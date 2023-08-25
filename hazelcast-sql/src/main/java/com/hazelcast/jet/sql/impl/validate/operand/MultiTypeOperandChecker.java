@@ -28,7 +28,7 @@ public final class MultiTypeOperandChecker extends TypedOperandChecker {
 
     private MultiTypeOperandChecker(
             final TypedOperandChecker primaryTypeChecker,
-            final TypedOperandChecker ...secondaryOperandCheckers
+            final TypedOperandChecker... secondaryOperandCheckers
     ) {
         super(primaryTypeChecker.type);
         if (secondaryOperandCheckers == null || secondaryOperandCheckers.length == 0) {

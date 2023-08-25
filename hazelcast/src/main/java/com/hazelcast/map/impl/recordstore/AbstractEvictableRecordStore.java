@@ -49,6 +49,7 @@ import static com.hazelcast.map.impl.recordstore.expiry.ExpiryReason.NOT_EXPIRED
  * Contains eviction specific functionality.
  */
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
+
     protected final Address thisAddress;
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;

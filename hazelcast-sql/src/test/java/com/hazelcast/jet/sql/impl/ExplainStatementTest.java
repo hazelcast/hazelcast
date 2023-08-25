@@ -21,7 +21,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
-import com.hazelcast.jet.sql.impl.opt.prunability.PartitionPruningIntegrationTest.KeyObj;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlStatement;
@@ -33,6 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -421,5 +421,21 @@ public class ExplainStatementTest extends SqlTestSupport {
                                 .startsWith("FullScanPhysicalRel(table=[[hazelcast, public, test[")
                                 .contains("partitioningKey=[$0, $1]")
                                 .contains("partitioningKeyValues=["));
+    }
+
+    public static class KeyObj implements Serializable {
+        public Long comp1;
+        public Long comp2;
+        public Long comp3;
+
+        public KeyObj() {
+
+        }
+
+        public KeyObj(final Long comp1, final Long comp2, final Long comp3) {
+            this.comp1 = comp1;
+            this.comp2 = comp2;
+            this.comp3 = comp3;
+        }
     }
 }

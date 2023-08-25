@@ -19,8 +19,8 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.steps.ClearOpSteps;
-import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -70,9 +70,10 @@ public class ClearOperation extends MapOperation
 
     @Override
     public void afterRunInternal() {
-        invalidateAllKeysInNearCaches();
+        if (mapContainer != null) {
+            invalidateAllKeysInNearCaches();
+        }
         hintMapEvent();
-        super.afterRunInternal();
     }
 
     private void hintMapEvent() {
