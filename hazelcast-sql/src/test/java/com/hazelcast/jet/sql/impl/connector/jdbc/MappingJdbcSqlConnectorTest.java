@@ -73,7 +73,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingWithExternalTableName() throws Exception {
-        createTable(tableName);
+        createTableWithQuotation(quote(tableName));
 
         String mappingName = "mapping_" + randomName();
         createMapping(tableName, mappingName);
@@ -190,7 +190,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingWithExternalFieldName() throws Exception {
-        createTable(tableName);
+        createTableWithQuotation(quote(tableName));
 
         execute("CREATE MAPPING " + tableName
                 + " ("
@@ -204,7 +204,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 newArrayList(new Row(tableName))
         );
 
-        insertItems(tableName, 1);
+        insertItems(quote(tableName), 1);
         assertRowsAnyOrder(
                 "SELECT id,fullName FROM " + tableName,
                 newArrayList(new Row(0, "name-0"))
@@ -213,7 +213,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingFieldDoesNotExist() throws Exception {
-        createTable(tableName);
+        createTableWithQuotation(quote(tableName));
 
         assertThatThrownBy(() ->
                 execute("CREATE MAPPING " + tableName
@@ -237,7 +237,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
              Statement stmt = conn.createStatement()
         ) {
-            stmt.execute("CREATE TABLE " + tableName + " (id INT PRIMARY KEY, name VARCHAR(10))");
+            stmt.execute("CREATE TABLE " + quote(tableName) + " ("+ quote("id") + " INT PRIMARY KEY, " + quote("name") + " VARCHAR(10))");
         }
 
         assertThatThrownBy(() ->
@@ -258,7 +258,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingFieldTypesDoNotMatch() throws Exception {
-        createTable(tableName);
+        createTableWithQuotation(quote(tableName));
 
         assertThatThrownBy(() ->
                 execute("CREATE MAPPING " + tableName
@@ -278,8 +278,8 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void when_createMappingWithImplicitFieldTypesDefinition_then_orderIsPreserved() throws Exception {
-        createTable(tableName);
-        insertItems(tableName, 2);
+        createTableWithQuotation(quote(tableName));
+        insertItems(quote(tableName), 2);
 
         execute("CREATE MAPPING " + tableName
                 + " DATA CONNECTION " + TEST_DATABASE_REF
@@ -297,7 +297,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // given
         String dcName = randomName();
         String name = randomName();
-        createTable(name);
+        createTableWithQuotation(quote(name));
         Map<String, String> options = new HashMap<>();
         options.put("jdbcUrl", dbConnectionUrl);
 
@@ -327,7 +327,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // given
         String dcName = randomName();
         String mappingName = randomName();
-        createTable(mappingName);
+        createTableWithQuotation(quote(mappingName));
         Map<String, String> options = new HashMap<>();
         options.put("jdbcUrl", dbConnectionUrl);
 
@@ -359,7 +359,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // given
         String dcName = randomName();
         String mappingName = randomName();
-        createTable(mappingName);
+        createTableWithQuotation(quote(mappingName));
 
         // when
         createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
@@ -387,7 +387,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // given
         String dcName = randomName();
         String mappingName = randomName();
-        createTable(mappingName);
+        createTableWithQuotation(quote(mappingName));
 
         createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
         createJdbcMappingUsingDataConnection(mappingName, dcName);
@@ -414,7 +414,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // given
         String dcName = randomName();
         String mappingName = randomName();
-        createTable(mappingName);
+        createTableWithQuotation(quote(mappingName));
 
         createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
         createJdbcMappingUsingDataConnection(mappingName, dcName);
@@ -442,7 +442,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingAutoResolveColumns() throws Exception {
-        createTable(tableName);
+        createTableWithQuotation(quote(tableName));
 
         execute("CREATE MAPPING " + tableName
                 + " DATA CONNECTION " + TEST_DATABASE_REF

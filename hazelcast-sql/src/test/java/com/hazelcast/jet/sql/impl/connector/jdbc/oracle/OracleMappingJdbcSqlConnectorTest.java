@@ -16,17 +16,18 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.oracle;
 
-import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcJoinTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.MappingJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.OracleDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class OracleJdbcJoinTest extends JdbcJoinTest {
+public class OracleMappingJdbcSqlConnectorTest extends MappingJdbcSqlConnectorTest {
 
     @BeforeClass
     public static void beforeClass() {
         initialize(new OracleDatabaseProvider());
     }
+
 }
