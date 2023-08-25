@@ -59,6 +59,15 @@
 
                 <configuration>
                     <shadedArtifactAttached>false</shadedArtifactAttached>
+
+                    <filters combine.children="append">
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/MANIFEST.MF</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
                 </configuration>
             </plugin>
         </plugins>
