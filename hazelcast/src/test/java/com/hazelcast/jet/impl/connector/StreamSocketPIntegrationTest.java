@@ -16,15 +16,6 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.Processors.noopP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.streamSocketP;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
@@ -34,24 +25,33 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.processor.Processors.noopP;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamSocketP;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class StreamSocketP_integrationTest extends JetTestSupport {
+public class StreamSocketPIntegrationTest extends JetTestSupport {
 
     private static final String HOST = "localhost";
-    private static final int PORT = 8888;
 
     private HazelcastInstance instance;
 
@@ -68,9 +68,11 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
     @Test
     public void when_dataWrittenToSocket_then_dataImmediatelyEmitted() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
+        int localPort;
         // Given
-        try (ServerSocket socket = new ServerSocket(PORT)) {
-            spawn(() -> uncheckRun(() -> {
+        try (ServerSocket socket = new ServerSocket(0) ) {
+            localPort = socket.getLocalPort();
+            new Thread(() -> uncheckRun(() -> {
                 Socket accept1 = socket.accept();
                 Socket accept2 = socket.accept();
                 PrintWriter writer1 = new PrintWriter(accept1.getOutputStream());
@@ -93,7 +95,7 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
             }));
 
             DAG dag = new DAG();
-            Vertex producer = dag.newVertex("producer", streamSocketP(HOST, PORT, UTF_8)).localParallelism(2);
+            Vertex producer = dag.newVertex("producer", streamSocketP(HOST, localPort, UTF_8)).localParallelism(2);
             Vertex consumer = dag.newVertex("consumer", writeListP("consumer")).localParallelism(1);
             dag.edge(between(producer, consumer));
 
@@ -110,7 +112,9 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
 
     @Test
     public void when_jobCancelled_then_readerClosed() throws Exception {
-        try (ServerSocket socket = new ServerSocket(PORT)) {
+        int localPort;
+        try (ServerSocket socket = new ServerSocket(0)) {
+            localPort = socket.getLocalPort();
             AtomicReference<Socket> accept = new AtomicReference<>();
             CountDownLatch acceptationLatch = new CountDownLatch(1);
             // Cancellation only works, if there are data on socket. Without data, SocketInputStream.read()
@@ -128,7 +132,7 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
                 }
             }));
 
-            Vertex producer = new Vertex("producer", streamSocketP(HOST, PORT, UTF_8)).localParallelism(1);
+            Vertex producer = new Vertex("producer", streamSocketP(HOST, localPort, UTF_8)).localParallelism(1);
             Vertex sink = new Vertex("sink", noopP()).localParallelism(1);
             DAG dag = new DAG()
                     .vertex(producer)
