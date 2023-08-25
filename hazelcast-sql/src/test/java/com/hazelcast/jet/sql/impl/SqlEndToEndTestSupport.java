@@ -18,11 +18,11 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.jet.JobInvocationObserver;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobCoordinationService;
+import com.hazelcast.jet.impl.JobInvocationObserver;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.spi.impl.NodeEngine;

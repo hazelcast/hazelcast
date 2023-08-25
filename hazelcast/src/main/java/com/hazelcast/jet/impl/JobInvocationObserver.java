@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.impl;
 
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
+import com.hazelcast.spi.annotation.Beta;
 
 import java.util.Set;
 
@@ -28,8 +29,14 @@ import java.util.Set;
  * It is invoked exactly before {@link InitExecutionOperation} for light jobs
  * in {@link com.hazelcast.jet.impl.LightMasterContext#createContext}.
  * <p>
+ * The internal state of the observer supposed to be mutable.
+ * {@link JobInvocationObserver#onLightJobInvocation} implementations must not use blocking code.
+ * <p>
  * Important note: right now it executes *only* for light jobs.
+ *
+ * @since 5.4
  */
+@Beta
 public interface JobInvocationObserver {
 
     void onLightJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.schema.model;
+package com.hazelcast.jet.sql.impl.module;
 
 import java.io.Serializable;
 
