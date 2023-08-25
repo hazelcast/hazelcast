@@ -59,13 +59,11 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
     private static final MongoDBContainer mongoContainer = new MyMongoContainer()
             .withEnv("MONGO_INITDB_DATABASE", DATABASE)
             .withClasspathResourceMapping("certs/localhost.pem", "/data/ssl/key.pem", READ_WRITE)
-            .withClasspathResourceMapping("certs/ca-cert.pem", "/data/ssl/ca.pem", READ_WRITE)
+            .withClasspathResourceMapping("certs/localhost-cert.pem", "/data/ssl/ca.pem", READ_WRITE)
             .withClasspathResourceMapping("tlsMongo.yaml", "/etc/mongo/mongod.conf", READ_WRITE)
             .withExposedPorts(27017)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
-            .withCommand("--config", "/etc/mongo/mongod.conf"
-//                    , "--tlsAllowInvalidCertificates", "--tlsAllowInvalidHostnames"
-                    );
+            .withCommand("--config", "/etc/mongo/mongod.conf");
     private static String connectionString;
 
     @BeforeClass
@@ -82,11 +80,7 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
             System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2,TLSv1.3");
             System.setProperty("javax.net.debug", "ssl:handshake");
             System.setProperty("javax.net.ssl.trustStore", tempFileTS.toString());
-//            System.setProperty("javax.net.ssl.trustStoreType", "pkcs12");
             System.setProperty("javax.net.ssl.trustStorePassword", "123456");
-//            System.setProperty("javax.net.ssl.keyStore", tempFile.toString());
-//            System.setProperty("javax.net.ssl.keyStoreType", "pkcs12");
-//            System.setProperty("javax.net.ssl.keyStorePassword", "123456");
         } catch (IOException e) {
             throw rethrow(e);
         }
@@ -109,9 +103,9 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
 
     @AfterClass
     public static void clear() {
-//        if (mongoContainer != null) {
-//            mongoContainer.stop();
-//        }
+        if (mongoContainer != null) {
+            mongoContainer.stop();
+        }
     }
 
     @Test

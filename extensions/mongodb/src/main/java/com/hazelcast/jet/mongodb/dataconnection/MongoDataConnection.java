@@ -100,8 +100,24 @@ public class MongoDataConnection extends DataConnectionBase {
      */
     public static final String CONNECTION_POOL_MAX = "connectionPoolMaxSize";
 
+    /**
+     * Name of the property holding the information if SSL should be enabled for clients.
+     *
+     * Default value is false.
+     *
+     * @since 5.4
+     * @see com.mongodb.connection.SslSettings.Builder#enabled(boolean)
+     */
     public static final String ENABLE_SSL = "enableSsl";
 
+    /**
+     * Name of the property holding information if invalid host names will be allowed.
+     *
+     * Default value is false.
+     *
+     * @since 5.4
+     * @see com.mongodb.connection.SslSettings.Builder#invalidHostNameAllowed(boolean)
+     */
     public static final String INVALID_HOSTNAME_ALLOWED = "invalidHostNameAllowed";
 
     private volatile ConcurrentMemoizingSupplier<MongoClient> mongoClientSup;
