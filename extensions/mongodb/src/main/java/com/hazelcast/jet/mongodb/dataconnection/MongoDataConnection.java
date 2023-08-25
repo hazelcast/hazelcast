@@ -100,6 +100,10 @@ public class MongoDataConnection extends DataConnectionBase {
      */
     public static final String CONNECTION_POOL_MAX = "connectionPoolMaxSize";
 
+    public static final String ENABLE_SSL = "enableSsl";
+
+    public static final String INVALID_HOSTNAME_ALLOWED = "invalidHostNameAllowed";
+
     private volatile ConcurrentMemoizingSupplier<MongoClient> mongoClientSup;
     private final String name;
     private final String connectionString;
@@ -110,6 +114,8 @@ public class MongoDataConnection extends DataConnectionBase {
     private final String authDb;
     private final int connectionPoolMinSize;
     private final int connectionPoolMaxSize;
+    private final boolean enableSsl;
+    private final boolean invalidHostNameAllowed;
 
     /**
      * Creates a new data connection based on given config.
@@ -126,6 +132,8 @@ public class MongoDataConnection extends DataConnectionBase {
         this.authDb = config.getProperty(AUTH_DB_PROPERTY, "admin");
         this.connectionPoolMinSize = Integer.parseInt(config.getProperty(CONNECTION_POOL_MIN, "10"));
         this.connectionPoolMaxSize = Integer.parseInt(config.getProperty(CONNECTION_POOL_MAX, "10"));
+        this.enableSsl = Boolean.parseBoolean(config.getProperty(ENABLE_SSL, "false"));
+        this.invalidHostNameAllowed = Boolean.parseBoolean(config.getProperty(INVALID_HOSTNAME_ALLOWED, "false"));
 
         checkState(connectionPoolMinSize <= connectionPoolMaxSize, "connection pool max size" +
                 " cannot be lower than min size");
@@ -154,23 +162,25 @@ public class MongoDataConnection extends DataConnectionBase {
 
     private MongoClient createClient() {
         try {
-            if (connectionString != null) {
-                Builder builder = MongoClientSettings.builder()
-                                                     .applyConnectionString(new ConnectionString(connectionString))
-                                                     .codecRegistry(defaultCodecRegistry())
-                                                     .applyToConnectionPoolSettings(this::connectionPoolSettings);
-                return MongoClients.create(builder.build());
-            }
-            ServerAddress serverAddress = new ServerAddress(host);
-            MongoCredential credential = MongoCredential.createCredential(username, authDb, password.toCharArray());
             Builder builder = MongoClientSettings.builder()
                                                  .codecRegistry(defaultCodecRegistry())
                                                  .applyToConnectionPoolSettings(this::connectionPoolSettings)
-                                                 .applyToClusterSettings(s -> s.hosts(singletonList(serverAddress)))
-                                                 .credential(credential);
+                                                 .applyToSslSettings(b -> {
+                                                     b.enabled(enableSsl);
+                                                     b.invalidHostNameAllowed(invalidHostNameAllowed);
+                                                 });
+            if (connectionString != null) {
+                builder.applyConnectionString(new ConnectionString(connectionString));
+            } else {
+                var serverAddress = new ServerAddress(host);
+                var credential = MongoCredential.createCredential(username, authDb, password.toCharArray());
+                builder
+                        .applyToClusterSettings(s -> s.hosts(singletonList(serverAddress)))
+                        .credential(credential);
+            }
             return MongoClients.create(builder.build());
         } catch (Exception e) {
-            throw new HazelcastException("Unable to create Mongo client for data connection '" + name + "'"
+            throw new HazelcastException("Unable to create Mongo client for data connection '" + name + "': "
                     + e.getMessage(), e);
         }
     }

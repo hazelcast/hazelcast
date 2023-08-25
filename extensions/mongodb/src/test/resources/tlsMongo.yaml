@@ -1,0 +1,8 @@
+net:
+  bindIp: localhost
+  port: 27017
+  tls:
+    mode: requireTLS
+    certificateKeyFile: "/data/ssl/key.pem"
+    CAFile: "/data/ssl/ca.pem"
+
