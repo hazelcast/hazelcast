@@ -95,7 +95,9 @@ class MetricsCollectionCycle {
 
     void notifyAllGauges(Collection<AbstractGauge> gauges) {
         for (AbstractGauge gauge : gauges) {
-            gauge.onCollectionCompleted(collectionId);
+            if (gauge != null) {
+                gauge.onCollectionCompleted(collectionId);
+            }
         }
     }
 
