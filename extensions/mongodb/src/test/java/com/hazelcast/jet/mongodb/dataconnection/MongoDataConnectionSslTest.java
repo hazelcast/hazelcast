@@ -69,8 +69,8 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void setUp() {
         try (
-                InputStream resource = MongoDataConnectionSslTest.class.getResourceAsStream("../../../../../testy/localhost.p12");
-                InputStream resourceTS = MongoDataConnectionSslTest.class.getResourceAsStream("../../../../../testy/ca.p12")
+                InputStream resource = MongoDataConnectionSslTest.class.getResourceAsStream("../../../../../certs/localhost.p12");
+                InputStream resourceTS = MongoDataConnectionSslTest.class.getResourceAsStream("../../../../../certs/ca.p12")
         ) {
             File tempFile = File.createTempFile("MongoDataConnectionSslTest", "jks");
             File tempFileTS = File.createTempFile("MongoDataConnectionSslTest", "jks");
