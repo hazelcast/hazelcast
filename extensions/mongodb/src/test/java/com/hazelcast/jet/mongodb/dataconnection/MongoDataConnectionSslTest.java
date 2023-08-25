@@ -106,6 +106,11 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
         if (mongoContainer != null) {
             mongoContainer.stop();
         }
+
+        System.clearProperty("https.protocols");
+        System.clearProperty("javax.net.debug");
+        System.clearProperty("javax.net.ssl.trustStore");
+        System.clearProperty("javax.net.ssl.trustStorePassword");
     }
 
     @Test
