@@ -70,9 +70,9 @@ public class StreamSocketPIntegrationTest extends JetTestSupport {
         CountDownLatch latch = new CountDownLatch(1);
         int localPort;
         // Given
-        try (ServerSocket socket = new ServerSocket(0) ) {
+        try (ServerSocket socket = new ServerSocket(0)) {
             localPort = socket.getLocalPort();
-            new Thread(() -> uncheckRun(() -> {
+            spawn(() -> uncheckRun(() -> {
                 Socket accept1 = socket.accept();
                 Socket accept2 = socket.accept();
                 PrintWriter writer1 = new PrintWriter(accept1.getOutputStream());
