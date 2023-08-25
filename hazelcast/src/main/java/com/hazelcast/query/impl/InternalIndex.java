@@ -20,6 +20,7 @@ import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.map.impl.recordstore.StepAwareStorage;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -118,18 +119,10 @@ public interface InternalIndex extends Index {
 
     /**
      * @return Step-aware storages that back the Index.
-     * By default returns {@code null} that indicates the
-     * backed storage is not Step-aware.
+     * By default returns empty list that indicates there is no
+     * Step-aware backed storage.
      */
     default List<StepAwareStorage> getStepAwareStorages() {
-        return null;
-    }
-
-    /**
-     * @return {@code true} if the Index is backed by Tiered Store,
-     * {@code false} otherwise.
-     */
-    default boolean isBackedByTieredStore() {
-        return false;
+        return Collections.emptyList();
     }
 }

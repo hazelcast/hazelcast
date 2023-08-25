@@ -253,15 +253,9 @@ public class Indexes {
         List<StepAwareStorage> stepAwareStorages = new ArrayList<>();
         for (InternalIndex index : indexes) {
             List<StepAwareStorage> saStorages = index.getStepAwareStorages();
-            if (saStorages != null) {
-                stepAwareStorages.addAll(saStorages);
-            }
+            stepAwareStorages.addAll(saStorages);
         }
         return stepAwareStorages;
-    }
-
-    public boolean isBackedByTieredStore() {
-        return indexes.length > 0 && indexes[0].isBackedByTieredStore();
     }
 
     public String getMapName() {
