@@ -145,7 +145,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
         out.writeString(databaseName);
         out.writeString(collectionName);
         out.writeStringArray(paths);
-        out.writeObject(writeMode);
+        out.writeString(writeMode == null ? null : writeMode.name());
         out.writeObject(types);
         var typesLocal = externalTypes == null ? new BsonType[0] : externalTypes;
         out.writeIntArray(stream(typesLocal).mapToInt(BsonType::getValue).toArray());
@@ -159,7 +159,8 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
         databaseName = in.readString();
         collectionName = in.readString();
         paths = in.readStringArray();
-        writeMode = in.readObject();
+        String writeModeName = in.readString();
+        writeMode = writeModeName == null ? null : WriteMode.valueOf(writeModeName);
         types = in.readObject();
         int[] extTypes = in.readIntArray();
         externalTypes = stream(extTypes == null ? new int[0] : extTypes).mapToObj(BsonType::findByValue).toArray(BsonType[]::new);
