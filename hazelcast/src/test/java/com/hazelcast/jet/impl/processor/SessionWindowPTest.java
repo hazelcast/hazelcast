@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.JetTestSupport.wm;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
@@ -69,7 +70,8 @@ public class SessionWindowPTest {
                 Collections.<ToLongFunction<Entry<?, Long>>>singletonList(Entry::getValue),
                 singletonList(entryKey()),
                 AggregateOperations.counting(),
-                KeyedWindowResult::new);
+                KeyedWindowResult::new,
+                (byte) 0);
     }
 
     @After
@@ -100,6 +102,15 @@ public class SessionWindowPTest {
         events.addAll(eventsWithKey("b"));
         events.addAll(eventsWithKey("c"));
         assertCorrectness(events);
+    }
+
+    @Test
+    public void when_multiKeyWatermarkReceived_then_emitOnlySupportedWm() {
+        List<Watermark> wmList = asList(wm(1), wm(1, (byte) 1), wm(1, (byte) 2));
+        verifyProcessor(supplier)
+                .disableCompleteCall()
+                .input(wmList)
+                .expectOutput(singletonList(wm(1)));
     }
 
     @Test

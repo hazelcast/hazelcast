@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -130,7 +131,8 @@ public class SqlExtendedInsert extends SqlInsert {
             if (field instanceof MapTableField) {
                 QueryPath path = ((MapTableField) field).getPath();
                 if (path.getPath() == null
-                        && field.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT) {
+                        && field.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT
+                        && !objectTypeSupportsTopLevelUpserts(field.getType())) {
                     throw validator.newValidationError(fieldNode, RESOURCE.insertToTopLevelObject());
                 }
             }
@@ -143,5 +145,10 @@ public class SqlExtendedInsert extends SqlInsert {
         public SqlLiteral symbol(SqlParserPos pos) {
             return SqlLiteral.createSymbol(this, pos);
         }
+    }
+
+    private boolean objectTypeSupportsTopLevelUpserts(QueryDataType dataType) {
+        // Only Java Types support top level upserts.
+        return dataType.isCustomType() && dataType.getObjectTypeKind().equals(QueryDataType.OBJECT_TYPE_KIND_JAVA);
     }
 }

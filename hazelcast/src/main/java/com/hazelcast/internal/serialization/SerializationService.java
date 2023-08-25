@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,14 +49,13 @@ public interface SerializationService {
      *     <li>it is registered for compact serialization via
      *     {@link com.hazelcast.config.CompactSerializationConfig}</li>
      *     <li>there is no serializer registered for it, and it can serialized
-     *     reflectively with {@link com.hazelcast.internal.serialization.impl.compact.ReflectiveCompactSerializer}</li>
+     *     reflectively</li>
      * </ul>
      * <p>
-     * This method can safely be called with a {@link Data} instance. The schema
-     * will be included only if the type of the data instance is {@code TYPE_COMPACT}.
-     * For any other data type, the instance will be returned as it is. Note that,
-     * if the data type is already {@code TYPE_COMPACT_WITH_SCHEMA}, it will also
-     * be returned as it is, since the schema is already included in it.
+     * This method can safely be called with a {@link Data} instance with a
+     * caveat. To include all the possible schemas, the data will be
+     * deserialized and serialized again, if it does not already include
+     * the schema.
      *
      * @param obj the object to serialize.
      * @return the serialized object.

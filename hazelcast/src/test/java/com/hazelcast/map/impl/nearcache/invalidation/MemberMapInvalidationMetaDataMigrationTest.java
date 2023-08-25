@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,15 +148,12 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
 
         final AtomicBoolean stop = new AtomicBoolean();
-        Thread shadow = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stop.get()) {
-                    HazelcastInstance instance = factory.newHazelcastInstance(config);
-                    waitAllForSafeState(instance);
-                    sleepSeconds(5);
-                    instance.shutdown();
-                }
+        Thread shadow = new Thread(() -> {
+            while (!stop.get()) {
+                HazelcastInstance instance = factory.newHazelcastInstance(config);
+                waitAllForSafeState(instance);
+                sleepSeconds(5);
+                instance.shutdown();
             }
         });
 

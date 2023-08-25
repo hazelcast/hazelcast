@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,13 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.ClearOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
@@ -46,15 +49,31 @@ public class ClearOperation extends MapOperation
             return;
         }
 
-        numberOfClearedEntries = recordStore.clear();
+        numberOfClearedEntries = recordStore.clear(false);
         shouldBackup = true;
     }
 
     @Override
-    protected void afterRunInternal() {
-        invalidateAllKeysInNearCaches();
+    public Step getStartingStep() {
+        return ClearOpSteps.CLEAR_MEMORY;
+    }
+
+    @Override
+    public void applyState(State state) {
+        if (recordStore == null) {
+            return;
+        }
+        super.applyState(state);
+        numberOfClearedEntries = (int) state.getResult();
+        shouldBackup = true;
+    }
+
+    @Override
+    public void afterRunInternal() {
+        if (mapContainer != null) {
+            invalidateAllKeysInNearCaches();
+        }
         hintMapEvent();
-        super.afterRunInternal();
     }
 
     private void hintMapEvent() {
@@ -82,10 +101,10 @@ public class ClearOperation extends MapOperation
         return numberOfClearedEntries;
     }
 
+    @Override
     public Operation getBackupOperation() {
-        ClearBackupOperation clearBackupOperation = new ClearBackupOperation(name);
-        clearBackupOperation.setServiceName(SERVICE_NAME);
-        return clearBackupOperation;
+        return new ClearBackupOperation(name)
+                .setServiceName(SERVICE_NAME);
     }
 
     @Override

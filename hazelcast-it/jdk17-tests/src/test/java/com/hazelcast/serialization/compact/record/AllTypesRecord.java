@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,20 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public record AllTypesRecord(
         byte primitiveInt8,
         Byte objectInt8,
+        char primitiveChar,
+        Character objectCharacter,
         short primitiveInt16,
         Short objectInt16,
         int primitiveInt32,
@@ -49,6 +57,8 @@ public record AllTypesRecord(
         NestedRecord nestedRecord,
         byte[] primitiveInt8Array,
         Byte[] objectInt8Array,
+        char[] primitiveCharArray,
+        Character[] objectCharacterArray,
         short[] primitiveInt16Array,
         Short[] objectInt16Array,
         int[] primitiveInt32Array,
@@ -68,7 +78,13 @@ public record AllTypesRecord(
         LocalDateTime[] timestampArray,
         OffsetDateTime[] timestampWithTimezoneArray,
         AnEnum[] anEnumArray,
-        NestedRecord[] nestedRecordArray
+        NestedRecord[] nestedRecordArray,
+        List<BigDecimal> list,
+        ArrayList<String> arrayList,
+        Set<Byte> set,
+        HashSet<Integer> hashSet,
+        Map<Short, Character> map,
+        HashMap<Long, Boolean> hashMap
 ) {
 
     enum AnEnum {
@@ -86,6 +102,8 @@ public record AllTypesRecord(
         return new AllTypesRecord(
                 (byte) 42,
                 (byte) -23,
+                '\uabcd',
+                '\ua0b0',
                 (short) 12345,
                 (short) -12345,
                 0,
@@ -108,6 +126,8 @@ public record AllTypesRecord(
                 NestedRecord.create(),
                 new byte[]{1, 2, -3},
                 new Byte[]{42, Byte.MAX_VALUE, Byte.MIN_VALUE, null},
+                new char[]{'0'},
+                new Character[]{Character.MAX_VALUE, '0', null, Character.MIN_VALUE, '\uf9ac'},
                 new short[]{0},
                 new Short[]{Short.MIN_VALUE, 0, null, Short.MIN_VALUE, Short.MAX_VALUE},
                 new int[]{123, 456, 789, Integer.MIN_VALUE},
@@ -127,13 +147,39 @@ public record AllTypesRecord(
                 new LocalDateTime[]{null, LocalDateTime.now()},
                 new OffsetDateTime[]{null, OffsetDateTime.now()},
                 new AnEnum[]{AnEnum.VALUE0, null, AnEnum.VALUE1},
-                new NestedRecord[]{null, NestedRecord.create()}
+                new NestedRecord[]{null, NestedRecord.create()},
+                new ArrayList<>() {{
+                    add(BigDecimal.ONE);
+                    add(null);
+                    add(BigDecimal.TEN);
+                }},
+                new ArrayList<>() {{
+                    add("a");
+                    add("b");
+                    add("c");
+                }},
+                new HashSet<>() {{
+                    add((byte) 0);
+                }},
+                new HashSet<>() {{
+                    add(42);
+                    add(null);
+                }},
+                new HashMap<>() {{
+                    put((short) 42, 'x');
+                }},
+                new HashMap<>() {{
+                    put(0L, false);
+                    put(1L, true);
+                }}
         );
     }
 
     public static AllTypesRecord createWithDefaultValues() {
         return new AllTypesRecord(
                 (byte) 0,
+                null,
+                '\u0000',
                 null,
                 (short) 0,
                 null,
@@ -146,6 +192,14 @@ public record AllTypesRecord(
                 0,
                 null,
                 false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null,
@@ -190,6 +244,7 @@ public record AllTypesRecord(
         }
         AllTypesRecord that = (AllTypesRecord) o;
         return primitiveInt8 == that.primitiveInt8
+                && primitiveChar == that.primitiveChar
                 && primitiveInt16 == that.primitiveInt16
                 && primitiveInt32 == that.primitiveInt32
                 && primitiveInt64 == that.primitiveInt64
@@ -197,6 +252,7 @@ public record AllTypesRecord(
                 && Double.compare(that.primitiveFloat64, primitiveFloat64) == 0
                 && primitiveBoolean == that.primitiveBoolean
                 && Objects.equals(objectInt8, that.objectInt8)
+                && Objects.equals(objectCharacter, that.objectCharacter)
                 && Objects.equals(objectInt16, that.objectInt16)
                 && Objects.equals(objectInt32, that.objectInt32)
                 && Objects.equals(objectInt64, that.objectInt64)
@@ -213,6 +269,8 @@ public record AllTypesRecord(
                 && Objects.equals(nestedRecord, that.nestedRecord)
                 && Arrays.equals(primitiveInt8Array, that.primitiveInt8Array)
                 && Arrays.equals(objectInt8Array, that.objectInt8Array)
+                && Arrays.equals(primitiveCharArray, that.primitiveCharArray)
+                && Arrays.equals(objectCharacterArray, that.objectCharacterArray)
                 && Arrays.equals(primitiveInt16Array, that.primitiveInt16Array)
                 && Arrays.equals(objectInt16Array, that.objectInt16Array)
                 && Arrays.equals(primitiveInt32Array, that.primitiveInt32Array)
@@ -232,6 +290,12 @@ public record AllTypesRecord(
                 && Arrays.equals(timestampArray, that.timestampArray)
                 && Arrays.equals(timestampWithTimezoneArray, that.timestampWithTimezoneArray)
                 && Arrays.equals(anEnumArray, that.anEnumArray)
-                && Arrays.equals(nestedRecordArray, that.nestedRecordArray);
+                && Arrays.equals(nestedRecordArray, that.nestedRecordArray)
+                && Objects.equals(list, that.list)
+                && Objects.equals(arrayList, that.arrayList)
+                && Objects.equals(set, that.set)
+                && Objects.equals(hashSet, that.hashSet)
+                && Objects.equals(map, that.map)
+                && Objects.equals(hashMap, that.hashMap);
     }
 }

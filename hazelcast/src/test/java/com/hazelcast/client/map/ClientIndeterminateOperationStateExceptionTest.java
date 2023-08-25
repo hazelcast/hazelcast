@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.IndeterminateOperationStateException;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,8 +40,8 @@ import static com.hazelcast.spi.properties.ClusterProperty.FAIL_ON_INDETERMINATE
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -82,11 +82,7 @@ public class ClientIndeterminateOperationStateExceptionTest extends HazelcastTes
         String key = generateKeyOwnedBy(instance1);
 
         IMap<Object, Object> map = client.getMap(randomMapName());
-        try {
-            map.put(key, key);
-            fail();
-        } catch (IndeterminateOperationStateException expected) {
-        }
+        assertThatThrownBy(() -> map.put(key, key)).isInstanceOf(IndeterminateOperationStateException.class);
 
         assertEquals(key, map.get(key));
     }

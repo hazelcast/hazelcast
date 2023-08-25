@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.cdc.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -38,28 +40,32 @@ public class PropertyRules {
         return this;
     }
 
-    public PropertyRules inclusive(String one, String other) {
+    public PropertyRules    inclusive(String one, String other) {
         includes.put(one, other);
         return this;
     }
 
     public void check(Properties properties) {
+        List<String> errors = new ArrayList<>();
         for (String mandatory : required) {
             if (!properties.containsKey(mandatory)) {
-                throw new IllegalStateException(mandatory + " must be specified");
+               errors.add(mandatory + " must be specified");
             }
         }
 
         for (Map.Entry<String, String> entry : excludes.entrySet()) {
             if (properties.containsKey(entry.getKey()) && properties.containsKey(entry.getValue())) {
-                throw new IllegalStateException(entry.getKey() + " and " + entry.getValue() + " are mutually exclusive");
+                errors.add(entry.getKey() + " and " + entry.getValue() + " are mutually exclusive");
             }
         }
 
         for (Map.Entry<String, String> entry : includes.entrySet()) {
-            if (properties.contains(entry.getKey()) && !properties.contains(entry.getValue())) {
-                throw new IllegalArgumentException(entry.getKey() + " requires " + entry.getValue() + " to be set too");
+            if (properties.containsKey(entry.getKey()) && !properties.containsKey(entry.getValue())) {
+                errors.add(entry.getKey() + " requires " + entry.getValue() + " to be set too");
             }
+        }
+        if (!errors.isEmpty()) {
+            throw new IllegalStateException(String.join(", ", errors));
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package com.hazelcast.jet.sql.impl.expression.predicate;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.predicate.IsFalsePredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsNotFalsePredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsNotTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -338,7 +338,7 @@ public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization_isTrue() {
         IsTruePredicate original = IsTruePredicate.create(ColumnExpression.create(0, QueryDataType.BOOLEAN));
-        IsTruePredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_TRUE);
+        IsTruePredicate restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_IS_TRUE);
 
         checkEquals(original, restored, true);
     }
@@ -355,7 +355,7 @@ public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization_isFalse() {
         IsFalsePredicate original = IsFalsePredicate.create(ColumnExpression.create(0, QueryDataType.BOOLEAN));
-        IsFalsePredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_FALSE);
+        IsFalsePredicate restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_IS_FALSE);
 
         checkEquals(original, restored, true);
     }
@@ -372,7 +372,7 @@ public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization_isNotTrue() {
         IsNotTruePredicate original = IsNotTruePredicate.create(ColumnExpression.create(0, QueryDataType.BOOLEAN));
-        IsNotTruePredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_NOT_TRUE);
+        IsNotTruePredicate restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_IS_NOT_TRUE);
 
         checkEquals(original, restored, true);
     }
@@ -389,7 +389,7 @@ public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization_isNotFalse() {
         IsNotFalsePredicate original = IsNotFalsePredicate.create(ColumnExpression.create(0, QueryDataType.BOOLEAN));
-        IsNotFalsePredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_NOT_FALSE);
+        IsNotFalsePredicate restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_IS_NOT_FALSE);
 
         checkEquals(original, restored, true);
     }

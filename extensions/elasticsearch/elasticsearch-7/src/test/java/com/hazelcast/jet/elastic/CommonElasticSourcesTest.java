@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,22 @@
 
 package com.hazelcast.jet.elastic;
 
-import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sinks;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.client.ResponseException;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.Test;
 
 import java.io.IOException;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexAsStringEnableSlicingPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexAsStringPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexAsStringZeroRetriesPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexExtractNamePipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexUsingScrollAsStringPipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexUsingSourceFactoryMethod1ExtractNamePipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexUsingSourceFactoryMethod2ExtractNamePipeline;
+import static com.hazelcast.jet.elastic.pipeline.CommonElasticSourcesPipeline.readFromIndexWithQueryExtractNamePipeline;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 
 /**
  * Base class for Elasticsearch source tests
@@ -54,21 +54,11 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         //
         // elasticClient.indices().create(new CreateIndexRequest("my-index"), DEFAULT);
 
-        // Instead we index a document and delete it, ending up with index with correct settings applied
+        // Instead, we index a document and delete it, ending up with index with correct settings applied
         indexDocument("my-index", of("name", "Frantisek"));
         deleteDocuments();
 
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .searchRequestFn(() -> new SearchRequest("my-index"))
-                .mapToItemFn(SearchHit::getSourceAsString)
-                .build();
-
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
-
+        Pipeline p = readFromIndexAsStringPipeline("my-index", elasticPipelineClientSupplier(), results);
         submitJob(p);
 
         assertThat(results).isEmpty();
@@ -78,54 +68,34 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
     public void given_indexWithOneDocument_whenReadFromElasticSource_thenFinishWithOneResult() {
         indexDocument("my-index", of("name", "Frantisek"));
 
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .searchRequestFn(() -> new SearchRequest("my-index"))
-                .mapToItemFn(hit -> (String) hit.getSourceAsMap().get("name"))
-                .build();
-
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
-
+        Pipeline p = readFromIndexExtractNamePipeline("my-index", elasticPipelineClientSupplier(), results);
         submitJob(p);
         assertThat(results).containsExactly("Frantisek");
     }
 
     @Test
-    public void given_sourceCreatedByFactoryMethod2_whenReadFromElasticSource_thenFinishWithOneResult() {
+    public void given_sourceCreatedBySourceFactoryMethod1_whenReadFromElasticSource_thenFinishWithOneResult() {
         indexDocument("my-index", of("name", "Frantisek"));
 
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = ElasticSources.elastic(
-                elasticClientSupplier(),
-                hit -> (String) hit.getSourceAsMap().get("name")
+        Pipeline p = readFromIndexUsingSourceFactoryMethod1ExtractNamePipeline(
+                elasticPipelineClientSupplier(),
+                results
         );
-
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
 
         submitJob(p);
         assertThat(results).containsExactly("Frantisek");
     }
 
     @Test
-    public void given_sourceCreatedByFactoryMethod3_whenReadFromElasticSource_thenFinishWithOneResult() {
+    public void given_sourceCreatedBySourceFactoryMethod2_whenReadFromElasticSource_thenFinishWithOneResult() {
         indexDocument("my-index-1", of("name", "Frantisek"));
         indexDocument("my-index-2", of("name", "Vladimir"));
 
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = ElasticSources.elastic(
-                elasticClientSupplier(),
-                () -> new SearchRequest("my-index-1"),
-                hit -> (String) hit.getSourceAsMap().get("name")
+        Pipeline p = readFromIndexUsingSourceFactoryMethod2ExtractNamePipeline(
+                "my-index-1",
+                elasticPipelineClientSupplier(),
+                results
         );
-
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
 
         submitJob(p);
         assertThat(results).containsExactly("Frantisek");
@@ -137,22 +107,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
 
         indexBatchOfDocuments("my-index");
 
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .searchRequestFn(() -> {
-                    SearchRequest sr = new SearchRequest("my-index");
-
-                    sr.source().size(10) // needs to scroll 5 times
-                      .query(matchAllQuery());
-                    return sr;
-                })
-                .mapToItemFn(SearchHit::getSourceAsString)
-                .build();
-
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
+        Pipeline p = readFromIndexUsingScrollAsStringPipeline("my-index", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).hasSize(BATCH_SIZE);
@@ -163,16 +118,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         indexDocument("my-index-1", of("name", "Frantisek"));
         indexDocument("my-index-2", of("name", "Vladimir"));
 
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .searchRequestFn(() -> new SearchRequest("my-index-*"))
-                .mapToItemFn(hit -> (String) hit.getSourceAsMap().get("name"))
-                .build();
-
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
+        Pipeline p = readFromIndexExtractNamePipeline("my-index-*", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).containsOnlyOnce("Frantisek", "Vladimir");
@@ -183,16 +129,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         indexDocument("my-index-1", of("name", "Frantisek"));
         indexDocument("my-index-2", of("name", "Vladimir"));
 
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .searchRequestFn(() -> new SearchRequest("my-index-1"))
-                .mapToItemFn(hit -> (String) hit.getSourceAsMap().get("name"))
-                .build();
-
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
+        Pipeline p = readFromIndexExtractNamePipeline("my-index-1", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).containsOnlyOnce("Frantisek");
@@ -203,17 +140,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         indexDocument("my-index", of("name", "Frantisek"));
         indexDocument("my-index", of("name", "Vladimir"));
 
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .searchRequestFn(() -> new SearchRequest("my-index")
-                        .source(new SearchSourceBuilder().query(QueryBuilders.matchQuery("name", "Frantisek"))))
-                .mapToItemFn(hit -> (String) hit.getSourceAsMap().get("name"))
-                .build();
-
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
+        Pipeline p = readFromIndexWithQueryExtractNamePipeline("my-index", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).containsOnlyOnce("Frantisek");
@@ -223,17 +150,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
     public void given_documents_whenReadFromElasticSourceWithSlicing_then_resultHasAllDocuments() throws IOException {
         initShardedIndex("my-index");
 
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .searchRequestFn(() -> new SearchRequest("my-index"))
-                .mapToItemFn(SearchHit::getSourceAsString)
-                .enableSlicing()
-                .build();
-
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
+        Pipeline p = readFromIndexAsStringEnableSlicingPipeline("my-index", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).hasSize(BATCH_SIZE);
@@ -246,17 +163,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         initShardedIndex("my-index-1");
         initShardedIndex("my-index-2");
 
-        Pipeline p = Pipeline.create();
-
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .searchRequestFn(() -> new SearchRequest("my-index-*"))
-                .mapToItemFn(SearchHit::getSourceAsString)
-                .enableSlicing()
-                .build();
-
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
+        Pipeline p = readFromIndexAsStringEnableSlicingPipeline("my-index-*", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).hasSize(2 * BATCH_SIZE);
@@ -264,34 +171,20 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
 
     @Test
     public void given_nonExistingIndex_whenReadFromElasticSource_thenThrowException() {
-        Pipeline p = Pipeline.create();
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .searchRequestFn(() -> new SearchRequest("non-existing-index"))
-                .mapToItemFn(SearchHit::getSourceAsString)
-                .retries(0) // we expect the exception -> faster test
-                .build();
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
+        Pipeline p = readFromIndexAsStringZeroRetriesPipeline(
+                "non-existing-index", elasticPipelineClientSupplier(), results);
 
         assertThatThrownBy(() -> submitJob(p))
-                .hasRootCauseInstanceOf(ResponseException.class)
+                .hasStackTraceContaining("ResponseException")
                 .hasStackTraceContaining("no such index [non-existing-index]");
     }
 
     @Test
     public void given_aliasMatchingNoIndex_whenReadFromElasticSource_thenReturnNoResults() {
-        Pipeline p = Pipeline.create();
-        BatchSource<String> source = new ElasticSourceBuilder<>()
-                .clientFn(elasticClientSupplier())
-                .searchRequestFn(() -> new SearchRequest("my-index-*"))
-                .mapToItemFn(SearchHit::getSourceAsString)
-                .build();
-
-        p.readFrom(source)
-         .writeTo(Sinks.list(results));
+        Pipeline p = readFromIndexAsStringPipeline("my-index-*", elasticPipelineClientSupplier(), results);
 
         submitJob(p);
         assertThat(results).isEmpty();
     }
+
 }

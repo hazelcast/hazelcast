@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -243,7 +243,8 @@ public final class DomConfigHelper {
                 next = null;
                 for (; index < maximum; index++) {
                     final Node item = wrapped.item(index);
-                    if ((nodeType == 0 || item.getNodeType() == nodeType) && (nodeName == null || nameMatches(item))) {
+                    if ((nodeType == 0 || (item != null && item.getNodeType() == nodeType))
+                            && (nodeName == null || nameMatches(item))) {
                         next = item;
                         return true;
                     }

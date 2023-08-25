@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,16 @@ package com.hazelcast.client.impl.spi.impl;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 /**
  * Default address provider of Hazelcast.
@@ -31,14 +37,19 @@ import java.util.List;
  */
 public class DefaultAddressProvider implements AddressProvider {
 
+    private static final EndpointQualifier CLIENT_PUBLIC_ENDPOINT_QUALIFIER =
+            EndpointQualifier.resolve(ProtocolType.CLIENT, "public");
     private final ClientNetworkConfig networkConfig;
+    private final BooleanSupplier translateToPublicAddressSupplier;
 
-    public DefaultAddressProvider(ClientNetworkConfig networkConfig) {
+    public DefaultAddressProvider(ClientNetworkConfig networkConfig,
+                                  BooleanSupplier translateToPublicAddressSupplier) {
         this.networkConfig = networkConfig;
+        this.translateToPublicAddressSupplier = translateToPublicAddressSupplier;
     }
 
     @Override
-    public Addresses loadAddresses() {
+    public Addresses loadAddresses(ClientConnectionProcessListenerRunner listenerRunner) {
         List<String> configuredAddresses = networkConfig.getAddresses();
 
         if (configuredAddresses.isEmpty()) {
@@ -46,15 +57,30 @@ public class DefaultAddressProvider implements AddressProvider {
         }
 
         Addresses addresses = new Addresses();
+        List<Address> allAddresses = new ArrayList<>();
         for (String address : configuredAddresses) {
-            addresses.addAll(AddressHelper.getSocketAddresses(address));
+            Addresses socketAddresses = AddressHelper.getSocketAddresses(address, listenerRunner);
+            addresses.addAll(socketAddresses);
         }
-
+        allAddresses.addAll(addresses.primary());
+        allAddresses.addAll(addresses.secondary());
+        listenerRunner.onPossibleAddressesCollected(allAddresses);
         return addresses;
     }
 
     @Override
     public Address translate(Address address) {
         return address;
+    }
+
+    @Override
+    public Address translate(Member member) {
+        if (translateToPublicAddressSupplier.getAsBoolean()) {
+            Address publicAddress = member.getAddressMap().get(CLIENT_PUBLIC_ENDPOINT_QUALIFIER);
+            if (publicAddress != null) {
+                return publicAddress;
+            }
+        }
+        return member.getAddress();
     }
 }

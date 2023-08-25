@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
  * (Note that this will occur if the specified collection is this list, and it's nonempty.)
  */
-@Generated("dbf1cd287073b84e0919e0a923db666d")
+@Generated("38b9e91091a07d77d442730211618346")
 public final class ListAddAllWithIndexCodec {
     //hex: 0x050E00
     public static final int REQUEST_MESSAGE_TYPE = 331264;
@@ -75,6 +75,7 @@ public final class ListAddAllWithIndexCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name, int index, java.util.Collection<com.hazelcast.internal.serialization.Data> valueList) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("List.AddAllWithIndex");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

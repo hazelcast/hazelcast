@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.index;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.query.impl.AbstractIndex;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -69,7 +69,7 @@ public class IndexRangeFilterTest extends IndexFilterTestSupport {
     @Test
     public void testSerialization() {
         IndexRangeFilter original = new IndexRangeFilter(intValue(1, true), true, intValue(2, true), true);
-        IndexRangeFilter restored = serializeAndCheck(original, SqlDataSerializerHook.INDEX_FILTER_RANGE);
+        IndexRangeFilter restored = serializeAndCheck(original, JetSqlSerializerHook.INDEX_FILTER_RANGE);
 
         checkEquals(original, restored, true);
     }

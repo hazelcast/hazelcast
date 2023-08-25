@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,6 +109,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
@@ -117,6 +118,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EventJournalMapEvent;
@@ -166,10 +168,12 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static com.hazelcast.query.impl.predicates.PredicateUtils.checkDoesNotContainPagingPredicate;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.containsPagingPredicate;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
-import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
@@ -179,7 +183,6 @@ import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.map.impl.record.Record.UNSET;
-import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -315,7 +318,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public void removeAll(@Nonnull Predicate<K, V> predicate) {
         checkNotNull(predicate, "predicate cannot be null");
-
+        checkDoesNotContainPagingPredicate(predicate, "removeAll");
         removeAllInternal(predicate);
     }
 
@@ -477,6 +480,25 @@ public class ClientMapProxy<K, V> extends ClientProxy
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             SerializationService ss = getSerializationService();
             return new ClientDelegatingFuture<>(future, ss, MapRemoveCodec::decodeResponse);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> deleteAsync(@Nonnull K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        return deleteAsyncInternal(key);
+    }
+
+    protected InternalCompletableFuture<Boolean> deleteAsyncInternal(Object key) {
+        try {
+            Data keyData = toData(key);
+            ClientMessage request = MapDeleteCodec.encodeRequest(name, keyData, getThreadId());
+            ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
+            SerializationService ss = getSerializationService();
+            return new ClientDelegatingFuture<>(future, ss,
+                clientMessage -> MapDeleteCodec.decodeResponse(clientMessage).response);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -943,6 +965,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                  boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkDoesNotContainPagingPredicate(predicate, "addEntryListener");
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
         return key == null
                 ? addEntryListenerInternal(listenerAdaptor, predicate, includeValue)
@@ -994,6 +1017,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                  boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkDoesNotContainPagingPredicate(predicate, "addEntryListener");
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, predicate, includeValue);
     }
@@ -1217,6 +1241,16 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return (Set<K>) new UnmodifiableLazySet(MapKeySetWithPredicateCodec.decodeResponse(response), getSerializationService());
     }
 
+    @Override
+    public Collection<V> localValues() {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
+    }
+
+    @Override
+    public Collection<V> localValues(@Nonnull Predicate<K, V> predicate) {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
+    }
+
     @SuppressWarnings("unchecked")
     private Set keySetWithPagingPredicate(Predicate predicate) {
         PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
@@ -1393,10 +1427,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor) {
         ClientMessage request = MapExecuteOnAllKeysCodec.encodeRequest(name, toData(entryProcessor));
         ClientMessage response = invoke(request);
-        return prepareResult(MapExecuteOnAllKeysCodec.decodeResponse(response));
+        boolean shouldInvalidate = !(entryProcessor instanceof ReadOnly);
+        return prepareResult(MapExecuteOnAllKeysCodec.decodeResponse(response), shouldInvalidate);
     }
 
-    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entries) {
+    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entries, boolean shouldInvalidate) {
         if (CollectionUtil.isEmpty(entries)) {
             return emptyMap();
         }
@@ -1412,10 +1447,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor,
                                           @Nonnull Predicate<K, V> predicate) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkNotNull(entryProcessor, NULL_ENTRY_PROCESSOR_IS_NOT_ALLOWED);
+        checkDoesNotContainPagingPredicate(predicate, "executeOnEntries");
+
         ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
-
-        return prepareResult(MapExecuteWithPredicateCodec.decodeResponse(response));
+        boolean shouldInvalidate = !(entryProcessor instanceof ReadOnly);
+        return prepareResult(MapExecuteWithPredicateCodec.decodeResponse(response), shouldInvalidate);
     }
 
     @Override
@@ -1433,7 +1472,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                            @Nonnull Predicate<K, V> predicate) {
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        checkNotPagingPredicate(predicate, "aggregate");
+        checkDoesNotContainPagingPredicate(predicate, "aggregate");
 
         ClientMessage request = MapAggregateWithPredicateCodec.encodeRequest(name, toData(aggregator), toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
@@ -1455,7 +1494,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                      @Nonnull Predicate<K, V> predicate) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        checkNotPagingPredicate(predicate, "project");
+        checkDoesNotContainPagingPredicate(predicate, "project");
 
         ClientMessage request = MapProjectWithPredicateCodec.encodeRequest(name, toData(projection), toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
@@ -1476,7 +1515,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                           boolean includeValue) {
         checkNotNull(name, "name cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
-        checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
+        checkDoesNotContainPagingPredicate(predicate, "getQueryCache");
 
         return getQueryCacheInternal(name, null, predicate, includeValue, this);
     }
@@ -1489,7 +1528,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(name, "name cannot be null");
         checkNotNull(listener, "listener cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
-        checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
+        checkDoesNotContainPagingPredicate(predicate, "getQueryCache");
 
         return getQueryCacheInternal(name, listener, predicate, includeValue, this);
     }
@@ -1546,9 +1585,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                                                             @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataKeys);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
+        boolean shouldInvalidate = !(entryProcessor instanceof ReadOnly);
+
         return new ClientDelegatingFuture<>(
                 future, getSerializationService(),
-                message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message)));
+                message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message), shouldInvalidate));
     }
 
     @Override
@@ -1644,7 +1685,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue(), triggerMapLoader);
             new ClientInvocation(getClient(), request, getName(), partitionId)
                     .invoke()
-                    .whenCompleteAsync(callback);
+                    .whenCompleteAsync(callback, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
         // if executing in sync mode, block for the responses
         if (future == null) {
@@ -1754,7 +1795,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                     @Nonnull Predicate<K, V> predicate) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        checkNotPagingPredicate(predicate, "iterator");
+        checkDoesNotContainPagingPredicate(predicate, "iterator");
         return new ClientMapQueryPartitionIterator<>(this, getContext(), fetchSize, partitionId,
                 predicate, projection);
     }
@@ -1862,6 +1903,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
                     + " must be greater or equal to minSize " + minSize);
         }
         final SerializationService ss = getSerializationService();
+        final ManagedContext context = ss.getManagedContext();
+        predicate = (java.util.function.Predicate<? super EventJournalMapEvent<K, V>>) context.initialize(predicate);
+        projection = (Function<? super EventJournalMapEvent<K, V>, ? extends T>) context.initialize(projection);
         final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
                 name, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
@@ -1887,23 +1931,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
                         "EntryProcessor.getBackupProcessor() should be null for a read-only EntryProcessor");
             }
         }
-    }
-
-    private static void checkNotPagingPredicate(Predicate predicate, String method) {
-        if (predicate instanceof PagingPredicate) {
-            throw new IllegalArgumentException("PagingPredicate not supported in " + method + " method");
-        }
-    }
-
-    private static boolean containsPagingPredicate(Predicate predicate) {
-        if (predicate instanceof PagingPredicateImpl) {
-            return true;
-        }
-        if (!(predicate instanceof PartitionPredicate)) {
-            return false;
-        }
-        PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
-        return partitionPredicate.getTarget() instanceof PagingPredicateImpl;
     }
 
     private class ClientMapToKeyWithPredicateEventHandler extends AbstractClientMapEventHandler {

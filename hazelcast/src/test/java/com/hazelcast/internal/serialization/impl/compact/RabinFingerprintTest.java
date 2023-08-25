@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,17 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RabinFingerprintTest {
+
+    @Test
+    public void testRabinFingerprint() {
+        SchemaWriter writer = new SchemaWriter("SomeType");
+        writer.writeInt32("id", 0);
+        writer.writeString("name", null);
+        writer.writeInt8("age", (byte) 0);
+        writer.writeArrayOfTimestamp("times", null);
+        Schema schema = writer.build();
+        assertEquals(3662264393229655598L, schema.getSchemaId());
+    }
 
     @Test
     public void testRabinFingerprintIsConsistentWithWrittenData() throws IOException {

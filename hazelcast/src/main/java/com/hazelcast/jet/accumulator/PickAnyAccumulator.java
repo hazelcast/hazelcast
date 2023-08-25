@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import java.util.Objects;
 public class PickAnyAccumulator<T> {
 
     private T value;
-    private long count;
 
     /**
      * Constructs an empty {@code pickAny} accumulator.
@@ -47,11 +46,9 @@ public class PickAnyAccumulator<T> {
      * the parameters.
      *
      * @param value the picked object
-     * @param count the count of accumulated objects
      */
-    public PickAnyAccumulator(T value, long count) {
+    public PickAnyAccumulator(T value) {
         this.value = value;
-        this.count = count;
     }
 
     /**
@@ -64,27 +61,14 @@ public class PickAnyAccumulator<T> {
         if (value == null) {
             value = t;
         }
-        count++;
     }
 
     /**
      * Combines another accumulator with this one.
      */
     public void combine(@Nonnull PickAnyAccumulator<T> other) {
-        count += other.count;
         if (value == null) {
             value = other.value;
-        }
-    }
-
-    /**
-     * Deducts another accumulator from this one.
-     */
-    public void deduct(@Nonnull PickAnyAccumulator<T> other) {
-        count -= other.count;
-        assert count >= 0 : "Negative count after deduct";
-        if (count == 0) {
-            value = null;
         }
     }
 
@@ -95,28 +79,18 @@ public class PickAnyAccumulator<T> {
         return value;
     }
 
-    /**
-     * Returns the count of accumulated objects.
-     */
-    public long count() {
-        return count;
-    }
-
     @Override
     @SuppressWarnings("rawtypes")
     public boolean equals(Object o) {
-        PickAnyAccumulator that;
         return this == o ||
                 o != null
                         && this.getClass() == o.getClass()
-                        && this.count == (that = (PickAnyAccumulator) o).count
-                        && Objects.equals(this.value, that.value);
+                        && Objects.equals(this.value, ((PickAnyAccumulator) o).value);
     }
 
     @Override
     public int hashCode() {
         long hc = 17;
-        hc = 73 * hc + count;
         hc = 73 * hc + (value != null ? value.hashCode() : 0);
         return Long.hashCode(hc);
     }

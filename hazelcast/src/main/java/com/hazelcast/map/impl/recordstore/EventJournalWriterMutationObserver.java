@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,13 +56,13 @@ public class EventJournalWriterMutationObserver implements MutationObserver {
     }
 
     @Override
-    public void onRemoveRecord(Data key, Record record) {
+    public void onRemoveRecord(Data key, Record record, boolean backup) {
         eventJournal.writeRemoveEvent(eventJournalConfig, objectNamespace,
                 partitionId, key, record.getValue());
     }
 
     @Override
-    public void onEvictRecord(Data key, Record record) {
+    public void onEvictRecord(Data key, Record record, boolean backup) {
         eventJournal.writeEvictEvent(eventJournalConfig, objectNamespace,
                 partitionId, key, record.getValue());
     }

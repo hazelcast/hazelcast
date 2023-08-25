@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.function.Predicate;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.Networking.createStreamPacketHeader;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
@@ -81,7 +81,7 @@ public class SenderTasklet implements Tasklet {
 
     // Written by HZ networking thread, read by Jet thread
     private volatile int sendSeqLimitCompressed;
-    private final Predicate<Object> addToInboxFunction = inbox::add;
+    private final Consumer<Object> addToInboxFunction = inbox::add;
 
     public SenderTasklet(
             InboundEdgeStream inboundEdgeStream,

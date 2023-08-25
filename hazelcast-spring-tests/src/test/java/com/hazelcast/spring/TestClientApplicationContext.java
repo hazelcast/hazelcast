@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.config.ClientTpcConfig;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
@@ -27,6 +28,8 @@ import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
+import com.hazelcast.client.config.ClientSqlConfig;
+import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -62,12 +65,10 @@ import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.map.IMap;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spring.serialization.DummyCompactSerializable;
 import com.hazelcast.spring.serialization.DummyCompactSerializer;
 import com.hazelcast.spring.serialization.DummyReflectiveSerializable;
 import com.hazelcast.test.annotation.QuickTest;
@@ -93,6 +94,7 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UP
 import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
 import static com.hazelcast.config.PersistentMemoryMode.SYSTEM_MEMORY;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -169,6 +171,12 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client23-with-compact-serialization")
     private HazelcastClientProxy clientWithCompactSerialization;
+
+    @Resource(name = "client24-with-sql")
+    private HazelcastClientProxy clientWithSql;
+
+    @Resource(name = "client25-with-tpc")
+    private HazelcastClientProxy clientWithTpc;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -389,22 +397,22 @@ public class TestClientApplicationContext {
         CompactSerializationConfig compactSerializationConfig = clientWithCompactSerialization.getClientConfig()
                 .getSerializationConfig()
                 .getCompactSerializationConfig();
-        assertTrue(compactSerializationConfig.isEnabled());
 
-        Map<String, TriTuple<String, String, String>> namedRegistrations = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
-        assertEquals(2, namedRegistrations.size());
+        List<String> serializerClassNames
+                = CompactSerializationConfigAccessor.getSerializerClassNames(compactSerializationConfig);
+        assertEquals(1, serializerClassNames.size());
+
+        List<String> compactSerializableClassNames
+                = CompactSerializationConfigAccessor.getCompactSerializableClassNames(compactSerializationConfig);
+        assertEquals(1, compactSerializableClassNames.size());
 
         String reflectivelySerializableClassName = DummyReflectiveSerializable.class.getName();
-        TriTuple<String, String, String> reflectiveClassRegistration = TriTuple.of(reflectivelySerializableClassName, reflectivelySerializableClassName, null);
-        TriTuple<String, String, String> actualReflectiveRegistration = namedRegistrations.get(reflectivelySerializableClassName);
-        assertEquals(reflectiveClassRegistration, actualReflectiveRegistration);
+        assertThat(compactSerializableClassNames)
+                .contains(reflectivelySerializableClassName);
 
-        String compactSerializableClassName = DummyCompactSerializable.class.getName();
         String compactSerializerClassName = DummyCompactSerializer.class.getName();
-        String typeName = "dummy";
-        TriTuple<String, String, String> explicitClassRegistration = TriTuple.of(compactSerializableClassName, typeName, compactSerializerClassName);
-        TriTuple<String, String, String> actualExplicitRegistration = namedRegistrations.get(typeName);
-        assertEquals(explicitClassRegistration, actualExplicitRegistration);
+        assertThat(serializerClassNames)
+                .contains(compactSerializerClassName);
     }
 
     @Test
@@ -630,5 +638,17 @@ public class TestClientApplicationContext {
         PersistentMemoryConfig pmemConfig = nativeMemoryConfig.getPersistentMemoryConfig();
         assertTrue(pmemConfig.isEnabled());
         assertEquals(SYSTEM_MEMORY, pmemConfig.getMode());
+    }
+
+    @Test
+    public void testSql() {
+        ClientSqlConfig sqlConfig = clientWithSql.getClientConfig().getSqlConfig();
+        assertEquals(ClientSqlResubmissionMode.RETRY_SELECTS, sqlConfig.getResubmissionMode());
+    }
+
+    @Test
+    public void testTpc() {
+        ClientTpcConfig tpcConfig = clientWithTpc.getClientConfig().getTpcConfig();
+        assertTrue(tpcConfig.isEnabled());
     }
 }

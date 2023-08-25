@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,16 +222,9 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             logger.fine("Taking snapshot for commit-index: " + commitIndex);
         }
 
-        MetadataRaftGroupSnapshot snapshot = new MetadataRaftGroupSnapshot();
-        snapshot.setMembers(activeMembers);
-        snapshot.setMembersCommitIndex(activeMembersCommitIndex);
-        snapshot.setGroups(groups.values());
-        snapshot.setMembershipChangeSchedule(membershipChangeSchedule);
-        snapshot.setInitialCPMembers(initialCPMembers);
-        snapshot.setInitializedCPMembers(initializedCPMembers);
-        snapshot.setInitializationStatus(initializationStatus);
-        snapshot.setInitializationCommitIndices(initializationCommitIndices);
-
+        MetadataRaftGroupSnapshot snapshot = new MetadataRaftGroupSnapshot(activeMembers, activeMembersCommitIndex,
+                groups.values(), membershipChangeSchedule, initialCPMembers, initializedCPMembers, initializationStatus,
+                initializationCommitIndices);
         return snapshot;
     }
 

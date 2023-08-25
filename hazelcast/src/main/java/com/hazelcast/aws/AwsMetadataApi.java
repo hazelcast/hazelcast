@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,10 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.utils.RestClient;
+import com.hazelcast.spi.exception.RestClientException;
 
 import java.util.Optional;
+import java.time.Instant;
 
 import static com.hazelcast.aws.AwsRequestUtils.createRestClient;
 import static com.hazelcast.spi.utils.RestClient.HTTP_NOT_FOUND;
@@ -40,17 +42,24 @@ class AwsMetadataApi {
     private static final String EC2_METADATA_ENDPOINT = "http://169.254.169.254/latest/meta-data";
     private static final String ECS_IAM_ROLE_METADATA_ENDPOINT = "http://169.254.170.2" + System.getenv(
         "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI");
+    private static final String EC2_METADATA_TOKEN_ENDPOINT = "http://169.254.169.254/latest/api/token";
     private static final String ECS_TASK_METADATA_ENDPOINT = System.getenv("ECS_CONTAINER_METADATA_URI");
 
     private static final String SECURITY_CREDENTIALS_URI = "/iam/security-credentials/";
+    private static final long METADATA_TOKEN_TTL_SECONDS = 21600;
 
     private final String ec2MetadataEndpoint;
+    private final String ec2MetadataTokenEndpoint;
     private final String ecsIamRoleEndpoint;
     private final String ecsTaskMetadataEndpoint;
     private final AwsConfig awsConfig;
 
+    private String metadataToken;
+    private Instant metadataExpiry;
+
     AwsMetadataApi(AwsConfig awsConfig) {
         this.ec2MetadataEndpoint = EC2_METADATA_ENDPOINT;
+        this.ec2MetadataTokenEndpoint = EC2_METADATA_TOKEN_ENDPOINT;
         this.ecsIamRoleEndpoint = ECS_IAM_ROLE_METADATA_ENDPOINT;
         this.ecsTaskMetadataEndpoint = ECS_TASK_METADATA_ENDPOINT;
         this.awsConfig = awsConfig;
@@ -60,8 +69,9 @@ class AwsMetadataApi {
      * For test purposes only.
      */
     AwsMetadataApi(String ec2MetadataEndpoint, String ecsIamRoleEndpoint, String ecsTaskMetadataEndpoint,
-                   AwsConfig awsConfig) {
+                   String ec2MetadataTokenEndpoint, AwsConfig awsConfig) {
         this.ec2MetadataEndpoint = ec2MetadataEndpoint;
+        this.ec2MetadataTokenEndpoint = ec2MetadataTokenEndpoint;
         this.ecsIamRoleEndpoint = ecsIamRoleEndpoint;
         this.ecsTaskMetadataEndpoint = ecsTaskMetadataEndpoint;
         this.awsConfig = awsConfig;
@@ -69,7 +79,11 @@ class AwsMetadataApi {
 
     String availabilityZoneEc2() {
         String uri = ec2MetadataEndpoint.concat("/placement/availability-zone/");
-        return createRestClient(uri, awsConfig).get().getBody();
+        return metadataClient(uri, awsConfig).get().getBody();
+    }
+
+    String availabilityZoneEcs() {
+        return getTaskMetadata().get("AvailabilityZone").asString();
     }
 
     Optional<String> placementGroupEc2() {
@@ -78,6 +92,10 @@ class AwsMetadataApi {
 
     Optional<String> placementPartitionNumberEc2() {
         return getOptionalMetadata(ec2MetadataEndpoint.concat("/placement/partition-number/"), "partition number");
+    }
+
+    String clusterEcs() {
+        return getTaskMetadata().get("Cluster").asString();
     }
 
     /**
@@ -93,7 +111,7 @@ class AwsMetadataApi {
     private Optional<String> getOptionalMetadata(String uri, String loggedName) {
         RestClient.Response response;
         try {
-            response = createRestClient(uri, awsConfig)
+            response = metadataClient(uri, awsConfig)
                     .expectResponseCodes(HTTP_OK, HTTP_NOT_FOUND)
                     .get();
         } catch (Exception e) {
@@ -112,14 +130,20 @@ class AwsMetadataApi {
         }
     }
 
+    private JsonObject getTaskMetadata() {
+        String uri = ecsTaskMetadataEndpoint.concat("/task");
+        String response = createRestClient(uri, awsConfig).get().getBody();
+        return Json.parse(response).asObject();
+    }
+
     String defaultIamRoleEc2() {
         String uri = ec2MetadataEndpoint.concat(SECURITY_CREDENTIALS_URI);
-        return createRestClient(uri, awsConfig).get().getBody();
+        return metadataClient(uri, awsConfig).get().getBody();
     }
 
     AwsCredentials credentialsEc2(String iamRole) {
         String uri = ec2MetadataEndpoint.concat(SECURITY_CREDENTIALS_URI).concat(iamRole);
-        String response = createRestClient(uri, awsConfig).get().getBody();
+        String response = metadataClient(uri, awsConfig).get().getBody();
         return parseCredentials(response);
     }
 
@@ -137,34 +161,34 @@ class AwsMetadataApi {
             .build();
     }
 
-    EcsMetadata metadataEcs() {
-        String response = createRestClient(ecsTaskMetadataEndpoint, awsConfig).get().getBody();
-        return parseEcsMetadata(response);
+    RestClient metadataClient(String url, AwsConfig awsConfig) {
+        try {
+            return createRestClient(url, awsConfig)
+                .withHeader("X-aws-ec2-metadata-token", metadataToken());
+        } catch (RestClientException ignored) {
+            // rest client without token
+            return createRestClient(url, awsConfig);
+        }
     }
 
-    private EcsMetadata parseEcsMetadata(String response) {
-        JsonObject metadata = Json.parse(response).asObject();
-        JsonObject labels = metadata.get("Labels").asObject();
-        String taskArn = labels.get("com.amazonaws.ecs.task-arn").asString();
-        String clusterArn = labels.get("com.amazonaws.ecs.cluster").asString();
-        return new EcsMetadata(taskArn, clusterArn);
+    String metadataToken() {
+        if (!tokenValid()) {
+            metadataToken = retrieveToken();
+        }
+        return metadataToken;
     }
 
-    static class EcsMetadata {
-        private final String taskArn;
-        private final String clusterArn;
+    String retrieveToken() {
+        String response = createRestClient(ec2MetadataTokenEndpoint, awsConfig)
+            .withHeader("X-aws-ec2-metadata-token-ttl-seconds", Long.toString(METADATA_TOKEN_TTL_SECONDS))
+            .put()
+            .getBody();
+        // we want to refresh token before it expires
+        metadataExpiry = Instant.now().plusSeconds(METADATA_TOKEN_TTL_SECONDS / 2);
+        return response;
+    }
 
-        EcsMetadata(String taskArn, String clusterArn) {
-            this.taskArn = taskArn;
-            this.clusterArn = clusterArn;
-        }
-
-        String getTaskArn() {
-            return taskArn;
-        }
-
-        String getClusterArn() {
-            return clusterArn;
-        }
+    boolean tokenValid() {
+        return metadataExpiry != null && metadataExpiry.isAfter(Instant.now());
     }
 }

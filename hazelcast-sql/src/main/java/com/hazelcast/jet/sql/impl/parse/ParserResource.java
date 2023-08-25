@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,17 @@ public interface ParserResource {
     @BaseMessage("The mapping must be created in the \"public\" schema")
     ExInst<SqlValidatorException> mappingIncorrectSchema();
 
+    @BaseMessage("The data connection must be created in the \"public\" schema")
+    ExInst<SqlValidatorException> dataConnectionIncorrectSchemaCreate();
+
+    @BaseMessage("Data connections can exists only in the \"public\" schema")
+    ExInst<SqlValidatorException> dataConnectionIncorrectSchemaUse();
+
     @BaseMessage("The view must be created in the \"public\" schema")
     ExInst<SqlValidatorException> viewIncorrectSchema();
+
+    @BaseMessage("The type must be created in the \"public\" schema")
+    ExInst<SqlValidatorException> typeIncorrectSchema();
 
     @BaseMessage("Column ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateColumn(String columnName);
@@ -49,8 +58,17 @@ public interface ParserResource {
     @BaseMessage("Mapping does not exist: {0}")
     ExInst<SqlValidatorException> droppedMappingDoesNotExist(String mappingName);
 
+    @BaseMessage("Data connection does not exist: {0}")
+    ExInst<SqlValidatorException> droppedDataConnectionDoesNotExist(String dataConnectionName);
+
     @BaseMessage("Index does not exist: {0}")
     ExInst<SqlValidatorException> droppedIndexDoesNotExist(String indexName);
+
+    @BaseMessage("View does not exist: {0}")
+    ExInst<SqlValidatorException> droppedViewDoesNotExist(String viewName);
+
+    @BaseMessage("Type does not exist: {0}")
+    ExInst<SqlValidatorException> droppedTypeDoesNotExist(String typeName);
 
     @BaseMessage("Writing to top-level fields of type OBJECT not supported")
     ExInst<SqlValidatorException> insertToTopLevelObject();

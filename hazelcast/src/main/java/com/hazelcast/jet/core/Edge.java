@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,7 +41,6 @@ import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.core.Partitioner.defaultPartitioner;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Objects.requireNonNull;
@@ -68,7 +68,6 @@ import static java.util.Objects.requireNonNull;
  * @since Jet 3.0
  */
 public class Edge implements IdentifiedDataSerializable {
-
     /**
      * An address returned by {@link #getDistributedTo()} denoting an edge that
      * distributes the items among all members.
@@ -85,6 +84,7 @@ public class Edge implements IdentifiedDataSerializable {
         }
     }
 
+    private transient boolean locked;
     private Vertex source; // transient field, restored during DAG deserialization
     private String sourceName;
     private int sourceOrdinal;
@@ -150,6 +150,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge to(@Nonnull Vertex destination) {
+        throwIfLocked();
         return to(destination, 0);
     }
 
@@ -158,6 +159,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge to(@Nonnull Vertex destination, int ordinal) {
+        throwIfLocked();
         if (this.destination != null) {
             throw new IllegalStateException("destination already set");
         }
@@ -265,6 +267,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge priority(int priority) {
+        throwIfLocked();
         if (priority == MasterJobContext.SNAPSHOT_RESTORE_EDGE_PRIORITY) {
             throw new IllegalArgumentException("priority must not be Integer.MIN_VALUE ("
                     + MasterJobContext.SNAPSHOT_RESTORE_EDGE_PRIORITY + ')');
@@ -287,6 +290,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge unicast() {
+        throwIfLocked();
         routingPolicy = RoutingPolicy.UNICAST;
         return this;
     }
@@ -299,6 +303,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public <T> Edge partitioned(@Nonnull FunctionEx<T, ?> extractKeyFn) {
+        throwIfLocked();
         // optimization for ConstantFunctionEx
         if (extractKeyFn instanceof ConstantFunctionEx) {
             return allToOne(extractKeyFn.apply(null));
@@ -316,6 +321,7 @@ public class Edge implements IdentifiedDataSerializable {
             @Nonnull FunctionEx<T, K> extractKeyFn,
             @Nonnull Partitioner<? super K> partitioner
     ) {
+        throwIfLocked();
         checkSerializable(extractKeyFn, "extractKeyFn");
         checkSerializable(partitioner, "partitioner");
         this.routingPolicy = RoutingPolicy.PARTITIONED;
@@ -335,7 +341,10 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge allToOne(Object key) {
-        return partitioned(wholeItem(), new Single(key));
+        throwIfLocked();
+        this.routingPolicy = RoutingPolicy.PARTITIONED;
+        this.partitioner = new Single(key);
+        return this;
     }
 
     /**
@@ -343,6 +352,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge broadcast() {
+        throwIfLocked();
         routingPolicy = RoutingPolicy.BROADCAST;
         return this;
     }
@@ -356,6 +366,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge isolated() {
+        throwIfLocked();
         routingPolicy = RoutingPolicy.ISOLATED;
         return this;
     }
@@ -375,6 +386,7 @@ public class Edge implements IdentifiedDataSerializable {
      * @since Jet 4.3
      */
     public Edge ordered(@Nonnull ComparatorEx<?> comparator) {
+        throwIfLocked();
         this.comparator = comparator;
         return this;
     }
@@ -386,6 +398,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge fanout() {
+        throwIfLocked();
         routingPolicy = RoutingPolicy.FANOUT;
         return this;
     }
@@ -430,6 +443,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge local() {
+        throwIfLocked();
         distributedTo = null;
         return this;
     }
@@ -462,6 +476,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge distributed() {
+        throwIfLocked();
         distributedTo = DISTRIBUTE_TO_ALL;
         return this;
     }
@@ -486,6 +501,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge distributeTo(@Nonnull Address targetMember) {
+        throwIfLocked();
         if (requireNonNull(targetMember).equals(DISTRIBUTE_TO_ALL)) {
             throw new IllegalArgumentException();
         }
@@ -533,6 +549,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge setConfig(@Nullable EdgeConfig config) {
+        throwIfLocked();
         this.config = config;
         return this;
     }
@@ -663,7 +680,7 @@ public class Edge implements IdentifiedDataSerializable {
      * the reasoning we introduce the concept of the <em>set of candidate
      * downstream processors</em>, or the <em>candidate set</em> for short. On
      * a local edge the candidate set contains only local processors and on a
-     * distributed edge it contain all the processors.
+     * distributed edge it contains all the processors.
      */
     public enum RoutingPolicy implements Serializable {
         /**
@@ -740,6 +757,11 @@ public class Edge implements IdentifiedDataSerializable {
         @Override
         public int getPartition(@Nonnull Object item, int partitionCount) {
             return partition;
+        }
+
+        @Override
+        public Object getConstantPartitioningKey() {
+            return key;
         }
 
         @Override
@@ -830,5 +852,21 @@ public class Edge implements IdentifiedDataSerializable {
         public int getClassId() {
             return JetDataSerializerHook.EDGE_KEY_PARTITIONER;
         }
+    }
+
+    private void throwIfLocked() {
+        if (locked) {
+            throw new IllegalStateException("Edge is already locked");
+        }
+    }
+
+    /**
+     * Used to prevent further mutations this instance after submitting it for execution.
+     * <p>
+     * It's not a public API, can be removed in the future.
+     */
+    @PrivateApi
+    void lock() {
+        locked = true;
     }
 }

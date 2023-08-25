@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -240,17 +240,19 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
     private Collection<AcquireInvocationKey> assignPermitsToWaitKeys() {
         List<AcquireInvocationKey> assigned = new ArrayList<>();
         Iterator<WaitKeyContainer<AcquireInvocationKey>> iterator = waitKeyContainersIterator();
-        while (iterator.hasNext() && available > 0) {
-            WaitKeyContainer<AcquireInvocationKey> container = iterator.next();
-            AcquireInvocationKey key = container.key();
-            if (key.permits() <= available) {
-                iterator.remove();
-                assigned.addAll(container.keyAndRetries());
-                assignPermitsToInvocation(key.endpoint(), key.invocationUid(), key.permits());
+        synchronized (waitKeys) {
+            while (iterator.hasNext() && available > 0) {
+                WaitKeyContainer<AcquireInvocationKey> container = iterator.next();
+                AcquireInvocationKey key = container.key();
+                if (key.permits() <= available) {
+                    iterator.remove();
+                    assigned.addAll(container.keyAndRetries());
+                    assignPermitsToInvocation(key.endpoint(), key.invocationUid(), key.permits());
+                }
             }
-        }
 
-        return assigned;
+            return assigned;
+        }
     }
 
     /**

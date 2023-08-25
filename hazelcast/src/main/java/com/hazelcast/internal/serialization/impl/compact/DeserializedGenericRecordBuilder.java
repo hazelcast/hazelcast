@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
@@ -32,27 +32,30 @@ import java.util.TreeMap;
  */
 public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuilder {
 
-    private final TreeMap<String, Object> objects = new TreeMap<>();
+    private final TreeMap<String, Object> objects;
     private final SchemaWriter schemaWriter;
+    private boolean built;
 
     public DeserializedGenericRecordBuilder(String typeName) {
+        this.objects = new TreeMap<>();
         schemaWriter = new SchemaWriter(typeName);
     }
 
     /**
      * @return newly created GenericRecord
-     * @throws HazelcastSerializationException if a field is not written when building with builder from
-     *                                         {@link GenericRecordBuilder#compact(String)} (ClassDefinition)} and
-     *                                         {@link GenericRecord#newBuilder()}
      */
     @Nonnull
     @Override
     public GenericRecord build() {
+        this.built = true;
         return new DeserializedGenericRecord(schemaWriter.build(), objects);
     }
 
 
     protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldKind fieldKind) {
+        if (this.built) {
+            throw new UnsupportedOperationException("Cannot modify the GenericRecordBuilder after building");
+        }
         if (objects.putIfAbsent(fieldName, value) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }

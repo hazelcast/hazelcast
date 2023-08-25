@@ -1,0 +1,8 @@
+#cloud-config
+# Update apt database on first boot (run 'apt-get update').
+package_update: true
+# Install additional packages on first boot
+packages:
+  - openjdk-8-jre-headless
+  - wget
+  - unzip

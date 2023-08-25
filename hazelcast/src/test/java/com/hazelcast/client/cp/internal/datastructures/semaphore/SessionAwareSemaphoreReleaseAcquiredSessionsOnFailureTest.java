@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,10 +73,11 @@ public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends H
     @Test
     public void testAcquire_shouldReleaseSessionsOnRuntimeError() throws InterruptedException {
         initSemaphoreAndAcquirePermits(10, 5);
-        assertEquals(getSessionAcquireCount(), 5);
+        assertEquals(5, getSessionAcquireCount());
         Future future = spawn(() -> {
             Thread.currentThread().interrupt();
-            semaphore.acquire(5);
+            // Make the semaphore block, so that Thread.interrupt() can be detected
+            semaphore.acquire(6);
         });
 
         try {
@@ -86,16 +87,17 @@ public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends H
             assertTrue(e.getCause() instanceof HazelcastException);
             assertTrue(e.getCause().getCause() instanceof InterruptedException);
         }
-        assertEquals(getSessionAcquireCount(), 5);
+        assertEquals(5, getSessionAcquireCount());
     }
 
     @Test
     public void testTryAcquire_shouldReleaseSessionsOnRuntimeError() throws InterruptedException {
         initSemaphoreAndAcquirePermits(2, 1);
-        assertEquals(getSessionAcquireCount(), 1);
+        assertEquals(1, getSessionAcquireCount());
         Future future = spawn(() -> {
             Thread.currentThread().interrupt();
-            semaphore.tryAcquire(10, TimeUnit.MINUTES);
+            // Make the semaphore block, so that Thread.interrupt() can be detected
+            semaphore.tryAcquire(2, 10, TimeUnit.MINUTES);
         });
 
         try {
@@ -105,13 +107,13 @@ public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends H
             assertTrue(e.getCause() instanceof HazelcastException);
             assertTrue(e.getCause().getCause() instanceof InterruptedException);
         }
-        assertEquals(getSessionAcquireCount(), 1);
+        assertEquals(1, getSessionAcquireCount());
     }
 
     @Test
     public void testDrainPermits_shouldReleaseSessionsOnRuntimeError() throws InterruptedException {
         initSemaphoreAndAcquirePermits(42, 2);
-        assertEquals(getSessionAcquireCount(), 2);
+        assertEquals(2, getSessionAcquireCount());
         Future future = spawn(() -> {
             Thread.currentThread().interrupt();
             semaphore.drainPermits();
@@ -124,7 +126,7 @@ public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends H
             assertTrue(e.getCause() instanceof HazelcastException);
             assertTrue(e.getCause().getCause() instanceof InterruptedException);
         }
-        assertEquals(getSessionAcquireCount(), 2);
+        assertEquals(2, getSessionAcquireCount());
     }
 
     private void initSemaphoreAndAcquirePermits(int initialPermits, int acquiredPermits) {
@@ -136,7 +138,7 @@ public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends H
 
     private long getSessionAcquireCount() {
         long sessionId = sessionManager.getSession(groupId);
-        assertNotEquals(sessionId, NO_SESSION_ID);
+        assertNotEquals(NO_SESSION_ID, sessionId);
         return sessionManager.getSessionAcquireCount(groupId, sessionId);
     }
 }

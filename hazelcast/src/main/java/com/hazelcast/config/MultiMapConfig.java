@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private String name;
     private String valueCollectionType = DEFAULT_VALUE_COLLECTION_TYPE.toString();
-    private List<EntryListenerConfig> listenerConfigs = new ArrayList<EntryListenerConfig>();
+    private List<EntryListenerConfig> listenerConfigs = new ArrayList<>();
     private boolean binary = true;
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
@@ -120,7 +120,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig {
      * @return the collection type for the values of this MultiMap
      */
     public ValueCollectionType getValueCollectionType() {
-        return ValueCollectionType.valueOf(valueCollectionType.toUpperCase(StringUtil.LOCALE_INTERNAL));
+        return ValueCollectionType.valueOf(StringUtil.upperCaseInternal(valueCollectionType));
     }
 
     /**
@@ -364,7 +364,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig {
         boolean hasListenerConfig = in.readBoolean();
         if (hasListenerConfig) {
             int configSize = in.readInt();
-            listenerConfigs = new ArrayList<EntryListenerConfig>(configSize);
+            listenerConfigs = new ArrayList<>(configSize);
             for (int i = 0; i < configSize; i++) {
                 EntryListenerConfig listenerConfig = in.readObject();
                 listenerConfigs.add(listenerConfig);

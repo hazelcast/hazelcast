@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.MergePolicyConfigReadOnly;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,9 +34,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
-import static org.hamcrest.CoreMatchers.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -105,9 +104,9 @@ public class MergePolicyConfigTest {
         config.setBatchSize(2342);
 
         String configString = config.toString();
-        assertThat(configString, containsString("MergePolicyConfig"));
-        assertThat(configString, containsString("policy='" + HigherHitsMergePolicy.class.getName() + "'"));
-        assertThat(configString, containsString("batchSize=2342"));
+        assertThat(configString).contains("MergePolicyConfig");
+        assertThat(configString).contains("policy='" + HigherHitsMergePolicy.class.getName() + "'");
+        assertThat(configString).contains("batchSize=2342");
     }
 
     @Test

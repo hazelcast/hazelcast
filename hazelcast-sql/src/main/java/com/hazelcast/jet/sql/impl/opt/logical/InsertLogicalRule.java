@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,14 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 final class InsertLogicalRule extends ConverterRule {
 
-    static final RelOptRule INSTANCE = new InsertLogicalRule();
+    private static final Config DEFAULT_CONFIG = Config.INSTANCE
+            .withConversion(LogicalTableInsert.class, Convention.NONE, LOGICAL,
+                    InsertLogicalRule.class.getSimpleName());
 
-    private InsertLogicalRule() {
-        super(
-                LogicalTableInsert.class, Convention.NONE, LOGICAL,
-                InsertLogicalRule.class.getSimpleName()
-        );
+    static final RelOptRule INSTANCE = new InsertLogicalRule(DEFAULT_CONFIG);
+
+    private InsertLogicalRule(Config config) {
+        super(config);
     }
 
     @Override

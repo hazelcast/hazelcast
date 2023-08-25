@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.Clock;
@@ -107,11 +108,16 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     @Override
     public void run() {
+        if (!nodeEngine.isStartCompleted()) {
+            return;
+        }
+        if (nodeEngine.getClusterService().getClusterState() == ClusterState.PASSIVE) {
+            return;
+        }
+        if (!singleRunPermit.compareAndSet(false, true)) {
+            return;
+        }
         try {
-            if (!singleRunPermit.compareAndSet(false, true)) {
-                return;
-            }
-
             runInternal();
 
         } finally {

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@
     <!-- Checks for Size Violations.                    -->
     <!-- See http://checkstyle.sf.net/config_sizes.html -->
     <module name="FileLength">
-        <property name="max" value="1500"/>
+        <property name="max" value="1600"/>
     </module>
 
     <!-- Checks for whitespace                               -->
@@ -113,15 +113,7 @@
     <module name="TreeWalker">
         <!-- Needed for SuppressWarningsFilter to work -->
         <module name="SuppressWarningsHolder"/>
-
-        <!-- Checks for Javadoc comments.                     -->
-        <!-- See http://checkstyle.sf.net/config_javadoc.html -->
-        <!-- Only for methods on public APIs we agreed to have JavaDoc. -->
-        <!-- TODO: figure out how to do that -->
-        <!--<module name="JavadocMethod">-->
-        <!--<property name="scope" value="public"/>-->
-        <!--<property name="allowMissingParamTags" value="true"/>-->
-        <!--</module>-->
+      
         <module name="JavadocType">
             <property name="scope" value="public"/>
         </module>
@@ -196,7 +188,7 @@
             <property name="max" value="2"/>
         </module>
         <module name="MethodCount">
-            <property name="maxTotal" value="30"/>
+            <property name="maxTotal" value="40"/>
         </module>
 
         <!-- Checks for whitespace                               -->

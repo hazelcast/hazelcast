@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.internal.serialization.Data;
@@ -51,14 +50,19 @@ class MapMergeRunnable extends AbstractMergeRunnable<Object, Object, RecordStore
     protected void mergeStore(RecordStore store, BiConsumer<Integer, MapMergeTypes<Object, Object>> consumer) {
         int partitionId = store.getPartitionId();
 
-        store.forEach((BiConsumer<Data, Record>) (key, record) -> {
-            Data dataKey = toHeapData(key);
-            Data dataValue = toHeapData(record.getValue());
-            ExpiryMetadata expiryMetadata = store.getExpirySystem().getExpiryMetadata(dataKey);
-            consumer.accept(partitionId,
+        store.beforeOperation();
+        try {
+            store.forEach((BiConsumer<Data, Record>) (key, record) -> {
+                Data dataKey = toHeapData(key);
+                Data dataValue = toHeapData(record.getValue());
+                ExpiryMetadata expiryMetadata = store.getExpirySystem().getExpiryMetadata(dataKey);
+                consumer.accept(partitionId,
                     createMergingEntry(getSerializationService(), dataKey, dataValue,
-                            record, expiryMetadata));
-        }, false);
+                        record, expiryMetadata));
+            }, false);
+        } finally {
+            store.afterOperation();
+        }
     }
 
     @Override
@@ -66,12 +70,6 @@ class MapMergeRunnable extends AbstractMergeRunnable<Object, Object, RecordStore
         MapConfig mapConfig = getMapConfig(dataStructureName);
         MergePolicyConfig mergePolicyConfig = mapConfig.getMergePolicyConfig();
         return mergePolicyConfig.getBatchSize();
-    }
-
-    @Override
-    protected InMemoryFormat getInMemoryFormat(String dataStructureName) {
-        MapConfig mapConfig = getMapConfig(dataStructureName);
-        return mapConfig.getInMemoryFormat();
     }
 
     @Override

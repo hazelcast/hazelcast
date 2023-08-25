@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,14 +33,8 @@ import static java.lang.String.format;
 public final class IntegrityChecker {
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
     private static final String INTEGRITY_CHECKER_IS_DISABLED = "Integrity Checker is disabled. "
-            + "Fail-fast on corrupted executables will not be performed.\n"
-            + "To enable integrity checker do one of the following: \n"
-            + format(CONFIG_CHANGE_TEMPLATE,
-            "config.setIntegrityCheckerEnabled(true);",
-            "hazelcast.integrity-checker.enabled to true",
-            "-Dhz.integritychecker.enabled=true",
-            "HZ_INTEGRITYCHECKER_ENABLED=true"
-    );
+            + "Fail-fast on corrupted executables will not be performed. "
+            + "For more information, see the documentation for Integrity Checker.";
     private static final String INTEGRITY_CHECKER_IS_ENABLED = "Starting Integrity Check scan. "
             + "This is a costly operation and it can be disabled if startup time is important. \n"
             + "To disable Integrity Checker do one of the following: \n"

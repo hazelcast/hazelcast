@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -273,7 +273,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
     }
 
     private void assertParamsEquals(Object[] array, Object... expected) {
-        assertArrayEquals(array, expected);
+        assertArrayEquals(expected, array);
     }
 
     private int randomInt() {

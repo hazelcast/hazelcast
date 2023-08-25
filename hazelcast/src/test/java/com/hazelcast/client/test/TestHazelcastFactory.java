@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,22 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.HazelcastClientUtil;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
+import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.DiscoveryStrategyConfig;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.TestEnvironment;
@@ -41,7 +43,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.client.HazelcastClientUtil.getInstanceName;
 
 public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
@@ -82,26 +83,13 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             config = new XmlClientConfigBuilder().build();
         }
 
-        Thread currentThread = Thread.currentThread();
-        ClassLoader tccl = currentThread.getContextClassLoader();
-        try {
-            if (tccl == ClassLoader.getSystemClassLoader()) {
-                currentThread.setContextClassLoader(HazelcastClient.class.getClassLoader());
-            }
-            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(getInstanceName(config), config,
-                    null, clientRegistry.createClientServiceFactory(sourceIp), createAddressProvider(config));
-            registerJvmNameAndPidMetric(client);
-            client.start();
-            if (clients.putIfAbsent(client.getName(), client) != null) {
-                throw new InvalidConfigurationException("HazelcastClientInstance with name '" + client.getName()
-                        + "' already exists!");
-            }
-
-            OutOfMemoryErrorDispatcher.registerClient(client);
-            return new HazelcastClientProxy(client);
-        } finally {
-            currentThread.setContextClassLoader(tccl);
-        }
+        ClientConnectionManagerFactory connectionManagerFactory = clientRegistry.createClientServiceFactory(sourceIp);
+        AddressProvider addressProvider = createAddressProvider(config);
+        HazelcastInstance proxy = HazelcastClientUtil.newHazelcastClient(config, connectionManagerFactory, addressProvider);
+        HazelcastClientInstanceImpl client = ((HazelcastClientProxy) proxy).client;
+        registerJvmNameAndPidMetric(client);
+        clients.put(client.getName(), client);
+        return proxy;
     }
 
     private void registerJvmNameAndPidMetric(HazelcastClientInstanceImpl client) {
@@ -136,11 +124,11 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
         return new AddressProvider() {
             @Override
-            public Addresses loadAddresses() {
+            public Addresses loadAddresses(ClientConnectionProcessListenerRunner listenerRunner) {
                 Addresses possibleAddresses = new Addresses();
                 for (Address address : getKnownAddresses()) {
                     Addresses addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
-                            address.getHost(), 1);
+                            address.getHost(), 1, listenerRunner);
                     possibleAddresses.addAll(addresses);
                 }
                 return possibleAddresses;
@@ -149,6 +137,11 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             @Override
             public Address translate(Address address) {
                 return address;
+            }
+
+            @Override
+            public Address translate(Member member) {
+                return member.getAddress();
             }
         };
     }

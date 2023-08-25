@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,12 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -108,6 +108,11 @@ public class SqlHashJoinP extends AbstractProcessor {
         return true;
     }
 
+    @Override
+    public boolean isCooperative() {
+        return joinInfo.isCooperative();
+    }
+
     public static HashJoinProcessorSupplier supplier(JetJoinInfo joinInfo, int rightInputColumnCount) {
         return new HashJoinProcessorSupplier(joinInfo, rightInputColumnCount);
     }
@@ -146,5 +151,10 @@ public class SqlHashJoinP extends AbstractProcessor {
             joinInfo = in.readObject();
             rightInputColumnCount = in.readInt();
         }
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 }

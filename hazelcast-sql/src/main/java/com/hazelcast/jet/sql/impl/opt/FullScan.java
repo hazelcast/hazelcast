@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt;
 
-import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -32,26 +29,25 @@ import static java.util.Collections.emptyList;
 
 public abstract class FullScan extends TableScan {
 
-    private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
-    private final int watermarkedColumnIndex;
+    protected final Expression<?> lagExpression;
+    protected final int watermarkedColumnIndex;
 
     protected FullScan(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            @Nullable Expression<?> lagExpression,
             int watermarkedColumnIndex
     ) {
         super(cluster, traitSet, emptyList(), table);
-        assert watermarkedColumnIndex < 0 ^ eventTimePolicyProvider != null;
-
-        this.eventTimePolicyProvider = eventTimePolicyProvider;
+        assert watermarkedColumnIndex < 0 ^ lagExpression != null;
+        this.lagExpression = lagExpression;
         this.watermarkedColumnIndex = watermarkedColumnIndex;
     }
 
     @Nullable
-    public FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider() {
-        return eventTimePolicyProvider;
+    public Expression<?> lagExpression() {
+        return lagExpression;
     }
 
     public int watermarkedColumnIndex() {
@@ -61,7 +57,7 @@ public abstract class FullScan extends TableScan {
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-                .itemIf("eventTimePolicyProvider", eventTimePolicyProvider, eventTimePolicyProvider != null)
+                .itemIf("lagExpression", "Present", lagExpression != null)
                 .itemIf("watermarkedColumnIndex", watermarkedColumnIndex, watermarkedColumnIndex >= 0);
     }
 }

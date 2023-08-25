@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,5 +34,12 @@ public final class JobConfigArguments {
      */
     public static final String KEY_SQL_UNBOUNDED = "__sql.queryUnbounded";
 
-    private JobConfigArguments() { }
+    /**
+     * The key under which the SQL engine stores detected partitions to apply
+     * member pruning technique.
+     */
+    public static final String KEY_REQUIRED_PARTITIONS = "__sql.requiredPartitions";
+
+    private JobConfigArguments() {
+    }
 }

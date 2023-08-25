@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
@@ -431,7 +431,7 @@ public class PortableUpsertTargetTest {
         target.init();
         assertThatThrownBy(() -> injector.set("1"))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Unable to inject a non-null value to \"field\"");
+                .hasMessageContaining("Field \"field\" doesn't exist in Portable Class Definition");
     }
 
     @Test

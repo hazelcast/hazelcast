@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,16 +28,18 @@ import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.cp.internal.CPSubsystemImpl;
 import com.hazelcast.client.cp.internal.session.ClientProxySessionManager;
 import com.hazelcast.client.impl.ClientExtension;
+import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.ClientICMPManager;
 import com.hazelcast.client.impl.connection.tcp.HeartbeatManager;
+import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
-import com.hazelcast.client.impl.proxy.ClientClusterProxy;
 import com.hazelcast.client.impl.proxy.PartitionServiceProxy;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientContext;
@@ -138,6 +140,7 @@ import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import javax.annotation.Nonnull;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
@@ -167,6 +170,7 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
+import static java.util.Collections.unmodifiableSet;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
 
@@ -253,11 +257,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this);
         partitionService = new ClientPartitionServiceImpl(this);
+        clusterService = new ClientClusterServiceImpl(loggingService.getLogger(ClientClusterService.class));
         clusterDiscoveryService = initClusterDiscoveryService(externalAddressProvider);
         connectionManager = (TcpClientConnectionManager) clientConnectionManagerFactory.createConnectionManager(this);
         invocationService = new ClientInvocationServiceImpl(this);
         listenerService = new ClientListenerServiceImpl(this);
-        clusterService = new ClientClusterServiceImpl(this);
         clientClusterViewListenerService = new ClientClusterViewListenerService(this);
         userContext.putAll(config.getUserContext());
         diagnostics = initDiagnostics();
@@ -295,7 +299,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             configs = clientFailoverConfig.getClientConfigs();
         }
         ClusterDiscoveryServiceBuilder builder = new ClusterDiscoveryServiceBuilder(tryCount, configs, loggingService,
-                externalAddressProvider, properties, clientExtension, getLifecycleService());
+                externalAddressProvider, properties, clientExtension, getLifecycleService(), clusterService);
         return builder.build();
     }
 
@@ -375,6 +379,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clusterService.start(configuredListeners);
             clientClusterViewListenerService.start();
 
+            // Add connection process listeners before starting the connection
+            // manager, so that they are invoked for all connection attempts
+            addConnectionProcessListeners(configuredListeners);
             connectionManager.start();
             startHeartbeat();
             startIcmpPing();
@@ -419,7 +426,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clientExtension.afterStart(this);
             cpSubsystem.init(clientContext);
             addClientConfigAddedListeners(configuredListeners);
-            sendStateToCluster();
+            if (!asyncStart) {
+                sendStateToCluster();
+            }
         } catch (Throwable e) {
             try {
                 lifecycleService.terminate();
@@ -435,14 +444,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         long heartbeatInterval = properties.getPositiveMillisOrDefault(HEARTBEAT_INTERVAL);
         ILogger logger = loggingService.getLogger(HeartbeatManager.class);
         HeartbeatManager.start(this, executionService, logger,
-                heartbeatInterval, heartbeatTimeout,
-                Collections.unmodifiableCollection(connectionManager.getActiveConnections()));
+                heartbeatInterval, heartbeatTimeout, connectionManager.getActiveConnections());
     }
 
     private void startIcmpPing() {
         ILogger logger = loggingService.getLogger(HeartbeatManager.class);
         ClientICMPManager.start(config.getNetworkConfig().getClientIcmpPingConfig(), executionService, logger,
-                Collections.unmodifiableCollection(connectionManager.getActiveConnections()));
+                connectionManager.getActiveConnections());
     }
 
     public void disposeOnClusterChange(Disposable disposable) {
@@ -551,13 +559,16 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Nonnull
     @Override
     public Cluster getCluster() {
-        return new ClientClusterProxy(clusterService);
+        return clusterService.getCluster();
     }
 
     @Nonnull
     @Override
     public Client getLocalEndpoint() {
-        return clusterService.getLocalClient();
+        TcpClientConnection connection = (TcpClientConnection) connectionManager.getRandomConnection();
+        InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
+        UUID clientUuid = connectionManager.getClientUuid();
+        return new ClientImpl(clientUuid, inetSocketAddress, instanceName, unmodifiableSet(config.getLabels()));
     }
 
     @Nonnull
@@ -858,13 +869,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return clientExtension.getJet();
     }
 
-    public void onClusterChange() {
+    public void onTryToConnectNextCluster() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Resetting local state of the client, because of a cluster change.");
 
         dispose(onClusterChangeDisposables);
-        //clear the member lists
-        clusterService.reset();
+        //reset the member list version
+        clusterService.onTryToConnectNextCluster();
         //clear partition service
         partitionService.reset();
         //close all the connections, consequently waiting invocations get TargetDisconnectedException
@@ -873,12 +884,24 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         connectionManager.reset();
     }
 
-    public void onClusterRestart() {
+    public void onConnectionToNewCluster() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Clearing local state of the client, because of a cluster restart.");
 
         dispose(onClusterChangeDisposables);
-        clusterService.clearMemberList();
+        clusterService.onClusterConnect();
+    }
+
+    public void collectAndSendStatsNow() {
+        clientStatisticsService.collectAndSendStatsNow();
+    }
+
+    /**
+     * Returns {@code true} if we need to check the urgent invocations, by
+     * examining the local registry of the schema service.
+     */
+    public boolean shouldCheckUrgentInvocations() {
+        return schemaService.hasAnySchemas();
     }
 
     public void waitForInitialMembershipEvents() {
@@ -926,6 +949,14 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         configuredListeners.stream().filter(listener -> listener instanceof CPGroupAvailabilityListener)
                 .forEach(listener -> getCPSubsystem().addGroupAvailabilityListener((CPGroupAvailabilityListener) listener));
+    }
+
+    private void addConnectionProcessListeners(Collection<EventListener> configuredListeners) {
+        configuredListeners.stream()
+                .filter(ClientConnectionProcessListener.class::isInstance)
+                // private API for Management Center (cluster connection diagnostics)
+                .map(ClientConnectionProcessListener.class::cast)
+                .forEach(connectionManager::addClientConnectionProcessListener);
     }
 
     public SchemaService getSchemaService() {

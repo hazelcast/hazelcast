@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import java.util.concurrent.ForkJoinPool;
  * used with the {@link GeneralStage#mapUsingServiceAsync(ServiceFactory, BiFunctionEx) mapUsingServiceAsync}
  * transform.
  * <p>
- * Currently two types of gRPC services are supported:
+ * Currently, two types of gRPC services are supported:
  * <ul>
  *     <li>{@link #unaryService(SupplierEx, FunctionEx) unary}</li>
  *     <li>{@link #bidirectionalStreamingService(SupplierEx, FunctionEx)} (SupplierEx, FunctionEx)
@@ -113,8 +113,8 @@ public final class GrpcServices {
     /**
      * Creates a {@link ServiceFactory} that calls out to a
      * <a href="https://grpc.io/docs/guides/concepts/#bidirectional-streaming-rpc">
-     *     bidirectional streaming gRPC service</a>. This may provide better
-     * throughput compared to the {@link #unaryService(SupplierEx, FunctionEx)}
+     * bidirectional streaming gRPC service</a>. This may provide better
+     * throughput compared to the {@link #unaryService(SupplierEx, FunctionEx)
      * unary} service because all communication happens within a single gRPC
      * call, eliminating some overheads.
      * <p>

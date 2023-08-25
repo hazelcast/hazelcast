@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,12 +38,12 @@ public final class PhysicalRules {
                 // Windowing rules
                 WatermarkPhysicalRule.INSTANCE,
                 SlidingWindowPhysicalRule.INSTANCE,
+                DropLateItemsPhysicalRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateBatchPhysicalRule.INSTANCE,
                 AggregateSlidingWindowPhysicalRule.WITH_CALC_INSTANCE,
                 AggregateSlidingWindowPhysicalRule.NO_CALC_INSTANCE,
-                StreamAggregateCannotExecuteRule.INSTANCE,
 
                 // Sort rules
                 SortPhysicalRule.INSTANCE,
@@ -51,6 +51,8 @@ public final class PhysicalRules {
 
                 // Join rules
                 JoinPhysicalRule.INSTANCE,
+                StreamToStreamJoinPhysicalRule.INSTANCE,
+                StreamToStreamJoinDropLateItemsEliminateRule.INSTANCE,
                 JoinValidationRule.INSTANCE,
 
                 // Union rules
@@ -71,7 +73,10 @@ public final class PhysicalRules {
                 UpdateByKeyMapPhysicalRule.INSTANCE,
                 DeleteByKeyMapPhysicalRule.INSTANCE,
 
+                StreamAggregateConverterRule.INSTANCE,
                 StreamingInsertMustNotExecuteRule.INSTANCE,
+
+                MustNotExecuteRule.INSTANCE,
 
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );

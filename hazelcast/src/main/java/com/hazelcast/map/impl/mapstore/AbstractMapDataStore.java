@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.ArrayList;
@@ -87,7 +87,7 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
      * @param hzExpirationTime
      * @return
      */
-    protected long getUserExpirationTime(long hzExpirationTime) {
+    protected static long getUserExpirationTime(long hzExpirationTime) {
         if (hzExpirationTime == Long.MAX_VALUE) {
             return hzExpirationTime;
         }

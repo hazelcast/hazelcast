@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -64,11 +63,11 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     private final CallIdSequence callIdSequence;
     private final UUID uuid;
     private final int partitionId;
-    private final Connection connection;
+    private final ClientConnection connection;
     private final long startTimeMillis;
     private final long retryPauseMillis;
     private final Object objectName;
-    private final boolean isSmartRoutingEnabled;
+    private final boolean isUnisocketClient;
     /**
      * We achieve synchronization of different threads via this field
      * sentConnection starts as null.
@@ -93,7 +92,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                                Object objectName,
                                int partitionId,
                                UUID uuid,
-                               Connection connection) {
+                               ClientConnection connection) {
         super(((ClientInvocationServiceImpl) client.getInvocationService()).invocationLogger);
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
@@ -108,7 +107,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         this.callIdSequence = invocationService.getCallIdSequence();
         this.clientInvocationFuture = new ClientInvocationFuture(this, clientMessage, logger, callIdSequence);
         this.invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
-        this.isSmartRoutingEnabled = invocationService.isSmartRoutingEnabled();
+        this.isUnisocketClient = invocationService.isUnisocketClient();
     }
 
     /**
@@ -139,7 +138,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
      * Create an invocation that will be executed on given {@code connection}.
      */
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, Object objectName,
-                            Connection connection) {
+                            ClientConnection connection) {
         this(client, clientMessage, objectName, UNASSIGNED_PARTITION, null, connection);
     }
 
@@ -174,12 +173,14 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     private void invokeOnSelection() {
         try {
             INVOKE_COUNT.incrementAndGet(this);
-            if (!urgent) {
+            if (urgent) {
+                invocationService.checkUrgentInvocationAllowed(this);
+            } else {
                 invocationService.checkInvocationAllowed();
             }
 
             if (isBindToSingleConnection()) {
-                boolean invoked = invocationService.invokeOnConnection(this, (ClientConnection) connection);
+                boolean invoked = invocationService.invokeOnConnection(this, connection);
                 if (!invoked) {
                     notifyExceptionWithOwnedPermission(new IOException("Could not invoke on connection " + connection));
                 }
@@ -187,7 +188,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             }
 
             boolean invoked;
-            if (isSmartRoutingEnabled) {
+            if (!isUnisocketClient) {
                 if (partitionId != -1) {
                     invoked = invocationService.invokeOnPartitionOwner(this, partitionId);
                 } else if (uuid != null) {
@@ -358,6 +359,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         }
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     private void execute() {
         invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
         if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
@@ -365,7 +367,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             executionService.execute(this);
         } else {
             // progressive retry delay
-            long delayMillis = Math.min(1 << (invokeCount - MAX_FAST_INVOCATION_COUNT), retryPauseMillis);
+            long delayMillis = Math.min(1L << Math.min(62, invokeCount - MAX_FAST_INVOCATION_COUNT), retryPauseMillis);
             executionService.schedule(this, delayMillis, TimeUnit.MILLISECONDS);
         }
     }
@@ -398,6 +400,10 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     }
 
     private boolean shouldRetry(Throwable t) {
+        if (t instanceof InvocationMightContainCompactDataException) {
+            return true;
+        }
+
         if (isBindToSingleConnection() && (t instanceof IOException || t instanceof TargetDisconnectedException)) {
             return false;
         }
@@ -442,7 +448,8 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         return callIdSequence;
     }
 
-    ClientInvocationFuture getClientInvocationFuture() {
+    // Used in tests
+    public ClientInvocationFuture getClientInvocationFuture() {
         return clientInvocationFuture;
     }
 }

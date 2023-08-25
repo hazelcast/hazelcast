@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,9 +88,6 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
         assertContainsSensor("os.processCpuTime");
         assertContainsSensor("os.totalPhysicalMemorySize");
         assertContainsSensor("os.totalSwapSpaceSize");
-
-        assumeThatNoJDK6();
-        // only available in JDK 7+
         assertContainsSensor("os.processCpuLoad");
         assertContainsSensor("os.systemCpuLoad");
     }

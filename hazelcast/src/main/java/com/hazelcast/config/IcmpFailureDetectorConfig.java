@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.lang.String.format;
 
 /**
- * This Failure Detector may be configured in addition to one of Deadline and Phi Actual Failure Detectors.<br>
+ * This Failure Detector may be configured in addition to one of Deadline and Phi Accrual Failure Detectors.<br>
  * It operates at Layer 3 of the OSI protocol, and provides much quicker and more deterministic detection of hardware<br>
  * and other lower level events. This detector may be configured to perform an extra check after a member is suspected by one<br>
  * of the other detectors, or it can work in parallel, which is the default. This way hardware and network level issues<br>
@@ -32,7 +32,7 @@ import static java.lang.String.format;
  * ICMP Echo requests. This is preferred.
  * However, if there are not enough permissions, it can be configured to fallback on attempting a TCP Echo on port 7.
  * In the latter case, both a successful connection or an explicit rejection will be treated as "Host is Reachable".
- * This is not preferred as each call creates a heavy weight socket and moreover the Echo service is typically disabled.
+ * This is not preferred as each call creates a heavyweight socket and moreover the Echo service is typically disabled.
  *
  * <p>For the Ping Failure Detector to rely only on ICMP (RAW sockets) Echo requests, there are some criteria
  * that need to be met. Please consult the Hazelcast Reference Manual on how to configure and what the OS requirements are.

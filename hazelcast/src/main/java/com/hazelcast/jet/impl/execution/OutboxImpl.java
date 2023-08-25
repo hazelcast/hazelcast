@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,11 @@ import com.hazelcast.jet.impl.util.Util;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -37,6 +40,8 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 
 public class OutboxImpl implements OutboxInternal {
+
+    private static final Function<Byte, Counter> CREATE_COUNTER_FUNCTION = x -> SwCounter.newSwCounter(Long.MIN_VALUE);
 
     private final OutboundCollector[] outstreams;
     private final ProgressTracker progTracker;
@@ -56,7 +61,7 @@ public class OutboxImpl implements OutboxInternal {
     private int[] unfinishedItemOrdinals;
     private Object unfinishedSnapshotKey;
     private Object unfinishedSnapshotValue;
-    private final Counter lastForwardedWm = SwCounter.newSwCounter(Long.MIN_VALUE);
+    private final Map<Byte, Counter> lastForwardedWm = new HashMap<>();
 
     private boolean blocked;
 
@@ -109,6 +114,7 @@ public class OutboxImpl implements OutboxInternal {
         return offerInternal(ordinals, item);
     }
 
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     private boolean offerInternal(@Nonnull int[] ordinals, @Nonnull Object item) {
         if (shouldBlock()) {
             return false;
@@ -120,9 +126,6 @@ public class OutboxImpl implements OutboxInternal {
                 : "Offered to different ordinals after previous call returned false: expected="
                 + Arrays.toString(unfinishedItemOrdinals) + ", got=" + Arrays.toString(ordinals);
 
-        assert numRemainingInBatch != -1 : "Outbox.offer() called again after it returned false, without a " +
-                "call to reset(). You probably didn't return from Processor method after Outbox.offer() " +
-                "or AbstractProcessor.tryEmit() returned false";
         numRemainingInBatch--;
         boolean done = true;
         if (numRemainingInBatch == -1) {
@@ -156,15 +159,16 @@ public class OutboxImpl implements OutboxInternal {
             unfinishedItem = null;
             unfinishedItemOrdinals = null;
             if (item instanceof Watermark) {
-                long wmTimestamp = ((Watermark) item).timestamp();
-                if (wmTimestamp != WatermarkCoalescer.IDLE_MESSAGE.timestamp()) {
+                Watermark wm = (Watermark) item;
+                long wmTimestamp = wm.timestamp();
+                if (wmTimestamp != WatermarkCoalescer.IDLE_MESSAGE_TIME) {
                     // We allow equal timestamp here, even though the WMs should be increasing.
                     // But we don't track WMs per ordinal and the same WM can be offered to different
                     // ordinals in different calls. Theoretically a completely different WM could be
                     // emitted to each ordinal, but we don't do that currently.
-                    assert lastForwardedWm.get() <= wmTimestamp
-                            : "current=" + lastForwardedWm.get() + ", new=" + wmTimestamp;
-                    lastForwardedWm.set(wmTimestamp);
+                    Counter counter = lastForwardedWm.computeIfAbsent(wm.key(), CREATE_COUNTER_FUNCTION);
+                    assert counter.get() <= wmTimestamp : "current=" + counter.get() + ", new=" + wmTimestamp;
+                    counter.set(wmTimestamp);
                 }
             }
         } else {
@@ -256,7 +260,11 @@ public class OutboxImpl implements OutboxInternal {
     }
 
     @Override
-    public long lastForwardedWm() {
-        return lastForwardedWm.get();
+    public long lastForwardedWm(byte wmKey) {
+        Counter counter = lastForwardedWm.get(wmKey);
+        if (counter == null) {
+            return Long.MIN_VALUE;
+        }
+        return counter.get();
     }
 }

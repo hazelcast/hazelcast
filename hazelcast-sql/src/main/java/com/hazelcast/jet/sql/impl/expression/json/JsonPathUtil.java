@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.fasterxml.jackson.jr.ob.JSON;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.ConcurrentInitialSetCache;
 import org.jsfr.json.Collector;
 import org.jsfr.json.DefaultErrorHandlingStrategy;
 import org.jsfr.json.ErrorHandlingStrategy;
@@ -26,6 +28,7 @@ import org.jsfr.json.JacksonJrParser;
 import org.jsfr.json.JsonSurfer;
 import org.jsfr.json.ValueBox;
 import org.jsfr.json.compiler.JsonPathCompiler;
+import org.jsfr.json.exception.JsonPathCompilerException;
 import org.jsfr.json.exception.JsonSurfingException;
 import org.jsfr.json.path.JsonPath;
 import org.jsfr.json.provider.JacksonJrProvider;
@@ -36,7 +39,8 @@ import java.util.Collection;
 import java.util.Map;
 
 public final class JsonPathUtil {
-    private static final long CACHE_SIZE = 50L;
+    private static final ILogger LOGGER = Logger.getLogger(JsonPathUtil.class);
+    private static final int CACHE_SIZE = 100;
     private static final ErrorHandlingStrategy ERROR_HANDLING_STRATEGY = new DefaultErrorHandlingStrategy() {
         @Override
         public void handleParsingException(Exception e) {
@@ -53,14 +57,20 @@ public final class JsonPathUtil {
 
     private JsonPathUtil() { }
 
-    public static Cache<String, JsonPath> makePathCache() {
-        return CacheBuilder.newBuilder()
-                .maximumSize(CACHE_SIZE)
-                .build();
+    public static ConcurrentInitialSetCache<String, JsonPath> makePathCache() {
+        return new ConcurrentInitialSetCache<>(CACHE_SIZE);
     }
 
     public static JsonPath compile(String path) {
-        return JsonPathCompiler.compile(path);
+        try {
+            return JsonPathCompiler.compile(path);
+        } catch (JsonPathCompilerException e) {
+            // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
+            // serializable, they can contain references to parser context and other objects, which are not.
+            // That's why we also log the exception here.
+            LOGGER.fine("JSON_QUERY JsonPath compilation failed", e);
+            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage());
+        }
     }
 
     public static Collection<Object> read(String json, JsonPath path) {

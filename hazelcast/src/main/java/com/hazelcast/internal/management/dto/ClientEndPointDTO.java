@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.client.Client;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
@@ -44,6 +44,7 @@ public class ClientEndPointDTO implements JsonSerializable {
      */
     public String address;
     public String clientType;
+    public String clientVersion;
     public String name;
     public Set<String> labels;
 
@@ -60,13 +61,14 @@ public class ClientEndPointDTO implements JsonSerializable {
     public ClientEndPointDTO() {
     }
 
-    public ClientEndPointDTO(Client client) {
-        this.uuid = client.getUuid();
-        this.clientType = client.getClientType();
-        this.name = client.getName();
-        this.labels = client.getLabels();
+    public ClientEndPointDTO(ClientEndpoint clientEndpoint) {
+        this.uuid = clientEndpoint.getUuid();
+        this.clientType = clientEndpoint.getClientType();
+        this.clientVersion = clientEndpoint.getClientVersion();
+        this.name = clientEndpoint.getName();
+        this.labels = clientEndpoint.getLabels();
 
-        InetSocketAddress socketAddress = client.getSocketAddress();
+        InetSocketAddress socketAddress = clientEndpoint.getSocketAddress();
         this.address = socketAddress.getHostName() + ":" + socketAddress.getPort();
 
         InetAddress address = socketAddress.getAddress();
@@ -80,6 +82,7 @@ public class ClientEndPointDTO implements JsonSerializable {
         root.add("uuid", uuid.toString());
         root.add("address", address);
         root.add("clientType", clientType);
+        root.add("clientVersion", clientVersion);
         root.add("name", name);
         JsonArray labelsObject = Json.array();
         for (String label : labels) {
@@ -96,6 +99,7 @@ public class ClientEndPointDTO implements JsonSerializable {
         uuid = UUID.fromString(getString(json, "uuid"));
         address = getString(json, "address");
         clientType = getString(json, "clientType");
+        clientVersion = getString(json, "clientVersion");
         name = getString(json, "name");
         JsonArray labelsArray = getArray(json, "labels");
         labels = new HashSet<>();

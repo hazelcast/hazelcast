@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,10 @@ public interface OutboxInternal extends Outbox {
     void unblock();
 
     /**
-     * Returns the timestamp of the last forwarded watermark.
+     * Returns the timestamp of the last forwarded watermark for the given key.
      * <p>
      * If there was no watermark added, it returns {@code Long.MIN_VALUE}. Can
      * be called from a concurrent thread.
      */
-    long lastForwardedWm();
-
+    long lastForwardedWm(byte key);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,6 +102,21 @@ public class MapBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implem
         return runOnPartitionThread(hz, new GetRecordCallable(serializationService, partitionContainer, key), partitionId);
     }
 
+    public long getExpiryTime(K key) {
+        IPartition partition = getPartitionForKey(key);
+        HazelcastInstance hz = getHazelcastInstance(partition);
+
+        Node node = getNode(hz);
+        SerializationService serializationService = node.getSerializationService();
+        MapService mapService = node.getNodeEngine().getService(MapService.SERVICE_NAME);
+        MapServiceContext context = mapService.getMapServiceContext();
+        int partitionId = partition.getPartitionId();
+        PartitionContainer partitionContainer = context.getPartitionContainer(partitionId);
+
+        return runOnPartitionThread(hz,
+                new GetExpiryTimeCallable(serializationService, partitionContainer, key), partitionId);
+    }
+
     private class SizeCallable extends AbstractClassLoaderAwareCallable<Integer> {
 
         private final PartitionContainer partitionContainer;
@@ -138,12 +153,17 @@ public class MapBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implem
             if (recordStore == null) {
                 return null;
             }
-            Data keyData = serializationService.toData(key);
-            Object o = recordStore.get(keyData, true, null);
-            if (o == null) {
-                return null;
+            recordStore.beforeOperation();
+            try {
+                Data keyData = serializationService.toData(key);
+                Object o = recordStore.get(keyData, true, null);
+                if (o == null) {
+                    return null;
+                }
+                return serializationService.toObject(o);
+            } finally {
+                recordStore.afterOperation();
             }
-            return serializationService.toObject(o);
         }
     }
 
@@ -167,6 +187,29 @@ public class MapBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implem
             }
             Data keyData = serializationService.toData(key);
             return recordStore.getRecord(keyData);
+        }
+    }
+
+    private class GetExpiryTimeCallable extends AbstractClassLoaderAwareCallable<Long> {
+
+        private final SerializationService serializationService;
+        private final PartitionContainer partitionContainer;
+        private final K key;
+
+        GetExpiryTimeCallable(SerializationService serializationService, PartitionContainer partitionContainer, K key) {
+            this.serializationService = serializationService;
+            this.partitionContainer = partitionContainer;
+            this.key = key;
+        }
+
+        @Override
+        Long callInternal() {
+            RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
+            if (recordStore == null) {
+                return null;
+            }
+            Data keyData = serializationService.toData(key);
+            return recordStore.getExpirySystem().getExpiryMetadata(keyData).getExpirationTime();
         }
     }
 

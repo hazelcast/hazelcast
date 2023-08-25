@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,8 @@ public class SessionWindowP_failoverTest {
                 singletonList((ToLongFunctionEx<Entry<?, Long>>) Entry::getValue),
                 singletonList(entryKey()),
                 aggrOp,
-                KeyedWindowResult::new);
+                KeyedWindowResult::new,
+                (byte) 0);
 
         Outbox outbox = new TestOutbox(128);
         Context context = new TestProcessorContext()

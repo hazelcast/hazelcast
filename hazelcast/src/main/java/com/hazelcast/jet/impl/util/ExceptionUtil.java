@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,19 @@ import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
+import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
+import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
+import com.hazelcast.jet.impl.execution.TaskletExecutionException;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.sql.impl.ResultLimitReachedException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -47,20 +52,23 @@ import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.JET_EXCEPTIONS_RANGE_START;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 
 public final class ExceptionUtil {
-
     private static final List<Tuple3<Integer, Class<? extends Throwable>, ExceptionFactory>> EXCEPTIONS = Arrays.asList(
             tuple3(JET_EXCEPTIONS_RANGE_START, JetException.class, JetException::new),
             tuple3(JET_EXCEPTIONS_RANGE_START + 1, TopologyChangedException.class, TopologyChangedException::new),
             tuple3(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class, JobNotFoundException::new),
             tuple3(JET_EXCEPTIONS_RANGE_START + 3, JobAlreadyExistsException.class, JobAlreadyExistsException::new),
             tuple3(JET_EXCEPTIONS_RANGE_START + 4, AssertionCompletedException.class, AssertionCompletedException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 5, JetDisabledException.class, JetDisabledException::new)
-        );
+            tuple3(JET_EXCEPTIONS_RANGE_START + 5, JetDisabledException.class, JetDisabledException::new),
+            tuple3(JET_EXCEPTIONS_RANGE_START + 6, CancellationByUserException.class, CancellationByUserException::new),
+            tuple3(JET_EXCEPTIONS_RANGE_START + 7, TaskletExecutionException.class, TaskletExecutionException::new)
+    );
 
     private ExceptionUtil() { }
 
@@ -68,10 +76,13 @@ public final class ExceptionUtil {
      * Returns true if the exception is one of a kind upon which the job
      * restarts rather than fails.
      */
+    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
     public static boolean isRestartableException(Throwable t) {
         return isTopologyException(t)
-                || t instanceof RestartableException
-                || t instanceof JetException && t.getCause() instanceof RestartableException;
+                || (t instanceof RestartableException)
+                || (t instanceof JetException && isOrHasCause(t, RestartableException.class))
+                || (t instanceof CompletionException && isOrHasCause(t, RestartableException.class))
+                ;
     }
 
     @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
@@ -182,6 +193,14 @@ public final class ExceptionUtil {
         throw (T) t;
     }
 
+    /**
+     * A {@linkplain Stream#collect(Supplier, BiConsumer, BiConsumer) combiner} that throws an
+     * {@link UnsupportedOperationException}. It is useful when parallel stream is not supported.
+     */
+    public static <T> void combinerUnsupported(T ignored, T ignored2) {
+        throw new UnsupportedOperationException("parallelStream() is not supported");
+    }
+
     @Nonnull
     public static String stackTraceToString(Throwable t) {
         StringWriter sw = new StringWriter();
@@ -212,5 +231,30 @@ public final class ExceptionUtil {
         }
 
         throw e;
+    }
+
+    /**
+     * Checks, if {@code t} itself or any exception in its cause chain is an
+     * instance of {@code classToFind}.
+     */
+    public static boolean isOrHasCause(Throwable t, Class<?> classToFind) {
+        while (t != null && t.getCause() != t && !classToFind.isAssignableFrom(t.getClass())) {
+            t = t.getCause();
+        }
+        return t != null && classToFind.isAssignableFrom(t.getClass());
+    }
+
+    public static boolean isTechnicalCancellationException(Throwable t) {
+        Throwable peeledFailure = peel(t);
+        return peeledFailure instanceof JobTerminateRequestedException
+                || peeledFailure instanceof ResultLimitReachedException
+                || peeledFailure instanceof TerminatedWithSnapshotException
+                || checkCause(peeledFailure);
+    }
+
+    private static boolean checkCause(Throwable peeledFailure) {
+        return peeledFailure.getCause() != null
+                && peeledFailure != peeledFailure.getCause()
+                && isTechnicalCancellationException(peeledFailure.getCause());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,18 @@
 package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -53,18 +53,18 @@ class SeriesSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
     @Override
-    public boolean isStream() {
-        return false;
+    public String defaultObjectType() {
+        return "Series";
     }
 
     @Nonnull
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
-    ) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
         throw new UnsupportedOperationException("Resolving fields not supported for " + typeName());
     }
 
@@ -73,11 +73,9 @@ class SeriesSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String name,
-            @Nonnull String externalName,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> resolvedFields) {
         throw new UnsupportedOperationException("Creating table not supported for " + typeName());
     }
 
@@ -90,19 +88,19 @@ class SeriesSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table0,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projections,
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
-        SeriesTable table = (SeriesTable) table0;
-        BatchSource<JetSqlRow> source = table.items(predicate, projections);
+        SeriesTable table = context.getTable();
+        BatchSource<JetSqlRow> source = table.items(context.convertFilter(predicate), context.convertProjection(projection));
         ProcessorMetaSupplier pms = ((BatchSourceTransform<JetSqlRow>) source).metaSupplier;
-        return dag.newUniqueVertex(table.toString(), pms);
+        return context.getDag().newUniqueVertex(table.toString(), pms);
     }
 }

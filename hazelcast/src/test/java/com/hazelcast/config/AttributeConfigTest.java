@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.instanceOf;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -117,8 +115,8 @@ public class AttributeConfigTest {
 
         String toString = config.toString();
 
-        assertThat(toString, containsString("iq"));
-        assertThat(toString, containsString("com.test.IqExtractor"));
+        assertThat(toString).contains("iq");
+        assertThat(toString).contains("com.test.IqExtractor");
     }
 
     @Test
@@ -127,7 +125,7 @@ public class AttributeConfigTest {
 
         AttributeConfigReadOnly readOnlyConfig = new AttributeConfigReadOnly(config);
 
-        assertThat(readOnlyConfig, instanceOf(AttributeConfigReadOnly.class));
+        assertThat(readOnlyConfig).isInstanceOf(AttributeConfigReadOnly.class);
         assertEquals("iq", readOnlyConfig.getName());
         assertEquals("com.test.IqExtractor", readOnlyConfig.getExtractorClassName());
     }

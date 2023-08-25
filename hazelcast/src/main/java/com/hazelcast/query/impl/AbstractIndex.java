@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.TypeConverter;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -66,22 +67,24 @@ public abstract class AbstractIndex implements InternalIndex {
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public AbstractIndex(
+            Node node,
             IndexConfig config,
             InternalSerializationService ss,
             Extractors extractors,
             IndexCopyBehavior copyBehavior,
-            PerIndexStats stats) {
+            PerIndexStats stats,
+            String mapName) {
         this.config = config;
         this.components = IndexUtils.getComponents(config);
         this.ordered = config.getType() == IndexType.SORTED;
         this.ss = ss;
         this.extractors = extractors;
         this.copyBehavior = copyBehavior;
-        this.indexStore = createIndexStore(config, stats);
+        this.indexStore = createIndexStore(node, config, stats, mapName);
         this.stats = stats;
     }
 
-    protected abstract IndexStore createIndexStore(IndexConfig config, PerIndexStats stats);
+    protected abstract IndexStore createIndexStore(Node node, IndexConfig config, PerIndexStats stats, String mapName);
 
     @Override
     public String getName() {

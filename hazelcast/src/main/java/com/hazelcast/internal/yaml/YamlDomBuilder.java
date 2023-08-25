@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,14 +40,13 @@ public final class YamlDomBuilder {
             throw new YamlException("The provided document is not a Map, and rootName is defined.");
         }
 
-        final Object rootNode;
+        Object rootNode;
         if (rootName != null) {
-            rootNode = ((Map) document).get(rootName);
-
-            if (rootNode == null) {
+            if (!((Map) document).containsKey(rootName)) {
                 throw new YamlException("The required " + rootName
                         + " root node couldn't be found in the document root");
             }
+            rootNode = ((Map) document).get(rootName);
         } else {
             rootNode = document;
         }

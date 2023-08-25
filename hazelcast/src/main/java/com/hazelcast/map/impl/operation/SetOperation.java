@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
-import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public class SetOperation extends BasePutOperation implements MutatingOperation {
 
@@ -41,16 +42,19 @@ public class SetOperation extends BasePutOperation implements MutatingOperation 
         newRecord = oldValue == null;
     }
 
-    protected long getTtl() {
-        return UNSET;
-    }
-
-    protected long getMaxIdle() {
-        return UNSET;
+    @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        newRecord = state.getOldValue() == null;
     }
 
     @Override
-    protected void afterRunInternal() {
+    protected StaticParams getStaticParams() {
+        return StaticParams.SET_PARAMS;
+    }
+
+    @Override
+    public void afterRunInternal() {
         eventType = newRecord ? ADDED : UPDATED;
 
         super.afterRunInternal();

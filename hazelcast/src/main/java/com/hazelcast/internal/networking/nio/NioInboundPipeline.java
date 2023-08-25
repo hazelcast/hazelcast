@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKIN
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_INBOUND_PIPELINE_IDLE_TIME_MS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_INBOUND_PIPELINE_NORMAL_FRAMES_READ;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_INBOUND_PIPELINE_PRIORITY_FRAMES_READ;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -57,11 +58,11 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     private InboundHandler[] handlers = new InboundHandler[0];
     private ByteBuffer receiveBuffer;
 
-    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_BYTES_READ, unit = BYTES)
+    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_BYTES_READ, unit = BYTES, level = DEBUG)
     private final SwCounter bytesRead = newSwCounter();
-    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_NORMAL_FRAMES_READ)
+    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_NORMAL_FRAMES_READ, level = DEBUG)
     private final SwCounter normalFramesRead = newSwCounter();
-    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_PRIORITY_FRAMES_READ)
+    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_PRIORITY_FRAMES_READ, level = DEBUG)
     private final SwCounter priorityFramesRead = newSwCounter();
     private volatile long lastReadTime = -1;
 
@@ -100,7 +101,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
         }
     }
 
-    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_IDLE_TIME_MS, unit = MS)
+    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_IDLE_TIME_MS, unit = MS, level = DEBUG)
     private long idleTimeMillis() {
         return Math.max(currentTimeMillis() - lastReadTime, 0);
     }

@@ -1,6 +1,6 @@
 /*
  * Original work Copyright 2015 Real Logic Ltd.
- * Modified work Copyright (c) 2015-2021, Hazelcast, Inc. All Rights Reserved.
+ * Modified work Copyright (c) 2015-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -271,9 +270,9 @@ public class Long2LongHashMapTest {
         assertTrue(keys.contains(1L));
         assertTrue(keys.contains(2L));
         assertFalse(keys.contains(3L));
-        assertThat(keys, hasItems(1L, 2L));
+        assertThat(keys).containsExactlyInAnyOrder(1L, 2L);
 
-        assertThat("iterator has failed to be reset", keys, hasItems(1L, 2L));
+        assertThat(keys).as("iterator has failed to be reset").containsExactlyInAnyOrder(1L, 2L);
     }
 
     @Test

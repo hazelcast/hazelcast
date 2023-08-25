@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOp;
@@ -41,6 +42,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
@@ -64,6 +66,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -99,7 +102,8 @@ public class ClusterJoinManager {
     private final ClusterClockImpl clusterClock;
     private final ClusterStateManager clusterStateManager;
 
-    private final Map<Address, MemberInfo> joiningMembers = new LinkedHashMap<>();
+    // Map of members batched to join, along with their passed OnJoinOp pre-join operation
+    private final Map<Address, BiTuple<MemberInfo, OnJoinOp>> joiningMembers = new LinkedHashMap<>();
     private final Map<UUID, Long> recentlyJoinedMemberUuids = new HashMap<>();
 
     /**
@@ -279,7 +283,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            startJoinRequest(joinRequest.toMemberInfo());
+            startJoinRequest(joinRequest.toMemberInfo(), joinRequest.getPreJoinOperation());
         } finally {
             clusterServiceLock.unlock();
         }
@@ -442,8 +446,9 @@ public class ClusterJoinManager {
      * will get processed as they arrive for the first time.
      *
      * @param memberInfo the joining member info
+     * @param preJoinOperation which is prepared on joining members and will run on the master
      */
-    private void startJoinRequest(MemberInfo memberInfo) {
+    private void startJoinRequest(MemberInfo memberInfo, OnJoinOp preJoinOperation) {
         long now = Clock.currentTimeMillis();
         if (logger.isFineEnabled()) {
             String timeToStart = (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
@@ -455,20 +460,29 @@ public class ClusterJoinManager {
             firstJoinRequest = now;
         }
 
-        final MemberInfo existing = joiningMembers.put(memberInfo.getAddress(), memberInfo);
+        // Store the OnJoinOp passed in joiningMembers map to execute later; otherwise when we batch
+        //  join request, only the final joiner's OnJoinOp is executed - we want to execute them all!
+        final BiTuple<MemberInfo, OnJoinOp> existing = joiningMembers.put(memberInfo.getAddress(),
+                BiTuple.of(memberInfo, preJoinOperation));
         if (existing == null) {
             sendMasterAnswer(memberInfo.getAddress());
             if (now - firstJoinRequest < maxWaitMillisBeforeJoin) {
                 timeToStartJoin = now + waitMillisBeforeJoin;
             }
-        } else if (!existing.getUuid().equals(memberInfo.getUuid())) {
+        } else if (!existing.element1().getUuid().equals(memberInfo.getUuid())) {
             logger.warning("Received a new join request from " + memberInfo.getAddress()
                     + " with a new UUID " + memberInfo.getUuid()
-                    + ". Previous UUID was " + existing.getUuid());
+                    + ". Previous UUID was " + existing.element1().getUuid());
         }
-        if (now >= timeToStartJoin) {
+
+        if (!isBatchingJoins(now)) {
             startJoin();
         }
+    }
+
+    // Accessible for testing
+    public boolean isBatchingJoins(long now) {
+        return now < timeToStartJoin;
     }
 
     /**
@@ -530,9 +544,11 @@ public class ClusterJoinManager {
 
             if (clusterService.isJoined()) {
                 if (logger.isFineEnabled()) {
-                    logger.fine(format("Ignoring master response %s from %s, this node is already joined",
-                            masterAddress, callerAddress));
+                    logger.fine(format("Master address information (%s) came from %s. This node is already joined. "
+                            + "The received master address will be suggested as a temporary member address "
+                            + "in the TCP joiner configuration.", masterAddress, callerAddress));
                 }
+                suggestAddressToKnownMembers(masterAddress);
                 return;
             }
 
@@ -568,6 +584,19 @@ public class ClusterJoinManager {
             }
         } finally {
             clusterServiceLock.unlock();
+        }
+    }
+
+    private void suggestAddressToKnownMembers(Address masterAddress) {
+        if (node.getThisAddress().equals(masterAddress)) {
+            return;
+        }
+        Joiner joiner = node.getJoiner();
+        if (joiner != null && joiner.getClass() == TcpIpJoiner.class) {
+            logger.info(
+                    format("The address (%s) will be added as a temporary member address to the TCP-IP joiner configuration.",
+                            masterAddress));
+            ((TcpIpJoiner) joiner).addTemporaryMemberAddress(masterAddress);
         }
     }
 
@@ -666,7 +695,9 @@ public class ClusterJoinManager {
                 }
 
                 // send members update back to node trying to join again...
-                boolean deferPartitionProcessing = isMemberRestartingWithPersistence(member.getAttributes());
+                MemberMap memberMap = clusterService.getMembershipManager().getMemberMap();
+                boolean deferPartitionProcessing = isMemberRestartingWithPersistence(member.getAttributes())
+                        && isMemberRejoining(memberMap, member.getAddress(), member.getUuid());
                 OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
                 PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
@@ -675,7 +706,8 @@ public class ClusterJoinManager {
                         clusterService.getMembershipManager().getMembersView(), preJoinOp, postJoinOp,
                         clusterClock.getClusterTime(), clusterService.getClusterId(),
                         clusterClock.getClusterStartTime(), clusterStateManager.getState(),
-                        clusterService.getClusterVersion(), partitionRuntimeState, deferPartitionProcessing);
+                        clusterService.getClusterVersion(), partitionRuntimeState, deferPartitionProcessing,
+                        node.getClusterTopologyIntent());
                 op.setCallerUuid(clusterService.getThisUuid());
                 invokeClusterOp(op, targetAddress);
             }
@@ -685,9 +717,10 @@ public class ClusterJoinManager {
         // If I am the master, I will just suspect from the target. If it sends a new join request, it will be processed.
         // If I am not the current master, I can turn into the new master and start the claim process
         // after I suspect from the target.
-        if (clusterService.isMaster() || targetAddress.equals(clusterService.getMasterAddress())) {
+        if (!hasMemberLeft(joinMessage.getUuid())
+                && (clusterService.isMaster() || targetAddress.equals(clusterService.getMasterAddress()))) {
             String msg = format("New join request has been received from an existing endpoint %s."
-                    + " Removing old member and processing join request...", member);
+                    + " Removing old member and processing join request with UUID %s", member, joinMessage.getUuid());
             logger.warning(msg);
 
             clusterService.suspectMember(member, msg, false);
@@ -760,7 +793,8 @@ public class ClusterJoinManager {
                 partitionService.pauseMigration();
                 MemberMap memberMap = clusterService.getMembershipManager().getMemberMap();
 
-                MembersView newMembersView = MembersView.cloneAdding(memberMap.toMembersView(), joiningMembers.values());
+                MembersView newMembersView = MembersView.cloneAdding(memberMap.toMembersView(),
+                        joiningMembers.values().stream().map(BiTuple::element1).collect(Collectors.toList()));
 
                 long time = clusterClock.getClusterTime();
 
@@ -771,15 +805,25 @@ public class ClusterJoinManager {
                     return;
                 }
 
+                // Run all joining members' provided pre join operations now, but only
+                //  execute them locally and on existing members of this cluster (do
+                //  not broadcast to other members joining within this batch)
+                runProvidedPostJoinOpsWithoutBroadcast();
+
+                // Prepare our normal pre-join operations, which will be broadcast remotely;
+                //  this must be done AFTER pre-join ops from all joining members are applied
+                //  to master, via #runProvidedPostJoinOpsWithoutBroadcast() above
+                OnJoinOp preJoinOp = preparePreJoinOps();
+
                 // post join operations must be lock free, that means no locks at all:
                 // no partition locks, no key-based locks, no service level locks!
-                OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
 
                 // this is the current partition assignment state, not taking into account the
                 // currently joining members
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
-                for (MemberInfo member : joiningMembers.values()) {
+                for (BiTuple<MemberInfo, OnJoinOp> tuple : joiningMembers.values()) {
+                    MemberInfo member = tuple.element1();
                     if (isMemberRestartingWithPersistence(member.getAttributes())
                         && isMemberRejoining(memberMap, member.getAddress(), member.getUuid())) {
                         logger.info(member + " is rejoining the cluster");
@@ -789,7 +833,8 @@ public class ClusterJoinManager {
                     long startTime = clusterClock.getClusterStartTime();
                     Operation op = new FinalizeJoinOp(member.getUuid(), newMembersView, preJoinOp, postJoinOp, time,
                             clusterService.getClusterId(), startTime, clusterStateManager.getState(),
-                            clusterService.getClusterVersion(), partitionRuntimeState, !shouldTriggerRepartition);
+                            clusterService.getClusterVersion(), partitionRuntimeState, !shouldTriggerRepartition,
+                            node.getClusterTopologyIntent());
                     op.setCallerUuid(thisUuid);
                     invokeClusterOp(op, member.getAddress());
                 }
@@ -810,6 +855,20 @@ public class ClusterJoinManager {
             }
         } finally {
             clusterServiceLock.unlock();
+        }
+    }
+
+    private void runProvidedPostJoinOpsWithoutBroadcast() {
+        for (BiTuple<MemberInfo, OnJoinOp> tuple : joiningMembers.values()) {
+            if (tuple.element2() != null) {
+                OnJoinOp onJoinOp = tuple.element2();
+                try {
+                    onJoinOp.beforeRun();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                onJoinOp.runWithoutBroadcastTo(joiningMembers.keySet());
+            }
         }
     }
 
@@ -866,6 +925,7 @@ public class ClusterJoinManager {
             logger.info("We should merge to " + joinMessage.getAddress()
                     + " because their data member count is bigger than ours ["
                     + (targetDataMemberCount + " > " + currentDataMemberCount) + ']');
+            suggestAddressToKnownMembers(joinMessage.getAddress());
             return LOCAL_NODE_SHOULD_MERGE;
         }
 
@@ -880,6 +940,7 @@ public class ClusterJoinManager {
         if (shouldMergeTo(node.getThisAddress(), joinMessage.getAddress())) {
             logger.info("We should merge to " + joinMessage.getAddress()
                     + ", both have the same data member count: " + currentDataMemberCount);
+            suggestAddressToKnownMembers(joinMessage.getAddress());
             return LOCAL_NODE_SHOULD_MERGE;
         }
 

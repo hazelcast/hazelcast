@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("b9c9db25c15492dce7f005ecf414436c")
+@Generated("797f9fbd9556892cdb7f5b1ac7729cac")
 public final class PagingPredicateHolderCodec {
     private static final int PAGE_SIZE_FIELD_OFFSET = 0;
     private static final int PAGE_FIELD_OFFSET = PAGE_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -47,6 +47,7 @@ public final class PagingPredicateHolderCodec {
         CodecUtil.encodeNullable(clientMessage, pagingPredicateHolder.getPredicateData(), DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, pagingPredicateHolder.getComparatorData(), DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, pagingPredicateHolder.getPartitionKeyData(), DataCodec::encode);
+        ListMultiFrameCodec.encodeNullable(clientMessage, pagingPredicateHolder.getPartitionKeysData(), DataCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -64,9 +65,15 @@ public final class PagingPredicateHolderCodec {
         com.hazelcast.internal.serialization.Data predicateData = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         com.hazelcast.internal.serialization.Data comparatorData = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         com.hazelcast.internal.serialization.Data partitionKeyData = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        boolean isPartitionKeysDataExists = false;
+        java.util.List<com.hazelcast.internal.serialization.Data> partitionKeysData = null;
+        if (!iterator.peekNext().isEndFrame()) {
+            partitionKeysData = ListMultiFrameCodec.decodeNullable(iterator, DataCodec::decode);
+            isPartitionKeysDataExists = true;
+        }
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder(anchorDataListHolder, predicateData, comparatorData, pageSize, page, iterationTypeId, partitionKeyData);
+        return new com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder(anchorDataListHolder, predicateData, comparatorData, pageSize, page, iterationTypeId, partitionKeyData, isPartitionKeysDataExists, partitionKeysData);
     }
 }

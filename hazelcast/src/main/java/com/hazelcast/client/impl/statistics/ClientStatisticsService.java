@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,10 @@ import com.hazelcast.internal.metrics.impl.CompositeMetricsCollector;
 import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.metrics.impl.PublisherMetricsCollector;
 import com.hazelcast.internal.metrics.jmx.JmxPublisher;
-import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.security.Credentials;
 
 import java.util.ArrayList;
@@ -106,6 +106,14 @@ public class ClientStatisticsService {
         logger.info("Client statistics is enabled with period " + periodSeconds + " seconds.");
     }
 
+    public void collectAndSendStatsNow() {
+        if (!enabled) {
+            return;
+        }
+
+        client.getTaskScheduler().schedule(this::collectAndSendStats, 0, SECONDS);
+    }
+
     public void shutdown() {
         if (publisherMetricsCollector != null) {
             publisherMetricsCollector.shutdown();
@@ -128,11 +136,14 @@ public class ClientStatisticsService {
      * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
-        ClientMetricCollector clientMetricCollector = new ClientMetricCollector();
-        CompositeMetricsCollector compositeMetricsCollector = new CompositeMetricsCollector(clientMetricCollector,
-                publisherMetricsCollector);
+        client.getTaskScheduler().scheduleWithRepetition(this::collectAndSendStats, 0, periodSeconds, SECONDS);
+    }
 
-        client.getTaskScheduler().scheduleWithRepetition(() -> {
+    private void collectAndSendStats() {
+        try (ClientMetricCollector clientMetricCollector = new ClientMetricCollector()) {
+            CompositeMetricsCollector compositeMetricsCollector = new CompositeMetricsCollector(clientMetricCollector,
+                    publisherMetricsCollector);
+
             long collectionTimestamp = System.currentTimeMillis();
             metricsRegistry.collect(compositeMetricsCollector);
             publisherMetricsCollector.publishCollectedMetrics();
@@ -149,7 +160,7 @@ public class ClientStatisticsService {
 
             byte[] metricsBlob = clientMetricCollector.getBlob();
             sendStats(collectionTimestamp, clientAttributes.toString(), metricsBlob, connection);
-        }, 0, periodSeconds, SECONDS);
+        }
     }
 
     private void addNearCacheStats(final StringBuilder stats) {
@@ -170,7 +181,7 @@ public class ClientStatisticsService {
 
                             nearCacheNameWithPrefix.append('.');
 
-                            NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
+                            NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
 
                             String prefix = nearCacheNameWithPrefix.toString();
 
@@ -380,7 +391,7 @@ public class ClientStatisticsService {
     }
 
     private class ClientMetricCollector
-            implements MetricsCollector {
+            implements MetricsCollector, AutoCloseable {
 
         private final MetricsCompressor compressor = new MetricsCompressor();
 
@@ -405,7 +416,12 @@ public class ClientStatisticsService {
         }
 
         private byte[] getBlob() {
-            return compressor.getBlobAndReset();
+            return compressor.getBlobAndClose();
+        }
+
+        @Override
+        public void close() {
+            compressor.close();
         }
     }
 }

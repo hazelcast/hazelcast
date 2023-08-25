@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,12 +58,14 @@ public class SqlMappingTest extends SqlTestSupport {
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasFieldOrPropertyWithValue("code", SqlErrorCode.OBJECT_NOT_FOUND)
                 .hasFieldOrPropertyWithValue("suggestion", null)
-                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE MAPPING?");
+                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE " +
+                        "MAPPING?");
         assertThatThrownBy(() -> client().getSql().execute("SELECT * FROM hazelcast.public.map").forEach(noop()))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasFieldOrPropertyWithValue("code", SqlErrorCode.OBJECT_NOT_FOUND)
                 .hasFieldOrPropertyWithValue("suggestion", null)
-                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE MAPPING?");
+                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE " +
+                        "MAPPING?");
     }
 
     @Test
@@ -154,6 +156,17 @@ public class SqlMappingTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_dataConnectionDoesNotExist_then_fail() {
+        String dlName = randomName();
+        String mappingName = randomName();
+        assertThatThrownBy(() ->
+                instance().getSql().execute("CREATE OR REPLACE MAPPING " + mappingName +
+                        " DATA CONNECTION " + dlName + "\nOPTIONS ()"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Data connection '" + dlName + "' not found");
+    }
+
+    @Test
     public void test_alias_int_integer() {
         test_alias(Integer.class.getName(), "int", "integer");
     }
@@ -179,9 +192,9 @@ public class SqlMappingTest extends SqlTestSupport {
                     "OPTIONS('keyFormat'='java', 'keyJavaClass'='" + javaClassName + "', 'valueFormat'='json-flat')");
         }
 
-        TablesStorage tablesStorage = new TablesStorage(getNodeEngineImpl(instance()));
-        assertEquals(aliases.length, tablesStorage.allObjects().size());
-        Iterator<Object> iterator = tablesStorage.allObjects().iterator();
+        RelationsStorage relationsStorage = new RelationsStorage(getNodeEngineImpl(instance()));
+        assertEquals(aliases.length, relationsStorage.allObjects().size());
+        Iterator<Object> iterator = relationsStorage.allObjects().iterator();
 
         // the two mappings must be equal, except for their name & objectName
         Object firstMapping = iterator.next();

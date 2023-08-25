@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.exec.scan;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -27,6 +26,7 @@ import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
@@ -124,6 +124,24 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
     public boolean isDescending() {
         return descending;
     }
+
+    public boolean isCooperative() {
+        for (Expression<?> e : projection) {
+            if (!e.isCooperative()) {
+                return false;
+            }
+        }
+
+        if (filter != null && !filter.isCooperative()) {
+            return false;
+        }
+
+        if (remainingFilter != null) {
+            return remainingFilter.isCooperative();
+        }
+        return true;
+    }
+
 
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override

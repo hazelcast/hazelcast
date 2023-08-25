@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.1.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd">
 
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
@@ -314,6 +314,7 @@
             <!--         	<factory-class-name>com.hazelcast.examples.DummyStoreFactory</factory-class-name> -->
             <write-delay-seconds>0</write-delay-seconds>
             <write-batch-size>1</write-batch-size>
+            <offload>false</offload>
             <write-coalescing>true</write-coalescing>
             <properties>
                 <property name="dummy.property">value</property>
@@ -385,6 +386,17 @@
                     <unique-key-transformation>RAW</unique-key-transformation>
                 </bitmap-index-options>
             </index>
+            <index type="SORTED">
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+                <btree-index>
+                    <page-size value="16" unit="KILOBYTES" />
+                    <memory-tier>
+                        <capacity value="3000" unit="GIGABYTES" />
+                    </memory-tier>
+                </btree-index>
+            </index>
         </indexes>
 
         <attributes>
@@ -434,6 +446,11 @@
             </memory-tier>
             <disk-tier enabled="true" device-name="default-tiered-store-device"/>
         </tiered-store>
+        <partition-strategy>com.example.Strategy</partition-strategy>
+        <partition-attributes>
+            <attribute>attributeName1</attribute>
+            <attribute>attributeName2</attribute>
+        </partition-attributes>
     </map>
 
     <multimap name="default">
@@ -619,15 +636,13 @@
                 <prefix>[</prefix>
             </whitelist>
         </java-serialization-filter>
-        <compact-serialization enabled="true">
-            <registered-classes>
-                <class>
-                    com.hazelcast.examples.DummyType
-                </class>
-                <class type-name="dummy" serializer="com.hazelcast.examples.DummyTypeSerializer">
-                    com.hazelcast.examples.DummyTypeWithSerializer
-                </class>
-            </registered-classes>
+        <compact-serialization>
+            <serializers>
+                <serializer>com.hazelcast.examples.DummyTypeSerializer</serializer>
+            </serializers>
+            <classes>
+                <class>com.hazelcast.examples.DummyType</class>
+            </classes>
         </compact-serialization>
     </serialization>
 
@@ -1021,6 +1036,7 @@
         <persistence-enabled>false</persistence-enabled>
         <base-dir>data</base-dir>
         <data-load-timeout-seconds>30</data-load-timeout-seconds>
+        <cp-member-priority>-1</cp-member-priority>
         <raft-algorithm>
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
             <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>
@@ -1075,5 +1091,19 @@
 
     <sql>
         <statement-timeout-millis>0</statement-timeout-millis>
+        <catalog-persistence-enabled>false</catalog-persistence-enabled>
     </sql>
+
+    <data-connection name="mysql-database">
+        <type>jdbc</type>
+        <properties>
+            <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
+        </properties>
+        <shared>false</shared>
+    </data-connection>
+
+    <tpc enabled="true">
+        <eventloop-count>12</eventloop-count>
+    </tpc>
+
 </hazelcast>

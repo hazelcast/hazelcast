@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -158,7 +158,7 @@ public class ReceiverTasklet implements Tasklet {
         tracker.reset();
         tracker.notDone();
         tryFillInbox();
-        int ackItemLocal = 0;
+        long ackItemLocal = 0;
         for (ObjWithPtionIdAndSize o; (o = inbox.peek()) != null; ) {
             final Object item = o.getItem();
             if (item == DONE_ITEM) {

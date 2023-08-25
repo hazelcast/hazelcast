@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,8 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
     @Test
     public void shouldReadJsonFile() {
         FileSourceBuilder<Map<String, Object>> source = FileSources.files(currentDir + "/src/test/resources")
-                                                         .glob("file.jsonl")
-                                                         .format(FileFormat.json());
+                                                                   .glob("file.jsonl")
+                                                                   .format(FileFormat.json());
 
         assertItemsInSource(source,
                 collected -> assertThat(collected).usingRecursiveFieldByFieldElementComparator()
@@ -51,6 +51,49 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
                                                           )
                                                   )
         );
+    }
+
+    @Test
+    public void shouldReadLargeJsonFile() {
+        FileSourceBuilder<Map<String, Object>> source =
+                FileSources.files(currentDir + "/src/test/resources")
+                           .glob("file-200-entries-with-header.jsonl")
+                           .sharedFileSystem(true)
+                           .option("mapreduce.input.fileinputformat.split.minsize", "32")
+                           .option("mapreduce.input.fileinputformat.split.maxsize", "64")
+                           .format(FileFormat.<Map<String, Object>>json().multiline(false));
+
+        assertItemsInSource(source, (collected) -> assertThat(collected).hasSize(200));
+    }
+
+    @Test
+    public void shouldReadLargeJsonFileCompressed() {
+        assumeThat(useHadoop).isTrue();
+
+        FileSourceBuilder<Map<String, Object>> source =
+                FileSources.files(currentDir + "/src/test/resources")
+                           .glob("file-200-entries-with-header.jsonl.gz")
+                           .sharedFileSystem(true)
+                           .option("mapreduce.input.fileinputformat.split.minsize", "32")
+                           .option("mapreduce.input.fileinputformat.split.maxsize", "64")
+                           .format(FileFormat.<Map<String, Object>>json().multiline(false));
+
+        assertItemsInSource(source, (collected) -> assertThat(collected).hasSize(200));
+    }
+
+    @Test
+    public void shouldReadLargeJsonFileCompressedSplittable() {
+        assumeThat(useHadoop).isTrue();
+
+        FileSourceBuilder<Map<String, Object>> source =
+                FileSources.files(currentDir + "/src/test/resources")
+                           .glob("file-200-entries-with-header.jsonl.bz2")
+                           .sharedFileSystem(true)
+                           .option("mapreduce.input.fileinputformat.split.minsize", "32")
+                           .option("mapreduce.input.fileinputformat.split.maxsize", "64")
+                           .format(FileFormat.<Map<String, Object>>json().multiline(false));
+
+        assertItemsInSource(source, (collected) -> assertThat(collected).hasSize(200));
     }
 
     @Test

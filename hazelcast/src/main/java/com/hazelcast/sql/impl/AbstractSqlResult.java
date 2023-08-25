@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,13 @@ public abstract class AbstractSqlResult implements SqlResult {
      * @return {@code true} if the result is possibly infinite, {@code false} otherwise.
      */
     public abstract boolean isInfiniteRows();
+
+    /**
+     * Returns index of the query parameter that should be used as a partition
+     * key to determine the coordinator for future executions of the same query,
+     * or -1 if there's no such parameter.
+     */
+    public abstract int getPartitionArgumentIndex();
 
     @Nonnull @Override
     public abstract ResultIterator<SqlRow> iterator();

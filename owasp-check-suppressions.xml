@@ -16,226 +16,134 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-      False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-hibernate.
-      ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-hibernate.*$</packageUrl>
-        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
       False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-wm.
       ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-wm@.*$</packageUrl>
         <cpe>cpe:/a:hazelcast:hazelcast</cpe>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-      False positive. The Avatica version is not related to the Calcite version.
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.apache\.calcite\.avatica/avatica\-core@.*$</packageUrl>
-       <cpe>cpe:/a:apache:calcite</cpe>
+        <notes><![CDATA[
+        False positive. The Avatica version is not related to the Calcite version.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.calcite\.avatica/avatica\-core@.*$</packageUrl>
+        <cpe>cpe:/a:apache:calcite</cpe>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-       False positive. The Hazelcast fork of JsonSurfer is based on top of original JsonSurfer version v1.6.3.
-       See https://github.com/hazelcast/JsonSurfer/
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jsurfer/.*$</packageUrl>
-       <cve>CVE-2016-10750</cve>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the Hazelcast version and not the jsurfer.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jsurfer/jsurfer\-.*$</packageUrl>
+        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-       False positive. The flaws are related to the jackson-databind version and not the jackson-mapper-asl.
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
-       <vulnerabilityName>CVE-2017-15095</vulnerabilityName>
-       <vulnerabilityName>CVE-2017-17485</vulnerabilityName>
-       <vulnerabilityName>CVE-2018-100873</vulnerabilityName>
-       <vulnerabilityName>CVE-2018-14718</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-14540</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-14893</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-16335</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-17267</vulnerabilityName>
-       <vulnerabilityName>CVE-2017-7525</vulnerabilityName>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the postgres version and not the debezium-connector-postgres.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.debezium/debezium\-connector\-postgres@.*$</packageUrl>
+        <cpe>cpe:/a:postgresql:postgresql</cpe>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-       False positive. The flaws are related to the FasterXML jackson version (2+) and not the codehaus one.
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
-       <vulnerabilityName>CVE-2018-1000873</vulnerabilityName>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the Hadoop version and not the shaded guava.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-guava@.*$</packageUrl>
+        <cpe>cpe:/a:apache:hadoop</cpe>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-       False positive. The flaws are related to the postgres version and not the debezium-connector-postgres.
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/io\.debezium/debezium\-connector\-postgres@.*$</packageUrl>
-       <vulnerabilityName>CVE-2007-2138</vulnerabilityName>
-       <vulnerabilityName>CVE-2010-0733</vulnerabilityName>
-       <vulnerabilityName>CVE-2014-0060</vulnerabilityName>
-       <vulnerabilityName>CVE-2014-0061</vulnerabilityName>
-       <vulnerabilityName>CVE-2014-0062</vulnerabilityName>
-       <vulnerabilityName>CVE-2014-0063</vulnerabilityName>
-       <vulnerabilityName>CVE-2014-0064</vulnerabilityName>
-       <vulnerabilityName>CVE-2014-0065</vulnerabilityName>
-       <vulnerabilityName>CVE-2014-0066</vulnerabilityName>
-       <vulnerabilityName>CVE-2014-0067</vulnerabilityName>
-       <vulnerabilityName>CVE-2014-8161</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-0241</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-0242</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-0243</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-0244</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-3165</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-3166</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-3167</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-5288</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-5289</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-0766</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-0768</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-0773</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-5423</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-5424</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-7048</vulnerabilityName>
-       <vulnerabilityName>CVE-2017-14798</vulnerabilityName>
-       <vulnerabilityName>CVE-2017-7484</vulnerabilityName>
-       <vulnerabilityName>CVE-2018-1115</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-10127</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-10128</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-10210</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-10211</vulnerabilityName>
-       <vulnerabilityName>CVE-2020-25694</vulnerabilityName>
-       <vulnerabilityName>CVE-2020-25695</vulnerabilityName>
-       <vulnerabilityName>CVE-2021-3393</vulnerabilityName>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the Hadoop version and not the shaded protobuf.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf_3_7@.*$</packageUrl>
+        <cpe>cpe:/a:apache:hadoop</cpe>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-       False positive. The flaws are related to the Hadoop version and not the shaded guava.
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-guava@.*$</packageUrl>
-       <vulnerabilityName>CVE-2013-2192</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-7430</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-5001</vulnerabilityName>
-       <vulnerabilityName>CVE-2017-3161</vulnerabilityName>
-       <vulnerabilityName>CVE-2017-3162</vulnerabilityName>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the MySQL version and not the MySQL Binary Log connector.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.github\.shyiko/mysql\-binlog\-connector\-java@.*$</packageUrl>
+        <cpe>cpe:/a:mysql:mysql</cpe>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-       False positive. The flaws are related to the Hadoop version and not the shaded protobuf.
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop\.thirdparty/hadoop\-shaded\-protobuf_3_7@.*$</packageUrl>
-       <vulnerabilityName>CVE-2013-2192</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-7430</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-5001</vulnerabilityName>
-       <vulnerabilityName>CVE-2017-3161</vulnerabilityName>
-       <vulnerabilityName>CVE-2017-3162</vulnerabilityName>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the MySQL version and not the MySQL Binary Log connector.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.zendesk/mysql\-binlog\-connector\-java@.*$</packageUrl>
+        <cpe>cpe:/a:mysql:mysql</cpe>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-       False positive. The flaws are related to the Elasticsearch version and not the JNA.
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.elasticsearch/jna@.*$</packageUrl>
-       <vulnerabilityName>CVE-2019-7611</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-7614</vulnerabilityName>
-       <vulnerabilityName>CVE-2020-7019</vulnerabilityName>
-       <vulnerabilityName>CVE-2020-7020</vulnerabilityName>
-       <vulnerabilityName>CVE-2020-7021</vulnerabilityName>
-       <vulnerabilityName>CVE-2021-22135</vulnerabilityName>
-       <vulnerabilityName>CVE-2021-22137</vulnerabilityName>
-       <vulnerabilityName>CVE-2021-22144</vulnerabilityName>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the MySQL version and not the MySQL Debezium connector.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.debezium/debezium\-connector\-mysql@.*$</packageUrl>
+        <cpe>cpe:/a:mysql:mysql</cpe>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-       False positive. The flaws are related to the MySQL version and not the MySQL Binary Log connector.
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/com\.github\.shyiko/mysql\-binlog\-connector\-java@.*$</packageUrl>
-       <vulnerabilityName>CVE-2007-1420</vulnerabilityName>
-       <vulnerabilityName>CVE-2007-2691</vulnerabilityName>
-       <vulnerabilityName>CVE-2007-5925</vulnerabilityName>
-       <vulnerabilityName>CVE-2009-0819</vulnerabilityName>
-       <vulnerabilityName>CVE-2009-4028</vulnerabilityName>
-       <vulnerabilityName>CVE-2010-1621</vulnerabilityName>
-       <vulnerabilityName>CVE-2010-1626</vulnerabilityName>
-       <vulnerabilityName>CVE-2010-3677</vulnerabilityName>
-       <vulnerabilityName>CVE-2010-3682</vulnerabilityName>
-       <vulnerabilityName>CVE-2012-5627</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-2575</vulnerabilityName>
-       <vulnerabilityName>CVE-2017-15945</vulnerabilityName>
+        <notes><![CDATA[
+        False positive. The flaws are relatated to the WildFly and OpenSSL version and not the wildfly-openssl library.
+        The OpenSSL is linked dynamically in the wildly-openssl.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.openssl/wildfly\-openssl.*@.*$</packageUrl>
+        <cpe>cpe:/a:openssl:openssl</cpe>
+        <cpe>cpe:/a:redhat:openssl</cpe>
+        <cpe>cpe:/a:redhat:wildfly</cpe>
+        <cpe>cpe:/a:wildfly:wildfly</cpe>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-       False positive. The flaws are related to the MySQL version and not the MySQL Debezium connector.
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/io\.debezium/debezium\-connector\-mysql@.*$</packageUrl>
-       <vulnerabilityName>CVE-2007-1420</vulnerabilityName>
-       <vulnerabilityName>CVE-2007-2691</vulnerabilityName>
-       <vulnerabilityName>CVE-2007-5925</vulnerabilityName>
-       <vulnerabilityName>CVE-2009-0819</vulnerabilityName>
-       <vulnerabilityName>CVE-2009-4028</vulnerabilityName>
-       <vulnerabilityName>CVE-2010-1621</vulnerabilityName>
-       <vulnerabilityName>CVE-2010-1626</vulnerabilityName>
-       <vulnerabilityName>CVE-2010-3677</vulnerabilityName>
-       <vulnerabilityName>CVE-2010-3682</vulnerabilityName>
-       <vulnerabilityName>CVE-2012-5627</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-2575</vulnerabilityName>
-       <vulnerabilityName>CVE-2017-15945</vulnerabilityName>
+        <notes><![CDATA[
+        The memory leak was fixed already in the wildfly-openssl-1.0.11.Final.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.openssl/wildfly\-openssl.*@1\.0\.12.*$</packageUrl>
+        <cve>CVE-2020-25644</cve>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-       False positive. The flaws are related to the WildFly and OpenSSL version and not the wildfly-openssl library.
-       The OpenSSL is linked dynamically in the wildly-openssl.
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.wildfly\.openssl/wildfly\-openssl.*@.*$</packageUrl>
-       <vulnerabilityName>CVE-2010-5298</vulnerabilityName>
-       <vulnerabilityName>CVE-2013-0169</vulnerabilityName>
-       <vulnerabilityName>CVE-2013-6449</vulnerabilityName>
-       <vulnerabilityName>CVE-2014-0160</vulnerabilityName>
-       <vulnerabilityName>CVE-2014-0224</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-3195</vulnerabilityName>
-       <vulnerabilityName>CVE-2015-4000</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-2106</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-2107</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-2108</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-2109</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-2176</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-7055</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-7056</vulnerabilityName>
-       <vulnerabilityName>CVE-2016-8610</vulnerabilityName>
-       <vulnerabilityName>CVE-2017-3736</vulnerabilityName>
-       <vulnerabilityName>CVE-2018-0732</vulnerabilityName>
-       <vulnerabilityName>CVE-2018-0734</vulnerabilityName>
-       <vulnerabilityName>CVE-2018-14627</vulnerabilityName>
-       <vulnerabilityName>CVE-2018-5407</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-1547</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-1551</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-1552</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-1559</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-1563</vulnerabilityName>
-       <vulnerabilityName>CVE-2019-3805</vulnerabilityName>
-       <vulnerabilityName>CVE-2020-10718</vulnerabilityName>
-       <vulnerabilityName>CVE-2020-10740</vulnerabilityName>
-       <vulnerabilityName>CVE-2020-1719</vulnerabilityName>
-       <vulnerabilityName>CVE-2020-1968</vulnerabilityName>
-       <vulnerabilityName>CVE-2020-1971</vulnerabilityName>
-       <vulnerabilityName>CVE-2020-25640</vulnerabilityName>
-       <vulnerabilityName>CVE-2020-25689</vulnerabilityName>
-       <vulnerabilityName>CVE-2021-23840</vulnerabilityName>
-       <vulnerabilityName>CVE-2021-23841</vulnerabilityName>
-       <vulnerabilityName>CVE-2021-3536</vulnerabilityName>
-       <vulnerabilityName>CVE-2021-3712</vulnerabilityName>
+        <notes><![CDATA[
+        False positive - these log4j CVEs have the fixes present in the version 1.2.17.redhat-00008.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/log4j/log4j@.*$</packageUrl>
+        <cve>CVE-2020-9488</cve>
+        <cve>CVE-2020-9493</cve>
+        <cve>CVE-2022-23307</cve>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-       The memory leak was fixed already in the wildfly-openssl-1.0.11.Final.jar
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.wildfly\.openssl/wildfly\-openssl.*@1\.0\.12.*$</packageUrl>
-       <cve>CVE-2020-25644</cve>
+        <notes><![CDATA[
+        False positive - google-http-client-gson-.*.jar incorrectly identified as gson.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
+        <cpe>cpe:/a:google:gson</cpe>
     </suppress>
     <suppress>
-       <notes><![CDATA[
-       False positive - these log4j CVEs have the fixes present in the version 1.2.17.redhat-00008.
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/log4j/log4j@.*$</packageUrl>
-       <cve>CVE-2020-9488</cve>
-       <cve>CVE-2022-23307</cve>
+        <notes><![CDATA[
+        False positive - json version 20230227 have already fix for listed CVE.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.json/json@20230227.*$</packageUrl>
+        <cve>CVE-2022-45688</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - this CVE is not a security issue according to jackson community
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
+        <cve>CVE-2023-35116</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CVE-2023-37475 affects Avro Go lib but is falsely linked to Maven lib
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro@.*$</packageUrl>
+        <cpe>cpe:/a:avro_project:avro</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CVE-2023-37475 affects Avro Go lib but is falsely linked to Maven lib
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.parquet/parquet\-avro@.*$</packageUrl>
+        <cve>CVE-2023-37475</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CVE-2023-37475 affects Avro Go lib but is falsely linked to Maven lib
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro\-mapred@.*$</packageUrl>
+        <cve>CVE-2023-37475</cve>
     </suppress>
 </suppressions>

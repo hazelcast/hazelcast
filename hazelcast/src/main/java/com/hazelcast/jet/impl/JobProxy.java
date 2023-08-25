@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,29 +20,39 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.JobStateSnapshot;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
+import com.hazelcast.jet.impl.operation.AddJobStatusListenerOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobMetricsOperation;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.jet.impl.operation.GetJobSuspensionCauseOperation;
+import com.hazelcast.jet.impl.operation.IsJobUserCancelledOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
+import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
@@ -50,7 +60,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
  * {@link Job} proxy on member.
  */
 public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
-
     public JobProxy(NodeEngineImpl nodeEngine, long jobId, Address coordinator) {
         super(nodeEngine, jobId, coordinator);
     }
@@ -66,10 +75,20 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Nonnull @Override
-    public JobStatus getStatus0() {
+    protected JobStatus getStatus0() {
         assert !isLightJob();
         try {
             return this.<JobStatus>invokeOp(new GetJobStatusOperation(getId())).get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    @Override
+    protected boolean isUserCancelled0() {
+        assert !isLightJob();
+        try {
+            return this.<Boolean>invokeOp(new IsJobUserCancelledOperation(getId())).get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -106,8 +125,24 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
-        return invokeOp(new SubmitJobOperation(getId(), dag, serializationService().toData(config), isLightJob()));
+    protected CompletableFuture<Void> invokeSubmitJob(Object jobDefinition, JobConfig config) {
+        boolean serialize = true;
+        if (isLightJob()) {
+            if (jobDefinition instanceof DAG) {
+                DAG dag = (DAG) jobDefinition;
+                dag.lock();
+                serialize = dag.vertices().stream().anyMatch(v -> !v.getMetaSupplier().isReusable());
+            }
+            config.lock();
+        }
+        if (serialize) {
+            Data configData = serializationService().toData(config);
+            Data jobDefinitionData = serializationService().toData(jobDefinition);
+            return invokeOp(new SubmitJobOperation(
+                    getId(), null, null, jobDefinitionData, configData, isLightJob(), null));
+        }
+        return invokeOp(new SubmitJobOperation(
+                getId(), jobDefinition, config, null, null, isLightJob(), null));
     }
 
     @Override
@@ -171,6 +206,15 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
+    protected JobConfig doUpdateJobConfig(@Nonnull DeltaJobConfig deltaConfig) {
+        try {
+            return this.<JobConfig>invokeOp(new UpdateJobConfigOperation(getId(), deltaConfig)).get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    @Override
     protected SerializationService serializationService() {
         return container().getSerializationService();
     }
@@ -199,5 +243,30 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
             throw new IllegalStateException("Master address unknown: instance is not yet initialized or is shut down");
         }
         return masterAddress;
+    }
+
+    @Override
+    protected UUID doAddStatusListener(@Nonnull JobStatusListener listener) {
+        checkJobStatusListenerSupported(container());
+        try {
+            JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);
+            Registration registration = jobEventService.prepareRegistration(getId(), listener, false);
+            return this.<UUID>invokeOp(new AddJobStatusListenerOperation(getId(), isLightJob(), registration)).get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    @Override
+    public boolean removeStatusListener(@Nonnull UUID id) {
+        checkJobStatusListenerSupported(container());
+        JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);
+        return jobEventService.removeEventListener(getId(), id);
+    }
+
+    public static void checkJobStatusListenerSupported(NodeEngine nodeEngine) {
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(V5_3)) {
+            throw new UnsupportedOperationException("Job status listener is not supported.");
+        }
     }
 }

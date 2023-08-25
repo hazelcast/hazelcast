@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,15 @@ public interface GeneralStageWithKey<T, K> {
      * can update the object's state. For each grouping key there's a separate
      * state object. The state object will be included in the state snapshot,
      * so it survives job restarts. For this reason it must be serializable.
+     * If you want to return the state variable from {@code mapFn},
+     * then the return value must be a copy of state variable to avoid
+     * situations in which the result of {@code mapFn} is modified
+     * after being emitted or where the state is modified by downstream processors.
+     * <p>
+     * If you want to return the state variable from {@code mapFn}, then the
+     * return value must be a copy of state variable to avoid situations in
+     * which the result of {@code mapFn} is modified after being emitted or
+     * where the state is modified by downstream processors.
      * <p>
      * This sample takes a stream of pairs {@code (serverId, latency)}
      * representing the latencies of serving individual requests and outputs
@@ -153,6 +162,15 @@ public interface GeneralStageWithKey<T, K> {
      * separate state object. The state object will be included in the state
      * snapshot, so it survives job restarts. For this reason it must be
      * serializable.
+     * If you want to return the state variable from {@code flatMapStateful},
+     * then the return value must be a copy of state variable to avoid
+     * situations in which the result of {@code mapFn} is modified
+     * after being emitted or where the state is modified by downstream processors.
+     * <p>
+     * If you want to return the state variable from {@code flatMapFn}, then the
+     * return value must be a copy of state variable to avoid situations in
+     * which the result of {@code mapFn} is modified after being emitted or
+     * where the state is modified by downstream processors.
      * <p>
      * This sample groups a stream of strings by length and inserts punctuation
      * (a special string) after every 10th string in each group:
@@ -272,6 +290,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     <S, R> GeneralStage<R> mapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -313,6 +332,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     default <S, R> GeneralStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -354,6 +374,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     <S, R> GeneralStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -405,6 +426,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     <S, R> GeneralStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -460,6 +482,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     <S, R> GeneralStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -513,6 +536,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     <S> GeneralStage<T> filterUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -566,6 +590,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     <S, R> GeneralStage<R> flatMapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,

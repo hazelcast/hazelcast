@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.version.Version;
@@ -36,6 +35,7 @@ import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_CONTROL_FACTORY;
 
@@ -46,7 +46,7 @@ import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_C
  * Each tenant control instance is bound to a single distributed object.
  */
 public class TenantControlServiceImpl
-        implements ClusterVersionListener, DistributedObjectListener, PreJoinAwareService {
+        implements ClusterVersionListener, DistributedObjectListener, PreJoinAwareService<TenantControlReplicationOperation> {
     public static final String SERVICE_NAME = "hz:impl:tenantControlService";
     /**
      * The number of retries for invocations replicating {@link TenantControl}
@@ -156,7 +156,7 @@ public class TenantControlServiceImpl
                 if (t != null) {
                     logger.warning("Failed to propagate tenant control", t);
                 }
-            });
+            }, CALLER_RUNS);
         }
     }
 
@@ -203,12 +203,12 @@ public class TenantControlServiceImpl
     /**
      * Returns {@code true} if tenant control is enabled.
      */
-    private boolean isTenantControlEnabled() {
+    public boolean isTenantControlEnabled() {
         return tenantControlFactory != NOOP_TENANT_CONTROL_FACTORY;
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public TenantControlReplicationOperation getPreJoinOperation() {
         return isTenantControlEnabled()
                 ? new TenantControlReplicationOperation(tenantControlMap)
                 : null;

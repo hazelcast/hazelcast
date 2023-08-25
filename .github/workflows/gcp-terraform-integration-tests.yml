@@ -1,116 +1,103 @@
 name: gcp-test
 on:
   workflow_dispatch:
-  push:
+  pull_request_target:
+    types:
+      - labeled
     branches:
-      - master
+      - "master"
+      - "*.z"
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/gcp/**'
-      - 'hazelcast/pom.xml'
       - '.github/terraform/gcp/**'
 
 jobs:
   build:
+    name: GCP Tests
     defaults:
       run:
         shell: bash
     env:
       GCP_KEY_FILE: ${{ secrets.GCP_KEY_FILE }}
-      SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'hazelcast'
-    strategy:
-      matrix:
-        java: [ '8' ]
-        architecture: [ 'x64' ]
-        distribution: [ 'adopt' ]
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'workflow_dispatch' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'run-discovery-tests' 
+        )
+      )
     steps:
-      # SET UP JDK
       - name: Setup JDK
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
-          java-version: ${{ matrix.java }}
-          architecture: ${{ matrix.architecture }}
-          distribution: ${{ matrix.distribution }}
+          java-version: 11
+          architecture: x64
+          distribution: adopt
+          cache: 'maven'
 
-      - run: java -version
+      - name: Decide which ref to checkout
+        id: decide-ref
+        run: |
+          if [[ "${{github.event_name}}" == "pull_request_target" ]]; then
+            echo "ref=refs/pull/${{ github.event.pull_request.number }}/merge" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{github.ref}}" >> $GITHUB_OUTPUT
+          fi
 
-      - run: mvn --version
-
-      - run : mkdir ~/lib
-
-      # BUILD HAZELCAST GCP SNAPSHOT
-      - uses: actions/checkout@v2.4.0
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
-          path: hazelcast
+          ref: ${{steps.decide-ref.outputs.ref}}
 
       - name: Build hazelcast jar
         run: |
-          cd hazelcast
-          mvn clean install -DskipTests -Dcheckstyle.skip
+          ./mvnw -T 4 -B -V -e clean package \
+          -Dfindbugs.skip \
+          -Dcheckstyle.skip \
+          -Dpmd.skip=true \
+          -Dspotbugs.skip \
+          -Denforcer.skip \
+          -Dmaven.javadoc.skip \
+          -DskipTests \
+          -Dlicense.skip=true \
+          -Drat.skip=true \
+          -Dspotless.check.skip=true \
+          -Dattribution.skip \
+          -Dmaven.source.skip=true
           echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
-          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/lib/hazelcast.jar
-
-      #BUILD TERRAFORM
-      - name : Set-up Terraform
-        uses: hashicorp/setup-terraform@v1.3.2
-        with:
-          terraform_version: 0.13.0
-
-      - name: Create unique prefix for resources
-        run: |
-          sed -i -e "s/SET_PREFIX/\"${GITHUB_WORKFLOW}-${GITHUB_RUN_ID}\"/g" hazelcast/.github/terraform/gcp/terraform.tfvars
-
-      - name: Add project ID terraform.tfvars
-        run: |
-          project_id=$(echo $GCP_KEY_FILE | grep -Po '"project_id":\s"\K[-a-zA-Z0-9]+')
-          sed -i -e "s~SET_PROJECT_ID~\"${project_id}\"~g"  hazelcast/.github/terraform/gcp/terraform.tfvars
+          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar
 
       - name: Create GCP credentials file
         run: |
-          touch hazelcast/.github/terraform/gcp/gcp_key_file.json
-          echo $GCP_KEY_FILE > hazelcast/.github/terraform/gcp/gcp_key_file.json
+          touch gcp_key_file.json
+          echo $GCP_KEY_FILE > ~/gcp_key_file.json
+
+      - name : Set-up Terraform
+        uses: hashicorp/setup-terraform@v2.0.0
+        with:
+          terraform_version: 1.1.8
 
       - name: Terraform Init
-        run: cd hazelcast/.github/terraform/gcp && terraform init
-
-      - name: Terraform Format
-        run: cd hazelcast/.github/terraform/gcp  && terraform fmt
-
-      - name: Generate SSH keys
-        id: ssh
-        run: |
-          ssh-keygen -t rsa -b 4096 -C "devOpsHazelcast@hazelcast.com" -f id_rsa -P "" 1>/dev/null
-          ssh_key=$(cat id_rsa)
-          echo 'SSH_KEY<<EOF' >> $GITHUB_ENV
-          echo "$ssh_key" >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
-
-          ssh_key_public=$(cat id_rsa.pub)
-          echo 'SSH_KEY_PUBLIC<<EOF' >> $GITHUB_ENV
-          echo "$ssh_key_public" >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
-
-      - name: Install private key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ env.SSH_KEY }}
-          name: id_rsa
-          known_hosts: " "
-
-      - name: Install public key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ env.SSH_KEY_PUBLIC }}
-          name: id_rsa.pub
-          known_hosts: " "
+        working-directory: .github/terraform/gcp
+        run: terraform init
 
       - name: Terraform Apply
+        working-directory: .github/terraform/gcp
         run: |
-          cd hazelcast/.github/terraform/gcp  && terraform apply -auto-approve
+          project_id=$(echo $GCP_KEY_FILE | grep -Po '"project_id":\s"\K[-a-zA-Z0-9]+')
+          terraform apply \
+            -var="hazelcast_mancenter_version=latest-snapshot" \
+            -var="hazelcast_path=~/hazelcast.jar" \
+            -var="gcp_key_file=~/gcp_key_file.json" \
+            -var="project_id=${project_id}" \
+            -auto-approve
 
       - name: Terraform Destroy
         if: ${{ always() }}
+        working-directory: .github/terraform/gcp
         run: |
-          cd hazelcast/.github/terraform/gcp  && terraform destroy -auto-approve
+          terraform destroy \
+            -auto-approve \
+            -var="gcp_key_file=~/gcp_key_file.json"

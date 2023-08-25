@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,12 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationMonitor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -79,6 +81,7 @@ import static org.junit.Assert.assertTrue;
 public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     public static final String MAP_NAME = "EntryProcessorOffloadableTest";
+    public static final String MAP_WITH_SLOW_MAP_STORE_NAME = "slow-map-store-EntryProcessorOffloadableTest";
 
     private HazelcastInstance[] instances;
 
@@ -91,15 +94,22 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
     @Parameter(2)
     public int asyncBackupCount;
 
+    @Parameter(3)
+    public boolean runWithForceOffload;
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    @Parameters(name = "{index}: {0} sync={1} async={2}")
+    @Parameters(name = "{index}: {0} sync={1} async={2} runWithForceOffload={3}")
     public static Collection<Object[]> data() {
         return asList(new Object[][]{
-                {BINARY, 0, 0}, {OBJECT, 0, 0},
-                {BINARY, 1, 0}, {OBJECT, 1, 0},
-                {BINARY, 0, 1}, {OBJECT, 0, 1},
+                {BINARY, 0, 0, false},
+                {OBJECT, 0, 0, false},
+                {BINARY, 1, 0, false},
+                {OBJECT, 1, 0, false},
+                {BINARY, 0, 1, false},
+                {OBJECT, 0, 1, false},
+                {OBJECT, 1, 1, true},
         });
     }
 
@@ -109,19 +119,67 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     @Override
     public Config getConfig() {
-        Config config = smallInstanceConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(),
+                String.valueOf(runWithForceOffload));
+        config.getMetricsConfig().setEnabled(false);
         MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setInMemoryFormat(inMemoryFormat);
         mapConfig.setAsyncBackupCount(asyncBackupCount);
         mapConfig.setBackupCount(syncBackupCount);
         config.addMapConfig(mapConfig);
-        return config;
+
+        MapConfig mapConfigWithSlowMapStore = new MapConfig(MAP_WITH_SLOW_MAP_STORE_NAME);
+        mapConfigWithSlowMapStore.setInMemoryFormat(inMemoryFormat);
+        mapConfigWithSlowMapStore.setAsyncBackupCount(asyncBackupCount);
+        mapConfigWithSlowMapStore.setBackupCount(syncBackupCount);
+        mapConfigWithSlowMapStore.getMapStoreConfig().setEnabled(true)
+                .setImplementation(new MapStoreAdapter() {
+                    @Override
+                    public Object load(Object key) {
+                        sleepSeconds(1000);
+                        // just returns a random number
+                        return System.currentTimeMillis();
+                    }
+
+                    @Override
+                    public void store(Object key, Object value) {
+                        sleepSeconds(1000);
+                        super.store(key, value);
+                    }
+                });
+
+        return config.addMapConfig(mapConfigWithSlowMapStore);
     }
 
     @Before
     public void before() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         instances = factory.newInstances(getConfig());
+    }
+
+    @Test
+    public void get_with_offloaded_entry_processor_does_not_block_partition_when_map_store_is_slow() {
+        IMap<Long, Long> mapWithSlowMapStore = instances[1].getMap(MAP_WITH_SLOW_MAP_STORE_NAME);
+        IMap<Long, Long> map = instances[1].getMap(MAP_NAME);
+        int partitionCount = Accessors.getPartitionService(instances[1]).getPartitionCount();
+
+        for (long i = 0; i < partitionCount; i++) {
+            mapWithSlowMapStore.submitToKey(i, new EntryGetOffloadable());
+            assertNull(map.get(i));
+        }
+    }
+
+    @Test
+    public void set_with_offloaded_entry_processor_does_not_block_partition_when_map_store_is_slow() {
+        IMap<Long, Long> mapWithSlowMapStore = instances[1].getMap(MAP_WITH_SLOW_MAP_STORE_NAME);
+        IMap<Long, Long> map = instances[1].getMap(MAP_NAME);
+        int partitionCount = Accessors.getPartitionService(instances[1]).getPartitionCount();
+
+        for (long i = 0; i < partitionCount; i++) {
+            mapWithSlowMapStore.submitToKey(i, new EntrySetOffloadable());
+            assertNull(map.get(i));
+        }
     }
 
     @Test
@@ -174,6 +232,31 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
             value.i++;
             entry.setValue(value);
             return result;
+        }
+
+        @Override
+        public String getExecutorName() {
+            return Offloadable.OFFLOADABLE_EXECUTOR;
+        }
+    }
+
+    private static class EntryGetOffloadable implements EntryProcessor<Long, Long, Long>, Offloadable {
+        @Override
+        public Long process(final Map.Entry<Long, Long> entry) {
+            return entry.getValue();
+        }
+
+        @Override
+        public String getExecutorName() {
+            return Offloadable.OFFLOADABLE_EXECUTOR;
+        }
+    }
+
+    private static class EntrySetOffloadable implements EntryProcessor<Long, Long, Long>, Offloadable {
+        @Override
+        public Long process(final Map.Entry<Long, Long> entry) {
+            entry.setValue(entry.getValue() + 1);
+            return entry.getValue();
         }
 
         @Override
@@ -658,7 +741,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
         // not locked -> will offload
         String thread = map.executeOnKey(key, new ThreadSneakingOffloadableEntryProcessor<>());
-        assertTrue(thread.contains("cached.thread"));
+        assertTrue(thread, thread.contains("cached.thread"));
 
         // locked -> won't offload
         map.lock(key);
@@ -673,12 +756,12 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
         // not locked -> will offload
         String thread = map.executeOnKey(key, new ThreadSneakingOffloadableReadOnlyEntryProcessor<>());
-        assertTrue(thread.contains("cached.thread"));
+        assertTrue(thread, thread.contains("cached.thread"));
 
         // locked -> will offload
         map.lock(key);
         thread = map.executeOnKey(key, new ThreadSneakingOffloadableReadOnlyEntryProcessor<>());
-        assertTrue(thread.contains("cached.thread"));
+        assertTrue(thread, thread.contains("cached.thread"));
     }
 
     private static class ThreadSneakingOffloadableEntryProcessor<K, V>
@@ -715,7 +798,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEntryProcessorWithKey_localNotReentrant() throws ExecutionException, InterruptedException {
+    public void testEntryProcessorWithKey_localNotReentrant() {
         String key = init();
         IMap<String, SimpleValue> map = instances[1].getMap(MAP_NAME);
         int count = 100;
@@ -913,9 +996,9 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     private static class TimeConsumingOffloadableTask
             implements HazelcastInstanceAware,
-                       EntryProcessor<String, TimestampedSimpleValue, Object>,
-                       Offloadable,
-                       Serializable {
+            EntryProcessor<String, TimestampedSimpleValue, Object>,
+            Offloadable,
+            Serializable {
 
         private final int secondsToWork;
         private final String startTimeRefName;

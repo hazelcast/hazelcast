@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ public abstract class AbstractJsonGetter extends Getter {
     }
 
     @Override
-    Object getValue(Object obj, String attributePath) {
+    public Object getValue(Object obj, String attributePath) {
         JsonPathCursor pathCursor = getPath(attributePath);
 
         try (JsonParser parser = createParser(obj)) {
@@ -221,12 +221,10 @@ public abstract class AbstractJsonGetter extends Getter {
                 return false;
             }
             if (pathCursor.getCurrent().equals(parser.getCurrentName())) {
+                // current token matched, advance to next token before returning
                 parser.nextToken();
                 return true;
-            } else if (multiValue) {
-                parser.nextToken();
-            } else {
-                parser.nextToken();
+            } else if (!multiValue) {
                 parser.skipChildren();
             }
         }

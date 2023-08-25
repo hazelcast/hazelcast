@@ -1,4 +1,4 @@
-# SQL Operator Interface
+# SQL Operator Interface (Outdated since Hazelcast 5.0)
 
 ## Overview
 In databases, SQL queries are typically represented in a form of operator tree, called **Volcano Model**,

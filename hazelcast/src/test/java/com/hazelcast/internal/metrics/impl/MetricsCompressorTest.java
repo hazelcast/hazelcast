@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,9 +41,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -55,7 +54,7 @@ public class MetricsCompressorTest {
                                                  .collect(Collectors.joining());
 
     private final DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
-    private final Supplier<? extends MetricDescriptor> supplierSpy = spy(supplier);
+    private final SpiedMetricDescriptor spiedSupplier = new SpiedMetricDescriptor(supplier);
     private final MetricsCompressor compressor = new MetricsCompressor();
 
     @Test
@@ -70,11 +69,11 @@ public class MetricsCompressorTest {
         byte[] blob = compressor.getBlobAndReset();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, spiedSupplier);
 
         verify(metricConsumerMock).consumeLong(originalMetric, 42L);
         verifyNoMoreInteractions(metricConsumerMock);
-        verify(supplierSpy, only()).get();
+        assertEquals(1, spiedSupplier.getInvocationCount());
     }
 
     @Test
@@ -89,11 +88,11 @@ public class MetricsCompressorTest {
         byte[] blob = compressor.getBlobAndReset();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, spiedSupplier);
 
         verify(metricConsumerMock).consumeDouble(originalMetric, 42.42D);
         verifyNoMoreInteractions(metricConsumerMock);
-        verify(supplierSpy, only()).get();
+        assertEquals(1, spiedSupplier.getInvocationCount());
     }
 
     @Test
@@ -110,11 +109,11 @@ public class MetricsCompressorTest {
         byte[] blob = compressor.getBlobAndReset();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, spiedSupplier);
 
         verify(metricConsumerMock).consumeLong(originalMetric, 42L);
         verifyNoMoreInteractions(metricConsumerMock);
-        verify(supplierSpy, only()).get();
+        assertEquals(1, spiedSupplier.getInvocationCount());
     }
 
     @Test
@@ -131,11 +130,11 @@ public class MetricsCompressorTest {
         byte[] blob = compressor.getBlobAndReset();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, spiedSupplier);
 
         verify(metricConsumerMock).consumeLong(originalMetric, 42L);
         verifyNoMoreInteractions(metricConsumerMock);
-        verify(supplierSpy, only()).get();
+        assertEquals(1, spiedSupplier.getInvocationCount());
     }
 
     @Test
@@ -156,12 +155,12 @@ public class MetricsCompressorTest {
         byte[] blob = compressor.getBlobAndReset();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, spiedSupplier);
 
         verify(metricConsumerMock).consumeLong(metric1, 42L);
         verify(metricConsumerMock).consumeLong(metric2, 43L);
         verifyNoMoreInteractions(metricConsumerMock);
-        verify(supplierSpy, times(2)).get();
+        assertEquals(2, spiedSupplier.getInvocationCount());
     }
 
     @Test
@@ -186,12 +185,12 @@ public class MetricsCompressorTest {
         byte[] blob = compressor.getBlobAndReset();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, spiedSupplier);
 
         verify(metricConsumerMock).consumeLong(metric1, 42L);
         verify(metricConsumerMock).consumeLong(metric2, 43L);
         verifyNoMoreInteractions(metricConsumerMock);
-        verify(supplierSpy, times(2)).get();
+        assertEquals(2, spiedSupplier.getInvocationCount());
     }
 
     @Test
@@ -213,12 +212,12 @@ public class MetricsCompressorTest {
         byte[] blob = compressor.getBlobAndReset();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, spiedSupplier);
 
         verify(metricConsumerMock).consumeLong(metric1, 42L);
         verify(metricConsumerMock).consumeLong(metric2, 43L);
         verifyNoMoreInteractions(metricConsumerMock);
-        verify(supplierSpy, times(2)).get();
+        assertEquals(2, spiedSupplier.getInvocationCount());
     }
 
     @Test
@@ -238,12 +237,12 @@ public class MetricsCompressorTest {
         byte[] blob = compressor.getBlobAndReset();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, spiedSupplier);
 
         verify(metricConsumerMock).consumeLong(metric1, 42L);
         verify(metricConsumerMock).consumeLong(metric2, 43L);
         verifyNoMoreInteractions(metricConsumerMock);
-        verify(supplierSpy, times(2)).get();
+        assertEquals(2, spiedSupplier.getInvocationCount());
     }
 
     @Test
@@ -263,12 +262,12 @@ public class MetricsCompressorTest {
         byte[] blob = compressor.getBlobAndReset();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, spiedSupplier);
 
         verify(metricConsumerMock).consumeLong(metric1, 42L);
         verify(metricConsumerMock).consumeLong(metric2, 43L);
         verifyNoMoreInteractions(metricConsumerMock);
-        verify(supplierSpy, times(2)).get();
+        assertEquals(2, spiedSupplier.getInvocationCount());
     }
 
     @Test
@@ -313,7 +312,7 @@ public class MetricsCompressorTest {
         };
 
         MetricConsumer metricConsumerSpy = spy(metricConsumer);
-        MetricsCompressor.extractMetrics(blob, metricConsumerSpy, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerSpy, spiedSupplier);
 
         verify(metricConsumerSpy).consumeLong(sameMetric, 43L);
     }
@@ -350,7 +349,7 @@ public class MetricsCompressorTest {
         };
 
         MetricConsumer metricConsumerSpy = spy(metricConsumer);
-        MetricsCompressor.extractMetrics(blob, metricConsumerSpy, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerSpy, spiedSupplier);
     }
 
     @Test
@@ -406,7 +405,7 @@ public class MetricsCompressorTest {
         byte[] blob = compressor.getBlobAndReset();
 
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, spiedSupplier);
 
         MetricDescriptor expectedMetric = supplier.get()
                 .withPrefix("prefix")
@@ -418,7 +417,7 @@ public class MetricsCompressorTest {
 
         verify(metricConsumerMock).consumeLong(expectedMetric, 42L);
         verifyNoMoreInteractions(metricConsumerMock);
-        verify(supplierSpy, only()).get();
+        assertEquals(1, spiedSupplier.getInvocationCount());
     }
 
     private void when_tooLongWord_then_metricIgnored(MetricDescriptor badDescriptor) {
@@ -437,9 +436,31 @@ public class MetricsCompressorTest {
 
         // try to decompress the metrics to see that a valid data were produced
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, spiedSupplier);
         verify(metricConsumerMock).consumeLong(goodDescriptor, 43L);
         verifyNoMoreInteractions(metricConsumerMock);
-        verify(supplierSpy, times(1)).get();
+        assertEquals(1, spiedSupplier.getInvocationCount());
+    }
+
+    // Mockito encounters non-deterministic failures in this test when verifying
+    // invocation counts - to avoid further time spent investigating that issue,
+    // we simply provide our own basic invocation counter instead
+    public static class SpiedMetricDescriptor implements Supplier<MetricDescriptor> {
+        private final DefaultMetricDescriptorSupplier supplier;
+        private final AtomicInteger invocationCounter = new AtomicInteger(0);
+
+        public SpiedMetricDescriptor(DefaultMetricDescriptorSupplier supplier) {
+            this.supplier = supplier;
+        }
+
+        @Override
+        public MetricDescriptor get() {
+            invocationCounter.getAndIncrement();
+            return supplier.get();
+        }
+
+        public int getInvocationCount() {
+            return invocationCounter.get();
+        }
     }
 }

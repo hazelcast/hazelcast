@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.monitor.MemberState;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.ArrayList;
@@ -49,6 +50,10 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
     boolean scriptingEnabled;
     boolean consoleEnabled;
     boolean mcDataAccessEnabled;
+
+    public TimedMemberState() {
+        this.time = Clock.currentTimeMillis();
+    }
 
     public List<String> getMemberList() {
         return memberList;

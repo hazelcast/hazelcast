@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionException;
-import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -47,7 +46,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
@@ -64,6 +62,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+import static com.hazelcast.jet.sql.impl.connector.map.QueryUtil.indexFilterToPointers;
+import static com.hazelcast.query.impl.getters.GetterCache.SIMPLE_GETTER_CACHE_SUPPLIER;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.emptyList;
@@ -116,10 +116,11 @@ final class MapIndexScanP extends AbstractProcessor {
         reader = new LocalMapIndexReader(hazelcastInstance, evalContext.getSerializationService(), metadata);
 
         int[] memberPartitions = context.processorPartitions();
+        IndexIterationPointer[] pointers = indexFilterToPointers(metadata.getFilter(), metadata.isDescending(), evalContext);
         splits.add(new Split(
                 new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), memberPartitions),
                 hazelcastInstance.getCluster().getLocalMember().getAddress(),
-                filtersToPointers(metadata.getFilter(), metadata.isDescending(), evalContext)
+                pointers
         ));
 
         row = MapScanRow.create(
@@ -127,23 +128,24 @@ final class MapIndexScanP extends AbstractProcessor {
                 metadata.getValueDescriptor(),
                 metadata.getFieldPaths(),
                 metadata.getFieldTypes(),
-                Extractors.newBuilder(evalContext.getSerializationService()).build(),
+                Extractors.newBuilder(evalContext.getSerializationService())
+                        .setGetterCacheSupplier(SIMPLE_GETTER_CACHE_SUPPLIER)
+                        .build(),
                 evalContext.getSerializationService()
         );
         isIndexSorted = metadata.getComparator() != null;
     }
 
-    private static IndexIterationPointer[] filtersToPointers(
-            @Nonnull IndexFilter filter,
-            boolean descending,
-            ExpressionEvalContext evalContext
-    ) {
-        return IndexIterationPointer.createFromIndexFilter(filter, descending, evalContext);
-    }
-
     @Override
     public boolean complete() {
         return isIndexSorted ? runSortedIndex() : runHashIndex();
+    }
+
+    @Override
+    public boolean isCooperative() {
+        // Note: it's highly unlikely for
+        // index scan to be non-cooperative.
+        return metadata.isCooperative();
     }
 
     @Override
@@ -197,7 +199,9 @@ final class MapIndexScanP extends AbstractProcessor {
     }
 
     private boolean runHashIndex() {
-        for (; ; ) {
+        boolean allIdle;
+        do {
+            allIdle = true;
             for (int i = 0; i < splits.size(); ++i) {
                 Split split = splits.get(i);
                 try {
@@ -216,6 +220,7 @@ final class MapIndexScanP extends AbstractProcessor {
                         }
                     }
                 } else {
+                    allIdle = false;
                     if (tryEmit(split.currentRow)) {
                         split.remove();
                     } else {
@@ -223,7 +228,9 @@ final class MapIndexScanP extends AbstractProcessor {
                     }
                 }
             }
-        }
+        } while (!allIdle);
+
+        return false;
     }
 
     /**
@@ -375,7 +382,7 @@ final class MapIndexScanP extends AbstractProcessor {
                     entry.getKeyIfPresent(), entry.getKeyDataIfPresent(),
                     entry.getValueIfPresent(), entry.getValueDataIfPresent()
             );
-            return ExpressionUtil.evaluate(metadata.getRemainingFilter(), metadata.getProjection(), row, evalContext);
+            return ExpressionUtil.projection(metadata.getRemainingFilter(), metadata.getProjection(), row, evalContext);
         }
 
         private void remove() {
@@ -425,8 +432,7 @@ final class MapIndexScanP extends AbstractProcessor {
                 IndexIterationPointer[] pointers
         ) {
             MapProxyImpl<?, ?> mapProxyImpl = (MapProxyImpl<?, ?>) hazelcastInstance.getMap(objectName);
-            MapOperationProvider operationProvider = mapProxyImpl.getOperationProvider();
-            Operation op = operationProvider.createFetchIndexOperation(
+            Operation op = new MapFetchIndexOperation(
                     mapProxyImpl.getName(),
                     indexName,
                     pointers,

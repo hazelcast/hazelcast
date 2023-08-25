@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -520,7 +520,7 @@ public class MemberCompatibilityTest_2_1 {
     @Test
     public void test_MapDeleteCodec_encodeResponse() {
         int fileClientMessageIndex = 54;
-        ClientMessage encoded = MapDeleteCodec.encodeResponse();
+        ClientMessage encoded = MapDeleteCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6509,6 +6509,7 @@ public class MemberCompatibilityTest_2_1 {
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(parameters.isStatisticsEnabledExists);
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
+        assertFalse(parameters.isCapacityPolicyExists);
     }
 
     @Test
@@ -6580,6 +6581,9 @@ public class MemberCompatibilityTest_2_1 {
         assertTrue(isEqual(aMerkleTreeConfig, parameters.merkleTreeConfig));
         assertTrue(isEqual(anInt, parameters.metadataPolicy));
         assertFalse(parameters.isPerEntryStatsEnabledExists);
+        assertFalse(parameters.isDataPersistenceConfigExists);
+        assertFalse(parameters.isTieredStoreConfigExists);
+        assertFalse(parameters.isPartitioningAttributeConfigsExists);
     }
 
     @Test
@@ -6643,6 +6647,7 @@ public class MemberCompatibilityTest_2_1 {
         assertTrue(isEqual(anEventJournalConfig, parameters.eventJournalConfig));
         assertTrue(isEqual(aHotRestartConfig, parameters.hotRestartConfig));
         assertFalse(parameters.isMerkleTreeConfigExists);
+        assertFalse(parameters.isDataPersistenceConfigExists);
     }
 
     @Test
@@ -7068,7 +7073,7 @@ public class MemberCompatibilityTest_2_1 {
     @Test
     public void test_MCGetClusterMetadataCodec_encodeResponse() {
         int fileClientMessageIndex = 790;
-        ClientMessage encoded = MCGetClusterMetadataCodec.encodeResponse(aByte, aString, aString, aLong);
+        ClientMessage encoded = MCGetClusterMetadataCodec.encodeResponse(aByte, aString, aString, aLong, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB;
@@ -588,7 +589,7 @@ public class MigrationManager {
     /**
      * Clears the migration queue and triggers the control task. Called on the master node.
      */
-    void triggerControlTask() {
+    public void triggerControlTask() {
         migrationQueue.clear();
         migrationThread.abortMigrationTask();
         if (stats.getRemainingMigrations() > 0) {
@@ -631,12 +632,12 @@ public class MigrationManager {
 
     void onShutdownRequest(Member member) {
         if (!partitionStateManager.isInitialized()) {
-            sendShutdownOperation(member.getAddress());
+            sendShutdownResponseOperation(member);
             return;
         }
         ClusterState clusterState = node.getClusterService().getClusterState();
         if (!clusterState.isMigrationAllowed() && clusterState != ClusterState.IN_TRANSITION) {
-            sendShutdownOperation(member.getAddress());
+            sendShutdownResponseOperation(member);
             return;
         }
         if (shutdownRequestedMembers.add(member)) {
@@ -749,12 +750,12 @@ public class MigrationManager {
     /**
      * Sends a {@link ShutdownResponseOperation} to the {@code address} or takes a shortcut if shutdown is local.
      */
-    private void sendShutdownOperation(Address address) {
-        if (node.getThisAddress().equals(address)) {
+    private void sendShutdownResponseOperation(Member member) {
+        if (node.getThisAddress().equals(member.getAddress())) {
             assert !node.isRunning() : "Node state: " + node.getState();
             partitionService.onShutdownResponse();
         } else {
-            nodeEngine.getOperationService().send(new ShutdownResponseOperation(), address);
+            nodeEngine.getOperationService().send(new ShutdownResponseOperation(member.getUuid()), member.getAddress());
         }
     }
 
@@ -822,7 +823,7 @@ public class MigrationManager {
      * this task has been scheduled, schedules migrations and syncs the partition state.
      * Also schedules a {@link ProcessShutdownRequestsTask}. Acquires partition service lock.
      */
-    class RepartitioningTask implements MigrationRunnable {
+    class RedoPartitioningTask implements MigrationRunnable {
         @Override
         public void run() {
             if (!partitionService.isLocalMemberMaster()) {
@@ -919,7 +920,7 @@ public class MigrationManager {
                 return;
             }
 
-            logger.fine("Cluster state doesn't allow repartitioning. RepartitioningTask will only assign lost partitions.");
+            logger.fine("Cluster state doesn't allow repartitioning. RedoPartitioningTask will only assign lost partitions.");
             InternalPartition[] partitions = partitionStateManager.getPartitions();
             PartitionIdSet partitionIds = Arrays.stream(partitions)
                     .filter(p -> InternalPartition.replicaIndices().allMatch(i -> p.getReplica(i) == null))
@@ -967,7 +968,7 @@ public class MigrationManager {
         private void processNewPartitionState(PartitionReplica[][] newState) {
             int migrationCount = 0;
             // List of migration queues per-partition
-            List<Queue<MigrationInfo>> migrationQs = new ArrayList<>(newState.length);
+            List<Queue<MigrationInfo>> partitionMigrationQueues = new ArrayList<>(newState.length);
             Int2ObjectHashMap<PartitionReplica> lostPartitions = new Int2ObjectHashMap<>();
 
             for (int partitionId = 0; partitionId < newState.length; partitionId++) {
@@ -987,7 +988,7 @@ public class MigrationManager {
                     lostPartitions.put(partitionId, migrationCollector.lostPartitionDestination);
                 }
                 if (!migrationCollector.migrations.isEmpty()) {
-                    migrationQs.add(migrationCollector.migrations);
+                    partitionMigrationQueues.add(migrationCollector.migrations);
                     migrationCount += migrationCollector.migrations.size();
                 }
             }
@@ -1009,7 +1010,7 @@ public class MigrationManager {
             partitionService.publishPartitionRuntimeState();
 
             if (migrationCount > 0) {
-                scheduleMigrations(migrationQs);
+                scheduleMigrations(partitionMigrationQueues);
                 // Schedule a task to publish completed migrations after all migrations tasks are completed.
                 schedule(new PublishCompletedMigrationsTask());
             }
@@ -1019,8 +1020,8 @@ public class MigrationManager {
         /**
          * Schedules all migrations.
          */
-        private void scheduleMigrations(List<Queue<MigrationInfo>> migrationQs) {
-            schedule(new MigrationPlanTask(migrationQs));
+        private void scheduleMigrations(List<Queue<MigrationInfo>> partitionMigrationQueues) {
+            schedule(new MigrationPlanTask(partitionMigrationQueues));
         }
 
         private void logMigrationStatistics(int migrationCount) {
@@ -1116,7 +1117,7 @@ public class MigrationManager {
         /**
          * List of migration queues per-partition
          */
-        private final List<Queue<MigrationInfo>> migrationQs;
+        private final List<Queue<MigrationInfo>> partitionMigrationQueues;
         /**
          * Queue for completed migrations.
          * It will be processed concurrently while migrations are running.
@@ -1137,16 +1138,18 @@ public class MigrationManager {
         private boolean failed;
         private volatile boolean aborted;
 
-        MigrationPlanTask(List<Queue<MigrationInfo>> migrationQs) {
-            this.migrationQs = migrationQs;
-            this.completed = new ArrayBlockingQueue<>(migrationQs.size());
+        MigrationPlanTask(List<Queue<MigrationInfo>> partitionMigrationQueues) {
+            this.partitionMigrationQueues = partitionMigrationQueues;
+            this.completed = new ArrayBlockingQueue<>(partitionMigrationQueues.size());
             this.migratingPartitions
-                    = new IntHashSet(migrationQs.stream().mapToInt(Collection::size).sum(), -1);
+                    = new IntHashSet(partitionMigrationQueues
+                    .stream().mapToInt(Collection::size).sum(), -1);
         }
 
         @Override
         public void run() {
-            migrationCount.set(migrationQs.stream().mapToInt(Collection::size).sum());
+            migrationCount.set(partitionMigrationQueues
+                    .stream().mapToInt(Collection::size).sum());
 
             while (true) {
                 MigrationInfo migration = next();
@@ -1162,11 +1165,11 @@ public class MigrationManager {
 
                 try {
                     CompletionStage<Boolean> f = new AsyncMigrationTask(migration).run();
-                    f.thenRun(() -> {
+                    f.thenRunAsync(() -> {
                         logger.fine("AsyncMigrationTask completed: " + migration);
                         boolean offered = completed.offer(migration);
                         assert offered : "Failed to offer completed migration: " + migration;
-                    });
+                    }, CALLER_RUNS);
                 } catch (Throwable e) {
                     logger.warning("AsyncMigrationTask failed: " + migration, e);
                     boolean offered = completed.offer(migration);
@@ -1185,7 +1188,7 @@ public class MigrationManager {
                         + ". Ignoring remaining migrations. Will recalculate the new migration plan. ("
                         + stats.formatToString(logger.isFineEnabled()) + ")");
                 migrationCount.set(0);
-                migrationQs.clear();
+                partitionMigrationQueues.clear();
             } else {
                 logger.info("All migration tasks have been completed. (" + stats.formatToString(logger.isFineEnabled()) + ")");
             }
@@ -1239,7 +1242,7 @@ public class MigrationManager {
         private MigrationInfo next() {
             MigrationInfo m;
             while ((m = next0()) == null) {
-                if (migrationQs.isEmpty()) {
+                if (partitionMigrationQueues.isEmpty()) {
                     break;
                 }
 
@@ -1261,7 +1264,7 @@ public class MigrationManager {
         }
 
         private MigrationInfo next0() {
-            Iterator<Queue<MigrationInfo>> iter = migrationQs.iterator();
+            Iterator<Queue<MigrationInfo>> iter = partitionMigrationQueues.iterator();
             while (iter.hasNext()) {
                 Queue<MigrationInfo> q = iter.next();
                 if (q.isEmpty()) {
@@ -1444,7 +1447,7 @@ public class MigrationManager {
             }
 
             return future.handleAsync((done, t) -> {
-                stats.recordMigrationOperationTime(Timer.nanosElapsed(start));
+                stats.recordMigrationOperationTime();
                 logger.fine("Migration operation response received -> " + migration + ", success: " + done + ", failure: " + t);
 
                 if (t != null) {
@@ -1473,12 +1476,10 @@ public class MigrationManager {
                     return CompletableFuture.completedFuture(false);
                 }
             }, asyncExecutor).handleAsync((result, t) -> {
-                long elapsed = Timer.nanosElapsed(start);
-                stats.recordMigrationTaskTime(elapsed);
+                stats.recordMigrationTaskTime();
 
-                PartitionEventManager partitionEventManager = partitionService.getPartitionEventManager();
-                partitionEventManager.sendMigrationEvent(stats.toMigrationState(), migration,
-                        TimeUnit.NANOSECONDS.toMillis(elapsed));
+                partitionService.getPartitionEventManager().sendMigrationEvent(stats.toMigrationState(), migration,
+                        TimeUnit.NANOSECONDS.toMillis(Timer.nanosElapsed(start)));
 
                 if (t != null) {
                     Level level = nodeEngine.isRunning() ? Level.WARNING : Level.FINE;
@@ -1538,7 +1539,7 @@ public class MigrationManager {
             // Pause migration process for a small amount of time, if a migration attempt is failed.
             // Otherwise, migration failures can do a busy spin until migration problem is resolved.
             // Migration can fail either a node's just joined and not completed start yet or it's just left the cluster.
-            // Re-execute RepartitioningTask when all other migration tasks are done,
+            // Re-execute RedoPartitioningTask when all other migration tasks are done,
             // an imbalance may occur because of this failure.
             partitionServiceLock.lock();
             try {
@@ -1568,11 +1569,10 @@ public class MigrationManager {
          */
         private CompletionStage<Boolean> migrationOperationSucceeded() {
             migrationInterceptor.onMigrationComplete(MigrationParticipant.MASTER, migration, true);
-            long start = System.nanoTime();
 
             CompletionStage<Boolean> f = commitMigrationToDestinationAsync(migration);
             f = f.thenApplyAsync(commitSuccessful -> {
-                stats.recordDestinationCommitTime(System.nanoTime() - start);
+                stats.recordDestinationCommitTime();
 
                 partitionServiceLock.lock();
                 try {
@@ -1632,7 +1632,7 @@ public class MigrationManager {
      * <li>Remove unknown addresses from the partition table</li>
      * <li>Promote the partition replicas if necessary (the partition owner is missing)</li>
      * </ul>
-     * If the promotions are successful, schedules the {@link RepartitioningTask}. If the process was not successful
+     * If the promotions are successful, schedules the {@link RedoPartitioningTask}. If the process was not successful
      * it will trigger a {@link ControlTask} to restart the partition table repair process.
      * <p>
      * Invoked on the master node. Acquires partition service lock when scheduling the tasks on the migration queue.
@@ -1673,9 +1673,9 @@ public class MigrationManager {
             try {
                 if (success) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest("RepartitioningTask scheduled");
+                        logger.finest("RedoPartitioningTask scheduled");
                     }
-                    migrationQueue.add(new RepartitioningTask());
+                    migrationQueue.add(new RedoPartitioningTask());
                 } else {
                     triggerControlTask();
                 }
@@ -1960,13 +1960,13 @@ public class MigrationManager {
                 if (shutdownRequestCount > 0) {
                     if (shutdownRequestCount == nodeEngine.getClusterService().getSize(DATA_MEMBER_SELECTOR)) {
                         for (Member member : shutdownRequestedMembers) {
-                            sendShutdownOperation(member.getAddress());
+                            sendShutdownResponseOperation(member);
                         }
                     } else {
                         boolean present = false;
                         for (Member member : shutdownRequestedMembers) {
                             if (partitionStateManager.isAbsentInPartitionTable(member)) {
-                                sendShutdownOperation(member.getAddress());
+                                sendShutdownResponseOperation(member);
                             } else {
                                 logger.warning(member + " requested to shutdown but still in partition table");
                                 present = true;

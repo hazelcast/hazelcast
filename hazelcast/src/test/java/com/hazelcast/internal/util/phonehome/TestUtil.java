@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.client.impl.ClientEndpointStatisticsManagerImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.core.HazelcastInstance;
@@ -31,8 +32,6 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
@@ -40,11 +39,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
-import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 public class TestUtil {
 
@@ -121,56 +116,8 @@ public class TestUtil {
             OutputStream os = socket.getOutputStream();
             InputStream is = socket.getInputStream();
             os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
-            writeClientMessage(os, authenticationRequest);
-            readResponse(is);
-        }
-
-        private ClientMessage readResponse(InputStream is) throws IOException {
-            ClientMessage clientMessage = ClientMessage.createForEncode();
-            while (true) {
-                ByteBuffer frameSizeBuffer = ByteBuffer.allocate(SIZE_OF_FRAME_LENGTH_AND_FLAGS);
-                frameSizeBuffer.order(ByteOrder.LITTLE_ENDIAN);
-                readFully(is, frameSizeBuffer.array());
-                int frameSize = frameSizeBuffer.getInt();
-                int flags = frameSizeBuffer.getShort() & 0xffff;
-                byte[] content = new byte[frameSize - SIZE_OF_FRAME_LENGTH_AND_FLAGS];
-                readFully(is, content);
-                clientMessage.add(new ClientMessage.Frame(content, flags));
-                if (ClientMessage.isFlagSet(flags, IS_FINAL_FLAG)) {
-                    break;
-                }
-            }
-            return clientMessage;
-        }
-
-        private void writeClientMessage(OutputStream os, final ClientMessage clientMessage) throws IOException {
-            for (ClientMessage.ForwardFrameIterator it = clientMessage.frameIterator(); it.hasNext(); ) {
-                ClientMessage.Frame frame = it.next();
-                os.write(frameAsBytes(frame, !it.hasNext()));
-            }
-            os.flush();
-        }
-
-        private byte[] frameAsBytes(ClientMessage.Frame frame, boolean isLastFrame) {
-            byte[] content = frame.content != null ? frame.content : new byte[0];
-            int frameSize = content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-            ByteBuffer buffer = ByteBuffer.allocateDirect(frameSize);
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
-            buffer.putInt(frameSize);
-            if (!isLastFrame) {
-                buffer.putShort((short) frame.flags);
-            } else {
-                buffer.putShort((short) (frame.flags | IS_FINAL_FLAG));
-            }
-            buffer.put(content);
-            return byteBufferToBytes(buffer);
-        }
-
-        private byte[] byteBufferToBytes(ByteBuffer buffer) {
-            upcast(buffer).flip();
-            byte[] requestBytes = new byte[buffer.limit()];
-            buffer.get(requestBytes);
-            return requestBytes;
+            ClientTestUtil.writeClientMessage(os, authenticationRequest);
+            ClientTestUtil.readResponse(is);
         }
     }
 
@@ -180,7 +127,8 @@ public class TestUtil {
         JAVA("cjv"),
         NODEJS("cnjs"),
         PYTHON("cpy"),
-        GO("cgo");
+        GO("cgo"),
+        CLC("ccl");
 
         private final String prefix;
 

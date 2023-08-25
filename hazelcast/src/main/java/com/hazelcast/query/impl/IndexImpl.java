@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
@@ -30,20 +31,22 @@ public class IndexImpl extends AbstractIndex {
     private final GlobalIndexPartitionTracker partitionTracker;
 
     public IndexImpl(
+            Node node,
             IndexConfig config,
             InternalSerializationService ss,
             Extractors extractors,
             IndexCopyBehavior copyBehavior,
             PerIndexStats stats,
-            int partitionCount
+            int partitionCount,
+            String mapName
     ) {
-        super(config, ss, extractors, copyBehavior, stats);
+        super(node, config, ss, extractors, copyBehavior, stats, mapName);
 
         partitionTracker = new GlobalIndexPartitionTracker(partitionCount);
     }
 
     @Override
-    protected IndexStore createIndexStore(IndexConfig config, PerIndexStats stats) {
+    protected IndexStore createIndexStore(Node node, IndexConfig config, PerIndexStats stats, String mapName) {
         switch (config.getType()) {
             case SORTED:
                 return new OrderedIndexStore(copyBehavior);
@@ -57,18 +60,12 @@ public class IndexImpl extends AbstractIndex {
     }
 
     @Override
-    public void clear() {
-        super.clear();
-        partitionTracker.clear();
-    }
-
-    @Override
-    public boolean hasPartitionIndexed(int partitionId) {
+    public final boolean hasPartitionIndexed(int partitionId) {
         return partitionTracker.isIndexed(partitionId);
     }
 
     @Override
-    public boolean allPartitionsIndexed(int ownedPartitionCount) {
+    public final boolean allPartitionsIndexed(int ownedPartitionCount) {
         // This check guarantees that all partitions are indexed
         // only if there is no concurrent migrations. Check migration stamp
         // to detect concurrent migrations if needed.
@@ -76,27 +73,34 @@ public class IndexImpl extends AbstractIndex {
     }
 
     @Override
-    public void beginPartitionUpdate() {
+    public final void beginPartitionUpdate() {
         partitionTracker.beginPartitionUpdate();
     }
 
     @Override
-    public void markPartitionAsIndexed(int partitionId) {
+    public final void markPartitionAsIndexed(int partitionId) {
         partitionTracker.partitionIndexed(partitionId);
     }
 
     @Override
-    public void markPartitionAsUnindexed(int partitionId) {
+    public final void markPartitionAsUnindexed(int partitionId) {
         partitionTracker.partitionUnindexed(partitionId);
     }
 
     @Override
-    public PartitionStamp getPartitionStamp() {
+    public final void clear() {
+        partitionTracker.clear();
+
+        super.clear();
+    }
+
+    @Override
+    public final PartitionStamp getPartitionStamp() {
         return partitionTracker.getPartitionStamp();
     }
 
     @Override
-    public boolean validatePartitionStamp(long stamp) {
+    public final boolean validatePartitionStamp(long stamp) {
         return partitionTracker.validatePartitionStamp(stamp);
     }
 

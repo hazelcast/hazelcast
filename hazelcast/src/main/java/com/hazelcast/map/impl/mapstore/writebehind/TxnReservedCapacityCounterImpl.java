@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,10 @@ public class TxnReservedCapacityCounterImpl implements TxnReservedCapacityCounte
      */
     @Override
     public void increment(@Nonnull UUID txnId, boolean backup) {
+        if (txnId.equals(NULL_UUID)) {
+            return;
+        }
+
         reservedCapacityCountByTxId.compute(txnId, (ignored, currentCapacityCount) -> {
             if (backup) {
                 nodeWideUsedCapacityCounter.add(1L);
@@ -91,6 +95,9 @@ public class TxnReservedCapacityCounterImpl implements TxnReservedCapacityCounte
 
     @Override
     public boolean hasReservedCapacity(@Nonnull UUID txnId) {
+        if (txnId.equals(NULL_UUID)) {
+            return false;
+        }
         return reservedCapacityCountByTxId.containsKey(txnId);
     }
 
@@ -107,6 +114,10 @@ public class TxnReservedCapacityCounterImpl implements TxnReservedCapacityCounte
     }
 
     private void decrement0(UUID txnId, boolean decrementNodeWideCounter) {
+        if (txnId.equals(NULL_UUID)) {
+            return;
+        }
+
         reservedCapacityCountByTxId.computeIfPresent(txnId, (ignored, currentCapacityCount) -> {
             if (decrementNodeWideCounter) {
                 nodeWideUsedCapacityCounter.add(-1L);

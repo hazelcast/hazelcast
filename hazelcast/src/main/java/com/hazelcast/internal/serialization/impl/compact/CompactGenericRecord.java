@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,15 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.json.JsonEscape;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
 
 /**
  * An extension of the {@link AbstractGenericRecord} that requires the
  * implementors to provide a {@link Schema} that represents the
  * Compact serialized objects.
+ * <p>
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
  */
 public abstract class CompactGenericRecord extends AbstractGenericRecord {
 

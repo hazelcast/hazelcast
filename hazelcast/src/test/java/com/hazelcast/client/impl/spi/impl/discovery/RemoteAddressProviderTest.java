@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.impl.spi.impl.discovery;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -34,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -51,7 +54,7 @@ public class RemoteAddressProviderTest {
     @Test
     public void testLoadAddresses() throws Exception {
         RemoteAddressProvider provider = new RemoteAddressProvider(() -> expectedAddresses, true);
-        Collection<Address> addresses = provider.loadAddresses().primary();
+        Collection<Address> addresses = provider.loadAddresses(createConnectionProcessListenerRunner()).primary();
 
         assertEquals(3, addresses.size());
         for (Address address : expectedAddresses.keySet()) {
@@ -66,13 +69,13 @@ public class RemoteAddressProviderTest {
             throw new IllegalStateException("Expected exception");
         }, true);
 
-        provider.loadAddresses();
+        provider.loadAddresses(createConnectionProcessListenerRunner());
     }
 
     @Test
     public void testTranslate_whenAddressIsNull_thenReturnNull() throws Exception {
         RemoteAddressProvider provider = new RemoteAddressProvider(() -> expectedAddresses, true);
-        Address actual = provider.translate(null);
+        Address actual = provider.translate((Address) null);
         assertNull(actual);
     }
 
@@ -107,6 +110,10 @@ public class RemoteAddressProviderTest {
         Address actual = provider.translate(notAvailableAddress);
 
         assertNull(actual);
+    }
+
+    private ClientConnectionProcessListenerRunner createConnectionProcessListenerRunner() {
+        return new ClientConnectionProcessListenerRunner(mock(HazelcastClientInstanceImpl.class));
     }
 }
 

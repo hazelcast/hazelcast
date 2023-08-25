@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,10 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.operation.steps.PartitionWideEntryOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
@@ -34,6 +38,7 @@ import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.wan.impl.CallerProvenance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -79,23 +84,58 @@ public class PartitionWideEntryOperation extends MapOperation
         queryOptimizer = mapServiceContext.getQueryOptimizer();
     }
 
+    @Override
+    public State createState() {
+        return super.createState()
+                .setPredicate(getPredicate())
+                .setCallerProvenance(CallerProvenance.NOT_WAN)
+                .setEntryProcessor(entryProcessor)
+                .setStaticPutParams(StaticParams.SET_WITH_NO_ACCESS_PARAMS);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return PartitionWideEntryOpSteps.PROCESS;
+    }
+
+    @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        responses = (MapEntries) state.getResult();
+        keysFromIndex = state.getKeysFromIndex();
+    }
+
     protected Predicate getPredicate() {
         return null;
     }
 
     @Override
     protected void runInternal() {
-        if (mapContainer.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE) {
+        if (isHDMap()) {
             runForNative();
         } else {
             runWithPartitionScan();
         }
     }
 
+    public boolean isTieredStoreMap() {
+        return mapContainer.getMapConfig()
+                .getTieredStoreConfig().isEnabled();
+    }
+
+    private boolean isHDMap() {
+        return mapContainer.getMapConfig()
+                .getInMemoryFormat() == InMemoryFormat.NATIVE;
+    }
+
     private void runForNative() {
-        if (runWithIndex()) {
+        // try run with partitioned index
+        if (!isTieredStoreMap()
+                && runWithPartitionedIndex()) {
             return;
         }
+
+        // as a fallback scan whole partition
         runWithPartitionScanForNative();
     }
 
@@ -103,7 +143,7 @@ public class PartitionWideEntryOperation extends MapOperation
      * @return {@code true} if index has been used and the EP
      * has been executed on its keys, {@code false} otherwise
      */
-    private boolean runWithIndex() {
+    private boolean runWithPartitionedIndex() {
         // here we try to query the partitioned-index
         Predicate predicate = getPredicate();
         if (predicate == null) {
@@ -168,6 +208,10 @@ public class PartitionWideEntryOperation extends MapOperation
                 outComes.add(operator.getByPreferringDataNewValue());
                 outComes.add(eventType);
                 outComes.add(operator.getEntry().getNewTtl());
+                outComes.add(operator.getEntry().isChangeExpiryOnUpdate());
+            } else {
+                // when event type is null, it means that there was no modification
+                operator.doPostOperateOps();
             }
         }, false);
 
@@ -183,9 +227,10 @@ public class PartitionWideEntryOperation extends MapOperation
             Object newValue = outComes.poll();
             EntryEventType eventType = (EntryEventType) outComes.poll();
             long newTtl = (long) outComes.poll();
+            boolean changeExpiryOnUpdate = (boolean) outComes.poll();
 
             operator.init(dataKey, oldValue, newValue, null, eventType,
-                    null, newTtl).doPostOperateOps();
+                    null, changeExpiryOnUpdate, newTtl).doPostOperateOps();
         }
     }
 

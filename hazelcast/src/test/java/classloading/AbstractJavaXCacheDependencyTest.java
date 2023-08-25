@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package classloading;
 
 import com.hazelcast.internal.util.FilteringClassLoader;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -26,7 +25,9 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import static classloading.ThreadLocalLeakTestUtils.checkThreadLocalsForLeaks;
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Creates a member or client {@link com.hazelcast.core.Hazelcast} instance with an explicit exclusion of {@code javax.cache}.
@@ -102,8 +103,8 @@ public abstract class AbstractJavaXCacheDependencyTest {
                     getCacheManager.invoke(hazelcastInstance);
                 }
                 if (testGetCache) {
-                    expectedException.expect(new RootCauseMatcher(ClassNotFoundException.class, EXPECTED_CAUSE));
-                    cacheManagerClazz.getDeclaredMethod("getCache", String.class);
+                    assertThatThrownBy(() -> cacheManagerClazz.getDeclaredMethod("getCache", String.class))
+                            .has(rootCause(ClassNotFoundException.class, EXPECTED_CAUSE));
                 }
             } finally {
                 Method shutdownAll = hazelcastClazz.getDeclaredMethod("shutdownAll");

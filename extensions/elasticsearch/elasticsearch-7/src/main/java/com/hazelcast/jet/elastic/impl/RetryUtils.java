@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,10 @@ public final class RetryUtils {
         for (Class<? extends Exception> exception : exceptions) {
             if (exception.isAssignableFrom(e.getClass())) {
                 return true;
+            }
+            if (e.getCause() != null && e.getCause() instanceof Exception && e.getCause() != e) {
+                Exception cause = (Exception) e.getCause();
+                return anyOf(cause, exceptions);
             }
         }
         return false;

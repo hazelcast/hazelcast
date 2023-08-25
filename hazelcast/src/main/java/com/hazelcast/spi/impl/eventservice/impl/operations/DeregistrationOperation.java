@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,24 +34,23 @@ public class DeregistrationOperation extends AbstractRegistrationOperation {
     public DeregistrationOperation() {
     }
 
-    public DeregistrationOperation(String topic, UUID id, int memberListVersion) {
-        super(memberListVersion);
+    public DeregistrationOperation(String topic, UUID id, int orderKey, int memberListVersion) {
+        super(memberListVersion, orderKey);
         this.topic = topic;
         this.id = id;
     }
 
     @Override
-    protected void runInternal() throws Exception {
+    protected void runInternal() {
         EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
         EventServiceSegment segment = eventService.getSegment(getServiceName(), false);
         if (segment != null) {
-            segment.removeRegistration(topic, id);
+            if (id == null) {
+                segment.removeRegistrations(topic);
+            } else {
+                segment.removeRegistration(topic, id);
+            }
         }
-    }
-
-    @Override
-    public Object getResponse() {
-        return true;
     }
 
     @Override

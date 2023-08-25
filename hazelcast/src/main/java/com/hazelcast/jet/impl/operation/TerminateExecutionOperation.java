@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
@@ -36,7 +37,7 @@ import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCE
  * particular job. See also {@link TerminateJobOperation}, which is sent
  * from client to coordinator to initiate the termination.
  */
-public class TerminateExecutionOperation extends AbstractJobOperation {
+public class TerminateExecutionOperation extends AsyncJobOperation {
 
     private long executionId;
     private TerminationMode mode;
@@ -51,11 +52,11 @@ public class TerminateExecutionOperation extends AbstractJobOperation {
     }
 
     @Override
-    public void run() {
+    protected CompletableFuture<?> doRun() throws Exception {
         JetServiceBackend service = getJetServiceBackend();
         JobExecutionService executionService = service.getJobExecutionService();
         Address callerAddress = getCallerAddress();
-        executionService.terminateExecution(jobId(), executionId, callerAddress, mode);
+        return executionService.terminateExecution(jobId(), executionId, callerAddress, mode);
     }
 
     @Override

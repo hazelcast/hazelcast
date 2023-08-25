@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
   the directory where you start your Hazelcast member.
 
   To learn how to configure Hazelcast, please see the schema at
-  https://hazelcast.com/schema/config/hazelcast-config-5.1.xsd
+  https://hazelcast.com/schema/config/hazelcast-config-5.3.xsd
   or the Reference Manual at https://docs.hazelcast.com/
 -->
 
@@ -31,7 +31,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.1.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
@@ -112,11 +112,24 @@
         Management Center can't access the data if at least one member has the data access disabled.
         Default value is true.
 
+        You can also specify <trusted-interfaces> as child element.
+        It includes allowed IP addresses for Management Center connections.
+        More preciselly, the element configures addresses from which clients are allowed to run cluster
+        management tasks over the Hazelcast client protocol.
+        You can give an IP addresses range using the wildcards (*) or intervals in the IPv4 address
+        (e.g. 192.168.1.* or 192.168.1.100-110).
+        Default value is empty, meaning all Management Center connections can execute management tasks.
+
         Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
         in your cluster. To use it for more members, you need to have either a Management Center,
         Hazelcast Enterprise or Hazelcast Enterprise HD license.
     -->
-    <management-center scripting-enabled="false" console-enabled="false" data-access-enabled="true"/>
+    <management-center scripting-enabled="false" console-enabled="false" data-access-enabled="true">
+        <trusted-interfaces>
+            <interface>10.10.1.*</interface>
+            <interface>10.10.2.*</interface>
+        </trusted-interfaces>
+    </management-center>
     <!--
         The <properties> element lets you add properties to some of the Hazelcast elements used to configure some of
         the Hazelcast modules.
@@ -542,21 +555,17 @@
         to true to be able to use your defined interfaces. You can define multiple interfaces
         using its <interface> sub-element. By default, it is disabled.
         * <ssl>:
-        Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast
-        Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement
-        your SSLContextFactory class. Its configuration contains the factory class and SSL properties.
-        By default, it is disabled. The following is an example:
+        Allows configuring TLS/SSL communication encryption. This feature is available only in Hazelcast
+        Enterprise.
+        The default configuration usually uses JSSE engine available in Java.
+        Consult the Hazelcast documentation on how to integrate with OpenSSL/BoringSSL engines.
         <ssl enabled="true">
-            <factory-class-name>
-                com.hazelcast.nio.ssl.BasicSSLContextFactory
-            </factory-class-name>
+            <factory-class-name>com.hazelcast.nio.ssl.OpenSSLEngineFactory</factory-class-name>
             <properties>
-                <property name="keyStore">keyStore</property>
-                <property name="keyStorePassword">keyStorePassword</property>
-                <property name="keyManagerAlgorithm">SunX509</property>
-                <property name="trustManagerAlgorithm">SunX509</property>
-                <property name="protocol">TLS</property>
-                <property name="mutualAuthentication">REQUIRED</property>
+                <property name="protocol">TLSv1.2</property>
+                <property name="trustCertCollectionFile">/opt/hazelcast/trusted-certs.pem</property>
+                <property name="keyFile">/opt/hazelcast/privkey.pem</property>
+                <property name="keyCertChainFile">/opt/hazelcast/chain.pem</property>
             </properties>
         </ssl>
         * <socket-interceptor>:
@@ -575,10 +584,7 @@
             </properties>
         </socket-interceptor>
         * <symmetric-encryption>:
-        Lets you encrypt the entire socket level communication among all Hazelcast members.
-        This feature is available only in Hazelcast Enterprise.  Its configuration contains the encryption
-        properties and the same configuration must be placed to all members. By default, it is disabled.
-        The following is an example:
+        The symmetric-encryption is deprecated since Hazelcast 4.2. Consider using TLS instead.
         <symmetric-encryption enabled="true">
             <algorithm>PBEWithMD5AndDES</algorithm>
             <salt>thesalt</salt>
@@ -638,6 +644,15 @@
             Maximum number of times the IP Datagram (ping) can be forwarded, in most cases
             all Hazelcast cluster members would be within one network switch/router therefore
             default of 0 is usually sufficient.
+
+        - <tpc-socket>:
+            Socket configuration for TPC. In TPC, each eventloop has its own sockets.
+            - <port-range>:
+                Configures the port range available for TPC sockets.
+            - <receive-buffer-size-kb>:
+                Configures SO_RCVBUF socket option for TPC sockets.
+            - <send-buffer-size-kb>:
+                Configures SO_SNDBUF socket option for TPC sockets.
     -->
     <network>
         <public-address>11.22.33.44:5555</public-address>
@@ -726,26 +741,19 @@
             <interface>10.10.1.*</interface>
         </interfaces>
         <ssl enabled="false">
-            <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
             <properties>
-                <property name="protocol">TLS</property>
-
+                <property name="protocol">TLSv1.3</property>
                 <property name="mutualAuthentication">REQUIRED</property>
                 <property name="keyStore">/opt/hazelcast.keystore</property>
                 <property name="keyStorePassword">secret.97531</property>
-                <property name="keyStoreType">JKS</property>
+                <property name="keyStoreType">PKCS12</property>
                 <property name="trustStore">/opt/hazelcast.truststore</property>
                 <property name="trustStorePassword">changeit</property>
-                <property name="trustStoreType">JKS</property>
+                <property name="trustStoreType">PKCS12</property>
+                <property name="keyMaterialDuration">PT10M</property>
             </properties>
         </ssl>
         <socket-interceptor enabled="false"/>
-        <symmetric-encryption enabled="false">
-            <algorithm>PBEWithMD5AndDES</algorithm>
-            <password>...</password>
-            <salt>...</salt>
-            <iteration-count>7</iteration-count>
-        </symmetric-encryption>
         <member-address-provider enabled="false">
             <class-name>com.hazelcast.MemberAddressProviderImpl</class-name>
             <properties>
@@ -801,6 +809,12 @@
         Allows to configure Memcache text protocol support in Hazelcast.
         -->
         <memcache-protocol enabled="false"/>
+
+        <tpc-socket>
+            <port-range>14000-16000</port-range>
+            <receive-buffer-size-kb>256</receive-buffer-size-kb>
+            <send-buffer-size-kb>256</send-buffer-size-kb>
+        </tpc-socket>
     </network>
     <!--
         ===== PARTITION GROUPING CONFIGURATION =====
@@ -1202,6 +1216,15 @@
         It has the following sub-elements:
         - <class-name>:
             The name of your class implementing MapLoader and/or MapStore interface.
+        - <offload>:
+            Default value is true.
+            MapStore or MapLoader implementations are executed by
+            partition threads, by setting offload to true, Hazelcast
+            makes these threads available for other cluster operations
+            and offloads MapStore or MapLoader interacting parts of
+            executions to a different thread pool, upon interaction finish,
+            operations continue to work in the partition thread from
+            the point they are offloaded.
         - <write-delay-seconds>:
             Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
             Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
@@ -1352,6 +1375,7 @@
         </event-journal>
         <map-store enabled="true" initial-mode="LAZY">
             <class-name>com.hazelcast.examples.DummyStore</class-name>
+            <offload>true</offload>
             <write-delay-seconds>60</write-delay-seconds>
             <write-batch-size>1000</write-batch-size>
             <write-coalescing>true</write-coalescing>
@@ -1417,6 +1441,17 @@
                     <unique-key>id</unique-key>
                     <unique-key-transformation>RAW</unique-key-transformation>
                 </bitmap-index-options>
+            </index>
+            <index type="SORTED">
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+                <btree-index>
+                    <memory-tier>
+                        <capacity value="128" unit="BYTES" />
+                    </memory-tier>
+                    <page-size value="1024" unit="BYTES" />
+                </btree-index>
             </index>
         </indexes>
         <attributes>
@@ -1489,6 +1524,12 @@
                 </indexes>
             </query-cache>
         </query-caches>
+        <!-- In an actual config, only one of {partition-strategy, partition-attributes} should be present -->
+        <partition-strategy>com.example.Strategy</partition-strategy>
+        <partition-attributes>
+            <attribute>attributeName1</attribute>
+            <attribute>attributeName2</attribute>
+        </partition-attributes>
     </map>
 
     <!--
@@ -2117,6 +2158,20 @@
             and throw a Serialization Exception with the error definition.
         * <java-serialization-filter>:
             Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used.
+        * <compact-serialization>:
+            Contains configuration elements and attributes for the compact serialization.
+
+            The optional "enabled" attribute enables or disables the Compact
+            serialization.
+
+            It has the following sub-elements.
+            * <serializers>:
+                List of fully qualified class names of the Compact serializers.
+            * <classes>:
+                List of fully qualified names of the classes to be serialized
+                with the reflective Compact serializer. It is meant to be used
+                to serialize classes that are serializable with other mechanisms
+                like Java serialization with Compact serialization.
     -->
     <serialization>
         <portable-version>0</portable-version>
@@ -2148,15 +2203,13 @@
                 <prefix>java</prefix>
             </whitelist>
         </java-serialization-filter>
-        <compact-serialization enabled="true">
-            <registered-classes>
-                <class>
-                    com.hazelcast.examples.DummyType
-                </class>
-                <class type-name="dummy" serializer="com.hazelcast.examples.DummyTypeSerializer">
-                    com.hazelcast.examples.DummyTypeWithSerializer
-                </class>
-            </registered-classes>
+        <compact-serialization>
+            <serializers>
+                <serializer>com.hazelcast.examples.DummyTypeSerializer</serializer>
+            </serializers>
+            <classes>
+                <class>com.hazelcast.examples.DummyType</class>
+            </classes>
         </compact-serialization>
     </serialization>
     <!--
@@ -3151,6 +3204,23 @@
                     Specifies the size of the receive buffer. The default value is 128KB.
                 * <linger-seconds>:
                     Specifies the TCP linger seconds. The default value is 0.
+                * <keep-count>:
+                    When keep-alive is true and supported by the platform, sets the number of unacknowledged TCP keep-alive probes
+                    to be sent before declaring a connection dead.
+                * <keep-idle-seconds>:
+                    When keep-alive is true and supported by the platform, sets the number of seconds to wait after the last
+                    packet was sent before sending a keep-alive probe.
+                * <keep-interval-seconds>:
+                    When keep-alive is true and supported by the platform, sets the number of seconds to wait between keep-alive
+                    probes.
+            * <tpc-socket>:
+                Socket configuration for TPC. In TPC, each eventloop has its own sockets.
+                * <port-range>:
+                    Configures the port range available for TPC sockets.
+                * <receive-buffer-size-kb>:
+                    Configures SO_RCVBUF socket option for TPC sockets.
+                * <send-buffer-size-kb>:
+                    Configures SO_SNDBUF socket option for TPC sockets.
 
         * <rest-server-socket-endpoint-config>:
             Controls access to Hazelcast HTTP REST API.
@@ -3188,6 +3258,7 @@
             * <socket-interceptor>
             * <symmetric-encryption>
             * <socket-options>
+            * <tpc-socket>
 
     -->
     <advanced-network enabled="false">
@@ -3319,11 +3390,22 @@
                 <send-buffer-size-kb>25</send-buffer-size-kb>
                 <receive-buffer-size-kb>33</receive-buffer-size-kb>
                 <linger-seconds>99</linger-seconds>
+                <!-- wait 10 minutes before sending a keep-alive probe -->
+                <keep-idle-seconds>600</keep-idle-seconds>
+                <!-- send 10 keep-alive probes before closing connection -->
+                <keep-count>10</keep-count>
+                <!-- send keep-alive probe retries every 15 seconds -->
+                <keep-interval-seconds>15</keep-interval-seconds>
             </socket-options>
             <port auto-increment="true" port-count="100">5701</port>
             <public-address>dummy</public-address>
             <!-- If the address should be reused. See NetworkConfig.setReuseAddress for more information. -->
             <reuse-address>true</reuse-address>
+            <tpc-socket>
+                <port-range>14000-16000</port-range>
+                <receive-buffer-size-kb>256</receive-buffer-size-kb>
+                <send-buffer-size-kb>256</send-buffer-size-kb>
+            </tpc-socket>
         </member-server-socket-endpoint-config>
         <!-- server socket listening for connections from hazelcast clients -->
         <client-server-socket-endpoint-config>
@@ -3348,6 +3430,11 @@
             <port auto-increment="true" port-count="100">9999</port>
             <public-address>10.10.0.10</public-address>
             <reuse-address>true</reuse-address>
+            <tpc-socket>
+                <port-range>14000-16000</port-range>
+                <receive-buffer-size-kb>256</receive-buffer-size-kb>
+                <send-buffer-size-kb>256</send-buffer-size-kb>
+            </tpc-socket>
         </client-server-socket-endpoint-config>
         <!-- create a server socket for REST API -->
         <rest-server-socket-endpoint-config name="internal-server-socket">
@@ -3363,6 +3450,11 @@
                 <endpoint-group name="CLUSTER_WRITE" enabled="false"/>
                 <endpoint-group name="HEALTH_CHECK" enabled="true"/>
             </endpoint-groups>
+            <tpc-socket>
+                <port-range>14000-16000</port-range>
+                <receive-buffer-size-kb>256</receive-buffer-size-kb>
+                <send-buffer-size-kb>256</send-buffer-size-kb>
+            </tpc-socket>
         </rest-server-socket-endpoint-config>
         <!-- specify SSL config to be used for outgoing connections -->
         <wan-endpoint-config name="endpoint-tokyo">
@@ -3372,6 +3464,11 @@
                     <property name="foo">bar</property>
                 </properties>
             </ssl>
+            <tpc-socket>
+                <port-range>14000-16000</port-range>
+                <receive-buffer-size-kb>256</receive-buffer-size-kb>
+                <send-buffer-size-kb>256</send-buffer-size-kb>
+            </tpc-socket>
         </wan-endpoint-config>
         <wan-endpoint-config name="endpoint-london">
             <symmetric-encryption enabled="true">
@@ -3386,9 +3483,19 @@
                 <interface>192.168.8.101</interface>
                 <interface>10.20.10.100</interface>
             </interfaces>
+            <tpc-socket>
+                <port-range>14000-16000</port-range>
+                <receive-buffer-size-kb>256</receive-buffer-size-kb>
+                <send-buffer-size-kb>256</send-buffer-size-kb>
+            </tpc-socket>
         </wan-server-socket-endpoint-config>
         <memcache-server-socket-endpoint-config name="memcache">
             <port auto-increment="false" port-count="10">6000</port>
+            <tpc-socket>
+                <port-range>14000-16000</port-range>
+                <receive-buffer-size-kb>256</receive-buffer-size-kb>
+                <send-buffer-size-kb>256</send-buffer-size-kb>
+            </tpc-socket>
         </memcache-server-socket-endpoint-config>
     </advanced-network>
 
@@ -3484,6 +3591,9 @@
             Timeout duration for CP members to restore their data from disk.
             A CP member fails its startup if it cannot complete its CP data restore
             process in the configured duration.
+        * <cp-member-priority>:
+            The CP member priority. The CP groups' leadership will be eventually
+            transferred to members with higher priorities within the CP group.
 
         * <raft-algorithm>:
             These parameters tune specific parameters of Hazelcast’s Raft consensus
@@ -3561,6 +3671,7 @@
         <persistence-enabled>true</persistence-enabled>
         <base-dir>custom-cp-dir</base-dir>
         <data-load-timeout-seconds>30</data-load-timeout-seconds>
+        <cp-member-priority>1</cp-member-priority>
         <raft-algorithm>
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
             <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>
@@ -3714,10 +3825,20 @@
         It has the following sub-elements:
         * <statement-timeout-millis>
             Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
+        * <catalog-persistence-enabled>
+            Sets whether SQL Catalog persistence is enabled for the node.
+            With SQL Catalog persistence enabled you can restart the whole cluster without
+            losing schema definition objects (such as MAPPINGs, TYPEs, VIEWs and DATA CONNECTIONs).
+            The feature is implemented on top of the Hot Restart feature of Hazelcast
+            which persists the data to disk. If enabled, you have to also configure
+            Hot Restart. Feature is disabled by default. If you enable this option in
+            open-source, the member will fail to start, you need Enterprise to run it
+            and obtain a license from Hazelcast.
 
     -->
     <sql>
         <statement-timeout-millis>0</statement-timeout-millis>
+        <catalog-persistence-enabled>false</catalog-persistence-enabled>
     </sql>
 
 
@@ -3865,5 +3986,34 @@
     it can be disabled to improve startup time. Integrity Checker is disabled by default.
     -->
     <integrity-checker enabled="false"/>
+
+    <!--
+      ===== HAZELCAST DATA CONNECTION CONFIGURATION =====
+
+      Configuration element's name is <data-connection>. Contains configuration of data connections
+      used by map stores and jdbc sinks and sources
+      -->
+    <data-connection name="mysql-database">
+        <type>jdbc</type>
+        <properties>
+            <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
+        </properties>
+        <shared>false</shared>
+    </data-connection>
+
+    <data-connection name="other-database">
+        <type>other</type>
+    </data-connection>
+
+    <!--
+    ===== HAZELCAST TPC CONFIGURATION =====
+
+    Hazelcast TPC is the next generation of Hazelcast built with thread per core architecture.
+    It's still being developed and everything is subject to change. TPC is disabled by default.
+    -->
+    <tpc enabled="true">
+        <!-- Configures the number of eventloops. It's equal to available processor count by default. -->
+        <eventloop-count>12</eventloop-count>
+    </tpc>
 
 </hazelcast>

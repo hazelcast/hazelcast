@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordB
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
@@ -33,6 +34,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
 
@@ -44,11 +47,12 @@ class PortableUpsertTarget implements UpsertTarget {
     private final ClassDefinition classDefinition;
 
     private final Object[] values;
+    private final Map<Integer, QueryDataType> dataTypeMap;
 
     PortableUpsertTarget(@Nonnull ClassDefinition classDef) {
         this.classDefinition = classDef;
-
         this.values = new Object[classDef.getFieldCount()];
+        this.dataTypeMap = new HashMap<>();
     }
 
     @Override
@@ -58,9 +62,14 @@ class PortableUpsertTarget implements UpsertTarget {
         }
 
         int fieldIndex = classDefinition.hasField(path) ? classDefinition.getField(path).getIndex() : -1;
+
+        if (type.isCustomType() && type.getObjectTypeKind() == QueryDataType.OBJECT_TYPE_KIND_PORTABLE) {
+            dataTypeMap.put(fieldIndex, type);
+        }
+
         return value -> {
             if (fieldIndex == -1 && value != null) {
-                throw QueryException.error("Unable to inject a non-null value to \"" + path + "\"");
+                throw QueryException.error("Field \"" + path + "\" doesn't exist in Portable Class Definition");
             }
 
             if (fieldIndex > -1) {
@@ -81,7 +90,7 @@ class PortableUpsertTarget implements UpsertTarget {
         return record;
     }
 
-    private static GenericRecord toRecord(ClassDefinition classDefinition, Object[] values) {
+    private GenericRecord toRecord(ClassDefinition classDefinition, Object[] values) {
         PortableGenericRecordBuilder portable = new PortableGenericRecordBuilder(classDefinition);
         for (int i = 0; i < classDefinition.getFieldCount(); i++) {
             FieldDefinition fieldDefinition = classDefinition.getField(i);
@@ -142,7 +151,13 @@ class PortableUpsertTarget implements UpsertTarget {
                         portable.setTimestampWithTimezone(name, value == NOT_SET ? null : (OffsetDateTime) value);
                         break;
                     case PORTABLE:
-                        portable.setGenericRecord(name, value == NOT_SET ? null : (GenericRecord) value);
+                        if (value instanceof RowValue) {
+                            portable.setGenericRecord(name, UpsertTargetUtils.convertRowToPortableType(
+                                    (RowValue) value, this.dataTypeMap.get(i))
+                            );
+                        } else {
+                            portable.setGenericRecord(name, value == NOT_SET ? null : (GenericRecord) value);
+                        }
                         break;
                     case BOOLEAN_ARRAY:
                         portable.setArrayOfBoolean(name, value == NOT_SET ? null : (boolean[]) value);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.internal.serialization.impl.compact;
+
+import javax.annotation.Nullable;
 
 /**
  * Service to put and get metadata to cluster.
@@ -32,7 +34,7 @@ public interface SchemaService {
      *     <li>searching the cluster.</li>
      * </ul>
      */
-    Schema get(long schemaId);
+    @Nullable Schema get(long schemaId);
 
     /**
      * Puts the schema with the given id to the cluster.

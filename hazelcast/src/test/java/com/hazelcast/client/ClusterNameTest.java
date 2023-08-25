@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -31,12 +32,11 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClusterNameTest {
+public class ClusterNameTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -50,7 +50,7 @@ public class ClusterNameTest {
         hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        String name = "aClient";
+        String name = randomString();
         clientConfig.setInstanceName(name);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
@@ -62,7 +62,7 @@ public class ClusterNameTest {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        String name = "aClient";
+        String name = randomString();
         clientConfig.setInstanceName(name);
         hazelcastFactory.newHazelcastClient(clientConfig);
 
@@ -91,7 +91,7 @@ public class ClusterNameTest {
         });
 
         ClientConfig clientConfig = new ClientConfig();
-        String name = "aClient";
+        String name = randomString();
         clientConfig.setInstanceName(name);
         hazelcastFactory.newHazelcastClient(clientConfig);
 
@@ -119,7 +119,7 @@ public class ClusterNameTest {
         });
 
         ClientConfig clientConfig = new ClientConfig();
-        String name = "aClient";
+        String name = randomString();
         clientConfig.setInstanceName(name);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         client.shutdown();

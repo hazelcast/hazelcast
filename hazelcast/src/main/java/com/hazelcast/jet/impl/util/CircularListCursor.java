@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package com.hazelcast.jet.impl.util;
 
-import java.util.List;
-import java.util.RandomAccess;
-
 /**
  * Cursor that repeatedly traverses a list. Initially it is at the first
  * element and advances from the last element back to the first.
@@ -27,11 +24,12 @@ import java.util.RandomAccess;
  */
 public class CircularListCursor<E> {
     private int index;
-    private final List<E> list;
+    private final E[] elementData;
+    private int size;
 
-    public CircularListCursor(List<E> list) {
-        assert list instanceof RandomAccess : "Attempt to create CircularListCursor with non-RandomAccess list";
-        this.list = list;
+    public CircularListCursor(E[] elementData) {
+        this.elementData = elementData;
+        this.size = elementData.length;
     }
 
     /**
@@ -41,10 +39,10 @@ public class CircularListCursor<E> {
      * @return {@code false} if the list is empty, {@code true} otherwise
      */
     public boolean advance() {
-        if (list.isEmpty()) {
+        if (size == 0) {
             return false;
         }
-        if (!(++index < list.size())) {
+        if (!(++index < size)) {
             index = 0;
         }
         return true;
@@ -54,7 +52,7 @@ public class CircularListCursor<E> {
      * Returns the item at the cursor's current position.
      */
     public E value() {
-        return list.get(index);
+        return elementData[index];
     }
 
     /**
@@ -62,9 +60,14 @@ public class CircularListCursor<E> {
      * to the previous item, wrapping around to the last item if necessary.
      */
     public void remove() {
-        list.remove(index--);
+        int numMoved = size - index - 1;
+        if (numMoved > 0) {
+            System.arraycopy(elementData, index + 1, elementData, index, numMoved);
+        }
+        elementData[--size] = null;
+        index--;
         if (index < 0) {
-            index = list.size() - 1;
+            index = size - 1;
         }
     }
 
@@ -73,7 +76,11 @@ public class CircularListCursor<E> {
         return "CircularListCursor{index=" + index + '}';
     }
 
-    public List<E> getList() {
-        return list;
+    public E[] getArray() {
+        return elementData;
+    }
+
+    public int getSize() {
+        return size;
     }
 }

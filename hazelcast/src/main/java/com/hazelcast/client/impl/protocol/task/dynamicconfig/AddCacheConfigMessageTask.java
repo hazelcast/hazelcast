@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("checkstyle:npathcomplexity")
 public class AddCacheConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddCacheConfigCodec.RequestParameters> {
 
@@ -58,7 +59,9 @@ public class AddCacheConfigMessageTask
         config.setCacheWriter(parameters.cacheWriter);
         config.setCacheWriterFactory(parameters.cacheWriterFactory);
         config.setDisablePerEntryInvalidationEvents(parameters.disablePerEntryInvalidationEvents);
-        config.setEvictionConfig(parameters.evictionConfig.asEvictionConfig(serializationService));
+        if (parameters.evictionConfig != null) {
+            config.setEvictionConfig(parameters.evictionConfig.asEvictionConfig(serializationService));
+        }
         if (parameters.expiryPolicyFactoryClassName != null) {
             config.setExpiryPolicyFactory(parameters.expiryPolicyFactoryClassName);
         } else if (parameters.timedExpiryPolicyFactoryConfig != null) {
@@ -66,12 +69,18 @@ public class AddCacheConfigMessageTask
                     new ExpiryPolicyFactoryConfig(parameters.timedExpiryPolicyFactoryConfig);
             config.setExpiryPolicyFactoryConfig(expiryPolicyFactoryConfig);
         }
-        config.setEventJournalConfig(parameters.eventJournalConfig);
-        config.setHotRestartConfig(parameters.hotRestartConfig);
+        if (parameters.eventJournalConfig != null) {
+            config.setEventJournalConfig(parameters.eventJournalConfig);
+        }
+        if (parameters.hotRestartConfig != null) {
+            config.setHotRestartConfig(parameters.hotRestartConfig);
+        }
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setKeyType(parameters.keyType);
         config.setManagementEnabled(parameters.managementEnabled);
-        config.setMergePolicyConfig(mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize));
+        if (parameters.mergePolicy != null) {
+            config.setMergePolicyConfig(mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize));
+        }
         config.setName(parameters.name);
         if (parameters.partitionLostListenerConfigs != null && !parameters.partitionLostListenerConfigs.isEmpty()) {
             List<CachePartitionLostListenerConfig> listenerConfigs = (List<CachePartitionLostListenerConfig>)
@@ -86,8 +95,11 @@ public class AddCacheConfigMessageTask
         config.setValueType(parameters.valueType);
         config.setWanReplicationRef(parameters.wanReplicationRef);
         config.setWriteThrough(parameters.writeThrough);
-        if (parameters.isMerkleTreeConfigExists) {
+        if (parameters.isMerkleTreeConfigExists && parameters.merkleTreeConfig != null) {
             config.setMerkleTreeConfig(parameters.merkleTreeConfig);
+        }
+        if (parameters.isDataPersistenceConfigExists) {
+            config.setDataPersistenceConfig(parameters.dataPersistenceConfig);
         }
         return config;
     }

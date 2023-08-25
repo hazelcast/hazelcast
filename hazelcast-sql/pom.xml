@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021 Hazelcast Inc.
+  ~ Copyright 2023 Hazelcast Inc.
   ~
   ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.2-SNAPSHOT</version>
+        <version>5.4.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -38,10 +38,7 @@
 
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
-        <calcite.version>1.29.0</calcite.version>
-        <confluent.version>4.1.4</confluent.version>
-        <jaxb.version>2.3.1</jaxb.version>
-        <immutables.version>2.8.2</immutables.version>
+        <immutables.version>2.9.3</immutables.version>
     </properties>
 
     <build>
@@ -113,7 +110,7 @@
                     <dependency>
                         <groupId>org.freemarker</groupId>
                         <artifactId>freemarker</artifactId>
-                        <version>2.3.31</version>
+                        <version>2.3.32</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -231,8 +228,9 @@
                                     <include>com.google.guava:guava</include>
                                     <include>com.google.guava:listenablefuture</include>
                                     <include>com.google.guava:failureaccess</include>
-                                    <include>com.esri.geometry:esri-geometry-api</include>
+                                    <include>org.locationtech.jts:jts-core</include>
                                     <include>org.slf4j:slf4j-api</include>
+                                    <include>com.fasterxml.jackson.core:jackson-databind</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -279,8 +277,8 @@
                                     <shadedPattern>${relocation.root}.com.google</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.esri.core.geometry</pattern>
-                                    <shadedPattern>${relocation.root}.com.esri.core.geometry</shadedPattern>
+                                    <pattern>org.locationtech.jts</pattern>
+                                    <shadedPattern>${relocation.root}.org.locationtech.jts</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.slf4</pattern>
@@ -310,6 +308,9 @@
                                     <artifact>*:*</artifact>
                                     <excludes>
                                         <exclude>Parser.jj</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>META-INF/NOTICE-binary</exclude>
+                                        <exclude>META-INF/licenses-binary/**</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -319,7 +320,9 @@
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
+                                        <exclude>META-INF/licenses-binary/**</exclude>
                                         <exclude>**/package-info.java</exclude>
+                                        <exclude>org/apache/calcite/runtime/CalciteResource.properties</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -330,54 +333,7 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
                                         <exclude>*.proto</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.checkerframework:checker-qual</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.hazelcast.jsurfer:jsurfer-core</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.hazelcast.jsurfer:jsurfer-jackson-jr</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.fasterxml.jackson.jr:jackson-jr-objects</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.antlr:antlr4-runtime</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.google.code.gson:gson</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>commons-codec:commons-codec</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>META-INF/licenses-binary/**</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -386,18 +342,6 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
                                         <exclude>org.codehaus.commons.compiler.properties</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.google.guava:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.esri.geometry:esri-geometry-api</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -443,7 +387,6 @@
             <artifactId>hazelcast</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.apache.calcite</groupId>
             <artifactId>calcite-core</artifactId>
@@ -532,6 +475,15 @@
                     <groupId>org.jetbrains.kotlin</groupId>
                     <artifactId>kotlin-stdlib-jdk8</artifactId>
                 </exclusion>
+                <!-- Unused geospatial libraries (only jts-core is required) -->
+                <exclusion>
+                    <groupId>org.locationtech.jts.io</groupId>
+                    <artifactId>jts-io-common</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.locationtech.proj4j</groupId>
+                    <artifactId>proj4j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -550,10 +502,6 @@
                 <exclusion>
                     <groupId>com.google.j2objc</groupId>
                     <artifactId>j2objc-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>animal-sniffer-annotations</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -579,14 +527,12 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
@@ -607,6 +553,33 @@
             <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- MONGODB -->
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-mongodb</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>${mongodb.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mongodb</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>toxiproxy</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- TEST -->
@@ -671,31 +644,9 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_${scala.version}</artifactId>
-            <version>${kafka.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.zookeeper</groupId>
-                    <artifactId>zookeeper</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- override zookeeper version to remedy https://issues.apache.org/jira/browse/ZOOKEEPER-3779 -->
-        <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
-            <version>${zookeeper.version}</version>
-            <scope>test</scope>
-            <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
+                    <artifactId>slf4j-reload4j</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -714,6 +665,19 @@
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-reload4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.yetus</groupId>
+                    <artifactId>audience-annotations</artifactId>
+                </exclusion>
+                <!-- Exclusions for Zookeeper. -->
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -734,6 +698,18 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_${scala.version}</artifactId>
             <version>${kafka.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.yetus</groupId>
+                    <artifactId>audience-annotations</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_${scala.version}</artifactId>
+            <version>${kafka.version}</version>
             <classifier>test</classifier>
             <scope>test</scope>
         </dependency>
@@ -742,6 +718,72 @@
             <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
             <classifier>test</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j2.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>redpanda</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql.connector.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mssqlserver</artifactId>
+            <version>1.18.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+            <version>12.4.0.jre8-preview</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -761,6 +803,10 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-reload4j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -768,6 +814,18 @@
             <groupId>org.immutables</groupId>
             <artifactId>value</artifactId>
             <version>${immutables.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+        </dependency>
+
+        <!-- Keep apiguardian-api as provided dependency to remove javac warnings -->
+        <dependency>
+            <groupId>org.apiguardian</groupId>
+            <artifactId>apiguardian-api</artifactId>
+            <version>1.1.2</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

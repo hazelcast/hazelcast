@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -102,7 +105,7 @@ public class ClientConfigTest {
         SerializationConfig serializationConfig = client.getConfig().getSerializationConfig();
         Map<Integer, com.hazelcast.nio.serialization.PortableFactory> factories = serializationConfig.getPortableFactories();
         assertEquals(1, factories.size());
-        assertEquals(factories.get(PortableFactory.FACTORY_ID).create(Employee.CLASS_ID).getClassId(), Employee.CLASS_ID);
+        assertEquals(Employee.CLASS_ID, factories.get(PortableFactory.FACTORY_ID).create(Employee.CLASS_ID).getClassId());
     }
 
     @Test
@@ -162,5 +165,19 @@ public class ClientConfigTest {
 
         assertEquals("com.hazelcast.client.test.CustomLoadBalancer", clientConfig.getLoadBalancerClassName());
         assertNull(clientConfig.getLoadBalancer());
+    }
+
+    @Test
+    public void testTpcConfig() {
+        ClientConfig config = new ClientConfig();
+        ClientTpcConfig tpcConfig = new ClientTpcConfig();
+
+        assertFalse(tpcConfig.isEnabled());
+
+        tpcConfig.setEnabled(true);
+        config.setTpcConfig(tpcConfig);
+
+        assertTrue(config.getTpcConfig().isEnabled());
+        assertThrows(IllegalArgumentException.class, () -> config.setTpcConfig(null));
     }
 }

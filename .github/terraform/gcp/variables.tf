@@ -1,20 +1,6 @@
-variable "prefix" {
-  type    = string
-}
-
 # ID of the project you want to use
 variable "project_id" {
   type    = string
-}
-
-variable "gcp_key_name" {
-  type = string
-  default = "id_rsa"
-}
-
-variable "local_key_path" {
-  type = string
-  default = "~/.ssh/"
 }
 
 variable "region" {
@@ -39,7 +25,6 @@ variable "gcp_ssh_user" {
 
 variable "hazelcast_mancenter_version" {
   type    = string
-  default = "4.2020.08"
 }
 
 variable "gcp_instance_type" {
@@ -55,4 +40,12 @@ variable "gcp_label_key" {
 variable "gcp_label_value" {
   type = string
   default = "terraform"
+}
+
+variable "hazelcast_path" {
+  type    = string
+}
+
+variable "gcp_key_file" {
+  type    = string
 }

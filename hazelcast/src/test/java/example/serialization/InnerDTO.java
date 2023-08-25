@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ public class InnerDTO {
 
     public boolean[] bools;
     public byte[] bytes;
+    public char[] chars;
     public short[] shorts;
     public int[] ints;
     public long[] longs;
@@ -41,6 +42,7 @@ public class InnerDTO {
     public OffsetDateTime[] offsetDateTimes;
     public Boolean[] nullableBools;
     public Byte[] nullableBytes;
+    public Character[] nullableCharacters;
     public Short[] nullableShorts;
     public Integer[] nullableIntegers;
     public Long[] nullableLongs;
@@ -51,14 +53,15 @@ public class InnerDTO {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public InnerDTO(boolean[] bools, byte[] bb, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd,
+    public InnerDTO(boolean[] bools, byte[] bb, char[] cc, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd,
                     String[] strings, NamedDTO[] nn,
                     BigDecimal[] bigDecimals, LocalTime[] localTimes, LocalDate[] localDates,
                     LocalDateTime[] localDateTimes, OffsetDateTime[] offsetDateTimes,
-                    Boolean[] nullableBools, Byte[] nullableBytes, Short[] nullableShorts, Integer[] nullableIntegers,
-                    Long[] nullableLongs, Float[] nullableFloats, Double[] nullableDoubles) {
+                    Boolean[] nullableBools, Byte[] nullableBytes, Character[] nullableCharacters, Short[] nullableShorts,
+                    Integer[] nullableIntegers, Long[] nullableLongs, Float[] nullableFloats, Double[] nullableDoubles) {
         this.bools = bools;
         this.bytes = bb;
+        this.chars = cc;
         this.shorts = ss;
         this.ints = ii;
         this.longs = ll;
@@ -73,6 +76,7 @@ public class InnerDTO {
         this.offsetDateTimes = offsetDateTimes;
         this.nullableBools = nullableBools;
         this.nullableBytes = nullableBytes;
+        this.nullableCharacters = nullableCharacters;
         this.nullableShorts = nullableShorts;
         this.nullableIntegers = nullableIntegers;
         this.nullableLongs = nullableLongs;
@@ -91,6 +95,7 @@ public class InnerDTO {
         InnerDTO that = (InnerDTO) o;
         return Arrays.equals(bytes, that.bytes)
                 && Arrays.equals(bools, that.bools)
+                && Arrays.equals(chars, that.chars)
                 && Arrays.equals(shorts, that.shorts)
                 && Arrays.equals(ints, that.ints)
                 && Arrays.equals(longs, that.longs)
@@ -104,6 +109,7 @@ public class InnerDTO {
                 && Arrays.equals(localDateTimes, that.localDateTimes)
                 && Arrays.equals(offsetDateTimes, that.offsetDateTimes)
                 && Arrays.equals(nullableBools, that.nullableBools)
+                && Arrays.equals(nullableCharacters, that.nullableCharacters)
                 && Arrays.equals(nullableShorts, that.nullableShorts)
                 && Arrays.equals(nullableIntegers, that.nullableIntegers)
                 && Arrays.equals(nullableLongs, that.nullableLongs)
@@ -115,6 +121,7 @@ public class InnerDTO {
     public int hashCode() {
         int result = Arrays.hashCode(bytes);
         result = 31 * result + Arrays.hashCode(bools);
+        result = 31 * result + Arrays.hashCode(chars);
         result = 31 * result + Arrays.hashCode(shorts);
         result = 31 * result + Arrays.hashCode(ints);
         result = 31 * result + Arrays.hashCode(longs);
@@ -129,6 +136,7 @@ public class InnerDTO {
         result = 31 * result + Arrays.hashCode(offsetDateTimes);
         result = 31 * result + Arrays.hashCode(nullableBools);
         result = 31 * result + Arrays.hashCode(nullableBytes);
+        result = 31 * result + Arrays.hashCode(nullableCharacters);
         result = 31 * result + Arrays.hashCode(nullableShorts);
         result = 31 * result + Arrays.hashCode(nullableIntegers);
         result = 31 * result + Arrays.hashCode(nullableLongs);
@@ -142,6 +150,7 @@ public class InnerDTO {
         return "InnerDTO{"
                 + "+ bools=" + Arrays.toString(bools)
                 + "+ bb=" + Arrays.toString(bytes)
+                + ", + cc=" + Arrays.toString(chars)
                 + ", + ss=" + Arrays.toString(shorts)
                 + ", + ii=" + Arrays.toString(ints)
                 + ", + ll=" + Arrays.toString(longs)
@@ -156,6 +165,7 @@ public class InnerDTO {
                 + ", + offsetDateTimes=" + Arrays.toString(offsetDateTimes)
                 + ", + nullableBools=" + Arrays.toString(nullableBools)
                 + ", + nullableBytes=" + Arrays.toString(nullableBytes)
+                + ", + nullableCharacters=" + Arrays.toString(nullableCharacters)
                 + ", + nullableShorts=" + Arrays.toString(nullableShorts)
                 + ", + nullableIntegers=" + Arrays.toString(nullableIntegers)
                 + ", + nullableLongs=" + Arrays.toString(nullableLongs)

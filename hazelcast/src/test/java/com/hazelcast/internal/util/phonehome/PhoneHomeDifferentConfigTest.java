@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -101,7 +101,7 @@ public class PhoneHomeDifferentConfigTest extends HazelcastTestSupport {
     public void testHdStorage() {
         NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig()
                 .setEnabled(true)
-                .setSize(new MemorySize(64L, MEGABYTES));
+                .setCapacity(new Capacity(64L, MEGABYTES));
         Config config = new Config()
                 .setNativeMemoryConfig(nativeMemoryConfig);
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
@@ -112,6 +112,7 @@ public class PhoneHomeDifferentConfigTest extends HazelcastTestSupport {
         Map<String, String> parameters = phoneHome.phoneHome(true);
         assertThat(parameters.get(PhoneHomeMetrics.HD_MEMORY_ENABLED.getRequestParameterName())).isEqualTo("true");
         assertThat(parameters.get(PhoneHomeMetrics.MEMORY_USED_HEAP_SIZE.getRequestParameterName())).isGreaterThan("0");
+        assertThat(parameters.get(PhoneHomeMetrics.MEMORY_FREE_HEAP_SIZE.getRequestParameterName())).isGreaterThan("0");
         assertThat(parameters.get(PhoneHomeMetrics.MEMORY_USED_NATIVE_SIZE.getRequestParameterName())).isEqualTo("0");
         assertThat(parameters.get(PhoneHomeMetrics.TIERED_STORAGE_ENABLED.getRequestParameterName())).isEqualTo("false");
         assertThat(parameters.get(PhoneHomeMetrics.DATA_MEMORY_COST.getRequestParameterName())).isEqualTo("0");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.jet.cdc;
 import com.hazelcast.jet.annotation.EvolvingApi;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Information pertaining to a single data change event (insert, delete or
@@ -64,11 +65,8 @@ public interface ChangeRecord {
      * be easy to identify them because they have a separate {@code SYNC}
      * operation instead of {@code INSERT}, however some databases emit {@code
      * INSERT} events in both cases (a notable example is MySQL).
-     *
-     * @throws ParsingException if the timestamp field isn't present or
-     *                          is unparseable
      */
-    long timestamp() throws ParsingException;
+    long timestamp();
 
     /**
      * Specifies the numeric value part of the record's source sequence. As long
@@ -97,21 +95,17 @@ public interface ChangeRecord {
      * @return {@link Operation#UNSPECIFIED} if this {@code ChangeRecord}
      * doesn't have an operation field, otherwise the appropriate {@link
      * Operation} that matches the CDC record's operation field
-     * @throws ParsingException if there is an operation field, but its
-     *                          value is not among the handled ones.
      */
     @Nonnull
-    Operation operation() throws ParsingException;
+    Operation operation();
 
     /**
      * Returns the name of the database containing the record's table.
      *
      * @return name of the source database for the current record
-     * @throws ParsingException if the database name field isn't present
-     *                          or is unparseable
      */
     @Nonnull
-    String database() throws ParsingException;
+    String database();
 
     /**
      * Returns the name of the schema containing the record's table.
@@ -119,33 +113,29 @@ public interface ChangeRecord {
      * MySQL).
      *
      * @return name of the source schema for the current record
-     * @throws ParsingException if the schema name field isn't present
-     *                          or is unparseable
      */
     @Nonnull
-    String schema() throws ParsingException, UnsupportedOperationException;
+    String schema() throws UnsupportedOperationException;
 
     /**
      * Returns the name of the table this record is part of.
      *
      * @return name of the source table for the current record
-     * @throws ParsingException if the table name field isn't present or
-     *                          is unparseable
      */
     @Nonnull
-    String table() throws ParsingException;
+    String table();
 
     /**
      * Returns the key part of the CDC event. It identifies the affected record.
      */
-    @Nonnull
+    @Nullable
     RecordPart key();
 
     /**
      * Returns the value part of the CDC event. It includes fields like the
      * timestamp, operation, and database record data.
      * <p>
-     * For <em>insert</em> and <em>update</em> operations the value describes
+     * For <em>sync</em>, <em>insert</em> and <em>update</em> operations the value describes
      * the database record as it looks AFTER the event, so the latest image.
      * <p>
      * For <em>delete</em> operations the value describes the database record as
@@ -153,6 +143,24 @@ public interface ChangeRecord {
      */
     @Nonnull
     RecordPart value();
+
+    /**
+     * Returns the new value of the record. For <em>sync</em>, <em>insert</em> and <em>update</em> operations the value
+     * describes the database record as it looks AFTER the event, so the latest state, for <em>delete</em> it returns null.
+     *
+     * @since 5.2
+     */
+    @Nullable
+    RecordPart newValue();
+
+    /**
+     * Returns the old value of the record. For <em>update</em> and <em>delete</em> operations the value
+     * describes the database record as it looks BEFORE the event, for <em>sync</em> and <em>insert</em> it returns null.
+     *
+     * @since 5.2
+     */
+    @Nullable
+    RecordPart oldValue();
 
     /**
      * Returns the raw JSON string from the CDC event underlying this {@code

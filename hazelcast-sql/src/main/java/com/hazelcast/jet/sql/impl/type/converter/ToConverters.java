@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ public final class ToConverters {
 
         converters.put(QueryDataType.OBJECT, new ToCanonicalConverter(QueryDataType.OBJECT));
         converters.put(QueryDataType.JSON, new ToCanonicalConverter(QueryDataType.JSON));
+        converters.put(QueryDataType.ROW, new ToCanonicalConverter(QueryDataType.ROW));
 
         return converters;
     }

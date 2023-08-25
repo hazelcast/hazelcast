@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.common.CalcIntoScanRule;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
-import com.hazelcast.jet.sql.impl.opt.logical.CalcIntoScanLogicalRule;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -60,7 +60,7 @@ import static java.util.stream.Collectors.joining;
  * <h2>Constrained scans</h2>
  * For a sequence of logical project/filter/scan operators we would like to ensure that the resulting relational tree is as
  * flat as possible because this minimizes the processing overhead and memory usage. To achieve this we try to push projects and
- * filters into the table using {@link CalcIntoScanLogicalRule}. These rules reduce the amount of data returned from the table
+ * filters into the table using {@link CalcIntoScanRule}. These rules reduce the amount of data returned from the table
  * during scanning. Pushed-down projection ensures that only columns required by parent operators are returned, thus
  * implementing field trimming. Pushed-down filter reduces the number of returned rows.
  * <p>
@@ -87,25 +87,15 @@ public class HazelcastTable extends AbstractTable {
     private final Table target;
     private final Statistic statistic;
     private final RexNode filter;
-    private final List<RexNode> projects;
+    private List<RexNode> projects;
 
-    private final RelDataType rowType;
+    private RelDataType rowType;
     private final Set<String> hiddenFieldNames = new HashSet<>();
 
     public HazelcastTable(Table target, Statistic statistic) {
         this.target = target;
         this.statistic = statistic;
         this.filter = null;
-
-        // produce default projects
-        int fieldCount = target.getFieldCount();
-        projects = new ArrayList<>(fieldCount);
-        for (int i = 0; i < fieldCount; i++) {
-            TableField field = target.getField(i);
-            RelDataType type = OptUtils.convert(field, HazelcastTypeFactory.INSTANCE);
-            projects.add(new RexInputRef(i, type));
-        }
-        rowType = computeRowType(projects);
     }
 
     private HazelcastTable(
@@ -122,6 +112,20 @@ public class HazelcastTable extends AbstractTable {
         this.filter = filter;
     }
 
+    private void initRowType() {
+        if (rowType == null) {
+            // produce default projects
+            int fieldCount = target.getFieldCount();
+            projects = new ArrayList<>(fieldCount);
+            for (int i = 0; i < fieldCount; i++) {
+                TableField field = target.getField(i);
+                RelDataType type = OptUtils.convert(field, HazelcastTypeFactory.INSTANCE);
+                projects.add(new RexInputRef(i, type));
+            }
+            rowType = computeRowType(projects);
+        }
+    }
+
     public HazelcastTable withProject(List<RexNode> projects, @Nullable RelDataType rowType) {
         return new HazelcastTable(target, statistic, projects, rowType, filter);
     }
@@ -132,9 +136,11 @@ public class HazelcastTable extends AbstractTable {
 
     @Nonnull
     public List<RexNode> getProjects() {
+        initRowType();
         return projects;
     }
 
+    @Nullable
     public RexNode getFilter() {
         return filter;
     }
@@ -146,6 +152,7 @@ public class HazelcastTable extends AbstractTable {
 
     @Override
     public RelDataType getRowType(RelDataTypeFactory typeFactory) {
+        initRowType();
         return rowType;
     }
 

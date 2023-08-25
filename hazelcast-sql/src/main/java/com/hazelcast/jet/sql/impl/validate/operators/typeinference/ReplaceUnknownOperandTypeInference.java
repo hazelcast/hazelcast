@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.createNullableType;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
 
 /**
  * Type inference that replaces UNKNOWN and NULL operands with the given types.
@@ -54,9 +55,7 @@ public class ReplaceUnknownOperandTypeInference implements SqlOperandTypeInferen
         for (int i = 0; i < operandTypes.length; i++) {
             RelDataType operandType = callBinding.getOperandType(i);
 
-            if (operandType.getSqlTypeName() == SqlTypeName.NULL) {
-                // note that this path is taken if operandType is both UNKNOWN or NULL.
-                // That is in case of FUNCTION(?) and FUNCTION(null).
+            if (isNullOrUnknown(operandType.getSqlTypeName())) {
                 RelDataType resolvedOperandType = resolveOperandType(i, callBinding.getTypeFactory());
 
                 // Preserve nullability

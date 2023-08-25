@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
     @After
     public void cleanup() {
-        hazelcastFactory.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Test
@@ -699,7 +699,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         CountDownLatch clientStartedDoingRequests = new CountDownLatch(1);
-        new Thread(() -> {
+        Thread restartThread = new Thread(() -> {
             try {
                 clientStartedDoingRequests.await();
             } catch (InterruptedException ignored) {
@@ -708,8 +708,8 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
             hazelcastInstance.shutdown();
 
             hazelcastFactory.newHazelcastInstance();
-
-        }).start();
+        });
+        restartThread.start();
 
         ClientConfig clientConfig = new ClientConfig();
         //Retry all requests
@@ -733,6 +733,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
                 fail("Requests should not throw exception with this configuration. Last put key: " + i);
             }
         }
+        assertJoinable(restartThread);
     }
 
     @Test

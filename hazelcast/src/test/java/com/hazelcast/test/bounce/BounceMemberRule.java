@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
@@ -278,7 +279,11 @@ public class BounceMemberRule implements TestRule {
     }
 
     public static Builder with(Config memberConfig) {
-        return new Builder(memberConfig);
+        return with(() -> memberConfig);
+    }
+
+    public static Builder with(Supplier<Config> memberConfigSupplier) {
+        return new Builder(memberConfigSupplier);
     }
 
     @Override
@@ -317,9 +322,9 @@ public class BounceMemberRule implements TestRule {
         } else {
             factory = new TestHazelcastInstanceFactory();
         }
-        Config memberConfig = bounceTestConfig.getMemberConfig();
+        Supplier<Config> memberConfigSupplier = bounceTestConfig.getMemberConfigSupplier();
         for (int i = 0; i < bounceTestConfig.getClusterSize(); i++) {
-            members.set(i, factory.newHazelcastInstance(memberConfig));
+            members.set(i, factory.newHazelcastInstance(memberConfigSupplier.get()));
         }
 
         // setup drivers
@@ -442,7 +447,7 @@ public class BounceMemberRule implements TestRule {
 
     public static class Builder {
 
-        private final Config memberConfig;
+        private final Supplier<Config> memberConfigSupplier;
 
         private int clusterSize = DEFAULT_CLUSTER_SIZE;
         private int driversCount = DEFAULT_DRIVERS_COUNT;
@@ -452,12 +457,11 @@ public class BounceMemberRule implements TestRule {
         private int bouncingIntervalSeconds = DEFAULT_BOUNCING_INTERVAL_SECONDS;
         private long maximumStaleSeconds = DEFAULT_MAXIMUM_STALE_SECONDS;
 
-        private Builder(Config memberConfig) {
-            this.memberConfig = memberConfig;
+        private Builder(Supplier<Config> memberConfigSupplier) {
+            this.memberConfigSupplier = memberConfigSupplier;
         }
 
         public BounceMemberRule build() {
-
             if (testDriverType == null) {
                 throw new AssertionError("testDriverType must be set");
             }
@@ -481,7 +485,7 @@ public class BounceMemberRule implements TestRule {
                         throw new AssertionError("Cannot instantiate driver factory for driver type " + testDriverType);
                 }
             }
-            return new BounceMemberRule(new BounceTestConfiguration(clusterSize, testDriverType, memberConfig,
+            return new BounceMemberRule(new BounceTestConfiguration(clusterSize, testDriverType, memberConfigSupplier,
                     driversCount, driverFactory, useTerminate, bouncingIntervalSeconds, maximumStaleSeconds));
         }
 
@@ -554,7 +558,8 @@ public class BounceMemberRule implements TestRule {
                     if (!testRunning.get()) {
                         break;
                     }
-                    members.set(i, factory.newHazelcastInstance(bounceTestConfig.getMemberConfig()));
+                    Supplier<Config> memberConfigSupplier = bounceTestConfig.getMemberConfigSupplier();
+                    members.set(i, factory.newHazelcastInstance(memberConfigSupplier.get()));
                     sleepSecondsWhenRunning(bouncingIntervalSeconds);
                     // move to next member
                     i = nextInstance;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,13 +30,13 @@ import static java.lang.Thread.currentThread;
 public class MulticastDiscoverySender implements Runnable {
 
     private static final int SLEEP_DURATION = 2000;
-    private MulticastSocket multicastSocket;
-    private MulticastMemberInfo multicastMemberInfo;
-    private DatagramPacket datagramPacket;
+    private final MulticastSocket multicastSocket;
     private final ILogger logger;
     private final String group;
     private final int port;
     private final MulticastDiscoverySerializationHelper serializationHelper;
+    private MulticastMemberInfo multicastMemberInfo;
+    private DatagramPacket datagramPacket;
     private volatile boolean stop;
 
     public MulticastDiscoverySender(DiscoveryNode discoveryNode, MulticastSocket multicastSocket, ILogger logger, String group,

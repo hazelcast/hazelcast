@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -46,7 +47,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.testcontainers.DockerClientFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,13 +56,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.util.Lists.newArrayList;
 import static org.elasticsearch.client.RequestOptions.DEFAULT;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
-import static org.junit.Assume.assumeTrue;
 
 /**
  * Base class for running Elasticsearch connector tests
@@ -84,7 +84,7 @@ public abstract class BaseElasticTest {
 
     @BeforeClass
     public static void beforeClassCheckDocker() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+        assumeDockerEnabled();
     }
 
     @Before
@@ -113,13 +113,20 @@ public abstract class BaseElasticTest {
     }
 
     /**
-     * RestHighLevelClient supplier, it is used to
-     * - create a client before each test for use by all methods from this class interacting with elastic
-     * - may be used as as a parameter of {@link ElasticSourceBuilder#clientFn(SupplierEx)}
+     * RestHighLevelClient supplier, it is used to create a client before each
+     * test for use by all methods from this class interacting with elastic
      */
     protected SupplierEx<RestClientBuilder> elasticClientSupplier() {
         return ElasticSupport.elasticClientSupplier();
-    };
+    }
+
+    /**
+     * RestHighLevelClient supplier, it is used to used as a parameter of
+     * {@link ElasticSourceBuilder#clientFn(SupplierEx)}
+     */
+    protected SupplierEx<RestClientBuilder> elasticPipelineClientSupplier() {
+        return ElasticSupport.elasticClientSupplier();
+    }
 
     protected abstract HazelcastInstance createHazelcastInstance();
 
@@ -213,6 +220,11 @@ public abstract class BaseElasticTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected void refreshIndex() throws IOException {
+        // Need to refresh index because the default bulk request doesn't do it and we may not see the result
+        elasticClient.indices().refresh(new RefreshRequest("my-index"), DEFAULT);
     }
 
     protected void assertSingleDocument() throws IOException {

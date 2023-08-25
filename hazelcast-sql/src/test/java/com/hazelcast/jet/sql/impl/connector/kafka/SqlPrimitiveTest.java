@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,10 @@ package com.hazelcast.jet.sql.impl.connector.kafka;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.ResultIterator;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -32,6 +34,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -57,7 +60,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
         initialize(1, null);
         sqlService = instance().getSql();
 
-        kafkaTestSupport = new KafkaTestSupport();
+        kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
     }
 
@@ -94,6 +97,52 @@ public class SqlPrimitiveTest extends SqlTestSupport {
                 asList(new Row(1, "value-1"), new Row(2, "value-2"))
         );
     }
+
+    @Test
+    public void createKafkaMappingWithDataConnection() {
+        String dlName = randomName();
+        sqlService.execute("CREATE DATA CONNECTION " + dlName + " TYPE Kafka NOT SHARED " + options());
+
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "DATA CONNECTION " + dlName + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
+                + ")"
+        );
+
+        String from = randomName();
+        TestBatchSqlConnector.create(sqlService, from, 4);
+
+        assertTopicEventually(
+                name,
+                "INSERT INTO " + name + " SELECT v, 'value-' || v FROM " + from,
+                createMap(0, "value-0", 1, "value-1", 2, "value-2", 3, "value-3")
+        );
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name + " WHERE __key > 0 AND __key < 3",
+                asList(new Row(1, "value-1"), new Row(2, "value-2"))
+        );
+    }
+
+    protected static String options() {
+        return String.format("OPTIONS ( " +
+                        "'bootstrap.servers' = '%s', " +
+                        "'key.deserializer' = '%s', " +
+                        "'key.serializer' = '%s', " +
+                        "'value.serializer' = '%s', " +
+                        "'value.deserializer' = '%s', " +
+                        "'auto.offset.reset' = 'earliest') ",
+                kafkaTestSupport.getBrokerConnectionString(),
+                IntegerDeserializer.class.getCanonicalName(),
+                IntegerSerializer.class.getCanonicalName(),
+                StringSerializer.class.getCanonicalName(),
+                StringDeserializer.class.getCanonicalName());
+    }
+
 
     @Test
     public void test_insertValues() {
@@ -512,6 +561,26 @@ public class SqlPrimitiveTest extends SqlTestSupport {
                         + ", '" + OPTION_VALUE_CLASS + "'='" + Integer.class.getName() + '\''
                         + ")")
         ).hasMessage("The field '" + fieldName + "' is of type INTEGER, you can't map '" + fieldName + ".field' too");
+    }
+
+    // test for https://github.com/hazelcast/hazelcast/issues/21455
+    @Test
+    public void test_nonExistentTopic() {
+        String name = "nonExistentTopic";
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'auto.offset.reset'='earliest'"
+                + ")"
+        );
+
+        ResultIterator<SqlRow> result = (ResultIterator<SqlRow>) sqlService.execute("select * from " + name).iterator();
+        result.hasNext(500, TimeUnit.MILLISECONDS);
     }
 
     private static String createRandomTopic() {

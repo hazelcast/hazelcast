@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,7 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.AbstractSqlResult;
-import com.hazelcast.sql.impl.SqlInternalService;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.InternalSqlService;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
@@ -56,7 +55,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         query.setCursorBufferSize(parameters.cursorBufferSize);
         query.setExpectedResultType(SqlExpectedResultType.fromId(parameters.expectedResultType));
 
-        SqlServiceImpl sqlService = nodeEngine.getSqlService();
+        InternalSqlService sqlService = nodeEngine.getSqlService();
 
         boolean skipUpdateStatistics = parameters.isSkipUpdateStatisticsExists && parameters.skipUpdateStatistics;
         return sqlService.execute(query, sqlSecurityContext, parameters.queryId, skipUpdateStatistics);
@@ -72,11 +71,18 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         AbstractSqlResult result = (AbstractSqlResult) response;
 
         if (result.updateCount() >= 0) {
-            return SqlExecuteCodec.encodeResponse(null, null, result.updateCount(), null);
+            return SqlExecuteCodec.encodeResponse(
+                    null,
+                    null,
+                    result.updateCount(),
+                    null,
+                    false,
+                    result.getPartitionArgumentIndex()
+            );
         } else {
-            SqlServiceImpl sqlService = nodeEngine.getSqlService();
+            InternalSqlService sqlService = nodeEngine.getSqlService();
 
-            SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
+            SqlPage page = sqlService.getClientStateRegistry().registerAndFetch(
                     endpoint.getUuid(),
                     result,
                     parameters.cursorBufferSize,
@@ -87,7 +93,9 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                     result.getRowMetadata().getColumns(),
                     page,
                     -1,
-                    null
+                    null,
+                    result.isInfiniteRows(),
+                    result.getPartitionArgumentIndex()
             );
         }
     }
@@ -98,7 +106,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
             return super.encodeException(throwable);
         }
 
-        nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(parameters.queryId);
+        nodeEngine.getSqlService().closeOnError(parameters.queryId);
 
         if (throwable instanceof AccessControlException) {
             return super.encodeException(throwable);
@@ -106,19 +114,24 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         if (!(throwable instanceof Exception)) {
             return super.encodeException(throwable);
         }
+        if (logger.isFineEnabled()) {
+            logger.fine("Client SQL error: " + throwable, throwable);
+        }
         SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
 
         return SqlExecuteCodec.encodeResponse(
                 null,
                 null,
                 -1,
-                error
+                error,
+                false,
+                -1
         );
     }
 
     @Override
     public String getServiceName() {
-        return SqlInternalService.SERVICE_NAME;
+        return InternalSqlService.SERVICE_NAME;
     }
 
     @Override

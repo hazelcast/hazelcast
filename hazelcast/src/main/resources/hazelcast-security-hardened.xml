@@ -19,7 +19,7 @@
 
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://www.hazelcast.com/schema/config http://www.hazelcast.com/schema/config/hazelcast-config-5.1.xsd">
+    xsi:schemaLocation="http://www.hazelcast.com/schema/config http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd">
 
     <!-- 
       Custom cluster name protects against unintended cluster formation between foreign members.
@@ -42,9 +42,14 @@
       Explicitly disable the scripting operations and the console commands sent from the Management center.
       The default value for both attributes is false already so this one is just to be sure and explicit.
       Also disable access to the data for Management Center. The data access is enabled by default.
+      Only allow management connections from the local network.
      -->
-    <management-center scripting-enabled="false" console-enabled="false" data-access-enabled="false" />
-
+    <management-center scripting-enabled="false" console-enabled="false" data-access-enabled="false">
+        <trusted-interfaces>
+            <!-- UPDATE THE INTERFACE VALUE TO FIT TO YOUR ENVIRONMENT! -->
+            <interface>192.168.1.*</interface>
+        </trusted-interfaces>
+    </management-center>
     <!--
       Explicitly disable the user-code deployments. I.e. allow only code which already is on the classpath.
       The default value is false already so this one is just to be sure and explicit. 

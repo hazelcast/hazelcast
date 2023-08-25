@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
+import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.client.impl.protocol.task.AuthenticationBaseMessageTask;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
@@ -44,6 +45,8 @@ import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.tpcengine.iobuffer.ConcurrentIOBufferAllocator;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.internal.util.executor.UnblockablePoolExecutorThreadFactory;
@@ -118,6 +121,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final ClientLifecycleMonitor lifecycleMonitor;
     private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
     private final AddressChecker addressChecker;
+    private final IOBufferAllocator responseBufAllocator = new ConcurrentIOBufferAllocator(4096, true);
+    private final boolean tpcEnabled;
 
     // not final for the testing purposes
     private ClientEndpointStatisticsManager endpointStatisticsManager;
@@ -140,6 +145,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.addressChecker = new AddressCheckerImpl(trustedInterfaces, logger);
         this.endpointStatisticsManager = PhoneHome.isPhoneHomeEnabled(node)
                 ? new ClientEndpointStatisticsManagerImpl() : new NoOpClientEndpointStatisticsManager();
+        this.tpcEnabled = nodeEngine.getTpcServerBootstrap().isEnabled();
     }
 
     private ClientExceptionFactory initClientExceptionFactory() {
@@ -217,9 +223,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         return endpointManager.size();
     }
 
+    //PETER:
     public void accept(ClientMessage clientMessage) {
         Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
+
+        if (tpcEnabled && messageTask instanceof AbstractMessageTask) {
+            AbstractMessageTask abstractMessageTask = (AbstractMessageTask) messageTask;
+            abstractMessageTask.setAsyncSocket(clientMessage.getAsyncSocket());
+            abstractMessageTask.setResponseBufAllocator(responseBufAllocator);
+        }
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         if (isUrgent(messageTask)) {
             operationService.execute((UrgentMessageTask) messageTask);

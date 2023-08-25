@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -207,7 +207,7 @@ public class ByteArrayObjectDataOutputTest {
         out.writeInt(expected);
         int actual = Bits.readIntB(out.buffer, 0);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -216,7 +216,7 @@ public class ByteArrayObjectDataOutputTest {
         out.writeInt(1, expected);
         int actual = Bits.readIntB(out.buffer, 1);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
 
     }
 
@@ -226,7 +226,7 @@ public class ByteArrayObjectDataOutputTest {
         out.writeInt(expected, LITTLE_ENDIAN);
         int actual = Bits.readIntL(out.buffer, 0);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
 
     }
 
@@ -236,7 +236,7 @@ public class ByteArrayObjectDataOutputTest {
         out.writeInt(2, expected, LITTLE_ENDIAN);
         int actual = Bits.readIntL(out.buffer, 2);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -245,7 +245,7 @@ public class ByteArrayObjectDataOutputTest {
         out.writeLong(expected);
         long actual = Bits.readLongB(out.buffer, 0);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -254,7 +254,7 @@ public class ByteArrayObjectDataOutputTest {
         out.writeLong(2, expected);
         long actual = Bits.readLongB(out.buffer, 2);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -263,7 +263,7 @@ public class ByteArrayObjectDataOutputTest {
         out.writeLong(2, expected, LITTLE_ENDIAN);
         long actual = Bits.readLongL(out.buffer, 2);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -272,7 +272,7 @@ public class ByteArrayObjectDataOutputTest {
         out.writeLong(2, expected, LITTLE_ENDIAN);
         long actual = Bits.readLongL(out.buffer, 2);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -281,7 +281,7 @@ public class ByteArrayObjectDataOutputTest {
         out.writeShort(expected);
         short actual = Bits.readShortB(out.buffer, 0);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -290,7 +290,7 @@ public class ByteArrayObjectDataOutputTest {
         out.writeShort(2, expected);
         short actual = Bits.readShortB(out.buffer, 2);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -299,7 +299,7 @@ public class ByteArrayObjectDataOutputTest {
         out.writeShort(2, expected, LITTLE_ENDIAN);
         short actual = Bits.readShortL(out.buffer, 2);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -308,7 +308,7 @@ public class ByteArrayObjectDataOutputTest {
         out.writeShort(2, expected, LITTLE_ENDIAN);
         short actual = Bits.readShortL(out.buffer, 2);
 
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @Test

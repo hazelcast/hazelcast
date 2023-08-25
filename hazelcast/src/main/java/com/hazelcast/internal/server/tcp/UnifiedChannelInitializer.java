@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,16 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_KEEPALIVE;
 import static com.hazelcast.internal.networking.ChannelOption.SO_LINGER;
 import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPCOUNT;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPIDLE;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPINTERVAL;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_BUFFER_DIRECT;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_KEEP_ALIVE;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_KEEP_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_KEEP_IDLE;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_KEEP_INTERVAL;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_LINGER_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_NO_DELAY;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_RECEIVE_BUFFER_SIZE;
@@ -60,7 +66,10 @@ public class UnifiedChannelInitializer
                 .setOption(SO_KEEPALIVE, props.getBoolean(SOCKET_KEEP_ALIVE))
                 .setOption(SO_SNDBUF, props.getInteger(SOCKET_SEND_BUFFER_SIZE) * KILO_BYTE)
                 .setOption(SO_RCVBUF, props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * KILO_BYTE)
-                .setOption(SO_LINGER, props.getSeconds(SOCKET_LINGER_SECONDS));
+                .setOption(SO_LINGER, props.getSeconds(SOCKET_LINGER_SECONDS))
+                .setOption(TCP_KEEPIDLE, props.getInteger(SOCKET_KEEP_IDLE))
+                .setOption(TCP_KEEPCOUNT, props.getInteger(SOCKET_KEEP_COUNT))
+                .setOption(TCP_KEEPINTERVAL, props.getInteger(SOCKET_KEEP_INTERVAL));
 
         UnifiedProtocolEncoder encoder = new UnifiedProtocolEncoder(serverContext);
         UnifiedProtocolDecoder decoder = new UnifiedProtocolDecoder(serverContext, encoder);

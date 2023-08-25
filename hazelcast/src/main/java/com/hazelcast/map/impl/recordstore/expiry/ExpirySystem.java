@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * The expiry system interface that has all logic to remove expired entries.
  */
@@ -35,7 +37,7 @@ public interface ExpirySystem {
 
         @Override
         public void evictExpiredEntries(int percentage, long now, boolean backup) {
-           // no-op
+            // no-op
         }
 
         @Override
@@ -70,6 +72,11 @@ public interface ExpirySystem {
 
         @Override
         public void add(Data key, long ttl, long maxIdle, long expiryTime, long lastUpdateTime, long now) {
+            // no-op
+        }
+
+        @Override
+        public void add(Data key, long lastUpdateTime, long now) {
             // no-op
         }
 
@@ -110,13 +117,28 @@ public interface ExpirySystem {
 
     void add(Data key, ExpiryMetadata expiryMetadata, long now);
 
+    /**
+     * Adds key to expiry system.
+     * <p>
+     * Expiry config will be got either from {@link
+     * com.hazelcast.config.MapConfig} or api call like {@link
+     * com.hazelcast.map.IMap#set(Object, Object, long, TimeUnit)}
+     */
     void add(Data key, long ttl, long maxIdle,
-                          long expiryTime, long lastUpdateTime, long now);
+             long expiryTime, long lastUpdateTime, long now);
+
+    /**
+     * Adds key to expiry system.
+     * <p>
+     * Expiry config will be
+     * got from {@link com.hazelcast.config.MapConfig}
+     */
+    void add(Data key, long lastUpdateTime, long now);
 
     void removeKeyFromExpirySystem(Data key);
 
     long calculateExpirationTime(long ttl, long maxIdle,
-                                              long now, long lastUpdateTime);
+                                 long now, long lastUpdateTime);
 
     void clear();
 

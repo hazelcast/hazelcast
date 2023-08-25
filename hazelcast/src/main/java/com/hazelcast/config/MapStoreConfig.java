@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.map.MapStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
@@ -34,8 +35,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * Contains the configuration for a Map Store.
  */
-@SuppressWarnings("checkstyle:methodcount")
-public class MapStoreConfig implements IdentifiedDataSerializable {
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:cyclomaticcomplexity"})
+public class MapStoreConfig implements IdentifiedDataSerializable, Versioned {
     /**
      * Default delay seconds for writing
      */
@@ -49,7 +50,13 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      */
     public static final boolean DEFAULT_WRITE_COALESCING = true;
 
+    /**
+     * Default offload behavior
+     */
+    public static final boolean DEFAULT_OFFLOAD = true;
+
     private boolean enabled = true;
+    private boolean offload = DEFAULT_OFFLOAD;
     private boolean writeCoalescing = DEFAULT_WRITE_COALESCING;
     private int writeDelaySeconds = DEFAULT_WRITE_DELAY_SECONDS;
     private int writeBatchSize = DEFAULT_WRITE_BATCH_SIZE;
@@ -87,6 +94,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
         writeBatchSize = config.getWriteBatchSize();
         initialLoadMode = config.getInitialLoadMode();
         writeCoalescing = config.isWriteCoalescing();
+        offload = config.isOffload();
         properties.putAll(config.getProperties());
     }
 
@@ -192,6 +200,43 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
     public MapStoreConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
+    }
+
+    /**
+     * Default value is {@value #DEFAULT_OFFLOAD}.
+     * <p>
+     * {@link MapStore} interaction can be slow compared to in-memory
+     * processing of data, to make partition threads available during
+     * {@link MapStore} interaction for other cluster operations,
+     * MapStore/MapLoader implementations are offloaded from
+     * partition threads to a different thread pool by default.
+     * <p>
+     * If you set this property to {@code false}, {@link
+     * MapStore} interaction will be done on partition threads.
+     * This may introduce latency for other operations
+     * which don't require {@link MapStore} interaction.
+     *
+     * @param offload set {@code true} to enable
+     *                offloading, otherwise set {@code false}
+     * @since 5.2
+     */
+    public MapStoreConfig setOffload(boolean offload) {
+        this.offload = offload;
+        return this;
+    }
+
+    /**
+     * Default value is {@value #DEFAULT_OFFLOAD}.
+     * <p>
+     * Enables and disables offloading behavior.
+     *
+     * @return {@code true} if this configuration
+     * is enabled, {@code false} otherwise
+     * @see #setOffload
+     * @since 5.2
+     */
+    public boolean isOffload() {
+        return offload;
     }
 
     /**
@@ -335,6 +380,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
                 + ", properties=" + properties
                 + ", initialLoadMode=" + initialLoadMode
                 + ", writeCoalescing=" + writeCoalescing
+                + ", offload=" + offload
                 + '}';
     }
 
@@ -350,21 +396,22 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
         MapStoreConfig that = (MapStoreConfig) o;
 
         return enabled == that.enabled
-            && writeCoalescing == that.writeCoalescing
-            && writeDelaySeconds == that.writeDelaySeconds
-            && writeBatchSize == that.writeBatchSize
-            && Objects.equals(implementation, that.implementation)
-            && Objects.equals(className, that.className)
-            && Objects.equals(factoryImplementation, that.factoryImplementation)
-            && Objects.equals(factoryClassName, that.factoryClassName)
-            && properties.equals(that.properties)
-            && initialLoadMode == that.initialLoadMode;
+                && writeCoalescing == that.writeCoalescing
+                && writeDelaySeconds == that.writeDelaySeconds
+                && writeBatchSize == that.writeBatchSize
+                && Objects.equals(implementation, that.implementation)
+                && Objects.equals(className, that.className)
+                && Objects.equals(factoryImplementation, that.factoryImplementation)
+                && Objects.equals(factoryClassName, that.factoryClassName)
+                && properties.equals(that.properties)
+                && initialLoadMode == that.initialLoadMode
+                && offload == that.offload;
     }
 
     @Override
     public final int hashCode() {
         return Objects.hash(enabled, writeCoalescing, implementation, className, factoryImplementation, factoryClassName,
-            writeDelaySeconds, writeBatchSize, properties, initialLoadMode);
+                writeDelaySeconds, writeBatchSize, properties, initialLoadMode, offload);
     }
 
 
@@ -390,6 +437,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
         out.writeObject(factoryImplementation);
         out.writeObject(properties);
         out.writeString(initialLoadMode.name());
+        out.writeBoolean(offload);
     }
 
     @Override
@@ -404,5 +452,6 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
         factoryImplementation = in.readObject();
         properties = in.readObject();
         initialLoadMode = InitialLoadMode.valueOf(in.readString());
+        offload = in.readBoolean();
     }
 }

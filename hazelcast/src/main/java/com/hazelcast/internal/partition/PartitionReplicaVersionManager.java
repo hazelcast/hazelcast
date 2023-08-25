@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,19 @@ public interface PartitionReplicaVersionManager {
     long[] getPartitionReplicaVersions(int partitionId, ServiceNamespace namespace);
 
     /**
+     * Returns replica versions for syncing to backup replicas, ensuring any replica versions
+     * that are marked explicitly for sync ({@code REQUIRES_SYNC}) are reset. This is necessary
+     * when syncing primary to backup replicas (anti-entropy, migration etc), otherwise there is
+     * risk of perpetual attempts to sync partition data which may be already in sync.
+     *
+     * @param partitionId
+     * @param namespace
+     * @return
+     * @see     com.hazelcast.internal.partition.impl.PartitionReplicaManager#REQUIRES_SYNC
+     */
+    long[] getPartitionReplicaVersionsForSync(int partitionId, ServiceNamespace namespace);
+
+    /**
      * Updates the partition replica version and triggers replica sync if the replica is dirty (e.g. the
      * received version is not expected and this node might have missed an update)
      *
@@ -87,4 +100,6 @@ public interface PartitionReplicaVersionManager {
      * @return service namespace for operation
      */
     ServiceNamespace getServiceNamespace(Operation operation);
+
+    void markPartitionReplicaAsSyncRequired(int partitionId, ServiceNamespace namespace, int replicaIndex);
 }

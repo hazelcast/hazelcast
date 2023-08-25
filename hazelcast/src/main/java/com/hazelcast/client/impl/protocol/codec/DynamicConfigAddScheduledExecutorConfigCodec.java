@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a scheduled executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("17e9b8645c69aa68e53792f26265eb07")
+@Generated("fa3a2207e415fbf49692d562094bbc8a")
 public final class DynamicConfigAddScheduledExecutorConfigCodec {
     //hex: 0x1B0A00
     public static final int REQUEST_MESSAGE_TYPE = 1772032;
@@ -49,7 +49,8 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
     private static final int REQUEST_CAPACITY_FIELD_OFFSET = REQUEST_DURABILITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET = REQUEST_CAPACITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_CAPACITY_POLICY_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CAPACITY_POLICY_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private DynamicConfigAddScheduledExecutorConfigCodec() {
@@ -74,7 +75,8 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         public int durability;
 
         /**
-         * maximum number of tasks that a scheduler can have at any given point in time per partition
+         * maximum number of tasks that a scheduler can have at any given point in time per partition or per node
+         * according to the capacity policy
          */
         public int capacity;
 
@@ -102,13 +104,24 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         public boolean statisticsEnabled;
 
         /**
+         * Capacity policy for the configured capacity value
+         */
+        public byte capacityPolicy;
+
+        /**
          * True if the statisticsEnabled is received from the client, false otherwise.
          * If this is false, statisticsEnabled has the default value for its type.
          */
         public boolean isStatisticsEnabledExists;
+
+        /**
+         * True if the capacityPolicy is received from the client, false otherwise.
+         * If this is false, capacityPolicy has the default value for its type.
+         */
+        public boolean isCapacityPolicyExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int durability, int capacity, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize, boolean statisticsEnabled) {
+    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int durability, int capacity, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize, boolean statisticsEnabled, byte capacityPolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddScheduledExecutorConfig");
@@ -120,6 +133,7 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         encodeInt(initialFrame.content, REQUEST_CAPACITY_FIELD_OFFSET, capacity);
         encodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET, mergeBatchSize);
         encodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET, statisticsEnabled);
+        encodeByte(initialFrame.content, REQUEST_CAPACITY_POLICY_FIELD_OFFSET, capacityPolicy);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
@@ -140,6 +154,12 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
             request.isStatisticsEnabledExists = true;
         } else {
             request.isStatisticsEnabledExists = false;
+        }
+        if (initialFrame.content.length >= REQUEST_CAPACITY_POLICY_FIELD_OFFSET + BYTE_SIZE_IN_BYTES) {
+            request.capacityPolicy = decodeByte(initialFrame.content, REQUEST_CAPACITY_POLICY_FIELD_OFFSET);
+            request.isCapacityPolicyExists = true;
+        } else {
+            request.isCapacityPolicyExists = false;
         }
         request.name = StringCodec.decode(iterator);
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);

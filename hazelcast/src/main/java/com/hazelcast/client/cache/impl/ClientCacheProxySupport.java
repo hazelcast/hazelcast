@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.EmptyCompletionListener;
-import com.hazelcast.internal.nearcache.impl.NearCachingHook;
+import com.hazelcast.internal.nearcache.impl.RemoteCallHook;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -97,6 +97,7 @@ import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.addCal
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.getSafely;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.handleFailureOnCompletionListener;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getDefaultAsyncExecutor;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
@@ -891,7 +892,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
                                   List<Map.Entry<Data, Data>>[] entriesPerPartition,
                                   long startNanos) {
         try {
-            NearCachingHook<K, V> nearCachingHook = createPutAllNearCachingHook(userInputMap.size());
+            RemoteCallHook<K, V> nearCachingHook = createPutAllNearCachingHook(userInputMap.size());
             // first we fill entry set per partition
             groupDataToPartitions(userInputMap, entriesPerPartition, nearCachingHook);
             // then we invoke the operations and sync on completion of these operations
@@ -903,13 +904,13 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     }
 
     // Overridden to inject hook for near cache population.
-    protected NearCachingHook<K, V> createPutAllNearCachingHook(int keySetSize) {
-        return NearCachingHook.EMPTY_HOOK;
+    protected RemoteCallHook<K, V> createPutAllNearCachingHook(int keySetSize) {
+        return RemoteCallHook.EMPTY_HOOK;
     }
 
     private void groupDataToPartitions(Map<? extends K, ? extends V> userInputMap,
                                        List<Map.Entry<Data, Data>>[] entriesPerPartition,
-                                       NearCachingHook nearCachingHook) {
+                                       RemoteCallHook nearCachingHook) {
         ClientPartitionService partitionService = getContext().getPartitionService();
 
         for (Map.Entry<? extends K, ? extends V> entry : userInputMap.entrySet()) {
@@ -935,7 +936,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
 
     protected void callPutAllSync(List<Map.Entry<Data, Data>>[] entriesPerPartition,
                                   Data expiryPolicyData,
-                                  NearCachingHook<K, V> nearCachingHook, long startNanos) {
+                                  RemoteCallHook<K, V> nearCachingHook, long startNanos) {
 
         List<ClientCacheProxySupportUtil.FutureEntriesTuple> futureEntriesTuples
                 = new ArrayList<>(entriesPerPartition.length);
@@ -995,7 +996,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
                     loadAllCalls.remove(delFuture);
                     handleFailureOnCompletionListener(listener, t);
                 }
-            });
+            }, getDefaultAsyncExecutor());
         } catch (Throwable t) {
             if (delegatingFuture != null) {
                 loadAllCalls.remove(delegatingFuture);

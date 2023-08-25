@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,8 +123,8 @@ public class SqlExpandViewTest extends SqlTestSupport {
                 .hasMessageContaining("Sorting is not supported for a streaming query");
 
         assertThatThrownBy(() -> instance().getSql().execute("SELECT MAX(v) FROM v"))
-                .hasMessageContaining("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
-                        "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
+                .hasMessageContaining("Streaming aggregation is supported only for window aggregation, with imposed order, " +
+                        "grouping by a window bound (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -139,7 +139,6 @@ public class SqlExpandViewTest extends SqlTestSupport {
                 .hasMessageContaining("DML operations not supported for views");
     }
 
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/20032")
     @Test
     public void test_referencedViewChanged() {
         // We create a view v2 as reading from v1, and then change v1.
@@ -149,19 +148,6 @@ public class SqlExpandViewTest extends SqlTestSupport {
         instance().getSql().execute("CREATE or replace VIEW v1 AS SELECT 'key=' || __key __key FROM " + MAP_NAME);
 
         assertRowsAnyOrder("select * from v2", rows(1, "key=1"));
-    }
-
-    @Test
-    // remove after https://github.com/hazelcast/hazelcast/issues/20032 is properly fixed
-    public void when_incompatibleViewChange_then_notAllowed() {
-        instance().getSql().execute("CREATE VIEW v1 AS SELECT __key FROM " + MAP_NAME);
-        assertThatThrownBy(() -> instance().getSql().execute(
-                "CREATE or REPLACE VIEW v1 AS SELECT 'key=' || __key __key FROM " + MAP_NAME))
-                .hasMessage("Can't replace view, the type for column '__key' changed from INTEGER to VARCHAR");
-
-        assertThatThrownBy(() -> instance().getSql().execute(
-                "CREATE or REPLACE VIEW v1 AS SELECT __key AS a FROM " + MAP_NAME))
-                .hasMessage("Can't replace view, the new view doesn't contain column '__key'");
     }
 
     @Test

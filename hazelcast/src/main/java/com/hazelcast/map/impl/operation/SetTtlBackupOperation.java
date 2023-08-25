@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,11 +44,11 @@ public class SetTtlBackupOperation extends KeyBasedMapOperation implements Backu
 
     @Override
     protected void runInternal() {
-        recordStore.setTtl(dataKey, ttl, true);
+        recordStore.setTtlBackup(dataKey, ttl);
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
             publishWanUpdate(dataKey, record.getValue());

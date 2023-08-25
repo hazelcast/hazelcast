@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -234,7 +234,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = createMap();
         map.putAll(expectedMap);
-        assertEquals(map.size(), 100);
+        assertEquals(100, map.size());
         for (int i = 0; i < 100; i++) {
             int actual = map.get(i);
             assertEquals(i, actual);
@@ -258,7 +258,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = createMap();
         map.putAll(expectedMap);
-        assertEquals(map.size(), 1000);
+        assertEquals(1000, map.size());
         for (int i = 0; i < 1000; i++) {
             int actual = map.get(i);
             assertEquals(i, actual);
@@ -354,6 +354,15 @@ public class ClientMapTest extends HazelcastTestSupport {
         fillMap(map);
         Future<String> future = map.removeAsync("key4").toCompletableFuture();
         assertEquals("value4", future.get());
+        assertEquals(9, map.size());
+    }
+
+    @Test
+    public void testAsyncDelete() throws Exception {
+        IMap<String, String> map = createMap();
+        fillMap(map);
+        Future<Boolean> future = map.deleteAsync("key4").toCompletableFuture();
+        assertTrue(future.get());
         assertEquals(9, map.size());
     }
 

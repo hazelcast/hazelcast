@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.jet.sql.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.opt.cost.CostFactory;
-import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdBoundedness;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdPrunability;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdRowCount;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
@@ -31,7 +31,9 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSchema;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import org.apache.calcite.config.CalciteConnectionConfig;
@@ -51,7 +53,13 @@ import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.tools.RuleSet;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Optimizer context which holds the whole environment for the given optimization session.
@@ -60,10 +68,13 @@ import java.util.List;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public final class OptimizerContext {
 
+    private static final ThreadLocal<OptimizerContext> THREAD_CONTEXT = new ThreadLocal<>();
+
     private static final RelMetadataProvider METADATA_PROVIDER = ChainedRelMetadataProvider.of(ImmutableList.of(
             HazelcastRelMdRowCount.SOURCE,
             HazelcastRelMdBoundedness.SOURCE,
             HazelcastRelMdWatermarkedFields.SOURCE,
+            HazelcastRelMdPrunability.SOURCE,
             DefaultRelMetadataProvider.INSTANCE
     ));
 
@@ -73,6 +84,8 @@ public final class OptimizerContext {
     private final QueryParser parser;
     private final QueryConverter converter;
     private final QueryPlanner planner;
+    private final Set<PlanObjectKey> usedViews = new HashSet<>();
+    private final Deque<String> viewExpansionStack = new ArrayDeque<>();
 
     private OptimizerContext(
             HazelcastRelOptCluster cluster,
@@ -113,18 +126,25 @@ public final class OptimizerContext {
             int memberCount,
             IMapResolver iMapResolver
     ) {
-        DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
-
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
         HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
-        VolcanoPlanner volcanoPlanner = createPlanner(distributionTraitDef);
-        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, distributionTraitDef);
+        VolcanoPlanner volcanoPlanner = createPlanner();
+
+        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner);
 
         QueryParser parser = new QueryParser(validator);
         QueryConverter converter = new QueryConverter(validator, catalogReader, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
         return new OptimizerContext(cluster, parser, converter, planner);
+    }
+
+    public static void setThreadContext(OptimizerContext context) {
+        THREAD_CONTEXT.set(context);
+    }
+
+    public static OptimizerContext getThreadContext() {
+        return THREAD_CONTEXT.get();
     }
 
     /**
@@ -145,6 +165,10 @@ public final class OptimizerContext {
      */
     public QueryConvertResult convert(SqlNode node) {
         return converter.convert(node);
+    }
+
+    public RelNode convertView(SqlNode node) {
+        return converter.convertView(node);
     }
 
     /**
@@ -177,7 +201,7 @@ public final class OptimizerContext {
                 CONNECTION_CONFIG);
     }
 
-    private static VolcanoPlanner createPlanner(DistributionTraitDef distributionTraitDef) {
+    private static VolcanoPlanner createPlanner() {
         VolcanoPlanner planner = new VolcanoPlanner(
                 CostFactory.INSTANCE,
                 Contexts.of(CONNECTION_CONFIG)
@@ -186,24 +210,32 @@ public final class OptimizerContext {
         planner.clearRelTraitDefs();
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
         planner.addRelTraitDef(RelCollationTraitDef.INSTANCE);
-        planner.addRelTraitDef(distributionTraitDef);
 
         return planner;
     }
 
-    private static HazelcastRelOptCluster createCluster(
-            VolcanoPlanner planner,
-            DistributionTraitDef distributionTraitDef
-    ) {
-        HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(
-                planner,
-                HazelcastRexBuilder.INSTANCE,
-                distributionTraitDef
-        );
+    private static HazelcastRelOptCluster createCluster(VolcanoPlanner planner) {
+        HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(planner, HazelcastRexBuilder.INSTANCE);
 
         // Wire up custom metadata providers.
         cluster.setMetadataProvider(JaninoRelMetadataProvider.of(METADATA_PROVIDER));
 
         return cluster;
+    }
+
+    public Deque<String> getViewExpansionStack() {
+        return viewExpansionStack;
+    }
+
+    public Set<PlanObjectKey> getUsedViews() {
+        return usedViews;
+    }
+
+    public void dump(ILogger logger) {
+        StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw);
+        planner.dump(pw);
+        pw.flush();
+        logger.info(sw.toString());
     }
 }

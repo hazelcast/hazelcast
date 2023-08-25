@@ -8,6 +8,7 @@
         "session-heartbeat-interval-seconds": 0,
         "missing-cp-member-auto-removal-seconds": -1,
         "data-load-timeout-seconds": 0,
+        "cp-member-priority": 0,
         "raft-algorithm": {
           "leader-election-timeout-in-millis": 0,
           "leader-heartbeat-period-in-millis": 0,

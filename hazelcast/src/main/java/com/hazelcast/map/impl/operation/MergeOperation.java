@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,18 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.MergeOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.MapMergeResponse;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
@@ -30,9 +38,13 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -63,6 +75,7 @@ public class MergeOperation extends MapOperation
 
     private transient List<Data> invalidationKeys;
     private transient boolean hasMergedValues;
+    private transient BitSet nonWanReplicatedKeys;
 
     private List backupPairs;
 
@@ -79,21 +92,41 @@ public class MergeOperation extends MapOperation
     }
 
     @Override
+    protected void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
+        if (recordStore != null) {
+            recordStore.checkIfLoaded();
+        }
+    }
+
+    @Override
     protected boolean disableWanReplicationEvent() {
         return disableWanReplicationEvent;
     }
 
     @Override
+    public State createState() {
+        return super.createState()
+                .setMergingEntries(mergingEntries)
+                .setMergePolicy(mergePolicy);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return MergeOpSteps.READ;
+    }
+
+    @Override
+    public void applyState(State state) {
+        hasMergedValues = (boolean) state.getResult();
+        backupPairs = state.getBackupPairs();
+        hasBackups = mapContainer.getTotalBackupCount() > 0;
+    }
+
+    @Override
     protected void runInternal() {
         // Check once in a minute as earliest to avoid log bursts.
-        if (shouldCheckNow(mapContainer.getLastInvalidMergePolicyCheckTime())) {
-            try {
-                checkMapMergePolicy(mapContainer.getMapConfig(), mergePolicy.getClass().getName(),
-                        getNodeEngine().getSplitBrainMergePolicyProvider());
-            } catch (InvalidConfigurationException e) {
-                logger().log(Level.WARNING, e.getMessage(), e);
-            }
-        }
+        checkMergePolicy(mapContainer, mergePolicy);
 
         hasMapListener = mapEventPublisher.hasEventListener(name);
         hasWanReplication = mapContainer.isWanReplicationEnabled()
@@ -109,6 +142,23 @@ public class MergeOperation extends MapOperation
             invalidationKeys = new ArrayList<>(mergingEntries.size());
         }
 
+        if (hasWanReplication && hasBackups) {
+            nonWanReplicatedKeys = new BitSet(mergingEntries.size());
+        }
+
+        // This marking is needed because otherwise after split-brain heal, we can
+        // end up not marked partitions even they have indexed data.
+        //
+        // Problematic case definition:
+        // - you have two partitions 0,1
+        // - add index
+        // - do split (now each brain has its own partitions as 0,1 but also each
+        //   brain has one-not-indexed-partition 1 and 0 respectively)
+        // - heal split
+        // - merging starts and merging transfers data to un-marked partition 1.
+        // - since 1 is unmarked, it will not be available for indexed searches.
+        Queue<InternalIndex> notMarkedIndexes = beginIndexMarking();
+
         // if currentIndex is not zero, this is a
         // continuation of the operation after a NativeOOME
         int size = mergingEntries.size();
@@ -116,6 +166,43 @@ public class MergeOperation extends MapOperation
             merge(mergingEntries.get(currentIndex));
             currentIndex++;
         }
+
+        finishIndexMarking(notMarkedIndexes);
+    }
+
+    public static void checkMergePolicy(MapContainer mapContainer, SplitBrainMergePolicy mergePolicy) {
+        NodeEngine nodeEngine = mapContainer.getMapServiceContext().getNodeEngine();
+        if (shouldCheckNow(mapContainer.getLastInvalidMergePolicyCheckTime())) {
+            try {
+                checkMapMergePolicy(mapContainer.getMapConfig(), mergePolicy.getClass().getName(),
+                        nodeEngine.getSplitBrainMergePolicyProvider());
+            } catch (InvalidConfigurationException e) {
+                nodeEngine.getLogger(MergeOperation.class).log(Level.WARNING, e.getMessage(), e);
+            }
+        }
+    }
+
+    public void finishIndexMarking(Queue<InternalIndex> notIndexedPartitions) {
+        InternalIndex indexToMark;
+        while ((indexToMark = notIndexedPartitions.poll()) != null) {
+            indexToMark.markPartitionAsIndexed(getPartitionId());
+        }
+    }
+
+    public Queue<InternalIndex> beginIndexMarking() {
+        int partitionId = getPartitionId();
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        InternalIndex[] indexesSnapshot = indexes.getIndexes();
+
+        Queue<InternalIndex> notIndexedPartitions = new LinkedList<>();
+        for (InternalIndex internalIndex : indexesSnapshot) {
+            if (!internalIndex.hasPartitionIndexed(partitionId)) {
+                internalIndex.beginPartitionUpdate();
+
+                notIndexedPartitions.add(internalIndex);
+            }
+        }
+        return notIndexedPartitions;
     }
 
     private static boolean shouldCheckNow(AtomicLong lastLogTime) {
@@ -132,7 +219,8 @@ public class MergeOperation extends MapOperation
         Data dataKey = getNodeEngine().toData(mergingEntry.getRawKey());
         Data oldValue = hasMapListener ? getValue(dataKey) : null;
 
-        if (recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance())) {
+        MapMergeResponse response = recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance());
+        if (response.isMergeApplied()) {
             hasMergedValues = true;
 
             Data dataValue = getValueOrPostProcessedValue(dataKey, getValue(dataKey));
@@ -142,8 +230,14 @@ public class MergeOperation extends MapOperation
                 mapEventPublisher.publishEvent(getCallerAddress(), name, MERGED, dataKey, oldValue, dataValue);
             }
 
+            // Don't WAN replicate merge events where values don't change
             if (hasWanReplication) {
-                publishWanUpdate(dataKey, dataValue);
+                if (response != MapMergeResponse.RECORDS_ARE_EQUAL) {
+                    publishWanUpdate(dataKey, dataValue);
+                } else if (hasBackups) {
+                    // Mark this dataKey so we don't WAN replicate via backups
+                    nonWanReplicatedKeys.set(backupPairs.size() / 2);
+                }
             }
 
             if (hasInvalidation) {
@@ -159,15 +253,15 @@ public class MergeOperation extends MapOperation
         }
     }
 
-    private Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
-        if (!isPostProcessing(recordStore)) {
+    public Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
+        if (!isPostProcessingOrHasInterceptor(recordStore)) {
             return dataValue;
         }
         Record record = recordStore.getRecord(dataKey);
         return mapServiceContext.toData(record.getValue());
     }
 
-    private Data getValue(Data dataKey) {
+    public Data getValue(Data dataKey) {
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
             return mapServiceContext.toData(record.getValue());
@@ -196,7 +290,7 @@ public class MergeOperation extends MapOperation
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         invalidateNearCache(invalidationKeys);
 
         super.afterRunInternal();
@@ -204,8 +298,13 @@ public class MergeOperation extends MapOperation
 
     @Override
     public Operation getBackupOperation() {
+        // We need a fresh BitSet (where applicable) that is indexed to the list of elements
+        //  that will actually be backed up in this operation.
+        BitSet localNonWanReplicatedKeys = nonWanReplicatedKeys != null && !nonWanReplicatedKeys.isEmpty()
+                ? new BitSet(backupPairs.size()) : null;
         return new PutAllBackupOperation(name,
-                toBackupListByRemovingEvictedRecords(), disableWanReplicationEvent);
+                toBackupListByRemovingEvictedRecords(localNonWanReplicatedKeys), localNonWanReplicatedKeys,
+                disableWanReplicationEvent);
     }
 
     /**
@@ -213,12 +312,19 @@ public class MergeOperation extends MapOperation
      * they have been merged. We are re-checking
      * backup pair list to eliminate evicted entries.
      *
+     * @param localNonWanReplicatedKeys used to show which keys
+     *                                  should NOT be replicated
+     *                                  over WAN, or else null if
+     *                                  all keys should be
+     *
      * @return list of existing records which can
-     * safely be transferred to backup replica.
+     * safely be transferred to the backup replica.
      */
     @Nonnull
-    private List toBackupListByRemovingEvictedRecords() {
+    @SuppressWarnings("checkstyle:magicnumber")
+    private List toBackupListByRemovingEvictedRecords(@Nullable BitSet localNonWanReplicatedKeys) {
         List toBackupList = new ArrayList(backupPairs.size());
+        final boolean hasNonWanReplicatedKeys = localNonWanReplicatedKeys != null;
         for (int i = 0; i < backupPairs.size(); i += 2) {
             Data dataKey = ((Data) backupPairs.get(i));
             Record record = recordStore.getRecord(dataKey);
@@ -227,6 +333,9 @@ public class MergeOperation extends MapOperation
                 toBackupList.add(backupPairs.get(i + 1));
                 toBackupList.add(record);
                 toBackupList.add(recordStore.getExpirySystem().getExpiryMetadata(dataKey));
+                if (hasNonWanReplicatedKeys && nonWanReplicatedKeys.get(i / 2)) {
+                    localNonWanReplicatedKeys.set((toBackupList.size() - 4) / 4);
+                }
             }
         }
         return toBackupList;

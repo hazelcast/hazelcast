@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,30 +18,11 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.internal.util.Clock;
 
-import static com.hazelcast.internal.util.TimeUtil.zeroOutMs;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 /**
  * @param <V> the type of value which is in the Record
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface Record<V> {
-    /**
-     * Base time to be used for storing time values as diffs
-     * (int) rather than full blown epoch based vals (long)
-     * This allows for a space in seconds, of roughly 68 years.
-     *
-     * Reference value (1514764800000) -
-     * Monday, January 1, 2018 12:00:00 AM
-     *
-     * The fixed time in the past (instead of {@link
-     * System#currentTimeMillis()} prevents any time
-     * discrepancies among nodes, mis-translated as
-     * diffs of -1 ie. {@link Record#UNSET} values. (see.
-     * https://github.com/hazelcast/hazelcast-enterprise/issues/2527)
-     */
-    long EPOCH_TIME = zeroOutMs(1514764800000L);
 
     /**
      * Represents an unset value. This is the default
@@ -145,24 +126,6 @@ public interface Record<V> {
     }
 
     default void setLastStoredTime(long lastStoredTime) {
-    }
-
-    default long recomputeWithBaseTime(int value) {
-        if (value == UNSET) {
-            return 0L;
-        }
-
-        long exploded = SECONDS.toMillis(value);
-        return exploded + EPOCH_TIME;
-    }
-
-    default int stripBaseTime(long value) {
-        int diff = UNSET;
-        if (value > 0) {
-            diff = (int) MILLISECONDS.toSeconds(value - EPOCH_TIME);
-        }
-
-        return diff;
     }
 
     /**

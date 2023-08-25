@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,11 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.EmployeeDTO;
@@ -31,15 +28,25 @@ import example.serialization.NodeDTO;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.nio.ByteOrder;
 
-import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
+import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactWithSchemaStreamSerializerTest {
+
+    @Parameterized.Parameter
+    public ByteOrder byteOrder;
+
+    @Parameterized.Parameters(name = "byteOrder:{0}")
+    public static Object[] parameters() {
+        return new Object[]{ByteOrder.BIG_ENDIAN, ByteOrder.LITTLE_ENDIAN};
+    }
 
     @Test
     public void testReadAsGenericRecord() throws IOException {
@@ -56,20 +63,10 @@ public class CompactWithSchemaStreamSerializerTest {
 
         // Create a second schema service so that schemas are not shared across these two
         // This is to make sure that toObject call will use the schema in the data
-        InternalSerializationService serializationService2 = createSerializationService();
+        SerializationService serializationService2 = createSerializationService();
 
         GenericRecord actual = serializationService2.toObject(data);
         assertEquals(expected, actual);
-    }
-
-    private InternalSerializationService createSerializationService() {
-        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
     }
 
     @Test
@@ -136,5 +133,11 @@ public class CompactWithSchemaStreamSerializerTest {
         SerializationService serializationService2 = createSerializationService();
         NodeDTO actual = serializationService2.toObject(data);
         assertEquals(expected, actual);
+    }
+
+    private SerializationService createSerializationService() {
+        SerializationConfig config = new SerializationConfig();
+        config.setByteOrder(byteOrder);
+        return CompactTestUtil.createSerializationService(config);
     }
 }

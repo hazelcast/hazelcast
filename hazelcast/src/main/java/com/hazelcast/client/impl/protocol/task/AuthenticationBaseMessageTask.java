@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -167,37 +168,31 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     }
 
     private ClientMessage prepareUnauthenticatedClientMessage() {
-        boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
+        boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         Connection connection = endpoint.getConnection();
         logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid
                 + " and clientName " + clientName + ", authentication failed");
         byte status = CREDENTIALS_FAILED.getId();
-        return encodeAuth(status, null, null, serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId(),
-                clientFailoverSupported);
+        return encodeAuth(status, null, null, (byte) -1, "", -1, null, failoverSupported, null, null);
     }
 
     private ClientMessage prepareNotAllowedInCluster() {
-        boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
+        boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         byte status = NOT_ALLOWED_IN_CLUSTER.getId();
-        return encodeAuth(status, null, null, serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId(),
-                clientFailoverSupported);
+        return encodeAuth(status, null, null, (byte) -1, "", -1, null, failoverSupported, null, null);
     }
 
     private ClientMessage prepareSerializationVersionMismatchClientMessage() {
-        boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
-        return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null,
-                serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(),
-                clientEngine.getClusterService().getClusterId(), clientFailoverSupported);
+        boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
+        return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null, (byte) -1, "",
+                -1, null, failoverSupported, null, null);
     }
 
     private ClientMessage prepareAuthenticatedClientMessage() {
         ServerConnection connection = endpoint.getConnection();
         setConnectionType();
-        endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(),
-                clientName, labels);
+        setTpcTokenToEndpoint();
+        endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(), clientName, labels);
         validateNodeStart();
         final UUID clusterId = clientEngine.getClusterService().getClusterId();
         // additional check: cluster id may be null when member has not started yet;
@@ -214,23 +209,56 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         final Address thisAddress = clientEngine.getThisAddress();
         UUID uuid = clientEngine.getClusterService().getLocalMember().getUuid();
         byte status = AUTHENTICATED.getId();
-        boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
-        return encodeAuth(status, thisAddress, uuid, serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clusterId, clientFailoverSupported);
+        boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
+        String serverVersion = getMemberBuildInfo().getVersion();
+        byte[] tpcToken = endpoint.getTpcToken() != null ? endpoint.getTpcToken().getContent() : null;
+        return encodeAuth(status, thisAddress, uuid, serializationService.getVersion(), serverVersion,
+                clientEngine.getPartitionService().getPartitionCount(), clusterId, failoverSupported,
+                nodeEngine.getTpcServerBootstrap().getClientPorts(), tpcToken);
     }
 
     private void setConnectionType() {
         connection.setConnectionType(getClientType());
     }
 
+    protected void setTpcTokenToEndpoint() {
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,
-                                                byte serializationVersion,
-                                                int partitionCount, UUID clusterId, boolean failoverSupported);
+                                                byte serializationVersion, String serverVersion,
+                                                int partitionCount, UUID clusterId, boolean failoverSupported,
+                                                List<Integer> tpcPorts, byte[] tpcToken);
 
     protected abstract String getClientType();
 
     @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return (ClientMessage) response;
+    }
+
+    @Override
     public Permission getRequiredPermission() {
+        return null;
+    }
+
+    @Override
+    public String getServiceName() {
+        return null;
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return null;
+    }
+
+    @Override
+    public Object[] getParameters() {
         return null;
     }
 }

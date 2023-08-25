@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,33 @@ package com.hazelcast.jet.elastic;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.impl.util.Util;
-import org.apache.http.HttpHost;
-import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
+import org.testcontainers.containers.Network;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import java.time.Duration;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.elastic.ElasticClients.client;
 
 public final class ElasticSupport {
 
-    public static final DockerImageName ELASTICSEARCH_IMAGE = DockerImageName.parse("elasticsearch:7.10.1")
-            .asCompatibleSubstituteFor("docker.elastic.co/elasticsearch/elasticsearch");
+    public static final String TEST_ELASTIC_VERSION = System.getProperty("test.elastic.version", "7.17.7");
+
+    public static final DockerImageName ELASTICSEARCH_IMAGE = DockerImageName
+            .parse("docker.elastic.co/elasticsearch/elasticsearch:" + TEST_ELASTIC_VERSION);
+
     public static final int PORT = 9200;
+
+    public static Network network = Network.newNetwork();
 
     // Elastic container takes long time to start up, reusing the container for speedup
     public static final Supplier<ElasticsearchContainer> elastic = Util.memoize(() -> {
-        ElasticsearchContainer elastic = new ElasticsearchContainer(ELASTICSEARCH_IMAGE);
+        ElasticsearchContainer elastic = new ElasticsearchContainer(ELASTICSEARCH_IMAGE)
+                .withNetwork(network)
+                .withNetworkAliases("elastic")
+                .withStartupTimeout(Duration.ofMinutes(2L));
         elastic.start();
         Runtime.getRuntime().addShutdownHook(new Thread(elastic::stop));
         return elastic;
@@ -49,7 +57,8 @@ public final class ElasticSupport {
         ElasticsearchContainer elastic = new ElasticsearchContainer(ELASTICSEARCH_IMAGE)
                 .withEnv("ELASTIC_USERNAME", "elastic")
                 .withEnv("ELASTIC_PASSWORD", "SuperSecret")
-                .withEnv("xpack.security.enabled", "true");
+                .withEnv("xpack.security.enabled", "true")
+                .withStartupTimeout(Duration.ofMinutes(2L));
 
         elastic.start();
         Runtime.getRuntime().addShutdownHook(new Thread(elastic::stop));
@@ -60,16 +69,18 @@ public final class ElasticSupport {
     }
 
     public static SupplierEx<RestClientBuilder> elasticClientSupplier() {
-        String address = elastic.get().getHttpHostAddress();
-        return () -> RestClient.builder(HttpHost.create(address));
+        ElasticsearchContainer container = elastic.get();
+        String containerHost = container.getHost();
+        Integer port = container.getMappedPort(PORT);
+        return () -> client(containerHost, port);
     }
 
     public static SupplierEx<RestClientBuilder> secureElasticClientSupplier() {
         ElasticsearchContainer container = elastic.get();
-        String containerIp = container.getContainerIpAddress();
+        String containerHost = container.getHost();
         Integer port = container.getMappedPort(PORT);
 
-        return () -> client("elastic", "SuperSecret", containerIp, port);
+        return () -> client("elastic", "SuperSecret", containerHost, port);
     }
 
 }

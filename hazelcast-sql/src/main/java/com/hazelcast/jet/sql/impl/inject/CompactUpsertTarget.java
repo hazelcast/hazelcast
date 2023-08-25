@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ package com.hazelcast.jet.sql.impl.inject;
 import com.hazelcast.internal.serialization.impl.compact.DeserializedSchemaBoundGenericRecordBuilder;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
@@ -55,7 +56,7 @@ class CompactUpsertTarget implements UpsertTarget {
         boolean hasField = schema.hasField(path);
         if (!hasField) {
             return value -> {
-                throw QueryException.error("Unable to inject a non-null value to \"" + path + "\"");
+                throw QueryException.error("Field \"" + path + "\" doesn't exist in Compact Schema");
             };
         }
 
@@ -87,6 +88,8 @@ class CompactUpsertTarget implements UpsertTarget {
                 return value -> builder.setTimestamp(path, (LocalDateTime) value);
             case TIMESTAMP_WITH_TIMEZONE:
                 return value -> builder.setTimestampWithTimezone(path, (OffsetDateTime) value);
+            case COMPACT:
+                return createRowValueInjector(path, queryDataType);
             default:
                 throw QueryException.error(kind + " kind is not supported in SQL with Compact format!");
         }
@@ -102,5 +105,11 @@ class CompactUpsertTarget implements UpsertTarget {
         GenericRecord record = builder.build();
         builder = null;
         return record;
+    }
+
+    private UpsertInjector createRowValueInjector(String path, QueryDataType targetDataType) {
+        return value -> {
+            builder.setGenericRecord(path, UpsertTargetUtils.convertRowToCompactType((RowValue) value, targetDataType));
+        };
     }
 }

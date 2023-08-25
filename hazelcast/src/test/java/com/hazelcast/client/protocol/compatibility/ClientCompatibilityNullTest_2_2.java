@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -579,6 +579,9 @@ public class ClientCompatibilityNullTest_2_2 {
     @Test
     public void test_MapDeleteCodec_decodeResponse() {
         int fileClientMessageIndex = 60;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MapDeleteCodec.ResponseParameters parameters = MapDeleteCodec.decodeResponse(fromFile);
+        assertFalse(parameters.isResponseExists);
     }
 
     @Test
@@ -5828,7 +5831,7 @@ public class ClientCompatibilityNullTest_2_2 {
     @Test
     public void test_DynamicConfigAddScheduledExecutorConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 735;
-        ClientMessage encoded = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, null, aString, anInt, aBoolean);
+        ClientMessage encoded = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, null, aString, anInt, aBoolean, aByte);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5854,7 +5857,7 @@ public class ClientCompatibilityNullTest_2_2 {
     @Test
     public void test_DynamicConfigAddMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 739;
-        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, null, aBoolean, aString, aString, anInt, aString, null, null, aBoolean, null, null, null, null, null, null, null, null, null, null, null, null, anInt, aBoolean);
+        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, null, aBoolean, aString, aString, anInt, aString, null, null, aBoolean, null, null, null, null, null, null, null, null, null, null, null, null, anInt, aBoolean, aDataPersistenceConfig, aTieredStoreConfig, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5880,7 +5883,7 @@ public class ClientCompatibilityNullTest_2_2 {
     @Test
     public void test_DynamicConfigAddCacheConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 743;
-        ClientMessage encoded = DynamicConfigAddCacheConfigCodec.encodeRequest(aString, null, null, aBoolean, aBoolean, aBoolean, aBoolean, null, null, null, null, anInt, anInt, aString, null, null, anInt, aBoolean, null, null, null, null, null, null, null, null, null);
+        ClientMessage encoded = DynamicConfigAddCacheConfigCodec.encodeRequest(aString, null, null, aBoolean, aBoolean, aBoolean, aBoolean, null, null, null, null, anInt, anInt, aString, null, null, anInt, aBoolean, null, null, null, null, null, null, null, null, null, aDataPersistenceConfig);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6287,6 +6290,7 @@ public class ClientCompatibilityNullTest_2_2 {
         assertTrue(isEqual(aString, parameters.memberVersion));
         assertTrue(isEqual(null, parameters.jetVersion));
         assertTrue(isEqual(aLong, parameters.clusterTime));
+        assertFalse(parameters.isClusterIdExists);
     }
 
     @Test
@@ -6612,6 +6616,8 @@ public class ClientCompatibilityNullTest_2_2 {
         assertTrue(isEqual(null, parameters.rowPage));
         assertTrue(isEqual(aLong, parameters.updateCount));
         assertTrue(isEqual(null, parameters.error));
+        assertFalse(parameters.isIsInfiniteRowsExists);
+        assertFalse(parameters.isPartitionArgumentIndexExists);
     }
 
     @Test

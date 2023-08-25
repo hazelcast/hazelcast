@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,6 +133,15 @@ public class SlidingWindowPTest {
                 .disableCompleteCall()
                 .input(wmList)
                 .expectOutput(wmList);
+    }
+
+    @Test
+    public void when_multiKeyWatermarkReceived_then_emitOnlySupportedWm() {
+        List<Watermark> wmList = asList(wm(1, (byte) 0), wm(1, (byte) 1), wm(1, (byte) 2));
+        verifyProcessor(supplier)
+                .disableCompleteCall()
+                .input(wmList)
+                .expectOutput(singletonList(wm(1)));
     }
 
     @Test

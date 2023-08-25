@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static java.lang.String.format;
@@ -76,7 +76,10 @@ public final class ChunkSerDeHelper {
 
 
     public void writeChunkedOperations(ObjectDataOutput out) throws IOException {
-        IsEndOfChunk isEndOfChunk = new IsEndOfChunk(out, maxTotalChunkedDataInBytes);
+        assert out instanceof BufferObjectDataOutput;
+
+        BufferObjectDataOutput bufferedOut = (BufferObjectDataOutput) out;
+        IsEndOfChunk isEndOfChunk = new IsEndOfChunk(maxTotalChunkedDataInBytes);
 
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {
 
@@ -96,20 +99,21 @@ public final class ChunkSerDeHelper {
 
                 out.writeObject(chunk);
 
-                if (isEndOfChunk.getAsBoolean()) {
+                if (isEndOfChunk.test(bufferedOut)) {
                     break;
                 }
             }
 
-            if (isEndOfChunk.getAsBoolean()) {
-                logEndOfChunk(isEndOfChunk);
+            if (isEndOfChunk.test(bufferedOut)) {
+                logEndOfChunk(bufferedOut, isEndOfChunk);
                 break;
             }
         }
+
         // indicates end of chunked state
         out.writeObject(null);
 
-        logEndOfAllChunks(isEndOfChunk);
+        logEndOfAllChunks(bufferedOut, isEndOfChunk);
     }
 
     private void logCurrentChunk(ChunkSupplier chunkSupplier) {
@@ -121,18 +125,18 @@ public final class ChunkSerDeHelper {
                 partitionId, chunkSupplier));
     }
 
-    private void logEndOfChunk(IsEndOfChunk isEndOfChunk) {
+    private void logEndOfChunk(BufferObjectDataOutput out, IsEndOfChunk isEndOfChunk) {
         if (!logger.isFinestEnabled()) {
             return;
         }
 
         logger.finest(format("Chunk is full [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
                 partitionId,
-                MemorySize.toPrettyString(maxTotalChunkedDataInBytes),
-                MemorySize.toPrettyString(isEndOfChunk.bytesWrittenSoFar())));
+                Capacity.toPrettyString(maxTotalChunkedDataInBytes),
+                Capacity.toPrettyString(isEndOfChunk.bytesWrittenSoFar(out))));
     }
 
-    private void logEndOfAllChunks(IsEndOfChunk isEndOfChunk) {
+    private void logEndOfAllChunks(BufferObjectDataOutput out, IsEndOfChunk isEndOfChunk) {
         if (!logger.isFinestEnabled()) {
             return;
         }
@@ -148,32 +152,34 @@ public final class ChunkSerDeHelper {
         if (allDone) {
             logger.finest(format("Last chunk was sent [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
                     partitionId,
-                    MemorySize.toPrettyString(maxTotalChunkedDataInBytes),
-                    MemorySize.toPrettyString(isEndOfChunk.bytesWrittenSoFar())));
+                    Capacity.toPrettyString(maxTotalChunkedDataInBytes),
+                    Capacity.toPrettyString(isEndOfChunk.bytesWrittenSoFar(out))));
         }
     }
 
-    private static final class IsEndOfChunk implements BooleanSupplier {
+    private static final class IsEndOfChunk implements Predicate<BufferObjectDataOutput> {
 
-        private final int positionStart;
+        private int positionStart;
+        private boolean initialized;
+
         private final int maxTotalChunkedDataInBytes;
-        private final BufferObjectDataOutput out;
 
-        private IsEndOfChunk(ObjectDataOutput out, int maxTotalChunkedDataInBytes) {
+        private IsEndOfChunk(int maxTotalChunkedDataInBytes) {
             assert maxTotalChunkedDataInBytes > 0
                     : "Found maxTotalChunkedDataInBytes: " + maxTotalChunkedDataInBytes;
-
-            this.out = ((BufferObjectDataOutput) out);
-            this.positionStart = ((BufferObjectDataOutput) out).position();
             this.maxTotalChunkedDataInBytes = maxTotalChunkedDataInBytes;
         }
 
         @Override
-        public boolean getAsBoolean() {
-            return bytesWrittenSoFar() >= maxTotalChunkedDataInBytes;
+        public boolean test(BufferObjectDataOutput out) {
+            return bytesWrittenSoFar(out) >= maxTotalChunkedDataInBytes;
         }
 
-        public int bytesWrittenSoFar() {
+        public int bytesWrittenSoFar(BufferObjectDataOutput out) {
+            if (!initialized) {
+                positionStart = out.position();
+                initialized = true;
+            }
             return out.position() - positionStart;
         }
     }

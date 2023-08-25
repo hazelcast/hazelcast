@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     private static final Map<TestUtil.ClientPrefix, String> PREFIX_TO_CLIENT_TYPE = new HashMap<>(6);
 
     static {
+        PREFIX_TO_CLIENT_TYPE.put(TestUtil.ClientPrefix.CLC, ConnectionType.CL_CLIENT);
         PREFIX_TO_CLIENT_TYPE.put(TestUtil.ClientPrefix.CPP, ConnectionType.CPP_CLIENT);
         PREFIX_TO_CLIENT_TYPE.put(TestUtil.ClientPrefix.CSHARP, ConnectionType.CSHARP_CLIENT);
         PREFIX_TO_CLIENT_TYPE.put(TestUtil.ClientPrefix.JAVA, ConnectionType.JAVA_CLIENT);
@@ -81,6 +82,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     public static Collection<Object[]> parameters() {
         return asList(
                 new Object[][]{
+                        {TestUtil.ClientPrefix.CLC},
                         {TestUtil.ClientPrefix.CPP},
                         {TestUtil.ClientPrefix.CSHARP},
                         {TestUtil.ClientPrefix.GO},

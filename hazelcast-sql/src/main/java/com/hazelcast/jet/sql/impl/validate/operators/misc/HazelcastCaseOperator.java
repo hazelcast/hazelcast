@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference.wrap;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
 import static org.apache.calcite.util.Static.RESOURCE;
 
 public final class HazelcastCaseOperator extends SqlOperator {
@@ -168,7 +169,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
     private boolean typeCheckWhen(SqlValidatorScope scope, HazelcastSqlValidator validator, SqlNodeList whenList) {
         for (SqlNode node : whenList) {
             RelDataType type = validator.deriveType(scope, node);
-            if (type.getSqlTypeName() == SqlTypeName.NULL) {
+            if (isNullOrUnknown(type.getSqlTypeName())) {
                 type = validator.getTypeFactory().createSqlType(SqlTypeName.BOOLEAN);
                 validator.setValidatedNodeType(node, type);
             }

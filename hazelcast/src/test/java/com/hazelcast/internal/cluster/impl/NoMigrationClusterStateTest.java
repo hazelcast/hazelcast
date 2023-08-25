@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,10 +47,9 @@ import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.chang
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getPartitionService;
-import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -78,7 +77,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 List<Integer> memberPartitions = partitionService.getMemberPartitions(node.getThisAddress());
-                assertThat(memberPartitions, empty());
+                assertThat(memberPartitions).isEmpty();
                 service.assertNoReplication();
             }
         }, 10);
@@ -100,8 +99,10 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, instances[2]);
         assertAllPartitionsAreAssigned(instances[2], 1);
 
-        assertEquals(getPartitionService(instances[1]).getPartitionStateStamp(),
-                getPartitionService(instances[2]).getPartitionStateStamp());
+        assertTrueEventually(() -> {
+            assertEquals(getPartitionService(instances[1]).getPartitionStateStamp(),
+                    getPartitionService(instances[2]).getPartitionStateStamp());
+        });
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.nio.BufferObjectDataInput;
-import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -37,10 +35,6 @@ public interface SerializerAdapter {
     void destroy();
 
     Serializer getImpl();
-
-    default void conditionallyReturnInputBufferToPool(Object object, BufferObjectDataInput inputBuffer, BufferPool pool) {
-        pool.returnInputBuffer(inputBuffer);
-    }
 
     default Object read(ObjectDataInput in, Class aClass) throws IOException {
         throw new HazelcastSerializationException(this + " is not implementing the " + TypedStreamDeserializer.class

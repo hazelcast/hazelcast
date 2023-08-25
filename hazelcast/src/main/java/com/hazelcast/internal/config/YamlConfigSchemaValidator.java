@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.config;
 
+import com.hazelcast.client.config.impl.ClientConfigSections;
+import com.hazelcast.client.config.impl.ClientFailoverConfigSections;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlToJsonConverter;
@@ -33,6 +35,7 @@ import org.json.JSONTokener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.StreamSupport;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -45,7 +48,8 @@ public class YamlConfigSchemaValidator {
             = new HazelcastProperty("hazelcast.yaml.config.indentation.check.enabled", "true");
 
     private static final List<String> PERMITTED_ROOT_NODES = unmodifiableList(
-            asList("hazelcast", "hazelcast-client", "hazelcast-client-failover"));
+            asList(ConfigSections.HAZELCAST.getName(), ClientConfigSections.HAZELCAST_CLIENT.getName(),
+                    ClientFailoverConfigSections.CLIENT_FAILOVER.getName()));
 
     private static final Schema SCHEMA;
 
@@ -85,7 +89,9 @@ public class YamlConfigSchemaValidator {
             // this could be expressed in the schema as well, but that would make all the schema validation errors much harder
             // to read, so it is better to implement it here as a semantic check
             List<String> definedRootNodes = PERMITTED_ROOT_NODES.stream()
-                    .filter(rootNodeName -> rootNode != null && rootNode.child(rootNodeName) != null)
+                    .filter(rootNodeName -> rootNode != null
+                            && StreamSupport.stream(rootNode.childrenPairs().spliterator(), false)
+                                            .anyMatch(pair -> pair.nodeName().equals(rootNodeName)))
                     .collect(toList());
             if (definedRootNodes.size() != 1) {
                 throw new SchemaViolationConfigurationException(
@@ -95,6 +101,17 @@ public class YamlConfigSchemaValidator {
             } else if (new HazelcastProperties(System.getProperties()).getBoolean(ROOT_LEVEL_INDENTATION_CHECK_ENABLED)) {
                 validateAdditionalProperties(rootNode, definedRootNodes.get(0));
             }
+            // Make the root node nullable by skipping validation when the value
+            // of root node is null. When changing the root element in the json schema
+            // to nullable, it significantly reduces the readability of the validation
+            // error messages, so we preferred this workaround.
+            if (rootNode != null
+                    && rootNode.childCount() == 1
+                    && rootNode.child(definedRootNodes.get(0)) == null
+            ) {
+                return;
+            }
+
             Validator.builder()
                     .primitiveValidationStrategy(PrimitiveValidationStrategy.LENIENT)
                     .build()

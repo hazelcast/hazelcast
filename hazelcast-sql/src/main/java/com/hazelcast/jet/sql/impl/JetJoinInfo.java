@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,13 @@ public class JetJoinInfo implements DataSerializable {
     }
 
     /**
+     * Returns true if the join type is a RIGHT OUTER join.
+     */
+    public boolean isRightOuter() {
+        return joinType == JoinRelType.RIGHT;
+    }
+
+    /**
      * The indices of the fields from the left side of a join which are
      * equi-join keys.
      */
@@ -122,6 +129,10 @@ public class JetJoinInfo implements DataSerializable {
         return rightEquiJoinIndices.length > 0;
     }
 
+    public JoinRelType getJoinType() {
+        return joinType;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(joinType.name());
@@ -149,5 +160,10 @@ public class JetJoinInfo implements DataSerializable {
                 ", nonEquiCondition=" + nonEquiCondition +
                 ", condition=" + condition +
                 '}';
+    }
+
+    public boolean isCooperative() {
+        return (condition == null || condition.isCooperative())
+                && (nonEquiCondition == null || nonEquiCondition.isCooperative());
     }
 }

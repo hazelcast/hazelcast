@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
+import com.hazelcast.jet.impl.ExplodeSnapshotP;
+import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitioningStrategy;
@@ -75,7 +77,24 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     void writeObject(ObjectDataOutput out, Object obj);
 
-    <T> T readObject(ObjectDataInput in);
+    default <T> T readObject(ObjectDataInput in) {
+        return readObject(in, false);
+    }
+
+    /**
+     * This method is only exposed to read Jet snapshots in {@link
+     * ExplodeSnapshotP}. This method should not be called to read top
+     * level objects like {@link SerializationService#toObject(Object)}
+     * as this doesn't cache classes.
+     *
+     * @param in                           input to read object from
+     * @param useBigEndianForReadingTypeId is {@code typeId} serialized with big endian
+     * @param <T>                          type of the object read
+     * @return the object read
+     * @see InternalSerializationService#getByteOrder()
+     * @see AsyncSnapshotWriterImpl
+     */
+    <T> T readObject(ObjectDataInput in, boolean useBigEndianForReadingTypeId);
 
     <T> T readObject(ObjectDataInput in, Class aClass);
 
@@ -98,6 +117,11 @@ public interface InternalSerializationService extends SerializationService, Disp
     BufferObjectDataOutput createObjectDataOutput();
 
     /**
+     * The returned InternalGenericRecord is not thread safe.
+     * It is not meant to return to the user from our API's like IMap, IQueue etc.
+     * It will only be used with {@link com.hazelcast.internal.serialization.impl.GenericRecordQueryReader} for
+     * query purposes
+     *
      * @param data
      * @return InternalGenericRecord if data type supports it(Portable or Compact), otherwise throws
      * IllegalArgumentException

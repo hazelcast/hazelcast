@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.github.classgraph.ScanResult;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
@@ -107,10 +108,9 @@ public final class ReflectionUtils {
      * containing class type (a builder-style setter) and take one argument of
      * {@code propertyType}.
      *
-     * @param clazz The containing class
+     * @param clazz        The containing class
      * @param propertyName Name of the property
      * @param propertyType The propertyType of the property
-     *
      * @return The found setter or null if one matching the criteria doesn't exist
      */
     @Nullable
@@ -144,11 +144,63 @@ public final class ReflectionUtils {
         return method;
     }
 
+    @Nullable
+    public static Method findPropertySetter(@Nonnull Class<?> clazz, @Nonnull String propertyName) {
+        final Method setter = findPropertyAccessor(clazz, propertyName, "set");
+        if (setter == null) {
+            return null;
+        }
+
+        Class<?> returnType = setter.getReturnType();
+        if (returnType != void.class && returnType != Void.class && returnType != clazz) {
+            return null;
+        }
+        return setter;
+    }
+
+    public static Method findPropertyGetter(@Nonnull Class<?> clazz, @Nonnull String propertyName) {
+        Method getter = findPropertyAccessor(clazz, propertyName, "get", "is");
+        if (getter == null) {
+            return null;
+        }
+
+        Class<?> returnType = getter.getReturnType();
+        if (returnType == void.class || returnType == Void.class) {
+            return null;
+        }
+
+        return getter;
+    }
+
+    private static Method findPropertyAccessor(
+            @Nonnull Class<?> clazz,
+            @Nonnull String propertyName,
+            @Nonnull String... prefixes
+    ) {
+        final Set<String> accessorNames = stream(prefixes)
+                .map(prefix -> prefix + toUpperCase(propertyName.charAt(0)) + propertyName.substring(1))
+                .collect(toSet());
+        Method method = stream(clazz.getMethods())
+                .filter(m -> accessorNames.contains(m.getName()))
+                .findAny()
+                .orElse(null);
+
+        if (method == null) {
+            return null;
+        }
+
+        if (Modifier.isStatic(method.getModifiers())) {
+            return null;
+        }
+
+        return method;
+    }
+
     /**
      * Return a {@link Field} object for the given {@code fieldName}. The field
      * must be public and non-static.
      *
-     * @param clazz The containing class
+     * @param clazz     The containing class
      * @param fieldName The field
      * @return The field object or null, if not found or doesn't match the criteria.
      */
@@ -182,10 +234,10 @@ public final class ReflectionUtils {
             return concat(
                     stream(classes),
                     scanResult.getAllClasses()
-                              .stream()
-                              .filter(classInfo -> classNames.contains(classInfo.getName()))
-                              .flatMap(classInfo -> classInfo.getInnerClasses().stream())
-                              .map(ClassInfo::loadClass)
+                            .stream()
+                            .filter(classInfo -> classNames.contains(classInfo.getName()))
+                            .flatMap(classInfo -> classInfo.getInnerClasses().stream())
+                            .map(ClassInfo::loadClass)
             ).collect(toList());
         }
     }
@@ -217,6 +269,26 @@ public final class ReflectionUtils {
 
     public static String toClassResourceId(String name) {
         return toPath(name) + ".class";
+    }
+
+    public static Object getFieldValue(String fieldName, Object obj) {
+        final Method getter = findPropertyGetter(obj.getClass(), fieldName);
+        if (getter != null) {
+            try {
+                return getter.invoke(obj);
+            } catch (IllegalAccessException | InvocationTargetException ignored) { }
+        }
+
+        final Field field = findPropertyField(obj.getClass(), fieldName);
+        if (field == null) {
+            return null;
+        }
+
+        try {
+            return field.get(obj);
+        } catch (IllegalAccessException ignored) {
+            return null;
+        }
     }
 
     public static final class Resources {

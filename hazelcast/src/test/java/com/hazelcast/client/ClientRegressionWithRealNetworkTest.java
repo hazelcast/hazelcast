@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,12 @@ import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -66,19 +68,21 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     @Test
     @Category(QuickTest.class)
     public void testClientPortConnection() {
+        String clusterName1 = randomString();
         Config config1 = new Config();
-        config1.setClusterName("foo");
+        config1.setClusterName(clusterName1);
         config1.getNetworkConfig().setPort(5701);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config1);
         instance1.getMap("map").put("key", "value");
 
+        String clusterName2 = randomString();
         Config config2 = new Config();
-        config2.setClusterName("bar");
+        config2.setClusterName(clusterName2);
         config2.getNetworkConfig().setPort(5702);
         Hazelcast.newHazelcastInstance(config2);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName("bar");
+        clientConfig.setClusterName(clusterName2);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         IMap<Object, Object> map = client.getMap("map");
@@ -88,13 +92,19 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
     @Test
     public void testClientConnectionBeforeServerReady() {
+        String clusterName = randomString();
         ExecutorService executorService = Executors.newFixedThreadPool(2);
-        executorService.submit((Runnable) Hazelcast::newHazelcastInstance);
+        executorService.submit(() -> {
+            Config config = new Config();
+            config.setClusterName(clusterName);
+            Hazelcast.newHazelcastInstance(config);
+        });
 
         CountDownLatch clientLatch = new CountDownLatch(1);
         executorService.submit(() -> {
             ClientConfig config = new ClientConfig();
             config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
+            config.setClusterName(clusterName);
             HazelcastClient.newHazelcastClient(config);
             clientLatch.countDown();
         });
@@ -123,12 +133,15 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     private void testConnectionCountAfterClientReconnect(String memberAddress, String clientAddress) {
+        String clusterName = randomString();
         Config config = new Config();
+        config.setClusterName(clusterName);
         config.getNetworkConfig().setPublicAddress(memberAddress);
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().addAddress(clientAddress);
+        clientConfig.setClusterName(clusterName);
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
@@ -169,13 +182,16 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     private void testListenersAfterClientDisconnected(String memberAddress, String clientAddress) {
+        String clusterName = randomString();
         Config config = new Config();
         int heartBeatSeconds = 6;
         config.getNetworkConfig().setPublicAddress(memberAddress);
         config.setProperty(ClusterProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), Integer.toString(heartBeatSeconds));
+        config.setClusterName(clusterName);
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName(clusterName);
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         networkConfig.addAddress(clientAddress);
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
@@ -215,14 +231,18 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     private void testOperationsContinueWhenClientDisconnected(ClientConnectionStrategyConfig.ReconnectMode reconnectMode) {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        String clusterName = randomString();
+        Config config = new Config();
+        config.setClusterName(clusterName);
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName(clusterName);
         clientConfig.getConnectionStrategyConfig().setReconnectMode(reconnectMode);
         AtomicBoolean waitFlag = new AtomicBoolean();
         CountDownLatch testFinished = new CountDownLatch(1);
         AddressProvider addressProvider = new AddressProvider() {
             @Override
-            public Addresses loadAddresses() {
+            public Addresses loadAddresses(ClientConnectionProcessListenerRunner listenerRunner) {
                 if (waitFlag.get()) {
                     try {
                         testFinished.await();
@@ -230,20 +250,24 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
                         e.printStackTrace();
                     }
                 }
-                return AddressHelper.getSocketAddresses("127.0.0.1");
+                return AddressHelper.getSocketAddresses("127.0.0.1", listenerRunner);
             }
 
             @Override
             public Address translate(Address address) {
                 return address;
             }
+
+            @Override
+            public Address translate(Member member) throws Exception {
+                return member.getAddress();
+            }
         };
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(addressProvider, clientConfig);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, addressProvider);
 
-
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
 
         warmUpPartitions(instance1, instance2);
         String keyOwnedBy2 = generateKeyOwnedBy(instance2);

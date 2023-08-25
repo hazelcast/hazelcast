@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,21 +46,25 @@ public class IndexFirstComponentDecoratorTest {
         serializationService = new DefaultSerializationServiceBuilder().build();
         extractors = Extractors.newBuilder(serializationService).build();
         expected = new IndexImpl(
+            null,
             IndexUtils.createTestIndexConfig(IndexType.SORTED, "this"),
             serializationService,
             extractors,
             IndexCopyBehavior.COPY_ON_READ,
             PerIndexStats.EMPTY,
-            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT,
+            "test"
         );
 
         InternalIndex compositeIndex = new IndexImpl(
+            null,
             IndexUtils.createTestIndexConfig(IndexType.SORTED, "this", "__key"),
             serializationService,
             extractors,
             IndexCopyBehavior.COPY_ON_READ,
             PerIndexStats.EMPTY,
-            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT,
+            "test"
         );
 
         actual = new AttributeIndexRegistry.FirstComponentDecorator(compositeIndex);

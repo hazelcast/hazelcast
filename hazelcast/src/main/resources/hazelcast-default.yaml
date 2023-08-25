@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -711,6 +711,9 @@ hazelcast:
     # committed multiple times. If it is enabled, the public API call fails
     # with com.hazelcast.core.IndeterminateOperationStateException.
     fail-on-indeterminate-operation-state: false
+    # The CP member priority. The CP groups' leadership will be eventually
+    # transferred to members with higher priorities within the CP group.
+    cp-member-priority: 0
     raft-algorithm:
       # Leader election timeout in milliseconds. If a candidate cannot win
       # majority of the votes in time, a new leader election round is initiated.

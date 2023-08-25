@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
-import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -42,6 +41,7 @@ import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamJmsP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.jet.impl.pipeline.SourceBufferImpl;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.SourceBuilder;
@@ -52,20 +52,22 @@ import com.hazelcast.jet.pipeline.file.FileSources;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
+import jakarta.jms.Connection;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.Session;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.jms.Connection;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.security.Permission;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
@@ -116,7 +118,7 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link Sources#mapJournal(String, JournalInitialPosition)} )}.
+     * {@link Sources#mapJournal(String, JournalInitialPosition)}.
      */
     @Nonnull
     public static <K, V> ProcessorMetaSupplier streamMapP(
@@ -195,7 +197,7 @@ public final class SourceProcessors {
     ) {
         String clientXml = asXmlString(clientConfig);
         return StreamEventJournalP.streamRemoteMapSupplier(
-                mapName, clientXml, predicateFn, projectionFn, initialPos, eventTimePolicy);
+                mapName, null, clientXml, predicateFn, projectionFn, initialPos, eventTimePolicy);
     }
 
     /**
@@ -429,14 +431,28 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for {@link Sources#jdbc(
-     * SupplierEx, ToResultSetFunction, FunctionEx)}.
+     *SupplierEx, ToResultSetFunction, FunctionEx)}.
      */
     public static <T> ProcessorMetaSupplier readJdbcP(
             @Nonnull SupplierEx<? extends java.sql.Connection> newConnectionFn,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(newConnectionFn, resultSetFn, mapOutputFn);
+        return ReadJdbcP.supplier(context -> newConnectionFn.get(), resultSetFn, mapOutputFn);
+    }
+
+    /**
+     * Returns a supplier of processors for {@link Sources#jdbc(
+     *DataConnectionRef, ToResultSetFunction, FunctionEx)}.
+     *
+     * @since 5.2
+     */
+    public static <T> ProcessorMetaSupplier readJdbcP(
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull ToResultSetFunction resultSetFn,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        return ReadJdbcP.supplier(dataConnectionRef, resultSetFn, mapOutputFn);
     }
 
     /**
@@ -448,9 +464,18 @@ public final class SourceProcessors {
             @Nonnull String query,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(connectionURL, query, mapOutputFn);
+        Properties properties = new Properties();
+        return ReadJdbcP.supplier(connectionURL, query, properties, mapOutputFn);
     }
 
+    public static <T> ProcessorMetaSupplier readJdbcP(
+            @Nonnull String connectionURL,
+            @Nonnull String query,
+            @Nonnull Properties properties,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        return ReadJdbcP.supplier(connectionURL, query, properties, mapOutputFn);
+    }
     /**
      * Returns a supplier of processors for a source that the user can create
      * using the {@link SourceBuilder}. This variant creates a source that

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -289,7 +290,11 @@ public class MockServerContext implements ServerContext {
             }
 
             @Override
-            public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic) {
+            public void deregisterAllLocalListeners(@Nonnull String serviceName, @Nonnull String topic) {
+            }
+
+            @Override
+            public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic, int orderKey) {
             }
 
             @Override
@@ -338,7 +343,7 @@ public class MockServerContext implements ServerContext {
             }
 
             @Override
-            public Operation getPreJoinOperation() {
+            public OnJoinRegistrationOperation getPreJoinOperation() {
                 return null;
             }
 

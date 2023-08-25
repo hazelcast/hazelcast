@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,8 @@ package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.Expirable;
-import com.hazelcast.map.impl.record.Record;
 
 import java.util.UUID;
-
-import static com.hazelcast.internal.util.TimeUtil.zeroOutMs;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * An expirable and evictable data object
@@ -38,22 +33,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @see com.hazelcast.internal.eviction.Evictable
  */
 public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
-
-    /**
-     * Base time to be used for storing time values as diffs
-     * (int) rather than full blown epoch based vals (long)
-     * This allows for a space in seconds, of roughly 68 years.
-     *
-     * Reference value (1514764800000) -
-     * Monday, January 1, 2018 12:00:00 AM
-     *
-     * The fixed time in the past (instead of {@link
-     * System#currentTimeMillis()} prevents any time
-     * discrepancies among nodes, mis-translated as diffs
-     * of -1 ie. {@link Record#UNSET} values. (see.
-     * https://github.com/hazelcast/hazelcast-enterprise/issues/2527)
-     */
-    long EPOCH_TIME = zeroOutMs(1514764800000L);
 
     int TIME_NOT_SET = -1;
 
@@ -97,7 +76,7 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
     /**
      * It can have 2 different value:
      *
-     *  1. {@link #READ_PERMITTED} if no
+     * 1. {@link #READ_PERMITTED} if no
      * update is happening on this record.
      *
      * 2. A `long` reservation id to indicate
@@ -151,25 +130,9 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
 
     void setCachedAsNull(boolean valueCachedAsNull);
 
-    default int stripBaseTime(long timeInMillis) {
-        if (timeInMillis > 0) {
-            return (int) MILLISECONDS.toSeconds(timeInMillis - EPOCH_TIME);
-        } else {
-            return TIME_NOT_SET;
-        }
-    }
-
-    default long recomputeWithBaseTime(int trimmedTime) {
-        if (trimmedTime == TIME_NOT_SET) {
-            return TIME_NOT_SET;
-        }
-        long exploded = SECONDS.toMillis(trimmedTime);
-        return exploded + EPOCH_TIME;
-    }
-
     default boolean isExpiredAt(long now) {
         long expirationTime = getExpirationTime();
-        return (expirationTime > TIME_NOT_SET) && (expirationTime <= now);
+        return (expirationTime > 0L) && (expirationTime <= now);
     }
 
     /**
@@ -187,7 +150,7 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
         }
 
         long lastAccessTime = getLastAccessTime();
-        return lastAccessTime > TIME_NOT_SET
+        return lastAccessTime > 0L
                 ? lastAccessTime + maxIdleMilliSeconds < now
                 : getCreationTime() + maxIdleMilliSeconds < now;
     }

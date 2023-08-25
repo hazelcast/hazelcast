@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Tracker of indexed partition for global indexes.
  * <p>
- * Used by {@link InternalIndex} to keep track of indexed partitions and decide whether the query
- * using this index could be executed or not.
+ * Used by {@link InternalIndex} to keep track of indexed partitions and
+ * decide whether the query using this index could be executed or not.
  */
 public class GlobalIndexPartitionTracker {
 
@@ -52,7 +52,8 @@ public class GlobalIndexPartitionTracker {
     public GlobalIndexPartitionTracker(int partitionCount) {
         this.partitionCount = partitionCount;
 
-        state = new AtomicReference<>(new State(STAMP_INITIAL, new PartitionIdSet(partitionCount), 0));
+        state = new AtomicReference<>(new State(STAMP_INITIAL,
+                new PartitionIdSet(partitionCount), 0));
     }
 
     /**
@@ -189,6 +190,14 @@ public class GlobalIndexPartitionTracker {
         @Override
         public int hashCode() {
             return Objects.hash(stamp, partitions);
+        }
+
+        @Override
+        public String toString() {
+            return "PartitionStamp{"
+                    + "stamp=" + stamp
+                    + ", partitions=" + partitions
+                    + '}';
         }
     }
 

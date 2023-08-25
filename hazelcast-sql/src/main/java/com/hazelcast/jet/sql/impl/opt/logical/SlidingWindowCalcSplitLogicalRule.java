@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
-import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
@@ -71,20 +70,31 @@ public class SlidingWindowCalcSplitLogicalRule extends RelRule<Config> implement
         final CalcLogicalRel calc = call.rel(0);
         final SlidingWindow sw = call.rel(1);
 
+        final boolean[] mustNotExecute = {false};
+
         RexProgram program = calc.getProgram();
         RexVisitorImpl<Void> visitor = new RexVisitorImpl<Void>(true) {
             @Override
             public Void visitInputRef(RexInputRef ref) {
                 int index = ref.getIndex();
                 if (index == sw.windowStartIndex() || index == sw.windowEndIndex()) {
-                    // TODO[sasha]: convert into ShouldNotExecuteRel (after #20996 merge)
-                    throw QueryException.error("Can't apply filter criteria to window bounds");
+                    mustNotExecute[0] = true;
                 }
                 return super.visitInputRef(ref);
             }
         };
 
         program.expandLocalRef(program.getCondition()).accept(visitor);
+
+        if (mustNotExecute[0]) {
+            call.transformTo(new MustNotExecuteLogicalRel(
+                    sw.getCluster(),
+                    sw.getTraitSet(),
+                    program.getOutputRowType(),
+                    "Can't apply filter criteria to window bounds"
+            ));
+            return;
+        }
 
         RexProgramBuilder programBuilder = new RexProgramBuilder(
                 sw.getInput().getRowType(),

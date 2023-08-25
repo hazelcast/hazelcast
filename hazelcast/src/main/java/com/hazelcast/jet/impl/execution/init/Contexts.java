@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Preconditions;
@@ -35,6 +36,7 @@ import com.hazelcast.jet.impl.metrics.MetricsContext;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
@@ -44,6 +46,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.Permission;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -203,6 +206,23 @@ public final class Contexts {
         @Override
         public ClassLoader classLoader() {
             return classLoader;
+        }
+
+        @Override
+        public DataConnectionService dataConnectionService() {
+            return nodeEngine().getDataConnectionService();
+        }
+
+        @Override
+        public void checkPermission(@Nonnull Permission permission) {
+            if (subject == null) {
+                return;
+            }
+            SecurityContext securityContext = nodeEngine.getNode().securityContext;
+            if (securityContext == null) {
+                return;
+            }
+            securityContext.checkPermission(subject, permission);
         }
     }
 

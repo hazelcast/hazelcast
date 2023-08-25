@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -36,6 +35,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Iterator;
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientReconnectTest extends HazelcastTestSupport {
+public class ClientReconnectTest extends ClientTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -60,7 +60,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        ClientTestSupport.ReconnectListener reconnectListener = new ClientTestSupport.ReconnectListener();
+        ReconnectListener reconnectListener = new ReconnectListener();
         client.getLifecycleService().addLifecycleListener(reconnectListener);
         IMap<String, String> m = client.getMap("default");
         h1.shutdown();
@@ -131,14 +131,20 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCallbackAfterClientShutdown() {
+    public void testCallbackAfterServerShutdown() {
         final HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(5000);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap<Object, Object> test = client.getMap("test");
+        UUID serverUuid = server.getLocalEndpoint().getUuid();
         server.shutdown();
+
+        // wait until client disconnects from the shutdown member to not get
+        // target disconnected exception in case the putAsync call is made
+        // before the connection on the client side is closed.
+        makeSureDisconnectedFromServer(client, serverUuid);
         CompletionStage<Object> future = test.putAsync("key", "value");
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Throwable> reference = new AtomicReference<>();

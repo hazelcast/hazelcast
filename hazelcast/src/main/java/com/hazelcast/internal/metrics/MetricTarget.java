@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,13 @@ package com.hazelcast.internal.metrics;
 
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Set;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * Enum representing the target platforms of the metrics collection.
@@ -40,7 +38,7 @@ public enum MetricTarget {
     DIAGNOSTICS,
     JET_JOB;
 
-    public static final List<MetricTarget> ALL_TARGETS = unmodifiableList(asList(values()));
+    public static final Collection<MetricTarget> ALL_TARGETS = EnumSet.copyOf(Arrays.asList(values()));
     public static final Collection<MetricTarget> NONE_OF = EnumSet.noneOf(MetricTarget.class);
     public static final Collection<MetricTarget> ALL_TARGETS_BUT_DIAGNOSTICS;
 

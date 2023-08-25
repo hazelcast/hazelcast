@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -162,20 +162,18 @@ hazelcast-client:
   #         kerberos-host: kerb-host-name
   #         kerberos-config-file: kerb.conf
   # * "ssl":
-  #     Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast
-  #     Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement
-  #     your SSLContextFactory class. Its configuration contains the factory class and SSL properties.
-  #     By default, it is disabled. The following is an example:
+  #     Allows configuring TLS/SSL communication encryption. This feature is available only in Hazelcast
+  #     Enterprise.
+  #     The default configuration usually uses JSSE engine available in Java.
+  #     Consult the Hazelcast documentation on how to integrate with OpenSSL/BoringSSL engines.
   #     ssl:
   #       enabled: true
-  #       factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory
+  #       factory-class-name: com.hazelcast.nio.ssl.OpenSSLEngineFactory
   #       properties:
-  #         keyStore: keyStore
-  #         keyStorePassword: keyStorePassword
-  #         keyManagerAlgorithm: SunX509
-  #         trustManagerAlgorithm: SunX509
-  #         protocol: TLS
-  #         mutualAuthentication: REQUIRED
+  #         protocol: TLSv1.2
+  #         trustCertCollectionFile: /opt/hazelcast/trusted-certs.pem
+  #         keyFile: /opt/hazelcast/privkey.pem
+  #         keyCertChainFile: /opt/hazelcast/chain.pem
   # * "aws":
   #     Set its "enabled" sub-element to true for discovery within Amazon EC2.
   #     Please refer to https://github.com/hazelcast/hazelcast-aws/#configuration for the configuration details.
@@ -258,18 +256,19 @@ hazelcast-client:
 
     ssl:
       enabled: false
-      factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory
       properties:
-        protocol: TLS
+        protocol: TLSv1.3
 
         trustStore: /opt/hazelcast-client.truststore
         trustStorePassword: secret.123456
-        trustStoreType: JKS
+        trustStoreType: PKCS12
+
+        keyMaterialDuration: PT10M
 
         # Following properties are only needed when the mutual authentication is used.
         keyStore: /opt/hazelcast-client.keystore
         keyStorePassword: keystorePassword123
-        keyStoreType: JKS
+        keyStoreType: PKCS12
 
     auto-detection:
       enabled: false
@@ -437,6 +436,19 @@ hazelcast-client:
   #     and throw a Serialization Exception with the error definition.
   # * "java-serialization-filter":
   #     Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used.
+  # * "compact-serialization":
+  #     Contains configuration attributes for the compact serialization.
+  #
+  #     It has the following sub-attributes:
+  #     * "enabled":
+  #       Enables/disables the Compact serialization.
+  #     * "serializers":
+  #       List of fully qualified class names of the Compact serializers.
+  #     * "classes:
+  #       List of fully qualified names of the classes to be serialized
+  #       with the reflective Compact serializer. It is meant to be used
+  #       to serialize classes that are serializable with other mechanisms
+  #       like Java serialization with Compact serialization.
   #
   serialization:
     portable-version: 3
@@ -475,12 +487,10 @@ hazelcast-client:
           - "["
           - com.
     compact-serialization:
-      enabled: true
-      registered-classes:
+      serializers:
+        - serializer: com.hazelcast.examples.DummyTypeSerializer
+      classes:
         - class: com.hazelcast.examples.DummyType
-        - class: com.hazelcast.examples.DummyTypeWithSerializer
-          type-name: dummy
-          serializer: com.hazelcast.examples.DummyTypeSerializer
   #
   # ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====
   #
@@ -955,3 +965,23 @@ hazelcast-client:
     enabled: false
     file-name: hazelcast.process
     format-pattern: $HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}
+  # ===== HAZELCAST SQL CLIENT CONFIGURATION =====
+  #
+  # Configuration element's name is <sql>.
+  #
+  # It has the following sub-elements:
+  # * "resubmission-mode":
+  #     Sets the resubmission mode for failing queries. By default, it is set to NEVER.
+  sql:
+    resubmission-mode: RETRY_SELECTS
+  # Configures the client for TPC, which is the next generation Hazelcast that
+  # uses thread-per-core model. TPC-aware clients will maintain connections to
+  # all cores of all cluster members. The client will route partition-specific
+  # invocations to the correct core of the correct member in the best effort
+  # basis. Configuration element's name is "tpc".
+  #
+  # It has the following sub-elements:
+  # * "enabled":
+  #     Enables or disables the TPC-aware mode.
+  tpc:
+    enabled: true

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,15 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,7 +47,7 @@ import static com.hazelcast.jet.core.TestProcessors.reset;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobLifecycleMetricsTest extends JetTestSupport {
 
@@ -64,6 +66,11 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         hzInstances = createHazelcastInstances(config, MEMBER_COUNT);
     }
 
+    @After
+    public void after() {
+        TestProcessors.assertNoErrorsInProcessors();
+    }
+
     @Test
     public void multipleJobsSubmittedAndCompleted() {
         //when
@@ -78,12 +85,19 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         DAG dag = new DAG();
         Throwable e = new AssertionError("mock error");
         Vertex source = dag.newVertex("source", ListSource.supplier(singletonList(1)));
+
         Vertex process = dag.newVertex("faulty",
-                new MockPMS(() -> new MockPS(() -> new MockP().setProcessError(e), MEMBER_COUNT)));
+                new MockPMS(() -> new MockPS(() -> new MockP().initBlocks().setProcessError(() -> e), MEMBER_COUNT)))
+                            .localParallelism(1);
         dag.edge(between(source, process));
 
         //when
         Job job2 = hzInstances[0].getJet().newJob(dag);
+
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            MockP.unblock();
+        }
+
         try {
             job2.join();
             fail("Expected exception not thrown!");
@@ -162,7 +176,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     private Pipeline batchPipeline() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(1, 2, 3))
-                .writeTo(Sinks.logger());
+         .writeTo(Sinks.logger());
         return p;
     }
 
@@ -182,7 +196,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     }
 
     private void assertJobStatsOnMember(HazelcastInstance instance, int submitted, int executionsStarted,
-                                   int executionsTerminated, int completedSuccessfully, int completedWithFailure) {
+                                        int executionsTerminated, int completedSuccessfully, int completedWithFailure) {
         try {
             JmxMetricsChecker jmxChecker = new JmxMetricsChecker(instance.getName());
             jmxChecker.assertMetricValue(MetricNames.JOBS_SUBMITTED, submitted);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,11 +72,6 @@ public class ProcessorTaskletTest_Watermarks {
     }
 
     @Test
-    public void when_isCooperative_then_true() {
-        assertTrue(createTasklet().isCooperative());
-    }
-
-    @Test
     public void when_singleInbound_then_watermarkForwardedImmediately() {
         // Given
         List<Object> input = new ArrayList<>(asList(0, 1));
@@ -93,7 +88,7 @@ public class ProcessorTaskletTest_Watermarks {
         callUntil(tasklet);
 
         // Then
-        assertEquals(asList(0, 1, "wm(123)-0", wm(123)), outstream1.getBuffer());
+        assertEquals(asList(0, 1, "ord=0,key=0,time=123,seq=0", "key=0,time=123,seq=0"), outstream1.getBuffer());
     }
 
     @Test
@@ -116,7 +111,7 @@ public class ProcessorTaskletTest_Watermarks {
         callUntil(tasklet);
 
         // Then
-        assertEquals(asList(0, 1, 2, 3), outstream1.getBuffer());
+        assertEquals(asList(0, 1, "ord=0,key=0,time=100,seq=0", 2, 3), outstream1.getBuffer());
         outstream1.flush();
 
         // 100 ms later still no progress - we are waiting for the WM
@@ -126,7 +121,7 @@ public class ProcessorTaskletTest_Watermarks {
         // When watermark in the other queue
         instream2.push(wm(99));
         callUntil(tasklet);
-        assertEquals(asList("wm(99)-0", wm(99)), outstream1.getBuffer());
+        assertEquals(asList("ord=1,key=0,time=99,seq=0", "key=0,time=99,seq=0"), outstream1.getBuffer());
     }
 
     @Test
@@ -137,13 +132,21 @@ public class ProcessorTaskletTest_Watermarks {
         instreams.add(instream1);
         outstreams.add(outstream1);
         ProcessorTasklet tasklet = createTasklet();
-        processor.processWatermarkCallCountdown = 2;
+        processor.processGlobalWatermarkCallCountdown = 2;
+        processor.processEdgeWatermarkCallCountdown = 2;
 
         // When
         callUntil(tasklet);
 
         // Then
-        assertEquals(asList("wm(100)-2", "wm(100)-1", "wm(100)-0", wm(100)), outstream1.getBuffer());
+        assertEquals(asList(
+                        "ord=0,key=0,time=100,seq=2",
+                        "ord=0,key=0,time=100,seq=1",
+                        "ord=0,key=0,time=100,seq=0",
+                        "key=0,time=100,seq=2",
+                        "key=0,time=100,seq=1",
+                        "key=0,time=100,seq=0"),
+                outstream1.getBuffer());
     }
 
     @Test
@@ -159,7 +162,27 @@ public class ProcessorTaskletTest_Watermarks {
         callUntil(tasklet);
 
         // Then
-        assertEquals(asList("wm(100)-0", wm(100), "wm(101)-0", wm(101)), outstream1.getBuffer());
+        assertEquals(asList("ord=0,key=0,time=100,seq=0", "key=0,time=100,seq=0", "ord=0,key=0,time=101,seq=0", "key=0,time=101,seq=0"),
+                outstream1.getBuffer());
+    }
+
+    @Test
+    public void when_multipleKeyedWms_then_processed() {
+        // Given
+        MockInboundStream instream1 = new MockInboundStream(0, singletonList(wm(100, (byte) 42)), 1000);
+        MockInboundStream instream2 = new MockInboundStream(0, singletonList(wm(100, (byte) 43)), 1000);
+        MockOutboundStream outstream1 = new MockOutboundStream(0, 128);
+        instreams.addAll(asList(instream1, instream2));
+        outstreams.add(outstream1);
+        ProcessorTasklet tasklet = createTasklet();
+
+        // When
+        callUntil(tasklet);
+
+        // Then
+        assertEquals(
+                asList("ord=0,key=42,time=100,seq=0", "ord=1,key=43,time=100,seq=0"),
+                outstream1.getBuffer());
     }
 
     // #### IDLE_MESSAGE related tests ####
@@ -203,7 +226,8 @@ public class ProcessorTaskletTest_Watermarks {
         instream2.push(wm(101));
         callUntil(tasklet);
         // Then2
-        assertEquals(asList("wm(100)-0", wm(100)), outstream1.getBuffer());
+        assertEquals(asList("ord=0,key=0,time=100,seq=0", "key=0,time=100,seq=0", "ord=1,key=0,time=101,seq=0"),
+                outstream1.getBuffer());
     }
 
     @Test
@@ -220,7 +244,7 @@ public class ProcessorTaskletTest_Watermarks {
         // When
         callUntil(tasklet);
         // Then
-        assertEquals(asList("wm(100)-0", wm(100)), outstream1.getBuffer());
+        assertEquals(asList("ord=0,key=0,time=100,seq=0", "key=0,time=100,seq=0"), outstream1.getBuffer());
     }
 
     @Test
@@ -237,7 +261,7 @@ public class ProcessorTaskletTest_Watermarks {
         callUntil(tasklet);
 
         // Then
-        assertEquals(asList("wm(100)-0", wm(100)), outstream1.getBuffer());
+        assertEquals(asList("ord=0,key=0,time=100,seq=0", "key=0,time=100,seq=0"), outstream1.getBuffer());
 
         outstream1.getBuffer().clear();
 
@@ -247,7 +271,7 @@ public class ProcessorTaskletTest_Watermarks {
         instream1.push(wm(102));
         callUntil(tasklet);
         // Then2
-        assertEquals(asList("wm(101)-0", wm(101)), outstream1.getBuffer());
+        assertEquals(asList("ord=1,key=0,time=101,seq=0", "ord=0,key=0,time=102,seq=0", "key=0,time=101,seq=0"), outstream1.getBuffer());
     }
 
     @Test
@@ -263,7 +287,51 @@ public class ProcessorTaskletTest_Watermarks {
         callUntil(tasklet);
 
         // Then
-        assertEquals(asList("wm(100)-0", wm(100)), outstream1.getBuffer());
+        assertEquals(asList("ord=0,key=0,time=100,seq=0", "key=0,time=100,seq=0"), outstream1.getBuffer());
+    }
+
+    @Test
+    public void when_tryProcessEdgeWmReturnsFalse_then_notCalledAgain() {
+        MockInboundStream instream = new MockInboundStream(0, singletonList(wm(100)), 1000);
+        MockOutboundStream outstream1 = new MockOutboundStream(0, 128);
+        instreams.add(instream);
+        outstreams.add(outstream1);
+        ProcessorTasklet tasklet = createTasklet();
+        processor.processEdgeWatermarkCallCountdown = 2;
+
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(singletonList("ord=0,key=0,time=100,seq=2"), outstream1.getBuffer());
+        outstream1.getBuffer().clear();
+
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(singletonList("ord=0,key=0,time=100,seq=1"), outstream1.getBuffer());
+        outstream1.getBuffer().clear();
+
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(asList("ord=0,key=0,time=100,seq=0", "key=0,time=100,seq=0"), outstream1.getBuffer());
+    }
+
+    @Test
+    public void when_tryProcessGlobalWmReturnsFalse_then_notCalledAgain() {
+        MockInboundStream instream = new MockInboundStream(0, singletonList(wm(100)), 1000);
+        MockOutboundStream outstream1 = new MockOutboundStream(0, 128);
+        instreams.add(instream);
+        outstreams.add(outstream1);
+        ProcessorTasklet tasklet = createTasklet();
+        processor.processGlobalWatermarkCallCountdown = 2;
+
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(asList("ord=0,key=0,time=100,seq=0", "key=0,time=100,seq=2"), outstream1.getBuffer());
+        outstream1.getBuffer().clear();
+
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(singletonList("key=0,time=100,seq=1"), outstream1.getBuffer());
+        outstream1.getBuffer().clear();
+
+        assertEquals(MADE_PROGRESS, tasklet.call());
+        assertEquals(singletonList("key=0,time=100,seq=0"), outstream1.getBuffer());
     }
 
     private ProcessorTasklet createTasklet() {
@@ -284,8 +352,8 @@ public class ProcessorTaskletTest_Watermarks {
         for (ProgressState r; (r = tasklet.call()) != NO_PROGRESS; ) {
             assertEquals("Failed to make progress", MADE_PROGRESS, r);
             assertTrue(String.format(
-                    "tasklet.call() invoked %d times without reaching %s. Last state was %s",
-                    CALL_COUNT_LIMIT, NO_PROGRESS, r),
+                            "tasklet.call() invoked %d times without reaching %s. Last state was %s",
+                            CALL_COUNT_LIMIT, NO_PROGRESS, r),
                     ++iterCount < CALL_COUNT_LIMIT);
         }
     }
@@ -293,7 +361,8 @@ public class ProcessorTaskletTest_Watermarks {
     private static class ProcessorWithWatermarks implements Processor {
 
         int nullaryProcessCallCountdown;
-        int processWatermarkCallCountdown;
+        int processGlobalWatermarkCallCountdown;
+        int processEdgeWatermarkCallCountdown;
         private Outbox outbox;
 
         @Override
@@ -317,14 +386,27 @@ public class ProcessorTaskletTest_Watermarks {
 
         @Override
         public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-            if (processWatermarkCallCountdown >= 0) {
-                assertTrue(outbox.offer("wm(" + watermark.timestamp() + ")-" + processWatermarkCallCountdown));
-                if (processWatermarkCallCountdown > 0) {
-                    processWatermarkCallCountdown--;
+            if (processGlobalWatermarkCallCountdown >= 0) {
+                assertTrue(outbox.offer("key=" + watermark.key() + ",time=" + watermark.timestamp()
+                        + ",seq=" + processGlobalWatermarkCallCountdown));
+                if (processGlobalWatermarkCallCountdown > 0) {
+                    processGlobalWatermarkCallCountdown--;
                     return false;
                 }
             }
-            assertTrue(outbox.offer(watermark));
+            return true;
+        }
+
+        @Override
+        public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
+            if (processEdgeWatermarkCallCountdown >= 0) {
+                assertTrue(outbox.offer("ord=" + ordinal + ",key=" + watermark.key() + ",time=" + watermark.timestamp()
+                        + ",seq=" + processEdgeWatermarkCallCountdown));
+                if (processEdgeWatermarkCallCountdown > 0) {
+                    processEdgeWatermarkCallCountdown--;
+                    return false;
+                }
+            }
             return true;
         }
 

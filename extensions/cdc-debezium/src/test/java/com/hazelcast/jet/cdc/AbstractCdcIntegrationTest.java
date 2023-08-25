@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.map.IMap;
-
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
@@ -46,9 +45,9 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
 
 @Category({IgnoreInJenkinsOnWindows.class})
 public class AbstractCdcIntegrationTest extends JetTestSupport {
@@ -58,7 +57,7 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
 
     @BeforeClass
     public static void beforeClassCheckDocker() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+        assumeDockerEnabled();
     }
 
     @Nonnull
@@ -68,13 +67,12 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
                 .sorted().collect(Collectors.toList());
     }
 
-    @Nonnull
     protected static void assertMatch(List<String> expectedPatterns, List<String> actualValues) {
         assertEquals(expectedPatterns.size(), actualValues.size());
         for (int i = 0; i < expectedPatterns.size(); i++) {
             String pattern = expectedPatterns.get(i);
             String value = actualValues.get(i);
-            assertTrue(value.matches(pattern));
+            assertTrue("\n" + value + " \nmust match \n" + pattern, value.matches(pattern));
         }
     }
 

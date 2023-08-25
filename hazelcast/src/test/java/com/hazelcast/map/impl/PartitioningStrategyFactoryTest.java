@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,27 +18,32 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -48,9 +53,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Rule
     public TestName testName = new TestName();
@@ -72,7 +74,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
 
     @Test
     public void whenConfigNull_getPartitioningStrategy_returnsNull() {
-        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, null);
+        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, null, null);
         assertNull(partitioningStrategy);
     }
 
@@ -80,7 +82,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
     public void whenPartitioningStrategyDefined_getPartitioningStrategy_returnsSameInstance() {
         PartitioningStrategy configuredPartitioningStrategy = new StringPartitioningStrategy();
         PartitioningStrategyConfig cfg = new PartitioningStrategyConfig(configuredPartitioningStrategy);
-        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, cfg);
+        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, cfg, null);
         assertSame(configuredPartitioningStrategy, partitioningStrategy);
     }
 
@@ -88,7 +90,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
     public void whenPartitioningStrategyClassDefined_getPartitioningStrategy_returnsNewInstance() {
         PartitioningStrategyConfig cfg = new PartitioningStrategyConfig();
         cfg.setPartitioningStrategyClass("com.hazelcast.partition.strategy.StringPartitioningStrategy");
-        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, cfg);
+        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, cfg, null);
         assertEquals(StringPartitioningStrategy.class, partitioningStrategy.getClass());
     }
 
@@ -99,9 +101,9 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
         PartitioningStrategyConfig cfg = new PartitioningStrategyConfig();
         cfg.setPartitioningStrategyClass("com.hazelcast.partition.strategy.StringPartitioningStrategy");
         // when we have already obtained the partitioning strategy for a given map name
-        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, cfg);
+        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, cfg, null);
         // then once we get it again with the same arguments, we retrieve the same instance
-        PartitioningStrategy cachedPartitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, cfg);
+        PartitioningStrategy cachedPartitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, cfg, null);
         assertSame(partitioningStrategy, cachedPartitioningStrategy);
     }
 
@@ -114,16 +116,16 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
         cfg.setPartitioningStrategyClass("NonExistentPartitioningStrategy");
 
         // while attempting to get partitioning strategy, ClassNotFound exception will be thrown and wrapped in HazelcastException
-        expectedException.expect(new RootCauseMatcher(ClassNotFoundException.class));
         // use a random UUID as map name, to avoid obtaining the PartitioningStrategy from cache.
-        partitioningStrategyFactory.getPartitioningStrategy(UUID.randomUUID().toString(), cfg);
+        assertThatThrownBy(() -> partitioningStrategyFactory.getPartitioningStrategy(UUID.randomUUID().toString(), cfg, null))
+                .has(rootCause(ClassNotFoundException.class));
     }
 
     @Test
     public void whenRemoveInvoked_entryIsRemovedFromCache() {
         PartitioningStrategyConfig cfg = new PartitioningStrategyConfig();
         cfg.setPartitioningStrategyClass("com.hazelcast.partition.strategy.StringPartitioningStrategy");
-        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, cfg);
+        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory.getPartitioningStrategy(mapName, cfg, null);
         partitioningStrategyFactory.removePartitioningStrategyFromCache(mapName);
         assertFalse(partitioningStrategyFactory.cache.containsKey(mapName));
     }
@@ -138,6 +140,21 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> assertFalse("Key should have been removed from cache",
                 partitioningStrategyFactory.cache.containsKey(mapName)), 20);
+    }
+
+    @Test
+    public void test_partitioningStrategyAttributes() {
+        PartitioningStrategyConfig cfg = new PartitioningStrategyConfig();
+        List<PartitioningAttributeConfig> attributeConfigs = Arrays.asList(
+                new PartitioningAttributeConfig("field1"),
+                new PartitioningAttributeConfig("field2")
+        );
+        partitioningStrategyFactory.cache.clear();
+        PartitioningStrategy partitioningStrategy = partitioningStrategyFactory
+                .getPartitioningStrategy(mapName, cfg, attributeConfigs);
+        assertEquals(AttributePartitioningStrategy.class, partitioningStrategy.getClass());
+        assertArrayEquals(((AttributePartitioningStrategy) partitioningStrategy).getPartitioningAttributes(),
+                new String[] {"field1", "field2"});
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,7 @@ import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Default implementation of {@link MetricDescriptor} and
- * {@link MetricDescriptor}.
+ * Default implementation of {@link MetricDescriptor}.
  */
 @SuppressWarnings("checkstyle:MethodCount")
 public final class MetricDescriptorImpl implements MetricDescriptor {

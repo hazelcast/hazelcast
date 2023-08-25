@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.sql.impl.HazelcastSqlToRelConverter;
+import com.hazelcast.jet.sql.impl.opt.ExtractUpdateExpressionsRule;
 import com.hazelcast.jet.sql.impl.opt.logical.CalcMergeRule;
-import com.hazelcast.jet.sql.impl.schema.HazelcastViewExpander;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
@@ -40,8 +40,10 @@ import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql2rel.RelDecorrelator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
+import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.Pair;
 
 import javax.annotation.Nullable;
@@ -82,24 +84,16 @@ public class QueryConverter {
     private final SqlValidator validator;
     private final Prepare.CatalogReader catalogReader;
     private final RelOptCluster cluster;
-    private final HazelcastViewExpander viewExpander;
 
     public QueryConverter(SqlValidator validator, Prepare.CatalogReader catalogReader, HazelcastRelOptCluster cluster) {
         this.validator = validator;
         this.catalogReader = catalogReader;
         this.cluster = cluster;
-        this.viewExpander = new HazelcastViewExpander(validator, catalogReader, cluster);
     }
 
     public QueryConvertResult convert(SqlNode node) {
-        SqlToRelConverter converter = new HazelcastSqlToRelConverter(
-                viewExpander,
-                validator,
-                catalogReader,
-                cluster,
-                StandardConvertletTable.INSTANCE,
-                CONFIG
-        );
+        SqlToRelConverter converter = createSqlToRelConverter();
+
         // 1. Perform initial conversion.
         RelRoot root = converter.convertQuery(node, false, true);
 
@@ -125,6 +119,22 @@ public class QueryConverter {
 
         // 6. Collect original field names.
         return new QueryConvertResult(result, Pair.right(root.fields));
+    }
+
+    public RelNode convertView(SqlNode node) {
+        HazelcastSqlToRelConverter sqlToRelConverter = createSqlToRelConverter();
+
+        final RelRoot root = sqlToRelConverter.convertQuery(node, true, true);
+        final RelRoot root2 = root.withRel(sqlToRelConverter.flattenTypes(root.rel, true));
+
+        final RelBuilder relBuilder = QueryConverter.CONFIG.getRelBuilderFactory().create(cluster, null);
+        RelRoot root3 = root2.withRel(RelDecorrelator.decorrelateQuery(root.rel, relBuilder));
+        return root3.project();
+    }
+
+    private HazelcastSqlToRelConverter createSqlToRelConverter() {
+        return new HazelcastSqlToRelConverter(validator, catalogReader, cluster,
+                StandardConvertletTable.INSTANCE, QueryConverter.CONFIG);
     }
 
     /**
@@ -154,6 +164,9 @@ public class QueryConverter {
         // Union optimization rules
         hepProgramBuilder.addRuleInstance(CoreRules.UNION_MERGE);
         hepProgramBuilder.addRuleInstance(CoreRules.UNION_TO_DISTINCT);
+
+        // Other rules
+        hepProgramBuilder.addRuleInstance(ExtractUpdateExpressionsRule.INSTANCE);
 
         HepPlanner planner = new HepPlanner(
                 hepProgramBuilder.build(),

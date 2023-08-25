@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,14 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.PortableUtil;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -56,21 +57,22 @@ import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 
-public class PortableInternalGenericRecord extends PortableGenericRecord {
+/**
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
+ */
+public class PortableInternalGenericRecord extends PortableGenericRecord implements InternalGenericRecord {
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
 
     private final BufferObjectDataInput in;
     private final int offset;
-    private final boolean readGenericLazy;
     private final int finalPosition;
 
     PortableInternalGenericRecord(PortableSerializer serializer, BufferObjectDataInput in,
-                                  ClassDefinition cd, boolean readGenericLazy) {
+                                  ClassDefinition cd) {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;
-        this.readGenericLazy = readGenericLazy;
 
         int fieldCount;
         try {
@@ -108,7 +110,14 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     @Override
     @Nonnull
     public FieldKind getFieldKind(@Nonnull String fieldName) {
-        return FieldTypeToFieldKind.toFieldKind(cd.getFieldType(fieldName));
+        FieldType fieldType;
+        try {
+            fieldType = cd.getFieldType(fieldName);
+        } catch (IllegalArgumentException ignored) {
+            // field does not exist
+            return FieldKind.NOT_AVAILABLE;
+        }
+        return FieldTypeToFieldKind.toFieldKind(fieldType);
     }
 
     @Override
@@ -513,7 +522,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder cloneWithBuilder() {
+    public GenericRecordBuilder newBuilderWithClone() {
         throw new UnsupportedOperationException();
     }
 
@@ -525,10 +534,23 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
 
     @Override
     public GenericRecord[] getArrayOfGenericRecord(@Nonnull String fieldName) {
-        return readNestedArray(fieldName, GenericRecord[]::new, true);
+        return readNestedArray(fieldName, GenericRecord[]::new, PortableReadMethod.GENERIC_RECORD);
     }
 
-    private <T> T[] readNestedArray(@Nonnull String fieldName, Function<Integer, T[]> constructor, boolean asGenericRecord) {
+    @Nullable
+    @Override
+    public InternalGenericRecord[] getArrayOfInternalGenericRecord(@Nonnull String fieldName) {
+        return readNestedArray(fieldName, InternalGenericRecord[]::new, PortableReadMethod.INTERNAL_GENERIC_RECORD);
+    }
+
+    enum PortableReadMethod {
+        OBJECT,
+        GENERIC_RECORD,
+        INTERNAL_GENERIC_RECORD
+    }
+
+    private <T> T[] readNestedArray(@Nonnull String fieldName, Function<Integer, T[]> constructor,
+                                    PortableReadMethod readMethod) {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -560,10 +582,18 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
                 for (int i = 0; i < len; i++) {
                     int start = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
                     in.position(start);
-                    if (asGenericRecord) {
-                        portables[i] = serializer.readAsGenericRecord(in, factoryId, classId, readGenericLazy);
-                    } else {
-                        portables[i] = serializer.read(in, factoryId, classId);
+                    switch (readMethod) {
+                        case OBJECT:
+                            portables[i] = serializer.read(in, factoryId, classId);
+                            break;
+                        case GENERIC_RECORD:
+                            portables[i] = serializer.readAsGenericRecord(in, factoryId, classId);
+                            break;
+                        case INTERNAL_GENERIC_RECORD:
+                            portables[i] = serializer.readAsInternalGenericRecord(in, factoryId, classId);
+                            break;
+                        default:
+                            throw new IllegalStateException();
                     }
                 }
             }
@@ -577,10 +607,16 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
 
     @Override
     public GenericRecord getGenericRecord(@Nonnull String fieldName) {
-        return readNested(fieldName, true);
+        return readNested(fieldName, PortableReadMethod.GENERIC_RECORD);
     }
 
-    private <T> T readNested(@Nonnull String fieldName, boolean asGenericRecord) {
+    @Nullable
+    @Override
+    public InternalGenericRecord getInternalGenericRecord(@Nonnull String fieldName) {
+        return readNested(fieldName, PortableReadMethod.INTERNAL_GENERIC_RECORD);
+    }
+
+    private <T> T readNested(@Nonnull String fieldName, PortableReadMethod readMethod) {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -601,10 +637,15 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
             checkFactoryAndClass(fd, factoryId, classId);
 
             if (!isNull) {
-                if (asGenericRecord) {
-                    return serializer.readAsGenericRecord(in, factoryId, classId, readGenericLazy);
-                } else {
-                    return serializer.read(in, factoryId, classId);
+                switch (readMethod) {
+                    case OBJECT:
+                        return serializer.read(in, factoryId, classId);
+                    case GENERIC_RECORD:
+                        return serializer.readAsGenericRecord(in, factoryId, classId);
+                    case INTERNAL_GENERIC_RECORD:
+                        return serializer.readAsInternalGenericRecord(in, factoryId, classId);
+                    default:
+                        throw new IllegalStateException();
                 }
             }
             return null;
@@ -759,15 +800,21 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
 
     @Override
     public GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index) {
-        return readNestedFromArray(fieldName, index, true);
+        return readNestedFromArray(fieldName, index, PortableReadMethod.GENERIC_RECORD);
+    }
+
+    @Nullable
+    @Override
+    public InternalGenericRecord getInternalGenericRecordFromArray(@Nonnull String fieldName, int index) {
+        return readNestedFromArray(fieldName, index, PortableReadMethod.INTERNAL_GENERIC_RECORD);
     }
 
     @Override
     public <T> T getObjectFromArray(@Nonnull String fieldName, int index) {
-        return readNestedFromArray(fieldName, index, false);
+        return readNestedFromArray(fieldName, index, PortableReadMethod.OBJECT);
     }
 
-    private <T> T readNestedFromArray(@Nonnull String fieldName, int index, boolean asGenericRecord) {
+    private <T> T readNestedFromArray(@Nonnull String fieldName, int index, PortableReadMethod readMethod) {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -795,10 +842,15 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
             int offset = in.position();
             int start = in.readInt(offset + index * Bits.INT_SIZE_IN_BYTES);
             in.position(start);
-            if (asGenericRecord) {
-                return serializer.readAsGenericRecord(in, factoryId, classId, readGenericLazy);
-            } else {
-                return serializer.read(in, factoryId, classId);
+            switch (readMethod) {
+                case OBJECT:
+                    return serializer.read(in, factoryId, classId);
+                case GENERIC_RECORD:
+                    return serializer.readAsGenericRecord(in, factoryId, classId);
+                case INTERNAL_GENERIC_RECORD:
+                    return serializer.readAsInternalGenericRecord(in, factoryId, classId);
+                default:
+                    throw new IllegalStateException();
             }
         } catch (IOException e) {
             throw newIllegalStateException(e);
@@ -860,17 +912,59 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
 
     @Override
     public <T> T[] getArrayOfObject(@Nonnull String fieldName, Class<T> componentType) {
-        return readNestedArray(fieldName, length -> (T[]) Array.newInstance(componentType, length), false);
+        return readNestedArray(fieldName, length -> (T[]) Array.newInstance(componentType, length), PortableReadMethod.OBJECT);
     }
 
     @Override
     public Object getObject(@Nonnull String fieldName) {
-        return readNested(fieldName, false);
+        return readNested(fieldName, PortableReadMethod.OBJECT);
     }
 
     @Override
     protected Object getClassIdentifier() {
         return cd;
+    }
+
+    @Nullable
+    @Override
+    public Byte getNullableInt8FromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Short getNullableInt16FromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Integer getNullableInt32FromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Long getNullableInt64FromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Float getNullableFloat32FromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Double getNullableFloat64FromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.AbstractTextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
-import com.hazelcast.internal.nio.IOUtil;
 
+import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 import java.nio.ByteBuffer;
@@ -46,7 +46,7 @@ public class SetCommand extends AbstractTextCommand {
 
     @Override
     public boolean readFrom(ByteBuffer src) {
-        copy(src);
+        copyToHeapBuffer(src, bbValue);
         if (!bbValue.hasRemaining()) {
             while (src.hasRemaining()) {
                 char c = (char) src.get();
@@ -57,18 +57,6 @@ public class SetCommand extends AbstractTextCommand {
             }
         }
         return false;
-    }
-
-    void copy(ByteBuffer cb) {
-        if (cb.isDirect()) {
-            int n = Math.min(cb.remaining(), bbValue.remaining());
-            if (n > 0) {
-                cb.get(bbValue.array(), bbValue.position(), n);
-                upcast(bbValue).position(bbValue.position() + n);
-            }
-        } else {
-            IOUtil.copyToHeapBuffer(cb, bbValue);
-        }
     }
 
     public void setResponse(byte[] value) {

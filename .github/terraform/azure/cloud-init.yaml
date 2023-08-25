@@ -1,0 +1,6 @@
+#cloud-config
+# Install additional packages on first boot
+packages:
+  - openjdk-8-jre-headless
+  - wget
+  - unzip

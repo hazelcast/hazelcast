@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
@@ -654,6 +654,46 @@ public class SqlPortableTest extends SqlTestSupport {
         );
 
         assertRowsAnyOrder("SELECT __key, this FROM " + name, emptyList());
+    }
+
+    @Test
+    public void test_classDefMappingMismatch() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING " + randomName() + " ("
+                + "id VARCHAR"
+                + ") TYPE IMap "
+                + "OPTIONS ("
+                + "'keyFormat'='int',"
+                + "'valueFormat'='portable',"
+                + "'valuePortableFactoryId'='" + PERSON_ID_FACTORY_ID + "', "
+                + "'valuePortableClassId'='" + PERSON_ID_CLASS_ID + "', "
+                + "'valuePortableClassVersion'='" + PERSON_ID_CLASS_VERSION + "' "
+                + ")"))
+                .hasMessage("Mismatch between declared and resolved type: id");
+
+        String name = randomName();
+        // we map a non-existent field. This works, but will fail at runtime
+        sqlService.execute("CREATE MAPPING " + name + " ("
+                + "foo INT"
+                + ") TYPE IMap "
+                + "OPTIONS ("
+                + "'keyFormat'='int',"
+                + "'valueFormat'='portable',"
+                + "'valuePortableFactoryId'='" + PERSON_ID_FACTORY_ID + "', "
+                + "'valuePortableClassId'='" + PERSON_ID_CLASS_ID + "', "
+                + "'valuePortableClassVersion'='" + PERSON_ID_CLASS_VERSION + "' "
+                + ")");
+
+        assertThatThrownBy(() ->
+                sqlService.execute("insert into " + name + "(__key, foo) values(1, 1)"))
+                .hasMessage("Field \"foo\" doesn't exist in Portable Class Definition");
+
+        sqlService.execute("insert into " + name + "(__key, foo) values(1, null)");
+        sqlService.execute("insert into " + name + "(__key) values(2)");
+
+        assertRowsAnyOrder("select __key, foo from " + name,
+                rows(2,
+                        1, null,
+                        2, null));
     }
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})

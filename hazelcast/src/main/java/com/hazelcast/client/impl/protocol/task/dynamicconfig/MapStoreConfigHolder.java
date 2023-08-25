@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,13 +40,17 @@ public class MapStoreConfigHolder {
     private Data factoryImplementation;
     private Map<String, String> properties;
     private String initialLoadMode;
+    private boolean offload;
+    private boolean isOffloadExists;
 
     public MapStoreConfigHolder() {
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public MapStoreConfigHolder(boolean enabled, boolean writeCoalescing, int writeDelaySeconds, int writeBatchSize,
                                 String className, Data implementation, String factoryClassName,
-                                Data factoryImplementation, Map<String, String> properties, String initialLoadMode) {
+                                Data factoryImplementation, Map<String, String> properties,
+                                String initialLoadMode, boolean isOffloadExists, boolean offload) {
         this.enabled = enabled;
         this.writeCoalescing = writeCoalescing;
         this.className = className;
@@ -57,6 +61,8 @@ public class MapStoreConfigHolder {
         this.factoryImplementation = factoryImplementation;
         this.properties = properties;
         this.initialLoadMode = initialLoadMode;
+        this.offload = offload;
+        this.isOffloadExists = isOffloadExists;
     }
 
     public boolean isEnabled() {
@@ -65,6 +71,14 @@ public class MapStoreConfigHolder {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isOffload() {
+        return offload;
+    }
+
+    public void setOffload(boolean offload) {
+        this.offload = offload;
     }
 
     public boolean isWriteCoalescing() {
@@ -149,7 +163,9 @@ public class MapStoreConfigHolder {
             config.setFactoryClassName(factoryClassName);
         }
         config.setInitialLoadMode(InitialLoadMode.valueOf(initialLoadMode));
-        config.setProperties(PropertiesUtil.fromMap(properties));
+        if (properties != null) {
+            config.setProperties(PropertiesUtil.fromMap(properties));
+        }
         config.setWriteBatchSize(writeBatchSize);
         config.setWriteCoalescing(writeCoalescing);
         config.setWriteDelaySeconds(writeDelaySeconds);
@@ -160,6 +176,9 @@ public class MapStoreConfigHolder {
         Object factoryImplementation = serializationService.toObject(this.factoryImplementation);
         if (factoryImplementation != null) {
             config.setFactoryImplementation(factoryImplementation);
+        }
+        if (isOffloadExists) {
+            config.setOffload(offload);
         }
         return config;
     }
@@ -179,6 +198,7 @@ public class MapStoreConfigHolder {
         holder.setWriteBatchSize(config.getWriteBatchSize());
         holder.setWriteCoalescing(config.isWriteCoalescing());
         holder.setWriteDelaySeconds(config.getWriteDelaySeconds());
+        holder.setOffload(config.isOffload());
         return holder;
     }
 }

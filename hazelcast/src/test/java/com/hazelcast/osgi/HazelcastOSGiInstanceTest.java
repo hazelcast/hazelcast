@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.osgi.impl.HazelcastOSGiTestUtil.createHazelcastOSGiInstance;
@@ -579,7 +580,7 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getUserContextCalledSuccessfullyOverOSGiInstance() {
-        ConcurrentMap<String, Object> mockUserContext = mock(ConcurrentMap.class);
+        ConcurrentMap<String, Object> mockUserContext = new ConcurrentHashMap<>(1);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 

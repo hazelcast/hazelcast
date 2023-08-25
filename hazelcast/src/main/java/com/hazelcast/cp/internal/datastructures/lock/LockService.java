@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.Acquir
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.spi.properties.ClusterProperty.METRICS_DATASTRUCTURES;
 
 /**
  * Contains Raft-based lock instances
@@ -62,7 +63,10 @@ public class LockService extends AbstractBlockingService<LockInvocationKey, Lock
     @Override
     protected void initImpl() {
         super.initImpl();
-        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
+
+        if (nodeEngine.getProperties().getBoolean(METRICS_DATASTRUCTURES)) {
+            nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     public AcquireResult acquire(CPGroupId groupId, String name, LockInvocationKey key, long timeoutMs) {
@@ -223,9 +227,16 @@ public class LockService extends AbstractBlockingService<LockInvocationKey, Lock
                 // We are reading two separate volatile fields but not atomically.
                 // We may observe a partial update.
                 if (owner != null && lockCount > 0) {
-                    context.collect(desc.copy().withUnit(ProbeUnit.COUNT).withMetric("lockCount"), lockCount);
-                    context.collect(desc.copy().withMetric("ownerSessionId"), owner.sessionId());
-                    context.collect(desc.copy().withTag("owner", owner.callerAddress().toString()).withMetric("owner"), 0);
+                    MetricDescriptor copy = desc.copy()
+                                                .withTag("sessionId", String.valueOf(owner.sessionId()))
+                                                .withTag("qualifiedSessionId", owner.sessionId() + "@" + groupId.getName());
+
+                    // Continue to provide `owner.sessionId()` as the value of this metric; although we now include this data in
+                    // tags for this metric, this provides backwards compatibility, and there is no significant meaningful data
+                    // to provide in its place related to the `owner`
+                    context.collect(copy.withMetric("ownerSessionId"), owner.sessionId());
+                    context.collect(copy.withTag("owner", owner.callerAddress().toString()).withMetric("owner"), 0);
+                    context.collect(copy.withUnit(ProbeUnit.COUNT).withMetric("lockCount"), lockCount);
                 } else {
                     context.collect(desc.copy().withUnit(ProbeUnit.COUNT).withMetric("lockCount"), 0);
                 }

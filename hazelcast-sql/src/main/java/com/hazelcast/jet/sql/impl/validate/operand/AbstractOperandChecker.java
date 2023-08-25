@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,17 @@
 
 package com.hazelcast.jet.sql.impl.validate.operand;
 
-import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.ParameterConverter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.type.SqlTypeName;
+
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
 
 public abstract class AbstractOperandChecker implements OperandChecker {
     protected AbstractOperandChecker() {
@@ -52,7 +53,7 @@ public abstract class AbstractOperandChecker implements OperandChecker {
 
         RelDataType operandType = validator.deriveType(callBinding.getScope(), operand);
 
-        assert operandType.getSqlTypeName() != SqlTypeName.NULL : "Operand type is not resolved";
+        assert !isNullOrUnknown(operandType.getSqlTypeName()) : "Operand type is not resolved";
 
         // Handle type match
         if (matchesTargetType(operandType)) {

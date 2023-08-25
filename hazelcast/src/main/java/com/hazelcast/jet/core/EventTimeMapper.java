@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.function.ObjLongBiFunction;
+import com.hazelcast.jet.impl.execution.WatermarkCoalescer;
 import com.hazelcast.jet.pipeline.Sources;
 
 import javax.annotation.Nonnull;
@@ -30,7 +31,6 @@ import java.util.function.ToLongFunction;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
-import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -122,7 +122,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * </ul>
  *
  * @param <T> the event type
- *
  * @since Jet 3.0
  */
 public class EventTimeMapper<T> {
@@ -137,6 +136,7 @@ public class EventTimeMapper<T> {
     private static final WatermarkPolicy[] EMPTY_WATERMARK_POLICIES = {};
     private static final long[] EMPTY_LONGS = {};
 
+    private final byte wmKey;
     private final long idleTimeoutNanos;
     @Nullable
     private final ToLongFunction<? super T> timestampFn;
@@ -161,6 +161,7 @@ public class EventTimeMapper<T> {
      *                        Sources#streamFromProcessorWithWatermarks}
      */
     public EventTimeMapper(EventTimePolicy<? super T> eventTimePolicy) {
+        this.wmKey = eventTimePolicy.wmKey();
         this.idleTimeoutNanos = MILLISECONDS.toNanos(eventTimePolicy.idleTimeoutMillis());
         this.timestampFn = eventTimePolicy.timestampFn();
         this.wrapFn = eventTimePolicy.wrapFn();
@@ -269,12 +270,12 @@ public class EventTimeMapper<T> {
         if (min > lastEmittedWm) {
             long newWm = watermarkThrottlingFrame != null ? watermarkThrottlingFrame.floorFrameTs(min) : Long.MIN_VALUE;
             if (newWm > lastEmittedWm) {
-                traverser.append(new Watermark(newWm));
+                traverser.append(new Watermark(newWm, wmKey));
                 lastEmittedWm = newWm;
             }
         }
         if (allAreIdle) {
-            traverser.append(IDLE_MESSAGE);
+            traverser.append(WatermarkCoalescer.IDLE_MESSAGE);
         }
     }
 

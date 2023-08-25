@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@ public class QueryResultSizeLimiter {
         }
 
         // limit number of local partitions to check to keep runtime constant
-        PartitionIdSet localPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
+        PartitionIdSet localPartitions = mapServiceContext.getCachedOwnedPartitions();
         int partitionsToCheck = min(localPartitions.size(), maxLocalPartitionsLimitForPreCheck);
         if (partitionsToCheck == 0) {
             return;

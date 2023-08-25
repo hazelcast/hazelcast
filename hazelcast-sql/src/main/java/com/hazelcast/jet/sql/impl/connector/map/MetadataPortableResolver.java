@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.PortableUpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -31,6 +31,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -48,6 +49,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_VERSION;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.asInt;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
@@ -76,11 +78,15 @@ final class MetadataPortableResolver implements KvMetadataResolver {
         ClassDefinition classDefinition = findClassDefinition(isKey, options, serializationService);
 
         return userFields.isEmpty()
-                ? resolveFields(isKey, classDefinition)
+                ? resolveFields(isKey, classDefinition, serializationService)
                 : resolveAndValidateFields(isKey, userFieldsByPath, classDefinition);
     }
 
-    Stream<MappingField> resolveFields(boolean isKey, @Nullable ClassDefinition clazz) {
+    Stream<MappingField> resolveFields(
+            boolean isKey,
+            @Nullable ClassDefinition clazz,
+            InternalSerializationService ss
+    ) {
         if (clazz == null || clazz.getFieldCount() == 0) {
             // ClassDefinition does not exist, or it is empty, map the whole value
             String name = isKey ? KEY : VALUE;
@@ -90,7 +96,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
         return clazz.getFieldNames().stream()
                 .map(name -> {
                     QueryPath path = new QueryPath(name, isKey);
-                    QueryDataType type = resolvePortableType(clazz.getFieldType(name));
+                    QueryDataType type = TypesUtils.resolvePortableFieldType(clazz.getFieldType(name));
 
                     return new MappingField(name, type, path.toString());
                 });
@@ -102,19 +108,19 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             @Nullable ClassDefinition clazz
     ) {
         if (clazz == null) {
-            // CLassDefinition does not exist, make sure there are no OBJECT fields
+            // ClassDefinition does not exist, make sure there are no OBJECT fields
             return userFieldsByPath.values().stream()
                     .peek(mappingField -> {
                         QueryDataType type = mappingField.type();
-                        if (type == QueryDataType.OBJECT) {
+                        if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
                             throw QueryException.error("Cannot derive Portable type for '" + type.getTypeFamily() + "'");
                         }
                     });
         }
 
         for (String name : clazz.getFieldNames()) {
-            QueryPath path = new QueryPath(name, isKey);
-            QueryDataType type = resolvePortableType(clazz.getFieldType(name));
+            final QueryPath path = new QueryPath(name, isKey);
+            final QueryDataType type = TypesUtils.resolvePortableFieldType(clazz.getFieldType(name));
 
             MappingField userField = userFieldsByPath.get(path);
             if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
@@ -122,42 +128,6 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             }
         }
         return userFieldsByPath.values().stream();
-    }
-
-    @SuppressWarnings("checkstyle:ReturnCount")
-    private static QueryDataType resolvePortableType(FieldType type) {
-        switch (type) {
-            case BOOLEAN:
-                return QueryDataType.BOOLEAN;
-            case BYTE:
-                return QueryDataType.TINYINT;
-            case SHORT:
-                return QueryDataType.SMALLINT;
-            case INT:
-                return QueryDataType.INT;
-            case LONG:
-                return QueryDataType.BIGINT;
-            case FLOAT:
-                return QueryDataType.REAL;
-            case DOUBLE:
-                return QueryDataType.DOUBLE;
-            case DECIMAL:
-                return QueryDataType.DECIMAL;
-            case CHAR:
-                return QueryDataType.VARCHAR_CHARACTER;
-            case UTF:
-                return QueryDataType.VARCHAR;
-            case TIME:
-                return QueryDataType.TIME;
-            case DATE:
-                return QueryDataType.DATE;
-            case TIMESTAMP:
-                return QueryDataType.TIMESTAMP;
-            case TIMESTAMP_WITH_TIMEZONE:
-                return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
-            default:
-                return QueryDataType.OBJECT;
-        }
     }
 
     @Override
@@ -278,30 +248,12 @@ final class MetadataPortableResolver implements KvMetadataResolver {
 
     private static Tuple3<Integer, Integer, Integer> settings(boolean isKey, Map<String, String> options) {
         String factoryIdProperty = isKey ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID;
-        String factoryIdString = options.get(factoryIdProperty);
         String classIdProperty = isKey ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID;
-        String classIdString = options.get(classIdProperty);
         String classVersionProperty = isKey ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION;
-        String classVersionString = options.getOrDefault(classVersionProperty, "0");
-        if (factoryIdString == null || classIdString == null) {
-            throw QueryException.error(
-                    "Unable to resolve table metadata. Missing ['"
-                            + factoryIdProperty + "'|'"
-                            + classIdProperty
-                            + "'] option(s)");
-        }
         return Tuple3.tuple3(
-                asInt(factoryIdProperty, factoryIdString),
-                asInt(classIdProperty, classIdString),
-                asInt(classVersionProperty, classVersionString)
+                asInt(options, factoryIdProperty, null),
+                asInt(options, classIdProperty, null),
+                asInt(options, classVersionProperty, 0)
         );
-    }
-
-    private static int asInt(String property, String value) {
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            throw QueryException.error("Cannot parse " + property + " value as integer: " + "'" + value + "'");
-        }
     }
 }

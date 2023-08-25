@@ -36,10 +36,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
+                <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
+                    <relase>${jdk.version}</relase>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>

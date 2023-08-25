@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PARTITION_BACKUP_REPLICA_ANTI_ENTROPY;
+import static com.hazelcast.internal.partition.impl.PartitionReplicaManager.REQUIRES_SYNC;
 
 // should not be an urgent operation. required to be in order with backup operations on target node
 public final class PartitionBackupReplicaAntiEntropyOperation
@@ -105,7 +106,8 @@ public final class PartitionBackupReplicaAntiEntropyOperation
             long[] currentVersions = replicaManager.getPartitionReplicaVersions(partitionId, ns);
             long currentVersion = currentVersions[replicaIndex - 1];
 
-            if (replicaManager.isPartitionReplicaVersionDirty(partitionId, ns) || currentVersion != primaryVersion) {
+            if (replicaManager.isPartitionReplicaVersionDirty(partitionId, ns) || currentVersion != primaryVersion
+                || currentVersion == REQUIRES_SYNC) {
                 logBackupVersionMismatch(ns, currentVersion, primaryVersion);
                 continue;
             }

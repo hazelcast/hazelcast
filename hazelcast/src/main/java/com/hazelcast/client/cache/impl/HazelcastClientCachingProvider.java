@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.AbstractHazelcastCachingProvider;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.client.config.YamlClientConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 
 import javax.annotation.Nonnull;
@@ -125,8 +126,10 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
     }
 
     private ClientConfig getConfig(URL configURL, ClassLoader theClassLoader, String instanceName) throws IOException {
-        ClientConfig config = new XmlClientConfigBuilder(configURL).build()
-                .setClassLoader(theClassLoader);
+        ClientConfig config = isYamlConfiguration(configURL)
+                ? new YamlClientConfigBuilder(configURL).build()
+                : new XmlClientConfigBuilder(configURL).build();
+        config.setClassLoader(theClassLoader);
         if (instanceName != null) {
             // if the instance name is specified via properties use it,
             // even though instance name is specified in the config

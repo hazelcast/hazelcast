@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_CONNECTION_OUT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_INPUTTHREAD;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_OUTPUTTHREAD;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
@@ -128,13 +129,13 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     // Currently, this is a coarse-grained aggregation of the bytes/send received.
     // In the future you probably want to split this up in member and client and potentially
     // wan specific.
-    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_SEND, unit = BYTES)
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_SEND, unit = BYTES, level = DEBUG)
     private volatile long bytesSend;
-    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_RECEIVED, unit = BYTES)
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_RECEIVED, unit = BYTES, level = DEBUG)
     private volatile long bytesReceived;
-    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_PACKETS_SEND)
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_PACKETS_SEND, level = DEBUG)
     private volatile long packetsSend;
-    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_PACKETS_RECEIVED)
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_PACKETS_RECEIVED, level = DEBUG)
     private volatile long packetsReceived;
 
     public NioNetworking(Context ctx) {

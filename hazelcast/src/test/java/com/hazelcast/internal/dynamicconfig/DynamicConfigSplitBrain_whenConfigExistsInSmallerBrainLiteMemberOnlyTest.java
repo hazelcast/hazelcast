@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.function.Supplier;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicConfigSplitBrain_whenConfigExistsInSmallerBrainLiteMemberOnlyTest
@@ -31,11 +33,12 @@ public class DynamicConfigSplitBrain_whenConfigExistsInSmallerBrainLiteMemberOnl
 
     // start 2 data members and 1 lite member
     @Override
-    protected HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {
+    protected HazelcastInstance[] startInitialCluster(Supplier<Config> configSupplier, int clusterSize) {
+        Config config = configSupplier.get();
         HazelcastInstance[] hazelcastInstances = new HazelcastInstance[clusterSize];
         factory = createHazelcastInstanceFactory(clusterSize);
         for (int i = 0; i < clusterSize - 1; i++) {
-            HazelcastInstance hz = factory.newHazelcastInstance(config);
+            HazelcastInstance hz = factory.newHazelcastInstance(configSupplier.get());
             hazelcastInstances[i] = hz;
         }
         config.setLiteMember(true);

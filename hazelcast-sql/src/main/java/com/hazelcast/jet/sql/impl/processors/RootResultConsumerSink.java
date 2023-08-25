@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
@@ -56,8 +57,8 @@ public final class RootResultConsumerSink implements Processor {
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-        rootResultConsumer = getNodeEngine(context.hazelcastInstance())
-                .getSqlService()
+        SqlServiceImpl sqlService = (SqlServiceImpl) getNodeEngine(context.hazelcastInstance()).getSqlService();
+        rootResultConsumer = sqlService
                 .getInternalService()
                 .getResultRegistry()
                 .remove(context.jobId());

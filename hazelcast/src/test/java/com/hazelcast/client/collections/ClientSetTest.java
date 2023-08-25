@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,13 +35,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Spliterator;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -103,6 +106,32 @@ public class ClientSetTest extends HazelcastTestSupport {
         assertTrue(((String) iter.next()).startsWith("item"));
         assertTrue(((String) iter.next()).startsWith("item"));
         assertFalse(iter.hasNext());
+    }
+
+    @Test
+    public void testSpliterator() {
+        assertTrue(set.add("item1"));
+        assertTrue(set.add("item2"));
+        assertTrue(set.add("item3"));
+        assertTrue(set.add("item4"));
+
+        Spliterator spliterator = set.spliterator();
+
+        ArrayList recorder = new ArrayList(set.size());
+        Consumer consumer = value -> recorder.add(value);
+
+        // tryAdvance.
+        assertTrue(spliterator.tryAdvance(consumer));
+        assertTrue(set.contains(recorder.get(0)));
+
+        // forEachRemaining.
+        spliterator.forEachRemaining(consumer);
+        assertCollection(set, recorder);
+
+        // There should be no more elements remaining in this spliterator.
+        assertFalse(spliterator.tryAdvance(consumer));
+        spliterator.forEachRemaining(item -> fail());
+
     }
 
     @Test

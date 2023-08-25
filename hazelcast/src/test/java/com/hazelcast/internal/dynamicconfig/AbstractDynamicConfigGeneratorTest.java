@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
+import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -28,6 +30,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.ConsistencyCheckStrategy;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -56,6 +59,7 @@ import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -67,6 +71,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanAcknowledgeType;
@@ -98,6 +103,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -122,6 +128,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setWriteDelaySeconds(10)
                 .setClassName("className")
                 .setWriteCoalescing(false)
+                .setOffload(false)
                 .setWriteBatchSize(500)
                 .setProperty("key", "value");
 
@@ -137,6 +144,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setImplementation(new TestMapStore())
                 .setWriteCoalescing(true)
                 .setWriteBatchSize(500)
+                .setOffload(true)
                 .setProperty("key", "value");
 
         testMap(mapStoreConfig);
@@ -150,6 +158,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setWriteDelaySeconds(10)
                 .setWriteCoalescing(true)
                 .setWriteBatchSize(500)
+                .setOffload(false)
                 .setFactoryClassName("factoryClassName")
                 .setProperty("key", "value");
 
@@ -164,6 +173,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setWriteDelaySeconds(10)
                 .setWriteCoalescing(true)
                 .setWriteBatchSize(500)
+                .setOffload(true)
                 .setFactoryImplementation((MapStoreFactory<Object, Object>) (mapName, properties) -> null)
                 .setProperty("key", "value");
 
@@ -205,6 +215,25 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
 
         Config decConfig = getNewConfigViaGenerator(config);
         MapConfig actualConfig = decConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapWithBTreeConfig() {
+        MapConfig expectedConfig = newMapConfig()
+                .setName("testMapWithBTreeConfig");
+        IndexConfig indexConfig = new IndexConfig();
+        indexConfig.setAttributes(singletonList("age"));
+        BTreeIndexConfig bTreeIndexConfig = indexConfig.getBTreeIndexConfig();
+        bTreeIndexConfig.getMemoryTierConfig().setCapacity(Capacity.of(1337, MemoryUnit.GIGABYTES));
+        bTreeIndexConfig.setPageSize(Capacity.of(4871, MemoryUnit.GIGABYTES));
+        expectedConfig.addIndexConfig(indexConfig);
+
+        Config config = new Config()
+                .addMapConfig(expectedConfig);
+
+        Config decConfig = getNewConfigViaGenerator(config);
+        MapConfig actualConfig = decConfig.getMapConfig("testMapWithBTreeConfig");
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -253,6 +282,25 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
         assertEquals(23, actualConfig.getEvictionConfig().getSize());
         assertEquals("LRU", actualConfig.getEvictionConfig().getEvictionPolicy().name());
         assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapPartitioningAttributes() {
+        final List<PartitioningAttributeConfig> attributes = asList(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
+
+        MapConfig mapConfig = newMapConfig()
+                .setName("partitioningAttributesTest")
+                .setPartitioningAttributeConfigs(attributes);
+
+        Config config = new Config()
+                .addMapConfig(mapConfig);
+
+        Config decConfig = getNewConfigViaGenerator(config);
+        assertEquals(attributes,
+                decConfig.getMapConfig("partitioningAttributesTest").getPartitioningAttributeConfigs());
     }
 
     // CACHE
@@ -816,6 +864,58 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
         ConfigCompatibilityChecker.checkWanConfigs(
                 config.getWanReplicationConfigs(),
                 decConfig.getWanReplicationConfigs());
+    }
+
+    @Test
+    public void testRegularNetworkTcpIpMemberList() {
+        List<String> members = Arrays.asList("10.11.12.13", "10.11.12.14", "10.11.12.15", "10.11.12.16");
+        Config config = new Config();
+        TcpIpConfig tcpIpConfig = new TcpIpConfig()
+                .setEnabled(true)
+                .setMembers(members);
+
+        config.getNetworkConfig().getJoin().setTcpIpConfig(tcpIpConfig);
+        Config decConfig = getNewConfigViaGenerator(config);
+
+        List<String> actualMembers = decConfig.getNetworkConfig().getJoin().getTcpIpConfig().getMembers();
+        assertContainsAll(members, actualMembers);
+    }
+
+    @Test
+    public void testAdvancedNetworkTcpIpMemberList() {
+        List<String> members = Arrays.asList("10.11.12.13", "10.11.12.14", "10.11.12.15", "10.11.12.16");
+        Config config = new Config();
+        TcpIpConfig tcpIpConfig = new TcpIpConfig()
+                .setEnabled(true)
+                .setMembers(members);
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+        advancedNetworkConfig.setEnabled(true);
+        advancedNetworkConfig.getJoin().setTcpIpConfig(tcpIpConfig);
+        Config decConfig = getNewConfigViaGenerator(config);
+
+        List<String> actualMembers = decConfig.getAdvancedNetworkConfig().getJoin().getTcpIpConfig().getMembers();
+        assertContainsAll(members, actualMembers);
+    }
+
+
+    // DATA CONNECTION
+
+    @Test
+    public void testDataConnection() {
+        Properties properties = new Properties();
+        properties.setProperty("prop1", "val1");
+        properties.setProperty("prop2", "val2");
+        DataConnectionConfig expectedConfig = new DataConnectionConfig()
+                .setName("some-name")
+                .setType("some-type")
+                .setProperties(properties);
+
+        Config config = new Config().addDataConnectionConfig(expectedConfig);
+
+        Config decConfig = getNewConfigViaGenerator(config);
+
+        DataConnectionConfig actualConfig = decConfig.getDataConnectionConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
     }
 
     // UTILITY - GENERATOR

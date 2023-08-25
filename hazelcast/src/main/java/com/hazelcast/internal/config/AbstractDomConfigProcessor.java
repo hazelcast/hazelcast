@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import org.w3c.dom.Node;
 
@@ -189,16 +189,22 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
 
     protected void handleCompactSerialization(Node node, SerializationConfig serializationConfig) {
         CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
-        Node enabledNode = getNamedItemNode(node, "enabled");
-        if (enabledNode != null) {
-            boolean enabled = getBooleanValue(getTextContent(enabledNode));
-            compactSerializationConfig.setEnabled(enabled);
-        }
-
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
-            if (matches("registered-classes", name)) {
+            if (matches("serializers", name)) {
+                fillCompactSerializers(child, compactSerializationConfig);
+            } else if (matches("classes", name)) {
                 fillCompactSerializableClasses(child, compactSerializationConfig);
+            }
+        }
+    }
+
+    protected void fillCompactSerializers(Node node, CompactSerializationConfig compactSerializationConfig) {
+        for (Node child : childElements(node)) {
+            String name = cleanNodeName(child);
+            if (matches("serializer", name)) {
+                String serializerClassName = getTextContent(child);
+                CompactSerializationConfigAccessor.registerSerializer(compactSerializationConfig, serializerClassName);
             }
         }
     }
@@ -207,29 +213,10 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
             if (matches("class", name)) {
-                String className = getTextContent(child);
-                Node typeNameNode = getNamedItemNode(child, "type-name");
-                String typeName = typeNameNode != null ? getTextContent(typeNameNode) : null;
-                Node serializerClassNameNode = getNamedItemNode(child, "serializer");
-                String serializerClassName = serializerClassNameNode != null
-                        ? getTextContent(serializerClassNameNode) : null;
-                registerCompactSerializableClass(compactSerializationConfig, className, typeName, serializerClassName);
+                String compactSerializableClassName = getTextContent(child);
+                CompactSerializationConfigAccessor.registerClass(compactSerializationConfig,
+                        compactSerializableClassName);
             }
-        }
-    }
-
-    protected void registerCompactSerializableClass(CompactSerializationConfig compactSerializationConfig,
-                                                    String className, String typeName, String serializerClassName) {
-        if (typeName != null && serializerClassName != null) {
-            CompactSerializationConfigAccessor.registerExplicitSerializer(compactSerializationConfig, className,
-                    typeName, serializerClassName);
-        } else if (typeName == null && serializerClassName == null) {
-            CompactSerializationConfigAccessor.registerReflectiveSerializer(compactSerializationConfig, className);
-        } else {
-            throw new InvalidConfigurationException("Either both 'type-name' and 'serializer' attributes "
-                    + "must be defined to register a class with an explicit serializer, "
-                    + "or no attributes should be defined to register a class to be used with "
-                    + "reflective compact serializer.");
         }
     }
 
@@ -354,7 +341,9 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         for (Node n : childElements(node)) {
             final String nodeName = cleanNodeName(n);
             if (matches("size", nodeName)) {
-                nativeMemoryConfig.setSize(createMemorySize(n));
+                nativeMemoryConfig.setCapacity(createCapacity(n));
+            } else if (matches("capacity", nodeName)) {
+                nativeMemoryConfig.setCapacity(createCapacity(n));
             } else if (matches("min-block-size", nodeName)) {
                 String value = getTextContent(n);
                 nativeMemoryConfig.setMinBlockSize(Integer.parseInt(value));
@@ -375,10 +364,10 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         }
     }
 
-    protected MemorySize createMemorySize(Node node) {
+    protected Capacity createCapacity(Node node) {
         final String value = getTextContent(getNamedItemNode(node, "value"));
         final MemoryUnit unit = MemoryUnit.valueOf(getTextContent(getNamedItemNode(node, "unit")));
-        return new MemorySize(Long.parseLong(value), unit);
+        return new Capacity(Long.parseLong(value), unit);
     }
 
     private void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node node) {

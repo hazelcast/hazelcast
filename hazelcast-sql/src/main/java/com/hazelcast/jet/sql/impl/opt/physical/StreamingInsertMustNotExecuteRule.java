@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@ import org.apache.calcite.rel.rules.TransformationRule;
 import org.immutables.value.Value;
 
 /**
- * A rule that replaces any streaming SINK INTO without Jet job creation with {@link MustNotExecuteRel}.
+ * A rule that replaces any streaming SINK INTO without Jet job creation with
+ * {@link MustNotExecutePhysicalRel}.
  */
 @Value.Enclosing
 public final class StreamingInsertMustNotExecuteRule extends RelRule<Config> implements TransformationRule {
@@ -60,7 +61,7 @@ public final class StreamingInsertMustNotExecuteRule extends RelRule<Config> imp
         HazelcastRelOptCluster cluster = (HazelcastRelOptCluster) sinkRel.getCluster();
         if (!cluster.requiresJob()) {
             call.transformTo(
-                    new MustNotExecuteRel(sinkRel.getCluster(), sinkRel.getTraitSet(), sinkRel.getRowType(),
+                    new MustNotExecutePhysicalRel(sinkRel.getCluster(), sinkRel.getTraitSet(), sinkRel.getRowType(),
                             "You must use CREATE JOB statement for a streaming DML query"));
         }
     }

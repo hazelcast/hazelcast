@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hazelcast.jet.annotation.EvolvingApi;
  * @since Jet 4.2
  */
 @EvolvingApi
-public class ParsingException extends Exception {
+public class ParsingException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,13 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-public class JsonParseFunction extends UniExpressionWithType<HazelcastJsonValue> implements IdentifiedDataSerializable {
+public class JsonParseFunction extends UniExpressionWithType<HazelcastJsonValue> {
 
     public JsonParseFunction() { }
 
@@ -35,11 +34,6 @@ public class JsonParseFunction extends UniExpressionWithType<HazelcastJsonValue>
 
     public static JsonParseFunction create(Expression<?> operand) {
         return new JsonParseFunction(operand);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
     }
 
     @Override

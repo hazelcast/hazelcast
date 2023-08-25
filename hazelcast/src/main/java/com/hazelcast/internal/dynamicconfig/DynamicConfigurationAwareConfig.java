@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
@@ -58,9 +60,12 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
+import com.hazelcast.internal.config.DataConnectionConfigReadOnly;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
@@ -252,7 +257,9 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     private MapConfig getMapConfigInternal(String name, String fallbackName) {
-        return (MapConfig) configSearcher.getConfig(name, fallbackName, supplierFor(MapConfig.class));
+        MapConfig mapConfig = (MapConfig) configSearcher.getConfig(name, fallbackName, supplierFor(MapConfig.class));
+        DataPersistenceAndHotRestartMerger.merge(mapConfig.getHotRestartConfig(), mapConfig.getDataPersistenceConfig());
+        return mapConfig;
     }
 
     @Override
@@ -871,7 +878,12 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        throw new UnsupportedOperationException("Unsupported operation");
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getWanReplicationConfigs(),
+                wanReplicationConfig.getName(), wanReplicationConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(wanReplicationConfig);
+        }
+        return this;
     }
 
     @Override
@@ -1211,6 +1223,56 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Nonnull
     @Override
     public Config setIntegrityCheckerConfig(final IntegrityCheckerConfig config) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public Map<String, DataConnectionConfig> getDataConnectionConfigs() {
+        Map<String, DataConnectionConfig> staticConfigs = staticConfig.getDataConnectionConfigs();
+        Map<String, DataConnectionConfig> dynamicConfigs = configurationService.getDataConnectionConfigs();
+
+        return aggregate(staticConfigs, dynamicConfigs);
+    }
+
+    @Override
+    public Config setDataConnectionConfigs(Map<String, DataConnectionConfig> dataConnectionConfigs) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public Config addDataConnectionConfig(DataConnectionConfig dataConnectionConfig) {
+        DataConnectionConfigValidator.validate(dataConnectionConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getDataConnectionConfigs(),
+                dataConnectionConfig.getName(), dataConnectionConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(dataConnectionConfig);
+        }
+        return this;
+    }
+
+    @Override
+    public DataConnectionConfig getDataConnectionConfig(String name) {
+        return getDataConnectionConfigInternal(name, name);
+    }
+
+    private DataConnectionConfig getDataConnectionConfigInternal(String name, String fallbackName) {
+        return (DataConnectionConfig) configSearcher.getConfig(name, fallbackName, supplierFor(DataConnectionConfig.class));
+    }
+
+    @Override
+    public DataConnectionConfig findDataConnectionConfig(String name) {
+        return new DataConnectionConfigReadOnly(getDataConnectionConfigInternal(name, "default"));
+    }
+
+    @Override
+    @Nonnull
+    public TpcConfig getTpcConfig() {
+        return staticConfig.getTpcConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setTpcConfig(@Nonnull TpcConfig tpcConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 }

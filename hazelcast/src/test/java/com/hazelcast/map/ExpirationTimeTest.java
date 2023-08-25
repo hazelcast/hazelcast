@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,11 +47,10 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -118,7 +117,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
     @Test
     public void last_update_time_as_version_when_both_ttl_and_max_idle_defined() {
-        assumeThat(perEntryStatsEnabled, is(false));
+        assumeThat(perEntryStatsEnabled).isFalse();
 
         final long ttlSeconds = 12;
         final long maxIdleSeconds = 10;
@@ -205,7 +204,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
     @Test
     public void testExpirationTime_withTTL() {
-        assumeThat(perEntryStatsEnabled, is(true));
+        assumeThat(perEntryStatsEnabled).isTrue();
 
         IMap<Integer, Integer> map = createMap();
 
@@ -253,7 +252,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
     @Test
     public void testExpirationTime_withTTL_withShorterMaxIdle() {
-        assumeThat(perEntryStatsEnabled, is(true));
+        assumeThat(perEntryStatsEnabled).isTrue();
 
         IMap<Integer, Integer> map = createMap();
 
@@ -268,7 +267,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
     @Test
     public void testExpirationTime_withShorterTTL_andMaxIdle() {
-        assumeThat(perEntryStatsEnabled, is(true));
+        assumeThat(perEntryStatsEnabled).isTrue();
 
         IMap<Integer, Integer> map = createMap();
 
@@ -337,7 +336,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
     @Test
     public void testExpirationTime_withTTL_afterMultipleUpdates() {
-        assumeThat(perEntryStatsEnabled, is(true));
+        assumeThat(perEntryStatsEnabled).isTrue();
 
         IMap<Integer, Integer> map = createMap();
 
@@ -551,6 +550,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         assertEquals(expirationTimeAfterReplace, expirationTimeAfterPut);
     }
 
+    @SuppressWarnings("rawtypes")
     @Test
     public void last_access_time_updated_on_primary_when_read_backup_data_enabled() {
         String mapName = "test";
@@ -597,6 +597,72 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         if (value == null) {
             fail("Expect second get is non-null");
         }
+    }
+
+    @Test
+    public void no_expiration_happens_when_max_idle_is_int_max() {
+        IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(Integer.MAX_VALUE);
+
+        map.set(1, 1);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        assertEquals(Long.MAX_VALUE, expirationTimeAfterPut);
+    }
+
+    @Test
+    public void no_expiration_happens_when_max_idle_is_zero() {
+        IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(0);
+
+        map.set(1, 1);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        assertEquals(Long.MAX_VALUE, expirationTimeAfterPut);
+    }
+
+    @Test
+    public void no_expiration_happens_when_max_idle_is_close_to_int_max() {
+        IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(Integer.MAX_VALUE - 100);
+
+        map.set(1, 1);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        assertEquals(Long.MAX_VALUE, expirationTimeAfterPut);
+    }
+
+    @Test
+    public void no_expiration_happens_when_ttl_is_int_max() {
+        IMap<Integer, Integer> map = createMapWithTTLSeconds(Integer.MAX_VALUE);
+
+        map.set(1, 1);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        assertEquals(Long.MAX_VALUE, expirationTimeAfterPut);
+    }
+
+    @Test
+    public void no_expiration_happens_when_ttl_is_zero() {
+        IMap<Integer, Integer> map = createMapWithTTLSeconds(0);
+
+        map.set(1, 1);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        assertEquals(Long.MAX_VALUE, expirationTimeAfterPut);
+    }
+
+    @Test
+    public void no_expiration_happens_when_ttl_is_close_to_int_max() {
+        IMap<Integer, Integer> map = createMapWithTTLSeconds(Integer.MAX_VALUE - 100);
+
+        map.set(1, 1);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        assertEquals(Long.MAX_VALUE, expirationTimeAfterPut);
     }
 
     protected InMemoryFormat inMemoryFormat() {

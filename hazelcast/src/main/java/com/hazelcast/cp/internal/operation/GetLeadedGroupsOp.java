@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,15 +26,18 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 /**
- * Returns the CP groups that this local CP member is the Raft group leader.
+ * Returns member priority and the CP groups that this local CP member is the Raft group leader.
  */
 public class GetLeadedGroupsOp extends Operation implements RaftSystemOperation, IdentifiedDataSerializable {
 
-    private transient Collection<CPGroupId> groups = Collections.emptyList();
+    private transient Map.Entry<Integer, Collection<CPGroupId>> entry =
+        new AbstractMap.SimpleImmutableEntry<>(0, Collections.emptyList());
 
     public GetLeadedGroupsOp() {
     }
@@ -42,12 +45,14 @@ public class GetLeadedGroupsOp extends Operation implements RaftSystemOperation,
     @Override
     public void run() throws Exception {
         RaftService service = getService();
-        groups = service.getLeadedGroups();
+        Collection<CPGroupId> groups = service.getLeadedGroups();
+        int cpMemberPriority = service.getCPMemberPriority();
+        entry = new AbstractMap.SimpleImmutableEntry<>(cpMemberPriority, groups);
     }
 
     @Override
     public Object getResponse() {
-        return groups;
+        return entry;
     }
 
     @Override

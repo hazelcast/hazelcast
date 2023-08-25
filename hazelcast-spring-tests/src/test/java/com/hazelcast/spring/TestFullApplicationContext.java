@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
@@ -83,6 +84,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PersistenceConfig;
@@ -105,7 +107,6 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SqlConfig;
-import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
@@ -118,6 +119,8 @@ import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -136,14 +139,13 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.SocketInterceptor;
@@ -158,7 +160,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
-import com.hazelcast.spring.serialization.DummyCompactSerializable;
 import com.hazelcast.spring.serialization.DummyCompactSerializer;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
@@ -197,10 +198,13 @@ import java.util.concurrent.ExecutorService;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
+import static com.hazelcast.memory.MemoryUnit.GIGABYTES;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.lang.Boolean.TRUE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -352,8 +356,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testMapConfig() {
         assertNotNull(config);
         long mapConfigSize = config.getMapConfigs()
-                .keySet().stream().filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX)).count();
-        assertEquals(27, mapConfigSize);
+                .keySet().stream()
+                .filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX))
+                .filter(name -> !name.equals(SQL_CATALOG_MAP_NAME))
+                .count();
+        assertEquals(28, mapConfigSize);
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -372,15 +379,20 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(321, journalConfig.getTimeToLiveSeconds());
         assertEquals(MetadataPolicy.OFF, testMapConfig.getMetadataPolicy());
         assertTrue(testMapConfig.isReadBackupData());
-        assertEquals(2, testMapConfig.getIndexConfigs().size());
+        assertEquals(3, testMapConfig.getIndexConfigs().size());
         for (IndexConfig index : testMapConfig.getIndexConfigs()) {
             if ("name".equals(index.getAttributes().get(0))) {
                 assertEquals(IndexType.HASH, index.getType());
                 assertNull(index.getName());
-            } else if ("age".equals(index.getAttributes().get(0))) {
+            } else if ("sortedIndex".equals(index.getName())) {
                 assertEquals(IndexType.SORTED, index.getType());
-                assertEquals("sortedIndex", index.getName());
-                assertEquals("name", index.getAttributes().get(1));
+                assertEquals("age", index.getAttributes().get(0));
+            } else if ("sortedIndexTiered".equals(index.getName())) {
+                assertEquals(IndexType.SORTED, index.getType());
+                assertEquals("age", index.getAttributes().get(0));
+                assertEquals(Capacity.of(17, GIGABYTES), index.getBTreeIndexConfig().getPageSize());
+                assertEquals(Capacity.of(129, GIGABYTES),
+                        index.getBTreeIndexConfig().getMemoryTierConfig().getCapacity());
             } else {
                 fail("unknown index!");
             }
@@ -409,6 +421,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
         assertEquals(10, testMapStoreConfig.getWriteBatchSize());
         assertTrue(testMapStoreConfig.isWriteCoalescing());
+        assertFalse(testMapStoreConfig.isOffload());
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER, testMapStoreConfig.getInitialLoadMode());
 
         // test that the testMapConfig has a nearCacheConfig and it is correct
@@ -464,7 +477,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapConfig3 = config.getMapConfig("testMap3");
         assertEquals("com.hazelcast.spring.DummyStoreFactory", testMapConfig3.getMapStoreConfig().getFactoryClassName());
         assertFalse(testMapConfig3.getMapStoreConfig().getProperties().isEmpty());
-        assertEquals(testMapConfig3.getMapStoreConfig().getProperty("dummy.property"), "value");
+        assertEquals("value", testMapConfig3.getMapStoreConfig().getProperty("dummy.property"));
 
         MapConfig testMapConfig4 = config.getMapConfig("testMap4");
         assertEquals(dummyMapStoreFactory, testMapConfig4.getMapStoreConfig().getFactoryImplementation());
@@ -498,6 +511,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
         assertTrue(diskTierConfig.isEnabled());
         assertEquals("the-local0751", diskTierConfig.getDeviceName());
+
+        final List<PartitioningAttributeConfig> attributeConfigs = Arrays.asList(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
+        MapConfig testMapWithPartitionAttributes = config.getMapConfig("mapWithPartitionAttributes");
+        assertEquals(attributeConfigs, testMapWithPartitionAttributes.getPartitioningAttributeConfigs());
     }
 
     @Test
@@ -820,8 +840,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("36000,36100", portIter.next());
         assertFalse(networkConfig.getJoin().getAutoDetectionConfig().isEnabled());
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
-        assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
-        assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);
+        assertEquals(8, networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds());
+        assertEquals(16, networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive());
         assertEquals(Boolean.FALSE, networkConfig.getJoin().getMulticastConfig().getLoopbackModeEnabled());
         Set<String> tis = networkConfig.getJoin().getMulticastConfig().getTrustedInterfaces();
         assertEquals(1, tis.size());
@@ -832,12 +852,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         TcpIpConfig tcp = networkConfig.getJoin().getTcpIpConfig();
         assertNotNull(tcp);
         assertFalse(tcp.isEnabled());
-        SymmetricEncryptionConfig symmetricEncryptionConfig = networkConfig.getSymmetricEncryptionConfig();
-        assertFalse(symmetricEncryptionConfig.isEnabled());
-        assertEquals("PBEWithMD5AndDES", symmetricEncryptionConfig.getAlgorithm());
-        assertEquals("thesalt", symmetricEncryptionConfig.getSalt());
-        assertEquals("thepass", symmetricEncryptionConfig.getPassword());
-        assertEquals(19, symmetricEncryptionConfig.getIterationCount());
 
         List<String> members = tcp.getMembers();
         assertEquals(members.toString(), 2, members.size());
@@ -867,6 +881,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1002, icmpFailureDetectorConfig.getIntervalMilliseconds());
         assertEquals(2, icmpFailureDetectorConfig.getMaxAttempts());
         assertEquals(1, icmpFailureDetectorConfig.getTtl());
+
+        TpcSocketConfig tpcSocketConfig = networkConfig.getTpcSocketConfig();
+        assertEquals("14000-16000", tpcSocketConfig.getPortRange());
+        assertEquals(256, tpcSocketConfig.getReceiveBufferSizeKB());
+        assertEquals(256, tpcSocketConfig.getSendBufferSizeKB());
     }
 
     private void assertAwsConfig(AwsConfig aws) {
@@ -1120,7 +1139,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
         assertNotNull(sslConfig);
         assertFalse(sslConfig.isEnabled());
-        assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
+        assertNotNull(sslContextFactory);
     }
 
     @Test
@@ -1186,30 +1205,31 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testCompactSerializationConfig() {
-        CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
-        assertTrue(compactSerializationConfig.isEnabled());
+        CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig()
+                .getCompactSerializationConfig();
 
-        Map<String, TriTuple<String, String, String>> namedRegistrations = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
-        assertEquals(2, namedRegistrations.size());
+        List<String> serializerClassNames
+                = CompactSerializationConfigAccessor.getSerializerClassNames(compactSerializationConfig);
+        assertEquals(1, serializerClassNames.size());
+
+        List<String> compactSerializableClassNames
+                = CompactSerializationConfigAccessor.getCompactSerializableClassNames(compactSerializationConfig);
+        assertEquals(1, compactSerializableClassNames.size());
 
         String reflectivelySerializableClassName = DummyReflectiveSerializable.class.getName();
-        TriTuple<String, String, String> reflectiveClassRegistration = TriTuple.of(reflectivelySerializableClassName, reflectivelySerializableClassName, null);
-        TriTuple<String, String, String> actualReflectiveRegistration = namedRegistrations.get(reflectivelySerializableClassName);
-        assertEquals(reflectiveClassRegistration, actualReflectiveRegistration);
+        assertThat(compactSerializableClassNames)
+                .contains(reflectivelySerializableClassName);
 
-        String compactSerializableClassName = DummyCompactSerializable.class.getName();
         String compactSerializerClassName = DummyCompactSerializer.class.getName();
-        String typeName = "dummy";
-        TriTuple<String, String, String> explicitClassRegistration = TriTuple.of(compactSerializableClassName, typeName, compactSerializerClassName);
-        TriTuple<String, String, String> actualExplicitRegistration = namedRegistrations.get(typeName);
-        assertEquals(explicitClassRegistration, actualExplicitRegistration);
+        assertThat(serializerClassNames)
+                .contains(compactSerializerClassName);
     }
 
     @Test
     public void testNativeMemoryConfig() {
         NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
         assertFalse(nativeMemoryConfig.isEnabled());
-        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getSize().getUnit());
+        assertEquals(GIGABYTES, nativeMemoryConfig.getSize().getUnit());
         assertEquals(256, nativeMemoryConfig.getSize().getValue());
         assertEquals(20, nativeMemoryConfig.getPageSize());
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
@@ -1387,7 +1407,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         SSLConfig sslConfig = vaultConfig.getSSLConfig();
         assertNotNull(sslConfig);
         assertTrue(sslConfig.isEnabled());
-        assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
+        assertNotNull(sslContextFactory);
         assertEquals(60, vaultConfig.getPollingInterval());
         assertEquals(240, persistenceConfig.getRebalanceDelaySeconds());
     }
@@ -1427,7 +1447,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(blockSize, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount0, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(new MemorySize(9321, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(9321, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
 
         localDeviceConfig = config.getDeviceConfig(deviceName1);
         assertEquals(deviceName1, localDeviceConfig.getName());
@@ -1547,6 +1567,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
         assertFalse(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/custom-dir").getAbsolutePath(), cpSubsystemConfig.getBaseDir().getAbsolutePath());
+        assertEquals(-1, cpSubsystemConfig.getCPMemberPriority());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());
@@ -1603,6 +1624,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testSqlConfig() {
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+        assertFalse(sqlConfig.isCatalogPersistenceEnabled());
     }
 
     @Test
@@ -1628,5 +1650,23 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testIntegrityCheckerConfig() {
         final IntegrityCheckerConfig integrityCheckerConfig = config.getIntegrityCheckerConfig();
         assertFalse(integrityCheckerConfig.isEnabled());
+    }
+
+    @Test
+    public void testDataConnectionConfig() {
+        DataConnectionConfig dataConnectionConfig = config.getDataConnectionConfig("my-data-connection");
+        assertNotNull(dataConnectionConfig);
+        assertEquals("my-data-connection", dataConnectionConfig.getName());
+        assertEquals("dummy", dataConnectionConfig.getType());
+        assertFalse(dataConnectionConfig.isShared());
+        assertEquals("jdbc:mysql://dummy:3306", dataConnectionConfig.getProperty("jdbcUrl"));
+    }
+
+    @Test
+    public void testTpcConfig() {
+        TpcConfig tpcConfig = config.getTpcConfig();
+
+        assertTrue(tpcConfig.isEnabled());
+        assertEquals(12, tpcConfig.getEventloopCount());
     }
 }

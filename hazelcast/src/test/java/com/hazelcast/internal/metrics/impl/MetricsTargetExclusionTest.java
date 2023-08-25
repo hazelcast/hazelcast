@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import java.util.Collection;
 import static com.hazelcast.internal.metrics.MetricTarget.ALL_TARGETS;
 import static com.hazelcast.internal.metrics.MetricTarget.ALL_TARGETS_BUT_DIAGNOSTICS;
 import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
+import static com.hazelcast.internal.metrics.MetricTarget.JET_JOB;
+import static com.hazelcast.internal.metrics.MetricTarget.JMX;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.MetricTarget.NONE_OF;
 import static com.hazelcast.internal.metrics.MetricTarget.asSet;
@@ -105,12 +107,12 @@ public class MetricsTargetExclusionTest {
             MetricDescriptor descriptorValues = descriptor.copy().withPrefix("testValues");
             context.collect(descriptorValues.copy().withMetric("noLevelLong").withUnit(COUNT), 42L);
             context.collect(descriptorValues.copy(), "nonDebugLong", INFO, COUNT, 42L);
-            context.collect(descriptorValues.copy(), "debugLong", DEBUG, COUNT, 42L);
-            context.collect(descriptorValues.copy().withExcludedTarget(DIAGNOSTICS), "debugLongNoDiag", DEBUG, COUNT, 42L);
+            context.collect(descriptorValues.copy().withExcludedTargets(ALL_TARGETS_BUT_DIAGNOSTICS), "debugLong", DEBUG, COUNT, 42L);
+            context.collect(descriptorValues.copy().withExcludedTargets(ALL_TARGETS), "debugLongNoDiag", DEBUG, COUNT, 42L);
             context.collect(descriptorValues.copy().withMetric("noLevelDouble").withUnit(COUNT), 42L);
             context.collect(descriptorValues.copy(), "nonDebugDouble", INFO, COUNT, 42.42D);
-            context.collect(descriptorValues.copy(), "debugDouble", DEBUG, COUNT, 42.42D);
-            context.collect(descriptorValues.copy().withExcludedTarget(DIAGNOSTICS), "debugDoubleNoDiag", DEBUG, COUNT, 42.42D);
+            context.collect(descriptorValues.copy().withExcludedTargets(ALL_TARGETS_BUT_DIAGNOSTICS), "debugDouble", DEBUG, COUNT, 42.42D);
+            context.collect(descriptorValues.copy().withExcludedTargets(ALL_TARGETS), "debugDoubleNoDiag", DEBUG, COUNT, 42.42D);
 
             // object
             context.collect(descriptor.withPrefix("test"), new SomeObject());
@@ -186,15 +188,15 @@ public class MetricsTargetExclusionTest {
 
         @Probe(name = "nonDebugLongField")
         private long nonDebugLongField;
-        @Probe(name = "debugLongField", level = DEBUG)
+        @Probe(name = "debugLongField", level = DEBUG, excludedTargets = {MANAGEMENT_CENTER, JET_JOB, JMX})
         private long debugLongField;
-        @Probe(name = "debugLongFieldNoDiag", level = DEBUG, excludedTargets = DIAGNOSTICS)
+        @Probe(name = "debugLongFieldNoDiag", level = DEBUG, excludedTargets = {MANAGEMENT_CENTER, JET_JOB, JMX, DIAGNOSTICS})
         private long debugLongFieldNoDiag;
         @Probe(name = "nonDebugDoubleField")
         private double nonDebugDoubleField;
-        @Probe(name = "debugDoubleField", level = DEBUG)
+        @Probe(name = "debugDoubleField", level = DEBUG, excludedTargets = {MANAGEMENT_CENTER, JET_JOB, JMX})
         private double debugDoubleField;
-        @Probe(name = "debugDoubleFieldNoDiag", level = DEBUG, excludedTargets = DIAGNOSTICS)
+        @Probe(name = "debugDoubleFieldNoDiag", level = DEBUG, excludedTargets = {MANAGEMENT_CENTER, JET_JOB, JMX, DIAGNOSTICS})
         private long debugDoubleFieldNoDiag;
 
         @Probe(name = "nonDebugLongMethod")
@@ -202,12 +204,12 @@ public class MetricsTargetExclusionTest {
             return 0;
         }
 
-        @Probe(name = "debugLongMethod", level = DEBUG)
+        @Probe(name = "debugLongMethod", level = DEBUG, excludedTargets = {MANAGEMENT_CENTER, JET_JOB, JMX})
         private long debugLongMethod() {
             return 0;
         }
 
-        @Probe(name = "debugLongMethodNoDiag", level = DEBUG, excludedTargets = DIAGNOSTICS)
+        @Probe(name = "debugLongMethodNoDiag", level = DEBUG, excludedTargets = {MANAGEMENT_CENTER, JET_JOB, JMX, DIAGNOSTICS})
         private long debugLongMethodNoDiag() {
             return 0;
         }
@@ -217,12 +219,12 @@ public class MetricsTargetExclusionTest {
             return 0;
         }
 
-        @Probe(name = "debugDoubleMethod", level = DEBUG)
+        @Probe(name = "debugDoubleMethod", level = DEBUG, excludedTargets = {MANAGEMENT_CENTER, JET_JOB, JMX})
         private double debugDoubleMethod() {
             return 0;
         }
 
-        @Probe(name = "debugDoubleMethodNoDiag", level = DEBUG, excludedTargets = DIAGNOSTICS)
+        @Probe(name = "debugDoubleMethodNoDiag", level = DEBUG, excludedTargets = {MANAGEMENT_CENTER, JET_JOB, JMX, DIAGNOSTICS})
         private long debugDoubleMethodNoDiag() {
             return 0;
         }

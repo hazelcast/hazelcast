@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -50,6 +51,38 @@ import static junit.framework.TestCase.fail;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
+
+    private static final Set<String> EXCEPTIONAL_EXPRESSIONS = new HashSet<>(
+            Arrays.asList(
+                    "DESC",
+                    "UNION",
+                    "UNION_ALL",
+                    "VALUES",
+                    "ROW",
+                    "COLLECTION_TABLE",
+                    "MAP_VALUE_CONSTRUCTOR",
+                    "ARGUMENT_ASSIGNMENT",
+                    "GENERATE_SERIES",
+                    "GENERATE_STREAM",
+                    "CSV_FILE",
+                    "JSON_FLAT_FILE",
+                    "AVRO_FILE",
+                    "PARQUET_FILE",
+                    "EXISTS",
+                    "DESCRIPTOR",
+                    "IMPOSE_ORDER",
+                    "TUMBLE",
+                    "HOP",
+                    "WITHIN_GROUP",
+                    "JSON_ARRAYAGG_ABSENT_ON_NULL",
+                    "JSON_ARRAYAGG_NULL_ON_NULL",
+                    "JSON_OBJECTAGG_ABSENT_ON_NULL",
+                    "JSON_OBJECTAGG_NULL_ON_NULL",
+                    "DOT",
+                    "GET_DDL"
+            )
+    );
+
     @Before
     public void before0() {
         put(1);
@@ -69,26 +102,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
             }
 
             if (!SqlOperator.class.isAssignableFrom(field.getType())
-                    || field.getName().equals("DESC")
-                    || field.getName().equals("UNION")
-                    || field.getName().equals("UNION_ALL")
-                    || field.getName().equals("VALUES")
-                    || field.getName().equals("ROW")
-                    || field.getName().equals("COLLECTION_TABLE")
-                    || field.getName().equals("MAP_VALUE_CONSTRUCTOR")
-                    || field.getName().equals("ARGUMENT_ASSIGNMENT")
-                    || field.getName().equals("GENERATE_SERIES")
-                    || field.getName().equals("GENERATE_STREAM")
-                    || field.getName().equals("CSV_FILE")
-                    || field.getName().equals("JSON_FLAT_FILE")
-                    || field.getName().equals("AVRO_FILE")
-                    || field.getName().equals("PARQUET_FILE")
-                    || field.getName().equals("EXISTS")
-                    || field.getName().equals("DESCRIPTOR")
-                    || field.getName().equals("IMPOSE_ORDER")
-                    || field.getName().equals("TUMBLE")
-                    || field.getName().equals("HOP")
-            ) {
+                    || EXCEPTIONAL_EXPRESSIONS.contains(field.getName())) {
                 continue;
             }
 
@@ -503,6 +517,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void test_TO_CHAR() {
+        check(sql("TO_CHAR(?, ?) || TO_CHAR(?, ?)"), LOCAL_DATE_VAL, "YYYY-MM-DD", 1, "9");
+    }
+
+    @Test
     public void test_COUNT() {
         check(sql("COUNT(?) || COUNT(?)"), 1L, 1L);
     }
@@ -545,6 +564,16 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     @Test
     public void test_JSON_ARRAY() {
         check(sql("JSON_ARRAY(?) || JSON_ARRAY(?)"), "v", "v");
+    }
+
+    @Test
+    public void test_JSON_ARRAYAGG() {
+        check(sql("JSON_VALUE(JSON_ARRAYAGG(?), '$[0]')"), "k");
+    }
+
+    @Test
+    public void test_JSON_OBJECTAGG() {
+        check(sql("JSON_VALUE(JSON_OBJECTAGG(? VALUE ?), '$.k')"), "k", "v");
     }
 
     private void check(String sql, Object... params) {

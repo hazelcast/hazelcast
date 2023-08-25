@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.Collection;
@@ -81,6 +80,9 @@ public class ClientTestSupport extends HazelcastTestSupport {
     }
 
     protected static HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
+        if (client instanceof HazelcastClientInstanceImpl) {
+            return (HazelcastClientInstanceImpl) client;
+        }
         HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
         return clientProxy.client;
     }
@@ -101,10 +103,10 @@ public class ClientTestSupport extends HazelcastTestSupport {
 
     protected Map<Long, EventHandler> getAllEventHandlers(HazelcastInstance client) {
         ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
-        Collection<Connection> activeConnections = connectionManager.getActiveConnections();
+        Collection<ClientConnection> activeConnections = connectionManager.getActiveConnections();
         HashMap<Long, EventHandler> map = new HashMap<>();
-        for (Connection activeConnection : activeConnections) {
-            map.putAll(((ClientConnection) activeConnection).getEventHandlers());
+        for (ClientConnection activeConnection : activeConnections) {
+            map.putAll(activeConnection.getEventHandlers());
         }
         return map;
     }

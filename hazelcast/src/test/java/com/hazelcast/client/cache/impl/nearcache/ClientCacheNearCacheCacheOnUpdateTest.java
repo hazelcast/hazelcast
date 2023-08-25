@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.RECONCILIATION_INTERVAL_SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -103,14 +104,14 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
         Runnable getter = () -> {
             int i = 0;
             while (!stop.get()) {
-                icacheOnClient.get(i++ % NUM_OF_KEYS);
+                icacheOnClient.get(++i % NUM_OF_KEYS);
             }
         };
 
         Runnable putter = () -> {
             int i = 0;
             while (!stop.get()) {
-                i = i++ % NUM_OF_KEYS;
+                i = ++i % NUM_OF_KEYS;
                 icacheOnClient.put(i, i);
             }
         };
@@ -140,7 +141,9 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
     private ICache<Integer, Integer> newNearCachedCache(NearCacheConfig.LocalUpdatePolicy localUpdatePolicy) {
         NearCacheConfig nearCacheConfig = getNearCacheConfig(localUpdatePolicy);
         ClientConfig clientConfig = getClientConfig()
-                .addNearCacheConfig(nearCacheConfig);
+                .addNearCacheConfig(nearCacheConfig)
+                // Disable the repairing task invalidations to prevent any interference with the test
+                .setProperty(RECONCILIATION_INTERVAL_SECONDS.getName(), "0");
 
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
         CachingProvider provider = new HazelcastClientCachingProvider(client);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,11 +53,11 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
     @Override
     public void run() {
         QueueContainer queueContainer = getContainer();
-        if (queueContainer.hasEnoughCapacity()) {
+        if (queueContainer.hasEnoughCapacity(dataList.size())) {
             dataMap = queueContainer.addAll(dataList);
             response = true;
         } else {
-            response = false;
+            throw new IllegalStateException("Queue full");
         }
     }
 

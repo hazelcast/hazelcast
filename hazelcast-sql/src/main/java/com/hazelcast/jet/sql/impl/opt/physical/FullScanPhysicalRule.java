@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,12 @@ final class FullScanPhysicalRule extends ConverterRule {
     @Override
     public RelNode convert(RelNode rel) {
         FullScanLogicalRel logicalScan = (FullScanLogicalRel) rel;
-
         return new FullScanPhysicalRel(
                 logicalScan.getCluster(),
                 OptUtils.toPhysicalConvention(logicalScan.getTraitSet()),
                 logicalScan.getTable(),
-                logicalScan.eventTimePolicyProvider(),
-                logicalScan.watermarkedColumnIndex());
+                logicalScan.lagExpression(),
+                logicalScan.watermarkedColumnIndex(),
+                0);
     }
 }

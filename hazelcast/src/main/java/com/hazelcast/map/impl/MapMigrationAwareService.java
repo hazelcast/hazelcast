@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,25 +174,31 @@ class MapMigrationAwareService
             depopulateIndexes(event, "commitMigration");
         }
 
+        PartitionContainer partitionContainer
+                = mapServiceContext.getPartitionContainer(event.getPartitionId());
         if (SOURCE == event.getMigrationEndpoint()) {
             // Do not change order of below methods
             removeWbqCountersHavingLesserBackupCountThan(event.getPartitionId(),
                     event.getNewReplicaIndex());
             removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(),
                     event.getNewReplicaIndex());
+
+            partitionContainer.cleanUpOnMigration(event.getNewReplicaIndex());
         }
 
-        PartitionContainer partitionContainer
-                = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : partitionContainer.getAllRecordStores()) {
             // in case the record store has been created without
             // loading during migration trigger again if loading
             // has been already started this call will do nothing
             recordStore.startLoading();
         }
-        mapServiceContext.nullifyOwnedPartitions();
+
+        if (event.getCurrentReplicaIndex() == 0 || event.getNewReplicaIndex() == 0) {
+            mapServiceContext.refreshCachedOwnedPartitions();
+        }
 
         removeOrRegenerateNearCacheUuid(event);
+
     }
 
     private void removeOrRegenerateNearCacheUuid(PartitionMigrationEvent event) {
@@ -216,15 +222,20 @@ class MapMigrationAwareService
             removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(),
                     event.getCurrentReplicaIndex());
             getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
+
+            PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(event.getPartitionId());
+            partitionContainer.cleanUpOnMigration(event.getCurrentReplicaIndex());
         }
 
-        mapServiceContext.nullifyOwnedPartitions();
+        if (event.getCurrentReplicaIndex() == 0 || event.getNewReplicaIndex() == 0) {
+            mapServiceContext.refreshCachedOwnedPartitions();
+        }
     }
 
     private void clearNonGlobalIndexes(PartitionMigrationEvent event) {
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
-            final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
+            final MapContainer mapContainer = recordStore.getMapContainer();
 
             final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
             if (!indexes.haveAtLeastOneIndex() || indexes.isGlobal()) {
@@ -265,8 +276,17 @@ class MapMigrationAwareService
      * @return predicate to find all map partitions which are expected to have
      * fewer backups than given backupCount.
      */
-    private static Predicate<RecordStore> lesserBackupMapsThen(final int backupCount) {
+    static Predicate<RecordStore> lesserBackupMapsThen(final int backupCount) {
         return recordStore -> recordStore.getMapContainer().getTotalBackupCount() < backupCount;
+    }
+
+    /**
+     * @param backupCount number of backups of a maps' partition
+     * @return predicate to find all map partitions which are expected to have
+     * fewer backups than given backupCount.
+     */
+    static Predicate<MapContainer> lesserBackupMapsThenWithContainer(final int backupCount) {
+        return container -> container.getTotalBackupCount() < backupCount;
     }
 
     private MetaDataGenerator getMetaDataGenerator() {
@@ -286,7 +306,7 @@ class MapMigrationAwareService
 
         PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore<Record> recordStore : container.getMaps().values()) {
-            MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
+            MapContainer mapContainer = recordStore.getMapContainer();
 
             Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
             indexes.createIndexesFromRecordedDefinitions();
@@ -309,16 +329,21 @@ class MapMigrationAwareService
             CacheDeserializedValues cacheDeserializedValues = mapContainer.getMapConfig().getCacheDeserializedValues();
             CachedQueryEntry<?, ?> cachedEntry = cacheDeserializedValues == NEVER ? new CachedQueryEntry<>(serializationService,
                     mapContainer.getExtractors()) : null;
-            recordStore.forEach((key, record) -> {
-                Object value = Records.getValueOrCachedValue(record, serializationService);
-                if (value != null) {
-                    QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
-                    queryEntry.setRecord(record);
-                    CachedQueryEntry<?, ?> newEntry =
+            recordStore.beforeOperation();
+            try {
+                recordStore.forEach((key, record) -> {
+                    Object value = Records.getValueOrCachedValue(record, serializationService);
+                    if (value != null) {
+                        QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
+                        queryEntry.setRecord(record);
+                        CachedQueryEntry<?, ?> newEntry =
                             cachedEntry == null ? (CachedQueryEntry<?, ?>) queryEntry : cachedEntry.init(key, value);
-                    indexes.putEntry(newEntry, null, queryEntry, Index.OperationSource.SYSTEM);
-                }
-            }, false);
+                        indexes.putEntry(newEntry, null, queryEntry, Index.OperationSource.SYSTEM);
+                    }
+                }, false);
+            } finally {
+                recordStore.afterOperation();
+            }
 
             Indexes.markPartitionAsIndexed(event.getPartitionId(), indexesSnapshot);
         }
@@ -339,7 +364,7 @@ class MapMigrationAwareService
 
         PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore<Record> recordStore : container.getMaps().values()) {
-            MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
+            MapContainer mapContainer = recordStore.getMapContainer();
             Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
             if (!indexes.haveAtLeastOneIndex()) {
                 // no indexes to work with
@@ -351,11 +376,16 @@ class MapMigrationAwareService
             Indexes.beginPartitionUpdate(indexesSnapshot);
 
             CachedQueryEntry<?, ?> entry = new CachedQueryEntry<>(serializationService, mapContainer.getExtractors());
-            recordStore.forEach((key, record) -> {
-                Object value = Records.getValueOrCachedValue(record, serializationService);
-                entry.init(key, value);
-                indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
-            }, false);
+            recordStore.beforeOperation();
+            try {
+                recordStore.forEach((key, record) -> {
+                    Object value = Records.getValueOrCachedValue(record, serializationService);
+                    entry.init(key, value);
+                    indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
+                }, false);
+            } finally {
+                recordStore.afterOperation();
+            }
 
             Indexes.markPartitionAsUnindexed(event.getPartitionId(), indexesSnapshot);
         }

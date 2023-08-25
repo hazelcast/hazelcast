@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,20 @@
 
 package com.hazelcast.jet.sql.impl.expression.math;
 
-import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
+import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.math.RandFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,6 +53,7 @@ import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -200,8 +203,20 @@ public class RandFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization() {
         RandFunction original = RandFunction.create(ConstantExpression.create(1, QueryDataType.INT));
-        RandFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_RAND);
+        RandFunction restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_RAND);
 
         checkEquals(original, restored, true);
+    }
+
+    @Test
+    @Ignore("Simplified test for https://github.com/hazelcast/hazelcast/issues/23629")
+    public void testNotInlined() {
+        String sql = "SELECT 1 FROM (" +
+                "  SELECT RAND() rand FROM TABLE(generate_series(1, 10000))" +
+                ") WHERE rand>? AND rand<?";
+        System.out.println(sql);
+
+        SqlResult res = instance().getSql().execute(sql, 0.5, 0.5);
+        assertFalse(res.iterator().hasNext());
     }
 }

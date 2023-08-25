@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -150,6 +150,9 @@ hazelcast:
         send-buffer-size-kb: 25
         receive-buffer-size-kb: 33
         linger-seconds: 99
+        keep-count: 5
+        keep-idle-seconds: 120
+        keep-interval-seconds: 20
       port:
         port-count: 100
         auto-increment: true
@@ -157,6 +160,10 @@ hazelcast:
       public-address: dummy
       # If the address should be reused. See NetworkConfig.setReuseAddress for more information.
       reuse-address: true
+      tpc-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
     client-server-socket-endpoint-config:
       outbound-ports:
         - 38000,38500-38600
@@ -180,6 +187,10 @@ hazelcast:
         port: 9999
       public-address: 10.10.0.10
       reuse-address: true
+      tpc-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
     rest-server-socket-endpoint-config:
       name: internal-server-socket
       interfaces:
@@ -200,6 +211,10 @@ hazelcast:
           enabled: false
         HEALTH_CHECK:
           enabled: true
+      tpc-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
     wan-endpoint-config:
       endpoint-tokyo:
         ssl:
@@ -207,6 +222,10 @@ hazelcast:
           factory-class-name: com.hazelcast.examples.MySSLContextFactory
           properties:
             foo: bar
+        tpc-socket:
+          port-range: 14000-16000
+          receive-buffer-size-kb: 256
+          send-buffer-size-kb: 256
       endpoint-london:
         symmetric-encryption:
           enabled: true
@@ -221,9 +240,17 @@ hazelcast:
           interfaces:
             - 192.168.8.101
             - 10.20.10.100
+        tpc-socket:
+          port-range: 14000-16000
+          receive-buffer-size-kb: 256
+          send-buffer-size-kb: 256
     memcache-server-socket-endpoint-config:
       name: memcache
       port:
         auto-increment: false
         port-count: 10
         port: 6000
+      tpc-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256

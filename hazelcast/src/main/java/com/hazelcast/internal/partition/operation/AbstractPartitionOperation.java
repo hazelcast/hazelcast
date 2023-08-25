@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,11 @@ import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
@@ -41,12 +39,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 import static java.util.Collections.emptyList;
@@ -75,7 +73,11 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
             UrgentPartitionRunnable<Collection<Operation>> runnable = new UrgentPartitionRunnable<>(
                     event.getPartitionId(), () -> createReplicationOperations(event, true));
             getNodeEngine().getOperationService().execute(runnable);
-            return runnable.future.joinInternal();
+            try {
+                return runnable.future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw sneakyThrow(peel(e));
+            }
         }
     }
 
@@ -177,20 +179,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         }
 
         if (currentThreadIsPartitionThread) {
-            // migration aware service requested offload, but we
-            // are on partition thread execute on async executor
-            Future<ChunkSupplier> future =
-                    getNodeEngine().getExecutionService().submit(ExecutionService.ASYNC_EXECUTOR,
-                            () -> service.newChunkSupplier(event, singleton(ns)));
-            try {
-                ChunkSupplier supplier = future.get();
-                return appendNewElement(chunkSuppliers, supplier);
-            } catch (ExecutionException | CancellationException e) {
-                ExceptionUtil.rethrow(e.getCause());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                ExceptionUtil.rethrow(e);
-            }
+            ChunkSupplier supplier = service.newChunkSupplier(event, singleton(ns));
+            return appendNewElement(chunkSuppliers, supplier);
         }
 
         // migration aware service did not request offload but
@@ -199,7 +189,12 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         UrgentPartitionRunnable<ChunkSupplier> partitionThreadRunnable = new UrgentPartitionRunnable<>(
                 event.getPartitionId(), () -> service.newChunkSupplier(event, singleton(ns)));
         getNodeEngine().getOperationService().execute(partitionThreadRunnable);
-        ChunkSupplier supplier = partitionThreadRunnable.future.joinInternal();
+        ChunkSupplier supplier;
+        try {
+            supplier = partitionThreadRunnable.future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw sneakyThrow(peel(e));
+        }
         return appendNewElement(chunkSuppliers, supplier);
     }
 
@@ -289,33 +284,27 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         if (currentThreadIsPartitionThread
                 ^ (service instanceof OffloadedReplicationPreparation
                 && ((OffloadedReplicationPreparation) service).shouldOffload())) {
-            operations = prepareAndAppendReplicationOperation(event, ns, service, serviceName, operations);
-        } else if (currentThreadIsPartitionThread) {
-            // migration aware service requested offload, but we are on partition thread
-            // execute on async executor
-            Future<Operation> future =
-                    getNodeEngine().getExecutionService().submit(ExecutionService.ASYNC_EXECUTOR,
-                            () -> prepareReplicationOperation(event, ns, service, serviceName));
-            try {
-                Operation op = future.get();
-                operations = appendNewElement(operations, op);
-            } catch (ExecutionException | CancellationException e) {
-                ExceptionUtil.rethrow(e.getCause());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                ExceptionUtil.rethrow(e);
-            }
-        } else {
-            // migration aware service did not request offload but execution is not on partition thread
-            // must execute replication operation preparation on partition thread
-            UrgentPartitionRunnable<Operation> partitionThreadRunnable = new UrgentPartitionRunnable<>(
-                    event.getPartitionId(),
-                    () -> prepareReplicationOperation(event, ns, service, serviceName));
-            getNodeEngine().getOperationService().execute(partitionThreadRunnable);
-            Operation op = partitionThreadRunnable.future.joinInternal();
-            operations = appendNewElement(operations, op);
+            return prepareAndAppendReplicationOperation(event, ns, service, serviceName, operations);
         }
-        return operations;
+
+        if (currentThreadIsPartitionThread) {
+            Operation op = prepareReplicationOperation(event, ns, service, serviceName);
+            return appendNewElement(operations, op);
+        }
+
+        // migration aware service did not request offload but execution is not on partition thread
+        // must execute replication operation preparation on partition thread
+        UrgentPartitionRunnable<Operation> partitionThreadRunnable = new UrgentPartitionRunnable<>(
+                event.getPartitionId(),
+                () -> prepareReplicationOperation(event, ns, service, serviceName));
+        getNodeEngine().getOperationService().execute(partitionThreadRunnable);
+        Operation op;
+        try {
+            op = partitionThreadRunnable.future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw sneakyThrow(peel(e));
+        }
+        return appendNewElement(operations, op);
     }
 
     private Collection<ChunkSupplier> prepareAndAppendNewChunkSupplier(PartitionReplicationEvent event,

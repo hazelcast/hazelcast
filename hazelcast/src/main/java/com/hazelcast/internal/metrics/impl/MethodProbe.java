@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ abstract class MethodProbe implements ProbeFunction {
                     method.getDeclaringClass().getName(), method.getName()));
         }
 
-        if (method.getParameterTypes().length != 0) {
+        if (method.getParameterCount() != 0) {
             throw new IllegalArgumentException(format("@Probe method '%s.%s' can't have arguments",
                     method.getDeclaringClass().getName(), method.getName()));
         }

@@ -11,6 +11,7 @@
         "persistence-enabled": true,
         "base-dir": "custom-cp-dir",
         "data-load-timeout-seconds": 30,
+        "cp-member-priority": -1,
         "raft-algorithm": {
           "leader-election-timeout-in-millis": 2000,
           "leader-heartbeat-period-in-millis": 5000,

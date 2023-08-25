@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.processor.ProcessorSupplierFromSimpleSupplier;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.security.impl.function.SecuredFunction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,6 +46,17 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
     }
 
     /**
+     * Returns {@code true} if the {@link #init(Context)} method of this
+     * instance is cooperative. If it's not, the call to the {@code init()}
+     * method is off-loaded to another thread.
+     *
+     * @since 5.2
+     */
+    default boolean initIsCooperative() {
+        return false;
+    }
+
+    /**
      * Called after {@link #init(Context)} to retrieve instances of
      * {@link Processor} that will be used during the execution of the Jet job.
      *
@@ -54,6 +65,17 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
      */
     @Nonnull
     Collection<? extends Processor> get(int count);
+
+    /**
+     * Returns {@code true} if the {@link #close(Throwable)} method of this
+     * instance is cooperative. If it's not, the call to the {@code close()}
+     * method is off-loaded to another thread.
+     *
+     * @since 5.2
+     */
+    default boolean closeIsCooperative() {
+        return false;
+    }
 
     /**
      * Called after the execution has finished on this member - successfully or

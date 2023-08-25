@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.spi.properties.ClusterProperty.QUERY_OPTIMIZER_TYPE;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,7 +45,7 @@ public class QueryOptimizerFactoryTest {
         HazelcastProperties hazelcastProperties = createMockHazelcastProperties(QUERY_OPTIMIZER_TYPE, "RULES");
         QueryOptimizer queryOptimizer = QueryOptimizerFactory.newOptimizer(hazelcastProperties);
 
-        assertThat(queryOptimizer, instanceOf(RuleBasedQueryOptimizer.class));
+        assertThat(queryOptimizer).isInstanceOf(RuleBasedQueryOptimizer.class);
     }
 
     @Test
@@ -54,7 +53,7 @@ public class QueryOptimizerFactoryTest {
         HazelcastProperties hazelcastProperties = createMockHazelcastProperties(QUERY_OPTIMIZER_TYPE, "NONE");
         QueryOptimizer queryOptimizer = QueryOptimizerFactory.newOptimizer(hazelcastProperties);
 
-        assertThat(queryOptimizer, instanceOf(EmptyOptimizer.class));
+        assertThat(queryOptimizer).isInstanceOf(EmptyOptimizer.class);
     }
 
     private HazelcastProperties createMockHazelcastProperties(HazelcastProperty property, String stringValue) {

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@
     <!-- Checks for Size Violations.                    -->
     <!-- See http://checkstyle.sf.net/config_sizes.html -->
     <module name="FileLength">
-        <property name="max" value="1500"/>
+        <property name="max" value="1600"/>
     </module>
 
     <!-- Checks for whitespace                               -->
@@ -116,7 +116,7 @@
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
         <!-- Only for methods on public APIs we agreed to have JavaDoc. -->
         <module name="JavadocMethod">
-            <property name="scope" value="public"/>
+            <property name="accessModifiers" value="public"/>
             <property name="allowMissingParamTags" value="true"/>
             <property name="allowMissingReturnTag" value="true"/>
             <property name="validateThrows" value="false"/>
@@ -290,7 +290,8 @@
         <module name="RegexpSinglelineJava">
             <property name="format" value="(import static java\.util\.UUID\.randomUUID|UUID\.randomUUID\(\))"/>
             <property name="ignoreComments" value="true"/>
-            <property name="message" value="Please use UuidUtil.buildRandomUUID() instead of UUID.randomUUID()!"/>
+            <property name="message"
+                      value="Please use UuidUtil.newUnsecureUUID() or UuidUtil.newSecureUUID() instead of UUID.randomUUID()"/>
         </module>
     </module>
 </module>

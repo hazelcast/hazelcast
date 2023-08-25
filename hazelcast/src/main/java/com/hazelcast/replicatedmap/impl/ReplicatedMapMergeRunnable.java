@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.replicatedmap.impl;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.replicatedmap.impl.operation.MergeOperationFactory;
@@ -68,12 +67,6 @@ class ReplicatedMapMergeRunnable
         ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(dataStructureName);
         MergePolicyConfig mergePolicyConfig = replicatedMapConfig.getMergePolicyConfig();
         return mergePolicyConfig.getBatchSize();
-    }
-
-    @Override
-    protected InMemoryFormat getInMemoryFormat(String dataStructureName) {
-        ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(dataStructureName);
-        return replicatedMapConfig.getInMemoryFormat();
     }
 
     @Override

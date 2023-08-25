@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,6 +152,14 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
         check(query("?=field1 or ?=field1", f1.valueFrom(), f1.valueTo()),
                 c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
+
+        // WHERE f1=? or f1 is null
+        check(query("field1=? or field1 is null", f1.valueFrom()),
+                c_notHashComposite(), or(eq(f1.valueFrom()), isNull()));
+
+        // WHERE f1=literal or f1 is null
+        check(query("field1=" + toLiteral(f1, f1.valueFrom()) + " or field1 is null"),
+                c_notHashComposite(), or(eq(f1.valueFrom()), isNull()));
 
         // WHERE f1!=literal
         check(query("field1!=" + toLiteral(f1, f1.valueFrom())), c_booleanComponent() && c_notHashComposite(), neq(f1.valueFrom()));
@@ -609,7 +617,6 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 }
             }
         }
-
         map.putAll(localMap);
     }
 
@@ -650,7 +657,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         return keys;
     }
 
-    private IndexConfig getIndexConfig() {
+    protected IndexConfig getIndexConfig() {
         IndexConfig config = new IndexConfig().setName(INDEX_NAME).setType(indexType);
 
         config.addAttribute("field1");

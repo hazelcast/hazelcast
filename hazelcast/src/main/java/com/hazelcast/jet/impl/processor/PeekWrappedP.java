@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,10 +99,23 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
         if (peekInput && !peekedWatermarkLogged) {
-            logger.info("Input: " + watermark);
+            logger.info("Input coalesced WM: " + watermark);
             peekedWatermarkLogged = true;
         }
         if (super.tryProcessWatermark(watermark)) {
+            peekedWatermarkLogged = false;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
+        if (peekInput && !peekedWatermarkLogged) {
+            logger.info("Input edge WM, ordinal=" + ordinal + ", wm=" + watermark);
+            peekedWatermarkLogged = true;
+        }
+        if (super.tryProcessWatermark(ordinal, watermark)) {
             peekedWatermarkLogged = false;
             return true;
         }

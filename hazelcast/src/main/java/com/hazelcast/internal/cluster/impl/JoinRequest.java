@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -46,6 +47,8 @@ public class JoinRequest extends JoinMessage {
     private Set<UUID> excludedMemberUuids = Collections.emptySet();
     // see Member.getAddressMap
     private Map<EndpointQualifier, Address> addresses;
+    private UUID cpMemberUUID;
+    private OnJoinOp preJoinOperation;
 
     public JoinRequest() {
     }
@@ -53,7 +56,8 @@ public class JoinRequest extends JoinMessage {
     @SuppressWarnings("checkstyle:parameternumber")
     public JoinRequest(byte packetVersion, int buildNumber, MemberVersion version, Address address, UUID uuid,
                        boolean liteMember, ConfigCheck config, Credentials credentials, Map<String, String> attributes,
-                       Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses) {
+                       Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses, UUID cpMemberUUID,
+                       OnJoinOp preJoinOperation) {
         super(packetVersion, buildNumber, version, address, uuid, liteMember, config);
         this.credentials = credentials;
         this.attributes = attributes;
@@ -61,6 +65,16 @@ public class JoinRequest extends JoinMessage {
             this.excludedMemberUuids = unmodifiableSet(new HashSet<>(excludedMemberUuids));
         }
         this.addresses = addresses;
+        this.cpMemberUUID = cpMemberUUID;
+        this.preJoinOperation = preJoinOperation;
+    }
+
+    @SuppressWarnings("checkstyle:parameternumber")
+    public JoinRequest(byte packetVersion, int buildNumber, MemberVersion version, Address address, UUID uuid,
+                       boolean liteMember, ConfigCheck config, Credentials credentials, Map<String, String> attributes,
+                       Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses) {
+        this(packetVersion, buildNumber, version, address, uuid, liteMember, config, credentials, attributes,
+                excludedMemberUuids, addresses, null, null);
     }
 
     public Credentials getCredentials() {
@@ -83,8 +97,12 @@ public class JoinRequest extends JoinMessage {
         return excludedMemberUuids;
     }
 
+    public OnJoinOp getPreJoinOperation() {
+        return preJoinOperation;
+    }
+
     public MemberInfo toMemberInfo() {
-        return new MemberInfo(address, uuid, attributes, liteMember, memberVersion, addresses);
+        return new MemberInfo(address, uuid, cpMemberUUID, attributes, liteMember, memberVersion, addresses);
     }
 
     @Override
@@ -107,6 +125,8 @@ public class JoinRequest extends JoinMessage {
 
         this.excludedMemberUuids = unmodifiableSet(excludedMemberUuids);
         this.addresses = readMap(in);
+        cpMemberUUID = UUIDSerializationUtil.readUUID(in);
+        preJoinOperation = in.readObject();
     }
 
     @Override
@@ -124,6 +144,8 @@ public class JoinRequest extends JoinMessage {
             UUIDSerializationUtil.writeUUID(out, uuid);
         }
         writeMap(addresses, out);
+        UUIDSerializationUtil.writeUUID(out, cpMemberUUID);
+        out.writeObject(preJoinOperation);
     }
 
     @Override
@@ -134,6 +156,7 @@ public class JoinRequest extends JoinMessage {
                 + ", memberVersion=" + memberVersion
                 + ", address=" + address
                 + ", uuid='" + uuid + "'"
+                + ", cpMemberUUID='" + cpMemberUUID + "'"
                 + ", liteMember=" + liteMember
                 + ", credentials=" + credentials
                 + ", memberCount=" + getMemberCount()

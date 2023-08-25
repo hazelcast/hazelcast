@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ package com.hazelcast.map.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
-import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.comparators.ValueComparator;
@@ -43,13 +44,16 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
 import java.util.function.Predicate;
+
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * Context which is needed by a map service.
@@ -71,13 +75,32 @@ import java.util.function.Predicate;
 public interface MapServiceContext extends MapServiceContextInterceptorSupport,
         MapServiceContextEventListenerSupport {
 
+    /**
+     * Following fields for FORCE_OFFLOAD_ALL_OPERATIONS
+     * are introduced only for testing purposes.
+     *
+     * @see {@link MapServiceContext#isForceOffloadEnabled}
+     */
+    boolean DEFAULT_FORCE_OFFLOAD_ALL_OPERATIONS = false;
+    String PROP_FORCE_OFFLOAD_ALL_OPERATIONS
+            = "hazelcast.internal.map.force.offload.all.map.operations";
+    HazelcastProperty FORCE_OFFLOAD_ALL_OPERATIONS
+            = new HazelcastProperty(PROP_FORCE_OFFLOAD_ALL_OPERATIONS,
+            DEFAULT_FORCE_OFFLOAD_ALL_OPERATIONS);
+
+    long DEFAULT_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS = 0;
+    String PROP_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS
+            = "hazelcast.internal.map.mapstore.max.successive.offloaded.operation.run.nanos";
+    HazelcastProperty MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS
+            = new HazelcastProperty(PROP_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS,
+            DEFAULT_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS, NANOSECONDS);
+
+
     Object toObject(Object data);
 
     Data toData(Object object, PartitioningStrategy partitionStrategy);
 
     Data toData(Object object);
-
-    Data toDataWithSchema(Object object);
 
     MapContainer getMapContainer(String mapName);
 
@@ -143,9 +166,9 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
      * Returns cached collection of owned partitions,
      * When it is null, reloads and caches it again.
      */
-    PartitionIdSet getOrInitCachedMemberPartitions();
+    PartitionIdSet getCachedOwnedPartitions();
 
-    void nullifyOwnedPartitions();
+    void refreshCachedOwnedPartitions();
 
     ExpirationManager getExpirationManager();
 
@@ -173,11 +196,13 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     Extractors getExtractors(String mapName);
 
-    void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation);
-
     boolean removeMapContainer(MapContainer mapContainer);
 
-    PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config);
+    PartitioningStrategy getPartitioningStrategy(
+            String mapName,
+            PartitioningStrategyConfig config,
+            List<PartitioningAttributeConfig> partitioningAttributeConfigs
+    );
 
     void removePartitioningStrategyFromCache(String mapName);
 
@@ -206,6 +231,38 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     NodeWideUsedCapacityCounter getNodeWideUsedCapacityCounter();
 
     ExecutorStats getOffloadedEntryProcessorExecutorStats();
+
+    /**
+     * Only used for testing purposes.
+     * <p>
+     * Default value is {@code false}
+     * <p>
+     * Forces offload of all operations of all maps regardless of a
+     * map-store is being configured. This has identical behavior
+     * with enabling {@link MapStoreConfig#isOffload()} for all maps.
+     *
+     * @return {@code true} if force offload for all
+     * operations are enabled, otherwise {@code false}.
+     */
+    boolean isForceOffloadEnabled();
+
+    /**
+     * By default, returns zero.
+     * <p>
+     * Independent of the number of queued offloaded operations, a
+     * {@link com.hazelcast.map.impl.operation.steps.engine.StepRunner}
+     * tries to run all queued operation in one go. This may
+     * cause biased usage of partition thread for the favour of
+     * operating map. To prevent this, one can put max execution
+     * time-limit, so partition
+     * operations of other maps don't wait longer but if there
+     * is a few maps, this limit can cause increased latencies
+     * as a side effect.
+     *
+     * @see #MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS
+     * @see com.hazelcast.map.impl.operation.steps.engine.StepRunner
+     */
+    long getMaxSuccessiveOffloadedOpRunNanos();
 
     Semaphore getNodeWideLoadedKeyLimiter();
 

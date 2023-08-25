@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,16 +112,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     public final void executeRun() {
         nodeExtension.onThreadStart(this);
         try {
-            while (!shutdown) {
-                Object task;
-                try {
-                    task = queue.take(priority);
-                } catch (InterruptedException e) {
-                    continue;
-                }
-
-                process(task);
-            }
+            loop();
         } catch (Throwable t) {
             inspectOutOfMemoryError(t);
             logger.severe(t);
@@ -130,13 +121,26 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         }
     }
 
-    private void process(Object task) {
+    @SuppressWarnings("java:S112")
+    protected void loop() throws Exception {
+        while (!shutdown) {
+            Object task;
+            try {
+                task = queue.take(priority);
+            } catch (InterruptedException e) {
+                continue;
+            }
+
+            process(task);
+        }
+    }
+
+    void process(Object task) {
         try {
-            boolean putBackInQueue = false;
             if (task.getClass() == Packet.class) {
-                putBackInQueue = process((Packet) task);
+                process((Packet) task);
             } else if (task instanceof Operation) {
-                putBackInQueue = process((Operation) task);
+                process((Operation) task);
             } else if (task instanceof PartitionSpecificRunnable) {
                 process((PartitionSpecificRunnable) task);
             } else if (task instanceof Runnable) {
@@ -146,12 +150,8 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
             } else {
                 throw new IllegalStateException("Unhandled task:" + task);
             }
-            if (putBackInQueue) {
-                // retry later if not ready
-                queue.add(task, priority);
-            } else {
-                completedTotalCount.inc();
-            }
+
+            completedTotalCount.inc();
         } catch (Throwable t) {
             errorCount.inc();
             inspectOutOfMemoryError(t);
@@ -169,37 +169,21 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
      * {@code false} if the operation should not be retried, either because it
      * timed out or has run successfully
      */
-    private boolean process(Operation operation) {
+    private void process(Operation operation) {
         currentRunner = operationRunner(operation.getPartitionId());
-        try {
-            if (currentRunner.run(operation)) {
-                return true;
-            } else {
-                completedOperationCount.inc();
-                return false;
-            }
-        } finally {
-            operation.clearThreadContext();
-        }
+        currentRunner.run(operation);
     }
 
     /**
      * Processes/executes the provided packet.
      *
      * @param packet the packet to execute
-     * @return {@code true} if this packet was not executed and should be retried at a later time,
-     * {@code false} if the packet should not be retried, either because it
-     * timed out or has run successfully
      * @throws Exception if there was an exception raised while processing the packet
      */
-    private boolean process(Packet packet) throws Exception {
+    private void process(Packet packet) throws Exception {
         currentRunner = operationRunner(packet.getPartitionId());
-        if (currentRunner.run(packet)) {
-            return true;
-        } else {
-            completedPacketCount.inc();
-            return false;
-        }
+        currentRunner.run(packet);
+        completedPacketCount.inc();
     }
 
     private void process(PartitionSpecificRunnable runnable) {
@@ -222,9 +206,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
 
         try {
             if (task instanceof Operation) {
-                if (process((Operation) task)) {
-                    queue.add(task, false);
-                }
+                process((Operation) task);
             } else if (task instanceof Runnable) {
                 process((Runnable) task);
             } else {
@@ -249,7 +231,12 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         interrupt();
     }
 
+    public boolean isShutdown() {
+        return shutdown;
+    }
+
     public final void awaitTermination(int timeout, TimeUnit unit) throws InterruptedException {
         join(unit.toMillis(timeout));
     }
+
 }

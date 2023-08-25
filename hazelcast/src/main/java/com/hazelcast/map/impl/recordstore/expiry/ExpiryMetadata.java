@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-
-import static com.hazelcast.map.impl.record.Record.EPOCH_TIME;
-import static com.hazelcast.map.impl.record.Record.UNSET;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 public interface ExpiryMetadata {
 
@@ -114,6 +109,16 @@ public interface ExpiryMetadata {
         public ExpiryMetadata setRawLastUpdateTime(int lastUpdateTime) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public String toString() {
+            return "NULL{"
+                    + "ttl=" + getTtl()
+                    + ", maxIdle=" + getMaxIdle()
+                    + ", expirationTime=" + getExpirationTime()
+                    + ", lastUpdateTime=" + getLastUpdateTime()
+                    + '}';
+        }
     };
 
     default boolean hasExpiry() {
@@ -164,23 +169,5 @@ public interface ExpiryMetadata {
         setRawMaxIdle(in.readInt());
         setRawExpirationTime(in.readInt());
         setRawLastUpdateTime(in.readInt());
-    }
-
-    default int stripBaseTime(long value) {
-        int diff = UNSET;
-        if (value > 0) {
-            diff = (int) MILLISECONDS.toSeconds(value - EPOCH_TIME);
-        }
-
-        return diff;
-    }
-
-    default long recomputeWithBaseTime(int value) {
-        if (value == UNSET) {
-            return 0L;
-        }
-
-        long exploded = SECONDS.toMillis(value);
-        return exploded + EPOCH_TIME;
     }
 }

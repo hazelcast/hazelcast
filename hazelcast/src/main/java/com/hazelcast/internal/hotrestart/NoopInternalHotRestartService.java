@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.hotrestart;
 
+import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.instance.impl.ClusterTopologyIntent;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.cluster.Address;
@@ -35,6 +37,11 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
     @Override
     public boolean isEnabled() {
         return false;
+    }
+
+    @Override
+    public boolean isStartCompleted() {
+        return true;
     }
 
     @Override
@@ -92,5 +99,23 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
 
     @Override
     public void deferPostJoinOps(OnJoinOp postJoinOp) {
+    }
+
+    @Override
+    public void setClusterTopologyIntentOnMaster(ClusterTopologyIntent clusterTopologyIntent) {
+    }
+
+    @Override
+    public boolean isClusterMetadataFoundOnDisk() {
+        return false;
+    }
+
+    @Override
+    public void onClusterTopologyIntentChange() {
+    }
+
+    @Override
+    public boolean trySetDeferredClusterState(ClusterState newClusterState) {
+        return false;
     }
 }

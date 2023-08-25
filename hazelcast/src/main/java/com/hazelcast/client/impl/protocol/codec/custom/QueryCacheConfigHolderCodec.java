@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("8a5e7ff16ef373bfed1830e63dac06e7")
+@Generated("a9dbe27ad1c96f77ebc6da75f2e7ae3c")
 public final class QueryCacheConfigHolderCodec {
     private static final int BATCH_SIZE_FIELD_OFFSET = 0;
     private static final int BUFFER_SIZE_FIELD_OFFSET = BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

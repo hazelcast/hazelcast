@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,7 @@ public class BackoffIdleStrategy implements IdleStrategy {
     @Override
     public boolean idle(long n) {
         if (n < yieldThreshold) {
+            // TODO: Think to call Thread.onSpinWait which is introduced in java 9.
             return false;
         }
         if (n < parkThreshold) {

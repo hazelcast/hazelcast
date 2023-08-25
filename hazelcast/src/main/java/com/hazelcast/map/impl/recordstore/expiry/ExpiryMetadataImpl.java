@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package com.hazelcast.map.impl.recordstore.expiry;
 
-import static com.hazelcast.map.impl.record.Record.UNSET;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.hazelcast.internal.util.TimeStripUtil.recomputeWithBaseTime;
+import static com.hazelcast.internal.util.TimeStripUtil.stripBaseTime;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.toMillis;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.toSeconds;
 
 public class ExpiryMetadataImpl implements ExpiryMetadata {
 
@@ -40,8 +41,7 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public long getTtl() {
-        return ttl == Integer.MAX_VALUE
-                ? Long.MAX_VALUE : SECONDS.toMillis(ttl);
+        return toMillis(ttl);
     }
 
     @Override
@@ -51,13 +51,7 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public ExpiryMetadata setTtl(long ttl) {
-        long ttlSeconds = MILLISECONDS.toSeconds(ttl);
-        if (ttlSeconds == 0 && ttl != 0) {
-            ttlSeconds = 1;
-        }
-
-        this.ttl = ttlSeconds > Integer.MAX_VALUE
-                ? Integer.MAX_VALUE : (int) ttlSeconds;
+        this.ttl = toSeconds(ttl);
         return this;
     }
 
@@ -69,8 +63,7 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public long getMaxIdle() {
-        return maxIdle == Integer.MAX_VALUE
-                ? Long.MAX_VALUE : SECONDS.toMillis(maxIdle);
+        return toMillis(maxIdle);
     }
 
     @Override
@@ -80,12 +73,7 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public ExpiryMetadata setMaxIdle(long maxIdle) {
-        long maxIdleSeconds = MILLISECONDS.toSeconds(maxIdle);
-        if (maxIdleSeconds == 0 && maxIdle != 0) {
-            maxIdleSeconds = 1;
-        }
-        this.maxIdle = maxIdleSeconds > Integer.MAX_VALUE
-                ? Integer.MAX_VALUE : (int) maxIdleSeconds;
+        this.maxIdle = toSeconds(maxIdle);
         return this;
     }
 
@@ -97,14 +85,6 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public long getExpirationTime() {
-        if (expirationTime == UNSET) {
-            return 0L;
-        }
-
-        if (expirationTime == Integer.MAX_VALUE) {
-            return Long.MAX_VALUE;
-        }
-
         return recomputeWithBaseTime(expirationTime);
     }
 
@@ -115,9 +95,7 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public ExpiryMetadata setExpirationTime(long expirationTime) {
-        this.expirationTime = expirationTime == Long.MAX_VALUE
-                ? Integer.MAX_VALUE
-                : stripBaseTime(expirationTime);
+        this.expirationTime = stripBaseTime(expirationTime);
         return this;
     }
 
@@ -129,14 +107,6 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public long getLastUpdateTime() {
-        if (lastUpdateTime == UNSET) {
-            return 0L;
-        }
-
-        if (lastUpdateTime == Integer.MAX_VALUE) {
-            return Long.MAX_VALUE;
-        }
-
         return recomputeWithBaseTime(lastUpdateTime);
     }
 
@@ -147,9 +117,7 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public ExpiryMetadata setLastUpdateTime(long lastUpdateTime) {
-        this.lastUpdateTime = lastUpdateTime == Long.MAX_VALUE
-                ? Integer.MAX_VALUE
-                : stripBaseTime(lastUpdateTime);
+        this.lastUpdateTime = stripBaseTime(lastUpdateTime);
         return this;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,16 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.operation.steps.PutOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
+
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public abstract class BasePutOperation
         extends LockAwareOperation implements BackupAwareOperation {
@@ -38,22 +44,69 @@ public abstract class BasePutOperation
     }
 
     @Override
-    protected void afterRunInternal() {
-        Object value = isPostProcessing(recordStore)
+    protected void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
+
+        if (getStaticParams().isCheckIfLoaded() && recordStore != null) {
+            recordStore.checkIfLoaded();
+        }
+    }
+
+    protected StaticParams getStaticParams() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return PutOpSteps.READ;
+    }
+
+    @Override
+    public State createState() {
+        return super.createState()
+                .setStaticPutParams(getStaticParams())
+                .setTtl(getTtl())
+                .setMaxIdle(getMaxIdle());
+    }
+
+    @Override
+    public void applyState(State state) {
+        oldValue = getOldValue(state);
+        eventType = getEventType();
+        recordToBackup = state.getRecord();
+    }
+
+    protected Data getOldValue(State state) {
+        return mapServiceContext.toData(state.getOldValue());
+    }
+
+    @Override
+    public void afterRunInternal() {
+        Object value = isPostProcessingOrHasInterceptor(recordStore)
                 ? recordStore.getRecord(dataKey).getValue() : dataValue;
         mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
-        mapEventPublisher.publishEvent(getCallerAddress(), name, getEventType(),
-                dataKey, oldValue, value);
+        mapEventPublisher.publishEvent(getCallerAddress(), name,
+                oldValue == null ? EntryEventType.ADDED
+                        : EntryEventType.UPDATED, dataKey, oldValue, value);
         invalidateNearCache(dataKey);
         publishWanUpdate(dataKey, value);
         evict(dataKey);
         super.afterRunInternal();
     }
 
-    private EntryEventType getEventType() {
+    // overridden in extension classes
+    protected long getTtl() {
+        return UNSET;
+    }
+
+    // overridden in extension classes
+    protected long getMaxIdle() {
+        return UNSET;
+    }
+
+    protected final EntryEventType getEventType() {
         if (eventType == null) {
-            eventType = oldValue == null
-                    ? EntryEventType.ADDED : EntryEventType.UPDATED;
+            eventType = oldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
         }
         return eventType;
     }

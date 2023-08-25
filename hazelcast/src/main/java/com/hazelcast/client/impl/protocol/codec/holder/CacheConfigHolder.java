@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolde
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -62,6 +63,8 @@ public class CacheConfigHolder {
     private final MergePolicyConfig mergePolicyConfig;
     private final boolean disablePerEntryInvalidationEvents;
     private final List<ListenerConfigHolder> cachePartitionLostListenerConfigs;
+    private final boolean isDataPersistenceConfigExists;
+    private final DataPersistenceConfig dataPersistenceConfig;
 
     public CacheConfigHolder(String name, String managerPrefix, String uriString, int backupCount, int asyncBackupCount,
                              String inMemoryFormat, EvictionConfigHolder evictionConfigHolder,
@@ -73,7 +76,8 @@ public class CacheConfigHolder {
                              List<Data> listenerConfigurations, MergePolicyConfig mergePolicyConfig,
                              boolean disablePerEntryInvalidationEvents,
                              List<ListenerConfigHolder> cachePartitionLostListenerConfigs, boolean merkleTreeConfigExists,
-                             MerkleTreeConfig merkleTreeConfig) {
+                             MerkleTreeConfig merkleTreeConfig, boolean isDataPersistenceConfigExist,
+                             DataPersistenceConfig dataPersistenceConfig) {
         this.name = name;
         this.managerPrefix = managerPrefix;
         this.uriString = uriString;
@@ -101,6 +105,8 @@ public class CacheConfigHolder {
         this.cachePartitionLostListenerConfigs = cachePartitionLostListenerConfigs;
         this.merkleTreeConfigExists = merkleTreeConfigExists;
         this.merkleTreeConfig = merkleTreeConfig;
+        this.isDataPersistenceConfigExists = isDataPersistenceConfigExist;
+        this.dataPersistenceConfig = dataPersistenceConfig;
     }
 
     public String getName() {
@@ -179,6 +185,10 @@ public class CacheConfigHolder {
         return hotRestartConfig;
     }
 
+    public DataPersistenceConfig getDataPersistenceConfig() {
+        return dataPersistenceConfig;
+    }
+
     public EventJournalConfig getEventJournalConfig() {
         return eventJournalConfig;
     }
@@ -254,7 +264,9 @@ public class CacheConfigHolder {
                     .add(listenerConfigHolder.asListenerConfig(serializationService)));
             config.setPartitionLostListenerConfigs(partitionLostListenerConfigs);
         }
-
+        if (isDataPersistenceConfigExists) {
+            config.setDataPersistenceConfig(dataPersistenceConfig);
+        }
         return config;
     }
 
@@ -289,7 +301,8 @@ public class CacheConfigHolder {
                 config.isStoreByValue(), config.isManagementEnabled(), config.isStatisticsEnabled(), config.getHotRestartConfig(),
                 config.getEventJournalConfig(), config.getSplitBrainProtectionName(), listenerConfigurations,
                 config.getMergePolicyConfig(), config.isDisablePerEntryInvalidationEvents(),
-                cachePartitionLostListenerConfigs, config.getMerkleTreeConfig() != null, config.getMerkleTreeConfig());
+                cachePartitionLostListenerConfigs, config.getMerkleTreeConfig() != null, config.getMerkleTreeConfig(),
+                true, config.getDataPersistenceConfig());
     }
 
 }

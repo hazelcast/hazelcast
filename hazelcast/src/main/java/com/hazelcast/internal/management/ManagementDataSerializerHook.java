@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.internal.management.operation.SetLicenseOperation;
 import com.hazelcast.internal.management.operation.UpdateConfigOperation;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
 import com.hazelcast.internal.management.operation.UpdatePermissionConfigOperation;
+import com.hazelcast.internal.management.operation.UpdateTcpIpMemberListOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -42,8 +43,9 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
     public static final int UPDATE_PERMISSION_CONFIG_OPERATION = 4;
     public static final int RELOAD_CONFIG_OPERATION = 5;
     public static final int UPDATE_CONFIG_OPERATION = 6;
+    public static final int UPDATE_TCP_IP_MEMBER_LIST_OPERATION = 7;
 
-    private static final int LEN = UPDATE_CONFIG_OPERATION + 1;
+    private static final int LEN = UPDATE_TCP_IP_MEMBER_LIST_OPERATION + 1;
 
     @Override
     public int getFactoryId() {
@@ -62,6 +64,7 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
         constructors[UPDATE_PERMISSION_CONFIG_OPERATION] = arg -> new UpdatePermissionConfigOperation();
         constructors[RELOAD_CONFIG_OPERATION] = arg -> new ReloadConfigOperation();
         constructors[UPDATE_CONFIG_OPERATION] = arg -> new UpdateConfigOperation();
+        constructors[UPDATE_TCP_IP_MEMBER_LIST_OPERATION] = arg -> new UpdateTcpIpMemberListOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

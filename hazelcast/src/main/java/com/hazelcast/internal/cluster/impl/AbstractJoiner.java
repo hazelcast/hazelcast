@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -246,7 +246,10 @@ public abstract class AbstractJoiner
         while (conn == null) {
             timeout -= SPLIT_BRAIN_SLEEP_TIME_MILLIS;
             if (timeout < 0) {
-                logger.fine("Returning null timeout<0, " + timeout);
+                logger.fine("Could not send SplitBrainJoinMessage to the " + target
+                        + " since the local member could not connect to that target address for "
+                        + SPLIT_BRAIN_CONN_TIMEOUT_MILLIS + " millis, which is the split brain"
+                        + " connection timeout");
                 return null;
             }
             try {

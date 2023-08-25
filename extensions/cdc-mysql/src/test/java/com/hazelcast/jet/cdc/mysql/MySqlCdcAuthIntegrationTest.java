@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public class MySqlCdcAuthIntegrationTest extends AbstractMySqlCdcIntegrationTest
     @Test
     public void wrongPassword() {
         StreamSource<ChangeRecord> source = MySqlCdcSources.mysql("name")
-                .setDatabaseAddress(mysql.getContainerIpAddress())
+                .setDatabaseAddress(mysql.getHost())
                 .setDatabasePort(mysql.getMappedPort(MYSQL_PORT))
                 .setDatabaseUser("debezium")
                 .setDatabasePassword("wrongPassword")
@@ -51,7 +51,7 @@ public class MySqlCdcAuthIntegrationTest extends AbstractMySqlCdcIntegrationTest
 
         // then
         assertThatThrownBy(job::join)
-                .hasRootCauseInstanceOf(JetException.class)
+                .hasCauseInstanceOf(JetException.class)
                 .hasStackTraceContaining("Access denied for user");
     }
 

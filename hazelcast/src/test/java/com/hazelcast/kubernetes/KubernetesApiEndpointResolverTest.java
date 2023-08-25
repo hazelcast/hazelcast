@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class KubernetesApiEndpointResolverTest {
         KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, null, 0, null, null, null, null, null, client);
 
         // when
-        List<DiscoveryNode> nodes = sut.resolve();
+        List<DiscoveryNode> nodes = sut.resolveNodes();
 
         // then
         assertEquals(0, nodes.size());
@@ -82,7 +82,7 @@ public class KubernetesApiEndpointResolverTest {
                 client);
 
         // when
-        List<DiscoveryNode> nodes = sut.resolve();
+        List<DiscoveryNode> nodes = sut.resolveNodes();
 
         // then
         assertEquals(1, nodes.size());
@@ -99,7 +99,7 @@ public class KubernetesApiEndpointResolverTest {
                 null, null, null, client);
 
         // when
-        List<DiscoveryNode> nodes = sut.resolve();
+        List<DiscoveryNode> nodes = sut.resolveNodes();
 
         // then
         assertEquals(1, nodes.size());
@@ -116,7 +116,7 @@ public class KubernetesApiEndpointResolverTest {
                 POD_LABEL, POD_LABEL_VALUE, null, client);
 
         // when
-        List<DiscoveryNode> nodes = sut.resolve();
+        List<DiscoveryNode> nodes = sut.resolveNodes();
 
         // then
         assertEquals(1, nodes.size());
@@ -133,7 +133,7 @@ public class KubernetesApiEndpointResolverTest {
                 null, null, RESOLVE_NOT_READY_ADDRESSES, client);
 
         // when
-        List<DiscoveryNode> nodes = sut.resolve();
+        List<DiscoveryNode> nodes = sut.resolveNodes();
 
         // then
         assertEquals(1, nodes.size());
@@ -149,7 +149,7 @@ public class KubernetesApiEndpointResolverTest {
                 client);
 
         // when
-        List<DiscoveryNode> nodes = sut.resolve();
+        List<DiscoveryNode> nodes = sut.resolveNodes();
 
         // then
         assertEquals(0, nodes.size());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -30,6 +31,7 @@ public interface IndexProvider {
     /**
      * Creates a new index with the given name.
      *
+     * @param node         The node object
      * @param config       Index configuration.
      * @param extractors   the extractors to extract values of the given
      *                     name.
@@ -38,14 +40,16 @@ public interface IndexProvider {
      *                     from them.
      * @param copyBehavior the desired index copy behaviour.
      * @param stats        the index stats instance to report the statistics to.
-     * @param storeAdapter the reference to the store adapter. {@code null} if the index is global.
+     * @param mapName      the name of the map being indexed
      * @return the created index instance.
      */
     InternalIndex createIndex(
+            Node node,
             IndexConfig config,
             Extractors extractors,
             InternalSerializationService ss,
             IndexCopyBehavior copyBehavior,
             PerIndexStats stats,
-            int partitionCount);
+            int partitionCount,
+            String mapName);
 }

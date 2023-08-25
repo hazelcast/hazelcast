@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.util.StringUtil;
@@ -33,10 +35,13 @@ import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.hazelcast.config.TcpIpConfig.MEMBER_TEXT_SPLIT_PATTERN;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.FAIL;
@@ -55,7 +60,6 @@ import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:methodlength"})
 public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostCommand> {
     private static final byte[] QUEUE_SIMPLE_VALUE_CONTENT_TYPE = stringToBytes("text/plain");
-
     public HttpPostCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService, textCommandService.getNode().getLogger(HttpPostCommandProcessor.class));
     }
@@ -131,6 +135,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleConfigReload(command);
             } else if (uri.startsWith(URI_CONFIG_UPDATE)) {
                 handleConfigUpdate(command);
+            } else if (uri.startsWith(URI_TCP_IP_MEMBER_LIST)) {
+                handleTcpIpConfigMemberList(command);
             } else {
                 command.send404();
             }
@@ -480,7 +486,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                         command.send500();
                         textCommandService.sendResponse(command);
                     }
-                });
+                }, internalAsyncExecutor);
     }
 
     private void handleRemoveCPMember(final HttpPostCommand command) {
@@ -503,7 +509,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
                         textCommandService.sendResponse(command);
                     }
-                });
+                }, internalAsyncExecutor);
     }
 
     private void handleCPGroup(HttpPostCommand command) throws UnsupportedEncodingException {
@@ -545,7 +551,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                         command.send500();
                         textCommandService.sendResponse(command);
                     }
-                });
+                }, internalAsyncExecutor);
     }
 
     private void handleForceDestroyCPGroup(final HttpPostCommand command) {
@@ -573,7 +579,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                         }
                         textCommandService.sendResponse(command);
                     }
-                });
+                }, internalAsyncExecutor);
     }
 
     private void handleResetCPSubsystem(final HttpPostCommand command) throws UnsupportedEncodingException {
@@ -590,7 +596,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                         command.send500();
                         textCommandService.sendResponse(command);
                     }
-                });
+                }, internalAsyncExecutor);
     }
 
     private CPSubsystemManagementService getCpSubsystemManagementService() {
@@ -642,5 +648,42 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 command,
                 response(FAIL, "message", "Configuration Update requires Hazelcast Enterprise Edition")
         );
+    }
+
+    private void handleTcpIpConfigMemberList(HttpPostCommand command) throws UnsupportedEncodingException {
+        String[] params = decodeParamsAndAuthenticate(command, 3);
+        // assumes that both groupName and password are present
+        String membersText = params[2];
+        // this separator chars must be sent in url encoded format
+        List<String> members = Arrays.asList(MEMBER_TEXT_SPLIT_PATTERN.split(membersText.trim()));
+        try {
+            ConfigurationService configurationService
+                    = getNode().getNodeEngine().getService(ConfigurationService.SERVICE_NAME);
+            configurationService.updateTcpIpConfigMemberList(members);
+        } catch (Exception ex) {
+            if (ex.getCause() instanceof IllegalStateException) {
+                throw new HttpBadRequestException(ex.getCause().getMessage());
+            } else {
+                throw ex;
+            }
+        }
+        prepareResponse(command, responseOnTcpIpMemberListUpdateSuccess(members));
+    }
+
+    private JsonObject responseOnTcpIpMemberListUpdateSuccess(List<String> members) {
+        JsonObject jsonResponse = response(ResponseType.SUCCESS, "message",
+                tcpIpMemberListUpdateMessage(getNode().getConfig().getDynamicConfigurationConfig().isPersistenceEnabled()));
+        JsonArray membersArray = new JsonArray();
+        members.forEach(membersArray::add);
+        jsonResponse.add("member-list", membersArray);
+        return jsonResponse;
+    }
+
+    public static String tcpIpMemberListUpdateMessage(boolean persistenceEnabled) {
+        String message = "The member list of TCP-IP join config is updated at run time. ";
+        if (persistenceEnabled) {
+            message += "Dynamic Configuration Persistence is enabled. This member list change will be persisted. ";
+        }
+        return message;
     }
 }

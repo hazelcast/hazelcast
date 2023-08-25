@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class StreamKafkaP_StandaloneKafkaTest extends JetTestSupport {
 
     @Test
     public void when_cancelledAfterBrokerDown_then_cancelsPromptly() throws IOException {
-        KafkaTestSupport kafkaTestSupport = new KafkaTestSupport();
+        KafkaTestSupport kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
         kafkaTestSupport.createTopic("topic", 1);
         DAG dag = new DAG();

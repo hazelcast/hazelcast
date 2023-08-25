@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,6 +177,16 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
     @Test(expected = ExecutionException.class)
     public void removeAsync_failing_whenSplitBrainProtectionSize_met() throws Exception {
         map(3).removeAsync("foo").toCompletableFuture().get();
+    }
+
+    @Test
+    public void deleteAsync_successful_whenSplitBrainProtectionSize_met() throws Exception {
+        map(0).deleteAsync("foo").toCompletableFuture().get();
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void deleteAsync_failing_whenSplitBrainProtectionSize_met() throws Exception {
+        map(3).deleteAsync("foo").toCompletableFuture().get();
     }
 
     @Test

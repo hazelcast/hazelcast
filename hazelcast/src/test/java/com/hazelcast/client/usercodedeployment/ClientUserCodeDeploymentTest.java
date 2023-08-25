@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.UserCodeDeploymentConfig;
@@ -50,8 +51,10 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.query.Predicates.equal;
+import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
@@ -60,7 +63,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientUserCodeDeploymentTest extends ClientTestSupport {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void tearDown() throws Exception {
@@ -140,7 +143,7 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
     }
 
     @Test
-    public void testWithMultipleNodes_clientReconnectsToNewNode() throws InterruptedException {
+    public void testWithMultipleNodes_clientReconnectsToNewNode() {
         ClientConfig clientConfig = createClientConfig();
         Config config = createNodeConfig();
 
@@ -155,6 +158,46 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
         factory.newHazelcastInstance(config);
 
         assertOpenEventually(reconnectListener.reconnectedLatch);
+        assertCodeDeploymentWorking(client, new IncrementingEntryProcessor());
+    }
+
+    @Test
+    public void testClassesAreDeployed_whenClientReconnectsToOtherHalf() {
+        ClientConfig clientConfig = createClientConfig();
+        Config config = createNodeConfig();
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(2, instance1, instance2);
+
+        // split the cluster
+        blockCommunicationBetween(instance1, instance2);
+
+        // make sure that each member quickly drops the other from their member list
+        suspectMember(instance1, instance2);
+        suspectMember(instance2, instance1);
+
+        assertClusterSizeEventually(1, instance1);
+        assertClusterSizeEventually(1, instance2);
+
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        Set<Member> members = client.getCluster().getMembers();
+        assertEquals(1, members.size());
+
+        UUID connectedMemberUUID = members.iterator().next().getUuid();
+
+        ReconnectListener reconnectListener = new ReconnectListener();
+        client.getLifecycleService().addLifecycleListener(reconnectListener);
+
+        if (connectedMemberUUID.equals(instance1.getLocalEndpoint().getUuid())) {
+            instance1.shutdown();
+        } else {
+            instance2.shutdown();
+        }
+
+        assertOpenEventually(reconnectListener.reconnectedLatch);
+
         assertCodeDeploymentWorking(client, new IncrementingEntryProcessor());
     }
 

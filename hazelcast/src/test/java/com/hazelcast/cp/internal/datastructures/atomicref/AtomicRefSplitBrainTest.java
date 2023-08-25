@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.cp.internal.HazelcastRaftTestSupport.waitUntilCPDiscoveryCompleted;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -74,8 +72,8 @@ public class AtomicRefSplitBrainTest extends RaftSplitBrainTestSupport {
             future.get();
         }
         IAtomicReference<Long> atomic = instances[0].getCPSubsystem().getAtomicReference(name);
-        assertThat(atomic.get(), greaterThanOrEqualTo(increments.get()));
-        assertThat(atomic.get(), lessThanOrEqualTo(increments.get() + indeterminate.get()));
+        assertThat(atomic.get()).isGreaterThanOrEqualTo(increments.get());
+        assertThat(atomic.get()).isLessThanOrEqualTo(increments.get() + indeterminate.get());
     }
 
     private class Adder implements Runnable {

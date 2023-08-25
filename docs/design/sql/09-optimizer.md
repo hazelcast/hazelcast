@@ -1,4 +1,4 @@
-# SQL Optimizer 
+# SQL Optimizer (Outdated since Hazelcast 5.0)
 
 ## Overview
 

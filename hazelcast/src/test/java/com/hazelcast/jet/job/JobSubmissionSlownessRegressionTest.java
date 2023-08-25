@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hazelcast.jet.test.IgnoredForCoverage;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,8 +45,15 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * This test is ignored due to being flaky - it tries to submit as many jobs as
+ * possible and checks if the rate doesn't go down.
+ * Any larger GC pause or noisy neighbor on the build machine can cause the test to fail.
+ * We keep the test so we can run it on demand when required.
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, IgnoredForCoverage.class})
+@Ignore
 public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
 
     private static final int DURATION_SECS = 10;
@@ -115,6 +123,8 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
 
         assertTrue("Job submission rate should not decrease. First rate: " + measurementARate
                 + ", second rate: " + measurementBRate, measurementARate * 0.8 < measurementBRate);
+
+        executorService.shutdownNow();
     }
 
     private static DAG twoVertex() {

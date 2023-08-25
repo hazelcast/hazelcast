@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.eventservice;
 
 /**
- * A service for publishing events. For example a Topic that receives an message (the event)
+ * A service for publishing events. For example a Topic that receives a message (the event)
  * and dispatches it to a listener.
  *
  * @param <E> the event type

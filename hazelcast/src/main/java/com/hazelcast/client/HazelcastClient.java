@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ public final class HazelcastClient {
      * @see #getHazelcastClientByName(String) (String)
      */
     public static HazelcastInstance newHazelcastClient() {
-        return newHazelcastClientInternal(null, resolveClientConfig(null), null);
+        return newHazelcastClientInternal(resolveClientConfig(null), null, null, null);
     }
 
     /**
@@ -133,7 +133,7 @@ public final class HazelcastClient {
      * @see #getHazelcastClientByName(String) (String)
      */
     public static HazelcastInstance newHazelcastClient(ClientConfig config) {
-        return newHazelcastClientInternal(null, resolveClientConfig(config), null);
+        return newHazelcastClientInternal(resolveClientConfig(config), null, null, null);
     }
 
     /**
@@ -158,7 +158,7 @@ public final class HazelcastClient {
      * @throws InvalidConfigurationException if the loaded failover configuration is not valid
      */
     public static HazelcastInstance newHazelcastFailoverClient() {
-        return newHazelcastClientInternal(null, null, resolveClientFailoverConfig());
+        return newHazelcastClientInternal(null, resolveClientFailoverConfig(), null, null);
     }
 
     /**
@@ -185,7 +185,7 @@ public final class HazelcastClient {
      * @throws InvalidConfigurationException if the provided or the loaded failover configuration is not valid
      */
     public static HazelcastInstance newHazelcastFailoverClient(ClientFailoverConfig clientFailoverConfig) {
-        return newHazelcastClientInternal(null, null, resolveClientFailoverConfig(clientFailoverConfig));
+        return newHazelcastClientInternal(null, resolveClientFailoverConfig(clientFailoverConfig), null, null);
     }
 
     /**
@@ -402,10 +402,14 @@ public final class HazelcastClient {
         OutOfMemoryErrorDispatcher.setClientHandler(outOfMemoryHandler);
     }
 
-    static HazelcastInstance newHazelcastClientInternal(AddressProvider addressProvider, ClientConfig clientConfig,
-                                                        ClientFailoverConfig failoverConfig) {
-        checkConfigs(clientConfig, failoverConfig);
-        String instanceName = getInstanceName(clientConfig, failoverConfig);
+    static HazelcastInstance newHazelcastClientInternal(
+            ClientConfig config,
+            ClientFailoverConfig failoverConfig,
+            ClientConnectionManagerFactory connectionManagerFactory,
+            AddressProvider addressProvider
+    ) {
+        checkConfigs(config, failoverConfig);
+        String instanceName = getInstanceName(config, failoverConfig);
 
         InstanceFuture<HazelcastClientProxy> future = new InstanceFuture<>();
         if (CLIENTS.putIfAbsent(instanceName, future) != null) {
@@ -413,7 +417,8 @@ public final class HazelcastClient {
         }
 
         try {
-            return constructHazelcastClient(addressProvider, clientConfig, failoverConfig, instanceName, future);
+            return constructHazelcastClient(instanceName, config, failoverConfig,
+                    connectionManagerFactory, addressProvider, future);
         } catch (Throwable t) {
             CLIENTS.remove(instanceName, future);
             future.setFailure(t);
@@ -439,7 +444,7 @@ public final class HazelcastClient {
         }
 
         try {
-            return constructHazelcastClient(null, config, null, instanceName, future);
+            return constructHazelcastClient(instanceName, config, null, null, null, future);
         } catch (Throwable t) {
             CLIENTS.remove(instanceName, future);
             future.setFailure(t);
@@ -447,38 +452,43 @@ public final class HazelcastClient {
         }
     }
 
-    private static HazelcastInstance constructHazelcastClient(AddressProvider addressProvider, ClientConfig clientConfig,
-                                                              ClientFailoverConfig failoverConfig, String instanceName,
-                                                              InstanceFuture<HazelcastClientProxy> future) {
+    private static HazelcastInstance constructHazelcastClient(
+            String instanceName,
+            ClientConfig config,
+            ClientFailoverConfig failoverConfig,
+            ClientConnectionManagerFactory connectionManagerFactory,
+            AddressProvider addressProvider,
+            InstanceFuture<HazelcastClientProxy> future
+    ) {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         HazelcastClientProxy proxy;
         try {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
-            ClientConnectionManagerFactory factory = new DefaultClientConnectionManagerFactory();
-            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(instanceName, clientConfig,
-                    failoverConfig, factory, addressProvider);
+            if (connectionManagerFactory == null) {
+                connectionManagerFactory = new DefaultClientConnectionManagerFactory();
+            }
+            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(instanceName, config,
+                    failoverConfig, connectionManagerFactory, addressProvider);
             client.start();
             OutOfMemoryErrorDispatcher.registerClient(client);
             proxy = new HazelcastClientProxy(client);
             future.set(proxy);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
         return proxy;
     }
 
-    private static void checkConfigs(ClientConfig clientConfig, ClientFailoverConfig clientFailoverConfig) {
-        assert clientConfig != null || clientFailoverConfig != null : "At most one type of config can be provided";
-        assert clientConfig == null || clientFailoverConfig == null : "At least one config should be provided ";
+    private static void checkConfigs(ClientConfig config, ClientFailoverConfig failoverConfig) {
+        assert config != null || failoverConfig != null : "At most one type of config can be provided";
+        assert config == null || failoverConfig == null : "At least one config should be provided ";
     }
 
-    static String getInstanceName(ClientConfig clientConfig, ClientFailoverConfig failoverConfig) {
+    private static String getInstanceName(ClientConfig config, ClientFailoverConfig failoverConfig) {
         int instanceNum = CLIENT_ID_GEN.incrementAndGet();
         String instanceName;
-        if (clientConfig != null) {
-            instanceName = clientConfig.getInstanceName();
+        if (config != null) {
+            instanceName = config.getInstanceName();
         } else {
             instanceName = failoverConfig.getClientConfigs().get(0).getInstanceName();
         }

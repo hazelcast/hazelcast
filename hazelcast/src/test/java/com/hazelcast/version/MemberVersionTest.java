@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,8 +127,8 @@ public class MemberVersionTest {
         assertEquals(version, version);
         assertEquals(version, versionSameAttributes);
 
-        assertNotEquals(version, null);
-        assertNotEquals(version, new Object());
+        assertNotEquals(null, version);
+        assertNotEquals(new Object(), version);
 
         assertNotEquals(version, versionOtherMajor);
         assertNotEquals(version, versionOtherMinor);

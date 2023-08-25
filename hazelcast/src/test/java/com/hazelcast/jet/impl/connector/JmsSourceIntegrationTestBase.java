@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,14 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Session;
+import jakarta.jms.TextMessage;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -69,8 +69,8 @@ import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static javax.jms.Session.AUTO_ACKNOWLEDGE;
-import static javax.jms.Session.DUPS_OK_ACKNOWLEDGE;
+import static jakarta.jms.Session.AUTO_ACKNOWLEDGE;
+import static jakarta.jms.Session.DUPS_OK_ACKNOWLEDGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -384,7 +384,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
             }
             logger.info(countsStr);
         }, 30);
-        assertEquals(job.getStatus(), RUNNING);
+        assertEquals(RUNNING, job.getStatus());
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,104 +18,115 @@ package com.hazelcast.jet.cdc.impl;
 
 import com.hazelcast.jet.cdc.ChangeRecord;
 import com.hazelcast.jet.cdc.Operation;
-import com.hazelcast.jet.cdc.ParsingException;
 import com.hazelcast.jet.cdc.RecordPart;
 
 import javax.annotation.Nonnull;
-import java.util.Map;
+import javax.annotation.Nullable;
 import java.util.Objects;
+import java.util.function.Supplier;
+
+import static java.util.Objects.requireNonNull;
 
 public class ChangeRecordImpl implements ChangeRecord {
 
     private final long sequenceSource;
     private final long sequenceValue;
     private final String keyJson;
-    private final String valueJson;
 
-    private String json;
-    private Long timestamp;
-    private Operation operation;
-    private String database;
-    private String schema;
-    private String table;
+    private final Long timestamp;
+    private final Operation operation;
+    private final String database;
+    private final String schema;
+    private final String table;
     private RecordPart key;
-    private RecordPart value;
+    private final RecordPart oldValue;
+    private final RecordPart newValue;
 
     public ChangeRecordImpl(
+            long timestamp,
             long sequenceSource,
             long sequenceValue,
-            @Nonnull String keyJson,
-            @Nonnull String valueJson
+            Operation operation,
+            @Nullable String keyJson,
+            Supplier<String> oldValueJsonSupplier,
+            Supplier<String> newValueJsonSupplier,
+            String table,
+            String schema,
+            String database
     ) {
+        this.timestamp = timestamp;
         this.sequenceSource = sequenceSource;
         this.sequenceValue = sequenceValue;
-        this.keyJson = Objects.requireNonNull(keyJson, "keyJson");
-        this.valueJson = Objects.requireNonNull(valueJson, "valueJson");
+        this.operation = operation;
+        this.keyJson = keyJson;
+        this.oldValue = oldValueJsonSupplier == null ? null : new RecordPartImpl(oldValueJsonSupplier);
+        this.newValue = newValueJsonSupplier == null ? null : new RecordPartImpl(newValueJsonSupplier);
+        this.table = table;
+        this.schema = schema;
+        this.database = database;
+    }
+
+    ChangeRecordImpl(
+            long timestamp,
+            long sequenceSource,
+            long sequenceValue,
+            Operation operation,
+            String keyJson,
+            String oldValueJson,
+            String newValueJson,
+            String table,
+            String schema,
+            String database
+    ) {
+        this.timestamp = timestamp;
+        this.sequenceSource = sequenceSource;
+        this.sequenceValue = sequenceValue;
+        this.operation = operation;
+        this.keyJson = keyJson;
+        this.oldValue = oldValueJson == null ? null : new RecordPartImpl(oldValueJson);
+        this.newValue = newValueJson == null ? null : new RecordPartImpl(newValueJson);
+        this.table = table;
+        this.schema = schema;
+        this.database = database;
     }
 
     @Override
-    public long timestamp() throws ParsingException {
-        if (timestamp == null) {
-            Long millis = get(value().toMap(), "__ts_ms", Long.class);
-            if (millis == null) {
-                throw new ParsingException("No parsable timestamp field found");
-            }
-            timestamp = millis;
-        }
+    public long timestamp() {
         return timestamp;
     }
 
     @Override
     @Nonnull
-    public Operation operation() throws ParsingException {
-        if (operation == null) {
-            String opAlias = get(value().toMap(), "__op", String.class);
-            operation = Operation.get(opAlias);
-        }
+    public Operation operation() {
         return operation;
     }
 
     @Nonnull
     @Override
-    public String database() throws ParsingException {
-        if (database == null) {
-            database = get(value().toMap(), "__db", String.class);
-            if (database == null) {
-                throw new ParsingException("No parsable database name field found");
-            }
-        }
+    public String database() {
         return database;
     }
 
     @Nonnull
     @Override
-    public String schema() throws ParsingException {
-        if (schema == null) {
-            schema = get(value().toMap(), "__schema", String.class);
-            if (schema == null) {
-                throw new ParsingException("No parsable schema name field found");
-            }
-        }
+    public String schema() {
         return schema;
     }
 
     @Nonnull
     @Override
-    public String table() throws ParsingException {
-        if (table == null) {
-            table = get(value().toMap(), "__table", String.class);
-            if (table == null) {
-                throw new ParsingException("No parsable table name field found");
-            }
-        }
+    public String table() {
         return table;
     }
 
     @Override
-    @Nonnull
+    @Nullable
     public RecordPart key() {
         if (key == null) {
-            key = new RecordPartImpl(keyJson);
+            if (keyJson == null) {
+                return null;
+            }
+            key = new RecordPartImpl(() -> keyJson);
         }
         return key;
     }
@@ -123,19 +134,30 @@ public class ChangeRecordImpl implements ChangeRecord {
     @Override
     @Nonnull
     public RecordPart value() {
-        if (value == null) {
-            value = new RecordPartImpl(valueJson);
+        switch (operation) {
+            case UNSPECIFIED:
+            case SYNC:
+            case INSERT:
+            case UPDATE: return requireNonNull(newValue(), "newValue missing for operation " + operation);
+            case DELETE: return requireNonNull(oldValue(), "oldValue missing for operation DELETE");
+            default: throw new IllegalArgumentException("cannot call .value() for operation " + operation);
         }
-        return value;
+    }
+    @Override
+    @Nullable
+    public RecordPart newValue() {
+        return newValue;
+    }
+    @Override
+    @Nullable
+    public RecordPart oldValue() {
+        return oldValue;
     }
 
     @Override
     @Nonnull
     public String toJson() {
-        if (json == null) {
-            json = String.format("key:{%s}, value:{%s}", keyJson, valueJson);
-        }
-        return json;
+        return String.format("key:{%s}, value:{%s}", keyJson, value().toJson());
     }
 
     @Override
@@ -152,31 +174,15 @@ public class ChangeRecordImpl implements ChangeRecord {
         return keyJson;
     }
 
-    public String getValueJson() {
-        return valueJson;
-    }
-
     @Override
     public String toString() {
         return toJson();
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> T get(Map<String, Object> map, String key, Class<T> clazz) {
-        Object obj = map.get(key);
-        if (clazz.isInstance(obj)) {
-            return (T) obj;
-        }
-        return null;
-    }
-
     @Override
     public int hashCode() {
-        int hash = (int) sequenceSource;
-        hash = 31 * hash + (int) sequenceValue;
-        hash = 31 * hash + keyJson.hashCode();
-        hash = 31 * hash + valueJson.hashCode();
-        return hash;
+        return Objects.hash(sequenceSource, sequenceValue, keyJson, timestamp,
+                operation, database, schema, table, oldValue, newValue);
     }
 
     @Override
@@ -188,9 +194,15 @@ public class ChangeRecordImpl implements ChangeRecord {
             return false;
         }
         ChangeRecordImpl that = (ChangeRecordImpl) obj;
-        return this.sequenceSource == that.sequenceSource &&
-                this.sequenceValue == that.sequenceValue &&
-                this.keyJson.equals(that.keyJson) &&
-                this.valueJson.equals(that.valueJson);
+        return this.sequenceSource == that.sequenceSource
+                && this.sequenceValue == that.sequenceValue
+                && Objects.equals(this.keyJson, that.keyJson)
+                && Objects.equals(this.timestamp, that.timestamp)
+                && this.operation == that.operation
+                && Objects.equals(this.database, that.database)
+                && Objects.equals(this.schema, that.schema)
+                && Objects.equals(this.table, that.table)
+                && Objects.equals(this.oldValue, that.oldValue)
+                && Objects.equals(this.newValue, that.newValue);
     }
 }

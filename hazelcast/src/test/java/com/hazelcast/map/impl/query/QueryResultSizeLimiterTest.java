@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -253,7 +253,7 @@ public class QueryResultSizeLimiterTest {
         MapServiceContext mapServiceContext = mock(MapServiceContext.class);
         when(mapServiceContext.getNodeEngine()).thenReturn(nodeEngine);
         when(mapServiceContext.getRecordStore(anyInt(), anyString())).thenReturn(recordStore);
-        when(mapServiceContext.getOrInitCachedMemberPartitions()).thenReturn(new PartitionIdSet(PARTITION_COUNT, localPartitions.keySet()));
+        when(mapServiceContext.getCachedOwnedPartitions()).thenReturn(new PartitionIdSet(PARTITION_COUNT, localPartitions.keySet()));
 
         limiter = new QueryResultSizeLimiter(mapServiceContext, Logger.getLogger(QueryResultSizeLimiterTest.class));
     }

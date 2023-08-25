@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -35,6 +36,9 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Set;
 
+/**
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
+ */
 public class DeserializedPortableGenericRecord extends PortableGenericRecord {
 
     private final ClassDefinition classDefinition;
@@ -59,7 +63,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder cloneWithBuilder() {
+    public GenericRecordBuilder newBuilderWithClone() {
         return new PortableGenericRecordBuilder(classDefinition, Arrays.copyOf(objects, objects.length));
     }
 
@@ -87,7 +91,14 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Override
     @Nonnull
     public FieldKind getFieldKind(@Nonnull String fieldName) {
-        return FieldTypeToFieldKind.toFieldKind(classDefinition.getFieldType(fieldName));
+        FieldType fieldType;
+        try {
+            fieldType = classDefinition.getFieldType(fieldName);
+        } catch (IllegalArgumentException ignored) {
+            // field does not exist
+            return FieldKind.NOT_AVAILABLE;
+        }
+        return FieldTypeToFieldKind.toFieldKind(fieldType);
     }
 
     @Override
@@ -257,6 +268,18 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
 
     @Nullable
     @Override
+    public InternalGenericRecord getInternalGenericRecord(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.PORTABLE);
+    }
+
+    @Nullable
+    @Override
+    public InternalGenericRecord[] getArrayOfInternalGenericRecord(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.PORTABLE_ARRAY);
+    }
+
+    @Nullable
+    @Override
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
         boolean[] array = getArrayOfBoolean(fieldName);
         if (array == null || array.length <= index) {
@@ -345,6 +368,12 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Override
     public GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index) {
         return getFromArray(getArrayOfGenericRecord(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public InternalGenericRecord getInternalGenericRecordFromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfInternalGenericRecord(fieldName), index);
     }
 
     @Nullable

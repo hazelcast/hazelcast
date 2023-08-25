@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
-import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -31,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class CreateViewStatementTest extends SqlTestSupport {
     private static final String LE = System.lineSeparator();
     private IMap<Integer, Integer> map;
+    private IMap<String, Object> viewStorage;
 
     @BeforeClass
     public static void beforeClass() {
@@ -51,6 +52,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
 
         map = instance().getMap("map");
         map.put(1, 10);
+        viewStorage = instance().getMap("__sql.catalog");
     }
 
     @Test
@@ -58,7 +60,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
-        ReplicatedMap<String, Object> viewStorage = instance().getReplicatedMap("__sql.catalog");
+        IMap<String, Object> viewStorage = instance().getMap(SQL_CATALOG_MAP_NAME);
         assertThat(viewStorage.containsKey("v")).isTrue();
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
         assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"" + LE
@@ -73,7 +75,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
         String sql = "CREATE OR REPLACE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
-        ReplicatedMap<String, Object> viewStorage = instance().getReplicatedMap("__sql.catalog");
+        IMap<String, Object> viewStorage = instance().getMap(SQL_CATALOG_MAP_NAME);
         assertThat(viewStorage.containsKey("v")).isTrue();
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
         assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"" + LE
@@ -88,7 +90,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
-        ReplicatedMap<String, Object> viewStorage = instance().getReplicatedMap("__sql.catalog");
+        IMap<String, Object> viewStorage = instance().getMap(SQL_CATALOG_MAP_NAME);
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
         assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"" + LE
                 + "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
@@ -108,7 +110,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
-        ReplicatedMap<String, Object> viewStorage = instance().getReplicatedMap("__sql.catalog");
+        IMap<String, Object> viewStorage = instance().getMap(SQL_CATALOG_MAP_NAME);
         assertThat(viewStorage.containsKey("v")).isTrue();
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
 
@@ -143,7 +145,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
-        ReplicatedMap<String, Object> viewStorage = instance().getReplicatedMap("__sql.catalog");
+        IMap<String, Object> viewStorage = instance().getMap(SQL_CATALOG_MAP_NAME);
         assertThat(viewStorage.containsKey("v")).isTrue();
 
         sql = "DROP VIEW v";
@@ -156,5 +158,30 @@ public class CreateViewStatementTest extends SqlTestSupport {
         String sql = "DROP VIEW v";
         assertThatThrownBy(() -> instance().getSql().execute(sql))
                 .hasMessageContaining("View does not exist: v");
+    }
+
+    @Test
+    public void test_fullyQualifiedName() {
+        final IMap<String, Object> viewStorage = instance().getMap("__sql.catalog");
+
+        instance().getSql().execute("CREATE VIEW hazelcast.public.v AS SELECT 1");
+        assertThat(viewStorage.containsKey("v")).isTrue();
+        assertRowsAnyOrder("SELECT * FROM v", rows(1, (byte) 1));
+
+        instance().getSql().execute("DROP VIEW hazelcast.public.v");
+        assertThat(viewStorage.containsKey("v")).isFalse();
+    }
+
+    @Test
+    public void test_failOnIncorrectSchema() {
+        final IMap<String, Object> viewStorage = instance().getMap("__sql.catalog");
+        assertThatThrownBy(() -> instance().getSql().execute("CREATE VIEW information_schema.v AS SELECT 1"))
+                .hasMessageContaining("The view must be created in the \"public\" schema");
+        assertThat(viewStorage.containsKey("v")).isFalse();
+
+        instance().getSql().execute("CREATE VIEW hazelcast.public.v AS SELECT 1");
+        assertThatThrownBy(() -> instance().getSql().execute("DROP VIEW information_schema.v").updateCount())
+                .hasMessageContaining("View does not exist: information_schema.v");
+        assertThat(viewStorage.containsKey("v")).isTrue();
     }
 }

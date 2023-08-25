@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,14 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.jet.sql.impl.extract.AvroQueryTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.AvroUpsertTargetDescriptor;
-import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.apache.avro.SchemaBuilder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -145,31 +146,32 @@ public class KvMetadataAvroResolverTest {
                 new MapTableField(prefix, QueryDataType.OBJECT, true, QueryPath.create(prefix))
         );
         assertThat(metadata.getQueryTargetDescriptor()).isEqualTo(AvroQueryTargetDescriptor.INSTANCE);
-        assertThat(metadata.getUpsertTargetDescriptor())
-                .isEqualToComparingFieldByField(new AvroUpsertTargetDescriptor(
-                                "{"
-                                        + "\"type\":\"record\""
-                                        + ",\"name\":\"sql\""
-                                        + ",\"namespace\":\"jet\""
-                                        + ",\"fields\":["
-                                        + "{\"name\":\"string\",\"type\":[\"null\",\"string\"],\"default\":null}"
-                                        + ",{\"name\":\"boolean\",\"type\":[\"null\",\"boolean\"],\"default\":null}"
-                                        + ",{\"name\":\"byte\",\"type\":[\"null\",\"int\"],\"default\":null}"
-                                        + ",{\"name\":\"short\",\"type\":[\"null\",\"int\"],\"default\":null}"
-                                        + ",{\"name\":\"int\",\"type\":[\"null\",\"int\"],\"default\":null}"
-                                        + ",{\"name\":\"long\",\"type\":[\"null\",\"long\"],\"default\":null}"
-                                        + ",{\"name\":\"float\",\"type\":[\"null\",\"float\"],\"default\":null}"
-                                        + ",{\"name\":\"double\",\"type\":[\"null\",\"double\"],\"default\":null}"
-                                        + ",{\"name\":\"decimal\",\"type\":[\"null\",\"string\"],\"default\":null}"
-                                        + ",{\"name\":\"time\",\"type\":[\"null\",\"string\"],\"default\":null}"
-                                        + ",{\"name\":\"date\",\"type\":[\"null\",\"string\"],\"default\":null}"
-                                        + ",{\"name\":\"timestamp\",\"type\":[\"null\",\"string\"],\"default\":null}"
-                                        + ",{\"name\":\"timestampTz\",\"type\":[\"null\",\"string\"],\"default\":null}"
-                                        + ",{\"name\":\"object\",\"type\":[\"null\",\"boolean\",\"int\",\"long\",\"float\",\"double\",\"string\"],\"default\":null}"
-                                        + "]"
-                                        + "}"
-                        )
-                );
+        assertThat(metadata.getUpsertTargetDescriptor()).isEqualToComparingFieldByField(
+                new AvroUpsertTargetDescriptor(SchemaBuilder.record("jet.sql")
+                        .fields()
+                        .name("string").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
+                        .name("boolean").type().unionOf().nullType().and().booleanType().endUnion().nullDefault()
+                        .name("byte").type().unionOf().nullType().and().intType().endUnion().nullDefault()
+                        .name("short").type().unionOf().nullType().and().intType().endUnion().nullDefault()
+                        .name("int").type().unionOf().nullType().and().intType().endUnion().nullDefault()
+                        .name("long").type().unionOf().nullType().and().longType().endUnion().nullDefault()
+                        .name("float").type().unionOf().nullType().and().floatType().endUnion().nullDefault()
+                        .name("double").type().unionOf().nullType().and().doubleType().endUnion().nullDefault()
+                        .name("decimal").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
+                        .name("time").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
+                        .name("date").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
+                        .name("timestamp").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
+                        .name("timestampTz").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
+                        .name("object").type()
+                                .unionOf().nullType()
+                                .and().booleanType()
+                                .and().intType()
+                                .and().longType()
+                                .and().floatType()
+                                .and().doubleType()
+                                .and().stringType()
+                                .endUnion().nullDefault()
+                        .endRecord()));
     }
 
     private static MappingField field(String name, QueryDataType type, String externalName) {

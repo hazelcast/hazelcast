@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTechnicalCancellationException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.stackTraceToString;
@@ -57,7 +58,17 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
             doSendResponse(e);
             return;
         }
-        future.whenComplete(withTryCatch(getLogger(), (r, f) -> doSendResponse(f != null ? peel(f) : r)));
+        future.whenComplete(withTryCatch(getLogger(), (r, f) -> {
+            if (f != null) {
+                Throwable peeledFailure = peel(f);
+                if (!isTechnicalCancellationException(f)) {
+                    logError(peeledFailure);
+                }
+                doSendResponse(peeledFailure);
+            } else {
+                doSendResponse(r);
+            }
+        }));
     }
 
     protected abstract CompletableFuture<?> doRun() throws Exception;
@@ -88,7 +99,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
                     // the response will not be sent and the operation will hang.
                     // To prevent this from happening, replace the exception with
                     // another exception that can be serialized.
-                    sendResponse(new JetException(stackTraceToString(ex)));
+                    sendResponse(new JetException(stackTraceToString((Throwable) value)));
                 } else {
                     throw e;
                 }

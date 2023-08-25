@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.sql.impl.expression.json;
 
-import com.google.common.cache.Cache;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.ConcurrentInitialSetCache;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
@@ -32,22 +32,26 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
-import org.jsfr.json.exception.JsonPathCompilerException;
 import org.jsfr.json.path.JsonPath;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.serialize;
 import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.wrapToArray;
 
 @SuppressWarnings("checkstyle:MagicNumber")
-public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
+public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> {
     private static final ILogger LOGGER = Logger.getLogger(JsonQueryFunction.class);
+    private static final Function<String, JsonPath> COMPILE_FUNCTION = JsonPathUtil::compile;
 
-    private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
+    private transient ConcurrentInitialSetCache<String, JsonPath> pathCache;
+    private JsonPath constantPathCache;
+
     private SqlJsonQueryWrapperBehavior wrapperBehavior;
     private SqlJsonQueryEmptyOrErrorBehavior onEmpty;
     private SqlJsonQueryEmptyOrErrorBehavior onError;
@@ -64,6 +68,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         this.wrapperBehavior = wrapperBehavior;
         this.onEmpty = onEmpty;
         this.onError = onError;
+        prepareCache();
     }
 
     public static JsonQueryFunction create(
@@ -79,11 +84,6 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     }
 
     @Override
-    public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
-    }
-
-    @Override
     public int getClassId() {
         return JetSqlSerializerHook.JSON_QUERY;
     }
@@ -92,9 +92,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     public HazelcastJsonValue eval(final Row row, final ExpressionEvalContext context) {
         // first evaluate the required parameter
         final String path = (String) operands[1].eval(row, context);
-        if (path == null) {
-            throw QueryException.error("SQL/JSON path expression cannot be null");
-        }
+        validatePath(path);
 
         final Object operand0 = operands[0].eval(row, context);
         String json = operand0 instanceof HazelcastJsonValue
@@ -104,18 +102,26 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
             json = "";
         }
 
-        final JsonPath jsonPath;
-        try {
-            jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
-        } catch (JsonPathCompilerException e) {
-            // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
-            // serializable, they can contain references to parser context and other objects, which are not.
-            // That's why we also log the exception here.
-            LOGGER.fine("JSON_QUERY JsonPath compilation failed", e);
-            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage());
-        }
+        final JsonPath jsonPath = constantPathCache != null ? constantPathCache :
+                pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
 
         return wrap(execute(json, jsonPath));
+    }
+
+    private void prepareCache() {
+        if (this.operands[1] instanceof ConstantExpression<?>) {
+            String path = (String) this.operands[1].eval(null, null);
+            validatePath(path);
+            this.constantPathCache = JsonPathUtil.compile(path);
+        } else {
+            this.pathCache = JsonPathUtil.makePathCache();
+        }
+    }
+
+    private void validatePath(String path) {
+        if (path == null) {
+            throw QueryException.error("SQL/JSON path expression cannot be null");
+        }
     }
 
     private String onErrorResponse(final Exception exception) {
@@ -193,6 +199,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         out.writeInt(wrapperBehavior.ordinal());
         out.writeInt(onEmpty.ordinal());
         out.writeInt(onError.ordinal());
+        out.writeObject(constantPathCache);
     }
 
     @Override
@@ -201,6 +208,18 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         this.wrapperBehavior = SqlJsonQueryWrapperBehavior.values()[in.readInt()];
         this.onEmpty = SqlJsonQueryEmptyOrErrorBehavior.values()[in.readInt()];
         this.onError = SqlJsonQueryEmptyOrErrorBehavior.values()[in.readInt()];
+        this.constantPathCache = in.readObject();
+        if (this.constantPathCache == null) {
+            this.pathCache = JsonPathUtil.makePathCache();
+        }
+    }
+
+    private void readObject(ObjectInputStream stream) throws ClassNotFoundException, IOException {
+        stream.defaultReadObject();
+        if (this.constantPathCache == null) {
+            // The transient fields are not initialized during Java deserialization, so we need to do it manually.
+            this.pathCache = JsonPathUtil.makePathCache();
+        }
     }
 
     @Override

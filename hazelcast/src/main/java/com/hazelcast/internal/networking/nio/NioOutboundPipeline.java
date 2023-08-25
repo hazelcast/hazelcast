@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKIN
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_SIZE;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
@@ -107,21 +108,21 @@ public final class NioOutboundPipeline
     }
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_SIZE)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_SIZE, level = INFO)
     public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<>();
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_SIZE)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_SIZE, level = DEBUG)
     public final Queue<OutboundFrame> priorityWriteQueue = new ConcurrentLinkedQueue<>();
 
     private OutboundHandler[] handlers = new OutboundHandler[0];
     private ByteBuffer sendBuffer;
 
     private final AtomicReference<State> scheduled = new AtomicReference<>(State.SCHEDULED);
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_BYTES_WRITTEN, unit = BYTES)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_BYTES_WRITTEN, unit = BYTES, level = DEBUG)
     private final SwCounter bytesWritten = newSwCounter();
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_NORMAL_FRAMES_WRITTEN)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_NORMAL_FRAMES_WRITTEN, level = DEBUG)
     private final SwCounter normalFramesWritten = newSwCounter();
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_FRAMES_WRITTEN)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_FRAMES_WRITTEN, level = DEBUG)
     private final SwCounter priorityFramesWritten = newSwCounter();
 
     private volatile long lastWriteTime;
@@ -188,12 +189,12 @@ public final class NioOutboundPipeline
         return bytesPending;
     }
 
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_IDLE_TIME_MILLIS, unit = MS)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_IDLE_TIME_MILLIS, unit = MS, level = INFO)
     private long idleTimeMillis() {
         return max(currentTimeMillis() - lastWriteTime, 0);
     }
 
-    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_SCHEDULED)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_SCHEDULED, level = DEBUG)
     private long scheduled() {
         return scheduled.get().ordinal();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -104,6 +105,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     @Nonnull
     private final FlatMapper<Watermark, ?> wmFlatMapper;
     private ProcessingGuarantee processingGuarantee;
+    private final byte windowWatermarkKey;
 
     // extracted lambdas to reduce GC litter
     private final LongFunction<Map<K, A>> createMapPerTsFunction;
@@ -120,6 +122,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     private final long earlyResultsPeriod;
     private long lastTimeEarlyResultsEmitted;
     private Traverser<? extends OUT> earlyWinTraverser;
+    private long maxEntries;
 
     private Traverser<Object> flushTraverser;
     private Traverser<Entry> snapshotTraverser;
@@ -133,7 +136,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     private long minRestoredFrameTs = Long.MAX_VALUE;
     private boolean badFrameRestored;
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "checkstyle:ExecutableStatementCount"})
     public SlidingWindowP(
             @Nonnull List<? extends Function<?, ? extends K>> keyFns,
             @Nonnull List<? extends ToLongFunction<?>> frameTimestampFns,
@@ -141,7 +144,8 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
             long earlyResultsPeriod,
             @Nonnull AggregateOperation<A, ? extends R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn,
-            boolean isLastStage
+            boolean isLastStage,
+            byte windowWatermarkKey
     ) {
         checkTrue(keyFns.size() == aggrOp.arity(), keyFns.size() + " key functions " +
                 "provided for " + aggrOp.arity() + "-arity aggregate operation");
@@ -168,15 +172,20 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
             return new HashMap<>();
         };
         this.createAccFunction = k -> {
-            totalKeysInFrames.inc();
+            long newCount = totalKeysInFrames.inc();
+            if (newCount == maxEntries) {
+                throw new AccumulationLimitExceededException();
+            }
             return aggrOp.createFn().get();
         };
+        this.windowWatermarkKey = windowWatermarkKey;
     }
 
     @Override
     protected void init(@Nonnull Context context) {
         processingGuarantee = context.processingGuarantee();
         lastTimeEarlyResultsEmitted = NANOSECONDS.toMillis(System.nanoTime());
+        maxEntries = context.maxProcessorAccumulatedRecords();
     }
 
     @Override
@@ -232,7 +241,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         // into `slidingWindow` and we can't modify the value because that would
         // disturb the value that we'll deduct from `slidingWindow` later on.
         if (frameTs < nextWinToEmit) {
-            logLateEvent(getLogger(), nextWinToEmit, item);
+            logLateEvent(getLogger(), (byte) 0, nextWinToEmit, item);
             lateEventsDropped.inc();
             return true;
         }
@@ -247,6 +256,10 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
+        // drop all watermarks except for the one we use for timestamps
+        if (wm.key() != windowWatermarkKey) {
+            return true;
+        }
         return wmFlatMapper.tryProcess(wm);
     }
 
@@ -346,6 +359,11 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                 }
             }
         }
+        return true;
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
         return true;
     }
 

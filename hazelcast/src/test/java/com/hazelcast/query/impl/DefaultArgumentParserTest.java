@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -38,7 +36,7 @@ public class DefaultArgumentParserTest {
         Object arguments = parser.parse("123");
 
         // THEN
-        assertThat((String) arguments, equalTo("123"));
+        assertThat((String) arguments).isEqualTo("123");
     }
 
     @Test
@@ -47,7 +45,7 @@ public class DefaultArgumentParserTest {
         Object arguments = parser.parse(null);
 
         // THEN
-        assertThat(arguments, equalTo(null));
+        assertThat(arguments).isEqualTo(null);
     }
 
 }

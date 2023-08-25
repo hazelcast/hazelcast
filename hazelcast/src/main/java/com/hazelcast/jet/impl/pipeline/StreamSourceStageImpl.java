@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,8 @@ public class StreamSourceStageImpl<T> implements StreamSourceStage<T> {
                 limitingRealTimeLag(0),
                 0,
                 0,
-                transform.partitionIdleTimeout()
+                transform.partitionIdleTimeout(),
+                (byte) 0
         ));
         return new StreamStageImpl<>(transform, ADAPT_TO_JET_EVENT, pipeline);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import com.hazelcast.jet.pipeline.file.ParquetFileFormat;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAvgAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastCountAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastHopTableFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastJsonArrayAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastJsonObjectAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastMinMaxAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastTumbleTableFunction;
@@ -32,6 +34,7 @@ import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFuncti
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastDescriptorOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastExtractFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToCharFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToEpochMillisFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToTimestampTzFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonArrayFunction;
@@ -53,6 +56,7 @@ import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastDescOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastNullIfFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnionOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastWithinGroupOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastComparisonPredicate;
@@ -61,6 +65,7 @@ import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastInOperat
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastNotPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCollectionTableOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastGetDdlFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastMapValueConstructor;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastRowOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastSqlCase;
@@ -240,11 +245,19 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction EXTRACT = HazelcastExtractFunction.INSTANCE;
     public static final SqlFunction TO_TIMESTAMP_TZ = HazelcastToTimestampTzFunction.INSTANCE;
     public static final SqlFunction TO_EPOCH_MILLIS = HazelcastToEpochMillisFunction.INSTANCE;
+    public static final SqlFunction TO_CHAR = HazelcastToCharFunction.INSTANCE;
 
     public static final SqlFunction JSON_QUERY = HazelcastJsonQueryFunction.INSTANCE;
     public static final SqlFunction JSON_VALUE = HazelcastJsonValueFunction.INSTANCE;
     public static final SqlFunction JSON_OBJECT = HazelcastJsonObjectFunction.INSTANCE;
     public static final SqlFunction JSON_ARRAY = HazelcastJsonArrayFunction.INSTANCE;
+    public static final SqlFunction JSON_ARRAYAGG_ABSENT_ON_NULL = HazelcastJsonArrayAggFunction.ABSENT_ON_NULL_INSTANCE;
+    public static final SqlFunction JSON_ARRAYAGG_NULL_ON_NULL = HazelcastJsonArrayAggFunction.NULL_ON_NULL_INSTANCE;
+    public static final SqlFunction JSON_OBJECTAGG_ABSENT_ON_NULL = HazelcastJsonObjectAggFunction.ABSENT_ON_NULL_INSTANCE;
+    public static final SqlFunction JSON_OBJECTAGG_NULL_ON_NULL = HazelcastJsonObjectAggFunction.NULL_ON_NULL_INSTANCE;
+
+    public static final SqlOperator WITHIN_GROUP = HazelcastWithinGroupOperator.INSTANCE;
+    public static final SqlOperator DOT = SqlStdOperatorTable.DOT;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
 
@@ -298,6 +311,12 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlSpecialOperator ROW = new HazelcastRowOperator();
     public static final SqlSpecialOperator COLLECTION_TABLE = new HazelcastCollectionTableOperator("TABLE");
     public static final SqlSpecialOperator MAP_VALUE_CONSTRUCTOR = new HazelcastMapValueConstructor();
+
+    //#region System
+
+    public static final SqlFunction GET_DDL = HazelcastGetDdlFunction.INSTANCE;
+
+    //#endregion
 
     // We use an operator that doesn't implement the HazelcastOperandTypeCheckerAware interface.
     // The reason is that HazelcastOperandTypeCheckerAware.prepareBinding() gets the operand type for

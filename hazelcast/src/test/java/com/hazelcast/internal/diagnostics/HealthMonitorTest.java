@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,7 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     @Test
     public void exceedsThreshold_when_osProcessCpuLoad_tooHigh() {
         registerMetric(metrics.osProcessCpuLoad, 90);
+        metrics.update();
         boolean result = metrics.exceedsThreshold();
         assertTrue(result);
     }
@@ -87,6 +88,7 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     @Test
     public void exceedsThreshold_when_osSystemCpuLoad_TooHigh() {
         registerMetric(metrics.osSystemCpuLoad, 90);
+        metrics.update();
         boolean result = metrics.exceedsThreshold();
         assertTrue(result);
     }
@@ -94,6 +96,7 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     @Test
     public void exceedsThreshold_operationServicePendingInvocationsPercentage() {
         registerMetric(metrics.operationServicePendingInvocationsPercentage, 90);
+        metrics.update();
         boolean result = metrics.exceedsThreshold();
         assertTrue(result);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,10 +65,10 @@ public class YamlConfigSchemaValidatorTest {
                     "-1 is not greater or equal to 0", "#/definitions/BackupCount",
                     "expected type: Integer, found: String"
             );
-            assertEquals(e.getErrors()
+            assertEquals(2, e.getErrors()
                     .stream().map(Exception::getMessage)
                     .filter(expectedSubErrorMessages::contains)
-                    .count(), 2);
+                    .count());
         }
     }
 

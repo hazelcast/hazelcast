@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -63,8 +61,8 @@ public class DefaultValueCollectorTest {
         collector.addObject(2);
 
         List<Integer> results = assertIsMultiResultAndGetResults(collector.getResult());
-        assertThat(results, hasSize(2));
-        assertThat(results, containsInAnyOrder(1, 2));
+        assertThat(results).hasSize(2);
+        assertThat(results).containsExactlyInAnyOrder(1, 2);
     }
 
     @Test
@@ -74,8 +72,8 @@ public class DefaultValueCollectorTest {
         collector.addObject(3);
 
         List<Integer> results = assertIsMultiResultAndGetResults(collector.getResult());
-        assertThat(results, hasSize(3));
-        assertThat(results, containsInAnyOrder(1, 2, 3));
+        assertThat(results).hasSize(3);
+        assertThat(results).containsExactlyInAnyOrder(1, 2, 3);
     }
 
     @Test
@@ -84,8 +82,8 @@ public class DefaultValueCollectorTest {
         collector.addObject(1);
 
         List<Integer> results = assertIsMultiResultAndGetResults(collector.getResult());
-        assertThat(results, hasSize(2));
-        assertThat(results, containsInAnyOrder(1, 1));
+        assertThat(results).hasSize(2);
+        assertThat(results).containsExactlyInAnyOrder(1, 1);
     }
 
     @Test
@@ -94,8 +92,8 @@ public class DefaultValueCollectorTest {
         collector.addObject(null);
 
         List<Integer> results = assertIsMultiResultAndGetResults(collector.getResult());
-        assertThat(results, hasSize(2));
-        assertThat(results, containsInAnyOrder(1, null));
+        assertThat(results).hasSize(2);
+        assertThat(results).containsExactlyInAnyOrder(1, null);
     }
 
     @SuppressWarnings("unchecked")

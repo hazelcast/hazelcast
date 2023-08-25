@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -129,15 +130,17 @@ public final class ClientMessage implements OutboundFrame {
 
     private static final long serialVersionUID = 1L;
 
-    transient Frame startFrame;
-    transient Frame endFrame;
+    private transient Frame startFrame;
+    private Frame endFrame;
 
     private transient boolean isRetryable;
     private transient String operationName;
     private transient Connection connection;
+    private transient boolean containsSerializedDataInRequest;
+
+    private AsyncSocket asyncSocket;
 
     private ClientMessage() {
-
     }
 
     //Constructs client message with single frame. StartFrame.next must be null.
@@ -162,6 +165,10 @@ public final class ClientMessage implements OutboundFrame {
 
     public Frame getStartFrame() {
         return startFrame;
+    }
+
+    public Frame getEndFrame() {
+        return endFrame;
     }
 
     public ClientMessage add(Frame frame) {
@@ -255,6 +262,14 @@ public final class ClientMessage implements OutboundFrame {
         this.connection = connection;
     }
 
+    public void setAsyncSocket(AsyncSocket asyncSocket) {
+        this.asyncSocket = asyncSocket;
+    }
+
+    public AsyncSocket getAsyncSocket() {
+        return asyncSocket;
+    }
+
     public Connection getConnection() {
         return connection;
     }
@@ -269,6 +284,16 @@ public final class ClientMessage implements OutboundFrame {
         return frameLength;
     }
 
+    public int getBufferLength() {
+        int length = 0;
+        Frame currentFrame = startFrame;
+        while (currentFrame != null) {
+            length += currentFrame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+            currentFrame = currentFrame.next;
+
+        }
+        return length;
+    }
     public boolean isUrgent() {
         return false;
     }
@@ -280,6 +305,14 @@ public final class ClientMessage implements OutboundFrame {
 
     public void dropFragmentationFrame() {
         startFrame = startFrame.next;
+    }
+
+    public boolean isContainsSerializedDataInRequest() {
+        return containsSerializedDataInRequest;
+    }
+
+    public void setContainsSerializedDataInRequest(boolean containsSerializedDataInRequest) {
+        this.containsSerializedDataInRequest = containsSerializedDataInRequest;
     }
 
     @Override
@@ -323,7 +356,6 @@ public final class ClientMessage implements OutboundFrame {
      * @return the copy message
      */
     public ClientMessage copyWithNewCorrelationId(long correlationId) {
-
         Frame initialFrameCopy = startFrame.deepCopy();
         ClientMessage newMessage = new ClientMessage(initialFrameCopy, endFrame);
 
@@ -331,6 +363,28 @@ public final class ClientMessage implements OutboundFrame {
 
         newMessage.isRetryable = isRetryable;
         newMessage.operationName = operationName;
+        newMessage.containsSerializedDataInRequest = containsSerializedDataInRequest;
+
+        return newMessage;
+    }
+
+    /**
+     * Only deep copies the initial frame to not duplicate the rest of the
+     * message to get rid of unnecessary allocations for the retry of the same
+     * client message.
+     * <p>
+     * It is expected that the correlation id for the returned message is set
+     * later.
+     *
+     * @return the copied message
+     */
+    public ClientMessage copyMessageWithSharedNonInitialFrames() {
+        Frame initialFrameCopy = startFrame.deepCopy();
+        ClientMessage newMessage = new ClientMessage(initialFrameCopy, endFrame);
+
+        newMessage.isRetryable = isRetryable;
+        newMessage.operationName = operationName;
+        newMessage.containsSerializedDataInRequest = containsSerializedDataInRequest;
 
         return newMessage;
     }
@@ -352,6 +406,9 @@ public final class ClientMessage implements OutboundFrame {
         if (isRetryable != message.isRetryable) {
             return false;
         }
+        if (containsSerializedDataInRequest != message.containsSerializedDataInRequest) {
+            return false;
+        }
         if (!Objects.equals(operationName, message.operationName)) {
             return false;
         }
@@ -362,6 +419,7 @@ public final class ClientMessage implements OutboundFrame {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (isRetryable ? 1 : 0);
+        result = 31 * result + (containsSerializedDataInRequest ? 1 : 0);
         result = 31 * result + (operationName != null ? operationName.hashCode() : 0);
         result = 31 * result + (connection != null ? connection.hashCode() : 0);
         return result;
@@ -392,13 +450,13 @@ public final class ClientMessage implements OutboundFrame {
 
     }
 
-    @SuppressWarnings("checkstyle:VisibilityModifier")
+    @SuppressWarnings({"checkstyle:VisibilityModifier", "java:S1104"})
     public static class Frame {
         public final byte[] content;
         //begin-fragment end-fragment final begin-data-structure end-data-structure is-null is-event 9reserved
         public int flags;
 
-        Frame next;
+        public Frame next;
 
         public Frame(byte[] content) {
             this(content, DEFAULT_FLAGS);
@@ -465,5 +523,4 @@ public final class ClientMessage implements OutboundFrame {
             return result;
         }
     }
-
 }

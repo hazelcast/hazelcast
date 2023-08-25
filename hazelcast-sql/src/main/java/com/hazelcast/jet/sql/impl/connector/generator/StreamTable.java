@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,38 +21,41 @@ import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.row.EmptyRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-class StreamTable extends JetTable {
+public class StreamTable extends JetTable {
 
     private final List<Expression<?>> argumentExpressions;
 
-    StreamTable(
+    public StreamTable(
             SqlConnector sqlConnector,
             List<TableField> fields,
             String schemaName,
             String name,
             List<Expression<?>> argumentExpressions
     ) {
-        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(Integer.MAX_VALUE));
+        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(Integer.MAX_VALUE),
+                sqlConnector.defaultObjectType(), true);
 
         this.argumentExpressions = argumentExpressions;
     }
 
-    StreamSource<JetSqlRow> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
+    StreamSource<JetSqlRow> items(@Nullable Expression<Boolean> predicate, @Nonnull List<Expression<?>> projections) {
         List<Expression<?>> argumentExpressions = this.argumentExpressions;
         return SourceBuilder
                 .stream("stream", ctx -> {
@@ -103,9 +106,9 @@ class StreamTable extends JetTable {
 
         private DataGenerator(
                 int rate,
-                Expression<Boolean> predicate,
-                List<Expression<?>> projections,
-                ExpressionEvalContext evalContext
+                @Nullable Expression<Boolean> predicate,
+                @Nonnull List<Expression<?>> projections,
+                @Nonnull ExpressionEvalContext evalContext
         ) {
             this.startTime = System.nanoTime();
             this.rate = rate;
@@ -118,8 +121,8 @@ class StreamTable extends JetTable {
             long now = System.nanoTime();
             long emitValuesUpTo = (now - startTime) / NANOS_PER_MICRO * rate / MICROS_PER_SECOND;
             for (int i = 0; i < MAX_BATCH_SIZE && sequence < emitValuesUpTo; i++) {
-                JetSqlRow row = ExpressionUtil.evaluate(predicate, projections,
-                                new JetSqlRow(evalContext.getSerializationService(), new Object[]{sequence}), evalContext);
+                JetSqlRow row = ExpressionUtil.projection(predicate, projections,
+                        new SingleLongRow(sequence), evalContext);
                 if (row != null) {
                     buffer.add(row);
                 }

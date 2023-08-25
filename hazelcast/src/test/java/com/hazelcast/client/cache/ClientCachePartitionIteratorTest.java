@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.cache;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -42,11 +41,5 @@ public class ClientCachePartitionIteratorTest extends AbstractClientCachePartiti
 
         HazelcastInstance client = factory.newHazelcastClient();
         cachingProvider = createClientCachingProvider(client);
-    }
-
-    @Override
-    public void teardown() {
-        super.teardown();
-        HazelcastClient.shutdownAll();
     }
 }

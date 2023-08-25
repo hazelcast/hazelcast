@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,8 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
 
             // everything from the Java package is OK - it's part of the Java SE platform
             "java.",
-
+            // everything from the jdk package is OK - it's part of the Java SE platform
+            "jdk",
             // with the "javax" package we have to be more specific - do not use just "javax."
             // as it contains e.g. javax.servlet which is not part of the SE platform!
             "javax.annotation",
@@ -73,7 +74,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
     };
 
     @Test
-    public void testNoMandatoryDependencyDeclared() throws IOException, InterruptedException {
+    public void testNoMandatoryDependencyDeclared() throws IOException {
         Manifest manifest = getHazelcastManifest();
         String packages = manifest.getMainAttributes().getValue("Import-Package");
 

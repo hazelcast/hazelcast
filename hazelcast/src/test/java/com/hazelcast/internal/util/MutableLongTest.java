@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,22 @@ import static org.junit.Assert.assertNotEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MutableLongTest {
+
+    @Test
+    public void testAddAndGet() {
+        MutableLong mutableLong = MutableLong.valueOf(13);
+
+        assertEquals(24L, mutableLong.addAndGet(11));
+        assertEquals(24L, mutableLong.value);
+    }
+
+    @Test
+    public void testGetAndInc() {
+        MutableLong mutableLong = MutableLong.valueOf(13);
+
+        assertEquals(13L, mutableLong.getAndInc());
+        assertEquals(14L, mutableLong.value);
+    }
 
     @Test
     public void testToString() {

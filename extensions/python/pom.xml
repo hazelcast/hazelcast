@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021 Hazelcast Inc.
+  ~ Copyright 2023 Hazelcast Inc.
   ~
   ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-extensions</artifactId>
-        <version>5.2-SNAPSHOT</version>
+        <version>5.4.0-SNAPSHOT</version>
     </parent>
 
     <build>
@@ -51,7 +51,7 @@
                             <goal>compile-custom</goal>
                         </goals>
                         <configuration>
-                            <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+                            <protocArtifact>com.google.protobuf:protoc:${java.protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
                             <pluginId>grpc-java</pluginId>
                             <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
                             <outputDirectory>${project.build.directory}/generated-sources/protobuf/java</outputDirectory>
@@ -101,13 +101,13 @@
                             <execution>
                                 <id>python</id>
                                 <configuration>
-                                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+                                    <protocArtifact>com.google.protobuf:protoc:${java.protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
                                     <pluginId>grpc-python</pluginId>
                                     <pluginExecutable>${grpc_python_plugin_path}</pluginExecutable>
                                     <outputDirectory>${project.basedir}/src/main/resources</outputDirectory>
                                     <clearOutputDirectory>false</clearOutputDirectory>
                                 </configuration>
-                                <phase />
+                                <phase/>
                                 <goals>
                                     <goal>compile-python</goal>
                                     <goal>compile-custom</goal>

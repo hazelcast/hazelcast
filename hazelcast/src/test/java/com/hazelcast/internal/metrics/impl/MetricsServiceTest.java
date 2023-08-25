@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,12 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
@@ -38,8 +40,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.JmxLeakHelper;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.core.Is;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -59,6 +59,7 @@ import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static com.hazelcast.internal.metrics.impl.MetricsCompressor.extractMetrics;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -70,7 +71,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -98,9 +99,11 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
     private MetricsService metricsService;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void setUp() {
-        initMocks(this);
+        openMocks = openMocks(this);
 
         metricsRegistry = new MetricsRegistryImpl(loggerMock, ProbeLevel.INFO);
 
@@ -139,6 +142,8 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         if (executionService != null) {
             executionService.shutdown();
         }
+
+        MockUtil.closeMocks(openMocks);
     }
 
     @Test
@@ -306,11 +311,10 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         long futureSequence = 42;
         long headSequence = 0;
 
-        expectedException.expect(ExecutionException.class);
-        expectedException.expectCause(Is.is(CoreMatchers.instanceOf(IllegalArgumentException.class)));
-        expectedException.expectMessage(Long.toString(futureSequence));
-        expectedException.expectMessage(Long.toString(headSequence));
-        readMetrics(metricsService, futureSequence, metricConsumerMock);
+        assertThatExceptionOfType(ExecutionException.class)
+                .isThrownBy(() -> readMetrics(metricsService, futureSequence, metricConsumerMock))
+                .withCauseExactlyInstanceOf(ConcurrentArrayRingbuffer.SequenceOutOfBoundsException.class)
+                .withMessageContainingAll(Long.toString(futureSequence), Long.toString(headSequence));
     }
 
     @Test

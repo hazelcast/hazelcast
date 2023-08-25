@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.config.Config;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -42,8 +42,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -64,6 +67,14 @@ public class TcpIpJoiner extends AbstractJoiner {
     private volatile boolean claimingMastership;
     private final JoinConfig joinConfig;
 
+    private final long previouslyJoinedMemberAddressRetentionDuration;
+
+    /**
+     * We register the member addresses to this map which are known with the
+     * member list update/when a new member joins the cluster
+     */
+    private final ConcurrentMap<Address, Long> knownMemberAddresses = new ConcurrentHashMap<>();
+
     public TcpIpJoiner(Node node) {
         super(node);
         int tryCount = node.getProperties().getInteger(ClusterProperty.TCP_JOIN_PORT_TRY_COUNT);
@@ -73,6 +84,8 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
         maxPortTryCount = tryCount;
         joinConfig = getActiveMemberNetworkConfig(config).getJoin();
+        previouslyJoinedMemberAddressRetentionDuration = node.getProperties().getMillis(
+                ClusterProperty.TCP_PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION);
     }
 
     public boolean isClaimingMastership() {
@@ -393,7 +406,8 @@ public class TcpIpJoiner extends AbstractJoiner {
                 }
             }
         }
-
+        cleanupKnownMemberAddresses();
+        possibleAddresses.addAll(knownMemberAddresses.keySet());
         possibleAddresses.remove(node.getThisAddress());
         return possibleAddresses;
     }
@@ -434,33 +448,48 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     protected Collection<String> getMembers() {
-        return getConfigurationMembers(config);
-    }
-
-    public static Collection<String> getConfigurationMembers(Config config) {
-        return getConfigurationMembers(getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig());
+        return getConfigurationMembers(joinConfig.getTcpIpConfig());
     }
 
     public static Collection<String> getConfigurationMembers(TcpIpConfig tcpIpConfig) {
-        final Collection<String> configMembers = tcpIpConfig.getMembers();
-        final Set<String> possibleMembers = new HashSet<>();
-        for (String member : configMembers) {
-            // split members defined in tcp-ip configuration by comma(,) semi-colon(;) space( ).
-            String[] members = member.split("[,; ]");
-            Collections.addAll(possibleMembers, members);
-        }
-        return possibleMembers;
+        return new HashSet<>(tcpIpConfig.getMembers());
     }
 
-    @Override
-    public void searchForOtherClusters() {
+    public void onMemberAdded(Member member) {
+        if (!member.localMember()) {
+            knownMemberAddresses.put(member.getAddress(), Long.MAX_VALUE);
+
+            // If we previously blacklisted this member's address (i.e. the address/port was
+            // previously used in an incompatible node), we should remove the blacklist now
+            // that it has joined our node - otherwise it's ignored in split-brain!
+            Boolean previousBlacklistStatus = blacklistedAddresses.remove(member.getAddress());
+            if (previousBlacklistStatus != null) {
+                logger.info(member.getAddress() + " is removed from the " + (previousBlacklistStatus ? "permanent " : " ")
+                        + "blacklist due to successfully joining the cluster");
+            }
+        }
+    }
+
+    public void onMemberRemoved(Member member) {
+        if (!member.localMember()) {
+            addTemporaryMemberAddress(member.getAddress());
+        }
+    }
+
+    protected void addTemporaryMemberAddress(Address memberAddress) {
+        knownMemberAddresses.put(memberAddress, Clock.currentTimeMillis());
+    }
+
+    public Collection<Address> getFilteredPossibleAddresses() {
         final Collection<Address> possibleAddresses;
         try {
             possibleAddresses = getPossibleAddresses();
         } catch (Throwable e) {
             logger.severe(e);
-            return;
+            return Collections.emptyList();
         }
+
+        // Remove known addresses from possibleAddresses
         LocalAddressRegistry addressRegistry = node.getLocalAddressRegistry();
         possibleAddresses.removeAll(addressRegistry.getLocalAddresses());
         node.getClusterService().getMembers().forEach(
@@ -477,9 +506,22 @@ public class TcpIpJoiner extends AbstractJoiner {
                 }
         );
 
+        // Remove permanently blacklisted addresses from possibleAddresses
+        blacklistedAddresses.entrySet().stream()
+                            .filter(Map.Entry::getValue)
+                            .map(Map.Entry::getKey)
+                            .forEach(possibleAddresses::remove);
+
+        return possibleAddresses;
+    }
+
+    @Override
+    public void searchForOtherClusters() {
+        final Collection<Address> possibleAddresses = getFilteredPossibleAddresses();
         if (possibleAddresses.isEmpty()) {
             return;
         }
+
         SplitBrainJoinMessage request = node.createSplitBrainJoinMessage();
         for (Address address : possibleAddresses) {
             SplitBrainMergeCheckResult result = sendSplitBrainJoinMessageAndCheckResponse(address, request);
@@ -490,6 +532,17 @@ public class TcpIpJoiner extends AbstractJoiner {
                 return;
             }
         }
+    }
+
+    private void cleanupKnownMemberAddresses() {
+        long currentTime = Clock.currentTimeMillis();
+        knownMemberAddresses.values().removeIf(memberLeftTime ->
+                (currentTime - memberLeftTime) >= previouslyJoinedMemberAddressRetentionDuration);
+    }
+
+    // only used in tests
+    public ConcurrentMap<Address, Long> getKnownMemberAddresses() {
+        return knownMemberAddresses;
     }
 
     @Override

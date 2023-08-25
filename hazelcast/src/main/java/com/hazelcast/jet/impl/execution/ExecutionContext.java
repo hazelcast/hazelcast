@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.metrics.MetricTags;
+import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.TerminationMode;
@@ -46,6 +48,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,16 +59,22 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TIME;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.runAsync;
 
 /**
  * Data pertaining to single job execution on all cluster members. There's one
@@ -137,11 +146,10 @@ public class ExecutionContext implements DynamicMetricsProvider {
         receiverQueuesMap = isLightJob ? new ConcurrentHashMap<>() : new HashMap<>();
     }
 
-    public ExecutionContext initialize(
+    public CompletableFuture<Void> initialize(
             @Nonnull Address coordinator,
             @Nonnull Set<Address> participants,
-            @Nonnull ExecutionPlan plan
-    ) {
+            @Nonnull ExecutionPlan plan) {
         this.coordinator = coordinator;
         this.participants = participants;
 
@@ -155,11 +163,18 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 plan.lastSnapshotId(), jobConfig.getProcessingGuarantee());
 
         JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+
         serializationService = jetServiceBackend.createSerializationService(jobConfig.getSerializerConfigs());
 
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
-        plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService);
-        int numPrioritySsTasklets = plan.getStoreSnapshotTaskletCount() != 0 ? plan.getHigherPriorityVertexCount() : 0;
+        return plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService)
+                .thenAccept(ignored -> initWithPlan(plan));
+    }
+
+    private void initWithPlan(@Nonnull ExecutionPlan plan) {
+        int numPrioritySsTasklets = plan.getStoreSnapshotTaskletCount() != 0
+                ? plan.getHigherPriorityVertexCount()
+                : 0;
         snapshotContext.initTaskletCount(plan.getProcessorTaskletCount(), plan.getStoreSnapshotTaskletCount(),
                 numPrioritySsTasklets);
         Map<SenderReceiverKey, ReceiverTasklet> receiverMapTmp = new HashMap<>();
@@ -191,7 +206,6 @@ public class ExecutionContext implements DynamicMetricsProvider {
         this.senderMap = unmodifiableMap(senderMapTmp);
 
         tasklets = plan.getTasklets();
-        return this;
     }
 
     /**
@@ -215,6 +229,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 if (cl == null) {
                     cl = nodeEngine.getConfigClassLoader();
                 }
+                startTime.set(System.currentTimeMillis());
                 executionFuture = taskletExecService
                         .beginExecute(tasklets, cancellationFuture, cl)
                         .whenComplete(withTryCatch(logger, (r, t) -> setCompletionTime()))
@@ -227,7 +242,6 @@ public class ExecutionContext implements DynamicMetricsProvider {
                             }
                             return res;
                         });
-                startTime.set(System.currentTimeMillis());
             }
             return executionFuture;
         }
@@ -237,61 +251,69 @@ public class ExecutionContext implements DynamicMetricsProvider {
      * Complete local execution. If local execution was started, it should be
      * called after execution has completed.
      */
-    public void completeExecution(Throwable error) {
+    public CompletableFuture<Void> completeExecution(Throwable error) {
         assert executionFuture == null || executionFuture.isDone()
                 : "If execution was begun, then completeExecution() should not be called before execution is done.";
 
         if (!executionCompleted.compareAndSet(false, true)) {
-            return;
+            return completedFuture(null);
         }
         for (Tasklet tasklet : tasklets) {
             try {
                 tasklet.close();
             } catch (Throwable e) {
                 logger.severe(jobNameAndExecutionId()
-                              + " encountered an exception in Processor.close(), ignoring it", e);
+                        + " encountered an exception in Processor.close(), ignoring it", e);
             }
         }
 
         JobClassLoaderService jobClassloaderService = jetServiceBackend.getJobClassLoaderService();
-        ClassLoader classLoader = jobClassloaderService.getClassLoader(jobId);
-        doWithClassLoader(classLoader, () -> {
-            for (VertexDef vertex : vertices) {
+        List<CompletableFuture<Void>> futures = new ArrayList<>(vertices.size());
+
+        ExecutorService offloadExecutor = nodeEngine.getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
+        for (VertexDef vertex : vertices) {
+            ProcessorSupplier processorSupplier = vertex.processorSupplier();
+            RunnableEx closeAction = () -> {
                 try {
                     ClassLoader processorCl = isLightJob ?
                             null : jobClassloaderService.getProcessorClassLoader(jobId, vertex.name());
-                    doWithClassLoader(processorCl, () -> vertex.processorSupplier().close(error));
+                    doWithClassLoader(processorCl, () ->  processorSupplier.close(error));
                 } catch (Throwable e) {
                     logger.severe(jobNameAndExecutionId()
-                                  + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
+                            + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
                 }
-            }
-        });
-
-        tempDirectories.forEach((k, dir) -> {
-            try {
-                IOUtil.delete(dir);
-            } catch (Exception e) {
-                logger.warning("Failed to delete temporary directory " + dir);
-            }
-        });
-
-        if (serializationService != null) {
-            serializationService.dispose();
+            };
+            Executor executor = processorSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
+            futures.add(runAsync(closeAction, executor));
         }
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .whenComplete(withTryCatch(logger, (ignored, e) -> {
+                    tempDirectories.forEach((k, dir) -> {
+                        try {
+                            IOUtil.delete(dir);
+                        } catch (Exception ex) {
+                            logger.warning("Failed to delete temporary directory " + dir);
+                        }
+                    });
+
+                    if (serializationService != null) {
+                        serializationService.dispose();
+                    }
+                }));
     }
 
     /**
      * Terminates the local execution of tasklets. Returns false, if the
      * execution wasn't yet begun.
      */
-    public boolean terminateExecution(@Nullable TerminationMode mode) {
+    public boolean terminateExecution(@Nullable TerminationMode mode, Throwable cause) {
         assert mode == null || !mode.isWithTerminalSnapshot()
                 : "terminating with a mode that should do a terminal snapshot";
 
         synchronized (executionLock) {
             if (mode == null) {
-                cancellationFuture.cancel(true);
+                cancellationFuture.completeExceptionally(new ExecutionCancellationException(cause));
             } else {
                 cancellationFuture.completeExceptionally(new JobTerminateRequestedException(mode));
             }
@@ -317,7 +339,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 // if execution is done, there are 0 processors to take snapshot of. Therefore we're done now.
                 LoggingUtil.logFine(logger, "Ignoring snapshot %d phase 1 for %s: execution completed",
                         snapshotId, jobNameAndExecutionId());
-                return CompletableFuture.completedFuture(new SnapshotPhase1Result(0, 0, 0, null));
+                return completedFuture(new SnapshotPhase1Result(0, 0, 0, null));
             }
             return snapshotContext.startNewSnapshotPhase1(snapshotId, mapName, flags);
         }
@@ -335,7 +357,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 // if execution is done, there are 0 processors to take snapshot of. Therefore we're done now.
                 LoggingUtil.logFine(logger, "Ignoring snapshot %d phase 2 for %s: execution completed",
                         snapshotId, jobNameAndExecutionId());
-                return CompletableFuture.completedFuture(null);
+                return completedFuture(null);
             }
             return snapshotContext.startNewSnapshotPhase2(snapshotId, success);
         }
@@ -398,6 +420,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
             return;
         }
         descriptor = descriptor.withTag(MetricTags.JOB, idToString(jobId))
+                               .withTag(MetricTags.JOB_NAME, jobName)
                                .withTag(MetricTags.EXECUTION, idToString(executionId));
 
         context.collect(descriptor, EXECUTION_START_TIME, ProbeLevel.INFO, ProbeUnit.MS, startTime.get());

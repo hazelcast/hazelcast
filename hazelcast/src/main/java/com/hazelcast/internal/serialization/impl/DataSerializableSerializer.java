@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -29,14 +32,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.nio.serialization.TypedStreamDeserializer;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.ServiceLoader;
-import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DATA_SERIALIZABLE;
@@ -62,13 +63,19 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
     DataSerializableSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                                ClassLoader classLoader) {
         try {
-            final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
-            while (hooks.hasNext()) {
-                DataSerializerHook hook = hooks.next();
+            List<DataSerializerHook> hooks = new ArrayList<>();
+            ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader)
+                    .forEachRemaining(hooks::add);
+
+            for (DataSerializerHook hook : hooks) {
                 final DataSerializableFactory factory = hook.createFactory();
                 if (factory != null) {
                     register(hook.getFactoryId(), factory);
                 }
+            }
+
+            for (DataSerializerHook hook : hooks) {
+                hook.afterFactoriesCreated(factories);
             }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

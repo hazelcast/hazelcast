@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -42,12 +42,13 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.hazelcast.internal.nio.IOUtil.readDataAsObject;
+import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
-import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
 
 public final class Backup extends Operation implements BackupOperation, AllowedDuringPassiveState,
         IdentifiedDataSerializable {
@@ -171,7 +172,9 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         }
 
         ensureBackupOperationInitialized();
-        runDirect(backupOp);
+        NodeEngineImpl nodeEngineImpl = (NodeEngineImpl) getNodeEngine();
+        Set<Operation> asyncOperations = nodeEngineImpl.getOperationService().getAsyncOperations();
+        runDirect(backupOp, nodeEngineImpl, asyncOperations);
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         PartitionReplicaVersionManager versionManager = nodeEngine.getPartitionService().getPartitionReplicaVersionManager();

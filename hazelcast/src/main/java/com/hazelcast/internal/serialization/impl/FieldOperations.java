@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,8 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.json.JsonEscape;
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -41,7 +40,7 @@ public final class FieldOperations {
     static {
         ALL[FieldKind.BOOLEAN.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Boolean readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getBoolean(fieldName);
             }
 
@@ -63,7 +62,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_BOOLEAN.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfBoolean(fieldName);
             }
 
@@ -89,7 +88,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.INT8.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Byte readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getInt8(fieldName);
             }
 
@@ -110,7 +109,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_INT8.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfInt8(fieldName);
             }
 
@@ -136,7 +135,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.CHAR.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Character readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getChar(fieldName);
             }
 
@@ -157,7 +156,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_CHAR.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfChar(fieldName);
             }
 
@@ -199,7 +198,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.INT16.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Short readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getInt16(fieldName);
             }
 
@@ -220,7 +219,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_INT16.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfInt16(fieldName);
             }
 
@@ -246,7 +245,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.INT32.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Integer readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getInt32(fieldName);
             }
 
@@ -267,7 +266,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_INT32.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfInt32(fieldName);
             }
 
@@ -293,7 +292,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.INT64.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Long readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getInt64(fieldName);
             }
 
@@ -314,7 +313,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_INT64.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfInt64(fieldName);
             }
 
@@ -340,7 +339,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.FLOAT32.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Float readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getFloat32(fieldName);
             }
 
@@ -361,7 +360,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_FLOAT32.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfFloat32(fieldName);
             }
 
@@ -387,7 +386,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.FLOAT64.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Double readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getFloat64(fieldName);
             }
 
@@ -408,7 +407,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_FLOAT64.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfFloat64(fieldName);
             }
 
@@ -434,7 +433,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.STRING.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getString(fieldName);
             }
 
@@ -455,7 +454,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_STRING.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfString(fieldName);
             }
 
@@ -482,7 +481,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.DECIMAL.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getDecimal(fieldName);
             }
 
@@ -493,12 +492,12 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(record.getDecimal(fieldName));
             }
         };
         ALL[FieldKind.ARRAY_OF_DECIMAL.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfDecimal(fieldName);
             }
 
@@ -525,7 +524,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.TIME.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getTime(fieldName);
             }
 
@@ -546,7 +545,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_TIME.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfTime(fieldName);
             }
 
@@ -574,7 +573,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.DATE.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getDate(fieldName);
             }
 
@@ -595,7 +594,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_DATE.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfDate(fieldName);
             }
 
@@ -624,7 +623,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.TIMESTAMP.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getTimestamp(fieldName);
             }
 
@@ -645,7 +644,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_TIMESTAMP.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfTimestamp(fieldName);
             }
 
@@ -673,7 +672,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.TIMESTAMP_WITH_TIMEZONE.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getTimestampWithTimezone(fieldName);
             }
 
@@ -694,7 +693,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONE.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfTimestampWithTimezone(fieldName);
             }
 
@@ -722,8 +721,8 @@ public final class FieldOperations {
         };
         ALL[FieldKind.COMPACT.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return ((InternalGenericRecord) genericRecord).getObject(fieldName);
+            public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName) {
+                return genericRecord.getObject(fieldName);
             }
 
             @Override
@@ -743,8 +742,8 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_COMPACT.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return ((InternalGenericRecord) genericRecord).getArrayOfObject(fieldName, Object.class);
+            public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName) {
+                return genericRecord.getArrayOfObject(fieldName, Object.class);
             }
 
             @Override
@@ -775,8 +774,8 @@ public final class FieldOperations {
         };
         ALL[FieldKind.PORTABLE.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return ((InternalGenericRecord) genericRecord).getObject(fieldName);
+            public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName) {
+                return genericRecord.getObject(fieldName);
             }
 
             @Override
@@ -796,8 +795,8 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_PORTABLE.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return ((InternalGenericRecord) genericRecord).getArrayOfObject(fieldName, Object.class);
+            public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName) {
+                return genericRecord.getArrayOfObject(fieldName, Object.class);
             }
 
             @Override
@@ -828,7 +827,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.NULLABLE_BOOLEAN.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Boolean readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getNullableBoolean(fieldName);
             }
 
@@ -839,12 +838,12 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(record.getNullableBoolean(fieldName));
             }
         };
         ALL[FieldKind.ARRAY_OF_NULLABLE_BOOLEAN.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableBoolean(fieldName);
             }
 
@@ -871,7 +870,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.NULLABLE_INT8.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Byte readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getNullableInt8(fieldName);
             }
 
@@ -882,12 +881,12 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(record.getNullableInt8(fieldName));
             }
         };
         ALL[FieldKind.ARRAY_OF_NULLABLE_INT8.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableInt8(fieldName);
             }
 
@@ -913,7 +912,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.NULLABLE_INT16.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Short readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getNullableInt16(fieldName);
             }
 
@@ -924,12 +923,12 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(record.getNullableInt16(fieldName));
             }
         };
         ALL[FieldKind.ARRAY_OF_NULLABLE_INT16.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableInt16(fieldName);
             }
 
@@ -955,7 +954,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.NULLABLE_INT32.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Integer readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getNullableInt32(fieldName);
             }
 
@@ -966,12 +965,12 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(record.getNullableInt32(fieldName));
             }
         };
         ALL[FieldKind.ARRAY_OF_NULLABLE_INT32.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableInt32(fieldName);
             }
 
@@ -997,7 +996,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.NULLABLE_INT64.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Long readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getNullableInt64(fieldName);
             }
 
@@ -1008,12 +1007,12 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(record.getNullableInt64(fieldName));
             }
         };
         ALL[FieldKind.ARRAY_OF_NULLABLE_INT64.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableInt64(fieldName);
             }
 
@@ -1039,7 +1038,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.NULLABLE_FLOAT32.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Float readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getNullableFloat32(fieldName);
             }
 
@@ -1050,12 +1049,12 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(record.getNullableFloat32(fieldName));
             }
         };
         ALL[FieldKind.ARRAY_OF_NULLABLE_FLOAT32.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableFloat32(fieldName);
             }
 
@@ -1081,7 +1080,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.NULLABLE_FLOAT64.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Double readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getNullableFloat64(fieldName);
             }
 
@@ -1092,12 +1091,12 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(record.getNullableFloat64(fieldName));
             }
         };
         ALL[FieldKind.ARRAY_OF_NULLABLE_FLOAT64.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readObject(GenericRecord genericRecord, String fieldName) {
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableFloat64(fieldName);
             }
 
@@ -1159,7 +1158,7 @@ public final class FieldOperations {
     }
 
     public static boolean isArrayKind(FieldKind fieldKind) {
-        return fieldKind.getId() % 2 != 0;
+        return fieldKind.getId() % 2 != 1;
     }
 
     public static FieldKind getSingleKind(FieldKind fieldKind) {

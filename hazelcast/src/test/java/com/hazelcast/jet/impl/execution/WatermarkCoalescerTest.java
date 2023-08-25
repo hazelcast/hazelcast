@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -40,7 +42,7 @@ public class WatermarkCoalescerTest {
 
     @Test
     public void when_nothingHappened_then_noWm() {
-        assertEquals(Long.MIN_VALUE, wc.checkWmHistory());
+        assertFalse(wc.idleMessagePending());
     }
 
     @Test
@@ -77,7 +79,7 @@ public class WatermarkCoalescerTest {
         // Then
         assertEquals(Long.MIN_VALUE, wc.observeWm(1, 12)); // not forwarded, waiting for i1
         assertEquals(12, wc.observeWm(0, 13)); // forwarded, both are at least at 12
-        assertEquals(Long.MIN_VALUE, wc.checkWmHistory());
+        assertFalse(wc.idleMessagePending());
     }
 
     @Test
@@ -107,7 +109,7 @@ public class WatermarkCoalescerTest {
 
     @Test
     public void when_i1_idle_i2_active_then_wmForwardedImmediately() {
-        assertEquals(Long.MIN_VALUE, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
+        assertEquals(NO_NEW_WM, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
         assertEquals(100, wc.observeWm(1, 100));
     }
 
@@ -115,27 +117,27 @@ public class WatermarkCoalescerTest {
     public void when_i1_activeNoWm_i2_idle_then_noWmToForward() {
         wc.observeEvent(0);
         assertEquals(Long.MIN_VALUE, wc.observeWm(1, IDLE_MESSAGE.timestamp()));
-        assertEquals(Long.MIN_VALUE, wc.checkWmHistory());
-        assertEquals(Long.MIN_VALUE, wc.checkWmHistory());
+        assertFalse(wc.idleMessagePending());
+        assertFalse(wc.idleMessagePending());
     }
 
     @Test
     public void when_i1_idle_i2_activeNoWm_then_wmForwardedAfterADelay() {
-        assertEquals(Long.MIN_VALUE, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
+        assertEquals(NO_NEW_WM, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
         wc.observeEvent(1);
-        assertEquals(Long.MIN_VALUE, wc.checkWmHistory());
-        assertEquals(Long.MIN_VALUE, wc.checkWmHistory());
+        assertFalse(wc.idleMessagePending());
+        assertFalse(wc.idleMessagePending());
     }
 
     @Test
-    public void when_i1_idle_i2_idle_then_idleMessageForwardedImmediately() {
+    public void when_i1_idle_i2_idle_then_noNewWmMessageForwardedImmediately() {
         assertEquals(Long.MIN_VALUE, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
-        assertEquals(IDLE_MESSAGE.timestamp(), wc.observeWm(1, IDLE_MESSAGE.timestamp()));
+        assertEquals(NO_NEW_WM, wc.observeWm(1, IDLE_MESSAGE.timestamp()));
     }
 
     @Test
     public void when_i1_active_i2_done_then_forwardImmediately() {
-        assertEquals(Long.MIN_VALUE, wc.observeWm(0, 100));
+        assertEquals(NO_NEW_WM, wc.observeWm(0, 100));
         assertEquals(100, wc.queueDone(1));
     }
 
@@ -148,14 +150,14 @@ public class WatermarkCoalescerTest {
     @Test
     public void when_i1_idle_i2_done_i1_recovers_then_idleMessageForwardedImmediately() {
         assertEquals(Long.MIN_VALUE, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
-        assertEquals(IDLE_MESSAGE.timestamp(), wc.queueDone(1));
+        assertEquals(NO_NEW_WM, wc.queueDone(1));
         assertEquals(10, wc.observeWm(0, 10));
     }
 
     @Test
     public void when_i1_done_i2_idleAndRecovers_then_wmsForwardedImmediately() {
         assertEquals(Long.MIN_VALUE, wc.queueDone(0));
-        assertEquals(IDLE_MESSAGE.timestamp(), wc.observeWm(1, IDLE_MESSAGE.timestamp()));
+        assertEquals(NO_NEW_WM, wc.observeWm(1, IDLE_MESSAGE.timestamp()));
         assertEquals(10, wc.observeWm(1, 10));
     }
 
@@ -176,7 +178,7 @@ public class WatermarkCoalescerTest {
         // IDLE_MESSAGE again. The IDLE_MESSAGE is broadcast, but the event is not. So a downstream
         // instance can receive two IDLE_MESSAGE-s in a row.
         assertEquals(Long.MIN_VALUE, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
-        assertEquals(IDLE_MESSAGE.timestamp(), wc.observeWm(1, IDLE_MESSAGE.timestamp()));
+        assertEquals(NO_NEW_WM, wc.observeWm(1, IDLE_MESSAGE.timestamp()));
         assertEquals(Long.MIN_VALUE, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
     }
 
@@ -184,6 +186,7 @@ public class WatermarkCoalescerTest {
     public void when_allDone_then_noMaxValueEmitted() {
         assertEquals(Long.MIN_VALUE, wc.queueDone(0));
         assertEquals(Long.MIN_VALUE, wc.queueDone(1));
+        assertFalse(wc.idleMessagePending());
     }
 
     @Test
@@ -233,7 +236,7 @@ public class WatermarkCoalescerTest {
         // Then
         // queue0 becomes idle. Wm should be forwarded to 11
         assertEquals(11L, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
-        assertEquals(IDLE_MESSAGE.timestamp(), wc.checkWmHistory());
+        assertTrue(wc.idleMessagePending());
     }
 
     @Test
@@ -248,16 +251,16 @@ public class WatermarkCoalescerTest {
         // Then
         // queue0 becomes done. Wm should be forwarded to 11
         assertEquals(11L, wc.queueDone(0));
-        assertEquals(IDLE_MESSAGE.timestamp(), wc.checkWmHistory());
+        assertTrue(wc.idleMessagePending());
     }
 
     @Test
     public void test_singleInput() {
         wc = WatermarkCoalescer.create(1);
-        assertEquals(IDLE_MESSAGE.timestamp(), wc.observeWm(0, IDLE_MESSAGE.timestamp()));
+        assertEquals(NO_NEW_WM, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
         assertEquals(10, wc.observeWm(0, 10));
         assertEquals(11, wc.observeWm(0, 11));
-        assertEquals(IDLE_MESSAGE.timestamp(), wc.observeWm(0, IDLE_MESSAGE.timestamp()));
+        assertEquals(NO_NEW_WM, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
         assertEquals(12, wc.observeWm(0, 12));
         assertEquals(NO_NEW_WM, wc.queueDone(0));
     }

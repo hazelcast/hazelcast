@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
   the directory where you start your Hazelcast client.
 
   To learn how to configure Hazelcast, please see the schema at
-  https://hazelcast.com/schema/client-config/hazelcast-client-config-5.1.xsd
+  https://hazelcast.com/schema/client-config/hazelcast-client-config-5.3.xsd
   or the Reference Manual at https://docs.hazelcast.com/
 -->
 
@@ -31,7 +31,7 @@
 <hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.1.xsd">
+                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.3.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
@@ -187,21 +187,18 @@
                 </properties>
             </socket-interceptor>
         * <ssl>:
-            Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast
-            Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement
-            your SSLContextFactory class. Its configuration contains the factory class and SSL properties.
-            By default, it is disabled. The following is an example:
+            Allows configuring TLS/SSL communication encryption. This feature is available only in Hazelcast Enterprise.
+            The default configuration usually uses JSSE engine available in Java.
+            Consult the Hazelcast documentation on how to integrate with OpenSSL/BoringSSL engines.
             <ssl enabled="true">
                 <factory-class-name>
-                    com.hazelcast.nio.ssl.BasicSSLContextFactory
+                    com.hazelcast.nio.ssl.OpenSSLEngineFactory
                 </factory-class-name>
                 <properties>
-                    <property name="keyStore">keyStore</property>
-                    <property name="keyStorePassword">keyStorePassword</property>
-                    <property name="keyManagerAlgorithm">SunX509</property>
-                    <property name="trustManagerAlgorithm">SunX509</property>
-                    <property name="protocol">TLS</property>
-                    <property name="mutualAuthentication">REQUIRED</property>
+                    <property name="protocol">TLSv1.2</property>
+                    <property name="trustCertCollectionFile">/opt/hazelcast/trusted-certs.pem</property>
+                    <property name="keyFile">/opt/hazelcast/privkey.pem</property>
+                    <property name="keyCertChainFile">/opt/hazelcast/chain.pem</property>
                 </properties>
             </ssl>
         * <aws>:
@@ -291,18 +288,19 @@
         </socket-interceptor>
 
         <ssl enabled="false">
-            <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
             <properties>
-                <property name="protocol">TLS</property>
+                <property name="protocol">TLSv1.3</property>
 
                 <property name="trustStore">/opt/hazelcast-client.truststore</property>
                 <property name="trustStorePassword">secret.123456</property>
-                <property name="trustStoreType">JKS</property>
+                <property name="trustStoreType">PKCS12</property>
+
+                <property name="keyMaterialDuration">PT10M</property>
 
                 <!-- Following properties are only needed when the mutual authentication is used. -->
                 <property name="keyStore">/opt/hazelcast-client.keystore</property>
                 <property name="keyStorePassword">keystorePassword123</property>
-                <property name="keyStoreType">JKS</property>
+                <property name="keyStoreType">PKCS12</property>
             </properties>
         </ssl>
         <auto-detection enabled="false"/>
@@ -497,6 +495,20 @@
             and throw a Serialization Exception with the error definition.
         * <java-serialization-filter>:
             Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used.
+        * <compact-serialization>:
+            Contains configuration elements and attributes for the compact serialization.
+
+            The optional "enabled" attribute enables or disables the Compact
+            serialization.
+
+            It has the following sub-elements.
+            * <serializers>:
+                List of fully qualified class names of the Compact serializers.
+            * <classes>:
+                List of fully qualified names of the classes to be serialized
+                with the reflective Compact serializer. It is meant to be used
+                to serialize classes that are serializable with other mechanisms
+                like Java serialization with Compact serialization.
     -->
     <serialization>
         <portable-version>3</portable-version>
@@ -534,15 +546,13 @@
                 <prefix>com.</prefix>
             </whitelist>
         </java-serialization-filter>
-        <compact-serialization enabled="true">
-            <registered-classes>
-                <class>
-                    com.hazelcast.examples.DummyType
-                </class>
-                <class type-name="dummy" serializer="com.hazelcast.examples.DummyTypeSerializer">
-                    com.hazelcast.examples.DummyTypeWithSerializer
-                </class>
-            </registered-classes>
+        <compact-serialization>
+            <serializers>
+                <serializer>com.hazelcast.examples.DummyTypeSerializer</serializer>
+            </serializers>
+            <classes>
+                <class>com.hazelcast.examples.DummyType</class>
+            </classes>
         </compact-serialization>
     </serialization>
     <!--
@@ -999,4 +1009,31 @@
         <format-pattern>$HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}</format-pattern>
     </instance-tracking>
 
+    <!--
+    ===== HAZELCAST SQL CLIENT CONFIGURATION =====
+
+    Configuration element's name is <sql>.
+
+    It has the following sub-elements:
+    * <resubmission-mode>:
+        Sets the resubmission mode for failing queries. By default, it is set to NEVER.
+    -->
+    <sql>
+        <resubmission-mode>RETRY_SELECTS</resubmission-mode>
+    </sql>
+
+    <!--
+    ===== HAZELCAST TPC CONFIGURATION =====
+
+    Configures the client for TPC, which is the next generation Hazelcast that
+    uses thread-per-core model. TPC-aware clients will maintain connections to
+    all cores of all cluster members. The client will route partition-specific
+    invocations to the correct core of the correct member in the best effort
+    basis. Configuration element's name is <tpc>.
+
+    It has the following attributes:
+      - enabled:
+          Enables or disables the TPC-aware mode.
+    -->
+    <tpc enabled="true"/>
 </hazelcast-client>

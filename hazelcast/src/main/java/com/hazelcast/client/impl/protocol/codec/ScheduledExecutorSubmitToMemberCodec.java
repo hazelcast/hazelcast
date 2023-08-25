@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to a member for execution. Member is provided with its uuid.
  */
-@Generated("82d5fe595489cb8ad17e862c9c30077b")
+@Generated("aea87e6a4ed0d962744d10fcea361924")
 public final class ScheduledExecutorSubmitToMemberCodec {
     //hex: 0x1A0300
     public static final int REQUEST_MESSAGE_TYPE = 1704704;
@@ -105,6 +105,7 @@ public final class ScheduledExecutorSubmitToMemberCodec {
 
     public static ClientMessage encodeRequest(java.lang.String schedulerName, java.util.UUID memberUuid, byte type, java.lang.String taskName, com.hazelcast.internal.serialization.Data task, long initialDelayInMillis, long periodInMillis, boolean autoDisposable) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("ScheduledExecutor.SubmitToMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

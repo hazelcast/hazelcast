@@ -1,0 +1,517 @@
+{
+  "instance": {
+    "hazelcast": {
+      "advanced-network": {
+        "enabled": false,
+        "join": {
+          "multicast": {
+            "enabled": true,
+            "loopback-mode-enabled": true,
+            "multicast-group": "1.2.3.4",
+            "multicast-port": 12345,
+            "multicast-timeout-seconds": 5,
+            "multicast-time-to-live": 10,
+            "trusted-interfaces": [
+              "10.10.1.*",
+              "10.10.2.*"
+            ]
+          },
+          "tcp-ip": {
+            "enabled": false,
+            "connection-timeout-seconds": 123,
+            "required-member": "dummy",
+            "member": "dummy1,dummy2",
+            "interface": "127.0.0.10",
+            "members": "dummy3,dummy4",
+            "member-list": [
+              "dummy5",
+              "dummy6"
+            ]
+          },
+          "aws": {
+            "enabled": false,
+            "access-key": "my-access-key",
+            "secret-key": "my-secret-key",
+            "iam-role": "dummy",
+            "region": "us-west-1",
+            "host-header": "ec2.amazonaws.com",
+            "security-group-name": "hazelcast-sg",
+            "tag-key": "type",
+            "tag-value": "hz-nodes",
+            "use-public-ip": true
+          },
+          "gcp": {
+            "enabled": false,
+            "zones": "us-east1-b,us-east1-c"
+          },
+          "azure": {
+            "enabled": false,
+            "client-id": "CLIENT_ID",
+            "client-secret": "CLIENT_SECRET",
+            "tenant-id": "TENANT_ID",
+            "subscription-id": "SUB_ID",
+            "cluster-id": "HZLCAST001",
+            "group-name": "RESOURCE-GROUP-NAME"
+          },
+          "kubernetes": {
+            "enabled": false,
+            "namespace": "MY-KUBERNETES-NAMESPACE",
+            "service-name": "MY-SERVICE-NAME",
+            "service-label-name": "MY-SERVICE-LABEL-NAME",
+            "service-label-value": "MY-SERVICE-LABEL-VALUE"
+          },
+          "eureka": {
+            "enabled": false,
+            "self-registration": true,
+            "namespace": "hazelcast"
+          }
+        },
+        "interfaces": {
+          "enabled": true,
+          "interfaces": [
+            "10.10.1.*"
+          ]
+        },
+        "failure-detector": {
+          "icmp": {
+            "enabled": false,
+            "timeout-milliseconds": 1000,
+            "fail-fast-on-startup": true,
+            "interval-milliseconds": 1000,
+            "max-attempts": 2,
+            "parallel-mode": true,
+            "ttl": 255
+          }
+        },
+        "member-address-provider": {
+          "enabled": false,
+          "class-name": "DummyMemberAddressProvider",
+          "properties": {
+            "foo": "bar"
+          }
+        },
+        "member-server-socket-endpoint-config": {
+          "outbound-ports": [
+            "33000-35000",
+            "38000,38500-38600"
+          ],
+          "interfaces": {
+            "enabled": true,
+            "interfaces": [
+              "10.10.1.*"
+            ]
+          },
+          "ssl": {
+            "enabled": true,
+            "factory-class-name": "com.hazelcast.examples.MySSLContextFactory",
+            "properties": {
+              "foo": "bar"
+            }
+          },
+          "socket-interceptor": {
+            "enabled": true,
+            "class-name": "com.hazelcast.examples.MySocketInterceptor",
+            "properties": {
+              "foo": "bar"
+            }
+          },
+          "socket-options": {
+            "buffer-direct": true,
+            "tcp-no-delay": true,
+            "keep-alive": true,
+            "connect-timeout-seconds": 64,
+            "send-buffer-size-kb": 25,
+            "receive-buffer-size-kb": 33,
+            "linger-seconds": 99
+          },
+          "port": {
+            "port-count": 100,
+            "auto-increment": true,
+            "port": 5701
+          },
+          "public-address": "dummy",
+          "reuse-address": true,
+          "tpc-socket": {
+            "port-range": 14000,
+            "receive-buffer-size-kb": "256",
+            "send-buffer-size-kb": "256"
+          }
+        },
+        "client-server-socket-endpoint-config": {
+          "outbound-ports": [
+            "38000,38500-38600"
+          ],
+          "interfaces": {
+            "enabled": false,
+            "interfaces": [
+              "10.10.1.*"
+            ]
+          },
+          "ssl": {
+            "enabled": true,
+            "factory-class-name": "com.hazelcast.examples.MySSLContextFactory",
+            "properties": {
+              "foo": "bar"
+            }
+          },
+          "socket-interceptor": {
+            "enabled": true,
+            "class-name": "com.hazelcast.examples.MySocketInterceptor",
+            "properties": {
+              "foo": "bar"
+            }
+          },
+          "port": {
+            "port-count": 100,
+            "auto-increment": true,
+            "port": 9999
+          },
+          "public-address": "10.10.0.10",
+          "reuse-address": true,
+          "tpc-socket": {
+            "port-range": 14000,
+            "receive-buffer-size-kb": "256",
+            "send-buffer-size-kb": "256"
+          }
+        },
+        "rest-server-socket-endpoint-config": {
+          "name": "internal-server-socket",
+          "interfaces": {
+            "enabled": false,
+            "interfaces": [
+              "10.10.1.*"
+            ]
+          },
+          "port": {
+            "auto-increment": false,
+            "port": 8080
+          },
+          "public-address": "192.168.1.10",
+          "reuse-address": true,
+          "endpoint-groups": {
+            "WAN": {
+              "enabled": true
+            },
+            "CLUSTER_READ": {
+              "enabled": true
+            },
+            "CLUSTER_WRITE": {
+              "enabled": false
+            },
+            "HEALTH_CHECK": {
+              "enabled": true
+            }
+          },
+          "tpc-socket": {
+            "port-range": 14000,
+            "receive-buffer-size-kb": "256",
+            "send-buffer-size-kb": "256"
+          }
+        },
+        "wan-endpoint-config": {
+          "endpoint-tokyo": {
+            "ssl": {
+              "enabled": true,
+              "factory-class-name": "com.hazelcast.examples.MySSLContextFactory",
+              "properties": {
+                "foo": "bar"
+              }
+            },
+            "tpc-socket": {
+              "port-range": 14000,
+              "receive-buffer-size-kb": "256",
+              "send-buffer-size-kb": "256"
+            }
+          },
+          "endpoint-london": {
+            "symmetric-encryption": {
+              "enabled": true,
+              "algorithm": "Algorithm",
+              "salt": "thesalt",
+              "password": "thepassword",
+              "iteration-count": 1000
+            },
+            "tpc-socket": {
+              "port-range": 14000,
+              "receive-buffer-size-kb": "256",
+              "send-buffer-size-kb": "256"
+            }
+          }
+        },
+        "wan-server-socket-endpoint-config": {
+          "interfaces": {
+            "enabled": false,
+            "interfaces": [
+              "192.168.8.101",
+              "10.20.10.100"
+            ]
+          },
+          "tpc-socket": {
+            "port-range": 14000,
+            "receive-buffer-size-kb": "256",
+            "send-buffer-size-kb": "256"
+          }
+        },
+        "memcache-server-socket-endpoint-config": {
+          "name": "memcache",
+          "port": {
+            "auto-increment": false,
+            "port-count": 10,
+            "port": 6000
+          },
+          "tpc-socket": {
+            "port-range": 14000,
+            "receive-buffer-size-kb": "256",
+            "send-buffer-size-kb": "256"
+          }
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/AdvancedNetwork",
+    "pointerToViolation": "#/hazelcast/advanced-network",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/AdvancedNetwork/properties/wan-endpoint-config",
+        "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/TpcSocketConfig",
+            "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-tokyo/tpc-socket",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-tokyo/tpc-socket/send-buffer-size-kb",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: Integer, found: String"
+              },
+              {
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-tokyo/tpc-socket/port-range",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: Integer"
+              },
+              {
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-tokyo/tpc-socket/receive-buffer-size-kb",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: Integer, found: String"
+              }
+            ],
+            "message": "3 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/TpcSocketConfig",
+            "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-london/tpc-socket",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-london/tpc-socket/send-buffer-size-kb",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: Integer, found: String"
+              },
+              {
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-london/tpc-socket/port-range",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: Integer"
+              },
+              {
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+                "pointerToViolation": "#/hazelcast/advanced-network/wan-endpoint-config/endpoint-london/tpc-socket/receive-buffer-size-kb",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: Integer, found: String"
+              }
+            ],
+            "message": "3 schema violations found"
+          }
+        ],
+        "message": "6 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/SocketEndpointConfig",
+        "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config",
+        "causingExceptions": [{
+          "schemaLocation": "#/definitions/TpcSocketConfig",
+          "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config/tpc-socket",
+          "causingExceptions": [
+            {
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config/tpc-socket/send-buffer-size-kb",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: Integer, found: String"
+            },
+            {
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+              "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config/tpc-socket/port-range",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: String, found: Integer"
+            },
+            {
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/member-server-socket-endpoint-config/tpc-socket/receive-buffer-size-kb",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: Integer, found: String"
+            }
+          ],
+          "message": "3 schema violations found"
+        }],
+        "keyword": "allOf",
+        "message": "#: only 1 subschema matches out of 2"
+      },
+      {
+        "schemaLocation": "#/definitions/SocketEndpointConfig",
+        "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config",
+        "causingExceptions": [{
+          "schemaLocation": "#/definitions/TpcSocketConfig",
+          "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config/tpc-socket",
+          "causingExceptions": [
+            {
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config/tpc-socket/send-buffer-size-kb",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: Integer, found: String"
+            },
+            {
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+              "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config/tpc-socket/port-range",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: String, found: Integer"
+            },
+            {
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/memcache-server-socket-endpoint-config/tpc-socket/receive-buffer-size-kb",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: Integer, found: String"
+            }
+          ],
+          "message": "3 schema violations found"
+        }],
+        "keyword": "allOf",
+        "message": "#: only 1 subschema matches out of 2"
+      },
+      {
+        "schemaLocation": "#/definitions/SocketEndpointConfig",
+        "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config",
+        "causingExceptions": [{
+          "schemaLocation": "#/definitions/TpcSocketConfig",
+          "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config/tpc-socket",
+          "causingExceptions": [
+            {
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config/tpc-socket/send-buffer-size-kb",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: Integer, found: String"
+            },
+            {
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+              "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config/tpc-socket/port-range",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: String, found: Integer"
+            },
+            {
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/client-server-socket-endpoint-config/tpc-socket/receive-buffer-size-kb",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: Integer, found: String"
+            }
+          ],
+          "message": "3 schema violations found"
+        }],
+        "keyword": "allOf",
+        "message": "#: only 1 subschema matches out of 2"
+      },
+      {
+        "schemaLocation": "#/definitions/SocketEndpointConfig",
+        "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config",
+        "causingExceptions": [{
+          "schemaLocation": "#/definitions/TpcSocketConfig",
+          "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config/tpc-socket",
+          "causingExceptions": [
+            {
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config/tpc-socket/send-buffer-size-kb",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: Integer, found: String"
+            },
+            {
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+              "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config/tpc-socket/port-range",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: String, found: Integer"
+            },
+            {
+              "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+              "pointerToViolation": "#/hazelcast/advanced-network/wan-server-socket-endpoint-config/tpc-socket/receive-buffer-size-kb",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: Integer, found: String"
+            }
+          ],
+          "message": "3 schema violations found"
+        }],
+        "keyword": "allOf",
+        "message": "#: only 1 subschema matches out of 2"
+      },
+      {
+        "schemaLocation": "#/definitions/AdvancedNetwork/properties/rest-server-socket-endpoint-config",
+        "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config",
+        "causingExceptions": [{
+          "schemaLocation": "#/definitions/SocketEndpointConfig",
+          "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config",
+          "causingExceptions": [{
+            "schemaLocation": "#/definitions/TpcSocketConfig",
+            "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config/tpc-socket",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+                "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config/tpc-socket/send-buffer-size-kb",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: Integer, found: String"
+              },
+              {
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+                "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config/tpc-socket/port-range",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: Integer"
+              },
+              {
+                "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+                "pointerToViolation": "#/hazelcast/advanced-network/rest-server-socket-endpoint-config/tpc-socket/receive-buffer-size-kb",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: Integer, found: String"
+              }
+            ],
+            "message": "3 schema violations found"
+          }],
+          "keyword": "allOf",
+          "message": "#: only 1 subschema matches out of 2"
+        }],
+        "keyword": "allOf",
+        "message": "#: only 1 subschema matches out of 2"
+      }
+    ],
+    "message": "21 schema violations found"
+  }
+}

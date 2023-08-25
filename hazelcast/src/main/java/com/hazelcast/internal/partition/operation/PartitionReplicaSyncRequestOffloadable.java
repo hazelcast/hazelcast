@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,12 +42,15 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 
 /**
@@ -152,13 +155,17 @@ public final class PartitionReplicaSyncRequestOffloadable
                         // returns references to the internal
                         // replica versions data structures
                         // that may change under our feet
-                        long[] versions = Arrays.copyOf(versionManager.getPartitionReplicaVersions(partitionId(), ns),
+                        long[] versions = Arrays.copyOf(versionManager.getPartitionReplicaVersionsForSync(partitionId(), ns),
                                 IPartition.MAX_BACKUP_COUNT);
                         replicaVersions.put(BiTuple.of(partitionId(), ns), versions);
                     }
                 });
         operationService.execute(gatherReplicaVersionsRunnable);
-        gatherReplicaVersionsRunnable.future.joinInternal();
+        try {
+            gatherReplicaVersionsRunnable.future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw sneakyThrow(peel(e));
+        }
     }
 
     @Override
@@ -175,7 +182,11 @@ public final class PartitionReplicaSyncRequestOffloadable
             UrgentPartitionRunnable partitionRunnable = new UrgentPartitionRunnable(partitionId(),
                     () -> sendOperations(operations, chunkSuppliers, ns));
             getNodeEngine().getOperationService().execute(partitionRunnable);
-            partitionRunnable.future.joinInternal();
+            try {
+                partitionRunnable.future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw sneakyThrow(peel(e));
+            }
         }
     }
 
@@ -210,34 +221,42 @@ public final class PartitionReplicaSyncRequestOffloadable
         }
 
         @Override
-        public void start() throws Exception {
+        public void start() {
             try {
                 nodeEngine.getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR,
                         () -> {
-                            // set partition as migrating to disable mutating
-                            // operations while preparing replication operations
-                            if (!trySetMigratingFlag()) {
-                                sendRetryResponse();
-                            }
-
                             try {
-                                Integer permits = getPermits();
-                                if (permits == null) {
-                                    return;
-                                }
-                                sendOperationsForNamespaces(permits);
-                                // send retry response for remaining namespaces
-                                if (!namespaces.isEmpty()) {
-                                    logNotEnoughPermits();
+                                // set partition as migrating to disable mutating
+                                // operations while preparing replication operations
+                                if (!trySetMigratingFlag()) {
                                     sendRetryResponse();
                                 }
+
+                                try {
+                                    Integer permits = getPermits();
+                                    if (permits == null) {
+                                        return;
+                                    }
+                                    sendOperationsForNamespaces(permits);
+                                    // send retry response for remaining namespaces
+                                    if (!namespaces.isEmpty()) {
+                                        logNotEnoughPermits();
+                                        sendRetryResponse();
+                                    }
+                                } finally {
+                                    clearMigratingFlag();
+                                }
                             } finally {
-                                clearMigratingFlag();
+                                sendResponse(null);
                             }
                         });
             } catch (RejectedExecutionException e) {
                 // if execution on async executor was rejected, then send retry response
-                sendRetryResponse();
+                try {
+                    sendRetryResponse();
+                } finally {
+                    sendResponse(null);
+                }
             }
         }
     }
@@ -261,7 +280,11 @@ public final class PartitionReplicaSyncRequestOffloadable
         UrgentPartitionRunnable<Boolean> trySetMigrating = new UrgentPartitionRunnable<>(partitionId(),
                 () -> partitionStateManager.trySetMigratingFlag(partitionId()));
         getNodeEngine().getOperationService().execute(trySetMigrating);
-        return trySetMigrating.future.joinInternal();
+        try {
+            return trySetMigrating.future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw sneakyThrow(peel(e));
+        }
     }
 
     private void clearMigratingFlag() {
@@ -270,6 +293,10 @@ public final class PartitionReplicaSyncRequestOffloadable
         UrgentPartitionRunnable<Void> trySetMigrating = new UrgentPartitionRunnable<>(partitionId(),
                 () -> partitionStateManager.clearMigratingFlag(partitionId()));
         getNodeEngine().getOperationService().execute(trySetMigrating);
-        trySetMigrating.future.joinInternal();
+        try {
+            trySetMigrating.future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw sneakyThrow(peel(e));
+        }
     }
 }

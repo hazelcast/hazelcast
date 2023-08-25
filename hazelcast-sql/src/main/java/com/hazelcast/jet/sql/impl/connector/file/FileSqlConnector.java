@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,16 @@
 package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 
@@ -34,6 +34,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.jet.core.Edge.between;
 
@@ -61,19 +62,19 @@ public class FileSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
     @Override
-    public boolean isStream() {
-        return false;
+    public String defaultObjectType() {
+        return "File";
     }
 
     @Nonnull
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
-    ) {
-        return resolveAndValidateFields(options, userFields);
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
+        return resolveAndValidateFields(externalResource.options(), userFields);
     }
 
     @Nonnull
@@ -90,11 +91,9 @@ public class FileSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
-        Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, options);
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> resolvedFields) {
+        Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, externalResource.options());
 
         return new FileTable.SpecificFileTable(
                 INSTANCE,
@@ -102,7 +101,8 @@ public class FileSqlConnector implements SqlConnector {
                 mappingName,
                 metadata.fields(),
                 metadata.processorMetaSupplier(),
-                metadata.queryTargetSupplier()
+                metadata.queryTargetSupplier(),
+                externalResource.objectType()
         );
     }
 
@@ -129,32 +129,46 @@ public class FileSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table0,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projections,
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
-        FileTable table = (FileTable) table0;
+        FileTable table = context.getTable();
 
-        Vertex vStart = dag.newUniqueVertex(table.toString(), table.processorMetaSupplier());
+        Vertex vStart = context.getDag().newUniqueVertex(table.toString(), table.processorMetaSupplier());
 
-        Vertex vEnd = dag.newUniqueVertex(
+        Vertex vEnd = context.getDag().newUniqueVertex(
                 "Project(" + table + ")",
                 SqlProcessors.rowProjector(
                         table.paths(),
                         table.types(),
                         table.queryTargetSupplier(),
-                        predicate,
-                        projections
+                        context.convertFilter(predicate),
+                        context.convertProjection(projection)
                 )
         );
 
-        dag.edge(between(vStart, vEnd).isolated());
+        context.getDag().edge(between(vStart, vEnd).isolated());
         return vEnd;
+    }
+
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
+    }
+
+    @Override
+    public Set<String> nonSensitiveConnectorOptions() {
+        Set<String> set = SqlConnector.super.nonSensitiveConnectorOptions();
+        // Note: OPTION_PATH and OPTION_GLOB are considered sensitive and won't be returned.
+        set.add(OPTION_SHARED_FILE_SYSTEM);
+        set.add(OPTION_IGNORE_FILE_NOT_FOUND);
+        return set;
     }
 }

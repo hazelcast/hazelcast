@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
@@ -49,6 +51,7 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NamedConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -80,6 +83,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -87,14 +91,19 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
 import static com.hazelcast.test.TestConfigUtils.NON_DEFAULT_BACKUP_COUNT;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -124,10 +133,16 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         return members[members.length - 1];
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testAddWanReplicationConfigIsNotSupported() {
         WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
-        getDriver().getConfig().addWanReplicationConfig(wanReplicationConfig);
+        wanReplicationConfig.setName(name);
+
+        UnsupportedOperationException exception = Assertions.catchThrowableOfType(
+                () -> getDriver().getConfig().addWanReplicationConfig(wanReplicationConfig),
+                UnsupportedOperationException.class);
+        assertNotNull(exception);
+        assertThat(exception).hasMessage("Adding new WAN config is not supported.");
     }
 
     @Test
@@ -447,6 +462,25 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapConfig_withDifferentOrderOfIndexes() {
+        MapConfig config = new MapConfig(name);
+        IndexConfig idx1 = new IndexConfig(IndexType.SORTED, "foo");
+        idx1.setName("idx1");
+        IndexConfig idx2 = new IndexConfig(IndexType.SORTED, "bar");
+        idx2.setName("idx2");
+        config.setIndexConfigs(List.of(idx1, idx2));
+
+        MapConfig reordered = new MapConfig(name);
+        reordered.setIndexConfigs(List.of(idx2, idx1));
+
+        driver.getConfig().addMapConfig(config);
+        assertThatNoException().isThrownBy(() -> driver.getConfig().addMapConfig(reordered));
+
+        assertConfigurationsEqualOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(reordered);
+    }
+
+    @Test
     public void testSetConfig_whenItemListenersConfigured() {
         SetConfig setConfig = getSetConfig(name);
         setConfig.addItemListenerConfig(getItemListenerConfig_byImplementation());
@@ -670,122 +704,103 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testDataConnectionConfig() {
+        Properties properties = new Properties();
+        properties.setProperty("prop1", "val1");
+        properties.setProperty("prop2", "val2");
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+                .setName("some-name")
+                .setType("dummy")
+                .setProperties(properties);
+
+
+        driver.getConfig().addDataConnectionConfig(dataConnectionConfig);
+        assertConfigurationsEqualOnAllMembers(dataConnectionConfig);
+    }
+
+    /**
+     * Reproducer for <a href="https://github.com/hazelcast/hazelcast/issues/24533">GH issue</a>.
+     */
+    @Test
+    public void testDataConnectionConfig_missingType() {
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig();
+
+        Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> driver.getConfig().addDataConnectionConfig(dataConnectionConfig));
+        assertThat(ex.getMessage())
+                .contains("Data connection type must be non-null and contain text")
+                .contains("Data connection name must be non-null and contain text");
+    }
+
+    private void assertConfigurationsEqualOnAllMembers(DataConnectionConfig expectedConfig) {
+        assertConfigurationsEqualOnAllMembers(expectedConfig, Config::getDataConnectionConfig);
+    }
+
     private void assertConfigurationsEqualOnAllMembers(CacheSimpleConfig config) {
-        String name = config.getName();
-        for (HazelcastInstance instance : members) {
-            CacheSimpleConfig registeredConfig = instance.getConfig().getCacheConfig(name);
-            assertEquals(config, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(config, Config::getCacheConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(QueueConfig queueConfig) {
-        String name = queueConfig.getName();
-        for (HazelcastInstance instance : members) {
-            QueueConfig registeredConfig = instance.getConfig().getQueueConfig(name);
-            assertEquals(queueConfig, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(queueConfig, Config::getQueueConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(CardinalityEstimatorConfig cardinalityEstimatorConfig) {
-        String name = cardinalityEstimatorConfig.getName();
-        for (HazelcastInstance instance : members) {
-            CardinalityEstimatorConfig registeredConfig = instance.getConfig().getCardinalityEstimatorConfig(name);
-            assertEquals(cardinalityEstimatorConfig, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(cardinalityEstimatorConfig, Config::getCardinalityEstimatorConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(MultiMapConfig multiMapConfig) {
-        String name = multiMapConfig.getName();
-        for (HazelcastInstance instance : members) {
-            MultiMapConfig registeredConfig = instance.getConfig().getMultiMapConfig(name);
-            assertEquals(multiMapConfig, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(multiMapConfig, Config::getMultiMapConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(ExecutorConfig executorConfig) {
-        String name = executorConfig.getName();
-        for (HazelcastInstance instance : members) {
-            ExecutorConfig registeredConfig = instance.getConfig().getExecutorConfig(name);
-            assertEquals(executorConfig, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(executorConfig, Config::getExecutorConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(RingbufferConfig ringbufferConfig) {
-        String name = ringbufferConfig.getName();
-        for (HazelcastInstance instance : members) {
-            RingbufferConfig registeredConfig = instance.getConfig().getRingbufferConfig(name);
-            assertEquals(ringbufferConfig, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(ringbufferConfig, Config::getRingbufferConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(DurableExecutorConfig durableExecutorConfig) {
-        String name = durableExecutorConfig.getName();
-        for (HazelcastInstance instance : members) {
-            DurableExecutorConfig registeredConfig = instance.getConfig().getDurableExecutorConfig(name);
-            assertEquals(durableExecutorConfig, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(durableExecutorConfig, Config::getDurableExecutorConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(ScheduledExecutorConfig scheduledExecutorConfig) {
-        String name = scheduledExecutorConfig.getName();
-        for (HazelcastInstance instance : members) {
-            ScheduledExecutorConfig registeredConfig = instance.getConfig().getScheduledExecutorConfig(name);
-            assertEquals(scheduledExecutorConfig, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(scheduledExecutorConfig, Config::getScheduledExecutorConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(SetConfig setConfig) {
-        String name = setConfig.getName();
-        for (HazelcastInstance instance : members) {
-            SetConfig registeredConfig = instance.getConfig().getSetConfig(name);
-            assertEquals(setConfig, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(setConfig, Config::getSetConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(MapConfig mapConfig) {
-        String name = mapConfig.getName();
-        for (HazelcastInstance instance : members) {
-            MapConfig registeredConfig = instance.getConfig().getMapConfig(name);
-            assertEquals(mapConfig, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(mapConfig, Config::getMapConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(ReplicatedMapConfig replicatedMapConfig) {
-        String name = replicatedMapConfig.getName();
-        for (HazelcastInstance instance : members) {
-            ReplicatedMapConfig registeredConfig = instance.getConfig().getReplicatedMapConfig(name);
-            assertEquals(replicatedMapConfig, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(replicatedMapConfig, Config::getReplicatedMapConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(ListConfig listConfig) {
-        String name = listConfig.getName();
-        for (HazelcastInstance instance : members) {
-            ListConfig registeredConfig = instance.getConfig().getListConfig(name);
-            assertEquals(listConfig, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(listConfig, Config::getListConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(FlakeIdGeneratorConfig config) {
-        for (HazelcastInstance instance : members) {
-            FlakeIdGeneratorConfig registeredConfig = instance.getConfig().getFlakeIdGeneratorConfig(config.getName());
-            assertEquals(config, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(config, Config::getFlakeIdGeneratorConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(TopicConfig topicConfig) {
-        String name = topicConfig.getName();
-        for (HazelcastInstance instance : members) {
-            TopicConfig registeredConfig = instance.getConfig().getTopicConfig(name);
-            assertEquals(topicConfig, registeredConfig);
-        }
+        assertConfigurationsEqualOnAllMembers(topicConfig, Config::getTopicConfig);
     }
 
     private void assertConfigurationsEqualOnAllMembers(ReliableTopicConfig reliableTopicConfig) {
-        String name = reliableTopicConfig.getName();
+        assertConfigurationsEqualOnAllMembers(reliableTopicConfig, Config::getReliableTopicConfig);
+    }
+
+    private <T extends NamedConfig> void assertConfigurationsEqualOnAllMembers(T expectedConfig, BiFunction<Config, String, T> getterByName) {
         for (HazelcastInstance instance : members) {
-            ReliableTopicConfig registeredConfig = instance.getConfig().getReliableTopicConfig(name);
-            assertEquals(reliableTopicConfig, registeredConfig);
+            T registeredConfig = getterByName.apply(instance.getConfig(), expectedConfig.getName());
+            assertThat(registeredConfig).isEqualTo(expectedConfig);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.unparseOptions;
 import static java.util.Objects.requireNonNull;
 
 public class SqlCreateJob extends SqlCreate {
@@ -103,27 +104,11 @@ public class SqlCreateJob extends SqlCreate {
         }
         name.unparse(writer, leftPrec, rightPrec);
 
-        if (options.size() > 0) {
-            writer.newlineAndIndent();
-            writer.keyword("OPTIONS");
-            SqlWriter.Frame withFrame = writer.startList("(", ")");
-            for (SqlNode property : options) {
-                printIndent(writer);
-                property.unparse(writer, leftPrec, rightPrec);
-            }
-            writer.newlineAndIndent();
-            writer.endList(withFrame);
-        }
+        unparseOptions(writer, options);
 
         writer.newlineAndIndent();
         writer.keyword("AS");
         sqlInsert.unparse(writer, leftPrec, rightPrec);
-    }
-
-    private void printIndent(SqlWriter writer) {
-        writer.sep(",", false);
-        writer.newlineAndIndent();
-        writer.print(" ");
     }
 
     @Override
@@ -133,7 +118,7 @@ public class SqlCreateJob extends SqlCreate {
         }
 
         Set<String> optionNames = new HashSet<>();
-        for (SqlNode option0 : options.getList()) {
+        for (SqlNode option0 : options) {
             SqlOption option = (SqlOption) option0;
             String key = option.keyString();
             String value = option.valueString();
@@ -148,26 +133,19 @@ public class SqlCreateJob extends SqlCreate {
                         case "exactlyOnce":
                             jobConfig.setProcessingGuarantee(EXACTLY_ONCE);
                             break;
-
                         case "atLeastOnce":
                             jobConfig.setProcessingGuarantee(AT_LEAST_ONCE);
                             break;
-
                         case "none":
                             jobConfig.setProcessingGuarantee(NONE);
                             break;
-
                         default:
                             throw validator.newValidationError(option.value(),
                                     RESOURCE.processingGuaranteeBadValue(key, value));
                     }
                     break;
                 case "snapshotIntervalMillis":
-                    try {
-                        jobConfig.setSnapshotIntervalMillis(Long.parseLong(value));
-                    } catch (NumberFormatException e) {
-                        throw validator.newValidationError(option.value(), RESOURCE.jobOptionIncorrectNumber(key, value));
-                    }
+                    jobConfig.setSnapshotIntervalMillis(parseLong(validator, option));
                     break;
                 case "autoScaling":
                     jobConfig.setAutoScaling(Boolean.parseBoolean(value));
@@ -185,7 +163,10 @@ public class SqlCreateJob extends SqlCreate {
                     jobConfig.setInitialSnapshotName(value);
                     break;
                 case "maxProcessorAccumulatedRecords":
-                    jobConfig.setMaxProcessorAccumulatedRecords(Long.parseLong(value));
+                    jobConfig.setMaxProcessorAccumulatedRecords(parseLong(validator, option));
+                    break;
+                case "suspendOnFailure":
+                    jobConfig.setSuspendOnFailure(Boolean.parseBoolean(value));
                     break;
                 default:
                     throw validator.newValidationError(option.key(), RESOURCE.unknownJobOption(key));
@@ -193,5 +174,14 @@ public class SqlCreateJob extends SqlCreate {
         }
 
         validator.validate(sqlInsert);
+    }
+
+    static long parseLong(SqlValidator validator, SqlOption option) {
+        try {
+            return Long.parseLong(option.valueString());
+        } catch (NumberFormatException e) {
+            throw validator.newValidationError(option.value(),
+                    RESOURCE.jobOptionIncorrectNumber(option.keyString(), option.valueString()));
+        }
     }
 }

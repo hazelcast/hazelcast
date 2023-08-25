@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,13 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static java.util.Arrays.asList;
@@ -33,6 +38,8 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlFilterProjectTest extends SqlTestSupport {
 
     private static SqlService sqlService;
@@ -475,7 +482,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_projectFilterProjectExpression()  {
+    public void test_projectFilterProjectExpression() {
         TestBatchSqlConnector.create(sqlService, "t", 3);
 
         assertRowsAnyOrder(
@@ -695,6 +702,30 @@ public class SqlFilterProjectTest extends SqlTestSupport {
                 .hasMessageContaining("Unexpected parameter count: expected 1, got 2");
     }
 
+    @Test // for https://github.com/hazelcast/hazelcast/issues/21640
+    public void test_selectByKey_deoptToFullScan() {
+        String mapOneName = "mapOne";
+        createMapping(mapOneName, int.class, String.class);
+
+        String mapTwoName = "mapTwo";
+        createMapping(mapTwoName, int.class, String.class);
+
+        instance().getMap(mapOneName).put(1, "value-1");
+        instance().getMap(mapOneName).put(2, "value-2");
+        instance().getMap(mapOneName).put(3, "value-3");
+
+        instance().getMap(mapTwoName).put(1, "value-1");
+        instance().getMap(mapTwoName).put(2, "value-2");
+        instance().getMap(mapTwoName).put(3, "value-3");
+
+        assertRowsAnyOrder(
+                "SELECT o.this as mId FROM mapOne AS o" +
+                        " JOIN mapTwo AS a ON o.__key = a.__key" +
+                        " WHERE a.__key IN (1)",
+                singletonList(new Row("value-1"))
+        );
+    }
+
     @Test
     // test for https://github.com/hazelcast/hazelcast/issues/19983
     // Checks the case when select-by-key optimization is used, but the __key (the 0-th) field isn't selected.
@@ -704,5 +735,19 @@ public class SqlFilterProjectTest extends SqlTestSupport {
 
         createMapping("test", Long.class, Person.class);
         assertRowsAnyOrder("select name from test where __key = 1", singletonList(new Row("foo")));
+    }
+
+    @Test
+    // test for https://github.com/hazelcast/hazelcast/issues/21954
+    public void test_filterSpecificValueOrNull() {
+        String mapName = "test";
+        createMapping(mapName, Integer.class, Person.class);
+
+        IMap<Object, Object> map = instance().getMap(mapName);
+        map.put(42, new Person(42, null));
+        map.put(43, new Person(43, "foo"));
+
+        assertRowsAnyOrder("select name from " + mapName + " where name is null or name='foo'", rows(1, null, "foo"));
+        assertRowsAnyOrder("select __key from " + mapName + " where name is null or name='foo'", rows(1, 42, 43));
     }
 }

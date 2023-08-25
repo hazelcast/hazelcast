@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Iterator;
-import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 
 /**
  * An iterator over collection of {@link Operation} which has
@@ -32,9 +33,9 @@ import java.util.function.BooleanSupplier;
 public interface ChunkSupplier extends Iterator<Operation> {
 
     /**
-     * @param isEndOfChunk boolean supplier to signal end of chunk.
+     * @param isEndOfChunk {@link Predicate} to test end of chunk.
      */
-    default void signalEndOfChunkWith(BooleanSupplier isEndOfChunk) {
+    default void signalEndOfChunkWith(Predicate<BufferObjectDataOutput> isEndOfChunk) {
 
     }
 }

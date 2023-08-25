@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,15 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.logical.WatermarkLogicalRel;
-import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.rules.TransformationRule;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.toPhysicalConvention;
 
-final class WatermarkPhysicalRule extends RelOptRule {
+final class WatermarkPhysicalRule extends RelOptRule implements TransformationRule {
 
     static final RelOptRule INSTANCE = new WatermarkPhysicalRule();
 
@@ -31,10 +33,7 @@ final class WatermarkPhysicalRule extends RelOptRule {
         super(
                 operand(
                         WatermarkLogicalRel.class,
-                        LOGICAL, node -> {
-                            // if we end up here it means watermarks were not pushed down into scan during logical phase
-                            throw QueryException.error("Ordering function cannot be applied to input table");
-                        },
+                        LOGICAL,
                         any()
                 ),
                 WatermarkPhysicalRule.class.getSimpleName()
@@ -43,6 +42,12 @@ final class WatermarkPhysicalRule extends RelOptRule {
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        throw new UnsupportedOperationException("Should never be called");
+        RelNode rel = call.rel(0);
+        call.transformTo(
+                new MustNotExecutePhysicalRel(
+                        rel.getCluster(),
+                        toPhysicalConvention(rel.getTraitSet()),
+                        rel.getRowType(),
+                        "IMPOSE_ORDER call is not supported in this configuration"));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.SECURITY_RECOMMENDATI
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_SERVER_BIND_ANY;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 
 import com.hazelcast.config.AdvancedNetworkConfig;
@@ -81,6 +82,12 @@ class NodeSecurityBanner {
         addSecurityFeatureCheck(sb,
                 "Bind Server sockets to a single network interface (disable " + SOCKET_SERVER_BIND_ANY.getName() + ")",
                 !bindAny);
+        Set<String> mcTrustedInterfaces = config.getManagementCenterConfig().getTrustedInterfaces();
+        boolean mcTrustedInterfacesUsed = mcTrustedInterfaces != null && !mcTrustedInterfaces.isEmpty();
+        addSecurityFeatureCheck(sb,
+                "Allow Management Center operations only from specified remote addresses"
+                + " (use management-center/trusted-interfaces configuration)",
+                mcTrustedInterfacesUsed);
         StringBuilder tlsSb = new StringBuilder();
         boolean tlsUsed = true;
         if (advancedNetworkConfig.isEnabled()) {

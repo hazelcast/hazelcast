@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,24 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.partition.AntiEntropyCorrectnessTest.setBackupPacketDropFilter;
 import static org.junit.Assert.assertFalse;
@@ -38,6 +44,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionServiceSafetyCheckTest extends PartitionCorrectnessTestSupport {
+
+    private static final ILogger LOGGER = Logger.getLogger(PartitionCorrectnessTestSupport.class);
 
     private static final float BLOCK_RATIO = 0.95f;
 
@@ -149,17 +157,65 @@ public class PartitionServiceSafetyCheckTest extends PartitionCorrectnessTestSup
 
         fillData(hz);
 
-        assertTrueFiveSeconds(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertFalse(isAllInSafeState(instances));
+        assertTrueFiveSeconds(() -> {
+            assertFalse(isAllInSafeState(instances));
 
-                for (HazelcastInstance instance : instances) {
-                    PartitionService ps = instance.getPartitionService();
-                    assertFalse(ps.isClusterSafe());
-                }
+            for (HazelcastInstance instance : instances) {
+                PartitionService ps = instance.getPartitionService();
+                assertFalse(ps.isClusterSafe());
             }
         });
+    }
+
+    @Category(SlowTest.class)
+    @Test(timeout = 120000)
+    public void clusterSafe_completes_whenInvokedFromCommonPool() throws InterruptedException {
+        Config config = getConfig(true, true);
+
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        startNodes(config, nodeCount);
+
+        final Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
+
+        // ensure we start enough threads to block all threads of FJP#commonPool
+        int threadCount = ForkJoinPool.commonPool().getParallelism() + 2;
+        spawn(() -> {
+            // trigger partition assignment while many threads are querying cluster safety
+            sleepSeconds(5);
+            warmUpPartitions(instances);
+            fillData(hz);
+        });
+        ExecutorService executorService = ForkJoinPool.commonPool();
+        // no assertions are actually executed. We only care that isClusterSafe
+        // does not hang indefinitely
+        AtomicInteger loopCount = new AtomicInteger();
+        assertTrueAllTheTime(() -> {
+            LOGGER.info(">> loop start: " + loopCount.incrementAndGet());
+            long start = System.currentTimeMillis();
+            CountDownLatch startQueryClusterSafe = new CountDownLatch(1);
+            CountDownLatch completed = new CountDownLatch(threadCount);
+            for (int i = 0; i < threadCount; i++) {
+                executorService.submit(() -> {
+                    try {
+                        startQueryClusterSafe.await();
+                        for (HazelcastInstance instance : instances) {
+                            PartitionService ps = instance.getPartitionService();
+                            // just invoke isClusterSafe, no need to assert result
+                            // we only care about the call eventually completing
+                                    ps.isClusterSafe();
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } finally {
+                        completed.countDown();
+                    }
+                });
+            }
+            startQueryClusterSafe.countDown();
+            completed.await();
+            long end = System.currentTimeMillis();
+            LOGGER.info(">> loop finish: " + TimeUnit.MILLISECONDS.toSeconds(end - start) + "s " + loopCount);
+        }, 30);
     }
 
     @Test

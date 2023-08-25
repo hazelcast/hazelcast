@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,15 +84,18 @@ public class SqlSplitBrainTest extends JetSplitBrainTestSupport {
             }
         };
 
-        testSplitBrain(1, 1, beforeSplit, null, null);
+        testSplitBrain(1, 1, beforeSplit, null, null, 3);
 
         done.set(true);
-        boolean stuck = false;
-        for (Thread t : threads) {
-            t.join(1000);
-            if (t.isAlive()) {
-                logger.info("thread " + t + " stuck");
-                stuck = true;
+        boolean stuck = isStuck(threads, 1000);
+        if (stuck) {
+            // give some grace period
+            logger.warning("Waiting a bit longer for possibly long-executing queries");
+            stuck = isStuck(threads, 15000);
+            if (!stuck) {
+                // queries should be fast, if they are slow, this requires some investigation
+                // or maybe increasing the timeout.
+                fail("All queries finished, but some queries took longer than expected");
             }
         }
 
@@ -101,5 +104,23 @@ public class SqlSplitBrainTest extends JetSplitBrainTestSupport {
         if (stuck) {
             fail("some threads were stuck");
         }
+    }
+
+    private boolean isStuck(Thread[] threads, int timeoutMillis) throws InterruptedException {
+        boolean stuck = false;
+        for (Thread t : threads) {
+            t.join(timeoutMillis);
+            if (t.isAlive()) {
+                StringBuilder dump = new StringBuilder("thread " + t.getName() + " stuck");
+                StackTraceElement[] stackTraceElements = t.getStackTrace();
+                for (StackTraceElement stackTraceElement : stackTraceElements) {
+                    dump.append("\n\t\tat ");
+                    dump.append(stackTraceElement);
+                }
+                logger.info(dump.toString());
+                stuck = true;
+            }
+        }
+        return stuck;
     }
 }

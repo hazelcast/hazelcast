@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.string.ConcatWSFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -44,6 +44,7 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testColumn() {
         ExpressionType<?>[] allTypes = ExpressionTypes.all();
+
         for (int i = 0; i < allTypes.length; i++) {
             for (int j = i; j < allTypes.length; j++) {
                 ExpressionType<?> type1 = allTypes[i];
@@ -173,7 +174,7 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         ConcatWSFunction corrupted2 = ConcatWSFunction.create(ConstantExpression.create("-", VARCHAR), ConstantExpression.create("10", VARCHAR), ConstantExpression.create("2", VARCHAR));
         ConcatWSFunction corrupted3 = ConcatWSFunction.create(ConstantExpression.create("-", VARCHAR), ConstantExpression.create("1", INT), ConstantExpression.create("2", VARCHAR));
         ConcatWSFunction corrupted4 = ConcatWSFunction.create(ConstantExpression.create("-", VARCHAR), ConstantExpression.create("1", VARCHAR), ConstantExpression.create(null, VARCHAR));
-        ConcatWSFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CONCAT_WS);
+        ConcatWSFunction restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_CONCAT_WS);
 
         checkEquals(original, restored, true);
         checkEquals(corrupted1, restored, false);

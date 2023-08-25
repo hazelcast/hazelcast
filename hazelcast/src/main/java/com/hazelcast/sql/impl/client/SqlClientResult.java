@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,18 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.client.impl.connection.ClientConnection;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.CoreQueryUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.ResultIterator;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -32,6 +35,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.annotation.Nonnull;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -39,11 +43,13 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * A wrapper around the normal client result that tracks the first response, and manages close requests.
  */
 public class SqlClientResult implements SqlResult {
-
     private final SqlClientService service;
-    private final Connection connection;
-    private final QueryId queryId;
     private final int cursorBufferSize;
+    private final Function<QueryId, ClientMessage> sqlExecuteMessageSupplier;
+    private final boolean selectQuery;
+    private volatile QueryId queryId;
+    private ClientConnection connection;
+    private int resubmissionCount;
 
     /** Mutex to synchronize access between operations. */
     private final Object mux = new Object();
@@ -57,14 +63,32 @@ public class SqlClientResult implements SqlResult {
     /** Whether the result is closed. When {@code true}, there is no need to send the "cancel" request to the server. */
     private boolean closed;
 
+    /** Whether any SqlRow was returned from an iterator. */
+    private volatile boolean returnedAnyResult;
+
+    /** Whether the result set is unbounded. */
+    private volatile Boolean isInfiniteRows;
+
     /** Fetch descriptor. Available when the fetch operation is in progress. */
     private SqlFetchResult fetch;
 
-    public SqlClientResult(SqlClientService service, Connection connection, QueryId queryId, int cursorBufferSize) {
+    /** Whether the last fetch() invoked resubmission. */
+    private boolean lastFetchResubmitted;
+
+    public SqlClientResult(
+            SqlClientService service,
+            ClientConnection connection,
+            QueryId queryId,
+            int cursorBufferSize,
+            Function<QueryId, ClientMessage> sqlExecuteMessageSupplier,
+            SqlStatement statement
+    ) {
         this.service = service;
         this.connection = connection;
         this.queryId = queryId;
         this.cursorBufferSize = cursorBufferSize;
+        this.sqlExecuteMessageSupplier = sqlExecuteMessageSupplier;
+        this.selectQuery = statement.getSql().trim().toLowerCase().startsWith("select");
     }
 
     /**
@@ -73,9 +97,11 @@ public class SqlClientResult implements SqlResult {
     public void onExecuteResponse(
         SqlRowMetadata rowMetadata,
         SqlPage rowPage,
-        long updateCount
+        long updateCount,
+        Boolean isInfiniteRows
     ) {
         synchronized (mux) {
+            this.isInfiniteRows = isInfiniteRows;
             if (closed) {
                 // The result is already closed, ignore the response.
                 return;
@@ -92,6 +118,34 @@ public class SqlClientResult implements SqlResult {
                 markClosed();
             }
 
+            mux.notifyAll();
+        }
+    }
+
+    public void onResubmissionResponse(SqlResubmissionResult result) {
+        synchronized (mux) {
+            if (closed) {
+                // The result is already closed, ignore the response.
+                return;
+            }
+
+            if (state != null && state.iterator != null && !state.iterator.rowMetadata.equals(result.getRowMetadata())) {
+                throw new HazelcastSqlException(queryId.getMemberId(), SqlErrorCode.GENERIC,
+                        "Row metadata changed after resubmission", null, null);
+            }
+
+            this.fetch = null;
+            this.connection = result.getConnection();
+            this.resubmissionCount++;
+
+            if (result.getRowMetadata() != null) {
+                ClientIterator iterator = state == null ? new ClientIterator(result.getRowMetadata()) : state.iterator;
+                iterator.onNextPage(result.getRowPage());
+                state = new State(iterator, -1, null);
+            } else {
+                state = new State(null, result.getUpdateCount(), null);
+                markClosed();
+            }
             mux.notifyAll();
         }
     }
@@ -186,7 +240,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     /**
-     * Mark result as closed. Invoked when we received an update count or the last page.
+     * Mark the result as closed. Invoked when we receive an update count or the last page.
      */
     private void markClosed() {
         synchronized (mux) {
@@ -198,6 +252,7 @@ public class SqlClientResult implements SqlResult {
      * Fetches the next page.
      */
     private SqlPage fetch(long timeoutNanos) {
+        lastFetchResubmitted = false;
         synchronized (mux) {
             if (fetch != null) {
                 if (fetch.getError() != null) {
@@ -228,7 +283,15 @@ public class SqlClientResult implements SqlResult {
             }
 
             if (fetch.getError() != null) {
-                throw wrap(fetch.getError());
+                SqlResubmissionResult resubmissionResult = service.resubmitIfPossible(this, fetch.getError());
+                if (resubmissionResult == null) {
+                    throw wrap(fetch.getError());
+                }
+                lastFetchResubmitted = true;
+                onResubmissionResponse(resubmissionResult);
+
+                // In onResubmissionResponse we change currentPage on iterator, so we now need to return it.
+                return state.iterator.currentPage;
             } else {
                 SqlPage page = fetch.getPage();
                 assert page != null;
@@ -287,7 +350,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     private HazelcastSqlException wrap(Throwable error) {
-        throw QueryUtils.toPublicException(error, service.getClientId());
+        throw CoreQueryUtils.toPublicException(error, service.getClientId());
     }
 
     private static final class State {
@@ -321,11 +384,15 @@ public class SqlClientResult implements SqlResult {
             if (currentPosition == currentRowCount) {
                 // Reached end of the page. Try fetching the next one if possible.
                 if (!last) {
-                    SqlPage page = fetch(timeUnit.toNanos(timeout));
-                    if (page == null) {
-                        return HasNextResult.TIMEOUT;
-                    }
-                    onNextPage(page);
+                    do {
+                        SqlPage page = fetch(timeUnit.toNanos(timeout));
+                        if (page == null) {
+                            return HasNextResult.TIMEOUT;
+                        }
+                        onNextPage(page);
+                        // The fetch() method may invoke resubmission that invokes SqlExecute operation. The SqlExecute may end
+                        // without any results in the buffer. In that case we need to invoke fetch() again.
+                    } while (lastFetchResubmitted && (!last && currentPosition == currentRowCount));
                 } else {
                     // No more pages expected, so return false.
                     return HasNextResult.DONE;
@@ -354,6 +421,7 @@ public class SqlClientResult implements SqlResult {
 
             JetSqlRow row = getCurrentRow();
             currentPosition++;
+            returnedAnyResult = true;
             return new SqlRowImpl(rowMetadata, row);
         }
 
@@ -378,5 +446,35 @@ public class SqlClientResult implements SqlResult {
 
             return new JetSqlRow(service.getSerializationService(), values);
         }
+    }
+
+    ClientMessage getSqlExecuteMessage(QueryId newId) {
+        return sqlExecuteMessageSupplier.apply(newId);
+    }
+
+    boolean isSelectQuery() {
+        return selectQuery;
+    }
+
+    boolean isReturnedAnyResult() {
+        return returnedAnyResult;
+    }
+
+    QueryId getQueryId() {
+        return queryId;
+    }
+
+    void setQueryId(QueryId queryId) {
+        this.queryId = queryId;
+    }
+
+    boolean wasResubmission() {
+        synchronized (mux) {
+            return resubmissionCount > 0;
+        }
+    }
+
+    public Boolean isInfiniteRows() {
+        return isInfiniteRows;
     }
 }

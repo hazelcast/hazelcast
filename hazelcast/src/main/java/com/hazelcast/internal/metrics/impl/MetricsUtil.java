@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,13 @@ final class MetricsUtil {
      *
      * @param descriptor The descriptor to update
      * @param level      The level of the metric to adjust with
+     * @param minimumLevel      The level of metrics exposed for debugging purposes
      */
-    static void adjustExclusionsWithLevel(MetricDescriptor descriptor, ProbeLevel level) {
+    static void adjustExclusionsWithLevel(MetricDescriptor descriptor, ProbeLevel level, ProbeLevel minimumLevel) {
+        if (DEBUG == minimumLevel) {
+            return;
+        }
+
         if (DEBUG != level) {
             return;
         }
@@ -59,27 +64,33 @@ final class MetricsUtil {
      *
      * @param function The {@link ProbeFunction} the excluded targets to
      *                 be excluded from
+     * @param minimumLevel The level of metrics exposed for debugging purposes
      * @return the excluded targets
      */
-    static Collection<MetricTarget> extractExcludedTargets(ProbeFunction function) {
+    static Collection<MetricTarget> extractExcludedTargets(ProbeFunction function, ProbeLevel minimumLevel) {
         if (function instanceof FieldProbe) {
             FieldProbe fieldProbe = (FieldProbe) function;
-            return extractExcludedTargets(fieldProbe.probe, fieldProbe.sourceMetadata);
+            return extractExcludedTargets(fieldProbe.probe, fieldProbe.sourceMetadata, minimumLevel);
         }
 
         if (function instanceof MethodProbe) {
             MethodProbe methodProbe = (MethodProbe) function;
-            return extractExcludedTargets(methodProbe.probe, methodProbe.sourceMetadata);
+            return extractExcludedTargets(methodProbe.probe, methodProbe.sourceMetadata, minimumLevel);
         }
 
         return emptySet();
     }
 
-    private static Collection<MetricTarget> extractExcludedTargets(CachedProbe probe, SourceMetadata sourceMetadata) {
+    private static Collection<MetricTarget> extractExcludedTargets(CachedProbe probe, SourceMetadata sourceMetadata,
+                                                                   ProbeLevel minimumLevel) {
         ProbeLevel level = probe.level();
         Collection<MetricTarget> excludedTargetsClass = sourceMetadata.excludedTargetsClass();
         Set<MetricTarget> excludedTargetsProbe = asSet(probe.excludedTargets());
         Set<MetricTarget> excludedTargetsUnion = MetricTarget.union(excludedTargetsClass, excludedTargetsProbe);
+
+        if (DEBUG == minimumLevel) {
+            return excludedTargetsUnion;
+        }
 
         if (DEBUG != level) {
             return excludedTargetsUnion;

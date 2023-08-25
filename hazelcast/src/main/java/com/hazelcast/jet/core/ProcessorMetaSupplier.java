@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.DataConnection;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetService;
@@ -33,14 +36,16 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.PermissionsUtil;
+import com.hazelcast.spi.annotation.Beta;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.io.Serializable;
+import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,22 +53,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static java.util.Collections.singletonList;
 
 /**
- * Factory of {@link ProcessorSupplier} instances. The starting point of
- * the chain leading to the eventual creation of {@code Processor} instances
- * on each cluster member:
+ * Factory of {@link ProcessorSupplier} instances. The starting point of the
+ * chain leading to the eventual creation of {@link Processor} instances on
+ * each cluster member:
  * <ol><li>
- * client creates {@code ProcessorMetaSupplier} as a part of the DAG;
+ * client or member creates {@code ProcessorMetaSupplier} as a part of the DAG;
  * </li><li>
- * serializes it and sends to a cluster member;
+ * client or member sends it to the job coordinator (if the member is job coordinator
+ * and the DAG consists of {@linkplain #isReusable reusable} {@code
+ * ProcessorMetaSupplier}s, the serialization may be skipped);
  * </li><li>
- * the member deserializes and uses it to create one {@code ProcessorSupplier}
- * for each cluster member;
+ * the job coordinator uses it to create one {@code
+ * ProcessorSupplier} for each cluster member;
  * </li><li>
  * serializes each {@code ProcessorSupplier} and sends it to its target member;
  * </li><li>
@@ -71,11 +81,11 @@ import static java.util.Collections.singletonList;
  * of {@code Processor} as requested by the <em>parallelism</em> property on
  * the corresponding {@code Vertex}.
  * </li></ol>
- * Before being asked to create {@code ProcessorSupplier}s this meta-supplier will
- * be given access to the Hazelcast instance and, in particular, its cluster topology
- * and partitioning services. It can use the information from these services to
- * precisely parameterize each {@code Processor} instance that will be created on
- * each member.
+ * Before being asked to create {@code ProcessorSupplier}s this meta-supplier
+ * will be given access to the Hazelcast instance and, in particular, its
+ * cluster topology and partitioning services. It can use the information from
+ * these services to precisely parameterize each {@code Processor} instance
+ * that will be created on each member.
  *
  * @since Jet 3.0
  */
@@ -113,12 +123,25 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
-     * Called on the cluster member that receives the client request, after
-     * deserializing the meta-supplier instance. Gives access to the Hazelcast
-     * instance's services and provides the parallelism parameters determined
-     * from the cluster size.
+     * Called on the cluster member that receives the job request. Gives access
+     * to the Hazelcast instance's services and provides the parallelism
+     * parameters determined from the cluster size.
+     *
+     * @see #isReusable()
      */
     default void init(@Nonnull Context context) throws Exception {
+    }
+
+    /**
+     * Returns {@code true} if both the {@link #init(Context)} and {@link
+     * #get(List)} methods of this instance are cooperative. If they are not,
+     * the call to the {@code init()} and {@code get()} method is off-loaded to
+     * another thread.
+     *
+     * @since 5.2
+     */
+    default boolean initIsCooperative() {
+        return false;
     }
 
     /**
@@ -131,9 +154,23 @@ public interface ProcessorMetaSupplier extends Serializable {
      * The method will be called once per job execution on the job's
      * <em>coordinator</em> member. {@code init()} will have already
      * been called.
+     *
+     * @see #isReusable()
      */
+
     @Nonnull
     Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses);
+
+    /**
+     * Returns {@code true} if the {@link #close(Throwable)} method of this
+     * instance is cooperative. If it's not, the call to the {@code close()}
+     * method is off-loaded to another thread.
+     *
+     * @since 5.2
+     */
+    default boolean closeIsCooperative() {
+        return false;
+    }
 
     /**
      * Called on coordinator member after execution has finished on all
@@ -153,11 +190,55 @@ public interface ProcessorMetaSupplier extends Serializable {
      *
      * @param error the exception (if any) that caused the job to fail;
      *              {@code null} in the case of successful job completion.
-     *              Note that it might not be the actual error that caused the job
-     *              to fail - it can be several other exceptions. We only guarantee
-     *              that it's non-null if the job didn't complete successfully.
+     *                           Note that it might not be the actual error that caused the job
+     *                           to fail - it can be several other exceptions. We only guarantee
+     *                           that it's non-null if the job didn't complete successfully.
+     * @see #isReusable()
      */
     default void close(@Nullable Throwable error) throws Exception {
+    }
+
+    /**
+     * Returns {@code true} if the same instance can be reused in different job
+     * executions or in different vertices. In that case, {@link #init}, {@link
+     * #get} and {@link #close} methods must be thread-safe and obey additional
+     * conditions defined below.
+     * <p>
+     * When a job is submitted from a client, the job definition is serialized,
+     * so the job coordinator will receive a different copy of processor
+     * meta-suppliers even if they are used multiple times within the same DAG,
+     * or across different DAGs, or submitted through different jobs. While this
+     * serialization mechanism ensures that processor meta-supplier instances do
+     * not share any internal state, it is unnecessary —and avoided— for jobs
+     * consisting of reusable meta-suppliers and submitted from the job
+     * coordinator —which is always the case for member-originated light jobs.
+     * <p>
+     * Non-reusable meta-suppliers <em>(default)</em> have a simple order of
+     * method executions: {@link #init} (once), {@link #get} (at most once after
+     * {@link #init}, {@link #close} (last).
+     * <p>
+     * Reusable meta-suppliers differ because the meta supplier instance may be
+     * shared and reused. That is why: <ol>
+     * <li> {@link #init} can be invoked multiple times (also after
+     * {@link #close}).
+     * <li> {@link #get} can be invoked multiple times, but each {@link #get}
+     * invocation will be preceded by {@link #init} invocation for given
+     * job execution.
+     * <li> {@link #close} can be invoked multiple times with or without
+     * preceding invocations of the other methods.
+     * <li> Meta-supplier method invocation sequences for different concurrent
+     * job executions may be interleaved.
+     * </ol>
+     * It is recommended that reusable meta-supplier does not have any mutable
+     * state that is changed by any of the methods. It is, however, allowed to
+     * initialize some thread-safe constant fields in {@link #init} method, for
+     * example, save some constant data from {@link Context} for further usage.
+     * Note, however, that cluster topology may change and should not be stored.
+     *
+     * @since 5.3
+     */
+    default boolean isReusable() {
+        return false;
     }
 
     /**
@@ -165,8 +246,8 @@ public interface ProcessorMetaSupplier extends Serializable {
      * returns the same instance for each given {@code Address}.
      *
      * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
-     * @param permission the required permission to run the processor
-     * @param procSupplier the processor supplier
+     * @param permission                the required permission to run the processor
+     * @param procSupplier              the processor supplier
      */
     @Nonnull
     static ProcessorMetaSupplier of(
@@ -243,7 +324,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * ProcessorSupplier}.
      *
      * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
-     * @param addressToSupplier the mapping from address to ProcessorSupplier
+     * @param addressToSupplier         the mapping from address to ProcessorSupplier
      */
     @Nonnull
     static ProcessorMetaSupplier of(
@@ -257,9 +338,25 @@ public interface ProcessorMetaSupplier extends Serializable {
                 return preferredLocalParallelism;
             }
 
-            @Nonnull @Override
+            @Nonnull
+            @Override
             public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return addressToSupplier;
+            }
+
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public boolean initIsCooperative() {
+                return true;
+            }
+
+            @Override
+            public boolean closeIsCooperative() {
+                return true;
             }
         };
     }
@@ -371,12 +468,11 @@ public interface ProcessorMetaSupplier extends Serializable {
      * The vertex containing the {@code ProcessorMetaSupplier} must have a local
      * parallelism setting of 1, otherwise {code IllegalArgumentException} is thrown.
      *
-     * @param supplier the supplier that will be wrapped
+     * @param supplier     the supplier that will be wrapped
      * @param partitionKey the supplier will only be created on the node that owns the supplied
      *                     partition key
-     * @param permission the required permission to run the processor
+     * @param permission   the required permission to run the processor
      * @return the wrapped {@code ProcessorMetaSupplier}
-     *
      * @throws IllegalArgumentException if vertex has local parallelism setting of greater than 1
      */
     @Nonnull
@@ -395,7 +491,7 @@ public interface ProcessorMetaSupplier extends Serializable {
                             "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
                                     + "supports only total parallelism of 1. Local parallelism must be 1.");
                 }
-                String key = StringPartitioningStrategy.getPartitionKey(partitionKey);
+                String key = getPartitionKey(partitionKey);
                 int partitionId = context.hazelcastInstance().getPartitionService().getPartition(key).getPartitionId();
                 ownerAddress = context.partitionAssignment().entrySet().stream()
                         .filter(en -> arrayIndexOf(partitionId, en.getValue()) >= 0)
@@ -404,7 +500,8 @@ public interface ProcessorMetaSupplier extends Serializable {
                         .orElseThrow(() -> new RuntimeException("Owner partition not assigned to any participating member"));
             }
 
-            @Nonnull @Override
+            @Nonnull
+            @Override
             public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return addr -> addr.equals(ownerAddress) ? supplier : count -> singletonList(new ExpectNothingP());
             }
@@ -417,6 +514,16 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Override
             public Permission getRequiredPermission() {
                 return permission;
+            }
+
+            @Override
+            public boolean initIsCooperative() {
+                return true;
+            }
+
+            @Override
+            public boolean closeIsCooperative() {
+                return true;
             }
         };
     }
@@ -448,6 +555,23 @@ public interface ProcessorMetaSupplier extends Serializable {
         return new SpecificMemberPms(supplier, memberAddress);
     }
 
+
+    /**
+     * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
+     * will only use the given {@code ProcessorSupplier} on a random node
+     *
+     * @param supplier the supplier that will be wrapped
+     * @return the wrapped {@code ProcessorMetaSupplier}
+     * @since 5.3
+     */
+    @Nonnull
+    @Beta
+    static ProcessorMetaSupplier randomMember(
+            @Nonnull ProcessorSupplier supplier
+    ) {
+        return new RandomMemberPms(supplier);
+    }
+
     /**
      * A meta-supplier that will only use the given {@code ProcessorSupplier}
      * on a node with given {@link Address}.
@@ -456,13 +580,13 @@ public interface ProcessorMetaSupplier extends Serializable {
     @SerializableByConvention
     class SpecificMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
 
-        private ProcessorSupplier supplier;
-        private Address memberAddress;
+        protected ProcessorSupplier supplier;
+        protected Address memberAddress;
 
-        SpecificMemberPms() {
+        public SpecificMemberPms() {
         }
 
-        private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
+        protected SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
             this.supplier = supplier;
             this.memberAddress = memberAddress;
         }
@@ -477,7 +601,7 @@ public interface ProcessorMetaSupplier extends Serializable {
             }
         }
 
-        @Nonnull @Override
+        @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             if (!addresses.contains(memberAddress)) {
                 throw new JetException("Cluster does not contain the required member: " + memberAddress);
@@ -488,6 +612,21 @@ public interface ProcessorMetaSupplier extends Serializable {
         @Override
         public int preferredLocalParallelism() {
             return 1;
+        }
+
+        @Override
+        public boolean isReusable() {
+            return true;
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
         }
 
         @Override
@@ -513,11 +652,70 @@ public interface ProcessorMetaSupplier extends Serializable {
         }
     }
 
+    class RandomMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
+
+        private ProcessorSupplier supplier;
+
+        RandomMemberPms() {
+        }
+
+        private RandomMemberPms(ProcessorSupplier supplier) {
+            this.supplier = supplier;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            PermissionsUtil.checkPermission(supplier, context);
+        }
+
+        @Nonnull
+        @Override
+        public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            Address memberAddress = addresses.get(RandomPicker.getInt(addresses.size()));
+            return addr -> addr.equals(memberAddress) ? supplier : new ExpectNothingProcessorSupplier();
+        }
+
+        @Override
+        public boolean isReusable() {
+            return true;
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(supplier);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            supplier = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.RANDOM_MEMBER_PROCESSOR_META_SUPPLIER;
+        }
+    }
+
     class ExpectNothingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
-        @Override @Nonnull
+        @Override
+        @Nonnull
         public Collection<? extends Processor> get(int count) {
-            assert count == 1;
-            return singletonList(new ExpectNothingP());
+            return IntStream.range(0, count).mapToObj(i -> new ExpectNothingP()).collect(Collectors.toList());
         }
 
         @Override
@@ -549,6 +747,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         /**
          * Returns the current Hazelcast instance.
+         *
          * @since 5.0
          */
         @Nonnull
@@ -633,7 +832,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         /**
          * Returns the maximum number of records that can be accumulated by any
-         * single {@link Processor}.
+         * single {@link Processor}. The returned value is strictly positive (>=1).
          */
         long maxProcessorAccumulatedRecords();
 
@@ -647,6 +846,7 @@ public interface ProcessorMetaSupplier extends Serializable {
          * Returns the partition assignment used by this job. This is the
          * assignment partitioned edges will use and the assignment processors
          * dealing with Hazelcast data structures should use.
+         * Each mapped partitions id array must be sorted.
          */
         Map<Address, int[]> partitionAssignment();
 
@@ -656,5 +856,21 @@ public interface ProcessorMetaSupplier extends Serializable {
          * @return processor classloader, null if no custom classpath elements are configured
          */
         ClassLoader classLoader();
+
+        /**
+         * A service to access {@link DataConnection}s in processors.
+         *
+         * @since 5.3
+         */
+        DataConnectionService dataConnectionService();
+
+        /**
+         * Check if the current Subject has the given permission granted (or implied).
+         *
+         * @param permission Permission to be checked
+         * @throws AccessControlException when the security is enabled and the checked permission is not implied for the current
+         *                                {@link Subject}
+         */
+        void checkPermission(@Nonnull Permission permission) throws AccessControlException;
     }
 }

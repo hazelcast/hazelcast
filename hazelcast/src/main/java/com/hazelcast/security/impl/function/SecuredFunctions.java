@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@ package com.hazelcast.security.impl.function;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier.Context;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.connector.ReadIListP;
@@ -45,6 +47,8 @@ import com.hazelcast.security.permission.ReliableTopicPermission;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.topic.ITopic;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
@@ -54,9 +58,12 @@ import java.nio.file.Path;
 import java.security.Permission;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.LongSupplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
@@ -267,21 +274,69 @@ public final class SecuredFunctions {
         };
     }
 
-    public static <T> SupplierEx<Processor> readJdbcProcessorFn(
+    public static <T> ProcessorSupplier readJdbcProcessorFn(
             String connectionUrl,
-            SupplierEx<? extends Connection> newConnectionFn,
+            FunctionEx<ProcessorSupplier.Context, ? extends Connection> newConnectionFn,
             ToResultSetFunction resultSetFn,
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return new SupplierEx<Processor>() {
+        return new ProcessorSupplier() {
+
+            private transient Context context;
+
             @Override
-            public Processor getEx() {
-                return new ReadJdbcP<>(newConnectionFn, resultSetFn, mapOutputFn);
+            public void init(@Nonnull ProcessorSupplier.Context context) {
+                this.context = context;
+            }
+
+            @Nonnull
+            @Override
+            public Collection<? extends Processor> get(int count) {
+                return IntStream.range(0, count)
+                        .mapToObj(i -> new ReadJdbcP<T>(() -> newConnectionFn.apply(context), resultSetFn, mapOutputFn))
+                        .collect(Collectors.toList());
             }
 
             @Override
             public List<Permission> permissions() {
                 return singletonList(ConnectorPermission.jdbc(connectionUrl, ACTION_READ));
+            }
+        };
+    }
+
+    public static <T> ProcessorSupplier readJdbcProcessorFn(
+            String dataConnectionName,
+            ToResultSetFunction resultSetFn,
+            FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        return new ProcessorSupplier() {
+
+            private transient JdbcDataConnection dataConnection;
+
+            @Override
+            public void init(@Nonnull ProcessorSupplier.Context context) {
+                dataConnection = context.dataConnectionService()
+                                        .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);
+            }
+
+            @Nonnull
+            @Override
+            public Collection<? extends Processor> get(int count) {
+                return IntStream.range(0, count)
+                        .mapToObj(i -> new ReadJdbcP<T>(() -> dataConnection.getConnection(), resultSetFn, mapOutputFn))
+                        .collect(Collectors.toList());
+            }
+
+            @Override
+            public void close(@Nullable Throwable error) {
+                if (dataConnection != null) {
+                    dataConnection.release();
+                }
+            }
+
+            @Override
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.jdbc(null, ACTION_READ));
             }
         };
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
@@ -46,7 +46,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 @RunWith(JUnitParamsRunner.class)
 public class SqlImposeOrderFunctionTest extends SqlTestSupport {
@@ -105,7 +105,6 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         };
     }
 
-    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     @Parameters(method = "validArguments")
     public void test_validArguments(QueryDataTypeFamily orderingColumnType, String maxLag, Object[]... values) {
@@ -151,7 +150,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_layeredInvocations() {
+    public void test_nestedInvocations() {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute(
@@ -167,7 +166,15 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         "))"
-        )).hasMessageContaining("Multiple ordering functions are not supported");
+        )).hasMessageContaining("IMPOSE_ORDER call is not supported in this configuration");
+    }
+
+    @Test
+    public void test_imposeOrderCannotBePushedToScan() {
+        createMapping("m", Integer.class, OffsetDateTime.class);
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE m, DESCRIPTOR(this), INTERVAL '0' SECONDS))"
+        )).hasMessageContaining("Ordering functions are not supported on top of IMap mappings");
     }
 
     @Test
@@ -182,7 +189,6 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         ).hasMessageContaining("You must specify single ordering column");
     }
 
-    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_filteredInput() {
         String name = createTable(
@@ -202,7 +208,6 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         );
     }
 
-    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_projectedInput() {
         String name = createTable(
@@ -226,7 +231,6 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         );
     }
 
-    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_filteredAndProjectedInput() {
         String name = createTable(
@@ -246,7 +250,6 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         );
     }
 
-    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_namedParameters() {
         String name = createTable(
@@ -273,31 +276,73 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
     @Test
     public void test_lateItemsDropping() {
         String name = createTable(
-                row(timestampTz(28), "Alice"),
-                row(timestampTz(29), "Bob"),
-                row(timestampTz(30), "Caitlyn"),
-                row(timestampTz(30), "Dorian"),
-                row(timestampTz(31), "Elijah"),
-                row(timestampTz(5), "Zedd")
+                row(timestampTz(280), "Alice"),
+                row(timestampTz(270), "Bob"),
+                row(timestampTz(300), "Caitlyn"),
+                row(timestampTz(300), "Dorian"),
+                row(timestampTz(310), "Elijah"),
+                row(timestampTz(29), "Zedd")
         );
 
-        // Temporal state
-        assertThatThrownBy(() -> sqlService.execute(
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))"
-        )).hasMessageContaining("Currently, IMPOSE_ORDER can only be used with window aggregation");
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))",
+                asList(
+                        new Row(timestampTz(280), "Alice"),
+                        new Row(timestampTz(270), "Bob"),
+                        new Row(timestampTz(300), "Caitlyn"),
+                        new Row(timestampTz(300), "Dorian"),
+                        new Row(timestampTz(310), "Elijah")
+                        // Zedd is dropped because this event is late
+                )
+        );
+    }
 
-        // TODO[sasha]: support dropping late items in 5.2
-//        assertRowsEventuallyInAnyOrder(
-//                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))",
-//                asList(
-//                        new Row(timestampTz(28), "Alice"),
-//                        new Row(timestampTz(29), "Bob"),
-//                        new Row(timestampTz(30), "Caitlyn"),
-//                        new Row(timestampTz(30), "Dorian"),
-//                        new Row(timestampTz(31), "Elijah")
-//                        // Zedd is dropped because ti's late
-//                )
-//        );
+    @Test
+    public void test_lateItemsDidNotDropWithAllowedLag() {
+        String name = createTable(
+                row(timestampTz(280), "Alice"),
+                row(timestampTz(290), "Bob"),
+                row(timestampTz(300), "Caitlyn"),
+                row(timestampTz(300), "Dorian"),
+                row(timestampTz(310), "Elijah"),
+                row(timestampTz(280), "Zedd")
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.05' SECONDS))",
+                asList(
+                        new Row(timestampTz(280), "Alice"),
+                        new Row(timestampTz(290), "Bob"),
+                        new Row(timestampTz(300), "Caitlyn"),
+                        new Row(timestampTz(300), "Dorian"),
+                        new Row(timestampTz(310), "Elijah"),
+                        // Zedd was not dropped due to allowed lag
+                        new Row(timestampTz(280), "Zedd"))
+        );
+    }
+
+    @Test
+    public void test_lateItemsDropWithAllowedLag() {
+        String name = createTable(
+                row(timestampTz(280), "Alice"),
+                row(timestampTz(290), "Bob"),
+                row(timestampTz(300), "Caitlyn"),
+                row(timestampTz(300), "Dorian"),
+                row(timestampTz(310), "Elijah"),
+                row(timestampTz(150), "Zedd")
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.005' SECONDS))",
+                asList(
+                        new Row(timestampTz(280), "Alice"),
+                        new Row(timestampTz(290), "Bob"),
+                        new Row(timestampTz(300), "Caitlyn"),
+                        new Row(timestampTz(300), "Dorian"),
+                        new Row(timestampTz(310), "Elijah")
+                        // Zedd is dropped because this event is late desp
+                )
+        );
     }
 
     private static String createTable(Object[]... values) {

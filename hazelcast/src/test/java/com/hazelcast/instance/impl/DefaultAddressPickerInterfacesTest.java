@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,12 +40,10 @@ import static com.hazelcast.instance.impl.TestUtil.setSystemProperty;
 import static com.hazelcast.internal.util.NetworkInterfaceInfo.builder;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * Tests if the {@link DefaultAddressPicker} chooses an expected bind address.
@@ -230,7 +228,7 @@ public class DefaultAddressPickerInterfacesTest {
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
-        assertThat(inetAddress.getHostAddress(), anyOf(equalTo("192.168.1.1"), equalTo("172.172.172.172")));
+        assertThat(inetAddress.getHostAddress()).isIn("192.168.1.1", "172.172.172.172");
     }
 
     /**

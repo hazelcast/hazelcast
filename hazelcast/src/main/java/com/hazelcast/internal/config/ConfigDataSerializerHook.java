@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,25 +19,23 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
-import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
-import com.hazelcast.config.DiskTierConfig;
-import com.hazelcast.config.MemoryTierConfig;
-import com.hazelcast.config.TieredStoreConfig;
-import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.HotRestartConfig;
@@ -49,13 +47,16 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
+import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
@@ -68,10 +69,12 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
-import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperation;
@@ -161,8 +164,11 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int TIERED_STORE_CONFIG = 64;
     public static final int MEMORY_TIER_CONFIG = 65;
     public static final int DISK_TIER_CONFIG = 66;
+    public static final int BTREE_INDEX_CONFIG = 67;
+    public static final int DATA_CONNECTION_CONFIG = 68;
+    public static final int PARTITION_ATTRIBUTE_CONFIG = 69;
 
-    private static final int LEN = DISK_TIER_CONFIG + 1;
+    private static final int LEN = PARTITION_ATTRIBUTE_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -239,6 +245,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[TIERED_STORE_CONFIG] = arg -> new TieredStoreConfig();
         constructors[MEMORY_TIER_CONFIG] = arg -> new MemoryTierConfig();
         constructors[DISK_TIER_CONFIG] = arg -> new DiskTierConfig();
+        constructors[BTREE_INDEX_CONFIG] = arg -> new BTreeIndexConfig();
+        constructors[DATA_CONNECTION_CONFIG] = arg -> new DataConnectionConfig();
+        constructors[PARTITION_ATTRIBUTE_CONFIG] = arg -> new PartitioningAttributeConfig();
 
         return new ArrayDataSerializableFactory(constructors);
     }

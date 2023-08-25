@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.client.Client;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
@@ -148,14 +148,14 @@ public class TimedMemberStateFactory {
                                    Collection<StatisticsAwareService> services) {
         Node node = instance.node;
 
-        final Collection<Client> clients = instance.node.clientEngine.getClients();
-        final Set<ClientEndPointDTO> serializableClientEndPoints = createHashSet(clients.size());
-        for (Client client : clients) {
-            serializableClientEndPoints.add(new ClientEndPointDTO(client));
+        final Collection<ClientEndpoint> clientEndpoints = instance.node.clientEngine.getEndpointManager()
+                .getEndpoints();
+        final Set<ClientEndPointDTO> serializableClientEndPoints = createHashSet(clientEndpoints.size());
+        for (ClientEndpoint endpoint : clientEndpoints) {
+            serializableClientEndPoints.add(new ClientEndPointDTO(endpoint));
         }
         memberState.setClients(serializableClientEndPoints);
         memberState.setName(instance.getName());
-
         memberState.setUuid(node.getThisUuid());
         if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {
             memberState.setCpMemberUuid(null);

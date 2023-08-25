@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package com.hazelcast.jet.core;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,6 +33,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -78,6 +81,9 @@ import static java.util.stream.Collectors.joining;
  * @since Jet 3.0
  */
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
+    //Note: This lock prevents only some changes to the DAG. It cannot prevent changing user-supplied
+    // objects like processor suppliers or various lambdas.
+    private transient boolean locked;
 
     private final Set<Edge> edges = new LinkedHashSet<>();
     private final Map<String, Vertex> nameToVertex = new HashMap<>();
@@ -87,15 +93,15 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     /**
      * Creates a vertex from a {@code Supplier<Processor>} and adds it to this DAG.
      *
-     * @see Vertex#Vertex(String, SupplierEx)
-     *
-     * @param name the unique name of the vertex
+     * @param name           the unique name of the vertex
      * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
+     * @see Vertex#Vertex(String, SupplierEx)
      */
     @Nonnull
     public Vertex newVertex(
             @Nonnull String name, @Nonnull SupplierEx<? extends Processor> simpleSupplier
     ) {
+        throwIfLocked();
         return addVertex(new Vertex(name, simpleSupplier));
     }
 
@@ -104,29 +110,29 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * DAG. The vertex will be given a unique name created from the {@code
      * namePrefix}.
      *
-     * @see Vertex#Vertex(String, SupplierEx)
-     *
-     * @param namePrefix the prefix for unique name of the vertex
+     * @param namePrefix     the prefix for unique name of the vertex
      * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
+     * @see Vertex#Vertex(String, SupplierEx)
      * @since Jet 4.4
      */
     @Nonnull
     public Vertex newUniqueVertex(
             @Nonnull String namePrefix, @Nonnull SupplierEx<? extends Processor> simpleSupplier
     ) {
+        throwIfLocked();
         return addVertex(new Vertex(uniqueName(namePrefix), simpleSupplier));
     }
 
     /**
      * Creates a vertex from a {@code ProcessorSupplier} and adds it to this DAG.
      *
-     * @see Vertex#Vertex(String, ProcessorSupplier)
-     *
-     * @param name the unique name of the vertex
+     * @param name              the unique name of the vertex
      * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
+     * @see Vertex#Vertex(String, ProcessorSupplier)
      */
     @Nonnull
     public Vertex newVertex(@Nonnull String name, @Nonnull ProcessorSupplier processorSupplier) {
+        throwIfLocked();
         return addVertex(new Vertex(name, processorSupplier));
     }
 
@@ -135,28 +141,27 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * DAG. The vertex will be given a unique name created from the {@code
      * namePrefix}.
      *
-     * @see Vertex#Vertex(String, ProcessorSupplier)
-     *
-     * @param namePrefix the prefix for unique name of the vertex
+     * @param namePrefix        the prefix for unique name of the vertex
      * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
+     * @see Vertex#Vertex(String, ProcessorSupplier)
      * @since Jet 4.4
      */
     @Nonnull
     public Vertex newUniqueVertex(@Nonnull String namePrefix, @Nonnull ProcessorSupplier processorSupplier) {
+        throwIfLocked();
         return addVertex(new Vertex(uniqueName(namePrefix), processorSupplier));
     }
 
     /**
      * Creates a vertex from a {@code ProcessorMetaSupplier} and adds it to this DAG.
      *
-     * @see Vertex#Vertex(String, ProcessorMetaSupplier)
-     *
-     * @param name the unique name of the vertex
+     * @param name         the unique name of the vertex
      * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s for each member
-     *
+     * @see Vertex#Vertex(String, ProcessorMetaSupplier)
      */
     @Nonnull
     public Vertex newVertex(@Nonnull String name, @Nonnull ProcessorMetaSupplier metaSupplier) {
+        throwIfLocked();
         return addVertex(new Vertex(name, metaSupplier));
     }
 
@@ -165,14 +170,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * this DAG. The vertex will be given a unique name created from the {@code
      * namePrefix}.
      *
-     * @see Vertex#Vertex(String, ProcessorMetaSupplier)
-     *
-     * @param namePrefix the prefix for unique name of the vertex
+     * @param namePrefix   the prefix for unique name of the vertex
      * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s for each member
+     * @see Vertex#Vertex(String, ProcessorMetaSupplier)
      * @since Jet 4.4
      */
     @Nonnull
     public Vertex newUniqueVertex(@Nonnull String namePrefix, @Nonnull ProcessorMetaSupplier metaSupplier) {
+        throwIfLocked();
         return addVertex(new Vertex(uniqueName(namePrefix), metaSupplier));
     }
 
@@ -181,6 +186,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public DAG vertex(@Nonnull Vertex vertex) {
+        throwIfLocked();
         addVertex(vertex);
         return this;
     }
@@ -193,10 +199,11 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * one inbound and one outbound.
      * <p>
      * Jet supports multigraphs, that is you can add two edges between the same
-     * tow vertices. However, they have to have different ordinals.
+     * two vertices. However, they have to have different ordinals.
      */
     @Nonnull
     public DAG edge(@Nonnull Edge edge) {
+        throwIfLocked();
         if (edge.getDestination() == null) {
             throw new IllegalArgumentException("Edge has no destination");
         }
@@ -282,11 +289,31 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     }
 
     /**
+     * Returns a copy of the DAG's vertices. Adding a vertex to or removing a
+     * vertex from the returned {@link Set} will not be reflected in the DAG,
+     * and vice-versa.
+     */
+    @Nonnull
+    public Set<Vertex> vertices() {
+        return new HashSet<>(verticesByIdentity);
+    }
+
+    /**
      * Returns an iterator over the DAG's vertices in topological order.
      */
     @Nonnull @Override
     public Iterator<Vertex> iterator() {
         return validate().iterator();
+    }
+
+    /**
+     * Returns an iterator over the DAG's edges in unspecified order.
+     *
+     * @since 5.4
+     */
+    @Nonnull
+    public Iterator<Edge> edgeIterator() {
+        return IterableUtil.asReadOnlyIterator(edges.iterator());
     }
 
     /**
@@ -332,7 +359,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         Map<Vertex, List<Vertex>> adjacencyMap = new HashMap<>();
         for (Edge edge : edges) {
             adjacencyMap.computeIfAbsent(edge.getSource(), x -> new ArrayList<>())
-                        .add(edge.getDestination());
+                    .add(edge.getDestination());
         }
         for (Vertex v : nameToVertex.values()) {
             adjacencyMap.putIfAbsent(v, emptyList());
@@ -453,8 +480,8 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      *                                neither overridden on the vertex nor the
      *                                preferred parallelism is defined by
      *                                meta-supplier
-     * @param defaultQueueSize the queue size that will be shown if not overridden
-     *                         on the edge
+     * @param defaultQueueSize        the queue size that will be shown if not overridden
+     *                                on the edge
      */
     @Nonnull
     public String toDotString(int defaultLocalParallelism, int defaultQueueSize) {
@@ -465,14 +492,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         for (Vertex v : this) {
             int localParallelism = v.determineLocalParallelism(defaultLocalParallelism);
             String parallelism = localParallelism == LOCAL_PARALLELISM_USE_DEFAULT ?
-                defaultLocalParallelism == LOCAL_PARALLELISM_USE_DEFAULT ?
-                    "default"
-                    : String.valueOf(defaultLocalParallelism)
-                : String.valueOf(localParallelism);
+                    defaultLocalParallelism == LOCAL_PARALLELISM_USE_DEFAULT ?
+                            "default"
+                            : String.valueOf(defaultLocalParallelism)
+                    : String.valueOf(localParallelism);
             builder.append("\t\"")
-                   .append(escapeGraphviz(v.getName()))
-                   .append("\" [localParallelism=").append(parallelism).append("]")
-                   .append(";\n");
+                    .append(escapeGraphviz(v.getName()))
+                    .append("\" [localParallelism=").append(parallelism).append("]")
+                    .append(";\n");
         }
 
         Map<String, int[]> inOutCounts = new HashMap<>();
@@ -481,7 +508,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             inOutCounts.computeIfAbsent(edge.getDestName(), v -> new int[2])[1]++;
         }
 
-        for (Vertex v: this) {
+        for (Vertex v : this) {
             List<Edge> out = getOutboundEdges(v.getName());
             for (Edge e : out) {
                 List<String> attributes = new ArrayList<>();
@@ -502,14 +529,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                 boolean inSubgraph = e.getSourceName().equals(e.getDestName() + FIRST_STAGE_VERTEX_NAME_SUFFIX);
                 if (inSubgraph) {
                     builder.append("\tsubgraph cluster_").append(clusterCount++).append(" {\n")
-                           .append("\t");
+                            .append("\t");
                 }
                 String source = escapeGraphviz(e.getSourceName());
                 String destination = escapeGraphviz(e.getDestName());
                 builder.append("\t")
-                       .append("\"").append(source).append("\"")
-                       .append(" -> ")
-                       .append("\"").append(destination).append("\"");
+                        .append("\"").append(source).append("\"")
+                        .append(" -> ")
+                        .append("\"").append(destination).append("\"");
                 if (attributes.size() > 0) {
                     builder.append(attributes.stream().collect(joining(", ", " [", "]")));
                 }
@@ -584,5 +611,23 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     @Override
     public int getClassId() {
         return JetDataSerializerHook.DAG;
+    }
+
+    private void throwIfLocked() {
+        if (locked) {
+            throw new IllegalStateException("DAG is already locked");
+        }
+    }
+
+    /**
+     * Used to prevent further mutations to the DAG after submitting it for execution.
+     * <p>
+     * It's not a public API, can be removed in the future.
+     */
+    @PrivateApi
+    public void lock() {
+        locked = true;
+        verticesByIdentity.forEach(Vertex::lock);
+        edges.forEach(Edge::lock);
     }
 }

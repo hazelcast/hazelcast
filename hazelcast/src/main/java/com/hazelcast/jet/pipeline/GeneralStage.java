@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,6 +132,15 @@ public interface GeneralStage<T> extends Stage {
      * the object's state. The state object will be included in the state
      * snapshot, so it survives job restarts. For this reason it must be
      * serializable.
+     * If you want to return the state variable from {@code mapFn},
+     * then the return value must be a copy of state variable to avoid
+     * situations in which the result of {@code mapFn} is modified
+     * after being emitted or where the state is modified by downstream processors.
+     * <p>
+     * If you want to return the state variable from {@code mapFn}, then the
+     * return value must be a copy of state variable to avoid situations in
+     * which the result of {@code mapFn} is modified after being emitted or
+     * where the state is modified by downstream processors.
      * <p>
      * This sample takes a stream of {@code long} numbers representing request
      * latencies, computes the cumulative latency of all requests so far, and
@@ -205,6 +214,15 @@ public interface GeneralStage<T> extends Stage {
      * the object's state. The state object will be included in the state
      * snapshot, so it survives job restarts. For this reason it must be
      * serializable.
+     * If you want to return the state variable from {@code mapFn},
+     * then the return value must be a copy of state variable to avoid
+     * situations in which the result of {@code mapFn} is modified
+     * after being emitted or where the state is modified by downstream processors.
+     * <p>
+     * If you want to return the state variable from {@code flatMapFn}, then the
+     * return value must be a copy of state variable to avoid situations in
+     * which the result of {@code mapFn} is modified after being emitted or
+     * where the state is modified by downstream processors.
      * <p>
      * This sample inserts a punctuation mark (a special string) after every
      * 10th input string:

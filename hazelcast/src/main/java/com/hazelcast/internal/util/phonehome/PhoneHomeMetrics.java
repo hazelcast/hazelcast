@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,30 +34,35 @@ public enum PhoneHomeMetrics {
     ACTIVE_NODEJS_CLIENTS_COUNT("cnjs"),
     ACTIVE_PYTHON_CLIENTS_COUNT("cpy"),
     ACTIVE_GO_CLIENTS_COUNT("cgo"),
+    ACTIVE_CL_CLIENTS_COUNT("ccl"),
     OPENED_CPP_CLIENT_CONNECTIONS_COUNT("ccppco"),
     OPENED_CSHARP_CLIENT_CONNECTIONS_COUNT("cdnco"),
     OPENED_JAVA_CLIENT_CONNECTIONS_COUNT("cjvco"),
     OPENED_NODEJS_CLIENT_CONNECTIONS_COUNT("cnjsco"),
     OPENED_PYTHON_CLIENT_CONNECTIONS_COUNT("cpyco"),
     OPENED_GO_CLIENT_CONNECTIONS_COUNT("cgoco"),
+    OPENED_CL_CLIENT_CONNECTIONS_COUNT("cclco"),
     CLOSED_CPP_CLIENT_CONNECTIONS_COUNT("ccppcc"),
     CLOSED_CSHARP_CLIENT_CONNECTIONS_COUNT("cdncc"),
     CLOSED_JAVA_CLIENT_CONNECTIONS_COUNT("cjvcc"),
     CLOSED_NODEJS_CLIENT_CONNECTIONS_COUNT("cnjscc"),
     CLOSED_PYTHON_CLIENT_CONNECTIONS_COUNT("cpycc"),
     CLOSED_GO_CLIENT_CONNECTIONS_COUNT("cgocc"),
+    CLOSED_CL_CLIENT_CONNECTIONS_COUNT("cclcc"),
     TOTAL_CPP_CLIENT_CONNECTION_DURATION("ccpptcd"),
     TOTAL_CSHARP_CLIENT_CONNECTION_DURATION("cdntcd"),
     TOTAL_JAVA_CLIENT_CONNECTION_DURATION("cjvtcd"),
     TOTAL_NODEJS_CLIENT_CONNECTION_DURATION("cnjstcd"),
     TOTAL_PYTHON_CLIENT_CONNECTION_DURATION("cpytcd"),
     TOTAL_GO_CLIENT_CONNECTION_DURATION("cgotcd"),
+    TOTAL_CL_CLIENT_CONNECTION_DURATION("ccltcd"),
     CPP_CLIENT_VERSIONS("ccppcv"),
     CSHARP_CLIENT_VERSIONS("cdncv"),
     JAVA_CLIENT_VERSIONS("cjvcv"),
     NODEJS_CLIENT_VERSIONS("cnjscv"),
     PYTHON_CLIENT_VERSIONS("cpycv"),
     GO_CLIENT_VERSIONS("cgocv"),
+    CL_CLIENT_VERSIONS("cclcv"),
 
     //CLUSTER INFO METRICS
     UUID_OF_CLUSTER("m"),
@@ -86,7 +91,7 @@ public enum PhoneHomeMetrics {
     MAP_COUNT_WITH_MAP_STORE_ENABLED("mpmsct"),
     MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE("mpaoqcct"),
     MAP_COUNT_WITH_ATLEAST_ONE_INDEX("mpaoict"),
-    MAP_COUNT_WITH_HOT_RESTART_ENABLED("mphect"),
+    MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED("mphect"),
     MAP_COUNT_WITH_WAN_REPLICATION("mpwact"),
     MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE("mpaocct"),
     MAP_COUNT_USING_EVICTION("mpevct"),
@@ -134,7 +139,13 @@ public enum PhoneHomeMetrics {
      *   D means it runs in docker but not on kubernetes ,
      *   N means it doesn't run in docker
      */
+
     DOCKER("dck"),
+
+    /*
+     *  Value of the environment variable "HZ_CLOUD_ENVIRONMENT" passed to this member.
+     */
+    VIRIDIAN("vrd"),
 
     //JET METRICS
     JET_ENABLED("jet"),
@@ -143,6 +154,7 @@ public enum PhoneHomeMetrics {
 
     // SQL METRICS
     SQL_QUERIES_SUBMITTED("sqlqs"),
+    SQL_STREAMING_QUERIES_EXECUTED("sqlqse"),
 
     // DYNAMIC CONFIG PERSISTENCE
     DYNAMIC_CONFIG_PERSISTENCE_ENABLED("dcpe"),
@@ -150,6 +162,7 @@ public enum PhoneHomeMetrics {
     // STORAGE METRICS
     HD_MEMORY_ENABLED("hdme"),
     MEMORY_USED_HEAP_SIZE("muhs"),
+    MEMORY_FREE_HEAP_SIZE("mfhs"),
     MEMORY_USED_NATIVE_SIZE("muns"),
     TIERED_STORAGE_ENABLED("tse"),
     DATA_MEMORY_COST("dmc"),

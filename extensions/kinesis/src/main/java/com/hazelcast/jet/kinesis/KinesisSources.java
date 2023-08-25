@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.jet.kinesis;
 import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
 import com.hazelcast.jet.kinesis.impl.source.InitialShardIterators;
 import com.hazelcast.jet.kinesis.impl.source.KinesisSourcePMetaSupplier;
@@ -34,6 +35,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 
 import static com.hazelcast.jet.Util.entry;
 
@@ -306,6 +308,16 @@ public final class KinesisSources {
         public <T_NEW> Builder<T_NEW> withProjectionFn(@Nonnull BiFunctionEx<Record, Shard, T_NEW> projectionFn) {
             this.projectionFn = (BiFunctionEx<Record, Shard, T>) projectionFn;
             return (Builder<T_NEW>) this;
+        }
+
+        /**
+         * Specifies an executor service supplier that will be used by the {@link AwsConfig}
+         * to construct an AWS async client.
+         */
+        @Nonnull
+        public Builder<T> withExecutorServiceSupplier(@Nonnull SupplierEx<ExecutorService> executorSupplier) {
+            awsConfig.withExecutorServiceSupplier(executorSupplier);
+            return this;
         }
 
         /**

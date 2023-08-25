@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -301,6 +301,7 @@ hazelcast:
         write-delay-seconds: 0
         write-batch-size: 1
         write-coalescing: true
+        offload: false
         properties:
           dummy.property: value
 
@@ -352,6 +353,17 @@ hazelcast:
           bitmap-index-options:
             unique-key: id
             unique-key-transformation: RAW
+        - type: SORTED
+          attributes:
+            - "age"
+          btree-index:
+            page-size:
+              value: 16
+              unit: KILOBYTES
+            memory-tier:
+              capacity:
+                value: 3000
+                unit: GIGABYTES
 
       attributes:
         currency:
@@ -402,6 +414,10 @@ hazelcast:
         disk-tier:
           enabled: true
           device-name: default-tiered-store-device
+      partition-strategy: "com.example.Strategy"
+      partition-attributes:
+        - name: "attributeName1"
+        - name: "attributeName2"
 
   multimap:
     default:
@@ -606,12 +622,10 @@ hazelcast:
           - "["
           - com.
     compact-serialization:
-      enabled: true
-      registered-classes:
+      serializers:
+        - serializer: com.hazelcast.examples.DummyTypeSerializer
+      classes:
         - class: com.hazelcast.examples.DummyType
-        - class: com.hazelcast.examples.DummyTypeWithSerializer
-          type-name: dummy
-          serializer: com.hazelcast.examples.DummyTypeSerializer
 
   native-memory:
     allocator-type: STANDARD
@@ -962,6 +976,7 @@ hazelcast:
     persistence-enabled: false
     base-dir: data
     data-load-timeout-seconds: 30
+    cp-member-priority: -1
     raft-algorithm:
       leader-election-timeout-in-millis: 2000
       leader-heartbeat-period-in-millis: 5000
@@ -1003,3 +1018,14 @@ hazelcast:
 
   sql:
     statement-timeout-millis: 0
+
+  data-connection:
+    mysql-database:
+      type: jdbc
+      properties:
+        jdbcUrl: jdbc:mysql://dummy:3306
+      shared: false
+
+  tpc:
+    enabled: true
+    eventloop-count: 12

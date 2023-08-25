@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -67,17 +67,16 @@ import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.test.Accessors.getNode;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.not;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
 
-    private static final MemorySize NATIVE_MEMORY_SIZE = new MemorySize(32, MemoryUnit.MEGABYTES);
+    private static final Capacity NATIVE_MEMORY_SIZE = new Capacity(32, MemoryUnit.MEGABYTES);
 
     @Parameters(name = "{0}")
     public static Collection parameters() {
@@ -114,7 +113,7 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
     }
 
     protected void assumptions() {
-        assumeThat(inMemoryFormat, not(NATIVE));
+        assumeThat(inMemoryFormat).isNotEqualTo(NATIVE);
     }
 
     @Override
@@ -140,7 +139,7 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
 
             NativeMemoryConfig memoryConfig = new NativeMemoryConfig()
                     .setEnabled(true)
-                    .setSize(NATIVE_MEMORY_SIZE)
+                    .setCapacity(NATIVE_MEMORY_SIZE)
                     .setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.STANDARD);
             config.setNativeMemoryConfig(memoryConfig);
         }

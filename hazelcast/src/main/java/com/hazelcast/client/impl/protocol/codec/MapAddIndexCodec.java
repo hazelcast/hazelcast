@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an index to this map with specified configuration.
  */
-@Generated("02a6ff191d4a64d9eff11f913749cb9e")
+@Generated("f0dae32ef7f0d6997100642407531a05")
 public final class MapAddIndexCodec {
     //hex: 0x012900
     public static final int REQUEST_MESSAGE_TYPE = 76032;

@@ -41,6 +41,7 @@
             "enabled": [],
             "initial-mode": "invalid",
             "class-name": null,
+            "offload": null,
             "write-delay-seconds": -60,
             "write-batch-size": -1000,
             "write-coalescing": null,
@@ -84,6 +85,18 @@
                 "unknown": true
               },
               "unknown": true
+            },
+            {
+              "type": "SORTED",
+              "attributes": [ "age" ],
+              "btree-index": {
+                "memory-tier": {
+                  "capacity": null
+                },
+                "page-size": {
+                  "unit": "TONS"
+                }
+              }
             }
           ],
           "attributes": {
@@ -162,6 +175,19 @@
               "predicate": {}
             }
           }
+        },
+        "map-with-wrong-partition-strategy-class": {
+          "partition-strategy": 1
+        },
+        "map-with-empty-partition-attributes-list": {
+          "partition-attributes": []
+        },
+        "map-with-invalid-partition-attribute-names": {
+          "partition-attributes": [
+            {
+              "attributeName": "test"
+            }
+          ]
         }
       }
     }
@@ -215,62 +241,6 @@
             "causingExceptions": [],
             "keyword": "enum",
             "message": "invalid is not a valid enum value"
-          },
-          {
-            "schemaLocation": "#/definitions/IndexConfig",
-            "pointerToViolation": "#/hazelcast/map/my-map/indexes/0",
-            "causingExceptions": [
-              {
-                "schemaLocation": "#/definitions/IndexConfig",
-                "pointerToViolation": "#/hazelcast/map/my-map/indexes/0",
-                "causingExceptions": [],
-                "keyword": "additionalProperties",
-                "message": "extraneous key [unknown] is not permitted"
-              },
-              {
-                "schemaLocation": "#/definitions/IndexConfig/properties/attributes/items",
-                "pointerToViolation": "#/hazelcast/map/my-map/indexes/0/attributes/0",
-                "causingExceptions": [],
-                "keyword": "type",
-                "message": "expected type: String, found: Integer"
-              },
-              {
-                "schemaLocation": "#/definitions/IndexConfig/properties/bitmap-index-options",
-                "pointerToViolation": "#/hazelcast/map/my-map/indexes/0/bitmap-index-options",
-                "causingExceptions": [
-                  {
-                    "schemaLocation": "#/definitions/IndexConfig/properties/bitmap-index-options",
-                    "pointerToViolation": "#/hazelcast/map/my-map/indexes/0/bitmap-index-options",
-                    "causingExceptions": [],
-                    "keyword": "additionalProperties",
-                    "message": "extraneous key [unknown] is not permitted"
-                  },
-                  {
-                    "schemaLocation": "#/definitions/IndexConfig/properties/bitmap-index-options/properties/unique-key",
-                    "pointerToViolation": "#/hazelcast/map/my-map/indexes/0/bitmap-index-options/unique-key",
-                    "causingExceptions": [],
-                    "keyword": "type",
-                    "message": "expected type: String, found: JSONObject"
-                  },
-                  {
-                    "schemaLocation": "#/definitions/IndexConfig/properties/bitmap-index-options/properties/unique-key-transformation",
-                    "pointerToViolation": "#/hazelcast/map/my-map/indexes/0/bitmap-index-options/unique-key-transformation",
-                    "causingExceptions": [],
-                    "keyword": "enum",
-                    "message": "invalid is not a valid enum value"
-                  }
-                ],
-                "message": "3 schema violations found"
-              },
-              {
-                "schemaLocation": "#/definitions/IndexConfig/properties/type",
-                "pointerToViolation": "#/hazelcast/map/my-map/indexes/0/type",
-                "causingExceptions": [],
-                "keyword": "enum",
-                "message": "invalid is not a valid enum value"
-              }
-            ],
-            "message": "6 schema violations found"
           },
           {
             "schemaLocation": "#/definitions/Map/additionalProperties",
@@ -434,6 +404,90 @@
             "message": "3 schema violations found"
           },
           {
+            "schemaLocation": "#/definitions/Map/additionalProperties/properties/indexes",
+            "pointerToViolation": "#/hazelcast/map/my-map/indexes",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/IndexConfig",
+                "pointerToViolation": "#/hazelcast/map/my-map/indexes/0",
+                "causingExceptions": [
+                  {
+                    "schemaLocation": "#/definitions/IndexConfig",
+                    "pointerToViolation": "#/hazelcast/map/my-map/indexes/0",
+                    "causingExceptions": [],
+                    "keyword": "additionalProperties",
+                    "message": "extraneous key [unknown] is not permitted"
+                  },
+                  {
+                    "schemaLocation": "#/definitions/IndexConfig/properties/attributes/items",
+                    "pointerToViolation": "#/hazelcast/map/my-map/indexes/0/attributes/0",
+                    "causingExceptions": [],
+                    "keyword": "type",
+                    "message": "expected type: String, found: Integer"
+                  },
+                  {
+                    "schemaLocation": "#/definitions/IndexConfig/properties/bitmap-index-options",
+                    "pointerToViolation": "#/hazelcast/map/my-map/indexes/0/bitmap-index-options",
+                    "causingExceptions": [
+                      {
+                        "schemaLocation": "#/definitions/IndexConfig/properties/bitmap-index-options",
+                        "pointerToViolation": "#/hazelcast/map/my-map/indexes/0/bitmap-index-options",
+                        "causingExceptions": [],
+                        "keyword": "additionalProperties",
+                        "message": "extraneous key [unknown] is not permitted"
+                      },
+                      {
+                        "schemaLocation": "#/definitions/IndexConfig/properties/bitmap-index-options/properties/unique-key",
+                        "pointerToViolation": "#/hazelcast/map/my-map/indexes/0/bitmap-index-options/unique-key",
+                        "causingExceptions": [],
+                        "keyword": "type",
+                        "message": "expected type: String, found: JSONObject"
+                      },
+                      {
+                        "schemaLocation": "#/definitions/IndexConfig/properties/bitmap-index-options/properties/unique-key-transformation",
+                        "pointerToViolation": "#/hazelcast/map/my-map/indexes/0/bitmap-index-options/unique-key-transformation",
+                        "causingExceptions": [],
+                        "keyword": "enum",
+                        "message": "invalid is not a valid enum value"
+                      }
+                    ],
+                    "message": "3 schema violations found"
+                  },
+                  {
+                    "schemaLocation": "#/definitions/IndexConfig/properties/type",
+                    "pointerToViolation": "#/hazelcast/map/my-map/indexes/0/type",
+                    "causingExceptions": [],
+                    "keyword": "enum",
+                    "message": "invalid is not a valid enum value"
+                  }
+                ],
+                "message": "6 schema violations found"
+              },
+              {
+                "schemaLocation": "#/definitions/IndexConfig/properties/btree-index",
+                "pointerToViolation": "#/hazelcast/map/my-map/indexes/1/btree-index",
+                "causingExceptions": [
+                  {
+                    "schemaLocation": "#/definitions/Capacity",
+                    "pointerToViolation": "#/hazelcast/map/my-map/indexes/1/btree-index/memory-tier/capacity",
+                    "causingExceptions": [],
+                    "keyword": "type",
+                    "message": "expected type: JSONObject, found: Null"
+                  },
+                  {
+                    "schemaLocation": "#/definitions/Capacity/properties/unit",
+                    "pointerToViolation": "#/hazelcast/map/my-map/indexes/1/btree-index/page-size/unit",
+                    "causingExceptions": [],
+                    "keyword": "enum",
+                    "message": "TONS is not a valid enum value"
+                  }
+                ],
+                "message": "2 schema violations found"
+              }
+            ],
+            "message": "8 schema violations found"
+          },
+          {
             "schemaLocation": "#/definitions/Map/additionalProperties/properties/map-store",
             "pointerToViolation": "#/hazelcast/map/my-map/map-store",
             "causingExceptions": [
@@ -492,9 +546,16 @@
                 "causingExceptions": [],
                 "keyword": "minimum",
                 "message": "-60 is not greater or equal to 0"
+              },
+              {
+                "schemaLocation": "#/definitions/Map/additionalProperties/properties/map-store/properties/offload",
+                "pointerToViolation": "#/hazelcast/map/my-map/map-store/offload",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: Boolean, found: Null"
               }
             ],
-            "message": "8 schema violations found"
+            "message": "9 schema violations found"
           },
           {
             "schemaLocation": "#/definitions/Map/additionalProperties/properties/merkle-tree",
@@ -914,7 +975,7 @@
             "message": "3 schema violations found"
           }
         ],
-        "message": "82 schema violations found"
+        "message": "85 schema violations found"
       },
       {
         "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/predicate",
@@ -954,8 +1015,43 @@
         }],
         "keyword": "allOf",
         "message": "#: only 1 subschema matches out of 2"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/partition-strategy",
+        "pointerToViolation": "#/hazelcast/map/map-with-wrong-partition-strategy-class/partition-strategy",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Integer"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/partition-attributes",
+        "pointerToViolation": "#/hazelcast/map/map-with-empty-partition-attributes-list/partition-attributes",
+        "causingExceptions": [],
+        "keyword": "minItems",
+        "message": "expected minimum item count: 1, found: 0"
+      },
+      {
+        "schemaLocation": "#/definitions/PartitionAttribute",
+        "pointerToViolation": "#/hazelcast/map/map-with-invalid-partition-attribute-names/partition-attributes/0",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/PartitionAttribute",
+            "pointerToViolation": "#/hazelcast/map/map-with-invalid-partition-attribute-names/partition-attributes/0",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [attributeName] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/PartitionAttribute",
+            "pointerToViolation": "#/hazelcast/map/map-with-invalid-partition-attribute-names/partition-attributes/0",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [name] not found"
+          }
+        ],
+        "message": "2 schema violations found"
       }
     ],
-    "message": "85 schema violations found"
+    "message": "92 schema violations found"
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -385,5 +385,15 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
             }
         }
         return (scheme != null && SUPPORTED_SCHEMES.contains(scheme.toLowerCase(StringUtil.LOCALE_INTERNAL)));
+    }
+
+    /**
+     * Tests if the configuration file provided is a YAML file. The test is based on the file extension.
+     * @param configURL configuration URL to test.
+     * @return true if the configuration file extension is .yml or .yaml; otherwise, false.
+     */
+    protected static boolean isYamlConfiguration(URL configURL) {
+        String path = configURL.getPath();
+        return path.endsWith(".yml") || path.endsWith(".yaml");
     }
 }

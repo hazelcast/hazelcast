@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -68,7 +68,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import example.serialization.EmployeeDTO;
 import example.serialization.EmployeeDTOSerializer;
 import example.serialization.EmployerDTO;
 import org.junit.Test;
@@ -88,10 +87,12 @@ import java.util.Random;
 import java.util.Set;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
+import static com.hazelcast.client.config.ClientSqlResubmissionMode.RETRY_SELECTS;
 import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -393,37 +394,32 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void testCompactSerialization() {
         CompactSerializationConfig expected = new CompactSerializationConfig();
-        expected.setEnabled(true);
-        expected.register(EmployerDTO.class);
-        expected.register(EmployeeDTO.class, "employee", new EmployeeDTOSerializer());
+        expected.addClass(EmployerDTO.class);
+        expected.addSerializer(new EmployeeDTOSerializer());
 
         clientConfig.getSerializationConfig().setCompactSerializationConfig(expected);
 
         CompactSerializationConfig actual = newConfigViaGenerator().getSerializationConfig().getCompactSerializationConfig();
-        assertEquals(expected.isEnabled(), actual.isEnabled());
 
-        // Since we don't have APIs of the form register(String) or register(String, String, String) in the
-        // compact serialization config, when we read the config from XML/YAML, we store registered classes
-        // in a different map.
-        Map<String, TriTuple<String, String, String>> namedRegistrations
-                = CompactSerializationConfigAccessor.getNamedRegistrations(actual);
+        // Since we don't have APIs to register string class names in the
+        // compact serialization config, when we read the config from XML/YAML,
+        // we store registered classes/serializers in different lists.
+        List<String> serializerClassNames
+                = CompactSerializationConfigAccessor.getSerializerClassNames(actual);
+        List<String> compactSerializableClassNames
+                = CompactSerializationConfigAccessor.getCompactSerializableClassNames(actual);
 
         Map<String, TriTuple<Class, String, CompactSerializer>> registrations
                 = CompactSerializationConfigAccessor.getRegistrations(actual);
 
-        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : registrations.entrySet()) {
-            String key = entry.getKey();
-            TriTuple<Class, String, CompactSerializer> expectedRegistration = entry.getValue();
-            TriTuple<String, String, String> actualRegistration = namedRegistrations.get(key);
-
-            assertEquals(expectedRegistration.element1.getName(), actualRegistration.element1);
-            assertEquals(expectedRegistration.element2, actualRegistration.element2);
-
-            CompactSerializer serializer = expectedRegistration.element3;
+        for (TriTuple<Class, String, CompactSerializer> registration : registrations.values()) {
+            CompactSerializer serializer = registration.element3;
             if (serializer != null) {
-                assertEquals(serializer.getClass().getName(), actualRegistration.element3);
+                assertThat(serializerClassNames)
+                        .contains(serializer.getClass().getName());
             } else {
-                assertNull(actualRegistration.element3);
+                assertThat(compactSerializableClassNames)
+                        .contains(registration.element1.getName());
             }
         }
     }
@@ -503,7 +499,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMetadataSpacePercentage(70)
                 .setMinBlockSize(randomInt())
                 .setPageSize(randomInt())
-                .setSize(new MemorySize(randomInt(), MemoryUnit.BYTES));
+                .setCapacity(new Capacity(randomInt(), MemoryUnit.BYTES));
         clientConfig.setNativeMemoryConfig(expected);
 
         NativeMemoryConfig actual = newConfigViaGenerator().getNativeMemoryConfig();
@@ -518,7 +514,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMetadataSpacePercentage(70)
                 .setMinBlockSize(randomInt())
                 .setPageSize(randomInt())
-                .setSize(new MemorySize(randomInt(), MemoryUnit.BYTES))
+                .setCapacity(new Capacity(randomInt(), MemoryUnit.BYTES))
                 .getPersistentMemoryConfig()
                 .setEnabled(true)
                 .addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem0", 0))
@@ -537,7 +533,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMetadataSpacePercentage(70)
                 .setMinBlockSize(randomInt())
                 .setPageSize(randomInt())
-                .setSize(new MemorySize(randomInt(), MemoryUnit.BYTES))
+                .setCapacity(new Capacity(randomInt(), MemoryUnit.BYTES))
                 .getPersistentMemoryConfig()
                 .setMode(PersistentMemoryMode.SYSTEM_MEMORY);
         clientConfig.setNativeMemoryConfig(expected);
@@ -771,6 +767,31 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(originalConfig.isEnabled(), generatedConfig.isEnabled());
         assertEquals(originalConfig.getFileName(), generatedConfig.getFileName());
         assertEquals(originalConfig.getFormatPattern(), generatedConfig.getFormatPattern());
+    }
+
+    @Test
+    public void testSqlConfig() {
+        ClientSqlConfig originalConfig = new ClientSqlConfig().setResubmissionMode(RETRY_SELECTS);
+        clientConfig.setSqlConfig(originalConfig);
+        ClientSqlConfig generatedConfig = newConfigViaGenerator().getSqlConfig();
+        assertEquals(originalConfig.getResubmissionMode(), generatedConfig.getResubmissionMode());
+    }
+
+    @Test
+    public void testTpcConfig() {
+        ClientTpcConfig originalConfig = new ClientTpcConfig().setEnabled(true);
+        clientConfig.setTpcConfig(originalConfig);
+        ClientTpcConfig generatedConfig = newConfigViaGenerator().getTpcConfig();
+        assertEquals(originalConfig, generatedConfig);
+    }
+
+    @Test
+    public void testNetworkCloud() {
+        ClientCloudConfig originalConfig = new ClientCloudConfig().setEnabled(true)
+                .setDiscoveryToken("pAB2kwCdHKbGpFBNd9iO9AmnYBiQa7rz8yfGW25iHEHRvoRWSN");
+        clientConfig.getNetworkConfig().setCloudConfig(originalConfig);
+        ClientCloudConfig generatedConfig = newConfigViaGenerator().getNetworkConfig().getCloudConfig();
+        assertEquals(originalConfig, generatedConfig);
     }
 
     private ClientConfig newConfigViaGenerator() {

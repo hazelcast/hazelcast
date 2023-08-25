@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+
 /**
  * Client message task for Raft group creation
  */
@@ -38,7 +40,7 @@ public class CreateRaftGroupMessageTask extends AbstractCPMessageTask<String> {
     @Override
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.createRaftGroupForProxyAsync(parameters).whenCompleteAsync(this);
+        service.createRaftGroupForProxyAsync(parameters).whenCompleteAsync(this, CALLER_RUNS);
     }
 
     @Override

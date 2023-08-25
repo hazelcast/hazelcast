@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.Objects;
  * Special item interleaved with other items on queue to signal a start of a
  * snapshot.
  */
-public final class SnapshotBarrier implements BroadcastItem {
+public final class SnapshotBarrier implements SpecialBroadcastItem {
     private final long snapshotId;
     private final boolean isTerminal;
 

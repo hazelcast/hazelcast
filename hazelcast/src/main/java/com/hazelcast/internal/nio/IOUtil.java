@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,9 +45,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketOption;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.NetworkChannel;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,7 +62,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Collection;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -70,8 +75,12 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_KEEPALIVE;
 import static com.hazelcast.internal.networking.ChannelOption.SO_LINGER;
 import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPCOUNT;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPIDLE;
+import static com.hazelcast.internal.networking.ChannelOption.TCP_KEEPINTERVAL;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
+import static com.hazelcast.internal.tpcengine.util.ReflectionUtil.findStaticFieldValue;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
@@ -79,12 +88,27 @@ import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 
-@SuppressWarnings({ "WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber", "checkstyle:classfanoutcomplexity",
-        "checkstyle:ClassDataAbstractionCoupling" })
+@SuppressWarnings({"WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber", "checkstyle:classfanoutcomplexity",
+        "checkstyle:ClassDataAbstractionCoupling"})
 public final class IOUtil {
 
+    public static final SocketOption<Integer> JDK_NET_TCP_KEEPCOUNT
+            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPCOUNT");
+    public static final SocketOption<Integer> JDK_NET_TCP_KEEPIDLE
+            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPIDLE");
+    public static final SocketOption<Integer> JDK_NET_TCP_KEEPINTERVAL
+            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPINTERVAL");
+    private static final AtomicBoolean TCP_KEEPCOUNT_WARNING = new AtomicBoolean();
+    private static final AtomicBoolean TCP_KEEPIDLE_WARNING = new AtomicBoolean();
+    private static final AtomicBoolean TCP_KEEPINTERVAL_WARNING = new AtomicBoolean();
     private static final ILogger LOGGER = Logger.getLogger(IOUtil.class);
     private static final Random RANDOM = new Random();
+    private static final String TCP_KEEP_WARNING = "Ignoring %s. It seems your JDK does not support "
+            + "jdk.net.ExtendedSocketOptions on this OS. Try upgrading to the latest JDK or check with your JDK vendor."
+            + "Alternatively, on Linux, configure %s in the kernel "
+            + "(affecting default keep-alive configuration for all sockets): "
+            + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+            + "If this isn't dealt with, idle connections could be closed prematurely.";
 
     private IOUtil() {
     }
@@ -323,24 +347,51 @@ public final class IOUtil {
         };
     }
 
+    /**
+     * Copies the contents of the {@code src} backed by an on-heap buffer to
+     * {@code dst}. The {@code dst} can be backed by either on-heap or
+     * off-heap buffer.
+     * <p>
+     * Number of bytes to copy is calculated by taking the minimum of the
+     * remaining bytes of {@code src} and {@code dst}.
+     *
+     * @param src source buffer
+     * @param dst destination buffer
+     * @return the number of bytes copied
+     */
+    public static int copyFromHeapBuffer(ByteBuffer src, ByteBuffer dst) {
+        if (src == null) {
+            return 0;
+        }
+
+        int n = Math.min(src.remaining(), dst.remaining());
+        int srcPosition = src.position();
+        dst.put(src.array(), srcPosition, n);
+        upcast(src).position(srcPosition + n);
+        return n;
+    }
+
+    /**
+     * Copies the contents of the {@code src} to {@code dst} backed by an
+     * on-heap buffer. The {@code src} can be backed by either on-heap or
+     * off-heap buffer.
+     * <p>
+     * Number of bytes to copy is calculated by taking the minimum of the
+     * remaining bytes of {@code src} and {@code dst}.
+     *
+     * @param src source buffer
+     * @param dst destination buffer
+     * @return the number of bytes copied
+     */
     public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dst) {
         if (src == null) {
             return 0;
         }
+
         int n = Math.min(src.remaining(), dst.remaining());
-        if (n > 0) {
-            if (n < 16) {
-                for (int i = 0; i < n; i++) {
-                    dst.put(src.get());
-                }
-            } else {
-                int srcPosition = src.position();
-                int destPosition = dst.position();
-                System.arraycopy(src.array(), srcPosition, dst.array(), destPosition, n);
-                upcast(src).position(srcPosition + n);
-                upcast(dst).position(destPosition + n);
-            }
-        }
+        int dstPosition = dst.position();
+        src.get(dst.array(), dstPosition, n);
+        upcast(dst).position(dstPosition + n);
         return n;
     }
 
@@ -385,18 +436,33 @@ public final class IOUtil {
     }
 
     /**
-     * Quietly attempts to close a {@link Closeable} resource, swallowing any exception.
+     * Quietly attempts to close a {@link Closeable} or {@link AutoCloseable} resource, swallowing any exception.
      *
      * @param closeable the resource to close. If {@code null}, no action is taken.
      */
-    public static void closeResource(Closeable closeable) {
+    public static void closeResource(AutoCloseable closeable) {
         if (closeable == null) {
             return;
         }
         try {
             closeable.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.finest("closeResource failed", e);
+        }
+    }
+
+    public static void closeResources(Collection<? extends Closeable> collection) {
+        if (collection == null) {
+            return;
+        }
+        for (Closeable closeable : collection) {
+            if (closeable != null) {
+                try {
+                    closeable.close();
+                } catch (IOException e) {
+                    LOGGER.finest("closeResource failed", e);
+                }
+            }
         }
     }
 
@@ -843,7 +909,73 @@ public final class IOUtil {
                 .setOption(SO_KEEPALIVE, config.isSocketKeepAlive())
                 .setOption(SO_SNDBUF, config.getSocketSendBufferSizeKb() * KILO_BYTE)
                 .setOption(SO_RCVBUF, config.getSocketRcvBufferSizeKb() * KILO_BYTE)
-                .setOption(SO_LINGER, config.getSocketLingerSeconds());
+                .setOption(SO_LINGER, config.getSocketLingerSeconds())
+                .setOption(TCP_KEEPCOUNT, config.getSocketKeepCount())
+                .setOption(TCP_KEEPINTERVAL, config.getSocketKeepIntervalSeconds())
+                .setOption(TCP_KEEPIDLE, config.getSocketKeepIdleSeconds());
+    }
+
+    public static void setKeepAliveOptionsIfNotDefault(NetworkChannel serverSocketChannel, EndpointConfig endpointConfig,
+                                                       ILogger logger)
+            throws IOException {
+        setKeepCount(serverSocketChannel, endpointConfig.getSocketKeepCount(), logger);
+        setKeepIdle(serverSocketChannel, endpointConfig.getSocketKeepIdleSeconds(), logger);
+        setKeepInterval(serverSocketChannel, endpointConfig.getSocketKeepIntervalSeconds(), logger);
+    }
+
+    public static void setKeepCount(NetworkChannel socketChannel, Integer value, ILogger logger) throws IOException {
+        if (!supportsKeepAliveOptions(socketChannel)) {
+            if (TCP_KEEPCOUNT_WARNING.compareAndSet(false, true)) {
+                logger.warning(String.format(TCP_KEEP_WARNING, "TCP_KEEPCOUNT", "tcp_keepalive_probes"));
+            }
+        } else {
+            setOptionIfNotDefault(socketChannel, JDK_NET_TCP_KEEPCOUNT, value, EndpointConfig.DEFAULT_SOCKET_KEEP_COUNT);
+        }
+    }
+
+    public static void setKeepIdle(NetworkChannel socketChannel, Integer value, ILogger logger) throws IOException {
+        if (!supportsKeepAliveOptions(socketChannel)) {
+            if (TCP_KEEPIDLE_WARNING.compareAndSet(false, true)) {
+                logger.warning(String.format(TCP_KEEP_WARNING, "TCP_KEEPIDLE", "tcp_keepalive_time"));
+            }
+        } else {
+            setOptionIfNotDefault(socketChannel, JDK_NET_TCP_KEEPIDLE, value, EndpointConfig.DEFAULT_SOCKET_KEEP_IDLE_SECONDS);
+        }
+    }
+
+    public static void setKeepInterval(NetworkChannel socketChannel, Integer value, ILogger logger) throws IOException {
+        if (!supportsKeepAliveOptions(socketChannel)) {
+            if (TCP_KEEPINTERVAL_WARNING.compareAndSet(false, true)) {
+                logger.warning(String.format(TCP_KEEP_WARNING, "TCP_KEEPINTERVAL", "tcp_keepalive_intvl"));
+            }
+        } else {
+            setOptionIfNotDefault(socketChannel, JDK_NET_TCP_KEEPINTERVAL, value,
+                    EndpointConfig.DEFAULT_SOCKET_KEEP_INTERVAL_SECONDS);
+        }
+    }
+
+    private static <T> void setOptionIfNotDefault(NetworkChannel serverSocketChannel,
+                                                  SocketOption<T> socketOption,
+                                                  T value, T defaultValue) throws IOException {
+        if (socketOption != null && !defaultValue.equals(value)) {
+            serverSocketChannel.setOption(socketOption, value);
+        }
+    }
+
+    public static boolean supportsKeepAliveOptions(NetworkChannel channel) {
+        // According to https://bugs.openjdk.org/browse/JDK-8194298 per-socket keep alive options
+        // are supported for linux & macos in OpenJDK-based Java distributions since JDK 8u272 or JDK >= 11.
+        // See: ExtendedOptionsImpl.c in
+        // https://github.com/AdoptOpenJDK/openjdk-jdk8u/commit/13a9d5b0c222b92812f0bc69ac96c8b7755a63a9
+        if (JDK_NET_TCP_KEEPCOUNT == null
+            || JDK_NET_TCP_KEEPIDLE == null
+            || JDK_NET_TCP_KEEPINTERVAL == null) {
+            return false;
+        }
+        Set<SocketOption<?>> options = channel.supportedOptions();
+        return options.contains(IOUtil.JDK_NET_TCP_KEEPCOUNT)
+                && options.contains(IOUtil.JDK_NET_TCP_KEEPIDLE)
+                && options.contains(IOUtil.JDK_NET_TCP_KEEPINTERVAL);
     }
 
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -62,6 +63,7 @@ public class Vertex implements IdentifiedDataSerializable {
      */
     public static final int LOCAL_PARALLELISM_USE_DEFAULT = -1;
 
+    private boolean locked;
     private ProcessorMetaSupplier metaSupplier;
     private String name;
     private int localParallelism = -1;
@@ -156,6 +158,7 @@ public class Vertex implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Vertex localParallelism(int localParallelism) {
+        throwIfLocked();
         this.localParallelism = checkLocalParallelism(localParallelism);
         return this;
     }
@@ -192,6 +195,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * decorate the existing meta-supplier.
      */
     public void updateMetaSupplier(@Nonnull UnaryOperator<ProcessorMetaSupplier> updateFn) {
+        throwIfLocked();
         metaSupplier = updateFn.apply(metaSupplier);
     }
 
@@ -228,4 +232,20 @@ public class Vertex implements IdentifiedDataSerializable {
     }
 
     // END Implementation of IdentifiedDataSerializable
+
+    private void throwIfLocked() {
+        if (locked) {
+            throw new IllegalStateException("Edge is already locked");
+        }
+    }
+
+    /**
+     * Used to prevent further mutations this instance after submitting it for execution.
+     * <p>
+     * It's not a public API, can be removed in the future.
+     */
+    @PrivateApi
+    void lock() {
+        locked = true;
+    }
 }

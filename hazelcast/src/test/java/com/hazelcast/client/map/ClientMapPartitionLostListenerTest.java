@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.map.MapPartitionLostEvent;
@@ -29,7 +28,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,13 +38,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.test.Accessors.getNode;
-import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -129,9 +125,6 @@ public class ClientMapPartitionLostListenerTest extends HazelcastTestSupport {
         assertRegistrationEventually(instance1, mapName, true);
         assertRegistrationEventually(instance2, mapName, true);
 
-        assertProxyExistsEventually(instance1, mapName);
-        assertProxyExistsEventually(instance2, mapName);
-
         MapService mapService = getNode(instance2).getNodeEngine().getService(SERVICE_NAME);
         int partitionId = 5;
         mapService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
@@ -154,22 +147,6 @@ public class ClientMapPartitionLostListenerTest extends HazelcastTestSupport {
                 assertFalse(events.isEmpty());
                 assertEquals(partitionId, events.get(0).getPartitionId());
 
-            }
-        });
-    }
-
-    private static void assertProxyExistsEventually(HazelcastInstance instance, final String proxyName) {
-        final InternalProxyService proxyService = getNodeEngineImpl(instance).getProxyService();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Collection<DistributedObject> allDistributedObjects = proxyService.getAllDistributedObjects();
-                for (DistributedObject distributedObject : allDistributedObjects) {
-                    if (distributedObject.getName().equals(proxyName)) {
-                        return;
-                    }
-                }
-                fail("There is no proxy with name " + proxyName + " created (yet)");
             }
         });
     }

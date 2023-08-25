@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -140,6 +141,10 @@ public class ConfigCompatibilityChecker {
                 new InstanceTrackingConfigChecker());
         checkCompatibleConfigs("native memory", c1.getNativeMemoryConfig(), c2.getNativeMemoryConfig(),
                 new NativeMemoryConfigChecker());
+        checkCompatibleConfigs("data connection", c1, c2, c1.getDataConnectionConfigs(), c2.getDataConnectionConfigs(),
+                new DataConnectionConfigChecker());
+        checkCompatibleConfigs("tpc", c1, c2, singletonMap("", c1.getTpcConfig()),
+                singletonMap("", c2.getTpcConfig()), new TpcConfigChecker());
 
         return true;
     }
@@ -687,6 +692,35 @@ public class ConfigCompatibilityChecker {
         }
     }
 
+    private static class DataConnectionConfigChecker extends ConfigChecker<DataConnectionConfig> {
+        @Override
+        boolean check(DataConnectionConfig c1, DataConnectionConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+            return nullSafeEqual(c1.getName(), c2.getName())
+                    && nullSafeEqual(c1.getType(), c2.getType())
+                    && c1.isShared() == c2.isShared()
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
+        }
+
+        @Override
+        DataConnectionConfig getDefault(Config c) {
+            return c.getDataConnectionConfig("default");
+        }
+    }
+
+    private static class TpcConfigChecker extends ConfigChecker<TpcConfig> {
+        @Override
+        boolean check(TpcConfig c1, TpcConfig c2) {
+            return nullSafeEqual(c1, c2);
+        }
+    }
+
+
     public static class CPSubsystemConfigChecker extends ConfigChecker<CPSubsystemConfig> {
 
         @Override
@@ -706,7 +740,8 @@ public class ConfigCompatibilityChecker {
                             && c1.isFailOnIndeterminateOperationState() == c2.isFailOnIndeterminateOperationState())
                             && c1.isPersistenceEnabled() == c2.isPersistenceEnabled()
                             && c1.getBaseDir().getAbsoluteFile().equals(c2.getBaseDir().getAbsoluteFile())
-                            && c1.getDataLoadTimeoutSeconds() == c2.getDataLoadTimeoutSeconds();
+                            && c1.getDataLoadTimeoutSeconds() == c2.getDataLoadTimeoutSeconds()
+                            && c1.getCPMemberPriority() == c2.getCPMemberPriority();
 
             if (!cpSubsystemConfigValuesEqual) {
                 return false;
@@ -837,7 +872,8 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            return c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis();
+            return c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis()
+                    && c1.isCatalogPersistenceEnabled() == c2.isCatalogPersistenceEnabled();
         }
 
         @Override
@@ -979,7 +1015,9 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
                     && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && nullSafeEqual(c1.getPartitioningStrategyConfig(), c2.getPartitioningStrategyConfig())
-                    && nullSafeEqual(c1.getTieredStoreConfig(), c2.getTieredStoreConfig());
+                    && nullSafeEqual(c1.getTieredStoreConfig(), c2.getTieredStoreConfig())
+                    && isCollectionCompatible(c1.getPartitioningAttributeConfigs(), c2.getPartitioningAttributeConfigs(),
+                    new PartitioningAttributesConfigChecker());
         }
 
         private static boolean isCompatible(WanReplicationRef c1, WanReplicationRef c2) {
@@ -1017,6 +1055,7 @@ public class ConfigCompatibilityChecker {
                     classNameOrImpl(c1.getFactoryClassName(), c1.getFactoryImplementation()),
                     classNameOrImpl(c2.getFactoryClassName(), c2.getFactoryImplementation()))
                 && nullSafeEqual(c1.getProperties(), c2.getProperties()))
+                && nullSafeEqual(c1.isOffload(), c2.isOffload())
                 && nullSafeEqual(c1.isWriteCoalescing(), c2.isWriteCoalescing())
                 && nullSafeEqual(c1.getWriteBatchSize(), c2.getWriteBatchSize())
                 && nullSafeEqual(c1.getWriteDelaySeconds(), c2.getWriteDelaySeconds())
@@ -1171,7 +1210,8 @@ public class ConfigCompatibilityChecker {
                     && REST_API_CONFIG_CHECKER.check(c1.getRestApiConfig(), c2.getRestApiConfig())
                     && MEMCACHE_PROTOCOL_CONFIG_CHECKER.check(
                     c1.getMemcacheProtocolConfig(),
-                    c2.getMemcacheProtocolConfig());
+                    c2.getMemcacheProtocolConfig())
+                    && nullSafeEqual(c1.getTpcSocketConfig(), c2.getTpcSocketConfig());
         }
     }
 
@@ -1328,7 +1368,11 @@ public class ConfigCompatibilityChecker {
                     && (c1.getSocketConnectTimeoutSeconds() == c2.getSocketConnectTimeoutSeconds())
                     && (c1.getSocketLingerSeconds() == c2.getSocketLingerSeconds())
                     && (c1.getSocketRcvBufferSizeKb() == c2.getSocketRcvBufferSizeKb())
-                    && (c1.getSocketSendBufferSizeKb() == c2.getSocketSendBufferSizeKb());
+                    && (c1.getSocketSendBufferSizeKb() == c2.getSocketSendBufferSizeKb())
+                    && (c1.getSocketKeepIntervalSeconds() == c2.getSocketKeepIntervalSeconds())
+                    && (c1.getSocketKeepIdleSeconds() == c2.getSocketKeepIdleSeconds())
+                    && (c1.getSocketKeepCount() == c2.getSocketKeepCount())
+                    && nullSafeEqual(c1.getTpcSocketConfig(), c2.getTpcSocketConfig());
 
             if (c1 instanceof ServerSocketEndpointConfig) {
                 ServerSocketEndpointConfig s1 = (ServerSocketEndpointConfig) c1;
@@ -1902,9 +1946,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    static class RestApiConfigChecker extends ConfigChecker<RestApiConfig> {
+    public static class RestApiConfigChecker extends ConfigChecker<RestApiConfig> {
         @Override
-        boolean check(RestApiConfig c1, RestApiConfig c2) {
+        public boolean check(RestApiConfig c1, RestApiConfig c2) {
             if (c1 == c2) {
                 return true;
             }
@@ -1916,9 +1960,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    static class MemcacheProtocolConfigChecker extends ConfigChecker<MemcacheProtocolConfig> {
+    public static class MemcacheProtocolConfigChecker extends ConfigChecker<MemcacheProtocolConfig> {
         @Override
-        boolean check(MemcacheProtocolConfig c1, MemcacheProtocolConfig c2) {
+        public boolean check(MemcacheProtocolConfig c1, MemcacheProtocolConfig c2) {
             if (c1 == c2) {
                 return true;
             }
@@ -1926,6 +1970,14 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
             return (c1.isEnabled() == c2.isEnabled());
+        }
+    }
+
+    public static class PartitioningAttributesConfigChecker extends ConfigChecker<PartitioningAttributeConfig> {
+        @Override
+        boolean check(PartitioningAttributeConfig c1, PartitioningAttributeConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getAttributeName(), c2.getAttributeName());
         }
     }
 

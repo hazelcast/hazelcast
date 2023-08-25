@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.spi.impl.merge;
 
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.internal.partition.IPartitionService;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -49,14 +49,12 @@ public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBr
 
     @Override
     public final Runnable prepareMergeRunnable() {
-        ConcurrentLinkedQueue<Store> mergingStores = new ConcurrentLinkedQueue<Store>();
-
-        collectStores(mergingStores);
-
-        return newMergeRunnable(mergingStores);
+        return newMergeRunnable(collectStores());
     }
 
-    private void collectStores(final ConcurrentLinkedQueue<Store> mergingStores) {
+    private Collection<Store> collectStores() {
+        ConcurrentLinkedQueue<Store> mergingStores = new ConcurrentLinkedQueue<>();
+
         int partitionCount = partitionService.getPartitionCount();
         final CountDownLatch latch = new CountDownLatch(partitionCount);
 
@@ -69,6 +67,8 @@ public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBr
         } catch (InterruptedException e) {
             currentThread().interrupt();
         }
+
+        return mergingStores;
     }
 
     /**
@@ -95,12 +95,14 @@ public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBr
 
         @Override
         public void run() {
-            LinkedList<Store> storesToDestroy = new LinkedList<Store>();
+            LinkedList<Store> storesToDestroy = new LinkedList<>();
             try {
                 Iterator<Store> iterator = storeIterator(partitionId);
                 while (iterator.hasNext()) {
                     Store store = iterator.next();
-                    if (isLocalPartition(partitionId) && hasEntries(store) && hasMergeablePolicy(store)) {
+                    if (isLocalPartition(partitionId)
+                            && hasEntries(store)
+                            && hasMergeablePolicy(store)) {
                         mergingStores.add(store);
                     } else {
                         storesToDestroy.add(store);

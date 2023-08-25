@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
@@ -29,6 +30,7 @@ import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.version.Version;
 
 import java.util.UUID;
+import java.util.concurrent.Executor;
 
 /**
  * Abstract DistributedObject implementation. Useful to provide basic functionality.
@@ -38,6 +40,7 @@ import java.util.UUID;
 public abstract class AbstractDistributedObject<S extends RemoteService> implements DistributedObject {
 
     protected static final PartitioningStrategy PARTITIONING_STRATEGY = StringPartitioningStrategy.INSTANCE;
+    protected final Executor internalAsyncExecutor;
 
     private volatile NodeEngine nodeEngine;
     private volatile S service;
@@ -45,6 +48,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     protected AbstractDistributedObject(NodeEngine nodeEngine, S service) {
         this.nodeEngine = nodeEngine;
         this.service = service;
+        this.internalAsyncExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     protected String getDistributedObjectName() {

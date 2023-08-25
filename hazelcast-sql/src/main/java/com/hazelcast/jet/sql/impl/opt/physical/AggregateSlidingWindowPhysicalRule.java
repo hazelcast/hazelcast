@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,13 +37,14 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
+import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.calcite.util.ImmutableBitSet.Builder;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map.Entry;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.hasInputRef;
@@ -128,7 +129,7 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         // -SlidingWindowAggregatePhysicalRel(group=[$0], EXPR$1=[AVG($1)])
         // --Calc(rowType=[timestamp, field1])
         //
-        // The group=[$0] we pass to SlidingWindowAggregatePhysicalRel' superclass isn't correct,
+        // The group=[$0] we pass to SlidingWindowAggregatePhysicalRel's superclass isn't correct,
         // but it works for us for now - the superclass uses it only to calculate the output type.
         // And the timestamp and the window bound have the same type.
 
@@ -187,6 +188,13 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
                     windowRel.windowPolicyProvider());
             if (transformedRel != null) {
                 call.transformTo(transformedRel);
+            } else {
+                call.transformTo(
+                        new ShouldNotExecuteRel(logicalAggregate.getCluster(),
+                                OptUtils.toPhysicalConvention(logicalAggregate.getTraitSet()),
+                                logicalAggregate.getRowType(),
+                                "Streaming aggregation is supported only for window aggregation, with imposed order, " +
+                                        "grouping by a window bound (see TUMBLE/HOP and IMPOSE_ORDER functions)"));
             }
         }
     }
@@ -198,13 +206,10 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
             List<Integer> windowEndIndexes,
             FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider
     ) {
-        Integer watermarkedField = findWatermarkedField(logicalAggregate, physicalInput);
+        Integer watermarkedField = findWatermarkedField(logicalAggregate, windowStartIndexes, windowEndIndexes, physicalInput);
         if (watermarkedField == null) {
             return null;
         }
-
-        RexNode timestampExpression = logicalAggregate.getCluster().getRexBuilder().makeInputRef(
-                physicalInput, watermarkedField);
 
         return new SlidingWindowAggregatePhysicalRel(
                 physicalInput.getCluster(),
@@ -213,7 +218,7 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
                 logicalAggregate.getGroupSet(),
                 logicalAggregate.getGroupSets(),
                 logicalAggregate.getAggCallList(),
-                timestampExpression,
+                watermarkedField,
                 windowPolicyProvider,
                 logicalAggregate.containsDistinctCall() ? 1 : 2,
                 windowStartIndexes,
@@ -221,23 +226,28 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
     }
 
     /**
-     * Extract watermarked column index
-     * (possibly) enforced by IMPOSE_ORDER.
+     * Extract watermarked column index (possibly) enforced by IMPOSE_ORDER.
      *
      * @return watermarked column index.
      */
     @Nullable
     private static Integer findWatermarkedField(
             AggregateLogicalRel logicalAggregate,
+            List<Integer> windowStartIndexes,
+            List<Integer> windowEndIndexes,
             RelNode input
     ) {
-        // TODO: [viliam, sasha] besides watermark order, we can also use normal collation
+        // TODO [sasha]: besides watermark order, we can also use normal collation
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(input);
         WatermarkedFields watermarkedFields = query.extractWatermarkedFields(input);
         if (watermarkedFields == null) {
             return null;
         }
-        Entry<Integer, RexNode> watermarkedField = watermarkedFields.findFirst(logicalAggregate.getGroupSet());
-        return watermarkedField != null ? watermarkedField.getKey() : null;
+
+        Builder windowBoundIndexesBuilder = ImmutableBitSet.builder()
+                .addAll(windowStartIndexes)
+                .addAll(windowEndIndexes);
+        windowBoundIndexesBuilder.intersect(logicalAggregate.getGroupSet());
+        return watermarkedFields.findFirst(windowBoundIndexesBuilder.build());
     }
 }

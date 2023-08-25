@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -1394,8 +1394,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) GROUP BY window_start"))
-                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
-                        "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
+                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed order, " +
+                        "grouping by a window bound (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1517,7 +1517,7 @@ public class SqlHopTest extends SqlTestSupport {
         );
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT window_start_inner, name, COUNT(name) FROM " +
+                "SELECT window_start, window_start_inner, name, COUNT(name) FROM " +
                         "TABLE(HOP(" +
                         "   (SELECT ts, name, window_start AS window_start_inner FROM" +
                         "      TABLE(HOP(" +
@@ -1531,16 +1531,16 @@ public class SqlHopTest extends SqlTestSupport {
                         "   , INTERVAL '0.004' SECOND" +
                         "   , INTERVAL '0.002' SECOND" +
                         ")) " +
-                        "GROUP BY window_start_inner, name",
+                        "GROUP BY window_start, window_start_inner, name",
                 asList(
-                        new Row(timestampTz(0L), "Alice", 1L),
-                        new Row(timestampTz(0L), "Alice", 1L),
-                        new Row(timestampTz(0L), "Bob", 1L),
-                        new Row(timestampTz(0L), "Bob", 1L),
-                        new Row(timestampTz(2L), "Alice", 1L),
-                        new Row(timestampTz(2L), "Alice", 1L),
-                        new Row(timestampTz(2L), "Bob", 1L),
-                        new Row(timestampTz(2L), "Bob", 1L)
+                        new Row(timestampTz(0L), timestampTz(0L), "Alice", 1L),
+                        new Row(timestampTz(2L), timestampTz(0L), "Alice", 1L),
+                        new Row(timestampTz(0L), timestampTz(0L), "Bob", 1L),
+                        new Row(timestampTz(2L), timestampTz(0L), "Bob", 1L),
+                        new Row(timestampTz(0L), timestampTz(2L), "Alice", 1L),
+                        new Row(timestampTz(2L), timestampTz(2L), "Alice", 1L),
+                        new Row(timestampTz(0L), timestampTz(2L), "Bob", 1L),
+                        new Row(timestampTz(2L), timestampTz(2L), "Bob", 1L)
                 )
         );
     }
@@ -1717,8 +1717,8 @@ public class SqlHopTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT window_start FROM " +
                 "TABLE(HOP(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND)) " +
                 "GROUP BY window_start")
-        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
-                "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed order, " +
+                "grouping by a window bound (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1728,8 +1728,8 @@ public class SqlHopTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
                 "TABLE(HOP(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND)) " +
                 "GROUP BY window_start")
-        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
-                "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed order, " +
+                "grouping by a window bound (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1738,8 +1738,8 @@ public class SqlHopTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
                 "TABLE(HOP(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND))")
-        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
-                "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed order, " +
+                "grouping by a window bound (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1753,8 +1753,8 @@ public class SqlHopTest extends SqlTestSupport {
                 "  , INTERVAL '0.004' SECOND" +
                 "  , INTERVAL '0.002' SECOND" +
                 "))")
-        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
-                "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed order, " +
+                "grouping by a window bound (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test

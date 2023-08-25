@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,6 @@ public class WanCacheEntryView<K, V> implements CacheEntryView<K, V>, Identified
     private V value;
     private Data dataKey;
     private Data dataValue;
-    private Data trimmedDataKey;
-    private Data trimmedDataValue;
     private long creationTime;
     private long expirationTime;
     private long lastAccessTime;
@@ -61,8 +59,8 @@ public class WanCacheEntryView<K, V> implements CacheEntryView<K, V>, Identified
                              long lastAccessTime,
                              long hits,
                              @Nonnull SerializationService serializationService) {
-        this.dataKey = serializationService.toDataWithSchema(dataKey);
-        this.dataValue = serializationService.toDataWithSchema(dataValue);
+        this.dataKey = dataKey;
+        this.dataValue = dataValue;
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
         this.lastAccessTime = lastAccessTime;
@@ -79,10 +77,7 @@ public class WanCacheEntryView<K, V> implements CacheEntryView<K, V>, Identified
     }
 
     public Data getDataKey() {
-        if (trimmedDataKey == null) {
-            trimmedDataKey = serializationService.trimSchema(dataKey);
-        }
-        return trimmedDataKey;
+        return dataKey;
     }
 
     @Override
@@ -94,10 +89,7 @@ public class WanCacheEntryView<K, V> implements CacheEntryView<K, V>, Identified
     }
 
     public Data getDataValue() {
-        if (trimmedDataValue == null) {
-            trimmedDataValue = serializationService.trimSchema(dataValue);
-        }
-        return trimmedDataValue;
+        return dataValue;
     }
 
     @Override

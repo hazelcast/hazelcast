@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,8 +69,8 @@ public class ClientMapReplaceAllTest extends HazelcastTestSupport {
         map.put("k1", "v1");
         map.put("k2", "v2");
         map.replaceAll(new StaticSerializableBiFunction("v_new"));
-        assertEquals(map.get("k1"), "v_new");
-        assertEquals(map.get("k2"), "v_new");
+        assertEquals("v_new", map.get("k1"));
+        assertEquals("v_new", map.get("k2"));
     }
 
     @Test
@@ -79,8 +79,8 @@ public class ClientMapReplaceAllTest extends HazelcastTestSupport {
         map.put("k1", 1);
         map.put("k2", 2);
         map.replaceAll((k, v) -> v * 10);
-        assertEquals((int) map.get("k1"), 10);
-        assertEquals((int) map.get("k2"), 20);
+        assertEquals(10, (int) map.get("k1"));
+        assertEquals(20, (int) map.get("k2"));
     }
 
     @Test(expected = ArithmeticException.class)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,8 +75,8 @@ public abstract class AbstractPNCounterBasicIntegrationTest extends HazelcastTes
         assertCounterValueEventually(finalValue.longValue(), counter1);
         assertCounterValueEventually(finalValue.longValue(), counter2);
 
-        int increments = 0;
-        int decrements = 0;
+        long increments = 0;
+        long decrements = 0;
         for (HazelcastInstance member : getMembers()) {
             final PNCounterService service = getNodeEngineImpl(member).getService(PNCounterService.SERVICE_NAME);
             for (LocalPNCounterStats stats : service.getStats().values()) {

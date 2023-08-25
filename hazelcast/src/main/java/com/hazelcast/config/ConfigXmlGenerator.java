@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -31,10 +33,10 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.config.ConfigXmlGeneratorHelper;
 import com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
@@ -42,7 +44,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 
@@ -197,6 +198,8 @@ public class ConfigXmlGenerator {
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
         integrityCheckerXmlGenerator(gen, config);
+        dataConnectionConfiguration(gen, config);
+        tpcConfiguration(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -205,6 +208,9 @@ public class ConfigXmlGenerator {
     }
 
     private String getOrMaskValue(String value) {
+        if (value == null) {
+            return null;
+        }
         return maskSensitiveFields ? MASK_FOR_SENSITIVE_DATA : value;
     }
 
@@ -319,7 +325,7 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void ldapAuthenticationGenerator(XmlGenerator gen, LdapAuthenticationConfig c) {
+    private void ldapAuthenticationGenerator(XmlGenerator gen, LdapAuthenticationConfig c) {
         if (c == null) {
             return;
         }
@@ -336,7 +342,7 @@ public class ConfigXmlGenerator {
                 .nodeIfContents("role-search-scope", c.getRoleSearchScope())
                 .nodeIfContents("user-name-attribute", c.getUserNameAttribute())
                 .nodeIfContents("system-user-dn", c.getSystemUserDn())
-                .nodeIfContents("system-user-password", c.getSystemUserPassword())
+                .nodeIfContents("system-user-password", getOrMaskValue(c.getSystemUserPassword()))
                 .nodeIfContents("system-authentication", c.getSystemAuthentication())
                 .nodeIfContents("security-realm", c.getSecurityRealm())
                 .nodeIfContents("password-attribute", c.getPasswordAttribute())
@@ -347,7 +353,7 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void kerberosAuthenticationGenerator(XmlGenerator gen, KerberosAuthenticationConfig c) {
+    private void kerberosAuthenticationGenerator(XmlGenerator gen, KerberosAuthenticationConfig c) {
         if (c == null) {
             return;
         }
@@ -362,14 +368,14 @@ public class ConfigXmlGenerator {
         kerberosGen.close();
     }
 
-    private static void simpleAuthenticationGenerator(XmlGenerator gen, SimpleAuthenticationConfig c) {
+    private void simpleAuthenticationGenerator(XmlGenerator gen, SimpleAuthenticationConfig c) {
         if (c == null) {
             return;
         }
         XmlGenerator simpleGen = gen.open("simple");
         addClusterLoginElements(simpleGen, c).nodeIfContents("role-separator", c.getRoleSeparator());
         for (String username : c.getUsernames()) {
-            simpleGen.open("user", "username", username, "password", c.getPassword(username));
+            simpleGen.open("user", "username", username, "password", getOrMaskValue(c.getPassword(username)));
             for (String role : c.getRoles(username)) {
                 simpleGen.node("role", role);
             }
@@ -522,30 +528,9 @@ public class ConfigXmlGenerator {
             gen.close();
         }
 
-        compactSerializationXmlGenerator(gen, c);
+        ConfigXmlGeneratorHelper.compactSerialization(gen, c.getCompactSerializationConfig());
 
-        gen.close();
-    }
-
-    private static void compactSerializationXmlGenerator(XmlGenerator gen, SerializationConfig serializationConfig) {
-        CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
-        if (!compactSerializationConfig.isEnabled()) {
-            return;
-        }
-
-        gen.open("compact-serialization", "enabled", compactSerializationConfig.isEnabled());
-
-        Map<String, TriTuple<Class, String, CompactSerializer>> registries
-                = CompactSerializationConfigAccessor.getRegistrations(compactSerializationConfig);
-        Map<String, TriTuple<String, String, String>> namedRegistries
-                = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
-        if (!MapUtil.isNullOrEmpty(registries) || !MapUtil.isNullOrEmpty(namedRegistries)) {
-            gen.open("registered-classes");
-            appendRegisteredClasses(gen, registries);
-            appendNamedRegisteredClasses(gen, namedRegistries);
-            gen.close();
-        }
-
+        // close serialization
         gen.close();
     }
 
@@ -601,7 +586,7 @@ public class ConfigXmlGenerator {
         gen.open("join");
         autoDetectionConfigXmlGenerator(gen, join);
         multicastConfigXmlGenerator(gen, join);
-        tcpConfigXmlGenerator(gen, join);
+        tcpIpConfigXmlGenerator(gen, join);
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
         discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
@@ -614,6 +599,7 @@ public class ConfigXmlGenerator {
         failureDetectorConfigXmlGenerator(gen, netCfg.getIcmpFailureDetectorConfig());
         restApiXmlGenerator(gen, netCfg);
         memcacheProtocolXmlGenerator(gen, netCfg);
+        tpcSocketConfigXmlGenerator(gen, netCfg.getTpcSocketConfig());
         gen.close();
     }
 
@@ -629,7 +615,7 @@ public class ConfigXmlGenerator {
         gen.open("join");
         autoDetectionConfigXmlGenerator(gen, join);
         multicastConfigXmlGenerator(gen, join);
-        tcpConfigXmlGenerator(gen, join);
+        tcpIpConfigXmlGenerator(gen, join);
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
         discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
@@ -682,6 +668,9 @@ public class ConfigXmlGenerator {
         gen.node("send-buffer-size-kb", endpointConfig.getSocketSendBufferSizeKb());
         gen.node("receive-buffer-size-kb", endpointConfig.getSocketRcvBufferSizeKb());
         gen.node("linger-seconds", endpointConfig.getSocketLingerSeconds());
+        gen.node("keep-idle-seconds", endpointConfig.getSocketKeepIdleSeconds());
+        gen.node("keep-interval-seconds", endpointConfig.getSocketKeepIntervalSeconds());
+        gen.node("keep-count", endpointConfig.getSocketKeepCount());
         gen.close();
 
         if (endpointConfig instanceof ServerSocketEndpointConfig) {
@@ -692,10 +681,12 @@ public class ConfigXmlGenerator {
                     .node("public-address", serverSocketEndpointConfig.getPublicAddress())
                     .node("reuse-address", serverSocketEndpointConfig.isReuseAddress());
         }
+
+        tpcSocketConfigXmlGenerator(gen, endpointConfig.getTpcSocketConfig());
         gen.close();
     }
 
-    private String endpointConfigElementName(EndpointConfig endpointConfig) {
+    public static String endpointConfigElementName(EndpointConfig endpointConfig) {
         if (endpointConfig instanceof ServerSocketEndpointConfig) {
             switch (endpointConfig.getProtocolType()) {
                 case REST:
@@ -759,16 +750,19 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void tcpConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
-        TcpIpConfig c = join.getTcpIpConfig();
-        gen.open("tcp-ip", "enabled", c.isEnabled(), "connection-timeout-seconds", c.getConnectionTimeoutSeconds())
-                .open("member-list");
-        for (String m : c.getMembers()) {
+    public static void tcpIpConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
+        TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
+        gen.open("tcp-ip", "enabled", tcpIpConfig.isEnabled(),
+                "connection-timeout-seconds", tcpIpConfig.getConnectionTimeoutSeconds());
+        gen.open("member-list");
+        for (String m : tcpIpConfig.getMembers()) {
             gen.node("member", m);
         }
-        gen.close()
-                .node("required-member", c.getRequiredMember())
-                .close();
+        // </member-list>
+        gen.close();
+        gen.node("required-member", tcpIpConfig.getRequiredMember());
+        // </tcp-ip>
+        gen.close();
     }
 
     private static void interfacesConfigXmlGenerator(XmlGenerator gen, InterfacesConfig interfaces) {
@@ -993,7 +987,8 @@ public class ConfigXmlGenerator {
                 .node("fail-on-indeterminate-operation-state", cpSubsystemConfig.isFailOnIndeterminateOperationState())
                 .node("persistence-enabled", cpSubsystemConfig.isPersistenceEnabled())
                 .node("base-dir", cpSubsystemConfig.getBaseDir().getAbsolutePath())
-                .node("data-load-timeout-seconds", cpSubsystemConfig.getDataLoadTimeoutSeconds());
+                .node("data-load-timeout-seconds", cpSubsystemConfig.getDataLoadTimeoutSeconds())
+                .node("cp-member-priority", cpSubsystemConfig.getCPMemberPriority());
 
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         gen.open("raft-algorithm")
@@ -1053,6 +1048,7 @@ public class ConfigXmlGenerator {
         SqlConfig sqlConfig = config.getSqlConfig();
         gen.open("sql")
                 .node("statement-timeout-millis", sqlConfig.getStatementTimeoutMillis())
+                .node("catalog-persistence-enabled", sqlConfig.isCatalogPersistenceEnabled())
                 .close();
     }
 
@@ -1127,9 +1123,9 @@ public class ConfigXmlGenerator {
         gen.open("native-memory",
                 "enabled", nativeMemoryConfig.isEnabled(),
                 "allocator-type", nativeMemoryConfig.getAllocatorType())
-                .node("size", null,
-                        "unit", nativeMemoryConfig.getSize().getUnit(),
-                        "value", nativeMemoryConfig.getSize().getValue())
+                .node("capacity", null,
+                        "unit", nativeMemoryConfig.getCapacity().getUnit(),
+                        "value", nativeMemoryConfig.getCapacity().getValue())
                 .node("min-block-size", nativeMemoryConfig.getMinBlockSize())
                 .node("page-size", nativeMemoryConfig.getPageSize())
                 .node("metadata-space-percentage", nativeMemoryConfig.getMetadataSpacePercentage());
@@ -1179,6 +1175,14 @@ public class ConfigXmlGenerator {
         gen.node("memcache-protocol", null, "enabled", c.isEnabled());
     }
 
+    private static void tpcSocketConfigXmlGenerator(XmlGenerator gen, TpcSocketConfig tpcSocketConfig) {
+        gen.open("tpc-socket")
+                .node("port-range", tpcSocketConfig.getPortRange())
+                .node("receive-buffer-size-kb", tpcSocketConfig.getReceiveBufferSizeKB())
+                .node("send-buffer-size-kb", tpcSocketConfig.getSendBufferSizeKB())
+                .close();
+    }
+
     private static void appendSerializationFactory(XmlGenerator gen, String elementName, Map<Integer, ?> factoryMap) {
         if (MapUtil.isNullOrEmpty(factoryMap)) {
             return;
@@ -1207,43 +1211,6 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void appendRegisteredClasses(XmlGenerator gen,
-                                                Map<String, TriTuple<Class, String, CompactSerializer>> registries) {
-        if (registries.isEmpty()) {
-            return;
-        }
-
-        for (TriTuple<Class, String, CompactSerializer> registration : registries.values()) {
-            Class registeredClass = registration.element1;
-            String typeName = registration.element2;
-            CompactSerializer serializer = registration.element3;
-            if (serializer != null) {
-                String serializerClassName = serializer.getClass().getName();
-                gen.node("class", registeredClass.getName(), "type-name", typeName, "serializer", serializerClassName);
-            } else {
-                gen.node("class", registeredClass.getName());
-            }
-        }
-    }
-
-    private static void appendNamedRegisteredClasses(XmlGenerator gen,
-                                                     Map<String, TriTuple<String, String, String>> namedRegistries) {
-        if (namedRegistries.isEmpty()) {
-            return;
-        }
-
-        for (TriTuple<String, String, String> registration : namedRegistries.values()) {
-            String registeredClassName = registration.element1;
-            String typeName = registration.element2;
-            String serializerClassName = registration.element3;
-            if (serializerClassName != null) {
-                gen.node("class", registeredClassName, "type-name", typeName, "serializer", serializerClassName);
-            } else {
-                gen.node("class", registeredClassName);
-            }
-        }
-    }
-
     private static void integrityCheckerXmlGenerator(final XmlGenerator gen, final Config config) {
         gen.node(
                 "integrity-checker",
@@ -1251,6 +1218,27 @@ public class ConfigXmlGenerator {
                 "enabled",
                 config.getIntegrityCheckerConfig().isEnabled()
         );
+    }
+
+    private static void dataConnectionConfiguration(final XmlGenerator gen, final Config config) {
+        for (DataConnectionConfig dataConnectionConfig : config.getDataConnectionConfigs().values()) {
+            gen.open(
+                            "data-connection",
+                            "name",
+                            dataConnectionConfig.getName()
+                    )
+                    .node("type", dataConnectionConfig.getType())
+                    .node("shared", dataConnectionConfig.isShared())
+                    .appendProperties(dataConnectionConfig.getProperties())
+                    .close();
+        }
+    }
+
+    private static void tpcConfiguration(final XmlGenerator gen, final Config config) {
+        TpcConfig tpcConfig = config.getTpcConfig();
+        gen.open("tpc", "enabled", tpcConfig.isEnabled())
+                .node("eventloop-count", tpcConfig.getEventloopCount())
+                .close();
     }
 
     /**
@@ -1398,6 +1386,12 @@ public class ConfigXmlGenerator {
             for (int i = 0; i < length; i++) {
                 char ch = s.charAt(i);
                 switch (ch) {
+                    case '\n':
+                        appendTo.append("&#10;");
+                        break;
+                    case '\r':
+                        appendTo.append("&#13;");
+                        break;
                     case '"':
                         appendTo.append("&quot;");
                         break;

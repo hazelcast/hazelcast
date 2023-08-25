@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,13 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -147,7 +148,7 @@ public class BasicCompletableFutureTest {
         delegateFuture.run();
         outerFuture.whenCompleteAsync(callback, CALLER_RUNS);
 
-        verifyZeroInteractions(callback);
+        verifyNoInteractions(callback);
     }
 
     @Test
@@ -158,7 +159,7 @@ public class BasicCompletableFutureTest {
         delegateFuture.run();
         outerFuture.whenCompleteAsync(callback, CALLER_RUNS);
 
-        verifyZeroInteractions(callback);
+        verifyNoInteractions(callback);
     }
 
     @Test
@@ -171,7 +172,7 @@ public class BasicCompletableFutureTest {
 
         verify(callback, times(1)).accept(any(String.class), isNull());
         verify(callback, times(0)).accept(isNull(), any(Throwable.class));
-        verifyZeroInteractions(callback);
+        verifyNoMoreInteractions(callback);
     }
 
     @Test
@@ -184,7 +185,7 @@ public class BasicCompletableFutureTest {
 
         verify(callback, times(1)).accept(any(String.class), isNull());
         verify(callback, times(0)).accept(isNull(), any(Throwable.class));
-        verifyZeroInteractions(callback);
+        verifyNoMoreInteractions(callback);
     }
 
     @Test
@@ -197,7 +198,7 @@ public class BasicCompletableFutureTest {
 
         verify(callback, times(1)).accept(any(String.class), isNull());
         verify(callback, times(0)).accept(isNull(), any(Throwable.class));
-        verifyZeroInteractions(callback);
+        verifyNoMoreInteractions(callback);
     }
 
     @Test
@@ -210,7 +211,7 @@ public class BasicCompletableFutureTest {
 
         verify(callback, times(1)).accept(any(String.class), isNull());
         verify(callback, times(0)).accept(isNull(), any(Throwable.class));
-        verifyZeroInteractions(callback);
+        verifyNoMoreInteractions(callback);
     }
 
     @Test
@@ -224,7 +225,7 @@ public class BasicCompletableFutureTest {
 
         verify(callback, times(0)).accept(any(String.class), isNull());
         verify(callback, times(1)).accept(isNull(), any(Throwable.class));
-        verifyZeroInteractions(callback);
+        verifyNoMoreInteractions(callback);
     }
 
     @Test
@@ -244,7 +245,7 @@ public class BasicCompletableFutureTest {
 
         verify(callback, times(0)).accept(any(String.class), isNull());
         verify(callback, times(1)).accept(isNull(), any(Throwable.class));
-        verifyZeroInteractions(callback);
+        verifyNoMoreInteractions(callback);
     }
 
     private <V> FutureTask<V> future(final V result) {

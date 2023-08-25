@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -25,16 +25,24 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
+import com.hazelcast.jet.pipeline.JdbcPropertyKeys;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 
+import static com.hazelcast.internal.util.StringUtil.isBoolean;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -45,13 +53,15 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
  */
 public final class ReadJdbcP<T> extends AbstractProcessor {
 
+    private static final ILogger LOGGER = Logger.getLogger(ReadJdbcP.class);
+
     private final SupplierEx<? extends Connection> newConnectionFn;
     private final ToResultSetFunction resultSetFn;
     private final FunctionEx<? super ResultSet, ? extends T> mapOutputFn;
 
     private Connection connection;
     private ResultSet resultSet;
-    private Traverser traverser;
+    private Traverser<? extends T> traverser;
     private int parallelism;
     private int index;
 
@@ -74,7 +84,18 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
      * Use {@link SourceProcessors#readJdbcP}.
      */
     public static <T> ProcessorMetaSupplier supplier(
-            @Nonnull SupplierEx<? extends Connection> newConnectionFn,
+            @Nonnull SupplierEx<? extends DataSource> newDataSourceFn,
+            @Nonnull ToResultSetFunction resultSetFn,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        return supplier(ctx -> newDataSourceFn.get().getConnection(), resultSetFn, mapOutputFn);
+    }
+
+    /**
+     * Use {@link SourceProcessors#readJdbcP}.
+     */
+    public static <T> ProcessorMetaSupplier supplier(
+            @Nonnull FunctionEx<ProcessorSupplier.Context, ? extends Connection> newConnectionFn,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
@@ -82,6 +103,9 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         checkSerializable(resultSetFn, "resultSetFn");
         checkSerializable(mapOutputFn, "mapOutputFn");
 
+        // We don't know the JDBC URL yet, so only the 'jdbc:' prefix is used as permission name.
+        // Additional permission check with URL retrieved from the JDBC connection metadata
+        // is performed in #init(Context) method.
         return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
                 SecuredFunctions.readJdbcProcessorFn(null, newConnectionFn, resultSetFn, mapOutputFn));
     }
@@ -89,27 +113,40 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     public static <T> ProcessorMetaSupplier supplier(
             @Nonnull String connectionURL,
             @Nonnull String query,
+            @Nonnull Properties properties,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(
-                ProcessorSupplier.of(
-                        SecuredFunctions.readJdbcProcessorFn(connectionURL,
-                                () -> DriverManager.getConnection(connectionURL),
-                                (connection, parallelism, index) -> {
-                                    PreparedStatement statement = connection.prepareStatement(query);
-                                    try {
-                                        return statement.executeQuery();
-                                    } catch (SQLException e) {
-                                        statement.close();
-                                        throw e;
-                                    }
-                                }, mapOutputFn)
-                ),
+                SecuredFunctions.readJdbcProcessorFn(connectionURL,
+                        // Return a new connection. Connection will be closed by ReadJdbcP processor
+                        context -> DriverManager.getConnection(connectionURL),
+                        // Create a ResultSet. ResultSet will be closed by ReadJdbcP processor
+                        (connection, parallelism, index) -> {
+                            setAutoCommitIfNecessary(connection, properties);
+                            PreparedStatement preparedStatement = connection.prepareStatement(query);
+                            try {
+                                setFetchSizeIfNecessary(preparedStatement, properties);
+                                return preparedStatement.executeQuery();
+                            } catch (SQLException e) {
+                                preparedStatement.close();
+                                throw e;
+                            }
+                        },
+                        mapOutputFn),
                 newUnsecureUuidString(),
                 ConnectorPermission.jdbc(connectionURL, ACTION_READ)
         );
+    }
+
+    public static <T> ProcessorMetaSupplier supplier(
+            DataConnectionRef dataConnectionRef,
+            ToResultSetFunction resultSetFn,
+            FunctionEx<? super ResultSet, ? extends T> mapOutputFn) {
+
+        return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
+                SecuredFunctions.readJdbcProcessorFn(dataConnectionRef.getName(), resultSetFn, mapOutputFn));
     }
 
     @Override
@@ -117,6 +154,12 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
         DriverManager.getDrivers();
         this.connection = newConnectionFn.get();
+        try {
+            String url = connection.getMetaData().getURL();
+            context.checkPermission(ConnectorPermission.jdbc(url, ACTION_READ));
+        } catch (SQLException e) {
+            throw new HazelcastException(e);
+        }
         this.parallelism = context.totalParallelism();
         this.index = context.globalProcessorIndex();
     }
@@ -125,8 +168,8 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     public boolean complete() {
         if (traverser == null) {
             resultSet = uncheckCall(() -> resultSetFn.createResultSet(connection, parallelism, index));
-            traverser = ((Traverser<ResultSet>) () -> uncheckCall(() -> resultSet.next() ? resultSet : null))
-                    .map(mapOutputFn);
+            Traverser<ResultSet> t = () -> uncheckCall(() -> resultSet.next() ? resultSet : null);
+            traverser = t.map(mapOutputFn);
         }
         return emitFromTraverser(traverser);
     }
@@ -160,5 +203,32 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             return e;
         }
         return null;
+    }
+
+    private static void setAutoCommitIfNecessary(Connection connection, Properties properties) throws SQLException {
+        String key = JdbcPropertyKeys.AUTO_COMMIT;
+        if (properties.containsKey(key)) {
+            String value = properties.getProperty(key);
+            if (isBoolean(value)) {
+                boolean autoCommit = Boolean.parseBoolean(value);
+                connection.setAutoCommit(autoCommit);
+            } else {
+                throw new IllegalArgumentException("Invalid boolean value specified for autoCommit: " + value);
+            }
+        }
+    }
+
+    private static void setFetchSizeIfNecessary(PreparedStatement statement, Properties properties) throws SQLException {
+        String key = JdbcPropertyKeys.FETCH_SIZE;
+        if (properties.containsKey(key)) {
+            String value = properties.getProperty(key);
+            try {
+                int fetchSize = Integer.parseInt(value);
+                statement.setFetchSize(fetchSize);
+            } catch (NumberFormatException exception) {
+                LOGGER.severe("Invalid integer value specified for fetchSize: " + value, exception);
+                throw exception;
+            }
+        }
     }
 }

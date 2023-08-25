@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.DeleteOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 
@@ -48,12 +51,23 @@ public class DeleteOperation extends BaseRemoveOperation {
     }
 
     @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        success = state.getOldValue() != null;
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return DeleteOpSteps.READ;
+    }
+
+    @Override
     public Object getResponse() {
         return success;
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         if (success) {
             super.afterRunInternal();
         }

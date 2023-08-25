@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,6 @@ public class AggregationMemberBounceTest extends HazelcastTestSupport {
 
     @Test
     public void aggregationReturnsCorrectResultWhenBouncing() {
-
         Runnable[] runnables = new Runnable[DRIVER_COUNT];
         for (int i = 0; i < DRIVER_COUNT; i++) {
             HazelcastInstance driver = bounceMemberRule.getNextTestDriver();

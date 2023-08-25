@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,19 +60,44 @@ public abstract class RaftReplicateOp extends Operation implements IdentifiedDat
         RaftService service = getService();
         RaftNode raftNode = service.getOrInitRaftNode(groupId);
         if (raftNode == null) {
-            if (service.isRaftGroupDestroyed(groupId)) {
-                sendResponse(new CPGroupDestroyedException(groupId));
-            } else {
-                sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
-            }
+            onNullRaftNode(service);
             return;
-        } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
+        }
+        if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
             sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
             getNodeEngine().getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () -> service.stepDownRaftNode(groupId));
             return;
         }
 
         replicate(raftNode).whenCompleteAsync(this, CALLER_RUNS);
+    }
+
+    private void onNullRaftNode(RaftService service) {
+        if (service.isRaftGroupDestroyed(groupId)) {
+            sendResponse(new CPGroupDestroyedException(groupId));
+        } else if (!groupId.equals(service.getMetadataGroupId())
+                && service.isDiscoveryCompleted() && service.isStartCompleted()) {
+            sendResponseAfterMetadataCheck(service);
+        } else {
+            sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
+        }
+    }
+
+    private void sendResponseAfterMetadataCheck(RaftService service) {
+        getNodeEngine().getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () ->
+            service.getCPGroup(groupId).whenCompleteAsync((group, throwable) -> {
+                        // Checking if groupId is known by the METADATA group.
+                        // If it is unaware, it means that the CP Subsystem has lost information about CPGroup after
+                        // the restart, and we can respond with a non-retriable exception.
+                        if (group == null && throwable == null) {
+                            getLogger().info("There is no info about " + groupId + " in the METADATA group");
+                            sendResponse(new CPGroupDestroyedException(groupId));
+                        } else {
+                            sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
+                        }
+                    },
+                    CALLER_RUNS)
+        );
     }
 
     protected abstract InternalCompletableFuture replicate(RaftNode raftNode);

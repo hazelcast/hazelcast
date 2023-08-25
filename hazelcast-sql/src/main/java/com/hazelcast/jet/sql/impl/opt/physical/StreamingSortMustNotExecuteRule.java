@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.apache.calcite.rel.rules.TransformationRule;
 import org.immutables.value.Value;
 
 /**
- * A rule that replaces any streaming sort attempt with {@link MustNotExecuteRel}.
+ * A rule that replaces any streaming sort attempt with {@link MustNotExecutePhysicalRel}.
  */
 @Value.Enclosing
 public final class StreamingSortMustNotExecuteRule extends RelRule<Config> implements TransformationRule {
@@ -59,7 +59,7 @@ public final class StreamingSortMustNotExecuteRule extends RelRule<Config> imple
         Sort sort = call.rel(0);
         if (sort.fetch == null) {
             call.transformTo(
-                    new MustNotExecuteRel(sort.getCluster(), sort.getTraitSet(), sort.getRowType(),
+                    new MustNotExecutePhysicalRel(sort.getCluster(), sort.getTraitSet(), sort.getRowType(),
                             "Sorting is not supported for a streaming query"));
         }
     }

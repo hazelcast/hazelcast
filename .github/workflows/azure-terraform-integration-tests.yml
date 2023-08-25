@@ -1,17 +1,19 @@
 name: azure-tests
 on:
   workflow_dispatch:
-  push:
+  pull_request_target:
+    types:
+      - labeled
     branches:
-      - master
+      - "master"
+      - "*.z"
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/azure/**'
-      - 'hazelcast/pom.xml'
       - '.github/terraform/azure/**'
-
 
 jobs:
   build:
+    name: Azure Tests
     defaults:
       run:
         shell: bash
@@ -20,91 +22,74 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'hazelcast'
-    strategy:
-      matrix:
-        java: [ '8' ]
-        architecture: [ 'x64' ]
-        distribution: [ 'adopt' ]
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'workflow_dispatch' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'run-discovery-tests' 
+        )
+      )
     steps:
-      # SET UP JDK
       - name: Setup JDK
-        uses: actions/setup-java@v2.1.0
+        uses: actions/setup-java@v3
         with:
-          java-version: ${{ matrix.java }}
-          architecture: ${{ matrix.architecture }}
-          distribution: ${{ matrix.distribution }}
+          java-version: 11
+          architecture: x64
+          distribution: adopt
+          cache: 'maven'
 
-      - run: java -version
+      - name: Decide which ref to checkout
+        id: decide-ref
+        run: |
+          if [[ "${{github.event_name}}" == "pull_request_target" ]]; then
+            echo "ref=refs/pull/${{ github.event.pull_request.number }}/merge" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{github.ref}}" >> $GITHUB_OUTPUT
+          fi
 
-      - run: mvn --version
-
-      - run : mkdir ~/lib
-
-      # BUILD HAZELCAST AZURE SNAPSHOT
-      - uses: actions/checkout@v2.4.0
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
-          path: hazelcast
+          ref: ${{steps.decide-ref.outputs.ref}}
 
       - name: Build hazelcast jar
         run: |
-          cd hazelcast
-          mvn clean install -DskipTests -Dcheckstyle.skip
+          ./mvnw -T 4 -B -V -e clean package \
+          -Dfindbugs.skip \
+          -Dcheckstyle.skip \
+          -Dpmd.skip=true \
+          -Dspotbugs.skip \
+          -Denforcer.skip \
+          -Dmaven.javadoc.skip \
+          -DskipTests \
+          -Dlicense.skip=true \
+          -Drat.skip=true \
+          -Dspotless.check.skip=true \
+          -Dattribution.skip \
+          -Dmaven.source.skip=true
           echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
-          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/lib/hazelcast.jar
+          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar
 
-      #BUILD TERRAFORM
       - name : Set-up Terraform
-        uses: hashicorp/setup-terraform@v1.3.2
+        uses: hashicorp/setup-terraform@v2.0.0
         with:
-          terraform_version: 0.13.0
-
-      - name: Create unique prefix for resources
-        run: |
-          sed -i -e "s/SET_PREFIX/\"${GITHUB_WORKFLOW}-${GITHUB_RUN_ID}\"/g" hazelcast/.github/terraform/azure/terraform.tfvars
+          terraform_version: 1.1.8
 
       - name: Terraform Init
-        run: cd hazelcast/.github/terraform/azure && terraform init
-
-      - name: Terraform Format
-        run: cd hazelcast/.github/terraform/azure  && terraform fmt
-
-      - name: Generate SSH keys
-        id: ssh
-        run: |
-          ssh-keygen -t rsa -b 4096 -C "devOpsHazelcast@hazelcast.com" -f id_rsa -P "" 1>/dev/null
-          ssh_key=$(cat id_rsa)
-          echo 'SSH_KEY<<EOF' >> $GITHUB_ENV
-          echo "$ssh_key" >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
-
-          ssh_key_public=$(cat id_rsa.pub)
-          echo 'SSH_KEY_PUBLIC<<EOF' >> $GITHUB_ENV
-          echo "$ssh_key_public" >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
-
-      - name: Install private key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ env.SSH_KEY }}
-          name: id_rsa
-          known_hosts: " "
-
-      - name: Install public key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ env.SSH_KEY_PUBLIC }}
-          name: id_rsa.pub
-          known_hosts: " "
+        working-directory: .github/terraform/azure
+        run: terraform init
 
       - name: Terraform Apply
+        working-directory: .github/terraform/azure
         run: |
-          cd hazelcast/.github/terraform/azure && terraform apply -auto-approve
+          terraform apply \
+            -var="hazelcast_mancenter_version=latest-snapshot" \
+            -var="hazelcast_path=~/hazelcast.jar" \
+            -auto-approve
 
       - name: Terraform Destroy
         if: ${{ always() }}
-        run: |
-          cd hazelcast/.github/terraform/azure && terraform destroy -auto-approve
+        working-directory: .github/terraform/azure
+        run: terraform destroy -auto-approve

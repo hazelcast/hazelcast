@@ -20,18 +20,18 @@
     "pointerToViolation": "#/hazelcast/native-memory",
     "causingExceptions": [
       {
-        "schemaLocation": "#/definitions/MemorySize",
+        "schemaLocation": "#/definitions/Capacity",
         "pointerToViolation": "#/hazelcast/native-memory/size",
         "causingExceptions": [
           {
-            "schemaLocation": "#/definitions/MemorySize/properties/unit",
+            "schemaLocation": "#/definitions/Capacity/properties/unit",
             "pointerToViolation": "#/hazelcast/native-memory/size/unit",
             "causingExceptions": [],
             "keyword": "enum",
             "message": "0 is not a valid enum value"
           },
           {
-            "schemaLocation": "#/definitions/MemorySize/properties/value",
+            "schemaLocation": "#/definitions/Capacity/properties/value",
             "pointerToViolation": "#/hazelcast/native-memory/size/value",
             "causingExceptions": [],
             "keyword": "type",

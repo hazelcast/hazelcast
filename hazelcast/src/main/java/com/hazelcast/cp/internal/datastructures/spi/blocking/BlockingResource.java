@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,10 +42,10 @@ import java.util.UUID;
  */
 public abstract class BlockingResource<W extends WaitKey> implements DataSerializable {
 
+    // Should be an insertion ordered map to ensure fairness
+    protected final Map<Object, WaitKeyContainer<W>> waitKeys = Collections.synchronizedMap(new LinkedHashMap<>());
     private CPGroupId groupId;
     private String name;
-    // Should be an insertion ordered map to ensure fairness
-    private final Map<Object, WaitKeyContainer<W>> waitKeys = new LinkedHashMap<>();
 
     protected BlockingResource() {
     }
@@ -98,23 +99,27 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
     }
 
     protected final Collection<W> getAllWaitKeys() {
-        List<W> all = new ArrayList<>(waitKeys.size());
-        for (WaitKeyContainer<W> container : waitKeys.values()) {
-            all.addAll(container.keyAndRetries());
-        }
+        synchronized (waitKeys) {
+            List<W> all = new ArrayList<>(waitKeys.size());
+            for (WaitKeyContainer<W> container : waitKeys.values()) {
+                all.addAll(container.keyAndRetries());
+            }
 
-        return all;
+            return all;
+        }
     }
 
     final void expireWaitKeys(UUID invocationUid, List<W> expired) {
         Iterator<WaitKeyContainer<W>> iter = waitKeys.values().iterator();
-        while (iter.hasNext()) {
-            WaitKeyContainer<W> container = iter.next();
-            if (container.invocationUid().equals(invocationUid)) {
-                expired.addAll(container.keyAndRetries());
-                iter.remove();
-                onWaitKeyExpire(container.key());
-                return;
+        synchronized (waitKeys) {
+            while (iter.hasNext()) {
+                WaitKeyContainer<W> container = iter.next();
+                if (container.invocationUid().equals(invocationUid)) {
+                    expired.addAll(container.keyAndRetries());
+                    iter.remove();
+                    onWaitKeyExpire(container.key());
+                    return;
+                }
             }
         }
     }
@@ -122,6 +127,10 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
     protected void onWaitKeyExpire(W waitKey) {
     }
 
+    /**
+     * To prevent a {@link java.util.ConcurrentModificationException}, all iterator operations
+     * should be synchronized on the {@code waitKeys} object
+     */
     protected final Iterator<WaitKeyContainer<W>> waitKeyContainersIterator() {
         return waitKeys.values().iterator();
     }
@@ -132,14 +141,16 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
 
     final void closeSession(long sessionId, List<Long> expiredWaitKeys, Map<Long, Object> result) {
         Iterator<WaitKeyContainer<W>> iter = waitKeys.values().iterator();
-        while (iter.hasNext()) {
-            WaitKeyContainer<W> container = iter.next();
-            if (container.sessionId() == sessionId) {
-                for (W retry : container.keyAndRetries()) {
-                    expiredWaitKeys.add(retry.commitIndex());
-                }
+        synchronized (waitKeys) {
+            while (iter.hasNext()) {
+                WaitKeyContainer<W> container = iter.next();
+                if (container.sessionId() == sessionId) {
+                    for (W retry : container.keyAndRetries()) {
+                        expiredWaitKeys.add(retry.commitIndex());
+                    }
 
-                iter.remove();
+                    iter.remove();
+                }
             }
         }
 
@@ -148,8 +159,10 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
 
     final void collectAttachedSessions(Collection<Long> sessions) {
         sessions.addAll(getActivelyAttachedSessions());
-        for (WaitKeyContainer<W> key : waitKeys.values()) {
-            sessions.add(key.sessionId());
+        synchronized (waitKeys) {
+            for (WaitKeyContainer<W> key : waitKeys.values()) {
+                sessions.add(key.sessionId());
+            }
         }
     }
 
@@ -163,10 +176,12 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(groupId);
         out.writeString(name);
-        out.writeInt(waitKeys.size());
-        for (Entry<Object, WaitKeyContainer<W>> e : waitKeys.entrySet()) {
-            out.writeObject(e.getKey());
-            out.writeObject(e.getValue());
+        synchronized (waitKeys) {
+            out.writeInt(waitKeys.size());
+            for (Entry<Object, WaitKeyContainer<W>> e : waitKeys.entrySet()) {
+                out.writeObject(e.getKey());
+                out.writeObject(e.getValue());
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,15 +125,16 @@ public class QueryEngineImpl implements QueryEngine {
 
     private Query adjustQuery(Query query) {
         IterationType retrievalIterationType = getRetrievalIterationType(query.getPredicate(), query.getIterationType());
-        Query adjustedQuery = Query.of(query).iterationType(retrievalIterationType).build();
-        if (adjustedQuery.getPredicate() instanceof PagingPredicateImpl) {
-            ((PagingPredicateImpl) adjustedQuery.getPredicate()).setIterationType(query.getIterationType());
-        } else {
-            if (adjustedQuery.getPredicate() == Predicates.alwaysTrue()) {
-                queryResultSizeLimiter.precheckMaxResultLimitOnLocalPartitions(adjustedQuery.getMapName());
-            }
+        Query.QueryBuilder builder = Query.of(query).iterationType(retrievalIterationType);
+        if (query.getPredicate() instanceof PagingPredicateImpl) {
+            // PagingPredicateImpl must be cloned before adjusting else it corrupts the iteration type for the caller
+            PagingPredicateImpl clonedPredicate = new PagingPredicateImpl((PagingPredicateImpl) query.getPredicate());
+            clonedPredicate.setIterationType(query.getIterationType());
+            builder.predicate(clonedPredicate);
+        } else if (query.getPredicate() == Predicates.alwaysTrue()) {
+            queryResultSizeLimiter.precheckMaxResultLimitOnLocalPartitions(query.getMapName());
         }
-        return adjustedQuery;
+        return builder.build();
     }
 
     // query thread first, fallback to partition thread

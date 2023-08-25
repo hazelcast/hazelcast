@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,12 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -42,7 +44,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 public final class RestClient {
 
@@ -55,6 +63,8 @@ public final class RestClient {
      * HTTP status code 404 NOT FOUND
      */
     public static final int HTTP_NOT_FOUND = 404;
+
+    private static final String WATCH_FORMAT = "watch=1&resourceVersion=%s";
 
     private final String url;
     private final List<Parameter> headers = new ArrayList<>();
@@ -126,6 +136,10 @@ public final class RestClient {
         return callWithRetries("POST");
     }
 
+    public Response put() {
+        return callWithRetries("PUT");
+    }
+
     private Response callWithRetries(String method) {
         return RetryUtils.retry(() -> call(method), retries);
     }
@@ -165,6 +179,49 @@ public final class RestClient {
             if (connection != null) {
                 connection.disconnect();
             }
+        }
+    }
+
+    /**
+     * Issues a watch request to a Kubernetes resource, starting with the given {@code resourceVersion}.
+     * Since a watch implies a stream of updates from the server will be consumed, unlike other methods
+     * in this class, it is the responsibility of the consumer to disconnect the connection
+     * (by invoking {@link WatchResponse#disconnect()}) once the watch is no longer required.
+     */
+    public WatchResponse watch(String resourceVersion, ExecutorService readExecutor) {
+        HttpURLConnection connection = null;
+        try {
+            String appendWatchParameter = (url.contains("?") ? "&" : "?")
+                    + String.format(WATCH_FORMAT, resourceVersion);
+            String completeUrl = url + appendWatchParameter;
+            URL urlToConnect = new URL(completeUrl);
+            connection = (HttpURLConnection) urlToConnect.openConnection();
+            if (connection instanceof HttpsURLConnection && caCertificate != null) {
+                ((HttpsURLConnection) connection).setSSLSocketFactory(buildSslSocketFactory());
+            }
+            connection.setReadTimeout((int) TimeUnit.SECONDS.toMillis(readTimeoutSeconds));
+            connection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(connectTimeoutSeconds));
+            connection.setRequestMethod("GET");
+            for (Parameter header : headers) {
+                connection.setRequestProperty(header.getKey(), header.getValue());
+            }
+            if (body != null) {
+                byte[] bodyData = body.getBytes(StandardCharsets.UTF_8);
+
+                connection.setDoOutput(true);
+                connection.setRequestProperty("charset", "utf-8");
+                connection.setRequestProperty("Content-Length", Integer.toString(bodyData.length));
+
+                try (DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream())) {
+                    outputStream.write(bodyData);
+                    outputStream.flush();
+                }
+            }
+
+            checkResponseCode("GET", connection);
+            return new WatchResponse(connection, readExecutor);
+        } catch (IOException e) {
+            throw new RestClientException("Failure in executing REST call", e);
         }
     }
 
@@ -208,7 +265,7 @@ public final class RestClient {
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(keyStore);
 
-            SSLContext context = SSLContext.getInstance("TLSv1.2");
+            SSLContext context = SSLContext.getInstance("TLS");
             context.init(null, tmf.getTrustManagers(), null);
             return context.getSocketFactory();
 
@@ -263,6 +320,46 @@ public final class RestClient {
 
         public String getBody() {
             return body;
+        }
+    }
+
+    public static class WatchResponse {
+        private final int code;
+        private final HttpURLConnection connection;
+        private final BufferedReader reader;
+
+        private final ExecutorService readExecutor;
+        private Future<String> future;
+
+        public WatchResponse(HttpURLConnection connection, ExecutorService readExecutor) throws IOException {
+            this.code = connection.getResponseCode();
+            this.connection = connection;
+            this.reader = new BufferedReader(new InputStreamReader(connection.getInputStream(),
+                    StandardCharsets.UTF_8));
+            this.readExecutor = readExecutor;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public String nextLine() throws IOException {
+            future = readExecutor.submit(reader::readLine);
+
+            try {
+                return future.get();
+            } catch (ExecutionException | CancellationException e) {
+                throw sneakyThrow(e);
+            } catch (InterruptedException e) {
+                // Pass on interruptions to thread
+                Thread.currentThread().interrupt();
+            }
+
+            return null;
+        }
+
+        public void disconnect() {
+            connection.disconnect();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,18 +28,21 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.core.StringContains.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -264,16 +266,14 @@ public class DAGTest {
            .edge(between(x, y))
            .edge(from(y).to(a, 1));
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(Matchers.anyOf(
-                Matchers.containsString("a -> b -> c -> a"),
-                Matchers.containsString("b -> c -> a -> b"),
-                Matchers.containsString("c -> a -> b -> c")
-        ));
-
-        // When
-        dag.validate();
+        // When and Then
+        assertThatThrownBy(dag::validate)
+                .isInstanceOf(IllegalArgumentException.class)
+                .satisfiesAnyOf(
+                        e -> assertThat(e).hasMessageContaining("a -> b -> c -> a"),
+                        e -> assertThat(e).hasMessageContaining("b -> c -> a -> b"),
+                        e -> assertThat(e).hasMessageContaining("c -> a -> b -> c")
+                );
     }
 
     @Test
@@ -378,11 +378,83 @@ public class DAGTest {
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
         dag.edge(from(a).to(c, 1));
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(not(containsString("Edge.from().to()")));
+        // When and Then
+        assertThatThrownBy(() -> dag.edge(from(b).to(c, 1)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageNotContaining("Edge.from().to()");
+    }
 
-        // When
-        dag.edge(from(b).to(c, 1));
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void when_mutatingLockedDag_then_fail() {
+        DAG dag = new DAG();
+
+        List<Supplier> mutatingMethods = Arrays.asList(
+                () -> dag.newVertex(null, (SupplierEx<? extends Processor>) null),
+                () -> dag.newVertex(null, (ProcessorSupplier) null),
+                () -> dag.newVertex(null, (ProcessorMetaSupplier) null),
+                () -> dag.newUniqueVertex(null, (SupplierEx<? extends Processor>) null),
+                () -> dag.newUniqueVertex(null, (ProcessorSupplier) null),
+                () -> dag.newUniqueVertex(null, (ProcessorMetaSupplier) null),
+                () -> dag.vertex(null),
+                () -> dag.edge(null)
+        );
+
+        dag.lock();
+        for (Supplier mutatingMethod : mutatingMethods) {
+            assertThrows(IllegalStateException.class, mutatingMethod::get);
+        }
+    }
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void when_mutatingLockedVertexInDag_then_fail() {
+        DAG dag = new DAG();
+        Vertex vertex = dag.newVertex("", (ProcessorMetaSupplier) addresses -> address -> null);
+
+        List<Supplier> mutatingMethods = Arrays.asList(
+                () -> vertex.localParallelism(1),
+                () -> {
+                    vertex.updateMetaSupplier(null);
+                    return null;
+                }
+        );
+
+        dag.lock();
+        for (Supplier mutatingMethod : mutatingMethods) {
+            assertThrows(IllegalStateException.class, mutatingMethod::get);
+        }
+    }
+    @Test
+    @SuppressWarnings({"rawtypes", "Convert2MethodRef"})
+    public void when_mutatingLockedEdgeInDag_then_fail() {
+        DAG dag = new DAG();
+        Vertex vertex1 = dag.newVertex("1", (ProcessorMetaSupplier) addresses -> address -> null);
+        Vertex vertex2 = dag.newVertex("2", (ProcessorMetaSupplier) addresses -> address -> null);
+        Edge edge = between(vertex1, vertex2);
+        dag.edge(edge);
+
+        List<Supplier> mutatingMethods = Arrays.asList(
+                () -> edge.to(null),
+                () -> edge.to(null, 0),
+                () -> edge.priority(0),
+                () -> edge.unicast(),
+                () -> edge.partitioned(null),
+                () -> edge.partitioned(null, null),
+                () -> edge.allToOne(null),
+                () -> edge.broadcast(),
+                () -> edge.isolated(),
+                () -> edge.ordered(null),
+                () -> edge.fanout(),
+                () -> edge.local(),
+                () -> edge.distributed(),
+                () -> edge.distributeTo(null),
+                () -> edge.setConfig(null)
+        );
+
+        dag.lock();
+        for (Supplier mutatingMethod : mutatingMethods) {
+            assertThrows(IllegalStateException.class, mutatingMethod::get);
+        }
     }
 }

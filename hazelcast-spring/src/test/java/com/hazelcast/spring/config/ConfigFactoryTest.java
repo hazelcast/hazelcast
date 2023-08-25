@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,11 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
-import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -128,22 +127,18 @@ public class ConfigFactoryTest {
 
     @Test
     public void should_create_compact_serialization_config() {
-        Map<String, TriTuple<String, String, String>> registrations = new HashMap<>();
-        TriTuple<String, String, String> registration = TriTuple.of("a", "b", "c");
-        registrations.put("b", registration);
-        CompactSerializationConfig config = ConfigFactory.newCompactSerializationConfig(true, registrations);
-        assertThat(config.isEnabled()).isTrue();
-        assertThat(CompactSerializationConfigAccessor.getNamedRegistrations(config)).isEqualTo(registrations);
-    }
-
-    @Test
-    public void should_create_compact_serialization_config_with_reflective_serializer() {
-        Map<String, TriTuple<String, String, String>> registrations = new HashMap<>();
-        TriTuple<String, String, String> registration = TriTuple.of("a", "a", null);
-        registrations.put("a", registration);
-        CompactSerializationConfig config = ConfigFactory.newCompactSerializationConfig(true, registrations);
-        assertThat(config.isEnabled()).isTrue();
-        assertThat(CompactSerializationConfigAccessor.getNamedRegistrations(config)).isEqualTo(registrations);
+        List<String> compactSerializerClassNames = new ArrayList<>();
+        List<String> compactSerializableClassNames = new ArrayList<>();
+        compactSerializerClassNames.add("a");
+        compactSerializableClassNames.add("b");
+        CompactSerializationConfig config = ConfigFactory.newCompactSerializationConfig(
+                compactSerializerClassNames,
+                compactSerializableClassNames
+        );
+        assertThat(CompactSerializationConfigAccessor.getSerializerClassNames(config))
+                .isEqualTo(compactSerializerClassNames);
+        assertThat(CompactSerializationConfigAccessor.getCompactSerializableClassNames(config))
+                .isEqualTo(compactSerializableClassNames);
     }
 
     private static void invalidEvictionConfig(boolean isNearCache, boolean isIMap) {

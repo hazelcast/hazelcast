@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
@@ -258,9 +259,13 @@ public class TestHazelcastInstanceFactory {
     }
 
     public HazelcastInstance[] newInstances(Config config, int nodeCount) {
+        return newInstances(() -> config, nodeCount);
+    }
+
+    public HazelcastInstance[] newInstances(Supplier<Config> configSupplier, int nodeCount) {
         HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
-            instances[i] = newHazelcastInstance(config);
+            instances[i] = newHazelcastInstance(configSupplier.get());
         }
         return instances;
     }
@@ -451,7 +456,9 @@ public class TestHazelcastInstanceFactory {
         config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         String gracefulShutdownMaxWaitValue = System.getProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "120");
         config.setProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), gracefulShutdownMaxWaitValue);
-        config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
+        if (config.getProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName()) == null) {
+            config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
+        }
         config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
         return config;
     }

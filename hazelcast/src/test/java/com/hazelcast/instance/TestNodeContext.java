@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,14 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
-import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
-import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
+import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -44,8 +46,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -85,12 +87,14 @@ public class TestNodeContext implements NodeContext {
                         )
                 );
         when(nodeExtension.createSerializationService()).thenReturn(new DefaultSerializationServiceBuilder().build());
+        when(nodeExtension.createSchemaService()).thenReturn(mock(MemberSchemaService.class));
         when(nodeExtension.isStartCompleted()).thenReturn(true);
         when(nodeExtension.isNodeVersionCompatibleWith(any(Version.class))).thenReturn(true);
         when(nodeExtension.getMemoryStats()).thenReturn(new DefaultMemoryStats());
         when(nodeExtension.createMemberUuid()).thenReturn(UuidUtil.newUnsecureUUID());
         when(nodeExtension.getCPPersistenceService()).thenReturn(new NopCPPersistenceService());
         when(nodeExtension.getAuditlogService()).thenReturn(NoOpAuditlogService.INSTANCE);
+        when(nodeExtension.getInternalHotRestartService()).thenReturn(new NoopInternalHotRestartService());
         return nodeExtension;
     }
 

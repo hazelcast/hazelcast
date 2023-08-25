@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1272,7 +1272,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
             public String toString() {
                 return "DurationConfig{"
                         + "durationAmount=" + durationAmount
-                        + ", timeUnit" + timeUnit
+                        + ", timeUnit=" + timeUnit
                         + '}';
             }
         }

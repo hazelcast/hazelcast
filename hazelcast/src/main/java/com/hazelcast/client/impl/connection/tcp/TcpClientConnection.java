@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_CLOSED_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_CONNECTIONID;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
 
@@ -53,9 +54,10 @@ import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
  * Client implementation of {@link Connection}.
  * ClientConnection is a connection between a Hazelcast Client and a Hazelcast Member.
  */
+@SuppressWarnings("checkstyle:MethodCount")
 public class TcpClientConnection implements ClientConnection {
 
-    @Probe(name = CLIENT_METRIC_CONNECTION_CONNECTIONID)
+    @Probe(name = CLIENT_METRIC_CONNECTION_CONNECTIONID, level = DEBUG)
     private final int connectionId;
     private final ILogger logger;
     private final Channel channel;
@@ -68,15 +70,15 @@ public class TcpClientConnection implements ClientConnection {
 
     @Probe(name = CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT, level = MANDATORY)
     private final ConcurrentMap<Long, EventHandler> eventHandlerMap = new ConcurrentHashMap<>();
-
-    private volatile Address remoteAddress;
     @Probe(name = CLIENT_METRIC_CONNECTION_CLOSED_TIME, level = ProbeLevel.DEBUG)
     private final AtomicLong closedTime = new AtomicLong();
 
+    private volatile Address remoteAddress;
     private volatile Throwable closeCause;
     private volatile String closeReason;
-    private String connectedServerVersion;
     private volatile UUID remoteUuid;
+    private volatile UUID clusterUuid;
+    private volatile Channel[] tpcChannels;
 
     public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
@@ -85,9 +87,10 @@ public class TcpClientConnection implements ClientConnection {
         this.lifecycleService = client.getLifecycleService();
         this.channel = channel;
         this.attributeMap = channel.attributeMap();
-        attributeMap.put(TcpClientConnection.class, this);
         this.connectionId = connectionId;
         this.logger = client.getLoggingService().getLogger(TcpClientConnection.class);
+
+        attributeMap.put(TcpClientConnection.class, this);
     }
 
     public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId) {
@@ -108,14 +111,19 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (channel.write(frame)) {
-            return true;
+        Channel[] tpcChannels = this.tpcChannels;
+        if (tpcChannels == null) {
+            return channel.write(frame);
         }
 
-        if (logger.isFinestEnabled()) {
-            logger.finest("Connection is closed, dropping frame -> " + frame);
+        ClientMessage clientMessage = (ClientMessage) frame;
+        int partitionId = clientMessage.getPartitionId();
+        if (partitionId < 0) {
+            return channel.write(frame);
         }
-        return false;
+
+        int channelIndex = partitionId % tpcChannels.length;
+        return tpcChannels[channelIndex].write(frame);
     }
 
     @Override
@@ -185,14 +193,14 @@ public class TcpClientConnection implements ClientConnection {
         try {
             innerClose();
         } catch (Exception e) {
-            logger.warning("Exception while closing connection" + e.getMessage());
+            logger.warning("Exception while closing connection " + e.getMessage());
         }
 
         connectionManager.onConnectionClose(this);
     }
 
     private void logClose() {
-        String message = toString() + " closed. Reason: ";
+        String message = this + " closed. Reason: ";
         if (closeReason != null) {
             message += closeReason;
         } else if (closeCause != null) {
@@ -216,7 +224,18 @@ public class TcpClientConnection implements ClientConnection {
         }
     }
 
+    @SuppressWarnings("java:S1135")
     protected void innerClose() throws IOException {
+        if (tpcChannels != null) {
+            for (Channel tpcChannel : tpcChannels) {
+                try {
+                    tpcChannel.close();
+                } catch (Exception e) {
+                    logger.warning("Exception while closing TPC channel " + e.getMessage());
+                }
+            }
+        }
+
         channel.close();
     }
 
@@ -278,16 +297,7 @@ public class TcpClientConnection implements ClientConnection {
                 + ", lastReadTime=" + timeToStringFriendly(lastReadTimeMillis())
                 + ", lastWriteTime=" + timeToStringFriendly(lastWriteTimeMillis())
                 + ", closedTime=" + timeToStringFriendly(closedTime.get())
-                + ", connected server version=" + connectedServerVersion
                 + '}';
-    }
-
-    public void setConnectedServerVersion(String connectedServerVersion) {
-        this.connectedServerVersion = connectedServerVersion;
-    }
-
-    public String getConnectedServerVersion() {
-        return connectedServerVersion;
     }
 
     @Override
@@ -305,9 +315,28 @@ public class TcpClientConnection implements ClientConnection {
         eventHandlerMap.put(correlationId, handler);
     }
 
+    @Override
+    public void setClusterUuid(UUID uuid) {
+        clusterUuid = uuid;
+    }
+
+    @Override
+    public UUID getClusterUuid() {
+        return clusterUuid;
+    }
+
     // used in tests
     @Override
     public Map<Long, EventHandler> getEventHandlers() {
         return Collections.unmodifiableMap(eventHandlerMap);
+    }
+
+    public void setTpcChannels(Channel[] tpcChannels) {
+        this.tpcChannels = tpcChannels;
+    }
+
+    @Override
+    public Channel[] getTpcChannels() {
+        return tpcChannels;
     }
 }

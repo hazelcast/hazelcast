@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,8 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceAsyncP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
+import static com.hazelcast.jet.core.test.TestSupport.in;
+import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.pipeline.GeneralStage.DEFAULT_MAX_CONCURRENT_OPS;
 import static com.hazelcast.jet.pipeline.GeneralStage.DEFAULT_PRESERVE_ORDER;
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
@@ -156,17 +158,25 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
     public void filter() {
         TestSupport
                 .verifyProcessor(filterP(o -> o.equals(1)))
-                .input(asList(1, 2, 1, 2))
-                .expectOutput(asList(1, 1));
+                .expectExactOutput(
+                        in(1),
+                        out(1),
+                        in(2),
+                        in(1),
+                        out(1),
+                        in(2)
+                );
     }
 
     @Test
     public void sort() {
         TestSupport
                 .verifyProcessor(sortP(null))
-                .input(asList(3, 5, 2, 1, 4))
                 .disableSnapshots()
-                .expectOutput(asList(1, 2, 3, 4, 5));
+                .expectExactOutput(
+                        in(3), in(5), in(2), in(1), in(4),
+                        out(1), out(2), out(3), out(4), out(5)
+                );
     }
 
     @Test

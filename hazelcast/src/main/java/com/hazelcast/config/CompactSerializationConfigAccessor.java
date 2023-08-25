@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,26 +18,27 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * An accessor for the package-private fields of the {@link CompactSerializationConfig}.
+ * An accessor for the package-private fields of the
+ * {@link CompactSerializationConfig}.
  * <p>
- * This is intended to be used while registering explicit and reflective serializers
- * via declarative configuration. This kind of accessor is necessary as the register
- * methods on the {@link CompactSerializationConfig} accepts concrete {@link Class}
- * or {@link com.hazelcast.nio.serialization.compact.CompactSerializer} instances
+ * This is intended to be used while registering serializers and Compact
+ * serializable classes with declarative configuration. This kind of accessor is
+ * necessary as the register methods on the {@link CompactSerializationConfig}
+ * accepts concrete {@link Class} or
+ * {@link com.hazelcast.nio.serialization.compact.CompactSerializer} instances
  * rather than the string representation of the fully qualified class names.
  * <p>
- * Also, it enables us to access registered classes using the programmatic API, without
- * providing a public API on the {@link CompactSerializationConfig}.
+ * Also, it enables us to access registered classes using the programmatic API,
+ * without providing a public API on the {@link CompactSerializationConfig}.
  */
-@Beta
 @PrivateApi
 public final class CompactSerializationConfigAccessor {
 
@@ -45,58 +46,42 @@ public final class CompactSerializationConfigAccessor {
     }
 
     /**
-     * Registers an explicit compact serializer for the given class and type name.
+     * Registers an explicit compact serializer for the given class and type
+     * name.
      */
-    public static void registerExplicitSerializer(CompactSerializationConfig compactSerializationConfig,
-                                                  String className, String typeName,
-                                                  String serializerClassName) {
-        checkNotNull(className, "Class name cannot be null");
-        checkNotNull(typeName, "Type name cannot be null");
+    public static void registerSerializer(CompactSerializationConfig config, String serializerClassName) {
         checkNotNull(serializerClassName, "Explicit serializer class name cannot be null");
-        register(compactSerializationConfig, className, typeName, serializerClassName);
+        config.serializerClassNames.add(serializerClassName);
     }
 
     /**
-     * Registers a reflective compact serializer for the given class name.
-     * The type name will be the same with the class name.
+     * Registers a reflective compact serializer for the given class name. The
+     * type name will be the same with the class name.
      */
-    public static void registerReflectiveSerializer(CompactSerializationConfig compactSerializationConfig,
-                                                    String className) {
+    public static void registerClass(CompactSerializationConfig config, String className) {
         checkNotNull(className, "Class name cannot be null");
-        register(compactSerializationConfig, className, className, null);
+        config.compactSerializableClassNames.add(className);
     }
 
     /**
-     * Returns the map of type names to config registrations.
+     * Returns the list of Compact serializer class names.
      */
-    public static Map<String, TriTuple<String, String, String>> getNamedRegistrations(
-            CompactSerializationConfig compactSerializationConfig) {
-        return compactSerializationConfig.typeNameToNamedRegistration;
+    public static List<String> getSerializerClassNames(CompactSerializationConfig config) {
+        return config.serializerClassNames;
+    }
+
+    /**
+     * Returns the list of Compact serializable class names.
+     */
+    public static List<String> getCompactSerializableClassNames(CompactSerializationConfig config) {
+        return config.compactSerializableClassNames;
     }
 
     /**
      * Returns the map of the type names to programmatic registrations.
      */
     public static Map<String, TriTuple<Class, String, CompactSerializer>> getRegistrations(
-            CompactSerializationConfig compactSerializationConfig) {
-        return compactSerializationConfig.typeNameToRegistration;
-    }
-
-    private static void register(CompactSerializationConfig compactSerializationConfig,
-                                 String className, String typeName, String explicitSerializerClassName) {
-        TriTuple<String, String, String> registration = TriTuple.of(className, typeName, explicitSerializerClassName);
-        TriTuple<String, String, String> oldRegistration = compactSerializationConfig
-                .typeNameToNamedRegistration
-                .putIfAbsent(typeName, registration);
-        if (oldRegistration != null) {
-            throw new InvalidConfigurationException("Already have a registration for the type name " + typeName);
-        }
-
-        oldRegistration = compactSerializationConfig
-                .classNameToNamedRegistration
-                .putIfAbsent(className, registration);
-        if (oldRegistration != null) {
-            throw new InvalidConfigurationException("Already have a registration for class name " + className);
-        }
+            CompactSerializationConfig config) {
+        return config.typeNameToRegistration;
     }
 }

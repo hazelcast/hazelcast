@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.serialization.compact;
 
-import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,9 +29,8 @@ import java.time.OffsetDateTime;
 /**
  * Provides means of writing compact serialized fields to the binary data.
  *
- * @since Hazelcast 5.0 as BETA
+ * @since 5.2
  */
-@Beta
 public interface CompactWriter {
 
     /**
@@ -91,12 +90,12 @@ public interface CompactWriter {
     void writeFloat64(@Nonnull String fieldName, double value);
 
     /**
-     * Writes an UTF-8 encoded string.
+     * Writes a UTF-8 encoded string.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeString(@Nonnull String fieldName, String value);
+    void writeString(@Nonnull String fieldName, @Nullable String value);
 
     /**
      * Writes an arbitrary precision and scale floating point number.
@@ -107,7 +106,7 @@ public interface CompactWriter {
     void writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value);
 
     /**
-     * Writes a time consisting of hour, minute, second, and nano seconds.
+     * Writes a time consisting of hour, minute, second, and nanoseconds.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
@@ -131,7 +130,7 @@ public interface CompactWriter {
     void writeTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime value);
 
     /**
-     * Reads a timestamp with timezone consisting of date, time and timezone offset.
+     * Writes a timestamp with timezone consisting of date, time and timezone offset.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
@@ -252,6 +251,9 @@ public interface CompactWriter {
 
     /**
      * Writes an array of nested compact objects.
+     * <p>
+     * It is not allowed to write an array containing different item types or
+     * a {@link HazelcastSerializationException} will be thrown.
      *
      * @param fieldName name of the field.
      * @param value     to be written.

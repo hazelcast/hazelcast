@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -54,7 +54,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobRepositoryTest extends JetTestSupport {
 
@@ -110,6 +110,9 @@ public class JobRepositoryTest extends JetTestSupport {
 
     @Test
     public void when_onlyJobResourcesExist_then_jobResourcesClearedAfterExpiration() {
+        // ensure that job records IMap exists - prerequisite for cleanup
+        assertNotNull(instance.getMap(JobRepository.JOB_RECORDS_MAP_NAME));
+
         long jobId = uploadResourcesForNewJob();
 
         sleepUntilJobExpires();
@@ -184,6 +187,22 @@ public class JobRepositoryTest extends JetTestSupport {
                 .setSnapshotIntervalMillis(100));
         JobRepository jobRepository = new JobRepository(client);
         assertTrueEventually(() -> assertNotNull(jobRepository.getJobRecord(job.getId())));
+        client.shutdown();
+    }
+
+    @Test
+    public void test_getJobExecutionRecordFromClient() {
+        HazelcastInstance client = createHazelcastClient();
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.streamFromProcessor("source", ProcessorMetaSupplier.of(() -> new NoOutputSourceP())))
+                .withoutTimestamps()
+                .writeTo(Sinks.logger());
+        Job job = instance.getJet().newJob(p, new JobConfig()
+                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
+                .setSnapshotIntervalMillis(100));
+        JobRepository jobRepository = new JobRepository(client);
+        // This simulates operation executed by Management Center (see JobManager.getSnapshotDetails)
+        assertTrueEventually(() -> assertNotNull(jobRepository.getJobExecutionRecord(job.getId())));
         client.shutdown();
     }
 

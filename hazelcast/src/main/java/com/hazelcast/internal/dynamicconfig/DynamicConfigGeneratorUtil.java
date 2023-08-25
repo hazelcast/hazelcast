@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
@@ -33,6 +34,7 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.util.XmlUtil;
@@ -48,6 +50,7 @@ import static com.hazelcast.internal.config.ConfigSections.CACHE;
 import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
+import static com.hazelcast.internal.config.ConfigSections.DATA_CONNECTION;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.internal.config.ConfigSections.LIST;
 import static com.hazelcast.internal.config.ConfigSections.MAP;
@@ -59,6 +62,7 @@ import static com.hazelcast.internal.config.ConfigSections.REPLICATED_MAP;
 import static com.hazelcast.internal.config.ConfigSections.RINGBUFFER;
 import static com.hazelcast.internal.config.ConfigSections.SCHEDULED_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.SET;
+import static com.hazelcast.internal.config.ConfigSections.TCP_IP;
 import static com.hazelcast.internal.config.ConfigSections.TOPIC;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 
@@ -239,6 +243,32 @@ public final class DynamicConfigGeneratorUtil {
                 Config::addPNCounterConfig,
                 DynamicConfigXmlGenerator::pnCounterXmlGenerator,
                 DynamicConfigYamlGenerator::pnCounterYamlGenerator
+        );
+    }
+
+    public static String dataConnectionConfigGenerator(DataConnectionConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                DATA_CONNECTION.getName(),
+                Config::addDataConnectionConfig,
+                DynamicConfigXmlGenerator::dataConnectionXmlGenerator,
+                DynamicConfigYamlGenerator::dataConnectionYamlGenerator
+        );
+    }
+
+    public static String tcpIpConfigGenerator(
+            TcpIpConfig subConfig, boolean configIsXml, int indent, boolean advancedNetwork
+    ) {
+        return configGenerator(subConfig, configIsXml, indent,
+                TCP_IP.getName(),
+                (config, tcpIpConfig) -> {
+                    if (advancedNetwork) {
+                        config.getAdvancedNetworkConfig().getJoin().setTcpIpConfig(tcpIpConfig);
+                    } else {
+                        config.getNetworkConfig().getJoin().setTcpIpConfig(tcpIpConfig);
+                    }
+                },
+                DynamicConfigXmlGenerator::tcpIpConfigXmlGenerator,
+                DynamicConfigYamlGenerator::tcpIpConfigYamlGenerator
         );
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,14 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.function.ComparatorEx;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
@@ -53,7 +52,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * Map index scan operator.
  */
-public class IndexScanMapPhysicalRel extends TableScan implements PhysicalRel {
+public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysicalScan {
 
     private final MapTableIndex index;
     private final IndexFilter indexFilter;
@@ -114,16 +113,14 @@ public class IndexScanMapPhysicalRel extends TableScan implements PhysicalRel {
         return descending;
     }
 
-    public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema schema = OptUtils.schema(getTable());
-        return filter(schema, remainderExp, parameterMetadata);
+    @Override
+    public RexNode filter() {
+        return remainderExp;
     }
 
-    public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema schema = OptUtils.schema(getTable());
-
-        HazelcastTable table = getTable().unwrap(HazelcastTable.class);
-        return project(schema, table.getProjects(), parameterMetadata);
+    @Override
+    public List<RexNode> projection() {
+        return getTable().unwrap(HazelcastTable.class).getProjects();
     }
 
     public HazelcastTable getTableUnwrapped() {
@@ -132,12 +129,12 @@ public class IndexScanMapPhysicalRel extends TableScan implements PhysicalRel {
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        List<QueryDataType> fieldTypes = toList(projection(parameterMetadata), Expression::getType);
+        List<QueryDataType> fieldTypes = toList(projection(), rexNode -> HazelcastTypeUtils.toHazelcastType(rexNode.getType()));
         return new PlanNodeSchema(fieldTypes);
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onMapIndexScan(this);
     }
 

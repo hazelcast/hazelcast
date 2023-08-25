@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,9 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -68,8 +66,8 @@ public class ShouldNotExecuteRel extends AbstractRelNode implements PhysicalRel 
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
-        throw QueryException.error(SqlErrorCode.GENERIC, message());
+    public <V> V accept(CreateDagVisitor<V> visitor) {
+        throw QueryException.error(message());
     }
 
     @Override

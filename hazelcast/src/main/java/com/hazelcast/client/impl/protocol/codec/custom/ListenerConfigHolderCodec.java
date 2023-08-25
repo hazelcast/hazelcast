@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("5abb3c222294edf3a3391fa7f5d269ba")
+@Generated("162c3749929c26263966fed222a498f5")
 public final class ListenerConfigHolderCodec {
     private static final int LISTENER_TYPE_FIELD_OFFSET = 0;
     private static final int INCLUDE_VALUE_FIELD_OFFSET = LISTENER_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

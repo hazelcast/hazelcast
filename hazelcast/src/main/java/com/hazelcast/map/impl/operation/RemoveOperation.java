@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.operation.steps.RemoveOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
 
 public class RemoveOperation extends BaseRemoveOperation {
 
@@ -32,20 +35,32 @@ public class RemoveOperation extends BaseRemoveOperation {
 
     @Override
     protected void runInternal() {
-        dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey, getCallerProvenance()));
+        dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey,
+                getCallerProvenance()));
         successful = dataOldValue != null;
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         if (successful) {
             super.afterRunInternal();
         }
     }
 
     @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        successful = dataOldValue != null;
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return RemoveOpSteps.READ;
+    }
+
+    @Override
     public boolean shouldBackup() {
-        return successful;
+        return dataOldValue != null;
     }
 
     @Override

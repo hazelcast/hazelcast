@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -607,7 +607,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             assertEquals(SampleTestObjects.State.STATE1, map.get(i).getState());
         }
         for (int i = 0; i < 5; i++) {
-            assertEquals(res.get(i).getState(), SampleTestObjects.State.STATE2);
+            assertEquals(SampleTestObjects.State.STATE2, res.get(i).getState());
         }
     }
 
@@ -1008,7 +1008,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         for (PartitionContainer partitionContainer : partitionContainers) {
             RecordStore rs = partitionContainer.getExistingRecordStore(MAP_NAME);
             if (rs != null) {
-                Record record = rs.getRecordOrNull(key);
+                Record record = rs.getRecordOrNull(key, false);
 
                 if (record != null) {
                     assertEquals(expectedTtl, rs.getExpirySystem().getExpiryMetadata(key).getTtl());
@@ -1106,8 +1106,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         Integer serialized = map.executeOnKey("key", new FetchSerializedCount());
         assertEquals(expectedSerializationCount, serialized.intValue());
-
-        instance.shutdown();
     }
 
     @Test
@@ -1122,8 +1120,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         Integer serialized = map.executeOnKey("key", new FetchDeSerializedCount());
         assertEquals(expectedDeserializationCount, serialized.intValue());
-
-        instance.shutdown();
     }
 
     @Test
@@ -1247,7 +1243,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         // the index has been queried.
         final int expectedApplyCount = globalIndex() ? 2 : 0;
         assertTrueEventually(() -> assertEquals("Expecting two predicate#apply method call one on owner, other one on backup",
-                expectedApplyCount, PREDICATE_APPLY_COUNT.get()));
+                PREDICATE_APPLY_COUNT.get(), expectedApplyCount));
     }
 
     @Test
@@ -1442,7 +1438,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     private void testEntryProcessorWithPredicate_updatesLastAccessTime(boolean accessExpected) {
-        Config config = withoutNetworkJoin(smallInstanceConfig());
+        Config config = withoutNetworkJoin(getConfig());
         config.getMetricsConfig().setEnabled(false);
         config.getMapConfig(MAP_NAME)
                 .setTimeToLiveSeconds(60)
@@ -1671,8 +1667,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-    private static class PartitionAwareTestEntryProcessor implements EntryProcessor<Integer, Integer, Object>,
-            HazelcastInstanceAware {
+    private static class PartitionAwareTestEntryProcessor
+            implements EntryProcessor<Integer, Integer, Object>, HazelcastInstanceAware {
 
         private final String name;
         private transient HazelcastInstance hz;
@@ -1698,7 +1694,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-    private static final class ExecutionCountingEP<K, V, O> implements EntryProcessor<K, V, O>, ReadOnly, HazelcastInstanceAware {
+    private static final class ExecutionCountingEP<K, V, O>
+            implements EntryProcessor<K, V, O>, ReadOnly, HazelcastInstanceAware {
         private AtomicLong executionCounter;
 
         @Override
@@ -1813,14 +1810,22 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         @Override
         public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
-            Index index = queryContext.getIndex(attributeName);
+            Index index = getIndex(queryContext);
+            if (index == null) {
+                return null;
+            }
+
             Set records = index.getRecords(key);
             return records;
         }
 
+        private Index getIndex(QueryContext queryContext) {
+            return queryContext.getIndex(attributeName);
+        }
+
         @Override
         public boolean isIndexed(QueryContext queryContext) {
-            return true;
+            return getIndex(queryContext) != null;
         }
 
         @Override

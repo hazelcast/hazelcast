@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.sql.impl.expression.RowValue;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -79,7 +81,15 @@ public enum SqlColumnType {
     NULL(14, Void.class),
 
     /** JSON type, represented by {@link HazelcastJsonValue} */
-    JSON(15, HazelcastJsonValue.class);
+    JSON(15, HazelcastJsonValue.class),
+
+    /**
+     * This type and the value representing it is likely to change or be removed in the future release
+     * <p>
+     * ROW type, represented by the private API {@link RowValue}
+     * */
+    @Beta
+    ROW(16, RowValue.class);
 
     private static final SqlColumnType[] CACHED_VALUES = values();
 

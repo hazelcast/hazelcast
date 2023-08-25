@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,10 +201,10 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     public void test_nullLiteral() {
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(null, null)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("SQL/JSON path expression cannot be null");
+                .hasRootCauseMessage("SQL/JSON path expression cannot be null");
         assertThatThrownBy(() -> query("SELECT JSON_QUERY('foo', null)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("SQL/JSON path expression cannot be null");
+                .hasRootCauseMessage("SQL/JSON path expression cannot be null");
         assertNull(querySingleValue("SELECT JSON_QUERY(null, '$.a')"));
         // this query returns null JSON value, not a null SQL value
         assertEquals(json("null"), querySingleValue("SELECT JSON_QUERY('{\"a\":null}', '$.a')"));

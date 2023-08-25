@@ -22,7 +22,6 @@ function findScriptDir() {
 }
 
 findScriptDir
-
 . "$SCRIPT_DIR"/common.sh
 
 if [ -z "$LOGGING_CONFIG" ]; then
@@ -93,16 +92,18 @@ $JAVA_OPTS \
 if [ -z "$LOGGING_PATTERN" ]; then
   if [ "$(arch)" == "s390x" ]; then
     # Workaround for s390x architecture where the orignal pattern fails
-    export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}][%style{%t{1.}}{cyan}] [%style{%-10c}{blue}]: %m%n%xEx"
+    export LOGGING_PATTERN="%d [%highlight{%5p}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}][%style{%t{1.}}{cyan}] [%style{%-10c}{blue}]: %m%n%xEx"
   else
-    export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%style{%t{1.}}{cyan}] [%style{%c{1.}}{blue}]: %m%n%xEx"
+    export LOGGING_PATTERN="%d [%highlight{%5p}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%style{%t{1.}}{cyan}] [%style{%c{1.}}{blue}]: %m%n%xEx"
   fi
 fi
 
-echo "########################################"
-echo "# JAVA=$JAVA"
-echo "# JAVA_OPTS=${JAVA_OPTS_ARRAY[*]}"
-echo "# CLASSPATH=$CLASSPATH"
-echo "########################################"
+if [[ "$1" != "--version" ]] && [[ "$1" != "-V" ]]; then
+  echo "########################################"
+  echo "# JAVA=$JAVA"
+  echo "# JAVA_OPTS=${JAVA_OPTS_ARRAY[*]}"
+  echo "# CLASSPATH=$CLASSPATH"
+  echo "########################################"
+fi
 
 exec "${JAVA}" -cp "${CLASSPATH}" ${JAVA_OPTS_ARRAY[*]} com.hazelcast.commandline.HazelcastServerCommandLine "$@"

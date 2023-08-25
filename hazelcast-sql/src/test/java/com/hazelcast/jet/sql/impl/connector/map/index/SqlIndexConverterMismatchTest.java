@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExecIterator;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -97,9 +96,6 @@ public class SqlIndexConverterMismatchTest extends SqlIndexTestSupport {
         map = member1.getMap(MAP_NAME);
     }
 
-    /**
-     * @see MapIndexScanExecIterator#getIndexEntries
-     */
     @SuppressWarnings({"StatementWithEmptyBody", "JavadocReference"})
     @Ignore("https://github.com/hazelcast/hazelcast/issues/19287")
     @Test

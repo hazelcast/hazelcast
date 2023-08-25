@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,23 +24,20 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.TransformP;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -61,9 +58,6 @@ import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
 
 @SuppressFBWarnings(
         value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
@@ -74,7 +68,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
     private JetJoinInfo joinInfo;
     private String mapName;
     private int partitionCount;
-    private List<Integer> partitions;
+    private int[] partitions;
     private KvRowProjector.Supplier rightRowProjectorSupplier;
 
     private transient MapProxyImpl<Object, Object> map;
@@ -89,7 +83,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
             @Nonnull JetJoinInfo joinInfo,
             @Nonnull String mapName,
             int partitionCount,
-            @Nullable List<Integer> partitions,
+            @Nullable int[] partitions,
             @Nonnull KvRowProjector.Supplier rightRowProjectorSupplier
     ) {
         assert joinInfo.isEquiJoin() && (joinInfo.isInner() || joinInfo.isLeftOuter());
@@ -225,7 +219,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
         private String mapName;
         private KvRowProjector.Supplier rightRowProjectorSupplier;
 
-        private transient PartitionService partitionService;
+        private transient Map<Address, int[]> partitionAssignment;
 
         @SuppressWarnings("unused")
         private Supplier() {
@@ -245,29 +239,20 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
 
         @Override
         public void init(@Nonnull Context context) {
-            this.partitionService = context.hazelcastInstance().getPartitionService();
+            partitionAssignment = context.partitionAssignment();
         }
 
         @Nonnull
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             if (joinInfo.isInner()) {
-                Set<Partition> partitions = partitionService.getPartitions();
-                int partitionCount = partitions.size();
-                Map<Address, List<Integer>> partitionsByMember = Util.assignPartitions(
-                        addresses,
-                        partitions.stream()
-                                  .collect(groupingBy(
-                                          partition -> partition.getOwner().getAddress(),
-                                          mapping(Partition::getPartitionId, toList()))
-                                  )
-                );
+                int partitionCount = partitionAssignment.values().stream().mapToInt(a -> a.length).sum();
 
                 return address -> new JoinByEquiJoinProcessorSupplier(
                         joinInfo,
                         mapName,
                         partitionCount,
-                        partitionsByMember.get(address),
+                        partitionAssignment.get(address),
                         rightRowProjectorSupplier
                 );
             } else {
@@ -279,6 +264,16 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
                         rightRowProjectorSupplier
                 );
             }
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
         }
 
         @Override

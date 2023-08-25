@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConfigXmlGenerator;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.client.config.YamlClientConfigBuilder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
@@ -48,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 import static java.util.stream.Collectors.toList;
@@ -86,6 +88,15 @@ public final class ImdgUtil {
     public static ClientConfig asClientConfig(String xml) {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
         return new XmlClientConfigBuilder(inputStream).build();
+    }
+
+    /**
+     * Converts client-config yaml string to {@link ClientConfig} using {@link
+     * YamlClientConfigBuilder}.
+     */
+    public static ClientConfig asClientConfigFromYaml(String yaml) {
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8));
+        return new YamlClientConfigBuilder(inputStream).build();
     }
 
     public static <T> PredicateEx<T> wrapImdgPredicate(Predicate<T> predicate) {
@@ -188,6 +199,39 @@ public final class ImdgUtil {
             list.add(input.readObject());
         }
         return list;
+    }
+
+    /**
+     * Writes given array into the ObjectDataOutput to be later read by {@linkplain #readArray}.
+     *
+     * @param output output to which we write
+     * @param array array what will be written, must not be null
+     * @param <E> element type of the array
+     */
+    public static <E> void writeArray(@Nonnull ObjectDataOutput output, @Nonnull E[] array) throws IOException {
+        output.writeInt(array.length);
+        for (E o : array) {
+            output.writeObject(o);
+        }
+    }
+
+    /**
+     * Reads array of type {@code E[]} from given ObjectDataInput, written by {@linkplain #writeArray}.
+     *
+     * @param input input from which the array will be read.
+     * @param arrayConstructor constructor used to construct new instance of E[], returned value should not be null.
+     * @return array read from input
+     * @param <E> element type of the array
+     */
+    @Nonnull
+    public static <E> E[] readArray(@Nonnull ObjectDataInput input, @Nonnull IntFunction<E[]> arrayConstructor)
+            throws IOException {
+        int length = input.readInt();
+        E[] array = arrayConstructor.apply(length);
+        for (int i = 0; i < length; i++) {
+            array[i] = input.readObject();
+        }
+        return array;
     }
 
     private static final class ImdgPredicateWrapper<T> implements PredicateEx<T> {

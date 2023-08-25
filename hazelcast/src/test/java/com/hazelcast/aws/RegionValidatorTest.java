@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.aws;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
 import static org.junit.Assert.assertEquals;
@@ -36,7 +37,7 @@ public class RegionValidatorTest {
         String expectedMessage = String.format("The provided region %s is not a valid AWS region.", region);
 
         //when
-        Runnable validateRegion = () -> RegionValidator.validateRegion(region);
+        ThrowingRunnable validateRegion = () -> RegionValidator.validateRegion(region);
 
         //then
         InvalidConfigurationException thrownEx = assertThrows(InvalidConfigurationException.class, validateRegion);
@@ -50,11 +51,23 @@ public class RegionValidatorTest {
         String expectedMessage = String.format("The provided region %s is not a valid AWS region.", region);
 
         // when
-        Runnable validateRegion = () -> RegionValidator.validateRegion(region);
+        ThrowingRunnable validateRegion = () -> RegionValidator.validateRegion(region);
 
         //then
         InvalidConfigurationException thrownEx = assertThrows(InvalidConfigurationException.class, validateRegion);
         assertEquals(expectedMessage, thrownEx.getMessage());
     }
 
+    @Test
+    public void validateNullRegion() {
+        // given
+        String expectedMessage = "The provided region is null.";
+
+        // when
+        ThrowingRunnable validateRegion = () -> RegionValidator.validateRegion(null);
+
+        //then
+        InvalidConfigurationException thrownEx = assertThrows(InvalidConfigurationException.class, validateRegion);
+        assertEquals(expectedMessage, thrownEx.getMessage());
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -382,7 +382,7 @@ public final class StringUtil {
         if (arr1.length == 0 || arr2.length == 0) {
             return new String[0];
         }
-        List<String> list = new ArrayList<String>(Arrays.asList(arr1));
+        List<String> list = new ArrayList<>(Arrays.asList(arr1));
         list.retainAll(Arrays.asList(arr2));
         return list.toArray(new String[0]);
     }
@@ -398,7 +398,7 @@ public final class StringUtil {
         if (arr1 == null || arr1.length == 0 || arr2 == null || arr2.length == 0) {
             return arr1;
         }
-        List<String> list = new ArrayList<String>(Arrays.asList(arr1));
+        List<String> list = new ArrayList<>(Arrays.asList(arr1));
         list.removeAll(Arrays.asList(arr2));
         return list.toArray(new String[0]);
     }
@@ -530,5 +530,27 @@ public final class StringUtil {
             return s;
         }
         return s.substring(maxLength - 1) + '…';
+    }
+
+    /**
+     * Removes all occurrence of {@code charToRemove} from {@code str}. This method is more efficient than
+     * {@link String#replaceAll(String, String)} which compiles a regex from the first parameter every invocation.
+     */
+    public static String removeCharacter(String str, char charToRemove) {
+        if (str == null || str.indexOf(charToRemove) == -1) {
+            return str;
+        }
+        char[] chars = str.toCharArray();
+        int pos = 0;
+        for (int i = 0; i < chars.length; i++) {
+            if (chars[i] != charToRemove) {
+                chars[pos++] = chars[i];
+            }
+        }
+        return new String(chars, 0, pos);
+    }
+
+    public static boolean isBoolean(String value) {
+        return value.equalsIgnoreCase("false") || value.equalsIgnoreCase("true");
     }
 }

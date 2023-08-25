@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,15 +27,16 @@ import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastUdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
@@ -87,6 +88,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
 import static java.util.Arrays.asList;
 import static org.apache.calcite.avatica.util.TimeUnit.DAY;
 import static org.apache.calcite.avatica.util.TimeUnit.MONTH;
@@ -112,14 +114,13 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
     private final Set<SqlNode> callSet = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public HazelcastSqlToRelConverter(
-            RelOptTable.ViewExpander viewExpander,
             SqlValidator validator,
             Prepare.CatalogReader catalogReader,
             RelOptCluster cluster,
             SqlRexConvertletTable convertletTable,
             Config config
     ) {
-        super(viewExpander, validator, catalogReader, cluster, convertletTable, config);
+        super(null, validator, catalogReader, cluster, convertletTable, config);
     }
 
     @Override
@@ -187,7 +188,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         Literal literal = LiteralUtils.literal(convertedOperand);
 
-        if (literal != null && ((RexLiteral) convertedOperand).getTypeName() != SqlTypeName.NULL) {
+        if (literal != null && !isNullOrUnknown(((RexLiteral) convertedOperand).getTypeName())) {
             // There is a bug in RexBuilder.makeCast(). If the operand is a literal, it can directly return a literal with the
             // desired target type instead of an actual cast, but when doing that it doesn't check for numeric overflow.
             // For example if this method is converting [128 AS TINYINT] is converted to -1, which is obviously incorrect.
@@ -244,6 +245,10 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return getRexBuilder().makeCall(HazelcastJsonParseFunction.INSTANCE, convertedOperand);
         }
 
+        if (toType.getTypeFamily().equals(QueryDataTypeFamily.JSON) && fromType.isCustomType()) {
+            return getRexBuilder().makeCall(HazelcastUdtObjectToJsonFunction.INSTANCE, convertedOperand);
+        }
+
         // Delegate to Apache Calcite.
         return getRexBuilder().makeCast(to, convertedOperand);
     }
@@ -278,8 +283,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
                     (SqlInOperator) call.getOperator()
             );
         }
-        throw QueryException.error(SqlErrorCode.GENERIC,
-                "Sub-queries are not supported for IN operator.");
+        throw QueryException.error("Sub-queries are not supported for IN operator.");
     }
 
     /**

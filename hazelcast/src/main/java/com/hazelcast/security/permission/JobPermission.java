@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,8 @@ public class JobPermission extends InstancePermission {
                 mask |= SUBMIT;
             } else if (ActionConstants.ACTION_CANCEL.equals(action)) {
                 mask |= CANCEL;
-            } else if (ActionConstants.ACTION_READ.equals(action)) {
+            } else if (ActionConstants.ACTION_READ.equals(action)
+                    || ActionConstants.ACTION_LISTEN.equals(action)) {
                 mask |= READ;
             } else if (ActionConstants.ACTION_RESTART.equals(action)) {
                 mask |= RESTART;

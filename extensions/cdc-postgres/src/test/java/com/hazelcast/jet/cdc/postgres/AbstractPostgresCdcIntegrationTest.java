@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
-    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-postgres:1.3")
+    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-postgres:2.3.0.Final")
             .asCompatibleSubstituteFor("postgres");
 
     protected static final String DATABASE_NAME = "postgres";

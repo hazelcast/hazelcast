@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.client.config.ClientSqlResubmissionMode.NEVER;
+import static com.hazelcast.client.config.ClientSqlResubmissionMode.RETRY_SELECTS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -422,6 +424,12 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals("jduke@HAZELCAST.COM", loginModuleConfig.getProperties().get("principal"));
     }
 
+    @Test
+    public void testSqlConfigs() {
+        assertEquals(RETRY_SELECTS, fullClientConfig.getSqlConfig().getResubmissionMode());
+        assertEquals(NEVER, defaultClientConfig.getSqlConfig().getResubmissionMode());
+    }
+
     @Test(expected = HazelcastException.class)
     public abstract void loadingThroughSystemProperty_nonExistingFile() throws IOException;
 
@@ -515,22 +523,45 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testPersistentMemoryConfiguration_NotExistingModeThrows();
 
+    @Test
+    public abstract void testNativeMemoryConfiguration_isBackwardCompatible();
+
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows();
 
     @Test
-    public abstract void testCompactSerialization();
+    public abstract void testCompactSerialization_serializerRegistration();
 
     @Test
-    public abstract void testCompactSerialization_explicitSerializationRegistration();
+    public abstract void testCompactSerialization_classRegistration();
 
     @Test
-    public abstract void testCompactSerialization_reflectiveSerializerRegistration();
+    public abstract void testCompactSerialization_serializerAndClassRegistration();
 
-    @Test(expected = InvalidConfigurationException.class)
-    public abstract void testCompactSerialization_registrationWithJustTypeName();
+    @Test
+    public abstract void testCompactSerialization_duplicateSerializerRegistration();
 
-    @Test(expected = InvalidConfigurationException.class)
-    public abstract void testCompactSerialization_registrationWithJustSerializer();
+    @Test
+    public abstract void testCompactSerialization_duplicateClassRegistration();
 
+    @Test
+    public abstract void testCompactSerialization_registrationsWithDuplicateClasses();
+
+    @Test
+    public abstract void testCompactSerialization_registrationsWithDuplicateTypeNames();
+
+    @Test
+    public abstract void testCompactSerialization_withInvalidSerializer();
+
+    @Test
+    public abstract void testCompactSerialization_withInvalidCompactSerializableClass();
+
+    @Test
+    public void testTpc() {
+        ClientTpcConfig tpcConfig = fullClientConfig.getTpcConfig();
+        assertTrue(tpcConfig.isEnabled());
+
+        ClientTpcConfig defaultTpcConfig = defaultClientConfig.getTpcConfig();
+        assertFalse(defaultTpcConfig.isEnabled());
+    }
 }

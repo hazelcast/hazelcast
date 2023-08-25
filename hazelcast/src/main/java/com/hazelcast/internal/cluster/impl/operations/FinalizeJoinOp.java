@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.instance.impl.ClusterTopologyIntent;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -59,6 +60,8 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     private ClusterState clusterState;
     private Version clusterVersion;
     private boolean deferPartitionProcessing;
+    // The detected cluster topology intent as observed by master member
+    private ClusterTopologyIntent clusterTopologyIntent;
 
     private transient boolean finalized;
     private transient Exception deserializationFailure;
@@ -70,7 +73,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     public FinalizeJoinOp(UUID targetUuid, MembersView members, OnJoinOp preJoinOp, OnJoinOp postJoinOp,
                           long masterTime, UUID clusterId, long clusterStartTime, ClusterState clusterState,
                           Version clusterVersion, PartitionRuntimeState partitionRuntimeState,
-                          boolean deferPartitionProcessing) {
+                          boolean deferPartitionProcessing, ClusterTopologyIntent clusterTopologyIntent) {
         super(targetUuid, members, masterTime, partitionRuntimeState, true);
         this.preJoinOp = preJoinOp;
         this.postJoinOp = postJoinOp;
@@ -79,6 +82,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         this.clusterState = clusterState;
         this.clusterVersion = clusterVersion;
         this.deferPartitionProcessing = deferPartitionProcessing;
+        this.clusterTopologyIntent = clusterTopologyIntent;
     }
 
     @Override
@@ -96,6 +100,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         if (hrServiceEnabled) {
             // notify hot restart before setting initial cluster state
             hrService.setRejoiningActiveCluster(deferPartitionProcessing);
+            hrService.setClusterTopologyIntentOnMaster(clusterTopologyIntent);
         }
         finalized = clusterService.finalizeJoin(getMembersView(), callerAddress, callerUuid, targetUuid, clusterId, clusterState,
                 clusterVersion, clusterStartTime, masterTime, preJoinOp);
@@ -120,6 +125,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         if (deserializationFailure != null) {
             getLogger().severe("Node could not join cluster.", deserializationFailure);
             Node node = clusterService.getNodeEngine().getNode();
+            JoinOperation.verifyCanShutdown(node, deserializationFailure.getMessage());
             node.shutdown(true);
             throw ExceptionUtil.rethrow(deserializationFailure);
         }
@@ -134,9 +140,16 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         }
 
         final boolean shouldExecutePostJoinOp = preparePostOp(postJoinOp);
-        if (deferPartitionProcessing && getInternalHotRestartService() != null && getInternalHotRestartService().isEnabled()) {
-            getInternalHotRestartService().deferPostJoinOps(postJoinOp);
-            return;
+        if (getInternalHotRestartService() != null && getInternalHotRestartService().isEnabled()) {
+            // Do not execute now the post-join ops either because master requested that (deferPartitionProcessing)
+            // or because recovery is not yet complete.
+            // For other operations, OperationRunnerImpl#checkNodeState enforces not allowing execution during
+            // recovery. However, post-join ops are executed without any node state checks by OnJoinOp, so we
+            // need to explicitly defer execution after recovery from persistence is done.
+            if (deferPartitionProcessing || !getInternalHotRestartService().isStartCompleted()) {
+                getInternalHotRestartService().deferPostJoinOps(postJoinOp);
+                return;
+            }
         }
 
         sendPostJoinOperationsBackToMaster();
@@ -188,6 +201,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         out.writeObject(preJoinOp);
         out.writeObject(postJoinOp);
         out.writeBoolean(deferPartitionProcessing);
+        out.writeByte(clusterTopologyIntent.getId());
     }
 
     @Override
@@ -200,7 +214,14 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         clusterVersion = in.readObject();
         preJoinOp = readOnJoinOp(in);
         postJoinOp = readOnJoinOp(in);
+        if (deserializationFailure != null) {
+            // failure occurred while deserializing pre- or post-join ops
+            // stop deserializing now because outcome is undefined and run() will anyway fail
+            return;
+        }
         deferPartitionProcessing = in.readBoolean();
+        byte topologyIntentId = in.readByte();
+        clusterTopologyIntent = ClusterTopologyIntent.of(topologyIntentId);
     }
 
     private OnJoinOp readOnJoinOp(ObjectDataInput in) {

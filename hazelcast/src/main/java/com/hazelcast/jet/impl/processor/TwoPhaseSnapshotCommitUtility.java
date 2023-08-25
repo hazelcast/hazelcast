@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  * @param <RES> type of the transactional resource
  */
 public abstract class TwoPhaseSnapshotCommitUtility<TXN_ID extends TransactionId,
-        RES extends TransactionalResource<TXN_ID>> {
+        RES extends TransactionalResource<TXN_ID>> implements AutoCloseable {
 
     private final boolean isSource;
     private final Outbox outbox;

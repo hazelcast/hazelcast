@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@
             <includes>
                 <include>com.hazelcast:hazelcast</include>
                 <include>com.hazelcast:hazelcast-sql</include>
-                <include>com.hazelcast:hazelcast-hibernate53</include>
                 <include>com.hazelcast:hazelcast-wm</include>
                 <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
                 <include>javax.cache:cache-api</include>
@@ -49,13 +48,14 @@
                 <include>com.hazelcast.jet:hazelcast-jet-files-s3</include>
                 <include>com.hazelcast.jet:hazelcast-jet-hadoop-all</include>
                 <include>com.hazelcast.jet:hazelcast-jet-kafka</include>
+                <include>com.hazelcast.jet:hazelcast-jet-kafka-connect</include>
                 <include>com.hazelcast.jet:hazelcast-jet-kinesis</include>
+                <include>com.hazelcast.jet:hazelcast-jet-mongodb</include>
                 <include>com.hazelcast.jet:hazelcast-jet-protobuf</include>
                 <include>com.hazelcast.jet:hazelcast-jet-python</include>
                 <include>com.hazelcast.jet:hazelcast-jet-s3</include>
-                <include>com.hazelcast:hazelcast-3-connector-interface</include>
-                <include>com.hazelcast:hazelcast-3-connector-common</include>
                 <include>com.hazelcast:hazelcast-distribution</include>
+                <include>com.hazelcast:hazelcast-mapstore</include>
             </includes>
             <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>

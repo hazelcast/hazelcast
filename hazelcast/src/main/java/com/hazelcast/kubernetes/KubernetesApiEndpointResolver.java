@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoint;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
@@ -26,6 +27,9 @@ import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+
+import static com.hazelcast.internal.util.HostnameUtil.getLocalHostname;
 
 class KubernetesApiEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
@@ -39,12 +43,19 @@ class KubernetesApiEndpointResolver
     private final int port;
     private final KubernetesClient client;
 
+    KubernetesApiEndpointResolver(ILogger logger, KubernetesConfig config, ClusterTopologyIntentTracker tracker) {
+        this(logger, config.getServiceName(), config.getServicePort(), config.getServiceLabelName(),
+                config.getServiceLabelValue(), config.getPodLabelName(), config.getPodLabelValue(),
+                config.isResolveNotReadyAddresses(), buildKubernetesClient(config, tracker));
+    }
+
+    /**
+     * Used externally only for testing
+     */
     KubernetesApiEndpointResolver(ILogger logger, String serviceName, int port,
                                   String serviceLabel, String serviceLabelValue, String podLabel, String podLabelValue,
                                   Boolean resolveNotReadyAddresses, KubernetesClient client) {
-
         super(logger);
-
         this.serviceName = serviceName;
         this.port = port;
         this.serviceLabel = serviceLabel;
@@ -55,8 +66,15 @@ class KubernetesApiEndpointResolver
         this.client = client;
     }
 
+    private static KubernetesClient buildKubernetesClient(KubernetesConfig config, ClusterTopologyIntentTracker tracker) {
+        return new KubernetesClient(config.getNamespace(), config.getKubernetesMasterUrl(), config.getTokenProvider(),
+                config.getKubernetesCaCertificate(), config.getKubernetesApiRetries(), config.getExposeExternallyMode(),
+                config.isUseNodeNameAsExternalAddress(), config.getServicePerPodLabelName(),
+                config.getServicePerPodLabelValue(), tracker);
+    }
+
     @Override
-    List<DiscoveryNode> resolve() {
+    List<DiscoveryNode> resolveNodes() {
         if (serviceName != null && !serviceName.isEmpty()) {
             logger.fine("Using service name to discover nodes.");
             return getSimpleDiscoveryNodes(client.endpointsByName(serviceName));
@@ -71,7 +89,7 @@ class KubernetesApiEndpointResolver
     }
 
     private List<DiscoveryNode> getSimpleDiscoveryNodes(List<Endpoint> endpoints) {
-        List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
+        List<DiscoveryNode> discoveredNodes = new ArrayList<>();
         for (Endpoint address : endpoints) {
             addAddress(discoveredNodes, address);
         }
@@ -80,8 +98,8 @@ class KubernetesApiEndpointResolver
 
     private void addAddress(List<DiscoveryNode> discoveredNodes, Endpoint endpoint) {
         if (Boolean.TRUE.equals(resolveNotReadyAddresses) || endpoint.isReady()) {
-            Address privateAddress = createAddress(endpoint.getPrivateAddress());
-            Address publicAddress = createAddress(endpoint.getPublicAddress());
+            Address privateAddress = createAddress(endpoint.getPrivateAddress(), this::port);
+            Address publicAddress = createAddress(endpoint.getPublicAddress(), this::portPublic);
             discoveredNodes
                     .add(new SimpleDiscoveryNode(privateAddress, publicAddress, endpoint.getAdditionalProperties()));
             if (logger.isFinestEnabled()) {
@@ -91,13 +109,14 @@ class KubernetesApiEndpointResolver
         }
     }
 
-    private Address createAddress(KubernetesClient.EndpointAddress address) {
+    private Address createAddress(KubernetesClient.EndpointAddress address,
+                                  Function<KubernetesClient.EndpointAddress, Integer> portResolver) {
         if (address == null) {
             return null;
         }
         String ip = address.getIp();
         InetAddress inetAddress = mapAddress(ip);
-        int port = port(address);
+        int port = portResolver.apply(address);
         return new Address(inetAddress, port);
     }
 
@@ -109,5 +128,66 @@ class KubernetesApiEndpointResolver
             return address.getPort();
         }
         return NetworkConfig.DEFAULT_PORT;
+    }
+
+    // For the public IP address the discovered port should be preferred over the configured one
+    private int portPublic(KubernetesClient.EndpointAddress address) {
+        if (address.getPort() != null) {
+            return address.getPort();
+        }
+        if (this.port > 0) {
+            return this.port;
+        }
+        return NetworkConfig.DEFAULT_PORT;
+    }
+
+    @Override
+    String resolveCurrentZone() {
+        try {
+            String zone = client.zone(podName());
+            if (zone != null) {
+                logger.info(String.format("Kubernetes plugin discovered availability zone: %s", zone));
+                return zone;
+            }
+        } catch (Exception e) {
+            // only log the exception and the message, Hazelcast should still start
+            logger.finest(e);
+        }
+        logger.info("Cannot fetch the current zone, ZONE_AWARE feature is disabled");
+        return "unknown";
+    }
+
+    @Override
+    String resolveCurrentNodeName() {
+        try {
+            String nodeName = client.nodeName(podName());
+            if (nodeName != null) {
+                logger.info(String.format("Kubernetes plugin discovered node name: %s", nodeName));
+                return nodeName;
+            }
+        } catch (Exception e) {
+            // only log the exception and the message, Hazelcast should still start
+            logger.finest(e);
+        }
+        logger.warning("Cannot fetch name of the node, NODE_AWARE feature is disabled");
+        return "unknown";
+    }
+
+    private String podName() {
+        String podName = System.getenv("POD_NAME");
+        if (podName == null) {
+            podName = getLocalHostname();
+        }
+        return podName;
+    }
+
+    @Override
+    void start() {
+        client.start();
+    }
+
+    @Override
+    void destroy() {
+        client.destroy();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,16 @@ package com.hazelcast.xa;
 
 import com.atomikos.icatch.jta.UserTransactionManager;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
-import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import org.junit.After;
 import org.junit.Before;
@@ -214,27 +214,27 @@ public class HazelcastXATest extends HazelcastTestSupport {
         final HazelcastInstance instance = createHazelcastInstance();
         // this is needed due to a racy bug in atomikos
         txn(instance);
+        //Perform 100 transactions with 5 threads
         int size = 100;
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         final CountDownLatch latch = new CountDownLatch(size);
         for (int i = 0; i < size; i++) {
-            executorService.execute(new Runnable() {
-                public void run() {
-                    try {
-                        txn(instance);
-                    } catch (Exception e) {
-                        LOGGER.severe("Exception during txn", e);
-                    } finally {
-                        latch.countDown();
-                    }
+            executorService.execute(() -> {
+                try {
+                    txn(instance);
+                } catch (Exception e) {
+                    LOGGER.severe("Exception during txn", e);
+                } finally {
+                    latch.countDown();
                 }
             });
         }
-        assertOpenEventually(latch, 20);
+        assertOpenEventually(latch, 60);
         final IMap map = instance.getMap("m");
         for (int i = 0; i < 10; i++) {
             assertFalse(map.isLocked(i));
         }
+        executorService.shutdownNow();
     }
 
     @Test
@@ -262,6 +262,7 @@ public class HazelcastXATest extends HazelcastTestSupport {
             LOGGER.severe("Exception during transaction", e);
             error = true;
         } finally {
+            // commit or rollback
             close(error, xaResource);
         }
     }

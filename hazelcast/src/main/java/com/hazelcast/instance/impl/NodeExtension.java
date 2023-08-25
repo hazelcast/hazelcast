@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ByteArrayProcessor;
@@ -176,6 +177,13 @@ public interface NodeExtension {
     boolean isStartCompleted();
 
     /**
+     * Check whether this instance is ready to start accepting requests. Use this
+     * method as a readiness probe.
+     * @return {@code true} when this instance is ready to accept requests, {@code false} otherwise.
+     */
+    boolean isReady();
+
+    /**
      * Called before <tt>Node.shutdown()</tt>
      */
     void beforeShutdown(boolean terminate);
@@ -200,6 +208,14 @@ public interface NodeExtension {
      * @return the compatibility serialization service
      */
     InternalSerializationService createCompatibilitySerializationService();
+
+    /**
+     * Creates and returns a schema service for the member side that is able
+     * to replicate schemas across the cluster.
+     *
+     * @return the member schema service
+     */
+    MemberSchemaService createSchemaService();
 
     /**
      * Returns <tt>SecurityContext</tt> for this <tt>Node</tt> if available, otherwise returns null.

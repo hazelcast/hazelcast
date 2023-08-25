@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,13 +127,14 @@ public class HealthMonitor {
     private final class HealthMonitorThread extends Thread {
 
         private final int delaySeconds;
-        private boolean performanceLogHint;
+        private boolean showPerformanceLogHint;
 
         private HealthMonitorThread(int delaySeconds) {
             super(createThreadName(node.hazelcastInstance.getName(), "HealthMonitor"));
             setDaemon(true);
             this.delaySeconds = delaySeconds;
-            this.performanceLogHint = node.getProperties().getBoolean(Diagnostics.ENABLED);
+            // Show the hint if diagnostics are disabled; if already enabled, don't show it
+            this.showPerformanceLogHint = !node.getProperties().getBoolean(Diagnostics.ENABLED);
         }
 
         @Override
@@ -174,15 +175,15 @@ public class HealthMonitor {
         }
 
         private void logDiagnosticsHint() {
-            if (!performanceLogHint) {
+            if (!showPerformanceLogHint) {
                 return;
             }
 
             // we only log the hint once
-            performanceLogHint = false;
+            showPerformanceLogHint = false;
 
             logger.info(format("The HealthMonitor has detected a high load on the system. For more detailed information,%n"
-                    + "enable the Diagnostics by adding the property -D%s=true", Diagnostics.ENABLED));
+                    + "enable Diagnostics by adding the property -D%s=true", Diagnostics.ENABLED));
         }
     }
 
@@ -275,7 +276,7 @@ public class HealthMonitor {
         final LongGauge operationServicePendingInvocationsCount
                 = metricRegistry.newLongGauge("operation.invocations.pending");
         final DoubleGauge operationServicePendingInvocationsPercentage
-                = metricRegistry.newDoubleGauge("operation.invocations.used");
+                = metricRegistry.newDoubleGauge("operation.invocations.usedPercentage");
 
         final LongGauge proxyCount
                 = metricRegistry.newLongGauge("proxy.proxyCount");
@@ -290,33 +291,47 @@ public class HealthMonitor {
         private final StringBuilder sb = new StringBuilder();
         private double memoryUsedOfTotalPercentage;
         private double memoryUsedOfMaxPercentage;
+        private long runtimeUsedMemory0;
+        private long runtimeTotalMemory0;
+        private long runtimeMaxMemory0;
+        private double osProcessCpuLoad0;
+        private double osSystemCpuLoad0;
+        private double operationServicePendingInvocationsPercentage0;
+        private long operationServicePendingInvocationsCount0;
 
         public void update() {
-            memoryUsedOfTotalPercentage = (PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read()) / runtimeTotalMemory.read();
-            memoryUsedOfMaxPercentage = (PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read()) / runtimeMaxMemory.read();
+            runtimeUsedMemory0 = runtimeUsedMemory.read();
+            runtimeTotalMemory0 = runtimeTotalMemory.read();
+            runtimeMaxMemory0 = runtimeMaxMemory.read();
+            osProcessCpuLoad0 = osProcessCpuLoad.read();
+            osSystemCpuLoad0 = osSystemCpuLoad.read();
+            operationServicePendingInvocationsPercentage0 = operationServicePendingInvocationsPercentage.read();
+            operationServicePendingInvocationsCount0 = operationServicePendingInvocationsCount.read();
+
+            memoryUsedOfTotalPercentage = (PERCENTAGE_MULTIPLIER * runtimeUsedMemory0) / runtimeTotalMemory0;
+            memoryUsedOfMaxPercentage = (PERCENTAGE_MULTIPLIER * runtimeUsedMemory0) / runtimeMaxMemory0;
         }
 
         boolean exceedsThreshold() {
             if (memoryUsedOfMaxPercentage > thresholdMemoryPercentage) {
                 return true;
             }
-            if (osProcessCpuLoad.read() > thresholdCPUPercentage) {
+            if (osProcessCpuLoad0 > thresholdCPUPercentage) {
                 return true;
             }
-            if (osSystemCpuLoad.read() > thresholdCPUPercentage) {
+            if (osSystemCpuLoad0 > thresholdCPUPercentage) {
                 return true;
             }
-            if (operationServicePendingInvocationsPercentage.read() > THRESHOLD_PERCENTAGE_INVOCATIONS) {
+            if (operationServicePendingInvocationsPercentage0 > THRESHOLD_PERCENTAGE_INVOCATIONS) {
                 return true;
             }
-            if (operationServicePendingInvocationsCount.read() > THRESHOLD_INVOCATIONS) {
+            if (operationServicePendingInvocationsCount0 > THRESHOLD_INVOCATIONS) {
                 return true;
             }
             return false;
         }
 
         public String render() {
-            update();
             sb.setLength(0);
             renderProcessors();
             renderPhysicalMemory();
@@ -357,16 +372,16 @@ public class HealthMonitor {
 
         private void renderLoad() {
             sb.append("load.process").append('=')
-                    .append(format("%.2f", osProcessCpuLoad.read())).append("%, ");
+                    .append(format("%.2f", osProcessCpuLoad0)).append("%, ");
             sb.append("load.system").append('=')
-                    .append(format("%.2f", osSystemCpuLoad.read())).append("%, ");
+                    .append(format("%.2f", osSystemCpuLoad0)).append("%, ");
 
             double value = osSystemLoadAverage.read();
             if (value < 0) {
                 sb.append("load.systemAverage").append("=n/a ");
             } else {
                 sb.append("load.systemAverage").append('=')
-                        .append(format("%.2f", osSystemLoadAverage.read())).append(", ");
+                        .append(format("%.2f", value)).append(", ");
             }
         }
 
@@ -391,13 +406,13 @@ public class HealthMonitor {
 
         private void renderHeap() {
             sb.append("heap.memory.used=")
-                    .append(numberToUnit(runtimeUsedMemory.read())).append(", ");
+                    .append(numberToUnit(runtimeUsedMemory0)).append(", ");
             sb.append("heap.memory.free=")
                     .append(numberToUnit(runtimeFreeMemory.read())).append(", ");
             sb.append("heap.memory.total=")
-                    .append(numberToUnit(runtimeTotalMemory.read())).append(", ");
+                    .append(numberToUnit(runtimeTotalMemory0)).append(", ");
             sb.append("heap.memory.max=")
-                    .append(numberToUnit(runtimeMaxMemory.read())).append(", ");
+                    .append(numberToUnit(runtimeMaxMemory0)).append(", ");
             sb.append("heap.memory.used/total=")
                     .append(percentageString(memoryUsedOfTotalPercentage)).append(", ");
             sb.append("heap.memory.used/max=")
@@ -502,9 +517,9 @@ public class HealthMonitor {
             sb.append("operations.running.count=")
                     .append(operationServiceRunningOperationsCount.read()).append(", ");
             sb.append("operations.pending.invocations.percentage=")
-                    .append(format("%.2f", operationServicePendingInvocationsPercentage.read())).append("%, ");
+                    .append(format("%.2f", operationServicePendingInvocationsPercentage0)).append("%, ");
             sb.append("operations.pending.invocations.count=")
-                    .append(operationServicePendingInvocationsCount.read()).append(", ");
+                    .append(operationServicePendingInvocationsCount0).append(", ");
         }
     }
 

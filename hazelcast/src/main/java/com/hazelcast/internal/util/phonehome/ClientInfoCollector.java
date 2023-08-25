@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,6 +99,17 @@ class ClientInfoCollector implements MetricsCollector {
                         PhoneHomeMetrics.CLOSED_GO_CLIENT_CONNECTIONS_COUNT,
                         PhoneHomeMetrics.TOTAL_GO_CLIENT_CONNECTION_DURATION,
                         PhoneHomeMetrics.GO_CLIENT_VERSIONS
+                )
+        );
+
+        CLIENT_TYPE_TO_HELPER.put(
+                ConnectionType.CL_CLIENT,
+                new ClientInfoCollectorHelper(
+                        PhoneHomeMetrics.ACTIVE_CL_CLIENTS_COUNT,
+                        PhoneHomeMetrics.OPENED_CL_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.CLOSED_CL_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.TOTAL_CL_CLIENT_CONNECTION_DURATION,
+                        PhoneHomeMetrics.CL_CLIENT_VERSIONS
                 )
         );
     }

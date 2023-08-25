@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
@@ -32,23 +34,41 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class EntryProcessorOffloadableBouncingNodesTest extends HazelcastTestSupport {
 
+    @Parameterized.Parameter
+    public boolean runWithForceOffload;
+
+    @Parameterized.Parameters(name = "runWithForceOffload: {0}")
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {false},
+                {true},
+        });
+    }
+
     public static final String MAP_NAME = "EntryProcessorOffloadableTest";
-    public static final int COUNT_ENTRIES = 1000;
-    private static final int CONCURRENCY = RuntimeAvailableProcessors.get();
+    public static final int COUNT_ENTRIES = 1_000;
+    private static final int CONCURRENCY = RuntimeAvailableProcessors.get() - 1;
 
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getBouncingTestConfig())
-            .driverType(BounceTestConfiguration.DriverType.MEMBER).build();
+    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(() -> getBouncingTestConfig())
+            .driverType(BounceTestConfiguration.DriverType.MEMBER)
+            .clusterSize(2)
+            .driverCount(2)
+            .build();
 
     private void populateMap(IMap<Integer, SimpleValue> map) {
         for (int i = 0; i < COUNT_ENTRIES; i++) {
@@ -58,6 +78,8 @@ public class EntryProcessorOffloadableBouncingNodesTest extends HazelcastTestSup
 
     public Config getBouncingTestConfig() {
         Config config = getConfig();
+        config.setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(),
+                String.valueOf(runWithForceOffload));
         MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         mapConfig.setAsyncBackupCount(1);

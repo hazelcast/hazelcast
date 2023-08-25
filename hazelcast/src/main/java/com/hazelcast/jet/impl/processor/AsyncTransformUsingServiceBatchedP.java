@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,14 +64,14 @@ public final class AsyncTransformUsingServiceBatchedP<C, S, T, R>
 
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        if (isQueueFull() && !tryFlushQueue()) {
+        if (!makeRoomInQueue()) {
             return;
         }
         // put the inbox items into a list and pass to the superclass as a single item
         List<T> batch = new ArrayList<>(Math.min(inbox.size(), maxBatchSize));
         inbox.drainTo(batch, maxBatchSize);
-        boolean success = super.tryProcess(ordinal, batch);
-        assert success : "the superclass didn't handle the batch";
+        boolean res = super.tryProcessInt(batch);
+        assert res;
     }
 
     /**

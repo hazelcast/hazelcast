@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021 Hazelcast Inc.
+  ~ Copyright 2023 Hazelcast Inc.
   ~
   ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-extensions</artifactId>
-        <version>5.2-SNAPSHOT</version>
+        <version>5.4.0-SNAPSHOT</version>
     </parent>
 
     <properties>
@@ -58,19 +58,19 @@
                         <relocations>
                             <relocation>
                                 <pattern>com.fasterxml.jackson.jr</pattern>
-                                <shadedPattern>com.hazelcast.com.fasterxml.jackson.jr</shadedPattern>
+                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.jr</shadedPattern>
                             </relocation>
                             <relocation>
                                 <pattern>com.fasterxml.jackson.core</pattern>
-                                <shadedPattern>com.hazelcast.com.fasterxml.jackson.core</shadedPattern>
+                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.core</shadedPattern>
                             </relocation>
                             <relocation>
                                 <pattern>com.fasterxml.jackson.databind</pattern>
-                                <shadedPattern>com.hazelcast.com.fasterxml.jackson.databind</shadedPattern>
+                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.databind</shadedPattern>
                             </relocation>
                             <relocation>
                                 <pattern>com.fasterxml.jackson.dataformat</pattern>
-                                <shadedPattern>com.hazelcast.com.fasterxml.jackson.dataformat</shadedPattern>
+                                <shadedPattern>${relocation.root}.com.fasterxml.jackson.dataformat</shadedPattern>
                             </relocation>
                         </relocations>
                     </configuration>
@@ -86,47 +86,32 @@
                         <includedLicense>The Go license</includedLicense>
                         <includedLicense>CDDL</includedLicense>
                         <includedLicense>CDDL 1.1</includedLicense>
-                        <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
                     </includedLicenses>
                 </configuration>
             </plugin>
         </plugins>
     </build>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-jaxb-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                <artifactId>jackson-jaxrs-json-provider</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-hadoop-core</artifactId>
-            <version>5.2-SNAPSHOT</version>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-text</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.10.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
@@ -146,7 +131,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
             <scope>provided</scope>
         </dependency>
 

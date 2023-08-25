@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AutoDetectionConfig;
-import com.hazelcast.config.CompactSerializationConfig;
-import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -51,12 +49,10 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
-import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.internal.config.ConfigXmlGeneratorHelper;
 import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.query.impl.IndexUtils;
 
 import java.util.ArrayList;
@@ -141,6 +137,9 @@ public final class ClientConfigXmlGenerator {
         //Metrics
         metrics(gen, clientConfig.getMetricsConfig());
         instanceTrackingConfig(gen, clientConfig.getInstanceTrackingConfig());
+        sql(gen, clientConfig.getSqlConfig());
+        // TPC
+        tpc(gen, clientConfig.getTpcConfig());
 
         //close HazelcastClient
         gen.close();
@@ -158,6 +157,7 @@ public final class ClientConfigXmlGenerator {
         socketOptions(gen, network.getSocketOptions());
         socketInterceptor(gen, network.getSocketInterceptorConfig());
         ssl(gen, network.getSSLConfig());
+        cloud(gen, network.getCloudConfig());
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(network));
         autoDetection(gen, network.getAutoDetectionConfig());
         discovery(gen, network.getDiscoveryConfig());
@@ -302,31 +302,10 @@ public final class ClientConfigXmlGenerator {
         }
 
         serializers(gen, serialization);
-        compactSerialization(gen, serialization);
+
+        ConfigXmlGeneratorHelper.compactSerialization(gen, serialization.getCompactSerializationConfig());
 
         //close serialization
-        gen.close();
-    }
-
-    private static void compactSerialization(XmlGenerator gen, SerializationConfig serializationConfig) {
-        CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
-        if (!compactSerializationConfig.isEnabled()) {
-            return;
-        }
-
-        gen.open("compact-serialization", "enabled", compactSerializationConfig.isEnabled());
-
-        Map<String, TriTuple<Class, String, CompactSerializer>> registrations
-                = CompactSerializationConfigAccessor.getRegistrations(compactSerializationConfig);
-        Map<String, TriTuple<String, String, String>> namedRegistries
-                = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
-        if (!MapUtil.isNullOrEmpty(registrations) || !MapUtil.isNullOrEmpty(namedRegistries)) {
-            gen.open("registered-classes");
-            appendRegisteredClasses(gen, registrations);
-            appendNamedRegisteredClasses(gen, namedRegistries);
-            gen.close();
-        }
-
         gen.close();
     }
 
@@ -352,8 +331,8 @@ public final class ClientConfigXmlGenerator {
     private static void nativeMemory(XmlGenerator gen, NativeMemoryConfig nativeMemory) {
         gen.open("native-memory", "enabled", nativeMemory.isEnabled(),
                 "allocator-type", nativeMemory.getAllocatorType())
-                .node("size", null, "value", nativeMemory.getSize().getValue(),
-                        "unit", nativeMemory.getSize().getUnit())
+                .node("capacity", null, "value", nativeMemory.getCapacity().getValue(),
+                        "unit", nativeMemory.getCapacity().getUnit())
                 .node("min-block-size", nativeMemory.getMinBlockSize())
                 .node("page-size", nativeMemory.getPageSize())
                 .node("metadata-space-percentage", nativeMemory.getMetadataSpacePercentage());
@@ -446,7 +425,7 @@ public final class ClientConfigXmlGenerator {
                             classNameOrImplClass(evictionConfig.getComparatorClassName(), evictionConfig.getComparator()));
                 queryCachePredicate(gen, queryCache.getPredicateConfig());
                 entryListeners(gen, queryCache.getEntryListenerConfigs());
-                IndexUtils.generateXml(gen, queryCache.getIndexConfigs());
+                IndexUtils.generateXml(gen, queryCache.getIndexConfigs(), false);
                 //close query-cache
                 gen.close();
             }
@@ -539,6 +518,12 @@ public final class ClientConfigXmlGenerator {
                 .node("class-name", classNameOrImplClass(socketInterceptor.getClassName(),
                         socketInterceptor.getImplementation()))
                 .appendProperties(socketInterceptor.getProperties())
+                .close();
+    }
+
+    private static void cloud(XmlGenerator gen, ClientCloudConfig cloudConfig) {
+        gen.open("hazelcast-cloud", "enabled", cloudConfig.isEnabled())
+                .node("discovery-token", cloudConfig.getDiscoveryToken())
                 .close();
     }
 
@@ -678,40 +663,13 @@ public final class ClientConfigXmlGenerator {
            .close();
     }
 
-    private static void appendRegisteredClasses(XmlGenerator gen,
-                                                Map<String, TriTuple<Class, String, CompactSerializer>> registries) {
-        if (registries.isEmpty()) {
-            return;
-        }
-
-        for (TriTuple<Class, String, CompactSerializer> registration : registries.values()) {
-            Class registeredClass = registration.element1;
-            String typeName = registration.element2;
-            CompactSerializer serializer = registration.element3;
-            if (serializer != null) {
-                String serializerClassName = serializer.getClass().getName();
-                gen.node("class", registeredClass.getName(), "type-name", typeName, "serializer", serializerClassName);
-            } else {
-                gen.node("class", registeredClass.getName());
-            }
-        }
+    private static void sql(XmlGenerator gen, ClientSqlConfig sqlConfig) {
+        gen.open("sql")
+           .node("resubmission-mode", sqlConfig.getResubmissionMode().name())
+           .close();
     }
 
-    private static void appendNamedRegisteredClasses(XmlGenerator gen,
-                                                     Map<String, TriTuple<String, String, String>> namedRegistries) {
-        if (namedRegistries.isEmpty()) {
-            return;
-        }
-
-        for (TriTuple<String, String, String> registration : namedRegistries.values()) {
-            String registeredClassName = registration.element1;
-            String typeName = registration.element2;
-            String serializerClassName = registration.element3;
-            if (serializerClassName != null) {
-                gen.node("class", registeredClassName, "type-name", typeName, "serializer", serializerClassName);
-            } else {
-                gen.node("class", registeredClassName);
-            }
-        }
+    private static void tpc(XmlGenerator gen, ClientTpcConfig tpcConfig) {
+        gen.open("tpc", "enabled", tpcConfig.isEnabled()).close();
     }
 }

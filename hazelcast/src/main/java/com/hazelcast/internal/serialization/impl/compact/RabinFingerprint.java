@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
-
-import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 
 /**
  * A very collision-resistant fingerprint method used to create automatic
@@ -69,10 +67,7 @@ public final class RabinFingerprint {
         return (fp >>> 8) ^ FP_TABLE[(int) (fp ^ b) & 0xff];
     }
 
-    private static long fingerprint64(long fp, @Nullable String value) {
-        if (value == null) {
-            return fingerprint64(fp, NULL_ARRAY_LENGTH);
-        }
+    private static long fingerprint64(long fp, @Nonnull String value) {
         byte[] utf8Bytes = value.getBytes(StandardCharsets.UTF_8);
         fp = fingerprint64(fp, utf8Bytes.length);
         for (byte utf8Byte : utf8Bytes) {

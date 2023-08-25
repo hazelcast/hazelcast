@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.core.Hazelcast;
@@ -27,7 +28,9 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.ascii.HTTPCommunicator.ConnectionResponse;
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
@@ -42,10 +45,14 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.SocketException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterStateEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
+import static com.hazelcast.test.HazelcastTestSupport.assertContainsAll;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
@@ -329,13 +336,13 @@ public class RestClusterTest {
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         ConnectionResponse response = communicator.headRequestToClusterHealthURI();
         assertEquals(HttpURLConnection.HTTP_OK, response.responseCode);
-        assertEquals(response.responseHeaders.get("Hazelcast-NodeState").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-NodeState").size());
         assertContains(response.responseHeaders.get("Hazelcast-NodeState"), "ACTIVE");
-        assertEquals(response.responseHeaders.get("Hazelcast-ClusterState").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-ClusterState").size());
         assertContains(response.responseHeaders.get("Hazelcast-ClusterState"), "ACTIVE");
-        assertEquals(response.responseHeaders.get("Hazelcast-ClusterSize").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-ClusterSize").size());
         assertContains(response.responseHeaders.get("Hazelcast-ClusterSize"), "2");
-        assertEquals(response.responseHeaders.get("Hazelcast-MigrationQueueSize").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-MigrationQueueSize").size());
         assertContains(response.responseHeaders.get("Hazelcast-MigrationQueueSize"), "0");
     }
 
@@ -389,6 +396,117 @@ public class RestClusterTest {
         // Reload is enterprise feature. Should fail here.
         assertJsonContains(response.response, "status", "fail",
                 "message", "Configuration Update requires Hazelcast Enterprise Edition");
+    }
+
+    @Test
+    public void testGetTcpIpMemberList() throws Exception {
+        Config config = createConfigWithRestEnabled();
+        List<String> members = Arrays.asList("localhost:5701", "localhost:5702", "localhost:5703", "localhost:5704");
+        if (config.getAdvancedNetworkConfig().isEnabled()) {
+            config.getAdvancedNetworkConfig().getJoin().getTcpIpConfig()
+                    .setMembers(members);
+        } else {
+            config.getNetworkConfig().getJoin().getTcpIpConfig()
+                    .setMembers(members);
+        }
+
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        ConnectionResponse resp = communicator.getTcpIpMemberList();
+        assertSuccessJson(resp);
+        assertContainsAll(((JsonArray) Json.parse(resp.response).asObject().get("member-list"))
+                        .values().stream().map(JsonValue::asString).collect(Collectors.toList()),
+                members);
+    }
+
+    @Test
+    public void testUpdateTcpIpMemberList() throws Exception {
+        Config config = createConfigWithRestEnabled();
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        List<String> expectedMembers = Arrays.asList("localhost:8001", "localhost:9001", "localhost:10001");
+        ConnectionResponse resp = communicator.updateTcpIpMemberList(
+                config.getClusterName(),
+                getPassword(),
+                "localhost:8001, localhost:9001, localhost:10001");
+
+        assertSuccessJson(resp);
+        assertContainsAll(((JsonArray) Json.parse(resp.response).asObject().get("member-list"))
+                        .values().stream().map(JsonValue::asString).collect(Collectors.toList()),
+                expectedMembers);
+        if (config.getAdvancedNetworkConfig().isEnabled()) {
+            assertContainsAll(instance.getConfig().getAdvancedNetworkConfig().getJoin().getTcpIpConfig().getMembers(),
+                    expectedMembers);
+        } else {
+            assertContainsAll(instance.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().getMembers(),
+                    expectedMembers);
+        }
+    }
+
+    @Test
+    public void testGetTcpIpMemberListWhenTcpIpJoinIsNotUsed() throws Exception {
+        Config config = createConfigWithRestEnabled();
+        // disable all join mechanisms
+        config.setProperty("hazelcast.wait.seconds.before.join", "0");
+        config.getNetworkConfig().setPort(10111);
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getAutoDetectionConfig().setEnabled(false);
+        join.getMulticastConfig().setEnabled(false);
+        join.getTcpIpConfig().setEnabled(false);
+        join.getAwsConfig().setEnabled(false);
+        join.getGcpConfig().setEnabled(false);
+        join.getAzureConfig().setEnabled(false);
+        join.getKubernetesConfig().setEnabled(false);
+        join.getEurekaConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        HazelcastInstance instance = null;
+        try {
+            instance = Hazelcast.newHazelcastInstance(config);
+            HTTPCommunicator communicator = new HTTPCommunicator(instance);
+            ConnectionResponse resp = communicator.getTcpIpMemberList();
+            assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, resp.responseCode);
+            assertJsonContains(resp.response, "message",
+                    "TCP-IP join mechanism is not enabled in the cluster.");
+        } finally {
+            if (instance != null) {
+                instance.getLifecycleService().terminate();
+            }
+        }
+    }
+
+    @Test
+    public void testUpdateTcpIpMemberListWhenTcpIpJoinIsNotUsed() throws Exception {
+        Config config = createConfigWithRestEnabled();
+        // disable all join mechanisms
+        config.setProperty("hazelcast.wait.seconds.before.join", "0");
+        config.getNetworkConfig().setPort(10112);
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getAutoDetectionConfig().setEnabled(false);
+        join.getMulticastConfig().setEnabled(false);
+        join.getTcpIpConfig().setEnabled(false);
+        join.getAwsConfig().setEnabled(false);
+        join.getGcpConfig().setEnabled(false);
+        join.getAzureConfig().setEnabled(false);
+        join.getKubernetesConfig().setEnabled(false);
+        join.getEurekaConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        HazelcastInstance instance = null;
+        try {
+            instance = Hazelcast.newHazelcastInstance(config);
+            HTTPCommunicator communicator = new HTTPCommunicator(instance);
+            ConnectionResponse resp = communicator.updateTcpIpMemberList(
+                    config.getClusterName(),
+                    getPassword(),
+                    "localhost:8001, localhost:9001, localhost:10001");
+            assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, resp.responseCode);
+            assertJsonContains(resp.response, "status", "fail", "message",
+                    "TCP-IP join mechanism is not enabled in the cluster.");
+        } finally {
+            if (instance != null) {
+                instance.getLifecycleService().terminate();
+            }
+        }
+
     }
 
     private JsonObject assertJsonContains(String json, String... attributesAndValues) {

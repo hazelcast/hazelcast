@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.string.TrimFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -191,7 +191,7 @@ public class TrimFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization() {
         TrimFunction original = TrimFunction.create(constant("a"), constant("b"), true, true);
-        TrimFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_TRIM);
+        TrimFunction restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_TRIM);
 
         checkEquals(original, restored, true);
     }

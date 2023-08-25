@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -179,16 +179,18 @@ public class MockServerConnection implements ServerConnection {
     }
 
     public void close(String msg, Throwable cause) {
-        if (!alive.compareAndSet(true, false)) {
-            return;
-        }
+        try {
+            if (!alive.compareAndSet(true, false)) {
+                return;
+            }
 
-        if (otherConnection != null) {
-            otherConnection.close(msg, cause);
-        }
-
-        if (lifecycleListener != null) {
-            lifecycleListener.onConnectionClose(this, cause, false);
+            if (otherConnection != null) {
+                otherConnection.close(msg, cause);
+            }
+        } finally {
+            if (lifecycleListener != null) {
+                lifecycleListener.onConnectionClose(this, cause, false);
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
@@ -90,6 +91,16 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
         System.setProperty("try-count", "11");
         ClientFailoverConfig config = buildConfig(yaml);
         assertEquals(11, config.getTryCount());
+    }
+
+    @Test
+    public void testEmptyYamlConfig() {
+        String emptyYaml = "hazelcast-client-failover:\n";
+        ClientFailoverConfig emptyFailoverConfig = buildConfig(emptyYaml);
+        ClientFailoverConfig defaultFailoverConfig = new ClientFailoverConfig();
+
+        assertEquals(emptyFailoverConfig.getTryCount(), defaultFailoverConfig.getTryCount());
+        HazelcastTestSupport.assertContainsAll(emptyFailoverConfig.getClientConfigs(), defaultFailoverConfig.getClientConfigs());
     }
 
     @Override

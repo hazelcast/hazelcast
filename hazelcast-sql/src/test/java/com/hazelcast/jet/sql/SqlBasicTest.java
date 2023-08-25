@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -98,7 +99,6 @@ public class SqlBasicTest extends SqlTestSupport {
 
     private static final String MAP_OBJECT = "map_object";
     private static final String MAP_BINARY = "map_binary";
-    protected static final String MAP_TS = "map_tiered_store";
 
     protected static final int[] PAGE_SIZES = {256};
     protected static final int[] DATA_SET_SIZES = {4096};
@@ -610,13 +610,9 @@ public class SqlBasicTest extends SqlTestSupport {
     }
 
     static Config memberConfig() {
-        MapConfig tsMapConfig = new MapConfig(MAP_TS).setInMemoryFormat(InMemoryFormat.NATIVE);
-        tsMapConfig.getTieredStoreConfig().setEnabled(true);
-
         return smallInstanceConfig()
                 .addMapConfig(new MapConfig(MAP_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
                 .addMapConfig(new MapConfig(MAP_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
-                .addMapConfig(tsMapConfig)
                 .setSerializationConfig(serializationConfig());
     }
 
@@ -659,6 +655,8 @@ public class SqlBasicTest extends SqlTestSupport {
     }
 
     abstract static class AbstractPojo implements Serializable {
+
+        private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
         protected boolean booleanVal;
 
@@ -714,7 +712,11 @@ public class SqlBasicTest extends SqlTestSupport {
             timeVal = timestampVal.toLocalTime();
 
             tsTzDateVal = new Date();
-            tsTzCalendarVal = (GregorianCalendar) GregorianCalendar.getInstance();
+            // GregorianCalendar with different timezones has different serialized length.
+            // It seems to vary between approximately 1000 and 2000 bytes.
+            // Use specific timezone to decrease variations between environments.
+            // Some tests (e.g. HD) have limited amount of memory which can be exceeded by longer values.
+            tsTzCalendarVal = (GregorianCalendar) GregorianCalendar.getInstance(UTC);
             tsTzInstantVal = Instant.now();
             tsTzOffsetDateTimeVal = OffsetDateTime.now();
             tsTzZonedDateTimeVal = ZonedDateTime.now();

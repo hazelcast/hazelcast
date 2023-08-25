@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -48,8 +46,9 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.splitbrainprotection.durableexecutor.DurableExecutorSplitBrainProtectionWriteTest.ExecRunnable.callable;
 import static com.hazelcast.splitbrainprotection.durableexecutor.DurableExecutorSplitBrainProtectionWriteTest.ExecRunnable.runnable;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.isA;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings("unchecked")
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -62,9 +61,6 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
 
     @Parameter
     public static SplitBrainProtectionOn splitBrainProtectionOn;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void setUp() {
@@ -87,8 +83,7 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
 
     @Test
     public void disposeResult_noSplitBrainProtection() {
-        expectedException.expect(isA(SplitBrainProtectionException.class));
-        exec(3).disposeResult(125L);
+        assertThatThrownBy(() -> exec(3).disposeResult(125L)).isInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -104,8 +99,7 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
 
     @Test
     public void retrieveAndDisposeResult_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).retrieveAndDisposeResult(125L).get();
+        assertThatThrownBy(() -> exec(3).disposeResult(125L)).isInstanceOf(SplitBrainProtectionException.class);
     }
 
 
@@ -139,9 +133,8 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
     }
 
     @Test
-    public void submit_runnable_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).submit(runnable()).get();
+    public void submit_runnable_noSplitBrainProtection() {
+        assertThatThrownBy(() -> exec(3).submit(runnable()).get()).hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -150,9 +143,9 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
     }
 
     @Test
-    public void submit_runnable_result_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).submit(runnable(), "result").get();
+    public void submit_runnable_result_noSplitBrainProtection() {
+        assertThatThrownBy(() -> exec(3).submit(runnable(), "result").get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -161,9 +154,8 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
     }
 
     @Test
-    public void submit_callable_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).submit(callable()).get();
+    public void submit_callable_noSplitBrainProtection() {
+        assertThatThrownBy(() -> exec(3).submit(callable()).get()).hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -172,9 +164,9 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
     }
 
     @Test
-    public void submitToKeyOwner_callable_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).submitToKeyOwner(callable(), key(3)).get();
+    public void submitToKeyOwner_callable_noSplitBrainProtection() {
+        assertThatThrownBy(() -> exec(3).submitToKeyOwner(callable(), key(3)).get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -183,9 +175,9 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
     }
 
     @Test
-    public void submitToKeyOwner_runnable_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).submitToKeyOwner(runnable(), key(3)).get();
+    public void submitToKeyOwner_runnable_noSplitBrainProtection() {
+        assertThatThrownBy(() -> exec(3).submitToKeyOwner(runnable(), key(3)).get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test(expected = UnsupportedOperationException.class)

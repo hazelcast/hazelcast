@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,26 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.NodeEngine;
 
-public class ShutdownResponseOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
+import java.io.IOException;
+import java.util.UUID;
+
+public class ShutdownResponseOperation
+        extends AbstractPartitionOperation implements MigrationCycleOperation, Versioned {
+
+    private UUID uuid;
 
     public ShutdownResponseOperation() {
+    }
+
+    public ShutdownResponseOperation(UUID uuid) {
+        this.uuid = uuid;
     }
 
     @Override
@@ -45,7 +59,12 @@ public class ShutdownResponseOperation extends AbstractPartitionOperation implem
             if (logger.isFinestEnabled()) {
                 logger.finest("Received shutdown response from " + caller);
             }
-            partitionService.onShutdownResponse();
+
+            if (nodeEngine.getLocalMember().getUuid().equals(uuid)) {
+                partitionService.onShutdownResponse();
+            } else {
+                logger.warning("Ignoring shutdown response for " + uuid + " since it's not the expected member");
+            }
         } else {
             logger.warning("Received shutdown response from " + caller + " but it's not the known master");
         }
@@ -64,5 +83,17 @@ public class ShutdownResponseOperation extends AbstractPartitionOperation implem
     @Override
     public int getClassId() {
         return PartitionDataSerializerHook.SHUTDOWN_RESPONSE;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        UUIDSerializationUtil.writeUUID(out, uuid);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        uuid = UUIDSerializationUtil.readUUID(in);
     }
 }

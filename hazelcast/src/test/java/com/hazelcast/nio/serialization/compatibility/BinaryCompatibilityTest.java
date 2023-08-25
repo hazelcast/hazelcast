@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,15 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import example.serialization.InnerDTOSerializer;
+import example.serialization.MainDTOSerializer;
+import example.serialization.NamedDTOSerializer;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,6 +40,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import javax.annotation.Nullable;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -118,7 +123,7 @@ public class BinaryCompatibilityTest {
     @Test
     public void readAndVerifyBinaries() {
         String key = createObjectKey();
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = createSerializationService(key);
         Object readObject = serializationService.toObject(dataMap.get(key));
         boolean equals = equals(object, readObject);
         if (!equals) {
@@ -129,7 +134,7 @@ public class BinaryCompatibilityTest {
 
     @Test
     public void basicSerializeDeserialize() {
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = createSerializationService(null);
         Data data = serializationService.toData(object);
         Object readObject = serializationService.toObject(data);
         assertTrue(equals(object, readObject));
@@ -139,7 +144,7 @@ public class BinaryCompatibilityTest {
         return version + "-" + (object == null ? "NULL" : object.getClass().getSimpleName()) + "-" + byteOrder;
     }
 
-    private SerializationService createSerializationService() {
+    private SerializationService createSerializationService(@Nullable String key) {
         SerializerConfig customByteArraySerializerConfig = new SerializerConfig()
                 .setImplementation(new CustomByteArraySerializer())
                 .setTypeClass(CustomByteArraySerializable.class);
@@ -154,6 +159,8 @@ public class BinaryCompatibilityTest {
                 .setAllowUnsafe(allowUnsafe)
                 .setByteOrder(byteOrder);
 
+        config.getCompactSerializationConfig().setSerializers(new MainDTOSerializer(), new InnerDTOSerializer(), new NamedDTOSerializer());
+
         ClassDefinition classDefinition = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, INNER_PORTABLE_CLASS_ID)
                 .addIntField("i")
                 .addFloatField("f")
@@ -161,6 +168,7 @@ public class BinaryCompatibilityTest {
 
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setVersion(version)
+                .setSchemaService(CompactTestUtil.createInMemorySchemaService())
                 .addPortableFactory(PORTABLE_FACTORY_ID, new APortableFactory())
                 .addDataSerializableFactory(IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID, new ADataSerializableFactory())
                 .setConfig(config)
@@ -168,6 +176,16 @@ public class BinaryCompatibilityTest {
                 .build();
 
         assumeConfiguredByteOrder(serializationService, byteOrder);
+
+        if (key != null && key.contains("MainDTO")) {
+            // Create schema for aCompact
+            serializationService.toData(CompactTestUtil.createMainDTO());
+        }
+
+        if (key != null && key.contains("AllFieldsDTO")) {
+            // Create schema for aReflectiveCompact
+            serializationService.toData(CompactTestUtil.createAllFieldsDTO());
+        }
 
         return serializationService;
     }

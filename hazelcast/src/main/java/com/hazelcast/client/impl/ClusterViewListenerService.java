@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.nio.channels.CancelledKeyException;
 import java.util.ArrayList;
@@ -48,9 +49,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ClusterViewListenerService {
-    private static final int PUSH_PERIOD_IN_SECONDS = 30;
+    private static final HazelcastProperty PUSH_PERIOD_IN_SECONDS
+            = new HazelcastProperty("hazelcast.client.internal.push.period.seconds", 30, SECONDS);
     private static final long PARTITION_UPDATE_DELAY_MS = 100;
     private static final long PARTITION_UPDATE_MAX_DELAY_MS = 500;
 
@@ -77,7 +80,8 @@ public class ClusterViewListenerService {
 
     private void schedulePeriodicPush() {
         ExecutionService executor = nodeEngine.getExecutionService();
-        executor.scheduleWithRepetition(this::pushView, PUSH_PERIOD_IN_SECONDS, PUSH_PERIOD_IN_SECONDS, TimeUnit.SECONDS);
+        int pushPeriodInSeconds = nodeEngine.getProperties().getSeconds(PUSH_PERIOD_IN_SECONDS);
+        executor.scheduleWithRepetition(this::pushView, pushPeriodInSeconds, pushPeriodInSeconds, TimeUnit.SECONDS);
     }
 
     private void pushView() {

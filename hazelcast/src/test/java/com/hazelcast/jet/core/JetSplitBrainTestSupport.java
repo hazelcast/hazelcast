@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,9 +97,17 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     }
 
     protected final void testSplitBrain(int firstSubClusterSize, int secondSubClusterSize,
-                              Consumer<HazelcastInstance[]> beforeSplit,
-                              BiConsumer<HazelcastInstance[], HazelcastInstance[]> onSplit,
-                              Consumer<HazelcastInstance[]> afterMerge) {
+                                        Consumer<HazelcastInstance[]> beforeSplit,
+                                        BiConsumer<HazelcastInstance[], HazelcastInstance[]> onSplit,
+                                        Consumer<HazelcastInstance[]> afterMerge) {
+        testSplitBrain(firstSubClusterSize, secondSubClusterSize, beforeSplit, onSplit, afterMerge, 1);
+    }
+
+    protected final void testSplitBrain(int firstSubClusterSize, int secondSubClusterSize,
+                                        Consumer<HazelcastInstance[]> beforeSplit,
+                                        BiConsumer<HazelcastInstance[], HazelcastInstance[]> onSplit,
+                                        Consumer<HazelcastInstance[]> afterMerge,
+                                        int numberOfRepeats) {
         checkPositive(firstSubClusterSize, "invalid first sub cluster size: " + firstSubClusterSize);
         checkPositive(secondSubClusterSize, "invalid second sub cluster size: " + secondSubClusterSize);
 
@@ -111,25 +119,28 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
             beforeSplit.accept(instances);
         }
 
-        LOGGER.info("Going to create split-brain...");
-        createSplitBrain(instances, firstSubClusterSize, secondSubClusterSize);
-        Brains brains = getBrains(instances, firstSubClusterSize, secondSubClusterSize);
-        LOGGER.info("Split-brain created");
+        for (int splitBrainNumber = 0; splitBrainNumber < numberOfRepeats; ++splitBrainNumber) {
 
-        if (onSplit != null) {
-            onSplit.accept(brains.firstSubCluster, brains.secondSubCluster);
-        }
+            LOGGER.info("Going to create split-brain... #" + splitBrainNumber);
+            createSplitBrain(instances, firstSubClusterSize, secondSubClusterSize);
+            Brains brains = getBrains(instances, firstSubClusterSize, secondSubClusterSize);
+            LOGGER.info("Split-brain created");
 
-        LOGGER.info("Going to heal split-brain...");
-        healSplitBrain(instances, firstSubClusterSize);
-        LOGGER.info("Split-brain healed");
+            if (onSplit != null) {
+                onSplit.accept(brains.firstSubCluster, brains.secondSubCluster);
+            }
 
-        if (afterMerge != null) {
-            afterMerge.accept(instances);
+            LOGGER.info("Going to heal split-brain... #" + splitBrainNumber);
+            healSplitBrain(instances, firstSubClusterSize);
+            LOGGER.info("Split-brain healed");
+
+            if (afterMerge != null) {
+                afterMerge.accept(instances);
+            }
         }
     }
 
-    private HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {
+    protected HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {
         HazelcastInstance[] instances = new HazelcastInstance[clusterSize];
         for (int i = 0; i < clusterSize; i++) {
             instances[i] = createHazelcastInstance(config);

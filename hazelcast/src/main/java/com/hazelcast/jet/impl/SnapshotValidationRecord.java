@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,8 +95,8 @@ public class SnapshotValidationRecord implements IdentifiedDataSerializable {
         out.writeLong(numBytes);
         out.writeLong(creationTime);
         out.writeLong(jobId);
-        out.writeUTF(jobName);
-        out.writeUTF(dagJsonString);
+        out.writeString(jobName);
+        out.writeString(dagJsonString);
     }
 
     @Override
@@ -106,8 +106,21 @@ public class SnapshotValidationRecord implements IdentifiedDataSerializable {
         numBytes = in.readLong();
         creationTime = in.readLong();
         jobId = in.readLong();
-        jobName = in.readUTF();
-        dagJsonString = in.readUTF();
+        jobName = in.readString();
+        dagJsonString = in.readString();
+    }
+
+    @Override
+    public String toString() {
+        return "SnapshotValidationRecord{" +
+                "snapshotId=" + snapshotId +
+                ", numChunks=" + numChunks +
+                ", numBytes=" + numBytes +
+                ", creationTime=" + creationTime +
+                ", jobId=" + jobId +
+                ", jobName='" + jobName + '\'' +
+                // dagJsonString may be long and does not bring much value in toString
+                '}';
     }
 
     enum SnapshotValidationKey {

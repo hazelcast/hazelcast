@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,12 +74,17 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
+import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -105,6 +110,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     private static final long UNINITIALIZED_CONTEXT_MAX_AGE_NS = MINUTES.toNanos(5);
 
     private static final long FAILED_EXECUTION_EXPIRY_NS = SECONDS.toNanos(5);
+    private static final CompletableFuture<?>[] EMPTY_COMPLETABLE_FUTURE_ARRAY = new CompletableFuture[0];
 
     private final Object mutex = new Object();
 
@@ -129,7 +135,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
      * cancellation-heavy scenarios a significant amount of memory could
      * be held for time defined in {@link
      * #UNINITIALIZED_CONTEXT_MAX_AGE_NS}, see
-     * https://github.com/hazelcast/hazelcast/issues/19897.
+     * <a href="https://github.com/hazelcast/hazelcast/issues/19897">issue #19897</a>.
      */
     private final ConcurrentMap<Long, Long> failedJobs = new ConcurrentHashMap<>();
 
@@ -233,29 +239,43 @@ public class JobExecutionService implements DynamicMetricsProvider {
     /**
      * Cancels all ongoing executions using the given failure supplier.
      */
+    @SuppressWarnings("rawtypes")
     public void cancelAllExecutions(String reason) {
-        for (ExecutionContext exeCtx : executionContexts.values()) {
-            LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s",
-                    exeCtx.jobNameAndExecutionId(), reason);
-            terminateExecution0(exeCtx, null, new CancellationException());
+        // The ConcurrentHashMap.values() is a projection of underlying data in the map. If other thread mutates the map the
+        // collection returned by values() mutates as well. That's the reason why we use ArrayList here instead of an array, the
+        // count of items may change.
+        Collection<ExecutionContext> contexts = executionContexts.values();
+        List<CompletableFuture> futures = new ArrayList<>(contexts.size());
+
+        for (ExecutionContext exeCtx : contexts) {
+            LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s", exeCtx.jobNameAndExecutionId(), reason);
+            futures.add(terminateExecution0(exeCtx, null, new CancellationException()));
         }
+
+        CompletableFuture.allOf(futures.toArray(EMPTY_COMPLETABLE_FUTURE_ARRAY)).join();
     }
 
     /**
      * Cancels executions that contain the leaving address as the coordinator or a
      * job participant
      */
+    @SuppressWarnings("rawtypes")
     void onMemberRemoved(Member member) {
         Address address = member.getAddress();
-        executionContexts.values().stream()
-             // note that coordinator might not be a participant (in case it is a lite member)
-             .filter(exeCtx -> exeCtx.coordinator() != null
-                     && (exeCtx.coordinator().equals(address) || exeCtx.hasParticipant(address)))
-             .forEach(exeCtx -> {
-                 LoggingUtil.logFine(logger, "Completing %s locally. Reason: Member %s left the cluster",
-                         exeCtx.jobNameAndExecutionId(), address);
-                 terminateExecution0(exeCtx, null, new MemberLeftException(member));
-             });
+        CompletableFuture[] terminationFutures =
+                executionContexts.values().stream()
+                                 // note that coordinator might not be a participant
+                                 // (in case it is a lite member)
+                                 .filter(exeCtx -> exeCtx.coordinator() != null
+                                         && (exeCtx.coordinator().equals(address) || exeCtx.hasParticipant(address)))
+                                 .map(exeCtx -> {
+                                     LoggingUtil.logFine(logger, "Completing %s " +
+                                                     "locally. Reason: Member %s left the cluster",
+                                             exeCtx.jobNameAndExecutionId(), address);
+                                     return terminateExecution0(exeCtx, null, new MemberLeftException(member));
+                                 })
+                                 .toArray(CompletableFuture[]::new);
+        CompletableFuture.allOf(terminationFutures).join();
     }
 
     public CompletableFuture<RawJobMetrics> runLightJob(
@@ -277,28 +297,23 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     x -> new ExecutionContext(nodeEngine, jobId, executionId, true));
         }
 
-        try {
-            Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-            ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
-            // We don't create the CL for light jobs.
-            assert jobClassloaderService.getClassLoader(jobId) == null;
-            doWithClassLoader(
-                    jobCl,
-                    () -> execCtx.initialize(coordinator, addresses, plan)
-            );
-        } catch (Throwable e) {
-            completeExecution(execCtx, new CancellationException());
-            throw e;
-        }
+        Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
 
-        // initial log entry with all of jobId, jobName, executionId
-        if (logger.isFineEnabled()) {
-            logger.fine("Execution plan for light job ID=" + idToString(jobId)
-                    + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
-                    + ", executionId=" + idToString(executionId) + " initialized, will start the execution");
-        }
-
-        return beginExecution0(execCtx, false);
+        return execCtx.initialize(coordinator, addresses, plan)
+                .whenComplete((r, e) -> {
+                    if (e != null) {
+                        completeExecution(execCtx, new CancellationException()).join();
+                    }
+                })
+                .thenAccept(r -> {
+                    // initial log entry with all of jobId, jobName, executionId
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Execution plan for light job ID=" + idToString(jobId)
+                                + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
+                                + ", executionId=" + idToString(executionId) + " initialized, will start the execution");
+                    }
+                })
+                .thenCompose(r -> beginExecution0(execCtx, false));
     }
 
     /**
@@ -316,27 +331,23 @@ public class JobExecutionService implements DynamicMetricsProvider {
      *     init execution is retried.
      * </li></ul>
      */
-    public void initExecution(
+    public CompletableFuture<Void> initExecution(
             long jobId, long executionId, Address coordinator, int coordinatorMemberListVersion,
             Set<MemberInfo> participants, ExecutionPlan plan
     ) {
         ExecutionContext execCtx = addExecutionContext(
                 jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
 
-        try {
-            jobClassloaderService.prepareProcessorClassLoaders(jobId);
-            Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-            ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
-            doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
-        } finally {
-            jobClassloaderService.clearProcessorClassLoaders();
-        }
-
-
-        // initial log entry with all of jobId, jobName, executionId
-        logger.info("Execution plan for jobId=" + idToString(jobId)
-                + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
-                + ", executionId=" + idToString(executionId) + " initialized");
+        Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
+        ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
+        return  doWithClassLoader(jobCl,
+                () -> execCtx.initialize(coordinator, addresses, plan))
+                .thenAccept(r -> {
+                    // initial log entry with all of jobId, jobName, executionId
+                    logger.info("Execution plan for jobId=" + idToString(jobId)
+                            + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
+                            + ", executionId=" + idToString(executionId) + " initialized");
+                });
     }
 
     private void addExecutionContextJobId(long jobId, long executionId, Address coordinator) {
@@ -427,7 +438,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
             }
             assert !masterAddress.equals(thisAddress) : String.format(
                     "Local node: %s is master but InitOperation has coordinator member list version: %s larger than "
-                    + " local member list version: %s", thisAddress, coordinatorMemberListVersion,
+                            + " local member list version: %s", thisAddress, coordinatorMemberListVersion,
                     localMemberListVersion);
 
             nodeEngine.getOperationService().send(new TriggerMemberListPublishOp(), masterAddress);
@@ -511,23 +522,25 @@ public class JobExecutionService implements DynamicMetricsProvider {
     /**
      * Completes and cleans up execution of the given job
      */
-    public void completeExecution(@Nonnull ExecutionContext executionContext, Throwable error) {
+    public CompletableFuture<Void> completeExecution(@Nonnull ExecutionContext executionContext, Throwable error) {
         ExecutionContext removed = executionContexts.remove(executionContext.executionId());
         if (removed != null) {
             if (error != null) {
                 failedJobs.put(executionContext.executionId(), System.nanoTime() + FAILED_EXECUTION_EXPIRY_NS);
             }
             JetDelegatingClassLoader jobClassLoader = jobClassloaderService.getClassLoader(executionContext.jobId());
-            try {
-                doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
-            } finally {
-                if (!executionContext.isLightJob()) {
-                    jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
-                }
-                executionCompleted.inc();
-                executionContextJobIds.remove(executionContext.jobId());
-                logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
-            }
+
+            return doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error))
+                    .whenComplete(withTryCatch(logger, (ignored, t) -> {
+                        if (!executionContext.isLightJob()) {
+                            jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
+                        }
+                        executionCompleted.inc();
+                        executionContextJobIds.remove(executionContext.jobId());
+                        logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
+                    }));
+        } else {
+            return completedFuture(null);
         }
     }
 
@@ -553,30 +566,38 @@ public class JobExecutionService implements DynamicMetricsProvider {
     public CompletableFuture<RawJobMetrics> beginExecution0(ExecutionContext execCtx, boolean collectMetrics) {
         executionStarted.inc();
         return execCtx.beginExecution(taskletExecutionService)
-                .thenApply(r -> {
-                    RawJobMetrics terminalMetrics;
-                    if (collectMetrics) {
-                        JobMetricsCollector metricsRenderer =
-                                new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger);
-                        nodeEngine.getMetricsRegistry().collect(metricsRenderer);
-                        terminalMetrics = metricsRenderer.getMetrics();
-                    } else {
-                        terminalMetrics = null;
-                    }
-                    return terminalMetrics;
-                })
-                .whenCompleteAsync(withTryCatch(logger, (i, e) -> {
-                    completeExecution(execCtx, peel(e));
-
-                    if (e instanceof CancellationException) {
-                        logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
-                    } else if (e != null) {
-                        logger.fine("Execution of " + execCtx.jobNameAndExecutionId()
-                                + " completed with failure", e);
-                    } else {
-                        logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
-                    }
-                }));
+                      .thenApply(r -> {
+                          RawJobMetrics terminalMetrics;
+                          if (collectMetrics) {
+                              try (JobMetricsCollector metricsRenderer =
+                                      new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger)) {
+                                  nodeEngine.getMetricsRegistry().collect(metricsRenderer);
+                                  terminalMetrics = metricsRenderer.getMetrics();
+                              }
+                          } else {
+                              terminalMetrics = null;
+                          }
+                          return terminalMetrics;
+                      })
+                      .handleAsync((metrics, e) -> completeExecution(execCtx, peel(e))
+                              .thenApply(ignored -> {
+                                  if (e == null) {
+                                    return metrics;
+                                  }
+                                  throw sneakyThrow(e);
+                              })
+                      )
+                      .thenCompose(stage -> stage)
+                      .whenComplete((metrics, e) -> {
+                          if (e instanceof CancellationException) {
+                              logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
+                          } else if (e != null) {
+                              logger.fine("Execution of " + execCtx.jobNameAndExecutionId()
+                                      + " completed with failure", e);
+                          } else {
+                              logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
+                          }
+                      });
     }
 
     @Override
@@ -584,7 +605,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         try {
             descriptor.withTag(MetricTags.MODULE, "jet");
             executionContexts.forEach((id, ctx) ->
-                ctx.provideDynamicMetrics(descriptor.copy(), context));
+                    ctx.provideDynamicMetrics(descriptor.copy(), context));
         } catch (Throwable t) {
             logger.warning("Dynamic metric collection failed", t);
             throw t;
@@ -594,12 +615,14 @@ public class JobExecutionService implements DynamicMetricsProvider {
     /**
      * See also javadoc at {@link CheckLightJobsOperation}.
      */
+    @SuppressWarnings("rawtypes")
     private void checkExecutions() {
         try {
             long now = System.nanoTime();
             long uninitializedContextThreshold = now - UNINITIALIZED_CONTEXT_MAX_AGE_NS;
             Map<Address, List<Long>> executionsPerMember = new HashMap<>();
 
+            List<CompletableFuture> terminateFutures = new ArrayList<>();
             for (ExecutionContext ctx : executionContexts.values()) {
                 if (!ctx.isLightJob()) {
                     continue;
@@ -615,9 +638,13 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     if (ctx.getCreatedOn() <= uninitializedContextThreshold) {
                         LoggingUtil.logFine(logger, "Terminating light job %s because it wasn't initialized during %d seconds",
                                 idToString(ctx.executionId()), NANOSECONDS.toSeconds(UNINITIALIZED_CONTEXT_MAX_AGE_NS));
-                        terminateExecution0(ctx, TerminationMode.CANCEL_FORCEFUL, new CancellationException());
+                        terminateFutures.add(terminateExecution0(ctx, CANCEL_FORCEFUL, new CancellationException()));
                     }
                 }
+            }
+
+            if (!terminateFutures.isEmpty()) {
+                CompletableFuture.allOf(terminateFutures.toArray(EMPTY_COMPLETABLE_FUTURE_ARRAY)).join();
             }
 
             // submit the query to the coordinator
@@ -625,10 +652,10 @@ public class JobExecutionService implements DynamicMetricsProvider {
                 long[] executionIds = en.getValue().stream().mapToLong(Long::longValue).toArray();
                 Operation op = new CheckLightJobsOperation(executionIds);
                 InvocationFuture<long[]> future = nodeEngine.getOperationService()
-                        .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, en.getKey())
-                        .invoke();
+                                                            .createInvocationBuilder(SERVICE_NAME, op, en.getKey())
+                                                            .invoke();
                 future.whenComplete((r, t) -> {
-                    if (t instanceof TargetNotMemberException) {
+                    if (isOrHasCause(t, TargetNotMemberException.class)) {
                         // if the target isn't a member, then all executions are unknown
                         r = executionIds;
                     } else if (t != null) {
@@ -641,7 +668,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                         if (execCtx != null) {
                             logger.fine("Terminating light job " + idToString(executionId)
                                     + " because the coordinator doesn't know it");
-                            terminateExecution0(execCtx, TerminationMode.CANCEL_FORCEFUL, new CancellationException());
+                            terminateExecution0(execCtx, CANCEL_FORCEFUL, new CancellationException());
                         }
                     }
                 });
@@ -654,7 +681,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
     }
 
-    public void terminateExecution(long jobId, long executionId, Address callerAddress, TerminationMode mode) {
+    public CompletableFuture<Void> terminateExecution(long jobId, long executionId, Address callerAddress, TerminationMode mode) {
         failIfNotRunning();
 
         ExecutionContext executionContext = executionContexts.get(executionId);
@@ -662,7 +689,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
             // If this happens after the execution terminated locally, ignore.
             // If this happens before the execution was initialized locally, that means it's a light
             // job. We ignore too and rely on the CheckLightJobsOperation.
-            return;
+            return completedFuture(null);
         }
         if (!executionContext.isLightJob()) {
             Address masterAddress = nodeEngine.getMasterAddress();
@@ -689,17 +716,19 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     executionContext.jobNameAndExecutionId(), coordinator, callerAddress, idToString(executionId)));
         }
         Exception cause = mode == null ? new CancellationException() : new JobTerminateRequestedException(mode);
-        terminateExecution0(executionContext, mode, cause);
+        return terminateExecution0(executionContext, mode, cause);
     }
 
-    public void terminateExecution0(ExecutionContext executionContext, TerminationMode mode, Throwable cause) {
-        if (!executionContext.terminateExecution(mode)) {
+    public CompletableFuture<Void> terminateExecution0(ExecutionContext executionContext, TerminationMode mode, Throwable cause) {
+        if (!executionContext.terminateExecution(mode, cause)) {
+
             // If the execution was terminated before it began, call completeExecution now.
             // Otherwise, if the execution was already begun, this method will be called when the tasklets complete.
             logger.fine(executionContext.jobNameAndExecutionId()
                     + " calling completeExecution because execution terminated before it started");
-            completeExecution(executionContext, cause);
+            return completeExecution(executionContext, cause);
         }
+        return completedFuture(null);
     }
 
     // for test
@@ -712,7 +741,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
     }
 
-    private static class JobMetricsCollector implements MetricsCollector {
+    private static class JobMetricsCollector implements MetricsCollector, AutoCloseable {
 
         private final Long executionId;
         private final MetricsCompressor compressor;
@@ -730,10 +759,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         @Override
         public void collectLong(MetricDescriptor descriptor, long value) {
-            System.out.println("bbb: " + descriptor + ", v=" + value);
             Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
             if (this.executionId.equals(executionId)) {
-                System.out.println("taken");
                 compressor.addLong(addPrefixFn.apply(descriptor), value);
             }
         }
@@ -759,7 +786,12 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         @Nonnull
         public RawJobMetrics getMetrics() {
-            return RawJobMetrics.of(compressor.getBlobAndReset());
+            return RawJobMetrics.of(compressor.getBlobAndClose());
+        }
+
+        @Override
+        public void close() {
+            compressor.close();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
@@ -29,22 +31,32 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.InterfacesConfig;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MemberAddressProviderConfig;
+import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -52,10 +64,18 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.config.RestApiConfig;
+import com.hazelcast.config.RestEndpointGroup;
+import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
@@ -63,17 +83,27 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.memory.Capacity;
 import org.snakeyaml.engine.v2.api.Dump;
 import org.snakeyaml.engine.v2.api.DumpSettings;
 import org.snakeyaml.engine.v2.common.FlowStyle;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
+import static com.hazelcast.config.ConfigXmlGenerator.endpointConfigElementName;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.classNameOrImplClass;
@@ -90,8 +120,11 @@ import static java.lang.Boolean.TRUE;
 public class DynamicConfigYamlGenerator {
 
     private static final int INDENT = 2;
+    private static final boolean DEFAULT_MASK_SENSITIVE_FIELDS = false;
+    private static volatile boolean maskSensitiveFields = DEFAULT_MASK_SENSITIVE_FIELDS;
 
-    String generate(Config config) {
+    String generate(Config config, boolean isMask) {
+        maskSensitiveFields = isMask;
         Map<String, Object> document = new LinkedHashMap<>();
         Map<String, Object> root = new LinkedHashMap<>();
         document.put("hazelcast", root);
@@ -116,7 +149,9 @@ public class DynamicConfigYamlGenerator {
         flakeIdGeneratorYamlGenerator(root, config);
         pnCounterYamlGenerator(root, config);
         wanReplicationYamlGenerator(root, config);
-
+        networkConfigYamlGenerator(root, config);
+        advancedNetworkConfigYamlGenerator(root, config);
+        dataConnectionYamlGenerator(root, config);
         DumpSettings dumpSettings = DumpSettings.builder()
                 .setDefaultFlowStyle(FlowStyle.BLOCK)
                 .setIndicatorIndent(INDENT - 2)
@@ -127,7 +162,7 @@ public class DynamicConfigYamlGenerator {
     }
 
     public static void licenseKeyYamlGenerator(Map<String, Object> parent, Config config) {
-        addNonNullToMap(parent, LICENSE_KEY.getName(), config.getLicenseKey());
+        addNonNullToMap(parent, LICENSE_KEY.getName(), getOrMaskValue(config.getLicenseKey()));
     }
 
     @SuppressWarnings("checkstyle:MethodLength")
@@ -198,6 +233,8 @@ public class DynamicConfigYamlGenerator {
                     getQueryCacheConfigsAsMap(subConfigAsObject.getQueryCacheConfigs()));
             addNonNullToMap(subConfigAsMap, "tiered-store",
                     getTieredStoreConfigAsMap(subConfigAsObject.getTieredStoreConfig()));
+            addNonNullToMap(subConfigAsMap, "partition-attributes",
+                    getPartitioningAttributesAsList(subConfigAsObject.getPartitioningAttributeConfigs()));
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -629,6 +666,28 @@ public class DynamicConfigYamlGenerator {
         parent.put("pn-counter", child);
     }
 
+    public static void dataConnectionYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getDataConnectionConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (DataConnectionConfig dataConnectionConfig : config.getDataConnectionConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "type",
+                    dataConnectionConfig.getType());
+            addNonNullToMap(subConfigAsMap, "shared",
+                    dataConnectionConfig.isShared());
+            addNonNullToMap(subConfigAsMap, "properties",
+                    getPropertiesAsMap(dataConnectionConfig.getProperties()));
+
+            child.put(dataConnectionConfig.getName(), subConfigAsMap);
+        }
+
+        parent.put("data-connection", child);
+    }
+
     public static void wanReplicationYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getWanReplicationConfigs().isEmpty()) {
             return;
@@ -649,6 +708,340 @@ public class DynamicConfigYamlGenerator {
         }
 
         parent.put("wan-replication", child);
+    }
+
+    private void networkConfigYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getAdvancedNetworkConfig().isEnabled()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        NetworkConfig netCfg = config.getNetworkConfig();
+        addNonNullToMap(child, "public-address", netCfg.getPublicAddress());
+        Map<String, Object> portCfg = new LinkedHashMap<>();
+        addNonNullToMap(portCfg, "port", netCfg.getPort());
+        addNonNullToMap(portCfg, "port-count", netCfg.getPortCount());
+        addNonNullToMap(portCfg, "auto-increment", netCfg.isPortAutoIncrement());
+        child.put("port", portCfg);
+        addNonNullToMap(child, "reuse-address", netCfg.isReuseAddress());
+
+        Collection<String> outboundPortDefinitions = netCfg.getOutboundPortDefinitions();
+        if (CollectionUtil.isNotEmpty(outboundPortDefinitions)) {
+            child.put("outbound-ports", new ArrayList<>(outboundPortDefinitions));
+        }
+        JoinConfig join = netCfg.getJoin();
+        Map<String, Object> joinSubConfig = new LinkedHashMap<>();
+        autoDetectionConfigYamlGenerator(joinSubConfig, join);
+        multicastConfigYamlGenerator(joinSubConfig, join);
+        tcpIpConfigYamlGenerator(joinSubConfig, config);
+        aliasedDiscoveryConfigsYamlGenerator(joinSubConfig, aliasedDiscoveryConfigsFrom(join));
+        discoveryStrategyConfigYamlGenerator(joinSubConfig, join.getDiscoveryConfig());
+        addNonNullToMap(child, "join", joinSubConfig);
+
+        interfacesConfigYamlGenerator(child, netCfg.getInterfaces());
+        sslConfigYamlGenerator(child, netCfg.getSSLConfig());
+        socketInterceptorConfigYamlGenerator(child, netCfg.getSocketInterceptorConfig());
+        symmetricEncInterceptorConfigYamlGenerator(child, netCfg.getSymmetricEncryptionConfig());
+        memberAddressProviderConfigYamlGenerator(child, netCfg.getMemberAddressProviderConfig());
+        failureDetectorConfigYamlGenerator(child, netCfg.getIcmpFailureDetectorConfig());
+        restApiYamlGenerator(child, netCfg.getRestApiConfig());
+        memcacheProtocolYamlGenerator(child, netCfg.getMemcacheProtocolConfig());
+        parent.put("network", child);
+    }
+
+    private void advancedNetworkConfigYamlGenerator(Map<String, Object> parent, Config config) {
+        AdvancedNetworkConfig netCfg = config.getAdvancedNetworkConfig();
+        if (!netCfg.isEnabled()) {
+            return;
+        }
+        Map<String, Object> child = new LinkedHashMap<>();
+        child.put("enabled", netCfg.isEnabled());
+
+        JoinConfig join = netCfg.getJoin();
+        Map<String, Object> joinSubConfig = new LinkedHashMap<>();
+        autoDetectionConfigYamlGenerator(joinSubConfig, join);
+        multicastConfigYamlGenerator(joinSubConfig, join);
+        tcpIpConfigYamlGenerator(joinSubConfig, config);
+        aliasedDiscoveryConfigsYamlGenerator(joinSubConfig, aliasedDiscoveryConfigsFrom(join));
+        discoveryStrategyConfigYamlGenerator(joinSubConfig, join.getDiscoveryConfig());
+        addNonNullToMap(child, "join", joinSubConfig);
+
+        failureDetectorConfigYamlGenerator(child, netCfg.getIcmpFailureDetectorConfig());
+        memberAddressProviderConfigYamlGenerator(child, netCfg.getMemberAddressProviderConfig());
+        for (EndpointConfig endpointConfig : netCfg.getEndpointConfigs().values()) {
+            endpointConfigYamlGenerator(child, endpointConfig);
+        }
+        parent.put("advanced-network", child);
+    }
+
+    public static void tcpIpConfigYamlGenerator(Map<String, Object> parent, Config config) {
+        TcpIpConfig tcpIpConfig = getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig();
+        Map<String, Object> child = new LinkedHashMap<>();
+        child.put("enabled", tcpIpConfig.isEnabled());
+        child.put("connection-timeout-seconds", tcpIpConfig.getConnectionTimeoutSeconds());
+        addNonNullToMap(child, "member-list", tcpIpConfig.getMembers());
+        addNonNullToMap(child, "required-member", tcpIpConfig.getRequiredMember());
+        parent.put("tcp-ip", child);
+    }
+
+    private static void autoDetectionConfigYamlGenerator(Map<String, Object> parent, JoinConfig joinConfig) {
+        Map<String, Object> child = new LinkedHashMap<>();
+        child.put("enabled", joinConfig.getAutoDetectionConfig().isEnabled());
+        parent.put("auto-detection", child);
+    }
+
+    private static void multicastConfigYamlGenerator(Map<String, Object> parent, JoinConfig joinConfig) {
+        Map<String, Object> child = new LinkedHashMap<>();
+        MulticastConfig multicastCfg = joinConfig.getMulticastConfig();
+        if (multicastCfg == null) {
+            return;
+        }
+        addNonNullToMap(child, "enabled", multicastCfg.isEnabled());
+        addNonNullToMap(child, "loopback-mode-enabled", multicastCfg.isLoopbackModeEnabled());
+        addNonNullToMap(child, "multicast-group", multicastCfg.getMulticastGroup());
+        addNonNullToMap(child, "multicast-port", multicastCfg.getMulticastPort());
+        addNonNullToMap(child, "multicast-timeout-seconds", multicastCfg.getMulticastTimeoutSeconds());
+        addNonNullToMap(child, "multicast-time-to-live", multicastCfg.getMulticastTimeToLive());
+        addNonNullToMap(child, "trusted-interfaces", new ArrayList<>(multicastCfg.getTrustedInterfaces()));
+        parent.put("multicast", child);
+    }
+
+    private static void aliasedDiscoveryConfigsYamlGenerator(Map<String, Object> parent,
+                                                             List<AliasedDiscoveryConfig<?>> configs) {
+        if (configs == null) {
+            return;
+        }
+        for (AliasedDiscoveryConfig<?> c : configs) {
+            Map<String, Object> child = new LinkedHashMap<>();
+            child.put("enabled", c.isEnabled());
+            if (c.isUsePublicIp()) {
+                child.put("use-public-ip", "true");
+            }
+            addNonNullToMap(child, "properties", c.getProperties());
+
+            parent.put(AliasedDiscoveryConfigUtils.tagFor(c), child);
+        }
+    }
+
+    private static void discoveryStrategyConfigYamlGenerator(Map<String, Object> parent, DiscoveryConfig discoveryConfig) {
+        if (discoveryConfig == null) {
+            return;
+        }
+        Map<String, Object> child = new LinkedHashMap<>();
+        String nodeFilterClass = classNameOrImplClass(discoveryConfig.getNodeFilterClass(), discoveryConfig.getNodeFilter());
+        if (nodeFilterClass != null) {
+            child.put("node-filter", wrapObjectWithMap("class", nodeFilterClass));
+        }
+
+        Collection<DiscoveryStrategyConfig> configs = discoveryConfig.getDiscoveryStrategyConfigs();
+        if (CollectionUtil.isNotEmpty(configs)) {
+            for (DiscoveryStrategyConfig config : configs) {
+                Map<String, Object> discoveryStrategySubConfig = new LinkedHashMap<>();
+                addNonNullToMap(
+                        discoveryStrategySubConfig,
+                        "class",
+                        classNameOrImplClass(config.getClassName(), config.getDiscoveryStrategyFactory())
+                );
+                addNonNullToMap(
+                        discoveryStrategySubConfig,
+                        "enabled",
+                        classNameOrImplClass(config.getClassName(), config.getDiscoveryStrategyFactory())
+                );
+                addNonNullToMap(
+                        discoveryStrategySubConfig,
+                        "properties",
+                        config.getProperties()
+                );
+                child.put("discovery-strategy", discoveryStrategySubConfig);
+            }
+        }
+        parent.put("discovery-strategies", child);
+    }
+
+    private static void sslConfigYamlGenerator(Map<String, Object> parent, SSLConfig sslConfig) {
+        if (sslConfig == null) {
+            return;
+        }
+        Map<String, Object> child = new LinkedHashMap<>();
+        sslConfig = new SSLConfig(sslConfig);
+        child.put("enabled", sslConfig.isEnabled());
+
+        String factoryClassName = classNameOrImplClass(sslConfig.getFactoryClassName(), sslConfig.getFactoryImplementation());
+        if (factoryClassName != null) {
+            sslConfig.setFactoryClassName(factoryClassName);
+            child.put("factory-class-name", factoryClassName);
+        }
+
+        Properties props = sslConfig.getProperties();
+
+        if (maskSensitiveFields && props.containsKey("trustStorePassword")) {
+            props.setProperty("trustStorePassword", MASK_FOR_SENSITIVE_DATA);
+        }
+
+        if (maskSensitiveFields && props.containsKey("keyStorePassword")) {
+            props.setProperty("keyStorePassword", MASK_FOR_SENSITIVE_DATA);
+        }
+        addNonNullToMap(child, "properties", props);
+
+        parent.put("ssl", child);
+    }
+
+    private static void interfacesConfigYamlGenerator(Map<String, Object> parent, InterfacesConfig interfaces) {
+        if (interfaces.getInterfaces() == null || interfaces.getInterfaces().isEmpty()) {
+            return;
+        }
+        Map<String, Object> child = new LinkedHashMap<>();
+        child.put("enabled", interfaces.isEnabled());
+        child.put("interfaces", new ArrayList<>(interfaces.getInterfaces()));
+        parent.put("interfaces", child);
+    }
+
+    private static void socketInterceptorConfigYamlGenerator(
+            Map<String, Object> parent,
+            SocketInterceptorConfig socketInterceptorCfg
+    ) {
+        if (socketInterceptorCfg == null) {
+            return;
+        }
+        Map<String, Object> child = new LinkedHashMap<>();
+        child.put("enabled", socketInterceptorCfg.isEnabled());
+        String className = classNameOrImplClass(socketInterceptorCfg.getClassName(), socketInterceptorCfg.getImplementation());
+        addNonNullToMap(child, "class-name", className);
+        addNonNullToMap(child, "properties", getPropertiesAsMap(socketInterceptorCfg.getProperties()));
+        parent.put("socket-interceptor", child);
+    }
+
+    private static void symmetricEncInterceptorConfigYamlGenerator(Map<String, Object> parent, SymmetricEncryptionConfig sec) {
+        if (sec == null) {
+            return;
+        }
+        Map<String, Object> child = new LinkedHashMap<>();
+        child.put("enabled", sec.isEnabled());
+        addNonNullToMap(child, "algorithm", sec.getAlgorithm());
+        addNonNullToMap(child, "salt", getOrMaskValue(sec.getSalt()));
+        addNonNullToMap(child, "password", getOrMaskValue(sec.getPassword()));
+        addNonNullToMap(child, "iteration-count", sec.getIterationCount());
+        parent.put("symmetric-encryption", child);
+    }
+
+    private static void memberAddressProviderConfigYamlGenerator(
+            Map<String, Object> parent,
+            MemberAddressProviderConfig memberAddressProviderConfig
+    ) {
+        if (memberAddressProviderConfig == null) {
+            return;
+        }
+        String className = classNameOrImplClass(memberAddressProviderConfig.getClassName(),
+                memberAddressProviderConfig.getImplementation());
+        if (isNullOrEmpty(className)) {
+            return;
+        }
+        Map<String, Object> child = new LinkedHashMap<>();
+        child.put("enabled", memberAddressProviderConfig.isEnabled());
+        child.put("class-name", className);
+        addNonNullToMap(child, "properties", getPropertiesAsMap(memberAddressProviderConfig.getProperties()));
+        parent.put("member-address-provider", child);
+    }
+
+    private static void failureDetectorConfigYamlGenerator(
+            Map<String, Object> parent,
+            IcmpFailureDetectorConfig icmpFailureDetectorConfig
+    ) {
+        if (icmpFailureDetectorConfig == null) {
+            return;
+        }
+        Map<String, Object> child = new LinkedHashMap<>();
+        addNonNullToMap(child, "enabled", icmpFailureDetectorConfig.isEnabled());
+        addNonNullToMap(child, "timeout-milliseconds", icmpFailureDetectorConfig.getTimeoutMilliseconds());
+        addNonNullToMap(child, "fail-fast-on-startup", icmpFailureDetectorConfig.isFailFastOnStartup());
+        addNonNullToMap(child, "interval-milliseconds", icmpFailureDetectorConfig.getIntervalMilliseconds());
+        addNonNullToMap(child, "max-attempts", icmpFailureDetectorConfig.getMaxAttempts());
+        addNonNullToMap(child, "parallel-mode", icmpFailureDetectorConfig.isParallelMode());
+        addNonNullToMap(child, "ttl", icmpFailureDetectorConfig.getTtl());
+
+        parent.put("failure-detector", wrapObjectWithMap("icmp", child));
+    }
+
+    private static void restApiYamlGenerator(Map<String, Object> parent, RestApiConfig restApiConfig) {
+        if (restApiConfig == null) {
+            return;
+        }
+        Map<String, Object> child = new LinkedHashMap<>();
+        child.put("enabled", restApiConfig.isEnabled());
+
+        Map<String, Object> endpointGroupsAsMap = new LinkedHashMap<>();
+        Set<RestEndpointGroup> enabledGroups = restApiConfig.getEnabledGroups();
+        for (RestEndpointGroup endpointGroup : RestEndpointGroup.getAllEndpointGroups()) {
+            endpointGroupsAsMap.put(endpointGroup.name(), wrapObjectWithMap("enabled",
+                    enabledGroups.stream().anyMatch(enabledGroup -> enabledGroup.getCode() == endpointGroup.getCode())));
+        }
+        child.put("endpoint-groups", endpointGroupsAsMap);
+        parent.put("rest-api", child);
+    }
+
+    private static void memcacheProtocolYamlGenerator(Map<String, Object> parent, MemcacheProtocolConfig memcacheProtocolConfig) {
+        if (memcacheProtocolConfig == null) {
+            return;
+        }
+        parent.put("memcache-protocol", wrapObjectWithMap("enabled", memcacheProtocolConfig.isEnabled()));
+    }
+
+    private static void endpointConfigYamlGenerator(Map<String, Object> parent, EndpointConfig endpointConfig) {
+        Map<String, Object> child = new LinkedHashMap<>();
+
+        if (endpointConfig.getName() != null && !endpointConfig.getProtocolType().equals(ProtocolType.WAN)) {
+            child.put("name", endpointConfig.getName());
+        }
+
+        Collection<String> outboundPortDefinitions = endpointConfig.getOutboundPortDefinitions();
+        if (CollectionUtil.isNotEmpty(outboundPortDefinitions)) {
+            addNonNullToMap(child, "outbound-ports", new ArrayList<>(outboundPortDefinitions));
+        }
+        interfacesConfigYamlGenerator(child, endpointConfig.getInterfaces());
+        sslConfigYamlGenerator(child, endpointConfig.getSSLConfig());
+        socketInterceptorConfigYamlGenerator(child, endpointConfig.getSocketInterceptorConfig());
+        symmetricEncInterceptorConfigYamlGenerator(child, endpointConfig.getSymmetricEncryptionConfig());
+
+        if (endpointConfig instanceof RestServerEndpointConfig) {
+            RestServerEndpointConfig restServerEndpointConfig = (RestServerEndpointConfig) endpointConfig;
+            Map<String, Object> endpointGroupsAsMap = new LinkedHashMap<>();
+            Set<RestEndpointGroup> enabledGroups = restServerEndpointConfig.getEnabledGroups();
+            for (RestEndpointGroup endpointGroup : RestEndpointGroup.getAllEndpointGroups()) {
+                endpointGroupsAsMap.put(endpointGroup.name(), wrapObjectWithMap("enabled",
+                        enabledGroups.stream().anyMatch(enabledGroup -> enabledGroup.getCode() == endpointGroup.getCode())));
+            }
+            child.put("endpoint-groups", endpointGroupsAsMap);
+        }
+
+        // socket-options
+        Map<String, Object> socketOptions = new LinkedHashMap<>();
+        addNonNullToMap(socketOptions, "buffer-direct", endpointConfig.isSocketBufferDirect());
+        addNonNullToMap(socketOptions, "tcp-no-delay", endpointConfig.isSocketTcpNoDelay());
+        addNonNullToMap(socketOptions, "keep-alive", endpointConfig.isSocketKeepAlive());
+        addNonNullToMap(socketOptions, "connect-timeout-seconds", endpointConfig.getSocketConnectTimeoutSeconds());
+        addNonNullToMap(socketOptions, "send-buffer-size-kb", endpointConfig.getSocketSendBufferSizeKb());
+        addNonNullToMap(socketOptions, "receive-buffer-size-kb", endpointConfig.getSocketRcvBufferSizeKb());
+        addNonNullToMap(socketOptions, "linger-seconds", endpointConfig.getSocketLingerSeconds());
+        if (!socketOptions.isEmpty()) {
+            addNonNullToMap(child, "socket-options", socketOptions);
+        }
+
+        if (endpointConfig instanceof ServerSocketEndpointConfig) {
+            ServerSocketEndpointConfig serverSocketEndpointConfig = (ServerSocketEndpointConfig) endpointConfig;
+
+            Map<String, Object> portCfg = new LinkedHashMap<>();
+            addNonNullToMap(portCfg, "port", serverSocketEndpointConfig.getPort());
+            addNonNullToMap(portCfg, "port-count", serverSocketEndpointConfig.getPortCount());
+            addNonNullToMap(portCfg, "auto-increment", serverSocketEndpointConfig.isPortAutoIncrement());
+            addNonNullToMap(child, "public-address", serverSocketEndpointConfig.getPublicAddress());
+            addNonNullToMap(child, "reuse-address", serverSocketEndpointConfig.isReuseAddress());
+            addNonNullToMap(child, "port", portCfg);
+        }
+        if (endpointConfig.getName() != null && endpointConfig.getProtocolType().equals(ProtocolType.WAN)) {
+            parent.put(endpointConfigElementName(endpointConfig), wrapObjectWithMap(endpointConfig.getName(), child));
+        } else {
+            parent.put(endpointConfigElementName(endpointConfig), child);
+        }
     }
 
     private static Map<String, Object> getWanConsumerConfigsAsMap(WanConsumerConfig wanConsumerConfig) {
@@ -868,6 +1261,22 @@ public class DynamicConfigYamlGenerator {
                 partitioningStrategyConfig.getPartitioningStrategy());
     }
 
+    private static List<Map<String, Object>> getPartitioningAttributesAsList(List<PartitioningAttributeConfig> attributeConfigs) {
+        if (attributeConfigs == null || attributeConfigs.isEmpty()) {
+            return null;
+        }
+
+        return attributeConfigs.stream()
+                .map(DynamicConfigYamlGenerator::getPartitionAttributeAsMap)
+                .collect(Collectors.toList());
+    }
+
+    private static Map<String, Object> getPartitionAttributeAsMap(PartitioningAttributeConfig config) {
+        final Map<String, Object> configAsMap = new LinkedHashMap<>();
+        configAsMap.put("name", config.getAttributeName());
+        return configAsMap;
+    }
+
     private static Map<String, Object> getPredicateConfigAsMap(PredicateConfig predicateConfig) {
         if (predicateConfig == null) {
             return null;
@@ -965,6 +1374,16 @@ public class DynamicConfigYamlGenerator {
                         indexConfig.getBitmapIndexOptions().getUniqueKeyTransformation().name());
 
                 indexConfigAsMap.put("bitmap-index-options", bitmapIndexOptionsAsMap);
+            } else if (indexConfig.getType() == IndexType.SORTED) {
+                BTreeIndexConfig bTreeConf = indexConfig.getBTreeIndexConfig();
+                Map<String, Object> btreeOptionsAsMap = new LinkedHashMap<>();
+                addNonNullToMap(btreeOptionsAsMap, "page-size", getCapacityAsMap(bTreeConf.getPageSize()));
+
+                Map<String, Object> memoryTierAsMap = new LinkedHashMap<>();
+                addNonNullToMap(memoryTierAsMap, "capacity", getCapacityAsMap(bTreeConf.getMemoryTierConfig().getCapacity()));
+
+                addNonNullToMap(btreeOptionsAsMap, "memory-tier", memoryTierAsMap);
+                indexConfigAsMap.put("btree-index", btreeOptionsAsMap);
             }
 
             addNonNullToList(indexConfigsAsList, indexConfigAsMap);
@@ -1283,6 +1702,7 @@ public class DynamicConfigYamlGenerator {
         );
 
         addNonNullToMap(mapStoreConfigAsMap, "initial-mode", mapStoreConfig.getInitialLoadMode().name());
+        addNonNullToMap(mapStoreConfigAsMap, "offload", mapStoreConfig.isOffload());
         addNonNullToMap(mapStoreConfigAsMap, "write-coalescing", mapStoreConfig.isWriteCoalescing());
         addNonNullToMap(mapStoreConfigAsMap, "write-delay-seconds", mapStoreConfig.getWriteDelaySeconds());
         addNonNullToMap(mapStoreConfigAsMap, "write-batch-size", mapStoreConfig.getWriteBatchSize());
@@ -1375,5 +1795,9 @@ public class DynamicConfigYamlGenerator {
         if (value != null) {
             map.put(key, value);
         }
+    }
+
+    private static String getOrMaskValue(String value) {
+        return maskSensitiveFields ? MASK_FOR_SENSITIVE_DATA : value;
     }
 }

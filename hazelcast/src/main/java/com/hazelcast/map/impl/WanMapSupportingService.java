@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.wan.WanEventCounters;
 import com.hazelcast.wan.impl.InternalWanEvent;
 
+import java.util.Collection;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -54,6 +56,17 @@ class WanMapSupportingService implements WanSupportingService {
         } else if (event instanceof WanMapRemoveEvent) {
             handleRemove((WanMapRemoveEvent) event);
         }
+    }
+
+    @Override
+    public CompletionStage<Void> onSyncBatch(Collection<InternalWanEvent> batch, WanAcknowledgeType acknowledgeType) {
+        // code should never reach here
+        throw new UnsupportedOperationException("WAN Synchronization requires Hazelcast Enterprise Edition");
+    }
+
+    @Override
+    public void onWanConfigChange() {
+        // no-op
     }
 
     private void handleRemove(WanMapRemoveEvent replicationRemove) {

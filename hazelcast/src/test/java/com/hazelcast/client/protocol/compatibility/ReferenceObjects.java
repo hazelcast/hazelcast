@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,13 @@ import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
 import com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.DiscoveryConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.DiscoveryStrategyConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanBatchPublisherConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanConsumerConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanCustomPublisherConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanSyncConfigHolder;
 import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
@@ -34,17 +40,29 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHol
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.AzureConfig;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DiskTierConfig;
+import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.KubernetesConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.RaftGroupId;
@@ -58,9 +76,13 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.jet.impl.JobAndSqlSummary;
+import com.hazelcast.jet.impl.SqlSummary;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
+import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.partition.MigrationState;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
@@ -79,11 +101,13 @@ import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 public class ReferenceObjects {
@@ -545,6 +569,27 @@ public class ReferenceObjects {
         return a.isFsync() == b.isFsync();
     }
 
+    public static boolean isEqual(HazelcastJsonValue a, HazelcastJsonValue b) {
+        if (a == null && b != null) {
+            return false;
+        }
+        return a.equals(b);
+    }
+
+    public static boolean isEqual(DataPersistenceConfig a, DataPersistenceConfig b) {
+        if (a == b) {
+            return true;
+        }
+        if (b == null) {
+            return false;
+        }
+        if (a.isEnabled() != b.isEnabled()) {
+            return false;
+        }
+
+        return a.isFsync() == b.isFsync();
+    }
+
     public static boolean isEqual(TimedExpiryPolicyFactoryConfig a, TimedExpiryPolicyFactoryConfig b) {
         if (a == b) {
             return true;
@@ -609,6 +654,25 @@ public class ReferenceObjects {
         return a.getProperties() != null ? a.getProperties().equals(b.getProperties()) : b.getProperties() == null;
     }
 
+    public static boolean isEqual(TieredStoreConfig a, TieredStoreConfig b) {
+        if (a == b) {
+            return true;
+        }
+        if (b == null) {
+            return false;
+        }
+
+        if (a.isEnabled() != b.isEnabled()) {
+            return false;
+        }
+
+        if (!Objects.equals(a.getMemoryTierConfig(), b.getMemoryTierConfig())) {
+            return false;
+        }
+
+        return Objects.equals(a.getDiskTierConfig(), b.getDiskTierConfig());
+    }
+
     private static boolean isEqualStackTrace(StackTraceElement stackTraceElement1, StackTraceElement stackTraceElement2) {
         //Not using stackTraceElement.equals
         //because in IBM JDK stacktraceElements with null method name are not equal
@@ -622,7 +686,6 @@ public class ReferenceObjects {
             return false;
         }
         return isEqual(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber());
-
     }
 
     // Static values below should not be a random value, because the values are used when generating compatibility files and
@@ -632,6 +695,7 @@ public class ReferenceObjects {
     public static int anInt = 25;
     public static int anEnum = 1;
     public static long aLong = -50992225L;
+    public static long aPositiveLong = 50992225L;
     public static UUID aUUID = new UUID(123456789, 987654321);
     public static byte[] aByteArray = new byte[]{aByte};
     public static long[] aLongArray = new long[]{aLong};
@@ -739,6 +803,14 @@ public class ReferenceObjects {
         aHotRestartConfig.setFsync(aBoolean);
     }
 
+    public static DataPersistenceConfig aDataPersistenceConfig;
+
+    static {
+        aDataPersistenceConfig = new DataPersistenceConfig();
+        aDataPersistenceConfig.setEnabled(aBoolean);
+        aDataPersistenceConfig.setFsync(aBoolean);
+    }
+
     public static MerkleTreeConfig aMerkleTreeConfig;
 
     static {
@@ -747,6 +819,35 @@ public class ReferenceObjects {
         aMerkleTreeConfig.setDepth(anInt);
     }
 
+    public static Capacity aCapacity;
+
+    static {
+        aCapacity = Capacity.of(aPositiveLong, MemoryUnit.GIGABYTES);
+    }
+
+    public static MemoryTierConfig aMemoryTierConfig;
+
+    static {
+        aMemoryTierConfig = new MemoryTierConfig();
+        aMemoryTierConfig.setCapacity(aCapacity);
+    }
+
+    public static DiskTierConfig aDiskTierConfig;
+
+    static {
+        aDiskTierConfig = new DiskTierConfig();
+        aDiskTierConfig.setEnabled(aBoolean);
+        aDiskTierConfig.setDeviceName(aString);
+    }
+
+    public static TieredStoreConfig aTieredStoreConfig;
+
+    static {
+        aTieredStoreConfig = new TieredStoreConfig();
+        aTieredStoreConfig.setEnabled(aBoolean);
+        aTieredStoreConfig.setMemoryTierConfig(aMemoryTierConfig);
+        aTieredStoreConfig.setDiskTierConfig(aDiskTierConfig);
+    }
 
     public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(ListenerConfigHolder.ListenerConfigType.ITEM, aData, aString, aBoolean, aBoolean);
     public static AttributeConfig anAttributeConfig = new AttributeConfig(aString, aString);
@@ -758,8 +859,16 @@ public class ReferenceObjects {
         aBitmapIndexOptions.setUniqueKeyTransformation(BitmapIndexOptions.UniqueKeyTransformation.LONG);
     }
 
-    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions);
-    public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
+    public static BTreeIndexConfig aBTreeIndexConfig;
+
+    static {
+        aBTreeIndexConfig = new BTreeIndexConfig();
+        aBTreeIndexConfig.setPageSize(aCapacity);
+        aBTreeIndexConfig.getMemoryTierConfig().setCapacity(aCapacity);
+    }
+
+    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions, true, aBTreeIndexConfig);
+    public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString, aBoolean, aBoolean);
 
     public static NearCachePreloaderConfig aNearCachePreloaderConfig = new NearCachePreloaderConfig(aBoolean, aString);
 
@@ -805,22 +914,75 @@ public class ReferenceObjects {
     public static List<ScheduledTaskHandler> aListOfScheduledTaskHandler = Collections.singletonList(aScheduledTaskHandler);
     public static List<Xid> aListOfXids = Collections.singletonList(anXid);
     public static List<ClientBwListEntryDTO> aListOfClientBwListEntries = Collections.singletonList(aClientBwListEntry);
+
+    public static Set<UUID> aSetOfUUIDs = new HashSet<>(Collections.singletonList(aUUID));
     public static MergePolicyConfig aMergePolicyConfig = new MergePolicyConfig(aString, anInt);
     public static CacheConfigHolder aCacheConfigHolder = new CacheConfigHolder(aString, aString, aString, anInt, anInt,
             aString, anEvictionConfigHolder, aWanReplicationRef, aString, aString, aData, aData, aData, aBoolean,
             aBoolean, aBoolean, aBoolean, aBoolean, aHotRestartConfig, anEventJournalConfig, aString, aListOfData,
-            aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders, aBoolean, aMerkleTreeConfig);
+            aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders, aBoolean, aMerkleTreeConfig, true,
+            aDataPersistenceConfig);
     private static MemberVersion aMemberVersion = new MemberVersion(aByte, aByte, aByte);
     public static Collection<MemberInfo> aListOfMemberInfos = Collections.singletonList(new MemberInfo(anAddress, aUUID, aMapOfStringToString, aBoolean, aMemberVersion,
             ImmutableMap.of(EndpointQualifier.resolve(ProtocolType.WAN, "localhost"), anAddress)));
 
     public static AnchorDataListHolder anAnchorDataListHolder = new AnchorDataListHolder(aListOfIntegers, aListOfDataToData);
     public static PagingPredicateHolder aPagingPredicateHolder = new PagingPredicateHolder(anAnchorDataListHolder, aData, aData,
-            anInt, anInt, aByte, aData);
+            anInt, anInt, aByte, aData, false, null);
 
     public static QueryId anSqlQueryId = new QueryId(aLong, aLong, aLong, aLong);
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
+    public static SqlSummary aSqlSummary = CustomTypeFactory.createSqlSummary(aString, aBoolean);
+    public static JobAndSqlSummary aJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, 2, aLong, aLong, aString, aSqlSummary, true, aString, true, false);
+    public static List<JobAndSqlSummary> aListJobAndSqlSummary = Collections.singletonList(aJobAndSqlSummary);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
+    public static HazelcastJsonValue aHazelcastJsonValue = new HazelcastJsonValue("{'value': ''}");
+    public static List<PartitioningAttributeConfig> aListOfPartitioningAttributeConfigs = Collections.singletonList(
+            new PartitioningAttributeConfig(aString)
+    );
+
+    public static WanConsumerConfigHolder aWanConsumerConfigHolder =
+            new WanConsumerConfigHolder(aBoolean, aString,aData, Map.of(aString, aData));
+    public static List<WanCustomPublisherConfigHolder> aListOfWanCustomPublisherConfigsHolders =
+            Collections.singletonList(new WanCustomPublisherConfigHolder(aString, aString, aData, Map.of(aString, aData)));
+    public static List<WanBatchPublisherConfigHolder> aListOfWanBatchPublisherConfigHolders =
+            Collections.singletonList(
+                    new WanBatchPublisherConfigHolder(
+                            aString,
+                            aString,
+                            aData,
+                            Map.of(aString, aData),
+                            aString,
+                            aBoolean,
+                            aByte,
+                            anInt,
+                            anInt,
+                            anInt,
+                            anInt,
+                            anInt,
+                            anInt,
+                            anInt,
+                            anInt,
+                            anInt,
+                            aBoolean,
+                            aLong,
+                            aLong,
+                            aString,
+                            new AwsConfig(aString, aBoolean, aBoolean, Map.of(aString, aString)),
+                            new GcpConfig(aString, aBoolean, aBoolean, Map.of(aString, aString)),
+                            new AzureConfig(aString, aBoolean, aBoolean, Map.of(aString, aString)),
+                            new KubernetesConfig(aString, aBoolean, aBoolean, Map.of(aString, aString)),
+                            new EurekaConfig(aString, aBoolean, aBoolean, Map.of(aString, aString)),
+                            new DiscoveryConfigHolder(
+                                    Collections.singletonList(new DiscoveryStrategyConfigHolder(aString, Map.of(aString, aData))),
+                                    aData,
+                                    aData,
+                                    aString
+                            ),
+                            new WanSyncConfigHolder(aByte),
+                            aString
+                    )
+            );
 }

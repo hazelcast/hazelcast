@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-
+import com.hazelcast.core.ReadOnly;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
@@ -251,6 +251,18 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         InternalCompletableFuture<V> future;
         try {
             future = super.removeAsyncInternal(key);
+        } finally {
+            invalidateNearCache(key);
+        }
+        return future;
+    }
+
+    @Override
+    protected InternalCompletableFuture<Boolean> deleteAsyncInternal(Object key) {
+        key = toNearCacheKey(key);
+        InternalCompletableFuture<Boolean> future;
+        try {
+            future = super.deleteAsyncInternal(key);
         } finally {
             invalidateNearCache(key);
         }
@@ -491,7 +503,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             return super.submitToKeysInternal(objectKeys, dataKeys, entryProcessor);
         } finally {
             Collection<?> nearCacheKeys = serializeKeys ? dataKeys : objectKeys;
-            nearCacheKeys.forEach(this::invalidateNearCache);
+            if (!(entryProcessor instanceof ReadOnly)) {
+                nearCacheKeys.forEach(this::invalidateNearCache);
+            }
         }
     }
 
@@ -503,7 +517,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         try {
             response = super.executeOnKeyInternal(key, entryProcessor);
         } finally {
-            invalidateNearCache(key);
+            if (!(entryProcessor instanceof ReadOnly)) {
+                invalidateNearCache(key);
+            }
         }
         return response;
     }
@@ -516,13 +532,15 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         try {
             future = super.submitToKeyInternal(key, entryProcessor);
         } finally {
-            invalidateNearCache(key);
+            if (!(entryProcessor instanceof ReadOnly)) {
+                invalidateNearCache(key);
+            }
         }
         return future;
     }
 
     @Override
-    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entrySet) {
+    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entrySet, boolean shouldInvalidate) {
         if (CollectionUtil.isEmpty(entrySet)) {
             return emptyMap();
         }
@@ -531,8 +549,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             Data dataKey = entry.getKey();
             K key = toObject(dataKey);
             R value = toObject(entry.getValue());
-
-            invalidateNearCache(serializeKeys ? dataKey : key);
+            if (shouldInvalidate) {
+                invalidateNearCache(serializeKeys ? dataKey : key);
+            }
             result.put(key, value);
         }
         return result;

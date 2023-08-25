@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,11 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.BasePutOperation;
+import com.hazelcast.map.impl.operation.steps.TxnSetOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -78,7 +82,7 @@ public class TxnSetOperation extends BasePutOperation
     @Override
     protected void runInternal() {
         recordStore.unlock(dataKey, ownerUuid, threadId, getCallId());
-        Record record = recordStore.getRecordOrNull(dataKey);
+        Record record = recordStore.getRecordOrNull(dataKey, false);
         if (record == null || version == record.getVersion()) {
             EventService eventService = getNodeEngine().getEventService();
             if (eventService.hasEventRegistration(MapService.SERVICE_NAME, getName())) {
@@ -88,6 +92,32 @@ public class TxnSetOperation extends BasePutOperation
             recordStore.setTxn(dataKey, dataValue, ttl, UNSET, transactionId);
             shouldBackup = true;
         }
+    }
+
+    @Override
+    public State createState() {
+        return super.createState()
+                .setStaticPutParams(getStaticParams())
+                .setTxnId(transactionId)
+                .setOwnerUuid(ownerUuid)
+                .setVersion(version)
+                .setTtl(ttl);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return TxnSetOpSteps.READ;
+    }
+
+    @Override
+    protected StaticParams getStaticParams() {
+        return StaticParams.TXN_SET_PARAMS;
+    }
+
+    @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        shouldBackup = state.getEntryEventType() != null;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,10 @@ abstract class FileTable extends JetTable {
             String name,
             List<TableField> fields,
             ProcessorMetaSupplierProvider processorMetaSupplierProvider,
-            SupplierEx<QueryTarget> queryTargetSupplier
+            SupplierEx<QueryTarget> queryTargetSupplier,
+            String objectType
     ) {
-        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(0));
+        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(0), objectType, false);
 
         this.processorMetaSupplierProvider = processorMetaSupplierProvider;
         this.queryTargetSupplier = queryTargetSupplier;
@@ -76,9 +77,9 @@ abstract class FileTable extends JetTable {
                 String name,
                 List<TableField> fields,
                 ProcessorMetaSupplierProvider processorMetaSupplierProvider,
-                SupplierEx<QueryTarget> queryTargetSupplier
-        ) {
-            super(sqlConnector, schemaName, name, fields, processorMetaSupplierProvider, queryTargetSupplier);
+                SupplierEx<QueryTarget> queryTargetSupplier,
+                String objectType) {
+            super(sqlConnector, schemaName, name, fields, processorMetaSupplierProvider, queryTargetSupplier, objectType);
         }
 
         @Override
@@ -101,7 +102,8 @@ abstract class FileTable extends JetTable {
                 ProcessorMetaSupplierProvider processorMetaSupplierProvider,
                 SupplierEx<QueryTarget> queryTargetSupplier
         ) {
-            super(sqlConnector, schemaName, name, fields, processorMetaSupplierProvider, queryTargetSupplier);
+            super(sqlConnector, schemaName, name, fields, processorMetaSupplierProvider, queryTargetSupplier,
+                    sqlConnector.defaultObjectType());
         }
 
         @Override

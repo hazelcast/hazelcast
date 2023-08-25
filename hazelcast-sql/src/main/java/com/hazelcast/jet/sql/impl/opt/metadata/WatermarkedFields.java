@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,50 +16,74 @@
 
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
-import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 public final class WatermarkedFields implements Serializable {
 
-    private final Map<Integer, RexNode> propertiesByIndex;
+    private final Set<Integer> fieldIndexes;
 
-    public WatermarkedFields(Map<Integer, RexNode> propertiesByIndex) {
-        this.propertiesByIndex = Collections.unmodifiableMap(propertiesByIndex);
+    public WatermarkedFields(Set<Integer> fieldIndexes) {
+        this.fieldIndexes = Collections.unmodifiableSet(fieldIndexes);
     }
 
-    public WatermarkedFields merge(WatermarkedFields other) {
-        if (other == null || other.propertiesByIndex.isEmpty()) {
+    /**
+     * Returns an instance that will have all the fields of {@code this} and
+     * {@code other} instance watermarked.
+     */
+    public WatermarkedFields union(WatermarkedFields other) {
+        if (other == null || other.fieldIndexes.isEmpty()) {
             return this;
         }
 
-        Map<Integer, RexNode> newPropertiesByIndex = new HashMap<>(this.propertiesByIndex);
-        newPropertiesByIndex.putAll(other.propertiesByIndex);
-        assert this.propertiesByIndex.size() + other.propertiesByIndex.size() == newPropertiesByIndex.size();
-        return new WatermarkedFields(newPropertiesByIndex);
+        Set<Integer> newWatermarkedFields = new HashSet<>(this.fieldIndexes);
+        newWatermarkedFields.addAll(other.fieldIndexes);
+        assert this.fieldIndexes.size() + other.fieldIndexes.size() == newWatermarkedFields.size();
+        return new WatermarkedFields(newWatermarkedFields);
+    }
+
+    public int findFirst() {
+        return fieldIndexes.iterator().next();
     }
 
     @Nullable
-    public Map.Entry<Integer, RexNode> findFirst(ImmutableBitSet indices) {
-        for (Entry<Integer, RexNode> entry : propertiesByIndex.entrySet()) {
-            if (indices.get(entry.getKey())) {
+    public Integer findFirst(ImmutableBitSet indices) {
+        for (Integer entry : fieldIndexes) {
+            if (indices.get(entry)) {
                 return entry;
             }
         }
         return null;
     }
 
-    public boolean isEmpty() {
-        return propertiesByIndex.isEmpty();
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        WatermarkedFields that = (WatermarkedFields) o;
+        return Objects.equals(fieldIndexes, that.fieldIndexes);
     }
 
-    public Map<Integer, RexNode> getPropertiesByIndex() {
-        return propertiesByIndex;
+    @Override
+    public int hashCode() {
+        return Objects.hash(fieldIndexes);
+    }
+
+    public boolean isEmpty() {
+        return fieldIndexes.isEmpty();
+    }
+
+    public Set<Integer> getFieldIndexes() {
+        return fieldIndexes;
     }
 }

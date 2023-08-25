@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import static com.hazelcast.kubernetes.KubernetesProperties.USE_NODE_NAME_AS_EXT
 @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:methodcount"})
 final class KubernetesConfig {
     private static final String DEFAULT_MASTER_URL = "https://kubernetes.default.svc";
+    private static final String DEFAULT_TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
     private static final int DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS = 5;
     private static final int DEFAULT_KUBERNETES_API_RETRIES = 3;
 
@@ -74,12 +75,13 @@ final class KubernetesConfig {
     private final String servicePerPodLabelValue;
     private final int kubernetesApiRetries;
     private final String kubernetesMasterUrl;
-    private final String kubernetesApiToken;
     private final String kubernetesCaCertificate;
 
     // Parameters for both DNS Lookup and Kubernetes API modes
     private final int servicePort;
     private final FileContentsReader fileContentsReader;
+
+    private final KubernetesTokenProvider tokenProvider;
 
     KubernetesConfig(Map<String, Comparable> properties) {
         this(properties, new DefaultFileContentsReader());
@@ -107,7 +109,7 @@ final class KubernetesConfig {
         this.kubernetesApiRetries
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_RETIRES, DEFAULT_KUBERNETES_API_RETRIES);
         this.kubernetesMasterUrl = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, DEFAULT_MASTER_URL);
-        this.kubernetesApiToken = getApiToken(properties);
+        this.tokenProvider = buildTokenProvider(properties);
         this.kubernetesCaCertificate = caCertificate(properties);
         this.servicePort = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PORT, 0);
         this.namespace = getNamespaceWithFallbacks(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE);
@@ -146,12 +148,15 @@ final class KubernetesConfig {
         return namespace;
     }
 
-    private String getApiToken(Map<String, Comparable> properties) {
+    private KubernetesTokenProvider buildTokenProvider(Map<String, Comparable> properties) {
         String apiToken = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_TOKEN);
+        KubernetesTokenProvider apiTokenProvider;
         if (apiToken == null && getMode() == DiscoveryMode.KUBERNETES_API) {
-            apiToken = readAccountToken();
+            apiTokenProvider = new FileReaderTokenProvider(DEFAULT_TOKEN_PATH);
+        } else {
+            apiTokenProvider = new StaticTokenProvider(apiToken);
         }
-        return apiToken;
+        return apiTokenProvider;
     }
 
     private String caCertificate(Map<String, Comparable> properties) {
@@ -160,11 +165,6 @@ final class KubernetesConfig {
             caCertificate = readCaCertificate();
         }
         return caCertificate;
-    }
-
-    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
-    private String readAccountToken() {
-        return fileContentsReader.readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/token");
     }
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
@@ -269,6 +269,20 @@ final class KubernetesConfig {
                     String.format("Properties '%s' and '%s' cannot be defined at the same time",
                             SERVICE_LABEL_NAME.key(), POD_LABEL_NAME.key()));
         }
+        if (!StringUtil.isNullOrEmptyAfterTrim(serviceLabelName) && !StringUtil.isNullOrEmptyAfterTrim(serviceLabelValue)
+                && (serviceLabelName.chars().filter(ch -> ch == ',').count()
+                != serviceLabelValue.chars().filter(ch -> ch == ',').count())) {
+            throw new InvalidConfigurationException(
+                    String.format("Properties '%s' and '%s' must have the same number of comma separated elements",
+                            SERVICE_LABEL_NAME.key(), SERVICE_LABEL_VALUE.key()));
+        }
+        if (!StringUtil.isNullOrEmptyAfterTrim(podLabelName) && !StringUtil.isNullOrEmptyAfterTrim(podLabelValue)
+                && (podLabelName.chars().filter(ch -> ch == ',').count()
+                != podLabelValue.chars().filter(ch -> ch == ',').count())) {
+            throw new InvalidConfigurationException(
+                    String.format("Properties '%s' and '%s' must have the same number of comma separated elements",
+                            POD_LABEL_NAME.key(), POD_LABEL_VALUE.key()));
+        }
         if (serviceDnsTimeout < 0) {
             throw new InvalidConfigurationException(
                     String.format("Property '%s' cannot be a negative number", SERVICE_DNS_TIMEOUT.key()));
@@ -351,16 +365,16 @@ final class KubernetesConfig {
         return kubernetesMasterUrl;
     }
 
-    String getKubernetesApiToken() {
-        return kubernetesApiToken;
-    }
-
     String getKubernetesCaCertificate() {
         return kubernetesCaCertificate;
     }
 
     int getServicePort() {
         return servicePort;
+    }
+
+    KubernetesTokenProvider getTokenProvider() {
+        return tokenProvider;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.api.Assumptions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -113,6 +114,8 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testEntryWithExpirationTime_expires() {
+        assumeNoTieredStorageConfigured();
+
         testEntryLoader.putExternally("key", "val", System.currentTimeMillis() + 10000);
         assertEquals("val", map.get("key"));
         sleepAtLeastMillis(10000);
@@ -133,6 +136,8 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testLoadAllWithExpirationTimes() {
+        assumeNoTieredStorageConfigured();
+
         final int entryCount = 100;
         for (int i = 0; i < entryCount; i++) {
             testEntryLoader.putExternally("key" + i, "val" + i, System.currentTimeMillis() + 10000);
@@ -147,6 +152,8 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testLoadAllDoesNotPutEntriesWithPastExpiration() {
+        assumeNoTieredStorageConfigured();
+
         final int entryCount = 100;
         for (int i = 0; i < entryCount; i++) {
             testEntryLoader.putExternally("key" + i, "val" + i, System.currentTimeMillis() - 1000);
@@ -175,8 +182,10 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testGetAllLoadsEntriesWithExpiration() {
+        assumeNoTieredStorageConfigured();
+
         final int entryCount = 100;
-        putEntriesExternally(testEntryLoader, "key", "val", 5000, 0, entryCount);
+        putEntriesExternally(testEntryLoader, "key", "val", 7000, 0, entryCount);
         Set<String> requestedKeys = new HashSet<>();
         for (int i = 0; i < 50; i++) {
             requestedKeys.add("key" + i);
@@ -185,7 +194,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         for (int i = 0; i < 50; i++) {
             assertEquals("val" + i, entries.get("key" + i));
         }
-        sleepAtLeastSeconds(6);
+        sleepAtLeastSeconds(8);
         for (int i = 0; i < 50; i++) {
             assertInMemory(instances, map.getName(), "key" + i, null);
         }
@@ -263,6 +272,12 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testDeleteAsync_returnsTrue() throws ExecutionException, InterruptedException {
+        testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
+        assertTrue(map.deleteAsync("key").toCompletableFuture().get());
+    }
+
+    @Test
     public void testReplace_returnValue() {
         testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
         assertEquals("val", map.replace("key", "val2"));
@@ -276,6 +291,8 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testKeySet() {
+        assumeNoTieredStorageConfigured();
+
         final int entryCount = 100;
         putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Set<String> entries = map.keySet();
@@ -287,6 +304,8 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testKeySet_withPredicate() {
+        assumeNoTieredStorageConfigured();
+
         final int entryCount = 100;
         putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Set<String> entries = map.keySet(Predicates.greaterEqual("__key", "key90"));
@@ -298,6 +317,8 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testValues() {
+        assumeNoTieredStorageConfigured();
+
         final int entryCount = 100;
         putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Collection<String> entries = map.values();
@@ -309,6 +330,8 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testValues_withPredicate() {
+        assumeNoTieredStorageConfigured();
+
         final int entryCount = 100;
         putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Collection<String> entries = map.values(Predicates.greaterEqual("this", "val90"));
@@ -320,6 +343,8 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testEntrySet() {
+        assumeNoTieredStorageConfigured();
+
         final int entryCount = 100;
         putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Set<Map.Entry<String, String>> entries = map.entrySet();
@@ -331,6 +356,8 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testEntrySet_withPredicate() {
+        assumeNoTieredStorageConfigured();
+
         final int entryCount = 100;
         putEntriesExternally(testEntryLoader, "key", "val", 10000, 0, entryCount);
         Set<Map.Entry<String, String>> entries = map.entrySet(Predicates.greaterEqual("__key", "key90"));
@@ -373,9 +400,13 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         Data keyData = serializationService.toData(key);
         NodeEngineImpl nodeEngine = getNodeEngineImpl(owner);
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
-        RecordStore recordStore = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(mapName);
-        Record record = recordStore.getRecordOrNull(keyData);
+        RecordStore recordStore = mapService.getMapServiceContext()
+                .getPartitionContainer(partitionId)
+                .getRecordStore(mapName);
+        recordStore.beforeOperation();
+        Record record = recordStore.getRecordOrNull(keyData, false);
         Object actualValue = record == null ? null : serializationService.toObject(record.getValue());
+        recordStore.afterOperation();
         assertEquals(expectedValue, actualValue);
     }
 
@@ -391,6 +422,9 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testLoadEntryAtCurrentTime() {
+        Assumptions.assumeThat(getConfig().getMapConfig(map.getName())
+                .getInMemoryFormat().equals(InMemoryFormat.NATIVE)).isEqualTo(false);
+
         testEntryLoader.putExternally("key", "value", 42);
 
         MapService service = getNodeEngineImpl(instances[0]).getService(MapService.SERVICE_NAME);
@@ -401,4 +435,10 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         DefaultRecordStore recordStore = new DefaultRecordStore(mapContainer, 0, mock(MapKeyLoader.class), mock(ILogger.class)) ;
         assertNull(recordStore.loadRecordOrNull(key, false, null));
     }
+
+    private void assumeNoTieredStorageConfigured() {
+        Assumptions.assumeThat(getConfig().getMapConfig(map.getName())
+                .getTieredStoreConfig().isEnabled()).isEqualTo(false);
+    }
+
 }

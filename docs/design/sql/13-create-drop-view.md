@@ -14,14 +14,11 @@
  |-------------|
 
 |||
- |---|---|
+|---|---|
 |Related Jira|[HZ-710](https://hazelcast.atlassian.net/browse/HZ-710)|
-|Related GitHub issues|_-_|
-|Document Status / Completeness|IN REVIEW|
+|Document Status / Completeness|DONE|
 |Requirement owner|Sandeep Akhouri|
 |Developer(s)|Sasha Syrotenko|
-|Quality Engineer|TBA|
-|Support Engineer|TBA|
 |Technical Reviewers|Viliam Durina|
 
 ### Background
@@ -134,7 +131,7 @@ CREATE MAPPING m (col1 INT, col2 INT) ...;
 
 CREATE VIEW v AS SELECT col1 FROM m;
 
--- col1 would be removed, operation not allowed because `v` depends on it.
+-- col1 would be removed, opertion not allowed because `v` depends on it.
 CREATE OR REPLACE MAPPING m (col2 INT) ...;  
 ```
 

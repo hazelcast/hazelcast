@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,16 @@
 package com.hazelcast.internal.serialization.impl.portable;
 
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
+import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public abstract class PortableGenericRecord extends AbstractGenericRecord implements InternalGenericRecord {
+/**
+ * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
+ */
+public abstract class PortableGenericRecord extends AbstractGenericRecord {
 
     /**
      * Returns the schema associated with this GenericRecord.

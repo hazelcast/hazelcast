@@ -1,4 +1,4 @@
-# SQL Parallel Execution
+# SQL Parallel Execution (Outdated since Hazelcast 5.0)
 
 ## Overview
 
@@ -48,7 +48,7 @@ queue. Partition of the message is used to determine the exact thread which will
 
 The partition pool has the following advantages:
 1. Only one thread processes messages with the given partition so that processing logic may use less synchronization.
-1. Dedicated thread queues reduce contention on enqueue/deque operations.
+1. Dedicated thread queues reduce contention on enqueue/dequeue operations.
 
 However, there is no load balancing in the partition pool: a single long-running task may delay other tasks from the same 
 partition indefinitely. An imbalance between partitions may cause low resource utilization.

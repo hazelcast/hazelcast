@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,16 +25,14 @@ import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 
 import java.security.Permission;
-import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
@@ -52,40 +50,23 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
             super.processMessage();
             return;
         }
-
-        int partitionId = clientMessage.getPartitionId();
-
+        PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
         OperationFactory operationFactory = createOperationFactory();
         OperationServiceImpl operationService = nodeEngine.getOperationService();
 
-        // We are running on a partition thread now and we are not allowed
-        // to call invokeOnPartitions(Async) on operation service because of
-        // that.
-
-        Operation operation;
-        if (operationFactory instanceof PartitionAwareOperationFactory) {
-            // If operation factory is partition-aware, we should utilize this to our advantage
-            // since for the on-heap storages this may speed up the operation via indexes
-            // (see PartitionWideEntryWithPredicateOperationFactory.createFactoryOnRunner).
-
-            PartitionAwareOperationFactory partitionAwareOperationFactory = (PartitionAwareOperationFactory) operationFactory;
-            partitionAwareOperationFactory = partitionAwareOperationFactory
-                    .createFactoryOnRunner(nodeEngine, new int[]{partitionId});
-            operation = partitionAwareOperationFactory.createPartitionOperation(partitionId);
-        } else {
-            operation = operationFactory.createOperation();
-        }
-
-        final int thisPartitionId = partitionId;
-        operation.setCallerUuid(endpoint.getUuid());
-        InvocationFuture<Object> future = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
+        CompletableFuture<Map<Integer, Object>> future = operationService
+            .invokeOnPartitionsAsync(
+                getServiceName(),
+                operationFactory,
+                nodeEngine.getPartitionService().getPartitionIdSet(partitionPredicate.getPartitionKeys())
+            );
         future.whenCompleteAsync((response, throwable) -> {
             if (throwable == null) {
-                sendResponse(reduce(Collections.singletonMap(thisPartitionId, response)));
+                sendResponse(reduce(response));
             } else {
                 handleProcessingFailure(throwable);
             }
-        });
+        }, CALLER_RUNS);
     }
 
     @Override

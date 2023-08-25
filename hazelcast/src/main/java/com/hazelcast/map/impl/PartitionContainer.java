@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSizePerNode;
+import static com.hazelcast.map.impl.MapMigrationAwareService.lesserBackupMapsThenWithContainer;
 
 public class PartitionContainer {
 
@@ -82,7 +83,8 @@ public class PartitionContainer {
     public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
         this.partitionId = partitionId;
-        int approxMapCount = mapService.mapServiceContext.getNodeEngine().getConfig().getMapConfigs().size();
+        int approxMapCount = mapService.mapServiceContext.getNodeEngine()
+                .getConfig().getMapConfigs().size();
         this.maps = MapUtil.createConcurrentHashMap(approxMapCount);
     }
 
@@ -185,14 +187,25 @@ public class PartitionContainer {
             // this IMap partition.
             clearLockStore(name);
         }
+
         // getting rid of Indexes object in case it has been initialized
         indexes.remove(name);
 
+        destroyMapContainer(mapContainer);
+        mapService.mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());
+    }
+
+    /**
+     * @return {@code true} if destruction is successful, otherwise
+     * return {@code false} if it is already destroyed.
+     */
+    public boolean destroyMapContainer(MapContainer mapContainer) {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         if (mapServiceContext.removeMapContainer(mapContainer)) {
             mapContainer.onDestroy();
+            return true;
         }
-        mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());
+        return false;
     }
 
     private void clearLockStore(String name) {
@@ -226,6 +239,26 @@ public class PartitionContainer {
 
     public void setLastCleanupTimeCopy(long lastCleanupTimeCopy) {
         this.lastCleanupTimeCopy = lastCleanupTimeCopy;
+    }
+
+    /**
+     * Cleans up the container's state if the enclosing partition is migrated
+     * off this member. Whether cleanup is needed is decided based on the
+     * provided {@code replicaIndex}.
+     *
+     * @param replicaIndex The replica index to use for deciding per map whether
+     *                     cleanup is necessary or not
+     */
+    final void cleanUpOnMigration(int replicaIndex) {
+        mapService.getMapServiceContext().getMapContainers().entrySet()
+                .stream()
+                .filter(entry -> replicaIndex == -1
+                        || lesserBackupMapsThenWithContainer(replicaIndex).test(entry.getValue()))
+                .forEach(entry -> cleanUpMap(entry.getKey()));
+    }
+
+    protected void cleanUpMap(String mapName) {
+        // overridden in enterprise
     }
 
     // -------------------------------------------------------------------------------------------------------------

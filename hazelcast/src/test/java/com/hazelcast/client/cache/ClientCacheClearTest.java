@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CacheClearTest;
 import com.hazelcast.cache.ICache;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
@@ -184,11 +183,11 @@ public class ClientCacheClearTest extends CacheClearTest {
 
     @Override
     protected void onTearDown() {
-        super.onTearDown();
+        clientFactory.shutdownAll();
         // Client factory is already shutdown at this test's super class (`CachePutAllTest`)
         // because it is returned instance factory from overridden `getInstanceFactory` method.
         client = null;
-        HazelcastClient.shutdownAll();
+        super.onTearDown();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,14 @@ public class MockUtil {
     public static <T> T serializableSpy(Class<T> clazz, T instance) {
         MockSettings settings = withSettings().spiedInstance(instance).serializable().defaultAnswer(CALLS_REAL_METHODS);
         return Mockito.mock(clazz, settings);
+    }
+
+    public static void closeMocks(AutoCloseable closeable) {
+        try {
+            closeable.close();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to close Mockito mocks", ex);
+        }
     }
 
     /**

@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -204,12 +204,10 @@ hazelcast-client:
           - "["
           - com.
     compact-serialization:
-      enabled: true
-      registered-classes:
+      serializers:
+        - serializer: com.hazelcast.examples.DummyTypeSerializer
+      classes:
         - class: com.hazelcast.examples.DummyType
-        - class: com.hazelcast.examples.DummyTypeWithSerializer
-          type-name: dummy
-          serializer: com.hazelcast.examples.DummyTypeSerializer
 
   native-memory:
     enabled: false
@@ -327,3 +325,9 @@ hazelcast-client:
 
   instance-tracking:
     enabled: false
+
+  sql:
+    resubmission-mode: RETRY_SELECTS
+
+  tpc:
+    enabled: true

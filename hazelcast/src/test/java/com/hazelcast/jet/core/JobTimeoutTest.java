@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,8 +27,14 @@ import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.CancellationException;
 
-import static com.hazelcast.jet.core.TestProcessors.MockP;
+import static com.hazelcast.jet.core.JobStatus.COMPLETED;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.TestProcessors.batchDag;
+import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobTimeoutTest extends JetTestSupport {
@@ -35,83 +42,94 @@ public class JobTimeoutTest extends JetTestSupport {
     @Test
     public void when_lightJobIsCompletedAfterTimeout_jobIsCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
-        final DAG dag = new DAG();
-        dag.newVertex("stuck", () -> new MockP().streaming());
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1L);
-        final Job job = hz.getJet().newLightJob(dag, jobConfig);
+        final Job job = hz.getJet().newLightJob(streamingDag(), jobConfig);
 
         assertThrows(CancellationException.class, job::join);
-        assertEquals(JobStatus.FAILED, job.getStatus());
+        assertEquals(FAILED, job.getStatus());
+        assertFalse(job.isUserCancelled());
     }
 
     @Test
     public void when_jobIsCompletedAfterTimeout_jobIsCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
-        final DAG dag = new DAG();
-        dag.newVertex("stuck", () -> new MockP().streaming());
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1L);
-        final Job job = hz.getJet().newJob(dag, jobConfig);
+        final Job job = hz.getJet().newJob(streamingDag(), jobConfig);
 
         assertThrows(CancellationException.class, job::join);
-        assertEquals(JobStatus.FAILED, job.getStatus());
+        assertEquals(FAILED, job.getStatus());
+        assertFalse(job.isUserCancelled());
     }
 
     @Test
     public void when_lightJobIsCompletedBeforeTimeout_jobIsNotCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
-        final DAG dag = new DAG();
-        dag.newVertex("normal", MockP::new);
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
-        final Job job = hz.getJet().newLightJob(dag, jobConfig);
+        final Job job = hz.getJet().newLightJob(batchDag(), jobConfig);
 
         job.join();
-        assertEquals(JobStatus.COMPLETED, job.getStatus());
+        assertEquals(COMPLETED, job.getStatus());
+        assertFalse(job.isUserCancelled());
     }
 
     @Test
     public void when_jobIsCompletedBeforeTimeout_jobIsNotCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
-        final DAG dag = new DAG();
-        dag.newVertex("normal", MockP::new);
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
-        final Job job = hz.getJet().newJob(dag, jobConfig);
+        final Job job = hz.getJet().newJob(batchDag(), jobConfig);
 
         job.join();
-        assertEquals(JobStatus.COMPLETED, job.getStatus());
+        assertEquals(COMPLETED, job.getStatus());
+        assertFalse(job.isUserCancelled());
     }
 
     @Test
     public void when_jobIsResumedAndExceedsTimeout_jobIsCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
-        final DAG dag = new DAG();
-        dag.newVertex("stuck", () -> new MockP().streaming());
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
-        final Job job = hz.getJet().newJob(dag, jobConfig);
+        final Job job = hz.getJet().newJob(streamingDag(), jobConfig);
 
-        assertJobStatusEventually(job, JobStatus.RUNNING, 1);
+        assertJobStatusEventually(job, RUNNING);
         job.suspend();
 
-        assertJobStatusEventually(job, JobStatus.SUSPENDED, 1);
+        assertJobStatusEventually(job, SUSPENDED);
         job.resume();
 
         assertThrows(CancellationException.class, job::join);
-        assertEquals(JobStatus.FAILED, job.getStatus());
+        assertEquals(FAILED, job.getStatus());
+        assertFalse(job.isUserCancelled());
     }
 
     @Test
     public void when_jobIsSuspendedAndExceedsTimeout_jobIsCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
-        final DAG dag = new DAG();
-        dag.newVertex("stuck", () -> new MockP().streaming());
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
-        final Job job = hz.getJet().newJob(dag, jobConfig);
+        final Job job = hz.getJet().newJob(streamingDag(), jobConfig);
 
-        assertJobStatusEventually(job, JobStatus.RUNNING, 1);
+        assertJobStatusEventually(job, RUNNING);
         job.suspend();
 
-        assertJobStatusEventually(job, JobStatus.SUSPENDED, 1);
+        assertJobStatusEventually(job, SUSPENDED);
 
         assertThrows(CancellationException.class, job::join);
-        assertEquals(JobStatus.FAILED, job.getStatus());
+        assertEquals(FAILED, job.getStatus());
+        assertFalse(job.isUserCancelled());
+    }
+
+    @Test
+    public void when_jobTimeoutIsSetLater_jobIsCancelled() {
+        final HazelcastInstance hz = createHazelcastInstance();
+        final Job job = hz.getJet().newJob(streamingDag());
+
+        assertJobStatusEventually(job, RUNNING);
+        job.suspend();
+
+        assertJobStatusEventually(job, SUSPENDED);
+        job.updateConfig(new DeltaJobConfig().setTimeoutMillis(1000));
+        job.resume();
+
+        assertThrows(CancellationException.class, job::join);
+        assertEquals(FAILED, job.getStatus());
+        assertFalse(job.isUserCancelled());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.MapEvent;
@@ -180,7 +181,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             ClientMessage request = MultiMapPutAllCodec.encodeRequest(name, entry.getValue());
             new ClientInvocation(getClient(), request, getName(), partitionId)
                     .invoke()
-                    .whenCompleteAsync(callback);
+                    .whenCompleteAsync(callback, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
     }
 

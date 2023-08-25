@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,10 +59,15 @@ public final class JoinValidationRule extends RelRule<Config> implements Transfo
         JoinLogicalRel join = call.rel(0);
         boolean rightInputIsStream = isUnbounded(join.getRight());
 
+        // we allow s2s JOIN
+        if (rightInputIsStream && isUnbounded(join.getLeft())) {
+            return;
+        }
+
         if (join.getJoinType() == LEFT) {
             if (rightInputIsStream) {
                 call.transformTo(
-                        new MustNotExecuteRel(
+                        new MustNotExecutePhysicalRel(
                                 join.getCluster(),
                                 toPhysicalConvention(join.getTraitSet()),
                                 join.getRowType(),
@@ -71,7 +76,7 @@ public final class JoinValidationRule extends RelRule<Config> implements Transfo
         } else if (join.getJoinType() == INNER) {
             if (rightInputIsStream) {
                 call.transformTo(
-                        new MustNotExecuteRel(
+                        new MustNotExecutePhysicalRel(
                                 join.getCluster(),
                                 toPhysicalConvention(join.getTraitSet()),
                                 join.getRowType(),

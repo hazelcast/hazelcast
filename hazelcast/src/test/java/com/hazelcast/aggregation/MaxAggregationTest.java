@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.data.Offset;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -30,6 +31,7 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.createExtractableEntryWithValue;
@@ -46,10 +48,7 @@ import static com.hazelcast.aggregation.ValueContainer.ValueType.DOUBLE;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.INTEGER;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.LONG;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.STRING;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -65,16 +64,16 @@ public class MaxAggregationTest {
         Collections.sort(values);
         BigDecimal expectation = values.get(values.size() - 1);
 
-        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> aggregation = Aggregators.bigDecimalMax();
+        Aggregator<Entry<BigDecimal, BigDecimal>, BigDecimal> aggregation = Aggregators.bigDecimalMax();
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalMax();
+        Aggregator<Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalMax();
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -83,16 +82,16 @@ public class MaxAggregationTest {
         Collections.sort(values);
         BigDecimal expectation = values.get(values.size() - 1).bigDecimal;
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalMax("bigDecimal");
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalMax("bigDecimal");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalMax("bigDecimal");
+        Aggregator<Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalMax("bigDecimal");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -101,16 +100,16 @@ public class MaxAggregationTest {
         Collections.sort(values);
         BigInteger expectation = values.get(values.size() - 1);
 
-        Aggregator<Map.Entry<BigInteger, BigInteger>, BigInteger> aggregation = Aggregators.bigIntegerMax();
+        Aggregator<Entry<BigInteger, BigInteger>, BigInteger> aggregation = Aggregators.bigIntegerMax();
         for (BigInteger value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<BigInteger, BigInteger>, BigInteger> resultAggregation = Aggregators.bigIntegerMax();
+        Aggregator<Entry<BigInteger, BigInteger>, BigInteger> resultAggregation = Aggregators.bigIntegerMax();
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -119,17 +118,17 @@ public class MaxAggregationTest {
         Collections.sort(values);
         BigInteger expectation = values.get(values.size() - 1).bigInteger;
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> aggregation = Aggregators.bigIntegerMax("bigInteger");
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigInteger> aggregation = Aggregators.bigIntegerMax("bigInteger");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation
                 = Aggregators.bigIntegerMax("bigInteger");
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -147,7 +146,7 @@ public class MaxAggregationTest {
         resultAggregation.combine(aggregation);
         Double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isCloseTo(expectation, Offset.offset(ERROR));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -156,16 +155,16 @@ public class MaxAggregationTest {
         Collections.sort(values);
         double expectation = values.get(values.size() - 1).doubleValue;
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleMax("doubleValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleMax("doubleValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<Double, Double>, Double> resultAggregation = Aggregators.doubleMax("doubleValue");
+        Aggregator<Entry<Double, Double>, Double> resultAggregation = Aggregators.doubleMax("doubleValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -174,16 +173,16 @@ public class MaxAggregationTest {
         Collections.sort(values);
         long expectation = values.get(values.size() - 1);
 
-        Aggregator<Map.Entry<Integer, Integer>, Integer> aggregation = Aggregators.integerMax();
+        Aggregator<Entry<Integer, Integer>, Integer> aggregation = Aggregators.integerMax();
         for (Integer value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<Integer, Integer>, Integer> resultAggregation = Aggregators.integerMax();
+        Aggregator<Entry<Integer, Integer>, Integer> resultAggregation = Aggregators.integerMax();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -192,16 +191,16 @@ public class MaxAggregationTest {
         Collections.sort(values);
         int expectation = values.get(values.size() - 1).intValue;
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Integer> aggregation = Aggregators.integerMax("intValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Integer> aggregation = Aggregators.integerMax("intValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Integer> resultAggregation = Aggregators.integerMax("intValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Integer> resultAggregation = Aggregators.integerMax("intValue");
         resultAggregation.combine(aggregation);
         int result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -210,16 +209,16 @@ public class MaxAggregationTest {
         Collections.sort(values);
         long expectation = values.get(values.size() - 1);
 
-        Aggregator<Map.Entry<Long, Long>, Long> aggregation = Aggregators.longMax();
+        Aggregator<Entry<Long, Long>, Long> aggregation = Aggregators.longMax();
         for (Long value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<Long, Long>, Long> resultAggregation = Aggregators.longMax();
+        Aggregator<Entry<Long, Long>, Long> resultAggregation = Aggregators.longMax();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -228,16 +227,16 @@ public class MaxAggregationTest {
         Collections.sort(values);
         long expectation = values.get(values.size() - 1).longValue;
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.longMax("longValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.longMax("longValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.longMax("longValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.longMax("longValue");
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -246,16 +245,16 @@ public class MaxAggregationTest {
         Collections.sort(values);
         String expectation = values.get(values.size() - 1);
 
-        Aggregator<Map.Entry<String, String>, String> aggregation = Aggregators.comparableMax();
+        Aggregator<Entry<String, String>, String> aggregation = Aggregators.comparableMax();
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<String, String>, String> resultAggregation = Aggregators.comparableMax();
+        Aggregator<Entry<String, String>, String> resultAggregation = Aggregators.comparableMax();
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -264,17 +263,17 @@ public class MaxAggregationTest {
         Collections.sort(values);
         String expectation = values.get(values.size() - 1).stringValue;
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> aggregation = Aggregators.comparableMax("stringValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, String> aggregation = Aggregators.comparableMax("stringValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, String> resultAggregation
                 = Aggregators.comparableMax("stringValue");
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -284,16 +283,16 @@ public class MaxAggregationTest {
         String expectation = values.get(values.size() - 1);
         values.add(null);
 
-        Aggregator<Map.Entry<String, String>, String> aggregation = Aggregators.comparableMax();
+        Aggregator<Entry<String, String>, String> aggregation = Aggregators.comparableMax();
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<String, String>, String> resultAggregation = Aggregators.comparableMax();
+        Aggregator<Entry<String, String>, String> resultAggregation = Aggregators.comparableMax();
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -303,38 +302,38 @@ public class MaxAggregationTest {
         String expectation = values.get(values.size() - 1).stringValue;
         values.add(null);
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> aggregation = Aggregators.comparableMax("stringValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, String> aggregation = Aggregators.comparableMax("stringValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, String> resultAggregation
                 = Aggregators.comparableMax("stringValue");
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = 60 * TimeoutInMillis.MINUTE)
     public void testMaxBy_withAttributePath_withNull() {
         List<ValueContainer> values = sampleValueContainers(STRING);
         Collections.sort(values);
-        Map.Entry<ValueContainer, ValueContainer> expectation = createExtractableEntryWithValue(values.get(values.size() - 1), ss);
+        Entry<ValueContainer, ValueContainer> expectation = createExtractableEntryWithValue(values.get(values.size() - 1), ss);
         values.add(null);
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> aggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, Entry<ValueContainer, ValueContainer>> aggregation
                 = Aggregators.maxBy("stringValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, Entry<ValueContainer, ValueContainer>> resultAggregation
                 = Aggregators.maxBy("stringValue");
         resultAggregation.combine(aggregation);
-        Map.Entry<ValueContainer, ValueContainer> result = resultAggregation.aggregate();
+        Entry<ValueContainer, ValueContainer> result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.createType;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.precedenceOf;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 
@@ -76,9 +77,9 @@ public final class CoalesceOperandTypeInference implements SqlOperandTypeInferen
             }
         }
 
-        // If we have only  UNKNOWN operands or a combination of NULL and UNKNOWN, throw a signature error,
+        // If we have only UNKNOWN operands or a combination of NULL and UNKNOWN, throw a signature error,
         // since we cannot deduce the return type
-        if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL && hasParameters) {
+        if (knownType == null || isNullOrUnknown(knownType.getSqlTypeName()) && hasParameters) {
             throw new HazelcastCallBinding(binding).newValidationSignatureError();
         }
 

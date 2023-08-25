@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package com.hazelcast.jet.s3;
 
+import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.s3.S3Sinks.S3SinkContext;
@@ -33,49 +35,53 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.testcontainers.DockerClientFactory;
-
+import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeTrue;
 import static software.amazon.awssdk.core.sync.ResponseTransformer.toInputStream;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class S3MockTest extends S3TestBase {
+    private static final int LINE_COUNT = 100;
 
     private static S3MockContainer s3MockContainer;
 
-    private static final ILogger logger = Logger.getLogger(S3MockTest.class);
-    private static final String SOURCE_BUCKET = "source-bucket";
-    private static final String SOURCE_BUCKET_2 = "source-bucket-2";
-    private static final String SOURCE_BUCKET_EMPTY = "source-bucket-empty";
-    private static final String SINK_BUCKET = "sink-bucket";
-    private static final String SINK_BUCKET_OVERWRITE = "sink-bucket-overwrite";
-    private static final String SINK_BUCKET_NONASCII = "sink-bucket-nonascii";
-
-    private static final int LINE_COUNT = 100;
-
     private static S3Client s3Client;
+
+    private static final ILogger logger = Logger.getLogger(S3MockTest.class);
+    private final UUID ID = UuidUtil.newUnsecureUUID();
+    private final String SOURCE_BUCKET = "source-bucket-" + ID;
+    private final String SOURCE_BUCKET_2 = "source-bucket-2-" + ID;
+    private final String SOURCE_BUCKET_EMPTY = "source-bucket-empty-" + ID;
+    private final String SINK_BUCKET = "sink-bucket-" + ID;
+    private final String SINK_BUCKET_OVERWRITE = "sink-bucket-overwrite-" + ID;
+    private final String SINK_BUCKET_NONASCII = "sink-bucket-nonascii-" + ID;
+
+
 
 
     @BeforeClass
     public static void setupS3() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
-        s3MockContainer = new S3MockContainer();
+        assumeDockerEnabled();
+        s3MockContainer = new S3MockContainer("2.4.14");
         s3MockContainer.start();
         s3MockContainer.followOutput(outputFrame -> logger.info(outputFrame.getUtf8String().trim()));
-        s3Client = s3MockContainer.client();
+        s3Client = s3Client(s3MockContainer.getHttpEndpoint());
     }
 
     @AfterClass
@@ -94,12 +100,6 @@ public class S3MockTest extends S3TestBase {
     @Before
     public void setup() {
         S3SinkContext.maximumPartNumber = 1;
-        deleteBucket(s3Client, SOURCE_BUCKET);
-        deleteBucket(s3Client, SOURCE_BUCKET_2);
-        deleteBucket(s3Client, SOURCE_BUCKET_EMPTY);
-        deleteBucket(s3Client, SINK_BUCKET);
-        deleteBucket(s3Client, SINK_BUCKET_OVERWRITE);
-        deleteBucket(s3Client, SINK_BUCKET_NONASCII);
     }
 
     @After
@@ -249,7 +249,7 @@ public class S3MockTest extends S3TestBase {
     }
 
     SupplierEx<S3Client> clientSupplier() {
-        return () -> S3MockContainer.client(s3MockContainer.endpointURL());
+        return () -> s3Client(s3MockContainer.getHttpEndpoint());
     }
 
     private void generateAndUploadObjects(String bucketName, String prefix, int objectCount, int lineCount) {
@@ -268,5 +268,15 @@ public class S3MockTest extends S3TestBase {
             s3Client.putObject(putObjectRequest, RequestBody.fromString(builder.toString()));
             builder.setLength(0);
         }
+    }
+
+    private static S3Client s3Client(String endpointURL) {
+        return S3Client
+                .builder()
+                .credentialsProvider(AnonymousCredentialsProvider.create())
+                .region(Region.US_EAST_1)
+                .endpointOverride(URI.create(endpointURL))
+                .forcePathStyle(true)
+                .build();
     }
 }

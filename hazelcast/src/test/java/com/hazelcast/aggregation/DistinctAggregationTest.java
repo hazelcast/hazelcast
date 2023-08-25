@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,15 +29,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.createExtractableEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.sampleStrings;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -50,16 +48,16 @@ public class DistinctAggregationTest {
         List<String> values = repeatTimes(3, sampleStrings());
         Set<String> expectation = new HashSet<String>(values);
 
-        Aggregator<Map.Entry<String, String>, Set<String>> aggregation = Aggregators.distinct();
+        Aggregator<Entry<String, String>, Set<String>> aggregation = Aggregators.distinct();
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<String, String>, Set<String>> resultAggregation = Aggregators.distinct();
+        Aggregator<Entry<String, String>, Set<String>> resultAggregation = Aggregators.distinct();
         resultAggregation.combine(aggregation);
         Set<String> result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -69,16 +67,16 @@ public class DistinctAggregationTest {
         values.add(null);
         Set<String> expectation = new HashSet<String>(values);
 
-        Aggregator<Map.Entry<String, String>, Set<String>> aggregation = Aggregators.distinct();
+        Aggregator<Entry<String, String>, Set<String>> aggregation = Aggregators.distinct();
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<String, String>, Set<String>> resultAggregation = Aggregators.distinct();
+        Aggregator<Entry<String, String>, Set<String>> resultAggregation = Aggregators.distinct();
         resultAggregation.combine(aggregation);
         Set<String> result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -88,16 +86,16 @@ public class DistinctAggregationTest {
         List<Person> values = repeatTimes(3, Arrays.asList(people));
         Set<Double> expectation = new HashSet<Double>(Arrays.asList(ages));
 
-        Aggregator<Map.Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
+        Aggregator<Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
         for (Person value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<Person, Person>, Set<Double>> resultAggregation = Aggregators.distinct("age");
+        Aggregator<Entry<Person, Person>, Set<Double>> resultAggregation = Aggregators.distinct("age");
         resultAggregation.combine(aggregation);
         Set<Double> result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -107,16 +105,16 @@ public class DistinctAggregationTest {
         List<Person> values = repeatTimes(3, Arrays.asList(people));
         Set<Double> expectation = new HashSet<Double>(Arrays.asList(ages));
 
-        Aggregator<Map.Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
+        Aggregator<Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
         for (Person value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<Person, Person>, Set<Double>> resultAggregation = Aggregators.distinct("age");
+        Aggregator<Entry<Person, Person>, Set<Double>> resultAggregation = Aggregators.distinct("age");
         resultAggregation.combine(aggregation);
         Set<Double> result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     private <T> List<T> repeatTimes(int times, List<T> values) {

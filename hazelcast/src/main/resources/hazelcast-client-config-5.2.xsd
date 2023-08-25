@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@
                             maxOccurs="unbounded"/>
                 <xs:element name="metrics" type="metrics" minOccurs="0"/>
                 <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0"/>
+                <xs:element name="sql" type="sql" minOccurs="0"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
@@ -366,6 +367,7 @@
             <xs:enumeration value="RAW"/>
         </xs:restriction>
     </xs:simpleType>
+
     <xs:complexType name="item-listener">
         <xs:simpleContent>
             <xs:extension base="listener-base">
@@ -603,22 +605,12 @@
                     <xs:annotation>
                         <xs:documentation>
                             Contains configuration elements and attributes for the compact serialization.
-
-                            This feature is in the BETA status and any schema definition related
-                            to it might change in the future without a prior notice, until the feature
-                            is promoted to the stable status.
                         </xs:documentation>
                     </xs:annotation>
-                    <xs:sequence>
-                        <xs:element name="registered-classes" type="registered-classes" minOccurs="0"/>
-                    </xs:sequence>
-                    <xs:attribute name="enabled" type="xs:boolean" default="false">
-                        <xs:annotation>
-                            <xs:documentation>
-                                Enables/disables the compact serialization.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:attribute>
+                    <xs:all>
+                        <xs:element name="serializers" type="compact-serializers" minOccurs="0"/>
+                        <xs:element name="classes" type="compact-serializable-classes" minOccurs="0"/>
+                    </xs:all>
                 </xs:complexType>
             </xs:element>
         </xs:all>
@@ -702,10 +694,34 @@
             </xs:element>
         </xs:choice>
     </xs:complexType>
-    <xs:complexType name="registered-classes">
+
+    <xs:complexType name="compact-serializers">
         <xs:annotation>
             <xs:documentation>
-                Contains classes registered to be serialized with compact serialization.
+                Contains the Compact serializers to be registered.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element name="serializer">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            Fully qualified class name of the Compact serializer.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:string"/>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="compact-serializable-classes">
+        <xs:annotation>
+            <xs:documentation>
+                Contains the classes to be serialized with Compact serialization,
+                which will override any other serialization mechanisms.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence maxOccurs="unbounded">
@@ -713,36 +729,11 @@
                 <xs:complexType>
                     <xs:annotation>
                         <xs:documentation>
-                            Fully qualified class name of the class to be serialized with
-                            compact serialization.
-
-                            If the class has an explicit serializer, it must be specified
-                            with type-name and serializer attributes.
-
-                            Those attributes must not be present if the class is to be
-                            serialized with reflective compact serializer.
-
-                            Either both or none of the attributes must be present.
+                            Fully qualified name of the class.
                         </xs:documentation>
                     </xs:annotation>
                     <xs:simpleContent>
-                        <xs:extension base="xs:string">
-                            <xs:attribute name="type-name" type="xs:string">
-                                <xs:annotation>
-                                    <xs:documentation>
-                                        Type name of the class.
-                                    </xs:documentation>
-                                </xs:annotation>
-                            </xs:attribute>
-                            <xs:attribute name="serializer" type="xs:string">
-                                <xs:annotation>
-                                    <xs:documentation>
-                                        Fully qualified class name of the compact serializer to be
-                                        used to serialize the class.
-                                    </xs:documentation>
-                                </xs:annotation>
-                            </xs:attribute>
-                        </xs:extension>
+                        <xs:extension base="xs:string"/>
                     </xs:simpleContent>
                 </xs:complexType>
             </xs:element>
@@ -759,7 +750,8 @@
 
     <xs:complexType name="native-memory">
         <xs:all>
-            <xs:element name="size" type="memory-size" minOccurs="0"/>
+            <xs:element name="size" type="capacity" minOccurs="0"/>
+            <xs:element name="capacity" type="capacity" minOccurs="0"/>
             <xs:element name="min-block-size" type="xs:positiveInteger" minOccurs="0"/>
             <xs:element name="page-size" type="xs:positiveInteger" minOccurs="0"/>
             <xs:element name="metadata-space-percentage" minOccurs="0">
@@ -779,7 +771,7 @@
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
     </xs:complexType>
 
-    <xs:complexType name="memory-size">
+    <xs:complexType name="capacity">
         <xs:attribute name="value" type="xs:int" default="128"/>
         <xs:attribute name="unit" type="memory-unit" default="MEGABYTES"/>
     </xs:complexType>
@@ -1167,4 +1159,31 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:complexType name="sql">
+        <xs:annotation>
+            <xs:documentation>
+                Configures the sql client.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="resubmission-mode" type="resubmission-mode" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The configuration when to retry query that fails with reasons:
+                        CONNECTION_PROBLEM, PARTITION_DISTRIBUTION, TOPOLOGY_CHANGE.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:simpleType name="resubmission-mode">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="NEVER"/>
+            <xs:enumeration value="RETRY_SELECTS"/>
+            <xs:enumeration value="RETRY_SELECTS_ALLOW_DUPLICATES"/>
+            <xs:enumeration value="RETRY_ALL"/>
+        </xs:restriction>
+    </xs:simpleType>
 </xs:schema>

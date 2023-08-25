@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.string.PositionFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -141,17 +141,17 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void test_serialization() {
         PositionFunction f = createFunctionWithoutStart("AB", "ABCD");
-        PositionFunction deserialized = serializeAndCheck(f, SqlDataSerializerHook.EXPRESSION_POSITION);
+        PositionFunction deserialized = serializeAndCheck(f, JetSqlSerializerHook.EXPRESSION_POSITION);
 
         checkEquals(f, deserialized, true);
 
         f = createFunction("AB", "ABCD", 2);
-        deserialized = serializeAndCheck(f, SqlDataSerializerHook.EXPRESSION_POSITION);
+        deserialized = serializeAndCheck(f, JetSqlSerializerHook.EXPRESSION_POSITION);
 
         checkEquals(f, deserialized, true);
     }
 
-    private void check(String sql, Integer expectedResult, Object ...parameters) {
+    private void check(String sql, Integer expectedResult, Object... parameters) {
         List<SqlRow> rows =  execute(sql, parameters);
         assertEquals("size", 1, rows.size());
         SqlRow row = rows.get(0);

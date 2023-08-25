@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,12 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 
 import java.io.IOException;
+
+import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 public class JoinRequestOp extends AbstractClusterOperation {
 
@@ -38,7 +42,22 @@ public class JoinRequestOp extends AbstractClusterOperation {
     @Override
     public void run() {
         ClusterServiceImpl cm = getService();
+        preparePreOp(request.getPreJoinOperation());
         cm.getClusterJoinManager().handleJoinRequest(request, getConnection());
+    }
+
+    private void preparePreOp(OnJoinOp preOp) {
+        if (preOp == null) {
+            return;
+        }
+
+        ClusterServiceImpl clusterService = getService();
+        NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
+
+        preOp.setNodeEngine(nodeEngine);
+        OperationAccessor.setCallerAddress(preOp, getCallerAddress());
+        OperationAccessor.setConnection(preOp, getConnection());
+        preOp.setOperationResponseHandler(createEmptyResponseHandler());
     }
 
     public JoinRequest getRequest() {

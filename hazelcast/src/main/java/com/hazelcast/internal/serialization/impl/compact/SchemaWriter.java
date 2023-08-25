@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.nio.serialization.FieldKind;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
@@ -26,8 +27,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.Comparator;
-import java.util.TreeMap;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A CompactWriter that constructs a schema from Compact
@@ -35,7 +37,8 @@ import java.util.TreeMap;
  */
 public final class SchemaWriter implements CompactWriter {
 
-    private final TreeMap<String, FieldDescriptor> fieldDefinitionMap = new TreeMap<>(Comparator.naturalOrder());
+    private final ArrayList<FieldDescriptor> fields = new ArrayList<>();
+    private final Set<String> fieldNames = new HashSet<>();
     private final String typeName;
 
     public SchemaWriter(String typeName) {
@@ -46,14 +49,19 @@ public final class SchemaWriter implements CompactWriter {
      * Builds the schema from the written fields and returns it.
      */
     public Schema build() {
-        return new Schema(typeName, fieldDefinitionMap);
+        return new Schema(typeName, fields);
     }
 
     /**
      * Adds a field to the schema.
      */
-    public void addField(FieldDescriptor fieldDefinition) {
-        fieldDefinitionMap.put(fieldDefinition.getFieldName(), fieldDefinition);
+    public void addField(FieldDescriptor field) {
+        String fieldName = field.getFieldName();
+        if (!fieldNames.add(fieldName)) {
+            throw new HazelcastSerializationException("Field with the name '" + fieldName + "' already exists");
+        }
+
+        fields.add(field);
     }
 
     @Override
@@ -67,7 +75,7 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
-    public void writeString(@Nonnull String fieldName, String str) {
+    public void writeString(@Nonnull String fieldName, @Nullable String str) {
         addField(new FieldDescriptor(fieldName, FieldKind.STRING));
     }
 

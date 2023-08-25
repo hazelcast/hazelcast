@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -25,19 +25,14 @@
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <!--<Logger name="com.hazelcast.instance" level="debug"/>-->
-        <!--<Logger name="com.hazelcast.cluster" level="debug"/>-->
-        <!--<Logger name="com.hazelcast.internal.cluster" level="debug"/>-->
-        <!--<Logger name="com.hazelcast.internal.partition" level="debug"/>-->
-        <!--<Logger name="com.hazelcast.internal.hotrestart.cluster" level="debug"/>-->
-        <!--<Logger name="com.hazelcast.test.mocknetwork" level="debug"/>-->
-        <!--<Logger name="com.hazelcast.cp.internal" level="trace"/>-->
+        <Logger name="com.hazelcast.internal.ascii" level="debug"/>
         <Logger name="com.hazelcast.client.impl.protocol.task" level="debug"/>
         <Logger name="com.hazelcast.client.impl.operations" level="debug"/>
         <Logger name="com.hazelcast.client.impl.spi.ClientListenerService" level="trace"/>
         <Logger name="com.hazelcast.jet" level="debug"/>
-<!--        <Logger name="com.hazelcast.internal.partition.operation.MigrationRequestOperation" level="trace"/>-->
-        <!--<Logger name="com.hazelcast.client.impl.spi.ClientInvocationService" level="trace"/>-->
-        <!--<Logger name="com.hazelcast.client.impl.connection.ClientConnectionManager" level="trace"/>-->
+        <Logger name="com.hazelcast.sql.impl.client" level="debug"/>
+        <Logger name="com.hazelcast.sql.impl.client.SqlExecuteMessageTask" level="DEBUG"/>
+        <Logger name="com.hazelcast.sql.impl.client.SqlFetchMessageTask" level="DEBUG"/>
+
     </Loggers>
 </Configuration>

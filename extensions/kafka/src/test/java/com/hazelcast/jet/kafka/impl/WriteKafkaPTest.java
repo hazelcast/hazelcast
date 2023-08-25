@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.kafka.impl;
 
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Traverser;
@@ -30,6 +31,7 @@ import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.connector.SinkStressTestUtil;
 import com.hazelcast.jet.kafka.KafkaSinks;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sources;
@@ -57,6 +59,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.kafka.impl.KafkaTestSupport.KAFKA_MAX_BLOCK_MS;
 import static java.util.Collections.singletonMap;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static org.junit.Assert.assertEquals;
@@ -69,14 +72,14 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
 
     private static KafkaTestSupport kafkaTestSupport;
 
-    private String sourceIMapName = randomMapName();
+    private final String sourceIMapName = randomMapName();
     private Properties properties;
     private String topic;
     private IMap<Integer, String> sourceIMap;
 
     @BeforeClass
     public static void beforeClass() throws IOException {
-        kafkaTestSupport = new KafkaTestSupport();
+        kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
         initialize(2, null);
     }
@@ -87,6 +90,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         properties.setProperty("bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
         properties.setProperty("key.serializer", IntegerSerializer.class.getName());
         properties.setProperty("value.serializer", StringSerializer.class.getName());
+        properties.setProperty("max.block.ms", String.valueOf(KAFKA_MAX_BLOCK_MS));
 
         topic = randomName();
         kafkaTestSupport.createTopic(topic, PARTITION_COUNT);
@@ -99,8 +103,10 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
 
     @AfterClass
     public static void afterClass() {
-        kafkaTestSupport.shutdownKafkaCluster();
-        kafkaTestSupport = null;
+        if (kafkaTestSupport != null) {
+            kafkaTestSupport.shutdownKafkaCluster();
+            kafkaTestSupport = null;
+        }
     }
 
     @Test
@@ -108,6 +114,21 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.map(sourceIMap))
          .writeTo(KafkaSinks.kafka(properties, topic));
+        instance().getJet().newJob(p).join();
+
+        kafkaTestSupport.assertTopicContentsEventually(topic, sourceIMap, false);
+    }
+
+    @Test
+    public void testWriteToTopicWithDataConnection() {
+        instance().getConfig().addDataConnectionConfig(
+                new DataConnectionConfig("kafka-data-connection")
+                        .setType("Kafka")
+                        .setProperties(properties)
+        );
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.map(sourceIMap))
+         .writeTo(KafkaSinks.kafka(DataConnectionRef.dataConnectionRef("kafka-data-connection"), topic));
         instance().getJet().newJob(p).join();
 
         kafkaTestSupport.assertTopicContentsEventually(topic, sourceIMap, false);

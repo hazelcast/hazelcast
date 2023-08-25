@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.transform.FlatMapTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MapTransform;
 import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
@@ -35,7 +36,6 @@ import com.hazelcast.jet.impl.pipeline.transform.TimestampTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -68,7 +68,7 @@ public class Planner {
     private static final int MAXIMUM_WATERMARK_GAP = 1000;
 
     public final DAG dag = new DAG();
-    public final Map<Transform, PlannerVertex> xform2vertex = new HashMap<>();
+    public final Map<Transform, PlannerVertex> transform2vertex = new HashMap<>();
     private final PipelineImpl pipeline;
 
     Planner(PipelineImpl pipeline) {
@@ -119,7 +119,7 @@ public class Planner {
         List<Transform> transforms = new ArrayList<>(adjacencyMap.keySet());
         for (int i = 0; i < transforms.size(); i++) {
             Transform transform = transforms.get(i);
-            List<Transform> chain = findFusableChain(transform, adjacencyMap);
+            List<Transform> chain = findFusibleChain(transform, adjacencyMap);
             if (chain == null) {
                 continue;
             }
@@ -149,7 +149,7 @@ public class Planner {
         return dag;
     }
 
-    private static List<Transform> findFusableChain(
+    private static List<Transform> findFusibleChain(
             @Nonnull Transform transform,
             @Nonnull Map<Transform, List<Transform>> adjacencyMap
     ) {
@@ -212,12 +212,11 @@ public class Planner {
             }
             fused = new FlatMapTransform(name, chain.get(0).upstream().get(0), flatMapFn);
         }
-        // if the first stage of the chain is rebalanced, then we set
-        // the rebalance flag of the created fused stage. Only consider
-        // the case when first element of the chain is rebalanced
-        // because there isn't any other case. If any stage in the
-        // middle includes rebalance, then those stages are not fused
-        // by findFusableChain().
+        fused.localParallelism(chain.get(0).localParallelism());
+        // If the first stage of the chain is rebalanced, then we set the rebalance flag
+        // of the created fused stage. Only consider the case when first element of the
+        // chain is rebalanced because there isn't any other case. If any stage in the
+        // middle includes rebalance, then those stages are not fused by findFusibleChain().
         fused.setRebalanceInput(0, chain.get(0).shouldRebalanceInput(0));
         return fused;
     }
@@ -263,14 +262,14 @@ public class Planner {
                                    ProcessorMetaSupplier metaSupplier) {
         PlannerVertex pv = new PlannerVertex(dag.newVertex(name, metaSupplier));
         pv.v.localParallelism(localParallelism);
-        xform2vertex.put(transform, pv);
+        transform2vertex.put(transform, pv);
         return pv;
     }
 
     public void addEdges(Transform transform, Vertex toVertex, ObjIntConsumer<Edge> configureEdgeFn) {
         int destOrdinal = 0;
         for (Transform fromTransform : transform.upstream()) {
-            PlannerVertex fromPv = xform2vertex.get(fromTransform);
+            PlannerVertex fromPv = transform2vertex.get(fromTransform);
             Edge edge = from(fromPv.v, fromPv.nextAvailableOrdinal()).to(toVertex, destOrdinal);
             dag.edge(edge);
             configureEdgeFn.accept(edge, destOrdinal);
@@ -311,8 +310,14 @@ public class Planner {
     private static <T> EventTimePolicy<T> withFrameSize(
             EventTimePolicy<T> original, long watermarkThrottlingFrameSize
     ) {
-        return eventTimePolicy(original.timestampFn(), original.wrapFn(), original.newWmPolicyFn(),
-                watermarkThrottlingFrameSize, 0, original.idleTimeoutMillis());
+        return eventTimePolicy(
+                original.timestampFn(),
+                original.wrapFn(),
+                original.newWmPolicyFn(),
+                watermarkThrottlingFrameSize,
+                0,
+                original.idleTimeoutMillis(),
+                original.wmKey());
     }
 
     public static <E> List<E> tailList(List<E> list) {

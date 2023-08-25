@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueReader;
@@ -59,8 +58,15 @@ public final class GenericRecordQueryReader implements ValueReader {
 
     private final InternalGenericRecord rootRecord;
 
+    private final boolean useLazyDeserialization;
+
     public GenericRecordQueryReader(InternalGenericRecord rootRecord) {
+        this(rootRecord, false);
+    }
+
+    public GenericRecordQueryReader(InternalGenericRecord rootRecord, boolean useLazyDeserialization) {
         this.rootRecord = rootRecord;
+        this.useLazyDeserialization = useLazyDeserialization;
     }
 
     @SuppressWarnings("unchecked")
@@ -130,7 +136,7 @@ public final class GenericRecordQueryReader implements ValueReader {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    InternalGenericRecord subGenericRecord = (InternalGenericRecord) record.getGenericRecord(fieldName);
+                    InternalGenericRecord subGenericRecord = record.getInternalGenericRecord(fieldName);
                     if (subGenericRecord == null) {
                         iterator.remove();
                         multiResult.setNullOrEmptyTarget(true);
@@ -147,14 +153,14 @@ public final class GenericRecordQueryReader implements ValueReader {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    GenericRecord[] genericRecords = record.getArrayOfGenericRecord(fieldName);
+                    InternalGenericRecord[] genericRecords = record.getArrayOfInternalGenericRecord(fieldName);
                     if (genericRecords == null || genericRecords.length == 0) {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    for (GenericRecord genericRecord : genericRecords) {
-                        if (genericRecord != null) {
-                            iterator.add(genericRecord);
+                    for (InternalGenericRecord internalGenericRecord : genericRecords) {
+                        if (internalGenericRecord != null) {
+                            iterator.add(internalGenericRecord);
                         } else {
                             multiResult.setNullOrEmptyTarget(true);
                         }
@@ -170,7 +176,7 @@ public final class GenericRecordQueryReader implements ValueReader {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    GenericRecord genericRecord = record.getGenericRecordFromArray(fieldName, index);
+                    InternalGenericRecord genericRecord = record.getInternalGenericRecordFromArray(fieldName, index);
                     if (genericRecord != null) {
                         iterator.set(genericRecord);
                     } else {
@@ -224,8 +230,8 @@ public final class GenericRecordQueryReader implements ValueReader {
             // ex: attribute[2]
             int index = Integer.parseInt(extractArgumentsFromAttributeName(path));
             while (iterator.hasNext()) {
-                GenericRecord record = (GenericRecord) iterator.next();
-                Object leaf = readIndexed((InternalGenericRecord) record, fieldName, index);
+                InternalGenericRecord record = (InternalGenericRecord) iterator.next();
+                Object leaf = readIndexed(record, fieldName, index);
                 iterator.set(leaf);
             }
         }
@@ -251,7 +257,11 @@ public final class GenericRecordQueryReader implements ValueReader {
             return null;
         }
         FieldKind kind = record.getFieldKind(path);
-        return fieldOperations(kind).readObject(record, path);
+        if ((kind == FieldKind.COMPACT || kind == FieldKind.PORTABLE) && useLazyDeserialization) {
+            // Use lazy deserialization for the queries that will read a nested compact or portable field
+            return record.getInternalGenericRecord(path);
+        }
+        return fieldOperations(kind).readAsLeafObjectOnQuery(record, path);
     }
 
 }

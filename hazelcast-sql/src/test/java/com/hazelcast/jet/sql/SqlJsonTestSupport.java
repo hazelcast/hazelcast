@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,26 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.json.ParseException;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
 
+import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 public abstract class SqlJsonTestSupport extends SqlTestSupport {
@@ -36,6 +47,10 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
 
     public static HazelcastJsonValue json(final String value) {
         return new HazelcastJsonValue(value);
+    }
+
+    public static HazelcastJsonValue jsonArray(Object... values) {
+        return json(jsonString(values));
     }
 
     public static Object querySingleValue(final String sql) {
@@ -79,6 +94,63 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
             return SERIALIZER.writeValueAsString(value);
         } catch (JsonProcessingException e) {
             throw new HazelcastException("Unable to serialize value: ", e);
+        }
+    }
+
+    protected void assertJsonRowsAnyOrder(String sql, Collection<Row> rows) {
+        assertJsonRowsAnyOrder(sql, Collections.emptyList(), rows);
+    }
+
+    protected void assertJsonRowsAnyOrder(String sql, List<Object> params, Collection<Row> rows) {
+        for (Row row : rows) {
+            convertRow(row);
+        }
+
+        List<Row> actualRows = new ArrayList<>();
+        try (SqlResult result = instance().getSql().execute(sql, params.toArray())) {
+            result.iterator().forEachRemaining(row -> actualRows.add(convertRow(new Row(row))));
+        }
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rows);
+    }
+
+    private static Row convertRow(Row row) {
+        Object[] rowObj = row.getValues();
+        for (int i = 0; i < rowObj.length; i++) {
+            if (rowObj[i] instanceof HazelcastJsonValue) {
+                HazelcastJsonValue value = (HazelcastJsonValue) rowObj[i];
+                try {
+                    if (Json.parse(value.getValue()) instanceof JsonObject) {
+                        rowObj[i] = new JsonObjectWithRelaxedEquality(value);
+                    }
+                } catch (ParseException parseException) {
+                    throw new HazelcastException("Invalid JSON: " + value.getValue(), parseException);
+                }
+            }
+        }
+        return row;
+    }
+
+    /**
+     * A JSON value with equals method that returns true for objects with
+     * the same keys and values, but in any order.
+     */
+    protected static class JsonObjectWithRelaxedEquality {
+        private final List<Map.Entry<String, JsonValue>> fields = new ArrayList<>();
+
+        JsonObjectWithRelaxedEquality(HazelcastJsonValue json) {
+            JsonObject jsonObject = (JsonObject) Json.parse(json.getValue());
+            jsonObject.iterator().forEachRemaining(m -> fields.add(entry(m.getName(), m.getValue())));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof JsonObjectWithRelaxedEquality
+                    && SAME_ITEMS_ANY_ORDER.test(fields, ((JsonObjectWithRelaxedEquality) o).fields);
+        }
+
+        @Override
+        public String toString() {
+            return fields.toString();
         }
     }
 }

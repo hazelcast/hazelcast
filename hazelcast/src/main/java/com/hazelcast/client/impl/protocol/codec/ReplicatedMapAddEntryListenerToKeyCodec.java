@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds the specified entry listener for the specified key. The listener will be notified for all
  * add/remove/update/evict events of the specified key only.
  */
-@Generated("d242750f9e8d01967444359c8da7de22")
+@Generated("75c581866ea98fa2b6a03593e699f4dc")
 public final class ReplicatedMapAddEntryListenerToKeyCodec {
     //hex: 0x0D0C00
     public static final int REQUEST_MESSAGE_TYPE = 855040;
@@ -79,6 +79,7 @@ public final class ReplicatedMapAddEntryListenerToKeyCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("ReplicatedMap.AddEntryListenerToKey");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

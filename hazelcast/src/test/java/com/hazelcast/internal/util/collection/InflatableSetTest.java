@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,9 @@ import java.io.Serializable;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -93,7 +90,7 @@ public class InflatableSetTest {
         InflatableSet<Object> clone = (InflatableSet<Object>) set.clone();
         set.add(new Object());
 
-        assertThat(clone, hasSize(1));
+        assertThat(clone).hasSize(1);
     }
 
 
@@ -113,7 +110,7 @@ public class InflatableSetTest {
         InflatableSet<Object> set = InflatableSet.newBuilder(2).add(o1).add(o2).build();
         set.clear();
 
-        assertThat(set, is(empty()));
+        assertThat(set).isEmpty();
     }
 
     @Test
@@ -125,7 +122,7 @@ public class InflatableSetTest {
         set.add(o2);
         set.clear();
 
-        assertThat(set, is(empty()));
+        assertThat(set).isEmpty();
     }
 
     @Test
@@ -137,7 +134,7 @@ public class InflatableSetTest {
         set.contains(o1);
         set.clear();
 
-        assertThat(set, is(empty()));
+        assertThat(set).isEmpty();
     }
 
     @Test
@@ -146,7 +143,7 @@ public class InflatableSetTest {
         InflatableSet<Object> set = InflatableSet.newBuilder(1).add(o).build();
         set.remove(o);
 
-        assertThat(set, is(empty()));
+        assertThat(set).isEmpty();
     }
 
     @Test
@@ -156,7 +153,7 @@ public class InflatableSetTest {
         set.contains(o);
         set.remove(o);
 
-        assertThat(set, is(empty()));
+        assertThat(set).isEmpty();
     }
 
     @Test
@@ -166,7 +163,7 @@ public class InflatableSetTest {
         set.add(o);
         set.remove(o);
 
-        assertThat(set, is(empty()));
+        assertThat(set).isEmpty();
     }
 
     @Test
@@ -175,7 +172,7 @@ public class InflatableSetTest {
         MyObject o = new MyObject();
         set.add(o);
 
-        assertThat(set, hasSize(1));
+        assertThat(set).hasSize(1);
     }
 
     @Test(expected = ConcurrentModificationException.class)
@@ -200,7 +197,7 @@ public class InflatableSetTest {
         iterator.next();
         iterator.remove();
 
-        assertThat(set, is(empty()));
+        assertThat(set).isEmpty();
     }
 
     private static class MyObject {

@@ -1,106 +1,92 @@
 name: aws-tests
+
 on:
   workflow_dispatch:
-  push:
+  pull_request_target:
+    types:
+      - labeled
     branches:
-      - main
+      - "master"
+      - "*.z"
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/aws/**'
-      - 'hazelcast/pom.xml'
       - '.github/terraform/aws/**'
 
 jobs:
   build:
+    name: Build Jar's And Docker Images
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'workflow_dispatch' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'run-discovery-tests' 
+        )
+      )
+    uses: ./.github/workflows/build-artifact.yml
+    secrets: inherit
+
+  test:
+    name: Run Tests
+    needs: build
+    runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash
+        working-directory: aws-discovery-suite/terraform/test
     env:
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
-      SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-    runs-on: ubuntu-latest
-    if: github.repository_owner == 'hazelcast'
+      AWS_REGION: us-east-1
     strategy:
       matrix:
-        java: [ '8' ]
-        architecture: [ 'x64' ]
-        distribution: [ 'adopt' ]
+        suite: ['ec2_cl_to_ec2_m', 'ec2_cl_to_fargate_ecs_m', 'fargate_ecs_cl_to_ec2_m', 'fargate_ecs_cl_to_fargate_ecs_m']
     steps:
-      # SET UP JDK
-      - name: Setup JDK
-        uses: actions/setup-java@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3.0.0
         with:
-          java-version: ${{ matrix.java }}
-          architecture: ${{ matrix.architecture }}
-          distribution: ${{ matrix.distribution }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - run: java -version
-
-      - run : mkdir ~/lib
-
-      # BUILD HAZELCAST AWS SNAPSHOT
-      - uses: actions/checkout@v2.4.0
+      - name: Get Secrets
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
-          path: hazelcast
+          secret-ids: |
+            DEVOPS_GITHUB_TOKEN,CN/DEVOPS_GITHUB_TOKEN
 
-      - name: Build hazelcast jar
-        run: |
-          cd hazelcast
-          mvn clean install -DskipTests -Dcheckstyle.skip
-          echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
-          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/lib/hazelcast.jar
+      - name: Checkout Auto Discovery Test Suite
+        uses: actions/checkout@v3
+        with:
+          repository: hazelcast/auto-discovery-test-suite
+          token: ${{ env.DEVOPS_GITHUB_TOKEN }}
+          path: aws-discovery-suite
 
-      #BUILD TERRAFORM
+      - name: Download hazelcast.jar
+        uses: actions/download-artifact@v3
+        with:
+          name: hazelcast.jar
+          path: aws-discovery-suite/terraform/tools
+
+      - name: Download aws-discovery-client.jar
+        uses: actions/download-artifact@v3
+        with:
+          name: aws-discovery-client.jar
+          path: aws-discovery-suite/terraform/tools/client
+
       - name : Set-up Terraform
-        uses: hashicorp/setup-terraform@v1.3.2
+        uses: hashicorp/setup-terraform@v2.0.3
         with:
-          terraform_version: 0.13.0
+          terraform_version: 1.5.4
+          terraform_wrapper: false
 
-      - name: Create unique prefix for resources
-        run: |
-          sed -i -e "s/SET_PREFIX/${GITHUB_WORKFLOW}-${GITHUB_RUN_ID}/g" hazelcast/.github/terraform/aws/hazelcast.yaml
-          sed -i -e "s/SET_PREFIX/\"${GITHUB_WORKFLOW}-${GITHUB_RUN_ID}\"/g" hazelcast/.github/terraform/aws/terraform.tfvars
-
-      - name: Terraform Init
-        run: cd hazelcast/.github/terraform/aws && terraform init
-
-      - name: Terraform Format
-        run: cd hazelcast/.github/terraform/aws  && terraform fmt
-
-      - name: Generate SSH keys
-        id: ssh
-        run: |
-          ssh-keygen -t rsa -b 4096 -C "devOpsHazelcast@hazelcast.com" -f id_rsa -P "" 1>/dev/null
-          ssh_key=$(cat id_rsa)
-          echo 'SSH_KEY<<EOF' >> $GITHUB_ENV
-          echo "$ssh_key" >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
-
-          ssh_key_public=$(cat id_rsa.pub)
-          echo 'SSH_KEY_PUBLIC<<EOF' >> $GITHUB_ENV
-          echo "$ssh_key_public" >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
-
-      - name: Install private key
-        uses: shimataro/ssh-key-action@v2
+      - name: Cache Golang dependencies
+        uses: actions/cache@v3
         with:
-          key: ${{ env.SSH_KEY }}
-          name: id_rsa
-          known_hosts: " "
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-      - name: Install public key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ env.SSH_KEY_PUBLIC }}
-          name: id_rsa.pub
-          known_hosts: " "
-
-      - name: Terraform Apply
+      - name: Run Tests
         run: |
-          cd hazelcast/.github/terraform/aws  && terraform apply -auto-approve
-
-      - name: Terraform Destroy
-        if: ${{ always() }}
-        run: |
-          cd hazelcast/.github/terraform/aws  && terraform destroy -auto-approve
+          go test -v -timeout 20m -run TestSuite -suite ${{ matrix.suite }} -member-image ${{ needs.build.outputs.HZ_IMG }} -client-image ${{ needs.build.outputs.CL_IMG }}

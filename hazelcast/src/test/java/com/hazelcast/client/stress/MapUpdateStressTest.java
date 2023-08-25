@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -101,8 +102,8 @@ public class MapUpdateStressTest extends StressTestSupport {
         Set<Integer> failedKeys = new HashSet<Integer>();
         for (int k = 0; k < MAP_SIZE; k++) {
             int expectedValue = increments[k];
-            int foundValue = map.get(k);
-            if (expectedValue != foundValue) {
+            Integer foundValue = map.get(k);
+            if (foundValue == null || expectedValue != foundValue) {
                 failedKeys.add(k);
             }
         }
@@ -148,7 +149,8 @@ public class MapUpdateStressTest extends StressTestSupport {
                 int increment = random.nextInt(10);
                 increments[key] += increment;
                 for (; ; ) {
-                    int oldValue = map.get(key);
+                    Integer oldValue = map.get(key);
+                    assertNotNull("Key missing from the map", oldValue);
                     if (map.replace(key, oldValue, oldValue + increment)) {
                         break;
                     }

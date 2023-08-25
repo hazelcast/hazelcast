@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.opt.common.CalcIntoScanRule;
 import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rel.rules.PruneEmptyRules;
 import org.apache.calcite.tools.RuleSet;
@@ -28,25 +29,29 @@ public final class LogicalRules {
 
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
-                // Calc rules
-                CalcLogicalRule.INSTANCE,
-                CalcIntoScanLogicalRule.INSTANCE,
-                CalcMergeRule.INSTANCE,
-                CoreRules.CALC_REMOVE,
-                CoreRules.CALC_REDUCE_EXPRESSIONS,
-                // We need it to transpose RIGHT JOIN to the LEFT JOIN
-                CoreRules.PROJECT_TO_CALC,
-                SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
-
                 // Scan rules
                 FullScanLogicalRule.INSTANCE,
                 FunctionLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
                 FunctionLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
 
-                // Windowing rules
+                // Calc rules
+                CalcLogicalRule.INSTANCE,
+                CalcIntoScanRule.INSTANCE,
+                CalcMergeRule.INSTANCE,
+                CoreRules.CALC_REMOVE,
+                CalcReduceExprRule.INSTANCE,
+                // We need it to transpose RIGHT JOIN to the LEFT JOIN
+                CoreRules.PROJECT_TO_CALC,
+                SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
+                CalcDropLateItemsTransposeRule.INSTANCE,
+
+                // Watermark rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
+
+                // Windowing rules
                 FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
+                SlidingWindowDropLateItemsMergeRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
@@ -63,6 +68,7 @@ public final class LogicalRules {
                 PruneEmptyRules.UNION_INSTANCE,
                 CoreRules.UNION_REMOVE,
                 CoreRules.UNION_PULL_UP_CONSTANTS,
+                UnionDropLateItemsTransposeRule.INSTANCE,
                 UnionLogicalRule.INSTANCE,
 
                 // Value rules
@@ -74,16 +80,14 @@ public final class LogicalRules {
                 TableModifyLogicalRule.INSTANCE,
                 InsertLogicalRule.INSTANCE,
                 SinkLogicalRule.INSTANCE,
-                UpdateLogicalRules.SCAN_INSTANCE,
-                UpdateLogicalRules.VALUES_INSTANCE,
-                DeleteLogicalRule.INSTANCE,
+                UpdateWithScanLogicalRule.INSTANCE,
+                UpdateNoScanLogicalRule.INSTANCE,
+                DeleteWithScanLogicalRule.INSTANCE,
+                DeleteNoScanLogicalRule.INSTANCE,
 
                 // imap-by-key access optimization rules
-                SelectByKeyMapLogicalRules.INSTANCE,
                 InsertMapLogicalRule.INSTANCE,
-                SinkMapLogicalRule.INSTANCE,
-                UpdateByKeyMapLogicalRule.INSTANCE,
-                DeleteByKeyMapLogicalRule.INSTANCE
+                SinkMapLogicalRule.INSTANCE
         );
     }
 }

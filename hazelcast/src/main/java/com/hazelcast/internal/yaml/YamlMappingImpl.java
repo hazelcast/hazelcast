@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.yaml.YamlUtil.asMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
@@ -65,12 +67,12 @@ public class YamlMappingImpl extends AbstractYamlNode implements MutableYamlMapp
 
     @Override
     public Iterable<YamlNode> children() {
-        return children.values();
+        return children.values().stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     @Override
     public Iterable<YamlNameNodePair> childrenPairs() {
-        List<YamlNameNodePair> pairs = new LinkedList<YamlNameNodePair>();
+        List<YamlNameNodePair> pairs = new LinkedList<>();
         for (Map.Entry<String, YamlNode> child : children.entrySet()) {
             pairs.add(new YamlNameNodePair(child.getKey(), child.getValue()));
         }
@@ -89,7 +91,7 @@ public class YamlMappingImpl extends AbstractYamlNode implements MutableYamlMapp
 
     private Map<String, YamlNode> getOrCreateChildren() {
         if (children == Collections.<String, YamlNode>emptyMap()) {
-            children = new LinkedHashMap<String, YamlNode>();
+            children = new LinkedHashMap<>();
         }
 
         return children;

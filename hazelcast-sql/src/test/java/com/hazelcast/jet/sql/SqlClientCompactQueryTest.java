@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
@@ -79,7 +78,6 @@ public class SqlClientCompactQueryTest extends HazelcastTestSupport {
     public void setup() {
         MapConfig mapConfig = new MapConfig("default").setInMemoryFormat(inMemoryFormat);
         Config config = smallInstanceConfig().addMapConfig(mapConfig);
-        config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
         if (!clusterHaveUserClasses) {
             List<String> excludes = singletonList("example.serialization");
             FilteringClassLoader classLoader = new FilteringClassLoader(excludes, null);
@@ -96,7 +94,7 @@ public class SqlClientCompactQueryTest extends HazelcastTestSupport {
 
     @Test
     public void testQueryOnPrimitive() {
-        HazelcastInstance client = factory.newHazelcastClient(clientConfig());
+        HazelcastInstance client = factory.newHazelcastClient();
         IMap<Integer, Object> map = client.getMap("test");
         for (int i = 0; i < 10; i++) {
             map.put(i, new EmployeeDTO(i, i));
@@ -123,7 +121,7 @@ public class SqlClientCompactQueryTest extends HazelcastTestSupport {
 
     @Test
     public void testQueryOnPrimitive_selectValue() {
-        HazelcastInstance client = factory.newHazelcastClient(clientConfig());
+        HazelcastInstance client = factory.newHazelcastClient();
         IMap<Integer, Object> map = client.getMap("test");
         for (int i = 0; i < 10; i++) {
             map.put(i, new EmployeeDTO(i, i));
@@ -146,11 +144,5 @@ public class SqlClientCompactQueryTest extends HazelcastTestSupport {
         SqlResult result = client.getSql().execute("SELECT this FROM test WHERE age >= 5");
 
         assertThat(result).hasSize(5);
-    }
-
-    private static ClientConfig clientConfig() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
-        return clientConfig;
     }
 }

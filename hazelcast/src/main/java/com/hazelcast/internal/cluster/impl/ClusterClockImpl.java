@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_M
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_UP_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_CLOCK_LOCAL_CLOCK_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_CLOCK_MAX_CLUSTER_TIME_DIFF;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static java.lang.Math.abs;
@@ -45,7 +46,7 @@ public class ClusterClockImpl implements ClusterClock {
         this.logger = logger;
     }
 
-    @Probe(name = CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_TIME, unit = MS)
+    @Probe(name = CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_TIME, unit = MS, level = DEBUG)
     @Override
     public long getClusterTime() {
         return Clock.currentTimeMillis() + clusterTimeDiff;
@@ -91,12 +92,12 @@ public class ClusterClockImpl implements ClusterClock {
         }
     }
 
-    @Probe(name = CLUSTER_METRIC_CLUSTER_CLOCK_LOCAL_CLOCK_TIME, unit = MS)
+    @Probe(name = CLUSTER_METRIC_CLUSTER_CLOCK_LOCAL_CLOCK_TIME, unit = MS, level = DEBUG)
     private long getLocalClockTime() {
         return Clock.currentTimeMillis();
     }
 
-    @Probe(name = CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_START_TIME, unit = MS)
+    @Probe(name = CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_START_TIME, unit = MS, level = DEBUG)
     public long getClusterStartTime() {
         return clusterStartTime;
     }

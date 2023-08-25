@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.operation.steps.PutAllOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -48,12 +50,14 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
  * Used to reduce the number of remote invocations
  * of an {@link IMap#putAll(Map)} or {@link IMap#setAll(Map)} call.
  */
+// RU_COMPAT_5_3 "implements Versioned" can be removed in 5.5
 public class PutAllOperation extends MapOperation
-        implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation, Versioned {
+        implements PartitionAwareOperation, BackupAwareOperation,
+        MutatingOperation, Versioned {
 
     private transient int currentIndex;
     private MapEntries mapEntries;
-    private boolean triggerMapLoader;
+    private volatile boolean triggerMapLoader;
 
     private transient boolean hasMapListener;
     private transient boolean hasWanReplication;
@@ -76,6 +80,10 @@ public class PutAllOperation extends MapOperation
     public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
 
+        if (recordStore != null) {
+            recordStore.checkIfLoaded();
+        }
+
         hasMapListener = mapEventPublisher.hasEventListener(name);
         hasWanReplication = mapContainer.isWanReplicationEnabled();
         hasBackups = hasBackups();
@@ -87,6 +95,18 @@ public class PutAllOperation extends MapOperation
         if (hasInvalidation) {
             invalidationKeys = new ArrayList<>(mapEntries.size());
         }
+    }
+
+    @Override
+    public State createState() {
+        return super.createState()
+                .setMapEntries(mapEntries)
+                .setTriggerMapLoader(triggerMapLoader);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return PutAllOpSteps.READ;
     }
 
     @Override
@@ -129,6 +149,30 @@ public class PutAllOperation extends MapOperation
         evict(dataKey);
     }
 
+    public boolean isHasMapListener() {
+        return hasMapListener;
+    }
+
+    public boolean isHasWanReplication() {
+        return hasWanReplication;
+    }
+
+    public boolean isHasBackups() {
+        return hasBackups;
+    }
+
+    public boolean isHasInvalidation() {
+        return hasInvalidation;
+    }
+
+    public List getBackupPairs() {
+        return backupPairs;
+    }
+
+    public List<Data> getInvalidationKeys() {
+        return invalidationKeys;
+    }
+
     private boolean hasBackups() {
         return (mapContainer.getTotalBackupCount() > 0);
     }
@@ -149,14 +193,14 @@ public class PutAllOperation extends MapOperation
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         invalidateNearCache(invalidationKeys);
 
         super.afterRunInternal();
     }
 
-    private Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
-        if (!isPostProcessing(recordStore)) {
+    public Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
+        if (!isPostProcessingOrHasInterceptor(recordStore)) {
             return dataValue;
         }
         Record record = recordStore.getRecord(dataKey);
@@ -217,20 +261,14 @@ public class PutAllOperation extends MapOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(mapEntries);
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeBoolean(triggerMapLoader);
-        }
+        out.writeBoolean(triggerMapLoader);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mapEntries = in.readObject();
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            triggerMapLoader = in.readBoolean();
-        } else {
-            triggerMapLoader = true;
-        }
+        triggerMapLoader = in.readBoolean();
     }
 
     @Override

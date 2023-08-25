@@ -38,6 +38,7 @@
             "enabled": true,
             "initial-mode": "LAZY",
             "class-name": "com.hazelcast.examples.DummyStore",
+            "offload": false,
             "write-delay-seconds": 60,
             "write-batch-size": 1000,
             "write-coalescing": true,
@@ -109,6 +110,24 @@
                 "unique-key": "id",
                 "unique-key-transformation": "RAW"
               }
+            },
+            {
+              "type": "SORTED",
+              "attributes": [
+                "name"
+              ],
+              "btree-index": {
+                "page-size": {
+                  "value": 16,
+                  "unit": "KILOBYTES"
+                },
+                "memory-tier": {
+                  "capacity": {
+                    "value": 160,
+                    "unit": "MEGABYTES"
+                  }
+                }
+              }
             }
           ],
           "attributes": {
@@ -167,6 +186,19 @@
               }
             }
           }
+        },
+        "map-with-partition-strategy": {
+          "partition-strategy": "com.example.Strategy"
+        },
+        "map-with-partition-attributes": {
+          "partition-attributes": [
+            {
+              "name": "attributeName1"
+            },
+            {
+              "name": "attributeName2"
+            }
+          ]
         }
       }
     }

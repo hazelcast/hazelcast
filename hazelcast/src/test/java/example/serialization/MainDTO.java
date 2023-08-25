@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ public class MainDTO {
 
     public byte b;
     public boolean bool;
+    public char c;
     public short s;
     public int i;
     public long l;
@@ -42,6 +43,7 @@ public class MainDTO {
     public OffsetDateTime offsetDateTime;
     public Byte nullableB;
     public Boolean nullableBool;
+    public Character nullableC;
     public Short nullableS;
     public Integer nullableI;
     public Long nullableL;
@@ -51,13 +53,14 @@ public class MainDTO {
     MainDTO() {
     }
 
-    public MainDTO(byte b, boolean bool, short s, int i, long l, float f, double d, String str, InnerDTO p,
+    public MainDTO(byte b, boolean bool, char c, short s, int i, long l, float f, double d, String str, InnerDTO p,
                    BigDecimal bigDecimal, LocalTime localTime, LocalDate localDate, LocalDateTime localDateTime,
                    OffsetDateTime offsetDateTime,
-                   Byte nullableB, Boolean nullableBool, Short nullableS, Integer nullableI,
+                   Byte nullableB, Boolean nullableBool, Character nullableC, Short nullableS, Integer nullableI,
                    Long nullableL, Float nullableF, Double nullableD) {
         this.b = b;
         this.bool = bool;
+        this.c = c;
         this.s = s;
         this.i = i;
         this.l = l;
@@ -72,6 +75,7 @@ public class MainDTO {
         this.offsetDateTime = offsetDateTime;
         this.nullableB = nullableB;
         this.nullableBool = nullableBool;
+        this.nullableC = nullableC;
         this.nullableS = nullableS;
         this.nullableI = nullableI;
         this.nullableL = nullableL;
@@ -95,6 +99,9 @@ public class MainDTO {
             return false;
         }
         if (bool != mainDTO.bool) {
+            return false;
+        }
+        if (c != mainDTO.c) {
             return false;
         }
         if (s != mainDTO.s) {
@@ -139,6 +146,9 @@ public class MainDTO {
         if (!Objects.equals(nullableBool, mainDTO.nullableBool)) {
             return false;
         }
+        if (!Objects.equals(nullableC, mainDTO.nullableC)) {
+            return false;
+        }
         if (!Objects.equals(nullableS, mainDTO.nullableS)) {
             return false;
         }
@@ -163,6 +173,7 @@ public class MainDTO {
         long temp;
         result = b;
         result = 31 * result + (bool ? 1 : 0);
+        result = 31 * result + (int) c;
         result = 31 * result + (int) s;
         result = 31 * result + i;
         result = 31 * result + (int) (l ^ (l >>> 32));
@@ -178,6 +189,7 @@ public class MainDTO {
         result = 31 * result + (offsetDateTime != null ? offsetDateTime.hashCode() : 0);
         result = 31 * result + (nullableB != null ? nullableB.hashCode() : 0);
         result = 31 * result + (nullableBool != null ? nullableBool.hashCode() : 0);
+        result = 31 * result + (nullableC != null ? nullableC.hashCode() : 0);
         result = 31 * result + (nullableS != null ? nullableS.hashCode() : 0);
         result = 31 * result + (nullableI != null ? nullableI.hashCode() : 0);
         result = 31 * result + (nullableL != null ? nullableL.hashCode() : 0);
@@ -191,6 +203,7 @@ public class MainDTO {
         return "MainDTO{"
                 + "+ b=" + b
                 + ", + bool=" + bool
+                + ", + c=" + c
                 + ", + s=" + s
                 + ", + i=" + i
                 + ", + l=" + l
@@ -205,6 +218,7 @@ public class MainDTO {
                 + ", + offsetDateTime=" + offsetDateTime
                 + ", + nullableB=" + nullableB
                 + ", + nullableBool=" + nullableBool
+                + ", + nullableC=" + nullableC
                 + ", + nullableS=" + nullableS
                 + ", + nullableI=" + nullableI
                 + ", + nullableL=" + nullableL

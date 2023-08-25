@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,14 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.retry.RetryStrategy;
+import io.debezium.connector.postgresql.PostgresConnectorConfig;
+import io.debezium.connector.postgresql.spi.Snapshotter;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.Properties;
+
+import static com.hazelcast.internal.util.Preconditions.checkState;
 
 /**
  * Contains factory methods for creating change data capture sources
@@ -123,7 +127,48 @@ public final class PostgresCdcSources {
             config.setProperty(CdcSourceP.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, PostgresSequenceExtractor.class.getName());
             config.setProperty(ChangeRecordCdcSourceP.DB_SPECIFIC_EXTRA_FIELDS_PROPERTY, "schema");
             config.setProperty("database.server.name", UuidUtil.newUnsecureUuidString());
-            config.setProperty("snapshot.mode", "exported");
+            config.setProperty("snapshot.mode", "initial");
+        }
+
+        /**
+         * Snapshot mode that will be used by the connector.
+         *
+         * If you want to use {@link io.debezium.connector.postgresql.PostgresConnectorConfig.SnapshotMode#CUSTOM},
+         * please use {@link #setCustomSnapshotter(Class)} method instead.
+         */
+        @Nonnull
+        public Builder setSnapshotMode(@Nonnull PostgresSnapshotMode snapshotMode) {
+            PostgresConnectorConfig.SnapshotMode debeziumMode;
+            switch (snapshotMode) {
+                case ALWAYS:
+                    debeziumMode = PostgresConnectorConfig.SnapshotMode.ALWAYS;
+                    break;
+                case INITIAL:
+                    debeziumMode = PostgresConnectorConfig.SnapshotMode.INITIAL;
+                    break;
+                case INITIAL_ONLY:
+                    debeziumMode = PostgresConnectorConfig.SnapshotMode.INITIAL_ONLY;
+                    break;
+                case NEVER:
+                    debeziumMode = PostgresConnectorConfig.SnapshotMode.NEVER;
+                    break;
+                default:
+                    throw new IllegalArgumentException("unsupported snapshot mode " + snapshotMode);
+            }
+            config.setProperty("snapshot.mode", debeziumMode.getValue());
+            return this;
+        }
+
+        /**
+         * Custom snapshotter that will be used by the connector.
+         */
+        @Nonnull
+        public Builder setCustomSnapshotter(@Nonnull Class<?> snapshotterClass) {
+            checkState(Snapshotter.class.isAssignableFrom(snapshotterClass), "snapshotterClass must be " +
+                    "a subclass of Snapshotter");
+            config.setProperty("snapshot.mode", PostgresConnectorConfig.SnapshotMode.CUSTOM.getValue());
+            config.setProperty("snapshot.custom.class", snapshotterClass.getName());
+            return this;
         }
 
         /**
@@ -469,5 +514,31 @@ public final class PostgresCdcSources {
                             ProcessorSupplier.of(() -> new ChangeRecordCdcSourceP(properties, eventTimePolicy))));
         }
 
+    }
+
+    /**
+     * Possible postgres snapshot modes, that does not require additional mandatory parameters to be set.
+     */
+    public enum PostgresSnapshotMode {
+
+        /**
+         * Always perform a snapshot when starting.
+         */
+        ALWAYS,
+
+        /**
+         * Perform a snapshot only upon initial startup of a connector.
+         */
+        INITIAL,
+
+        /**
+         * Never perform a snapshot and only receive logical changes.
+         */
+        NEVER,
+
+        /**
+         * Perform a snapshot and then stop before attempting to receive any logical changes.
+         */
+        INITIAL_ONLY;
     }
 }

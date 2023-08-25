@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,12 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
@@ -43,6 +45,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,8 +59,8 @@ import java.io.Writer;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -66,12 +69,12 @@ import java.util.Set;
 
 import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_DIR;
+import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_BLOCK_SIZE_IN_BYTES;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_BASE_DIR;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_READ_IO_THREAD_COUNT;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_WRITE_IO_THREAD_COUNT;
-import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MemoryTierConfig.DEFAULT_CAPACITY;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
@@ -83,6 +86,8 @@ import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.io.File.createTempFile;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -147,8 +152,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testConfigurationWithFileName() throws Exception {
-        assumeThatNotZingJDK6(); // https://github.com/hazelcast/hazelcast/issues/9044
-
         File file = createTempFile("foo", "bar");
         file.deleteOnExit();
 
@@ -848,6 +851,24 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(2342, mergePolicyConfig.getBatchSize());
     }
 
+
+    @Override
+    @Test
+    public void testMapExpiryConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"expiry\">"
+                + "    <time-to-live-seconds>2147483647</time-to-live-seconds>"
+                + "    <max-idle-seconds>2147483647</max-idle-seconds>    "
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("expiry");
+
+        assertEquals(Integer.MAX_VALUE, mapConfig.getTimeToLiveSeconds());
+        assertEquals(Integer.MAX_VALUE, mapConfig.getMaxIdleSeconds());
+    }
+
     @Override
     @Test
     public void readRingbuffer() {
@@ -1178,6 +1199,30 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testMapStoreConfig_offload_whenDefault() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(MapStoreConfig.DEFAULT_OFFLOAD, true);
+
+        assertTrue(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreConfig_offload_whenSetFalse() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(false, false);
+
+        assertFalse(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreConfig_offload_whenSetTrue() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(true, false);
+
+        assertTrue(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
     public void testMapStoreConfig_writeCoalescing_whenDefault() {
         MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(MapStoreConfig.DEFAULT_WRITE_COALESCING, true);
 
@@ -1210,7 +1255,23 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         return HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
                 + "<map-store >"
-                + (useDefault ? "" : "<write-coalescing>" + String.valueOf(value) + "</write-coalescing>")
+                + (useDefault ? "" : "<write-coalescing>" + value + "</write-coalescing>")
+                + "</map-store>"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+    }
+
+    private MapStoreConfig getOffloadMapStoreConfig(boolean offload, boolean useDefault) {
+        String xml = getOffloadConfigXml(offload, useDefault);
+        Config config = buildConfig(xml);
+        return config.getMapConfig("mymap").getMapStoreConfig();
+    }
+
+    private String getOffloadConfigXml(boolean value, boolean useDefault) {
+        return HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<map-store >"
+                + (useDefault ? "" : "<offload>" + String.valueOf(value) + "</offload>")
                 + "</map-store>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
@@ -2442,6 +2503,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <write-delay-seconds>42</write-delay-seconds>\n"
                 + "            <write-batch-size>42</write-batch-size>\n"
                 + "            <write-coalescing>true</write-coalescing>\n"
+                + "            <offload>false</offload>\n"
                 + "            <properties>\n"
                 + "                <property name=\"jdbc_url\">my.jdbc.com</property>\n"
                 + "            </properties>\n"
@@ -2529,6 +2591,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(42, mapStoreConfig.getWriteDelaySeconds());
         assertEquals(42, mapStoreConfig.getWriteBatchSize());
         assertTrue(mapStoreConfig.isWriteCoalescing());
+        assertFalse(mapStoreConfig.isOffload());
         assertEquals("com.hazelcast.examples.DummyStore", mapStoreConfig.getClassName());
         assertEquals(1, mapStoreConfig.getProperties().size());
         assertEquals("my.jdbc.com", mapStoreConfig.getProperties().getProperty("jdbc_url"));
@@ -2585,6 +2648,17 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "                   <attribute>age</attribute>\n"
                 + "               </attributes>\n"
                 + "           </index>\n"
+                + "           <index type=\"SORTED\">\n"
+                + "               <attributes>\n"
+                + "                   <attribute>age</attribute>\n"
+                + "               </attributes>\n"
+                + "               <btree-index>"
+                + "                   <page-size value=\"1337\" unit=\"BYTES\" />"
+                + "                   <memory-tier>"
+                + "                       <capacity value=\"1138\" unit=\"BYTES\" />"
+                + "                   </memory-tier>"
+                + "               </btree-index>"
+                + "           </index>\n"
                 + "       </indexes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2592,9 +2666,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getIndexConfigs().isEmpty());
-        assertIndexEqual("name", false, mapConfig.getIndexConfigs().get(0));
-        assertIndexEqual("age", true, mapConfig.getIndexConfigs().get(1));
+        List<IndexConfig> indexConfigs = mapConfig.getIndexConfigs();
+        assertFalse(indexConfigs.isEmpty());
+        assertIndexEqual("name", false, indexConfigs.get(0));
+        assertIndexEqual("age", true, indexConfigs.get(1));
+        assertIndexEqual("age", true, indexConfigs.get(2));
+        BTreeIndexConfig bTreeIndexConfig = indexConfigs.get(2).getBTreeIndexConfig();
+        assertEquals(Capacity.of(1337, MemoryUnit.BYTES), bTreeIndexConfig.getPageSize());
+        assertEquals(Capacity.of(1138, MemoryUnit.BYTES), bTreeIndexConfig.getMemoryTierConfig().getCapacity());
     }
 
     private static void assertIndexEqual(String expectedAttribute, boolean expectedOrdered, IndexConfig indexConfig) {
@@ -2977,95 +3056,183 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void testCompactSerialization() {
+    public void testCompactSerialization_serializerRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\" />\n"
-                + "    </serialization>\n"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        assertTrue(config.getSerializationConfig().getCompactSerializationConfig().isEnabled());
-    }
-
-    @Override
-    public void testCompactSerialization_explicitSerializationRegistration() {
-        String xml = HAZELCAST_START_TAG
-                + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
-                + "            <registered-classes>\n"
-                + "                <class type-name=\"obj\" serializer=\"example.serialization.EmployeeDTOSerializer\">"
-                + "                    example.serialization.EmployeeDTO\n"
-                + "                </class>\n"
-                + "            </registered-classes>\n"
+                + "        <compact-serialization>\n"
+                + "            <serializers>\n"
+                + "                <serializer>example.serialization.SerializableEmployeeDTOSerializer</serializer>\n"
+                + "            </serializers>\n"
                 + "        </compact-serialization>\n"
                 + "    </serialization>\n"
                 + HAZELCAST_END_TAG;
 
-        Config config = buildConfig(xml);
-        CompactTestUtil.verifyExplicitSerializerIsUsed(config.getSerializationConfig());
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        CompactTestUtil.verifyExplicitSerializerIsUsed(config);
     }
 
     @Override
-    public void testCompactSerialization_reflectiveSerializerRegistration() {
+    public void testCompactSerialization_classRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
-                + "            <registered-classes>\n"
+                + "        <compact-serialization>\n"
+                + "            <classes>\n"
                 + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
-                + "            </registered-classes>\n"
+                + "            </classes>\n"
                 + "        </compact-serialization>\n"
                 + "    </serialization>\n"
                 + HAZELCAST_END_TAG;
 
-        Config config = buildConfig(xml);
-        CompactTestUtil.verifyReflectiveSerializerIsUsed(config.getSerializationConfig());
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        CompactTestUtil.verifyReflectiveSerializerIsUsed(config);
     }
 
     @Override
-    public void testCompactSerialization_registrationWithJustTypeName() {
+    public void testCompactSerialization_serializerAndClassRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
-                + "            <registered-classes>\n"
-                + "                <class type-name=\"employee\">example.serialization.EmployeeDTO</class>\n"
-                + "            </registered-classes>\n"
+                + "        <compact-serialization>\n"
+                + "            <serializers>\n"
+                + "                <serializer>example.serialization.SerializableEmployeeDTOSerializer</serializer>\n"
+                + "            </serializers>\n"
+                + "            <classes>\n"
+                + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
+                + "            </classes>\n"
                 + "        </compact-serialization>\n"
                 + "    </serialization>\n"
                 + HAZELCAST_END_TAG;
 
-        buildConfig(xml);
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        CompactTestUtil.verifyExplicitSerializerIsUsed(config);
+        CompactTestUtil.verifyReflectiveSerializerIsUsed(config);
     }
 
     @Override
-    public void testCompactSerialization_registrationWithJustSerializer() {
+    public void testCompactSerialization_duplicateSerializerRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
-                + "            <registered-classes>\n"
-                + "                <class serializer=\"example.serialization.EmployeeDTOSerializer\">\n"
-                + "                    example.serialization.EmployeeDTO\n"
-                + "                </class>\n"
-                + "            </registered-classes>\n"
+                + "        <compact-serialization>\n"
+                + "            <serializers>\n"
+                + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
+                + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
+                + "            </serializers>\n"
                 + "        </compact-serialization>\n"
                 + "    </serialization>\n"
                 + HAZELCAST_END_TAG;
 
-        buildConfig(xml);
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate");
+    }
+
+    @Override
+    public void testCompactSerialization_duplicateClassRegistration() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization>\n"
+                + "            <classes>\n"
+                + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
+                + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
+                + "            </classes>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate");
+    }
+
+    @Override
+    public void testCompactSerialization_registrationsWithDuplicateClasses() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization>\n"
+                + "            <serializers>\n"
+                + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
+                + "                <serializer>example.serialization.SameClassEmployeeDTOSerializer</serializer>\n"
+                + "            </serializers>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("class");
+    }
+
+    @Override
+    public void testCompactSerialization_registrationsWithDuplicateTypeNames() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization>\n"
+                + "            <serializers>\n"
+                + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
+                + "                <serializer>example.serialization.SameTypeNameEmployeeDTOSerializer</serializer>\n"
+                + "            </serializers>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("type name");
+    }
+
+    @Override
+    public void testCompactSerialization_withInvalidSerializer() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization>\n"
+                + "            <serializers>\n"
+                + "                <serializer>does.not.exist.FooSerializer</serializer>\n"
+                + "            </serializers>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Cannot create an instance");
+    }
+
+    @Override
+    public void testCompactSerialization_withInvalidCompactSerializableClass() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization>\n"
+                + "            <classes>\n"
+                + "                <class>does.not.exist.Foo</class>\n"
+                + "            </classes>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Cannot load");
     }
 
     @Override
     @Test
     public void testAllowOverrideDefaultSerializers() {
         String xml = HAZELCAST_START_TAG
-          + "  <serialization>\n"
-          + "      <allow-override-default-serializers>true</allow-override-default-serializers>\n"
-          + "  </serialization>\n"
-          + HAZELCAST_END_TAG;
+                + "  <serialization>\n"
+                + "      <allow-override-default-serializers>true</allow-override-default-serializers>\n"
+                + "  </serialization>\n"
+                + HAZELCAST_END_TAG;
 
         final Config config = new InMemoryXmlConfig(xml);
         final boolean isAllowOverrideDefaultSerializers
-          = config.getSerializationConfig().isAllowOverrideDefaultSerializers();
+                = config.getSerializationConfig().isAllowOverrideDefaultSerializers();
         assertTrue(isAllowOverrideDefaultSerializers);
     }
 
@@ -3184,7 +3351,22 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         int readIOThreadCount = 16;
         int writeIOThreadCount = 1;
 
-        String xml = HAZELCAST_START_TAG
+        String xml = HAZELCAST_START_TAG + HAZELCAST_END_TAG;
+        Config config = new InMemoryXmlConfig(xml);
+
+        // default device
+        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        System.out.println(localDeviceConfig);
+        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
+        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), localDeviceConfig.getBaseDir());
+        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
+        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
+        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
+
+
+
+        xml = HAZELCAST_START_TAG
                 + "<local-device name=\"my-device\">"
                 + "    <base-dir>" + baseDir + "</base-dir>"
                 + "    <block-size>" + blockSize + "</block-size>"
@@ -3194,14 +3376,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "</local-device>\n"
                 + HAZELCAST_END_TAG;
 
-        Config config = new InMemoryXmlConfig(xml);
-        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig("my-device");
+        config = new InMemoryXmlConfig(xml);
+        localDeviceConfig = config.getDeviceConfig("my-device");
 
         assertNotNull(localDeviceConfig);
         assertEquals("my-device", localDeviceConfig.getName());
         assertEquals(new File(baseDir).getAbsolutePath(), localDeviceConfig.getBaseDir().getAbsolutePath());
         assertEquals(blockSize, localDeviceConfig.getBlockSize());
-        assertEquals(new MemorySize(100, MemoryUnit.GIGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(100, MemoryUnit.GIGABYTES), localDeviceConfig.getCapacity());
         assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount, localDeviceConfig.getWriteIOThreadCount());
 
@@ -3222,27 +3404,20 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         config = new InMemoryXmlConfig(xml);
-        assertEquals(3, config.getDeviceConfigs().size());
+        // default device removed
+        assertEquals(2, config.getDeviceConfigs().size());
+        assertNull(config.getDeviceConfig(DEFAULT_DEVICE_NAME));
 
         localDeviceConfig = config.getDeviceConfig("device0");
         assertEquals(blockSize * device0Multiplier, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device0Multiplier, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device0Multiplier, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(new MemorySize(1234567890, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(1234567890, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
 
         localDeviceConfig = config.getDeviceConfig("device1");
         assertEquals(blockSize * device1Multiplier, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device1Multiplier, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device1Multiplier, localDeviceConfig.getWriteIOThreadCount());
-
-        // default device
-        localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
-        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
-        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), localDeviceConfig.getBaseDir());
-        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
-        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
-        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
 
         // override the default device config
         String newBaseDir = "/some/random/base/dir/for/tiered/store";
@@ -3725,6 +3900,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  <persistence-enabled>true</persistence-enabled>\n"
                 + "  <base-dir>/mnt/cp-data</base-dir>\n"
                 + "  <data-load-timeout-seconds>30</data-load-timeout-seconds>\n"
+                + "  <cp-member-priority>-1</cp-member-priority>\n"
                 + "  <raft-algorithm>\n"
                 + "    <leader-election-timeout-in-millis>500</leader-election-timeout-in-millis>\n"
                 + "    <leader-heartbeat-period-in-millis>100</leader-heartbeat-period-in-millis>\n"
@@ -3769,6 +3945,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/mnt/cp-data").getAbsoluteFile(), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
         assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
+        assertEquals(-1, cpSubsystemConfig.getCPMemberPriority());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());
@@ -3892,6 +4069,48 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepIdleSeconds() {
+        // -1 fails XSD validation
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", -1);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid1));
+        // 0 fails XSD validation
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 0);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid2));
+        // 32768 fails range check in EndpointConfig
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 32768);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepIntervalSeconds() {
+        // -1 fails XSD validation
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", -1);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid1));
+        // 0 fails XSD validation
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 0);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid2));
+        // 32768 fails range check in EndpointConfig
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 32768);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepCount() {
+        // -1 fails XSD validation
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-count", -1);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid1));
+        // 0 fails XSD validation
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-count", 0);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid2));
+        // 128 fails range check in EndpointConfig
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-count", 128);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
     public void testAmbiguousNetworkConfig_throwsException() {
         String xml = HAZELCAST_START_TAG
                 + "  <advanced-network enabled=\"true\">\n"
@@ -3965,7 +4184,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         PersistentMemoryConfig pmemConfig = xmlConfig.getNativeMemoryConfig()
                 .getPersistentMemoryConfig();
         List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig
-                                                                          .getDirectoryConfigs();
+                .getDirectoryConfigs();
         assertFalse(pmemConfig.isEnabled());
         assertEquals(MOUNTED, pmemConfig.getMode());
         assertEquals(2, directoryConfigs.size());
@@ -4175,6 +4394,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      <send-buffer-size-kb>34</send-buffer-size-kb>\n"
                 + "      <receive-buffer-size-kb>67</receive-buffer-size-kb>\n"
                 + "      <linger-seconds>11</linger-seconds>\n"
+                + "      <keep-count>12</keep-count>\n"
+                + "      <keep-interval-seconds>13</keep-interval-seconds>\n"
+                + "      <keep-idle-seconds>14</keep-idle-seconds>\n"
                 + "    </socket-options>\n"
                 + "    <symmetric-encryption enabled=\"true\">\n"
                 + "      <algorithm>Algorithm</algorithm>\n"
@@ -4322,13 +4544,15 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testSqlConfig() {
         String xml = HAZELCAST_START_TAG
-            + "<sql>\n"
-            + "  <statement-timeout-millis>30</statement-timeout-millis>\n"
-            + "</sql>"
-            + HAZELCAST_END_TAG;
+                + "<sql>\n"
+                + "  <statement-timeout-millis>30</statement-timeout-millis>\n"
+                + "  <catalog-persistence-enabled>true</catalog-persistence-enabled>\n"
+                + "</sql>"
+                + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+        assertTrue(sqlConfig.isCatalogPersistenceEnabled());
     }
 
     @Override
@@ -4341,6 +4565,157 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
 
         assertFalse(config.getIntegrityCheckerConfig().isEnabled());
+    }
+
+    @Override
+    @Test
+    public void testDataConnectionConfigs() {
+        String xml = HAZELCAST_START_TAG
+                + "    <data-connection name=\"mysql-database\">\n"
+                + "        <type>jdbc</type>\n"
+                + "        <properties>\n"
+                + "            <property name=\"jdbcUrl\">jdbc:mysql://dummy:3306</property>\n"
+                + "            <property name=\"some.property\">dummy-value</property>\n"
+                + "        </properties>\n"
+                + "      <shared>true</shared>\n"
+                + "    </data-connection>"
+                + "    <data-connection name=\"other-database\">\n"
+                + "        <type>other</type>\n"
+                + "    </data-connection>"
+                + HAZELCAST_END_TAG;
+
+        Map<String, DataConnectionConfig> dataConnectionConfigs = buildConfig(xml).getDataConnectionConfigs();
+
+        assertThat(dataConnectionConfigs).hasSize(2);
+        assertThat(dataConnectionConfigs).containsKey("mysql-database");
+        DataConnectionConfig mysqlDataConnectionConfig = dataConnectionConfigs.get("mysql-database");
+        assertThat(mysqlDataConnectionConfig.getType()).isEqualTo("jdbc");
+        assertThat(mysqlDataConnectionConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataConnectionConfig.isShared()).isTrue();
+        assertThat(mysqlDataConnectionConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataConnectionConfig.getProperty("some.property")).isEqualTo("dummy-value");
+
+        assertThat(dataConnectionConfigs).containsKey("other-database");
+        DataConnectionConfig otherDataConnectionConfig = dataConnectionConfigs.get("other-database");
+        assertThat(otherDataConnectionConfig.getType()).isEqualTo("other");
+    }
+
+    @Override
+    @Test
+    public void testTpcConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <tpc enabled=\"true\">\n"
+                + "        <eventloop-count>12</eventloop-count>\n"
+                + "    </tpc>"
+                + HAZELCAST_END_TAG;
+
+        TpcConfig tpcConfig = buildConfig(xml).getTpcConfig();
+
+        assertThat(tpcConfig.isEnabled()).isTrue();
+        assertThat(tpcConfig.getEventloopCount()).isEqualTo(12);
+    }
+
+    @Override
+    @Test
+    public void testTpcSocketConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <network>"
+                + "        <tpc-socket>\n"
+                + "            <port-range>14000-16000</port-range>\n"
+                + "            <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "            <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "        </tpc-socket>\n"
+                + "    </network>"
+                + HAZELCAST_END_TAG;
+
+        TpcSocketConfig tpcSocketConfig = buildConfig(xml).getNetworkConfig().getTpcSocketConfig();
+
+        assertThat(tpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+        assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+        assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+    }
+
+    @Test
+    public void testTpcSocketConfigAdvanced() {
+        String xml = HAZELCAST_START_TAG
+                + "    <advanced-network enabled=\"true\">\n"
+                + "        <member-server-socket-endpoint-config>\n"
+                + "            <tpc-socket>\n"
+                + "                <port-range>14000-16000</port-range>\n"
+                + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "            </tpc-socket>\n"
+                + "        </member-server-socket-endpoint-config>\n"
+                + "        <client-server-socket-endpoint-config>\n"
+                + "            <tpc-socket>\n"
+                + "                <port-range>14000-16000</port-range>\n"
+                + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "            </tpc-socket>\n"
+                + "        </client-server-socket-endpoint-config>\n"
+                + "        <memcache-server-socket-endpoint-config>\n"
+                + "            <tpc-socket>\n"
+                + "                <port-range>14000-16000</port-range>\n"
+                + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "            </tpc-socket>\n"
+                + "        </memcache-server-socket-endpoint-config>\n"
+                + "        <rest-server-socket-endpoint-config>\n"
+                + "            <tpc-socket>\n"
+                + "                <port-range>14000-16000</port-range>\n"
+                + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "            </tpc-socket>\n"
+                + "        </rest-server-socket-endpoint-config>\n"
+                + "        <wan-endpoint-config name=\"tokyo\">\n"
+                + "            <tpc-socket>\n"
+                + "                <port-range>14000-16000</port-range>\n"
+                + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "            </tpc-socket>\n"
+                + "        </wan-endpoint-config>\n"
+                + "        <wan-server-socket-endpoint-config name=\"london\">\n"
+                + "            <tpc-socket>\n"
+                + "                <port-range>14000-16000</port-range>\n"
+                + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "            </tpc-socket>\n"
+                + "        </wan-server-socket-endpoint-config>\n"
+                + "    </advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        Map<EndpointQualifier, EndpointConfig> endpointConfigs = buildConfig(xml)
+                .getAdvancedNetworkConfig()
+                .getEndpointConfigs();
+
+        assertThat(endpointConfigs).hasSize(6);
+
+        endpointConfigs.forEach((endpointQualifier, endpointConfig) -> {
+            TpcSocketConfig tpcSocketConfig = endpointConfig.getTpcSocketConfig();
+
+            assertThat(tpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+            assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+            assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+        });
+    }
+
+    @Override
+    @Test
+    public void testPartitioningAttributeConfigs() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"test\">"
+                + "     <partition-attributes>"
+                + "         <attribute>attr1</attribute>"
+                + "         <attribute>attr2</attribute>"
+                + "     </partition-attributes>"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        final MapConfig mapConfig = buildConfig(xml).getMapConfig("test");
+        assertThat(mapConfig.getPartitioningAttributeConfigs()).containsExactly(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
     }
 
     @Override
@@ -4362,4 +4737,16 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         return new InMemoryXmlConfig(xml);
     }
 
+    public String getAdvancedNetworkConfigWithSocketOption(String socketOption, int value) {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <member-server-socket-endpoint-config name=\"member-server-socket\">\n"
+                + "    <socket-options>"
+                + "      <" + socketOption + ">" + value + "</" + socketOption + ">"
+                + "    </socket-options>"
+                + "  </member-server-socket-endpoint-config>\n"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+        return xml;
+    }
 }

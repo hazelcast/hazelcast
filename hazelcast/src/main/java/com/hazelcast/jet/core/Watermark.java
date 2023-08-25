@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.impl.execution.BroadcastItem;
+import com.hazelcast.jet.impl.execution.SpecialBroadcastItem;
+import com.hazelcast.jet.impl.execution.WatermarkCoalescer;
 
-import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
+import java.util.Objects;
+
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
@@ -33,15 +35,29 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
  *
  * @since Jet 3.0
  */
-public final class Watermark implements BroadcastItem {
+public final class Watermark implements SpecialBroadcastItem {
 
     private final long timestamp;
 
     /**
-     * Constructs a new watermark item.
+     * The watermark identifier distinguishes watermarks obtained from different sources.
+     */
+    private final byte key;
+
+    /**
+     * Constructs a new watermark item with {@code 0} watermark key.
      */
     public Watermark(long timestamp) {
         this.timestamp = timestamp;
+        this.key = 0;
+    }
+
+    /**
+     * Constructs a new watermark item with specified key.
+     */
+    public Watermark(long timestamp, byte key) {
+        this.timestamp = timestamp;
+        this.key = key;
     }
 
     /**
@@ -51,20 +67,31 @@ public final class Watermark implements BroadcastItem {
         return timestamp;
     }
 
+    /**
+     * Returns the key of this watermark item.
+     */
+    public byte key() {
+        return key;
+    }
+
     @Override
     public boolean equals(Object o) {
-        return this == o || o instanceof Watermark && this.timestamp == ((Watermark) o).timestamp;
+        return this == o || o instanceof Watermark
+                && this.timestamp == ((Watermark) o).timestamp
+                && this.key == ((Watermark) o).key;
     }
 
     @Override
     public int hashCode() {
-        return Long.hashCode(timestamp);
+        return Objects.hash(timestamp, key);
     }
 
     @Override
     public String toString() {
-        return timestamp == IDLE_MESSAGE.timestamp
-                ? "Watermark{IDLE_MESSAGE}"
-                : "Watermark{ts=" + toLocalTime(timestamp) + '}';
+        return timestamp ==
+                WatermarkCoalescer.IDLE_MESSAGE_TIME
+                        ? "Watermark{IDLE_MESSAGE}"
+                        : "Watermark{ts=" + toLocalTime(timestamp)
+                + ", key=" + key + "}";
     }
 }

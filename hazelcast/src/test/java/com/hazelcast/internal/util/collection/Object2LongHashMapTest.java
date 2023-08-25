@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.hasItems;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -241,9 +240,9 @@ public class Object2LongHashMapTest {
         assertTrue(keys.contains("1"));
         assertTrue(keys.contains("2"));
         assertFalse(keys.contains("3"));
-        assertThat(keys, hasItems("1", "2"));
+        assertThat(keys).containsExactlyInAnyOrder("1", "2");
 
-        assertThat("iterator has failed to be reset", keys, hasItems("1", "2"));
+        assertThat(keys).as("iterator has failed to be reset").containsExactlyInAnyOrder("1", "2");
     }
 
     private static void assertValuesContainsElements(final Collection<Long> values) {
@@ -252,9 +251,11 @@ public class Object2LongHashMapTest {
         assertTrue(values.contains(1L));
         assertTrue(values.contains(2L));
         assertFalse(values.contains(3L));
-        assertThat(values, hasItems(1L, 2L));
+        assertThat(values).containsExactlyInAnyOrder(1L, 2L);
 
-        assertThat("iterator has failed to be reset", values, hasItems(1L, 2L));
+        assertThat(values)
+                .as("iterator has failed to be reset")
+                .containsExactlyInAnyOrder(1L, 2L);
     }
 
     @Test

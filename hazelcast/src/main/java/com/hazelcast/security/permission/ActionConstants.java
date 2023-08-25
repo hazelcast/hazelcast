@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,8 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.sql.impl.SqlInternalService;
+import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
+import com.hazelcast.sql.impl.InternalSqlService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 
@@ -81,6 +82,11 @@ public final class ActionConstants {
     // SQL-specific actions
     public static final String ACTION_CREATE_VIEW = "create-view";
     public static final String ACTION_DROP_VIEW = "drop-view";
+    public static final String ACTION_CREATE_TYPE = "create-type";
+    public static final String ACTION_DROP_TYPE = "drop-type";
+    public static final String ACTION_VIEW_DATACONNECTION = "view-dataconnection";
+    public static final String ACTION_CREATE_DATACONNECTION = "create-dataconnection";
+    public static final String ACTION_DROP_DATACONNECTION = "drop-dataconnection";
 
     private static final Map<String, PermissionFactory> PERMISSION_FACTORY_MAP = new HashMap<>();
 
@@ -109,7 +115,8 @@ public final class ActionConstants {
         PERMISSION_FACTORY_MAP.put(PNCounterService.SERVICE_NAME, PNCounterPermission::new);
         PERMISSION_FACTORY_MAP.put(ReliableTopicService.SERVICE_NAME, ReliableTopicPermission::new);
         PERMISSION_FACTORY_MAP.put(JetServiceBackend.SERVICE_NAME, (name, actions) -> new JobPermission(actions));
-        PERMISSION_FACTORY_MAP.put(SqlInternalService.SERVICE_NAME, SqlPermission::new);
+        PERMISSION_FACTORY_MAP.put(InternalSqlService.SERVICE_NAME, SqlPermission::new);
+        PERMISSION_FACTORY_MAP.put(DistributedScheduledExecutorService.SERVICE_NAME, ScheduledExecutorPermission::new);
     }
 
     private ActionConstants() {

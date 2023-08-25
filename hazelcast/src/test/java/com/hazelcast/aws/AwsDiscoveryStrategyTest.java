@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,8 +35,7 @@ import java.util.Optional;
 
 import static com.hazelcast.spi.partitiongroup.PartitionGroupMetaData.PARTITION_GROUP_ZONE;
 import static java.util.Collections.emptyList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
 
@@ -216,8 +215,8 @@ public class AwsDiscoveryStrategyTest {
 
         // 2 instances found
         given(awsClient.getAddresses()).willReturn(ImmutableMap.of(
-            "192.168.1.15", "38.146.24.2",
-            "192.168.1.16", "38.146.28.15"
+                "192.168.1.15", "38.146.24.2",
+                "192.168.1.16", "38.146.28.15"
         ));
 
         // when
@@ -225,7 +224,7 @@ public class AwsDiscoveryStrategyTest {
 
         // then
         // 2 * 8 = 16 addresses found
-        assertThat(toList(nodes), hasSize(16));
+        assertThat(toList(nodes)).hasSize(16);
     }
 
     @Test

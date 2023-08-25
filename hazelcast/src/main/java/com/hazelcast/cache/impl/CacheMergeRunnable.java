@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
@@ -76,11 +75,6 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Object, Object, ICacheRec
 
             consumer.accept(partitionId, createMergingEntry(getSerializationService(), key, dataValue, record));
         }
-    }
-
-    @Override
-    protected InMemoryFormat getInMemoryFormat(String dataStructureName) {
-        return cacheService.getConfigs().get(dataStructureName).getInMemoryFormat();
     }
 
     @Override

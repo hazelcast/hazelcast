@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.impl.SerializerAdapter;
-import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Serializer;
@@ -63,13 +62,6 @@ public class CompactWithSchemaStreamSerializerAdapter implements SerializerAdapt
     @Override
     public Serializer getImpl() {
         return serializer;
-    }
-
-    @Override
-    public void conditionallyReturnInputBufferToPool(Object object, BufferObjectDataInput inputBuffer, BufferPool pool) {
-        if (!(object instanceof DefaultCompactReader)) {
-            pool.returnInputBuffer(inputBuffer);
-        }
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
+import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.Diagnostics;
@@ -46,6 +48,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.internal.tpc.TpcServerBootstrap;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
@@ -74,13 +77,16 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.InternalSqlService;
+import com.hazelcast.sql.impl.MissingSqlService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
@@ -125,11 +131,13 @@ public class NodeEngineImpl implements NodeEngine {
     private final WanReplicationService wanReplicationService;
     private final Consumer<Packet> packetDispatcher;
     private final SplitBrainProtectionServiceImpl splitBrainProtectionService;
-    private final SqlServiceImpl sqlService;
+    private final InternalSqlService sqlService;
     private final Diagnostics diagnostics;
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
+    private final InternalDataConnectionService dataConnectionService;
+    private final TpcServerBootstrap tpcServerBootstrap;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -144,6 +152,8 @@ public class NodeEngineImpl implements NodeEngine {
             this.proxyService = new ProxyServiceImpl(this);
             this.serviceManager = new ServiceManagerImpl(this);
             this.executionService = new ExecutionServiceImpl(this);
+            this.tenantControlService = new TenantControlServiceImpl(this);
+            this.tpcServerBootstrap = new TpcServerBootstrap(this);
             this.operationService = new OperationServiceImpl(this);
             this.eventService = new EventServiceImpl(this);
             this.operationParker = new OperationParkerImpl(this);
@@ -155,7 +165,8 @@ public class NodeEngineImpl implements NodeEngine {
             }
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
-            this.sqlService = new SqlServiceImpl(this);
+            this.sqlService = createSqlService();
+            this.dataConnectionService = new DataConnectionServiceImpl(node, configClassLoader);
             this.packetDispatcher = new PacketDispatcher(
                     logger,
                     operationService.getOperationExecutor(),
@@ -170,11 +181,11 @@ public class NodeEngineImpl implements NodeEngine {
 
             checkMapMergePolicies(node);
 
-            this.tenantControlService = new TenantControlServiceImpl(this);
+
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
-            serviceManager.registerService(MemberSchemaService.SERVICE_NAME, node.memberSchemaService);
+            serviceManager.registerService(MemberSchemaService.SERVICE_NAME, node.getSchemaService());
             serviceManager.registerService(ConfigurationService.SERVICE_NAME, configurationService);
             serviceManager.registerService(TenantControlServiceImpl.SERVICE_NAME, tenantControlService);
         } catch (Throwable e) {
@@ -185,6 +196,29 @@ public class NodeEngineImpl implements NodeEngine {
             }
             throw rethrow(e);
         }
+    }
+
+    private InternalSqlService createSqlService() {
+        Class<?> clz;
+        try {
+            clz = Class.forName("com.hazelcast.sql.impl.SqlServiceImpl");
+        } catch (ClassNotFoundException e) {
+            // this is normal if the hazelcast-sql module isn't present - return disabled service
+            return new MissingSqlService(node.getThisUuid());
+        }
+
+        try {
+            Constructor<?> constructor = clz.getConstructor(getClass());
+            return (InternalSqlService) constructor.newInstance(this);
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException
+                 | ClassCastException e) {
+            // this isn't normal - we found the class, but there's something unexpected
+            throw new RuntimeException(e);
+        }
+    }
+
+    public TpcServerBootstrap getTpcServerBootstrap() {
+        return tpcServerBootstrap;
     }
 
     private void checkMapMergePolicies(Node node) {
@@ -252,7 +286,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.start();
         splitBrainProtectionService.start();
         sqlService.start();
-
+        tpcServerBootstrap.start();
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);
     }
@@ -366,8 +400,13 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public SqlServiceImpl getSqlService() {
+    public InternalSqlService getSqlService() {
         return sqlService;
+    }
+
+    @Override
+    public InternalDataConnectionService getDataConnectionService() {
+        return dataConnectionService;
     }
 
     @Override
@@ -393,6 +432,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public boolean isRunning() {
         return node.isRunning();
+    }
+
+    @Override
+    public boolean isStartCompleted() {
+        return node.getNodeExtension().isStartCompleted();
     }
 
     @Override
@@ -529,7 +573,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.reset();
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressWarnings({"checkstyle:npathcomplexity", "cyclomaticcomplexity"})
     public void shutdown(boolean terminate) {
         logger.finest("Shutting down services...");
         if (sqlService != null) {
@@ -560,12 +604,24 @@ public class NodeEngineImpl implements NodeEngine {
         if (executionService != null) {
             executionService.shutdown();
         }
+        if (tpcServerBootstrap != null) {
+            tpcServerBootstrap.shutdown();
+        }
         if (metricsRegistry != null) {
             metricsRegistry.shutdown();
         }
         if (diagnostics != null) {
             diagnostics.shutdown();
         }
+        if (dataConnectionService != null) {
+            dataConnectionService.shutdown();
+        }
+
+    }
+
+    @Override
+    public MemberSchemaService getSchemaService() {
+        return node.getSchemaService();
     }
 
     @Nonnull

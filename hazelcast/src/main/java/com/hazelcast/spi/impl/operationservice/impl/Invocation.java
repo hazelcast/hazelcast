@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -287,7 +287,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                 // then it means a member left.
                 throw new MemberLeftException(previousTargetMember);
             }
-            if (!(isJoinOperation(op) || isWanReplicationOperation(op))) {
+            if (requiresTargetAsClusterMember()) {
                 throw new TargetNotMemberException(target, op.getPartitionId(), op.getClass().getName(), op.getServiceName());
             }
         }
@@ -295,6 +295,10 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         if (op instanceof TargetAware) {
             ((TargetAware) op).setTarget(targetAddress);
         }
+    }
+
+    private boolean requiresTargetAsClusterMember() {
+        return !(isJoinOperation(op) || isWanReplicationOperation(op));
     }
 
     /**
@@ -447,6 +451,19 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         } else {
             return false;
         }
+    }
+
+    boolean detectAndHandleLeftMember() {
+        if (requiresTargetAsClusterMember()
+                // if target member is null, error is already notified
+                && targetMember != null
+                && context.clusterService.getMember(targetAddress, targetMember.getUuid()) == null) {
+            notifyError(new MemberLeftException("Member: " + targetMember
+                    + " with address: " + targetAddress + " has left the cluster."));
+            return true;
+        }
+
+        return false;
     }
 
     boolean skipTimeoutDetection() {
@@ -611,7 +628,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         if (connection != null) {
             write = context.outboundOperationHandler.send(op, connection);
         } else {
-            write = context.outboundOperationHandler.send(op, targetAddress);
+            write = context.outboundOperationHandler.send(op, targetAddress, connectionManager);
         }
 
         if (!write) {
@@ -688,6 +705,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         context.invocationRegistry.retire(this);
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     private void handleRetry(Object cause) {
         context.retryCount.inc();
 
@@ -708,7 +726,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                     context.invocationMonitor.execute(retryTask);
                 } else {
                     // progressive retry delay
-                    long delayMillis = Math.min(1 << (invokeCount - MAX_FAST_INVOCATION_COUNT), tryPauseMillis);
+                    long delayMillis = Math.min(1L << Math.min(62, invokeCount - MAX_FAST_INVOCATION_COUNT), tryPauseMillis);
                     context.invocationMonitor.schedule(retryTask, delayMillis);
                 }
             } catch (RejectedExecutionException e) {
@@ -762,7 +780,9 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                 + ", firstInvocationTime='" + timeToString(firstInvocationTimeMillis) + '\''
                 + ", lastHeartbeatMillis=" + lastHeartbeatMillis
                 + ", lastHeartbeatTime='" + timeToString(lastHeartbeatMillis) + '\''
-                + ", target=" + targetAddress
+                + ", targetAddress=" + targetAddress
+                + ", targetMember=" + targetMember
+                + ", memberListVersion=" + memberListVersion
                 + ", pendingResponse={" + pendingResponse + '}'
                 + ", backupsAcksExpected=" + backupsAcksExpected
                 + ", backupsAcksReceived=" + backupsAcksReceived

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hazelcast.cp.CPGroupId;
 /**
  * A {@code CPSubsystemException} which is thrown when a request is sent to
  * a destroyed CP group.
+ * This exception is used as an indicator for the caller's session invalidation
+ * for {@code FencedLock} and {@code Semaphore} data structures
  */
 public class CPGroupDestroyedException extends CPSubsystemException {
 

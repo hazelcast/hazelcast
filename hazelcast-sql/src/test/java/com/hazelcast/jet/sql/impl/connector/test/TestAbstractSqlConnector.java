@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.test;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor.Context;
@@ -27,8 +26,8 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
@@ -36,6 +35,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
@@ -105,22 +105,21 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
                 + ", '" + OPTION_STREAMING + "'='" + streamingActual + "'"
                 + ")";
         System.out.println(sql);
-        sqlService.execute(sql).updateCount();
+        sqlService.executeUpdate(sql);
     }
 
     @Nonnull
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
-    ) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
 
-        String[] names = options.get(OPTION_NAMES).split(DELIMITER);
-        String[] types = options.get(OPTION_TYPES).split(DELIMITER);
+        String[] names = externalResource.options().get(OPTION_NAMES).split(DELIMITER);
+        String[] types = externalResource.options().get(OPTION_TYPES).split(DELIMITER);
 
         assert names.length == types.length;
 
@@ -137,10 +136,9 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> resolvedFields) {
+        Map<String, String> options = externalResource.options();
         String[] names = options.get(OPTION_NAMES).split(DELIMITER);
         String[] types = options.get(OPTION_TYPES).split(DELIMITER);
 
@@ -181,31 +179,38 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table_,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
-        TestTable table = (TestTable) table_;
+        TestTable table = context.getTable();
         List<Object[]> rows = table.rows;
         boolean streaming = table.streaming;
+        Expression<Boolean> convertedPredicate = context.convertFilter(predicate);
+        List<Expression<?>> convertedProjection = context.convertProjection(projection);
 
         FunctionEx<Context, TestDataGenerator> createContextFn = ctx -> {
             ExpressionEvalContext evalContext = ExpressionEvalContext.from(ctx);
             EventTimePolicy<JetSqlRow> eventTimePolicy = eventTimePolicyProvider == null
                     ? EventTimePolicy.noEventTime()
                     : eventTimePolicyProvider.apply(evalContext);
-            return new TestDataGenerator(rows, predicate, projection, evalContext, eventTimePolicy, streaming);
+            return new TestDataGenerator(rows, convertedPredicate, convertedProjection, evalContext, eventTimePolicy, streaming);
         };
 
         ProcessorMetaSupplier pms = createProcessorSupplier(createContextFn);
-        return dag.newUniqueVertex(table.toString(), pms);
+        return context.getDag().newUniqueVertex(table.toString(), pms);
+    }
+
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
     }
 
     protected abstract ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn);
 
-    private static final class TestTable extends JetTable {
+    public static final class TestTable extends JetTable {
 
         private final List<Object[]> rows;
         private final boolean streaming;
@@ -218,7 +223,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
                 @Nonnull List<Object[]> rows,
                 boolean streaming
         ) {
-            super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(rows.size()));
+            super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(rows.size()), null, streaming);
             this.rows = rows;
             this.streaming = streaming;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,10 +51,9 @@ public class SingleProtocolDecoder
      */
     protected volatile boolean verifyProtocolCalled;
     final SingleProtocolEncoder encoder;
-    private final boolean shouldSignalMemberProtocolEncoder;
 
     public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler next, SingleProtocolEncoder encoder) {
-        this(supportedProtocol, new InboundHandler[]{next}, encoder, false);
+        this(supportedProtocol, new InboundHandler[]{next}, encoder);
     }
 
     /**
@@ -73,19 +72,13 @@ public class SingleProtocolDecoder
      *                                          that will be notified when
      *                                          non-matching protocol bytes have
      *                                          been received
-     * @param shouldSignalMemberProtocolEncoder a boolean used to notify the
-     *                                          next encoder in the pipeline
-     *                                          after the {@link SingleProtocolEncoder}
-     *                                          when matching protocol bytes
-     *                                          have been received
      */
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler[] next,
-                                 SingleProtocolEncoder encoder, boolean shouldSignalMemberProtocolEncoder) {
+                                 SingleProtocolEncoder encoder) {
         this.supportedProtocol = supportedProtocol;
         this.inboundHandlers = next;
         this.encoder = encoder;
-        this.shouldSignalMemberProtocolEncoder = shouldSignalMemberProtocolEncoder;
         this.verifyProtocolCalled = false;
     }
 
@@ -123,16 +116,6 @@ public class SingleProtocolDecoder
             // Initialize the connection
             initConnection();
             setupNextDecoder();
-            if (!channel.isClientMode()) {
-                // Set up the next encoder in the pipeline if in server mode
-                // This replaces SignalProtocolEncoder with next one in the pipeline
-                encoder.setupNextEncoder();
-            }
-
-            // Signal the member protocol encoder only if it's needed
-            if (shouldSignalMemberProtocolEncoder) {
-                ((MemberProtocolEncoder) encoder.getFirstOutboundHandler()).signalEncoderCanReplace();
-            }
 
             return CLEAN;
         } finally {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("30cc65e8cf0fc534a6c96a037f06ddf8")
+@Generated("5f9d814309da009ccb91e1f4009984b8")
 public final class MapStoreConfigHolderCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int WRITE_COALESCING_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int WRITE_DELAY_SECONDS_FIELD_OFFSET = WRITE_COALESCING_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int WRITE_BATCH_SIZE_FIELD_OFFSET = WRITE_DELAY_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int INITIAL_FRAME_SIZE = WRITE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int OFFLOAD_FIELD_OFFSET = WRITE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = OFFLOAD_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private MapStoreConfigHolderCodec() {
     }
@@ -43,6 +44,7 @@ public final class MapStoreConfigHolderCodec {
         encodeBoolean(initialFrame.content, WRITE_COALESCING_FIELD_OFFSET, mapStoreConfigHolder.isWriteCoalescing());
         encodeInt(initialFrame.content, WRITE_DELAY_SECONDS_FIELD_OFFSET, mapStoreConfigHolder.getWriteDelaySeconds());
         encodeInt(initialFrame.content, WRITE_BATCH_SIZE_FIELD_OFFSET, mapStoreConfigHolder.getWriteBatchSize());
+        encodeBoolean(initialFrame.content, OFFLOAD_FIELD_OFFSET, mapStoreConfigHolder.isOffload());
         clientMessage.add(initialFrame);
 
         CodecUtil.encodeNullable(clientMessage, mapStoreConfigHolder.getClassName(), StringCodec::encode);
@@ -64,6 +66,12 @@ public final class MapStoreConfigHolderCodec {
         boolean writeCoalescing = decodeBoolean(initialFrame.content, WRITE_COALESCING_FIELD_OFFSET);
         int writeDelaySeconds = decodeInt(initialFrame.content, WRITE_DELAY_SECONDS_FIELD_OFFSET);
         int writeBatchSize = decodeInt(initialFrame.content, WRITE_BATCH_SIZE_FIELD_OFFSET);
+        boolean isOffloadExists = false;
+        boolean offload = false;
+        if (initialFrame.content.length >= OFFLOAD_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            offload = decodeBoolean(initialFrame.content, OFFLOAD_FIELD_OFFSET);
+            isOffloadExists = true;
+        }
 
         java.lang.String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         com.hazelcast.internal.serialization.Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
@@ -74,6 +82,6 @@ public final class MapStoreConfigHolderCodec {
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder(enabled, writeCoalescing, writeDelaySeconds, writeBatchSize, className, implementation, factoryClassName, factoryImplementation, properties, initialLoadMode);
+        return new com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder(enabled, writeCoalescing, writeDelaySeconds, writeBatchSize, className, implementation, factoryClassName, factoryImplementation, properties, initialLoadMode, isOffloadExists, offload);
     }
 }

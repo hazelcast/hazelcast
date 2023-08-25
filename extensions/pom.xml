@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021 Hazelcast Inc.
+  ~ Copyright 2023 Hazelcast Inc.
   ~
   ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.2-SNAPSHOT</version>
+        <version>5.4.0-SNAPSHOT</version>
     </parent>
 
     <modules>
@@ -39,13 +39,14 @@
         <module>cdc-mysql</module>
         <module>cdc-postgres</module>
         <module>csv</module>
-        <module>elasticsearch/elasticsearch-6</module>
         <module>elasticsearch/elasticsearch-7</module>
         <module>hadoop</module>
         <module>hadoop-dist</module>
-        <module>hazelcast-3-connector</module>
         <module>kafka</module>
+        <module>kafka-connect</module>
         <module>kinesis</module>
+        <module>mapstore</module>
+        <module>mongodb</module>
         <module>s3</module>
     </modules>
 
@@ -135,7 +136,7 @@
                     <configuration>
                         <createSourcesJar>true</createSourcesJar>
                         <shadeSourcesContent>true</shadeSourcesContent>
-                        <createDependencyReducedPom>true</createDependencyReducedPom>
+                        <createDependencyReducedPom>false</createDependencyReducedPom>
                         <shadedArtifactAttached>true</shadedArtifactAttached>
                         <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
                         <transformers>

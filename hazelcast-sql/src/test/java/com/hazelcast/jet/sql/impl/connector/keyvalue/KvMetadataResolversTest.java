@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,21 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
+import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
 
 import java.util.List;
@@ -43,8 +47,10 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(JUnitParamsRunner.class)
 public class KvMetadataResolversTest {
@@ -55,20 +61,39 @@ public class KvMetadataResolversTest {
     private KvMetadataResolver resolver;
 
     @Mock
+    private CalciteSqlOptimizer optimizer;
+
+    @Mock
+    private RelationsStorage relationsStorage;
+
+    @Mock
+    private SqlServiceImpl sqlService;
+
+    @Mock
     private NodeEngine nodeEngine;
 
     @Mock
     private InternalSerializationService ss;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
+        openMocks = openMocks(this);
 
         given(nodeEngine.getSerializationService()).willReturn(ss);
         given(resolver.supportedFormats())
                 .willAnswer((Answer<Stream<String>>) invocationOnMock -> Stream.of(JAVA_FORMAT));
+        given(nodeEngine.getSqlService()).willReturn(sqlService);
+        given(sqlService.getOptimizer()).willReturn(optimizer);
+        given(optimizer.relationsStorage()).willReturn(relationsStorage);
 
         resolvers = new KvMetadataResolvers(resolver);
+    }
+
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
     }
 
     @Test
@@ -95,9 +120,9 @@ public class KvMetadataResolversTest {
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
-        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(eq(true), eq(emptyList()), eq(options), eq(ss)))
                 .willReturn(Stream.of(field("__key", QueryDataType.INT)));
-        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(eq(false), eq(emptyList()), eq(options), eq(ss)))
                 .willReturn(Stream.of(field("this", QueryDataType.VARCHAR)));
 
         List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
@@ -114,12 +139,12 @@ public class KvMetadataResolversTest {
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
-        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(eq(true), eq(emptyList()), eq(options), eq(ss)))
                 .willReturn(Stream.of(
                         field("__key", QueryDataType.INT, "__key.name"),
                         field("keyField", QueryDataType.INT, "__key.__keyField")
                 ));
-        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(eq(false), eq(emptyList()), eq(options), eq(ss)))
                 .willReturn(Stream.of(
                         field("this", QueryDataType.VARCHAR, "this.name"),
                         field("thisField", QueryDataType.VARCHAR, "this.thisField")
@@ -139,9 +164,9 @@ public class KvMetadataResolversTest {
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
-        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(eq(true), eq(emptyList()), eq(options), eq(ss)))
                 .willReturn(Stream.of(field("field", QueryDataType.INT, "__key.field")));
-        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(eq(false), eq(emptyList()), eq(options), eq(ss)))
                 .willReturn(Stream.of(field("field", QueryDataType.VARCHAR, "this.field")));
 
         List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
@@ -155,9 +180,9 @@ public class KvMetadataResolversTest {
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
-        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(eq(true), eq(emptyList()), eq(options), eq(ss)))
                 .willReturn(Stream.empty());
-        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(eq(false), eq(emptyList()), eq(options), eq(ss)))
                 .willReturn(Stream.of(field("this", QueryDataType.INT)));
 
         List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
@@ -170,9 +195,9 @@ public class KvMetadataResolversTest {
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
-        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(eq(true), eq(emptyList()), eq(options), eq(ss)))
                 .willReturn(Stream.of(field("__key", QueryDataType.INT)));
-        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(eq(false), eq(emptyList()), eq(options), eq(ss)))
                 .willReturn(Stream.empty());
 
         List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
@@ -185,9 +210,9 @@ public class KvMetadataResolversTest {
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
-        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(eq(true), eq(emptyList()), eq(options), eq(ss)))
                 .willReturn(Stream.empty());
-        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+        given(resolver.resolveAndValidateFields(eq(false), eq(emptyList()), eq(options), eq(ss)))
                 .willReturn(Stream.empty());
 
         assertThatThrownBy(() -> resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine))
@@ -213,6 +238,7 @@ public class KvMetadataResolversTest {
         );
         given(resolver.resolveMetadata(key, emptyList(), options, ss)).willReturn(mock(KvMetadata.class));
 
+        // TODO: fix
         KvMetadata metadata = resolvers.resolveMetadata(key, emptyList(), options, ss);
 
         assertThat(metadata).isNotNull();

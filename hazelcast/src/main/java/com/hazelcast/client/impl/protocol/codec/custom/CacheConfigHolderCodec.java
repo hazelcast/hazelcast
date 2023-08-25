@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("940e5ecc325b3cd073644fa501289247")
+@Generated("4569a4ae7390cede52e57910c4ee9307")
 public final class CacheConfigHolderCodec {
     private static final int BACKUP_COUNT_FIELD_OFFSET = 0;
     private static final int ASYNC_BACKUP_COUNT_FIELD_OFFSET = BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -71,6 +71,7 @@ public final class CacheConfigHolderCodec {
         MergePolicyConfigCodec.encode(clientMessage, cacheConfigHolder.getMergePolicyConfig());
         ListMultiFrameCodec.encodeNullable(clientMessage, cacheConfigHolder.getCachePartitionLostListenerConfigs(), ListenerConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, cacheConfigHolder.getMerkleTreeConfig(), MerkleTreeConfigCodec::encode);
+        DataPersistenceConfigCodec.encode(clientMessage, cacheConfigHolder.getDataPersistenceConfig());
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -112,9 +113,15 @@ public final class CacheConfigHolderCodec {
             merkleTreeConfig = CodecUtil.decodeNullable(iterator, MerkleTreeConfigCodec::decode);
             isMerkleTreeConfigExists = true;
         }
+        boolean isDataPersistenceConfigExists = false;
+        com.hazelcast.config.DataPersistenceConfig dataPersistenceConfig = null;
+        if (!iterator.peekNext().isEndFrame()) {
+            dataPersistenceConfig = DataPersistenceConfigCodec.decode(iterator);
+            isDataPersistenceConfigExists = true;
+        }
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder(name, managerPrefix, uriString, backupCount, asyncBackupCount, inMemoryFormat, evictionConfigHolder, wanReplicationRef, keyClassName, valueClassName, cacheLoaderFactory, cacheWriterFactory, expiryPolicyFactory, readThrough, writeThrough, storeByValue, managementEnabled, statisticsEnabled, hotRestartConfig, eventJournalConfig, splitBrainProtectionName, listenerConfigurations, mergePolicyConfig, disablePerEntryInvalidationEvents, cachePartitionLostListenerConfigs, isMerkleTreeConfigExists, merkleTreeConfig);
+        return new com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder(name, managerPrefix, uriString, backupCount, asyncBackupCount, inMemoryFormat, evictionConfigHolder, wanReplicationRef, keyClassName, valueClassName, cacheLoaderFactory, cacheWriterFactory, expiryPolicyFactory, readThrough, writeThrough, storeByValue, managementEnabled, statisticsEnabled, hotRestartConfig, eventJournalConfig, splitBrainProtectionName, listenerConfigurations, mergePolicyConfig, disablePerEntryInvalidationEvents, cachePartitionLostListenerConfigs, isMerkleTreeConfigExists, merkleTreeConfig, isDataPersistenceConfigExists, dataPersistenceConfig);
     }
 }

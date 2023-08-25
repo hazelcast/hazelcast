@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.clientside;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDataConnectionConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
@@ -33,6 +34,10 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfig
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddWanReplicationConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.holder.WanBatchPublisherConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanConsumerConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanCustomPublisherConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder;
@@ -40,6 +45,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHold
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.WanReplicationConfigTransformer;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.AdvancedNetworkConfig;
@@ -49,6 +55,8 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
@@ -84,6 +92,7 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
@@ -98,9 +107,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
+import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
@@ -153,7 +165,8 @@ public class ClientDynamicClusterConfig extends Config {
                 mapConfig.getWanReplicationRef(), mapConfig.getIndexConfigs(), mapConfig.getAttributeConfigs(),
                 queryCacheConfigHolders, partitioningStrategyClassName, partitioningStrategy, mapConfig.getHotRestartConfig(),
                 mapConfig.getEventJournalConfig(), mapConfig.getMerkleTreeConfig(), mapConfig.getMetadataPolicy().getId(),
-                mapConfig.isPerEntryStatsEnabled());
+                mapConfig.isPerEntryStatsEnabled(), mapConfig.getDataPersistenceConfig(), mapConfig.getTieredStoreConfig(),
+                mapConfig.getPartitioningAttributeConfigs());
         invoke(request);
         return this;
     }
@@ -183,7 +196,8 @@ public class ClientDynamicClusterConfig extends Config {
                 cacheConfig.getCacheEntryListeners(),
                 EvictionConfigHolder.of(cacheConfig.getEvictionConfig(), serializationService),
                 cacheConfig.getWanReplicationRef(), cacheConfig.getEventJournalConfig(),
-                cacheConfig.getHotRestartConfig(), cacheConfig.getMerkleTreeConfig());
+                cacheConfig.getHotRestartConfig(), cacheConfig.getMerkleTreeConfig(),
+                cacheConfig.getDataPersistenceConfig());
         invoke(request);
         return this;
     }
@@ -318,7 +332,8 @@ public class ClientDynamicClusterConfig extends Config {
                 scheduledExecutorConfig.getName(), scheduledExecutorConfig.getPoolSize(),
                 scheduledExecutorConfig.getDurability(), scheduledExecutorConfig.getCapacity(),
                 scheduledExecutorConfig.getSplitBrainProtectionName(), scheduledExecutorConfig.getMergePolicyConfig().getPolicy(),
-                scheduledExecutorConfig.getMergePolicyConfig().getBatchSize(), scheduledExecutorConfig.isStatisticsEnabled());
+                scheduledExecutorConfig.getMergePolicyConfig().getBatchSize(), scheduledExecutorConfig.isStatisticsEnabled(),
+                scheduledExecutorConfig.getCapacityPolicy().getId());
         invoke(request);
         return this;
     }
@@ -343,9 +358,27 @@ public class ClientDynamicClusterConfig extends Config {
         return this;
     }
 
+
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+        WanReplicationConfigTransformer transformer = new WanReplicationConfigTransformer(serializationService);
+        WanConsumerConfigHolder consumerConfig = transformer.toHolder(wanReplicationConfig.getConsumerConfig());
+        List<WanCustomPublisherConfigHolder> customPublisherConfigs =
+                wanReplicationConfig.getCustomPublisherConfigs()
+                                    .stream()
+                                    .filter(Objects::nonNull)
+                                    .map(transformer::toHolder)
+                                    .collect(Collectors.toList());
+        List<WanBatchPublisherConfigHolder> batchPublisherConfigs =
+                wanReplicationConfig.getBatchPublisherConfigs()
+                                    .stream()
+                                    .filter(Objects::nonNull)
+                                    .map(transformer::toHolder)
+                                    .collect(Collectors.toList());
+        ClientMessage request = DynamicConfigAddWanReplicationConfigCodec.encodeRequest(
+                wanReplicationConfig.getName(), consumerConfig, customPublisherConfigs, batchPublisherConfigs);
+        invoke(request);
+        return this;
     }
 
     @Override
@@ -1109,6 +1142,48 @@ public class ClientDynamicClusterConfig extends Config {
     @Nonnull
     @Override
     public Config setIntegrityCheckerConfig(final IntegrityCheckerConfig config) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Map<String, DataConnectionConfig> getDataConnectionConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setDataConnectionConfigs(Map<String, DataConnectionConfig> dataConnectionConfigs) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config addDataConnectionConfig(DataConnectionConfig dataConnectionConfig) {
+        DataConnectionConfigValidator.validate(dataConnectionConfig);
+        ClientMessage request = DynamicConfigAddDataConnectionConfigCodec.encodeRequest(
+                dataConnectionConfig.getName(), dataConnectionConfig.getType(),
+                dataConnectionConfig.isShared(), toMap(dataConnectionConfig.getProperties()));
+        invoke(request);
+        return this;
+    }
+
+    @Override
+    public DataConnectionConfig getDataConnectionConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public DataConnectionConfig findDataConnectionConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public TpcConfig getTpcConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public Config setTpcConfig(@Nonnull TpcConfig tpcConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

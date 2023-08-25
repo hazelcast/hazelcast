@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ public class SerializerHooksTest {
                 new MutableReference<>("payload"),
                 new LinTrendAccumulator(42, BigInteger.ONE, BigInteger.TEN,
                         BigInteger.valueOf(42), BigInteger.valueOf(43)),
-                new PickAnyAccumulator<>("picked", 42),
+                new PickAnyAccumulator<>("picked"),
                 tuple2("a", "b"),
                 tuple3("a", "b", "c"),
                 tuple4("a", "b", "c", "d"),

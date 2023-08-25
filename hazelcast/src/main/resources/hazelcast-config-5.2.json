@@ -147,6 +147,9 @@
         },
         "integrity-checker": {
           "$ref": "#/definitions/IntegrityChecker"
+        },
+        "external-data-store": {
+          "$ref": "#/definitions/ExternalDataStoreConfig"
         }
       }
     },
@@ -227,6 +230,9 @@
         },
         "network": {
           "$ref": "#/definitions/ClientNetwork"
+        },
+        "sql": {
+          "$ref": "#/definitions/ClientSql"
         }
       }
     },
@@ -1091,6 +1097,40 @@
               "description": "Defines an assortment of transformations which can be applied to unique-key values. OBJECT: Extracted unique key value is interpreted as an object value. Non-negative unique ID is assigned to every distinct object value. LONG: Extracted unique key value is interpreted as a whole integer value of byte, short, int or long type. The extracted value is upcasted to long (if necessary) and unique non-negative ID is assigned to every distinct value. RAW: Extracted unique key value is interpreted as a whole integer value of byte, short, int or long type. The extracted value is upcasted to long (if necessary) and the resulting value is used directly as an ID."
             }
           }
+        },
+        "btree-index": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "page-size": {
+              "$ref": "#/definitions/Capacity",
+              "description": "Page size of the index B+ Tree. Default value is 16 kB.",
+              "default": {
+                "value": 16,
+                "unit": "KILOBYTES"
+              }
+            },
+
+            "memory-tier": {
+              "type": "object",
+              "description": "Memory tier.",
+              "additionalProperties": false,
+              "properties": {
+                "capacity": {
+                  "$ref": "#/definitions/Capacity",
+                  "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes."
+                }
+              },
+              "default": {
+                "capacity": {
+                  "default": {
+                    "value": 16,
+                    "unit": "KILOBYTES"
+                  }
+                }
+              }
+            }
+          }
         }
       },
       "required": [
@@ -1244,6 +1284,11 @@
                 "default": "LAZY",
                 "description": "LAZY: Default load mode where load is async; EAGER: load mode where load is blocked till all partitions are loaded."
               },
+              "offload": {
+                "type": "boolean",
+                "default": true,
+                "description": "Set true to offload map-store interacting code parts from partition threads, otherwise interaction is executed inside partition thread"
+              },
               "write-delay-seconds": {
                 "type": "integer",
                 "minimum": 0,
@@ -1283,7 +1328,8 @@
             "additionalProperties": false,
             "properties": {
               "name": {
-                "type": "string"
+                "type": "string",
+                "default": "default"
               },
               "time-to-live-seconds": {
                 "type": "integer",
@@ -1497,7 +1543,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "capacity": {
-                    "$ref": "#/definitions/MemorySize",
+                    "$ref": "#/definitions/Capacity",
                     "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes."
                   }
                 }
@@ -2419,6 +2465,11 @@
           "default": 120,
           "description": "Timeout duration for CP members to restore their data from disk. CP member fails its startup if it cannot complete its CP data restore process in the configured duration."
         },
+        "cp-member-priority": {
+          "type": "integer",
+          "default": 0,
+          "description": "The CP member priority. The CP groups' leadership will be eventually transferred to members with higher priorities within the CP group."
+        },
         "raft-algorithm": {
           "type": "object",
           "additionalProperties": false,
@@ -2940,7 +2991,7 @@
         "migration"
       ]
     },
-    "MemorySize": {
+    "Capacity": {
       "type": "object",
       "properties": {
         "unit": {
@@ -2978,7 +3029,11 @@
           "description": "Type of the memory allocator. The default value is POOLED. Available values are as follows: \\n- STANDARD: Allocates/frees the memory using default OS memory manager, \\n- POOLED: Manages memory blocks in thread local pools"
         },
         "size": {
-          "$ref": "#/definitions/MemorySize"
+          "$ref": "#/definitions/Capacity",
+          "description": "Deprecated, use 'capacity' instead."
+        },
+        "capacity": {
+          "$ref": "#/definitions/Capacity"
         },
         "min-block-size": {
           "type": "integer",
@@ -3210,31 +3265,32 @@
         "compact-serialization": {
           "type": "object",
           "additionalProperties": false,
-          "description": "Contains configuration elements and attributes for the compact serialization. This feature is in the BETA status and any schema definition related to it might change in the future without a prior notice, until the feature is promoted to the stable status.",
+          "description": "Contains configuration elements and attributes for the compact serialization.",
           "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": false,
-              "description": "Enables/disables the compact serialization."
-            },
-            "registered-classes": {
+            "serializers": {
               "type": "array",
-              "description": "Contains classes registered to be serialized with compact serialization.",
+              "description": "Contains the Compact serializers to be registered.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "serializer": {
+                    "type": "string",
+                    "description": "Fully qualified class name of the Compact serializer."
+                  }
+                }
+              }
+            },
+            "classes": {
+              "type": "array",
+              "description": "Contains the classes to be serialized with Compact serialization, which will override any other serialization mechanisms.",
               "items": {
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
                   "class": {
                     "type": "string",
-                    "description": "Fully qualified class name of the class to be serialized with compact serialization. If the class has an explicit serializer, it must be specified with type-name and serializer attributes. Those attributes must not be present if the class is to be serialized with reflective compact serializer. Either both or none of the attributes must be present."
-                  },
-                  "serializer": {
-                    "type": "string",
-                    "description": "Fully qualified class name of the compact serializer to be used to serialize the class."
-                  },
-                  "type-name": {
-                    "type": "string",
-                    "description": "Type name of the class."
+                    "description": "Fully qualified name of the class."
                   }
                 }
               }
@@ -3749,7 +3805,7 @@
             "description": "Device base directory that will be used for tiered-store."
           },
           "capacity": {
-            "$ref": "#/definitions/MemorySize",
+            "$ref": "#/definitions/Capacity",
             "description": "Device capacity, i.e., what is the soft upper bound capacity of the device. The default is 256 gigabytes."
           },
           "block-size": {
@@ -4219,6 +4275,22 @@
         },
         "format-pattern": {
           "type": "string"
+        }
+      }
+    },
+    "ClientSql": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resubmission-mode": {
+          "enum": [
+            "NEVER",
+            "RETRY_SELECTS",
+            "RETRY_SELECTS_ALLOW_DUPLICATES",
+            "RETRY_ALL"
+          ],
+          "default": "NEVER",
+          "description": "The configuration when to retry query that fails with reasons CONNECTION_PROBLEM, PARTITION_DISTRIBUTION, TOPOLOGY_CHANGE."
         }
       }
     },
@@ -4892,6 +4964,31 @@
         "enabled"
       ],
       "description": "Enables/disables Integrity Checker. Integrity Checker can be disabled to improve startup time."
+    },
+    "ExternalDataStoreConfig": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the external data store configuration."
+          },
+          "class-name": {
+            "type": "string",
+            "description": "The name of the class implementing ExternalDataStoreFactory."
+          },
+          "shared": {
+            "type": "boolean",
+            "description": "If true reuse an instance of JDBC pool or any other storage driver (e.g. kafka client) between jobs or instances of MapStore."
+          },
+          "properties": {
+            "description": "The \"properties\" used for configuring external data store",
+            "type": "object"
+          }
+        }
+      }
     }
   }
 }

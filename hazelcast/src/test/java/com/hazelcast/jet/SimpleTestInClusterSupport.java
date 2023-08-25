@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
@@ -33,13 +35,17 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.management.ThreadDumpGenerator.dumpAllThreads;
 import static com.hazelcast.jet.Util.idToString;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Base class for tests that share the cluster for all jobs. The subclass must
@@ -56,6 +62,8 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static HazelcastInstance client;
 
     protected static void initialize(int memberCount, @Nullable Config config) {
+        assertNoRunningInstances();
+
         assert factory == null : "already initialized";
         factory = new TestHazelcastFactory();
         instances = new HazelcastInstance[memberCount];
@@ -67,6 +75,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         for (int i = 0; i < memberCount; i++) {
             instances[i] = factory.newHazelcastInstance(config);
         }
+        assertEqualsEventually(() -> instance().getLifecycleService().isRunning(), true);
     }
 
     protected static void initializeWithClient(
@@ -81,34 +90,78 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         client = factory.newHazelcastClient(clientConfig);
     }
 
+    protected void assertNoLightJobsLeftEventually(HazelcastInstance instance) {
+        assertTrueEventually(() -> {
+            List<Job> runningJobs = instance.getJet().getJobs().stream()
+                    .filter(Job::isLightJob)
+                    .collect(toList());
+            int size = runningJobs.size();
+            assertEquals("at this point no running light jobs were expected, but got: " + runningJobs, 0, size);
+        });
+    }
+
     @After
     public void supportAfter() {
         if (instances == null) {
             return;
         }
-        for (HazelcastInstance inst : instances) {
+        List<HazelcastInstance> stillActiveInstances = Arrays.stream(instances())
+                .filter(SimpleTestInClusterSupport::testIfInstanceIsStillActive)
+                .collect(toList());
+
+        if (stillActiveInstances.isEmpty()) {
+            return;
+        }
+        for (HazelcastInstance inst : stillActiveInstances) {
             PacketFiltersUtil.resetPacketFiltersFrom(inst);
         }
         // after each test ditch all jobs and objects
-        List<Job> jobs = instances[0].getJet().getJobs();
+        List<Job> jobs = stillActiveInstances.get(0).getJet().getJobs();
         SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in SimpleTestInClusterSupport.@After: " +
                 jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
         for (Job job : jobs) {
             ditchJob(job, instances());
         }
         // cancel all light jobs by cancelling their executions
-        for (HazelcastInstance inst : instances) {
+        for (HazelcastInstance inst : stillActiveInstances) {
             JetServiceBackend jetServiceBackend = getJetServiceBackend(inst);
             jetServiceBackend.getJobExecutionService().cancelAllExecutions("ditching all jobs after a test");
             jetServiceBackend.getJobExecutionService().waitAllExecutionsTerminated();
         }
-        Collection<DistributedObject> objects = instances()[0].getDistributedObjects();
+        // If the client was created and used any proxy to a distributed object, we need to destroy that object through
+        // client, so the proxy in client's internals was destroyed as well. Without going through client, if we use
+        // the same distributed object in more than one test, we are not going to invoke InitializeDistributedObjectOperation
+        // in all of them (just in the first one).
+        Collection<DistributedObject> objects = client != null ? client.getDistributedObjects()
+                : instances()[0].getDistributedObjects();
         SUPPORT_LOGGER.info("Destroying " + objects.size()
                 + " distributed objects in SimpleTestInClusterSupport.@After: "
                 + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())
                          .collect(Collectors.joining(", ", "[", "]")));
         for (DistributedObject o : objects) {
             o.destroy();
+        }
+        for (HazelcastInstance instance : instances) {
+            assertTrueEventually(() -> {
+                // Let's wait for all unprocessed operations (like destroying distributed object) to complete
+                assertEquals(0, getNodeEngineImpl(instance).getEventService().getEventQueueSize());
+            });
+        }
+    }
+
+    private static boolean testIfInstanceIsStillActive(HazelcastInstance instance) {
+        if (instance instanceof HazelcastInstanceImpl) {
+            try {
+                return ((HazelcastInstanceImpl) instance).isRunning();
+            } catch (HazelcastInstanceNotActiveException ignored) {
+                return false;
+            }
+        }
+        try {
+            instance.getCluster().getClusterState();
+            return true;
+        } catch (HazelcastInstanceNotActiveException ignored) {
+            return false;
         }
     }
 
@@ -121,6 +174,9 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
                         .get(1, TimeUnit.MINUTES);
             }
         } catch (Exception e) {
+            // Shutdown failed, get thread dump for debugging
+            System.err.println(dumpAllThreads());
+
             // Log the exception, so it is visible in log file for the test class,
             // otherwise it is only visible in surefire test report
             SUPPORT_LOGGER.warning("Terminating instance factory failed", e);

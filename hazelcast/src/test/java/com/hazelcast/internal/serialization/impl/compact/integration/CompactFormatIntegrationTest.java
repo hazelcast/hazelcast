@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -76,14 +76,13 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
 
     @Override
     protected Config getConfig() {
-        Config config = super.smallInstanceConfig();
+        Config config = smallInstanceConfig();
         config.getMapConfig("test").setInMemoryFormat(inMemoryFormat);
         if (serverDoesNotHaveClasses) {
             List<String> excludes = singletonList("example.serialization");
             FilteringClassLoader classLoader = new FilteringClassLoader(excludes, null);
             config.setClassLoader(classLoader);
         }
-        config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
         return config;
     }
 
@@ -97,41 +96,38 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
 
     @Test
     public void testBasic() {
-        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
-        IMap<Integer, EmployeeDTO> map = instance1.getMap("test");
-        map.put(1, employeeDTO);
+        Object value = newValue(30, 102310312);
+        IMap<Integer, Object> map = instance1.getMap("test");
+        map.put(1, value);
 
-        IMap<Integer, EmployeeDTO> map2 = instance2.getMap("test");
-        assertEquals(employeeDTO, map2.get(1));
+        IMap<Integer, Object> map2 = instance2.getMap("test");
+        assertEquals(value, map2.get(1));
     }
 
     @Test
     public void testBasicQuery() {
-        IMap<Integer, EmployeeDTO> map = instance1.getMap("test");
+        IMap<Integer, Object> map = instance1.getMap("test");
         for (int i = 0; i < 100; i++) {
-            EmployeeDTO employeeDTO = new EmployeeDTO(i, 102310312);
-            map.put(i, employeeDTO);
+            map.put(i, newValue(i, 102310312));
         }
 
-        IMap<Integer, EmployeeDTO> map2 = instance2.getMap("test");
+        IMap<Integer, Object> map2 = instance2.getMap("test");
         int size = map2.keySet(Predicates.sql("age > 19")).size();
         assertEquals(80, size);
-
     }
 
     @Test
     public void testJoinedMemberQuery() {
-        IMap<Integer, EmployeeDTO> map = instance1.getMap("test");
+        IMap<Integer, Object> map = instance1.getMap("test");
         for (int i = 0; i < 100; i++) {
-            EmployeeDTO employeeDTO = new EmployeeDTO(i, 102310312);
-            map.put(i, employeeDTO);
+            map.put(i, newValue(i, 102310312));
         }
 
         HazelcastInstance newInstance = factory.newHazelcastInstance(getConfig());
 
         waitClusterForSafeState(newInstance);
 
-        IMap<Integer, EmployeeDTO> map2 = newInstance.getMap("test");
+        IMap<Integer, Object> map2 = newInstance.getMap("test");
         int size = map2.keySet(Predicates.sql("age > 19")).size();
         assertEquals(80, size);
     }
@@ -140,14 +136,7 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
     public void testEntryProcessor() {
         IMap<Integer, Object> map = instance1.getMap("test");
         for (int i = 0; i < 100; i++) {
-            if (serverDoesNotHaveClasses) {
-                GenericRecord record = GenericRecordBuilder.compact("employee").setInt32("age", i)
-                        .setInt64("id", 102310312).build();
-                map.put(i, record);
-            } else {
-                EmployeeDTO employeeDTO = new EmployeeDTO(i, 102310312);
-                map.put(i, employeeDTO);
-            }
+            map.put(i, newValue(i, 102310312));
         }
 
         IMap map2 = instance2.getMap("test");
@@ -164,8 +153,18 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
             } else {
                 EmployeeDTO employeeDTO = (EmployeeDTO) map.get(i);
                 assertEquals(employeeDTO.getAge(), 1000 + i);
-
             }
+        }
+    }
+
+    private Object newValue(int age, long id) {
+        if (serverDoesNotHaveClasses) {
+            return GenericRecordBuilder.compact("employee")
+                    .setInt32("age", age)
+                    .setInt64("id", id)
+                    .build();
+        } else {
+            return new EmployeeDTO(age, id);
         }
     }
 
@@ -183,28 +182,11 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
         @Override
         public Object process(Map.Entry<Integer, GenericRecord> entry) {
             GenericRecord value = entry.getValue();
-            GenericRecord newValue = value.cloneWithBuilder()
+            GenericRecord newValue = value.newBuilderWithClone()
                     .setInt32("age", value.getInt32("age") + 1000)
                     .build();
             entry.setValue(newValue);
             return null;
         }
     }
-
-    @Test
-    public void testClusterRestart() {
-        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
-        IMap<Integer, EmployeeDTO> map = instance1.getMap("test");
-        map.put(1, employeeDTO);
-
-        restartCluster();
-
-        map.put(1, employeeDTO);
-        assertEquals(employeeDTO, map.get(1));
-        // Perform a query to make sure that the schema is available on the cluster
-        assertEquals(1, map.values(Predicates.sql("age == 30")).size());
-    }
-
-    protected abstract void restartCluster();
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,23 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
+import com.google.common.collect.ImmutableSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
+import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.type.TypeKind;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -36,6 +42,9 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE_PREFIX;
+import static com.hazelcast.sql.impl.schema.type.TypeKind.COMPACT;
+import static com.hazelcast.sql.impl.schema.type.TypeKind.JAVA;
+import static com.hazelcast.sql.impl.schema.type.TypeKind.PORTABLE;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
@@ -48,6 +57,7 @@ public class KvMetadataResolvers {
 
     // A string of characters (excluding a `.`), optionally prefixed with "__key." or "this."
     private static final Pattern EXT_NAME_PATTERN = Pattern.compile("((" + KEY + "|" + VALUE + ")\\.)?[^.]+");
+    private static final Set<TypeKind> NESTED_FIELDS_SUPPORTED_FORMATS = ImmutableSet.of(JAVA, PORTABLE, COMPACT);
 
     private final Map<String, KvMetadataResolver> keyResolvers;
     private final Map<String, KvMetadataResolver> valueResolvers;
@@ -79,8 +89,9 @@ public class KvMetadataResolvers {
             Map<String, String> options,
             NodeEngine nodeEngine
     ) {
-        InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
-
+        final InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
+        final RelationsStorage relationsStorage = ((SqlServiceImpl) nodeEngine.getSqlService()).getOptimizer()
+                .relationsStorage();
         // normalize and validate the names and external names
         for (MappingField field : userFields) {
             String name = field.name();
@@ -112,6 +123,18 @@ public class KvMetadataResolvers {
                 .resolveAndValidateFields(false, userFields, options, ss)
                 .filter(field -> !field.name().equals(VALUE) || field.externalName().equals(VALUE));
 
+        final TypeKind keyKind = TypesUtils.formatToTypeKind(getFormat(options, true));
+        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(keyKind)) {
+            keyFields = keyFields
+                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(keyKind, mappingField, relationsStorage));
+        }
+
+        final TypeKind valueKind = TypesUtils.formatToTypeKind(getFormat(options, false));
+        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(valueKind)) {
+            valueFields = valueFields
+                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(valueKind, mappingField, relationsStorage));
+        }
+
         Map<String, MappingField> fields = concat(keyFields, valueFields)
                 .collect(LinkedHashMap::new, (map, field) -> map.putIfAbsent(field.name(), field), Map::putAll);
 
@@ -133,6 +156,7 @@ public class KvMetadataResolvers {
             InternalSerializationService serializationService
     ) {
         KvMetadataResolver resolver = findMetadataResolver(options, isKey);
+        // TODO: enhance types
         return requireNonNull(resolver.resolveMetadata(isKey, resolvedFields, options, serializationService));
     }
 
@@ -147,5 +171,10 @@ public class KvMetadataResolvers {
             throw QueryException.error("Unsupported serialization format: " + format);
         }
         return resolver;
+    }
+
+    private String getFormat(Map<String, String> options, boolean isKey) {
+        String option = isKey ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT;
+        return options.get(option);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.usercodedeployment;
 
+import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -39,6 +40,7 @@ import java.io.FileNotFoundException;
 
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.fail;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -119,6 +121,23 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         ClientConfig clientConfig2 = new ClientConfig()
                 .setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig2);
         factory.newHazelcastClient(clientConfig2);
+    }
+
+    @Test
+    public void testClientWithAsyncStart_ClientRetriesIndefinitely_WhenUserCodeDeploymentFails() {
+        ClientConfig clientConfig = createClientConfig();
+        clientConfig.getUserCodeDeploymentConfig().setEnabled(true);
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        Config config = createNodeConfig();
+
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+
+        String mapName = randomMapName();
+        assertTrueAllTheTime(() -> {
+            // Client state stays as INITIAL and since we are using async start, client will keep throwing this error
+            assertThatThrownBy(() -> client.getMap(mapName)).isInstanceOf(HazelcastClientOfflineException.class);
+        }, 10);
     }
 
     @Test(expected = ClassNotFoundException.class)

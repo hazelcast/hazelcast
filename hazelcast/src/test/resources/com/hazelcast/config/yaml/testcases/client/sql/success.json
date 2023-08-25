@@ -1,0 +1,10 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "sql": {
+        "resubmission-mode": "RETRY_SELECTS"
+      }
+    }
+  },
+  "error": null
+}

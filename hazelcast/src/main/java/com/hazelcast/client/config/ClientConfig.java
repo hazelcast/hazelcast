@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -117,6 +117,8 @@ public class ClientConfig {
     private final ConcurrentMap<String, Object> userContext;
     private ClientMetricsConfig metricsConfig = new ClientMetricsConfig();
     private InstanceTrackingConfig instanceTrackingConfig = new InstanceTrackingConfig();
+    private ClientSqlConfig sqlConfig = new ClientSqlConfig();
+    private ClientTpcConfig tpcConfig = new ClientTpcConfig();
 
     public ClientConfig() {
         listenerConfigs = new LinkedList<>();
@@ -181,6 +183,8 @@ public class ClientConfig {
         userContext = new ConcurrentHashMap<>(config.userContext);
         metricsConfig = new ClientMetricsConfig(config.metricsConfig);
         instanceTrackingConfig = new InstanceTrackingConfig(config.instanceTrackingConfig);
+        sqlConfig = new ClientSqlConfig(config.sqlConfig);
+        tpcConfig = new ClientTpcConfig(config.tpcConfig);
     }
 
     /**
@@ -961,7 +965,7 @@ public class ClientConfig {
      */
     @Nonnull
     public ClientConfig setMetricsConfig(@Nonnull ClientMetricsConfig metricsConfig) {
-        Preconditions.checkNotNull(metricsConfig, "metricsConfig");
+        isNotNull(metricsConfig, "metricsConfig");
         this.metricsConfig = metricsConfig;
         return this;
     }
@@ -979,8 +983,55 @@ public class ClientConfig {
      */
     @Nonnull
     public ClientConfig setInstanceTrackingConfig(@Nonnull InstanceTrackingConfig instanceTrackingConfig) {
-        Preconditions.checkNotNull(instanceTrackingConfig, "instanceTrackingConfig");
+        isNotNull(instanceTrackingConfig, "instanceTrackingConfig");
         this.instanceTrackingConfig = instanceTrackingConfig;
+        return this;
+    }
+
+    /**
+     * Returns the configuration for the SQL feature.
+     * @since 5.2
+     */
+    @Nonnull
+    public ClientSqlConfig getSqlConfig() {
+        return sqlConfig;
+    }
+
+    /**
+     * Sets the configuration for the SQL feature.
+     * @since 5.2
+     */
+    @Nonnull
+    public ClientConfig setSqlConfig(ClientSqlConfig sqlConfig) {
+        isNotNull(sqlConfig, "sqlConfig");
+        this.sqlConfig = sqlConfig;
+        return this;
+    }
+
+    /**
+     * Returns the ClientTpcConfig
+     *
+     * @return the ClientTpcConfig
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public ClientTpcConfig getTpcConfig() {
+        return tpcConfig;
+    }
+
+    /**
+     * Sets the TpcConfig
+     *
+     * @param tpcConfig TpcConfig to set
+     * @return configured {@link ClientConfig} for chaining
+     * @throws IllegalArgumentException if the {@code tpcConfig} is {@code null}
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public ClientConfig setTpcConfig(@Nonnull ClientTpcConfig tpcConfig) {
+        this.tpcConfig = isNotNull(tpcConfig, "tpcConfig");
         return this;
     }
 
@@ -990,7 +1041,7 @@ public class ClientConfig {
                 flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer, loadBalancerClassName,
                 managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
                 proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
-                userCodeDeploymentConfig, userContext, instanceTrackingConfig);
+                userCodeDeploymentConfig, userContext, instanceTrackingConfig, sqlConfig, tpcConfig);
     }
 
     @Override
@@ -1025,7 +1076,9 @@ public class ClientConfig {
                 && Objects.equals(serializationConfig, other.serializationConfig)
                 && Objects.equals(userCodeDeploymentConfig, other.userCodeDeploymentConfig)
                 && Objects.equals(userContext, other.userContext)
-                && Objects.equals(instanceTrackingConfig, other.instanceTrackingConfig);
+                && Objects.equals(instanceTrackingConfig, other.instanceTrackingConfig)
+                && Objects.equals(sqlConfig, other.sqlConfig)
+                && Objects.equals(tpcConfig, other.tpcConfig);
     }
 
     @Override
@@ -1053,6 +1106,8 @@ public class ClientConfig {
                 + ", labels=" + labels
                 + ", metricsConfig=" + metricsConfig
                 + ", instanceTrackingConfig=" + instanceTrackingConfig
+                + ", sqlConfig=" + sqlConfig
+                + ", tpcConfig=" + tpcConfig
                 + '}';
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,20 @@
 
 package com.hazelcast.jet.sql.impl.validate.operators.predicate;
 
-import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
+import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
 import com.hazelcast.jet.sql.impl.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.type.SqlTypeName;
+
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 
 public final class HazelcastComparisonPredicateUtils {
     private HazelcastComparisonPredicateUtils() {
@@ -55,6 +59,14 @@ public final class HazelcastComparisonPredicateUtils {
             SqlNode second,
             RelDataType secondType
     ) {
+        if (firstType.getSqlTypeName() == SqlTypeName.ROW || secondType.getSqlTypeName() == SqlTypeName.ROW) {
+            if (throwOnFailure) {
+                throw callBinding.newError(ValidatorResource.RESOURCE.rowTypeComparisonNotSupported());
+            } else {
+                return false;
+            }
+        }
+
         RelDataType winningType = HazelcastTypeUtils.withHigherPrecedence(firstType, secondType);
 
         if (winningType == firstType) {
@@ -111,8 +123,16 @@ public final class HazelcastComparisonPredicateUtils {
                         highType,
                         lowOperandNode -> callBinding.getCall().setOperand(lowIndex, lowOperandNode));
 
-        if (valid && highHZType == QueryDataType.OBJECT && lowHZType != QueryDataType.OBJECT) {
+        if (valid && highHZType.getTypeFamily() == OBJECT && lowHZType.getTypeFamily() != OBJECT) {
             valid = false;
+        }
+
+        // Custom types can not be converted to each other.
+        if (highHZType.isCustomType() && lowHZType.isCustomType()) {
+            if (!highHZType.getObjectTypeName().equals(lowHZType.getObjectTypeName())) {
+                valid = false;
+            }
+            assert highHZType.getObjectTypeKind().equals(lowHZType.getObjectTypeKind());
         }
 
         // Types cannot be converted to each other.

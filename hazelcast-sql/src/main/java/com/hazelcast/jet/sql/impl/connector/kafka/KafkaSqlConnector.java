@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,13 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.kafka.KafkaProcessors;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver;
@@ -32,10 +33,11 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataNullResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
@@ -46,14 +48,18 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
 public class KafkaSqlConnector implements SqlConnector {
 
     public static final String TYPE_NAME = "Kafka";
+    public static final String OPTION_BOOTSTRAP_SERVERS = "bootstrap.servers";
+    public static final String OPTION_OFFSET_RESET = "auto.offset.reset";
 
     private static final KvMetadataResolvers METADATA_RESOLVERS = new KvMetadataResolvers(
             new KvMetadataResolver[]{
@@ -74,31 +80,36 @@ public class KafkaSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
     @Override
-    public boolean isStream() {
-        return true;
+    public String defaultObjectType() {
+        return "Topic";
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
-    ) {
-        return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options, nodeEngine);
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
+        if (externalResource.externalName().length > 1) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalResource.externalName())
+                    + ", external name for Kafka is allowed to have only a single component referencing the topic " +
+                    "name");
+        }
+        return METADATA_RESOLVERS.resolveAndValidateFields(userFields, externalResource.options(), nodeEngine);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
-        KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, options, null);
-        KvMetadata valueMetadata = METADATA_RESOLVERS.resolveMetadata(false, resolvedFields, options, null);
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> resolvedFields) {
+        KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, externalResource.options(), null);
+        KvMetadata valueMetadata = METADATA_RESOLVERS.resolveMetadata(false, resolvedFields, externalResource.options(), null);
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
                 .collect(toList());
 
@@ -108,59 +119,70 @@ public class KafkaSqlConnector implements SqlConnector {
                 mappingName,
                 fields,
                 new ConstantTableStatistics(0),
-                externalName,
-                options,
+                externalResource.externalName()[0],
+                externalResource.dataConnection(),
+                externalResource.options(),
                 keyMetadata.getQueryTargetDescriptor(),
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getQueryTargetDescriptor(),
-                valueMetadata.getUpsertTargetDescriptor()
+                valueMetadata.getUpsertTargetDescriptor(),
+                externalResource.objectType()
         );
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table0,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projections,
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
-        KafkaTable table = (KafkaTable) table0;
+        KafkaTable table = context.getTable();
 
-        return dag.newUniqueVertex(
+        return context.getDag().newUniqueVertex(
                 table.toString(),
                 ProcessorMetaSupplier.of(
                         StreamKafkaP.PREFERRED_LOCAL_PARALLELISM,
                         new RowProjectorProcessorSupplier(
                                 table.kafkaConsumerProperties(),
+                                table.dataConnectionName(),
                                 table.topicName(),
                                 eventTimePolicyProvider,
                                 table.paths(),
                                 table.types(),
                                 table.keyQueryDescriptor(),
                                 table.valueQueryDescriptor(),
-                                predicate,
-                                projections
+                                context.convertFilter(predicate),
+                                context.convertProjection(projection)
                         )
                 )
         );
     }
 
-    @Nonnull @Override
-    public VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
-        return new VertexWithInputConfig(writeProcessor(dag, table));
-    }
-
-    @Nonnull @Override
-    public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
-        return writeProcessor(dag, table);
+    @Nonnull
+    @Override
+    public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
+        return new VertexWithInputConfig(writeProcessor(context));
     }
 
     @Nonnull
-    private Vertex writeProcessor(DAG dag, Table table0) {
-        KafkaTable table = (KafkaTable) table0;
+    @Override
+    public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
+        return writeProcessor(context);
+    }
 
-        Vertex vStart = dag.newUniqueVertex(
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
+    }
+
+    @Nonnull
+    private Vertex writeProcessor(@Nonnull DagBuildContext context) {
+        KafkaTable table = context.getTable();
+
+        Vertex vStart = context.getDag().newUniqueVertex(
                 "Project(" + table + ")",
                 KvProcessors.entryProjector(
                         table.paths(),
@@ -171,21 +193,40 @@ public class KafkaSqlConnector implements SqlConnector {
                 )
         );
         // set the parallelism to match that of the kafka sink - see https://github.com/hazelcast/hazelcast/issues/20507
-        // TODO eliminate the project vertex altogether and do the projecting in the sink directly
+        // TODO: eliminate the project vertex altogether and do the projecting in the sink directly
         vStart.localParallelism(1);
 
-        Vertex vEnd = dag.newUniqueVertex(
+        Vertex vEnd = context.getDag().newUniqueVertex(
                 table.toString(),
-                KafkaProcessors.<Entry<Object, Object>, Object, Object>writeKafkaP(
-                        table.kafkaProducerProperties(),
-                        table.topicName(),
-                        Entry::getKey,
-                        Entry::getValue,
-                        true
-                )
+                table.dataConnectionName() == null
+                        ?
+                        KafkaProcessors.<Entry<Object, Object>, Object, Object>writeKafkaP(
+                                table.kafkaProducerProperties(),
+                                table.topicName(),
+                                Entry::getKey,
+                                Entry::getValue,
+                                true)
+                        :
+                        KafkaProcessors.<Entry<Object, Object>, Object, Object>writeKafkaP(
+                                new DataConnectionRef(table.dataConnectionName()),
+                                table.kafkaProducerProperties(),
+                                table.topicName(),
+                                Entry::getKey,
+                                Entry::getValue,
+                                true)
         );
 
-        dag.edge(between(vStart, vEnd));
+        context.getDag().edge(between(vStart, vEnd));
         return vStart;
+    }
+
+    @Override
+    public Set<String> nonSensitiveConnectorOptions() {
+        Set<String> set = SqlConnector.super.nonSensitiveConnectorOptions();
+        set.addAll(Set.of(
+                OPTION_BOOTSTRAP_SERVERS,
+                OPTION_OFFSET_RESET
+        ));
+        return set;
     }
 }

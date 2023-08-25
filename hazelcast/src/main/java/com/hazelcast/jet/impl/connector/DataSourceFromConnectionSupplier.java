@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,30 +20,30 @@ import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
  * An adapter to adapt {@code Supplier<Connection>} to a {@link
- * javax.sql.DataSource}.
+ * DataSource}.
  */
 public class DataSourceFromConnectionSupplier implements DataSource {
-    private final String jdbcUrl;
+    private final Supplier<? extends Connection> newConnectionFn;
 
-    public DataSourceFromConnectionSupplier(@Nonnull String jdbcUrl) {
-        this.jdbcUrl = jdbcUrl;
+    public DataSourceFromConnectionSupplier(@Nonnull Supplier<? extends Connection> newConnectionFn) {
+        this.newConnectionFn = newConnectionFn;
     }
 
     @Override
     public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(jdbcUrl);
+        return newConnectionFn.get();
     }
 
     @Override
     public Connection getConnection(String username, String password) throws SQLException {
-        return DriverManager.getConnection(jdbcUrl, username, password);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -81,7 +81,4 @@ public class DataSourceFromConnectionSupplier implements DataSource {
         throw new UnsupportedOperationException();
     }
 
-    public String getJdbcUrl() {
-        return jdbcUrl;
-    }
 }

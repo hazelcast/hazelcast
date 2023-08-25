@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,8 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
-import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
-import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class IndexIterationPointer implements IdentifiedDataSerializable {
 
@@ -76,63 +69,6 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
                 to,
                 lastEntryKey
         );
-    }
-
-    public static IndexIterationPointer[] createFromIndexFilter(
-            IndexFilter indexFilter,
-            boolean descending,
-            ExpressionEvalContext evalContext
-    ) {
-        ArrayList<IndexIterationPointer> result = new ArrayList<>();
-        createFromIndexFilterInt(indexFilter, descending, evalContext, result);
-        return result.toArray(new IndexIterationPointer[0]);
-    }
-
-    private static void createFromIndexFilterInt(
-            IndexFilter indexFilter,
-            boolean descending,
-            ExpressionEvalContext evalContext,
-            List<IndexIterationPointer> result
-    ) {
-        if (indexFilter == null) {
-            result.add(create(null, true, null, true, descending, null));
-        }
-        if (indexFilter instanceof IndexRangeFilter) {
-            IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
-
-            Comparable<?> from = null;
-            if (rangeFilter.getFrom() != null) {
-                Comparable<?> fromValue = rangeFilter.getFrom().getValue(evalContext);
-                // If the index filter has expression like a > NULL, we need to
-                // stop creating index iteration pointer because comparison with NULL
-                // produces UNKNOWN result.
-                if (fromValue == null) {
-                    return;
-                }
-                from = fromValue;
-            }
-
-            Comparable<?> to = null;
-            if (rangeFilter.getTo() != null) {
-                Comparable<?> toValue = rangeFilter.getTo().getValue(evalContext);
-                // Same comment above for expressions like a < NULL.
-                if (toValue == null) {
-                    return;
-                }
-                to = toValue;
-            }
-
-            result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), descending, null));
-        } else if (indexFilter instanceof IndexEqualsFilter) {
-            IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
-            Comparable<?> value = equalsFilter.getComparable(evalContext);
-            result.add(create(value, true, value, true, descending, null));
-        } else if (indexFilter instanceof IndexCompositeFilter) {
-            IndexCompositeFilter inFilter = (IndexCompositeFilter) indexFilter;
-            for (IndexFilter filter : inFilter.getFilters()) {
-                createFromIndexFilterInt(filter, descending, evalContext, result);
-            }
-        }
     }
 
     public Comparable<?> getFrom() {

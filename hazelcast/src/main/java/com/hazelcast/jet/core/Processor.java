@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,28 +49,29 @@ import javax.annotation.Nonnull;
  * processor should work.
  *
  * <h3>Processing methods</h3>
- *
+ * <p>
  * When the documentation in this class refers to <em>processing methods,</em>
  * we mean all methods except for these:
  * <ul>
  *     <li>{@link #isCooperative()}
  *     <li>{@link #init(Outbox, Context)}
+ *     <li>{@link #closeIsCooperative()}
  *     <li>{@link #close()}
  * </ul>
  *
  * <h3>Transactional processors</h3>
- *
+ * <p>
  * If this processor communicates with an external transactional store, after
  * the snapshot is restored and before it executes any code in a <em>processing
- * method</em>, it should rollback all transactions that this processor
- * created. It should only rollback transactions created by this vertex and
- * this job; it can use the vertex name and job ID passed to the {@link #init}
- * method in the context to filter.
+ * method</em>, it should roll back all transactions that this processor
+ * created. It should only roll back transactions created by this vertex and this
+ * job; it can use the vertex name and job ID passed to the {@link #init} method
+ * in the context to filter.
  * <p>
  * <b>Determining the list of transactions to rollback</b><br/>
  * You can't store the IDs of the created transactions to the snapshot, as one
  * might intuitively think. The job might run for a while after creating a
- * snapshot and start a new transaction and we need to roll that one too. The
+ * snapshot and start a new transaction, and we need to roll that one too. The
  * job might even fail before it creates the first snapshot.
  * <p>
  * There are multiple ways to tackle this:
@@ -86,13 +87,14 @@ import javax.annotation.Nonnull;
  * </ul>
  *
  * <h3>How the methods are called</h3>
- *
- * Besides {@link #init}, {@link #close} and {@link #isCooperative} the methods
- * are called in a tight loop with a possibly short back-off if the method does
- * no work. "No work" is defined as adding nothing to outbox and taking nothing
- * from inbox. If you do heavy work on each call (such as querying a remote
- * service), you can do additional back-off: use {@code sleep} in a
- * non-cooperative processor or do nothing if sufficient time didn't elapse.
+ * <p>
+ * Except for {@link #init}, {@link #close}, {@link #isCooperative} and {@link
+ * #closeIsCooperative()}, the methods are called in a tight loop with a
+ * possibly short back-off if the method does no work. "No work" is defined as
+ * adding nothing to outbox and taking nothing from inbox. If you do heavy work
+ * on each call (such as querying a remote service), you can do additional
+ * back-off: use {@code sleep} in a non-cooperative processor or do nothing if
+ * sufficient time didn't elapse.
  *
  * @since Jet 3.0
  */
@@ -101,7 +103,7 @@ public interface Processor {
     /**
      * Tells whether this processor is able to participate in cooperative
      * multithreading. If this processor declares itself cooperative, it will
-     * share a thread with other cooperative processors. Otherwise it will run
+     * share a thread with other cooperative processors. Otherwise, it will run
      * in a dedicated Java thread.
      * <p>
      * There are specific requirements that all <em>processing methods</em> of
@@ -121,7 +123,7 @@ public interface Processor {
      *     rejects an item (that is when the {@link Outbox#offer(Object)
      *     offer()} method returns {@code false}).
      * </ul>
-     *
+     * <p>
      * Non-cooperative processors are allowed to block, but still must return
      * at least once per second (that is, they should not block
      * indeterminately). If they block longer, snapshots will take longer to
@@ -147,7 +149,7 @@ public interface Processor {
      * Initializes this processor with the outbox that the <em>processing
      * methods</em> must use to deposit their output items. This method will be
      * called exactly once and strictly before any calls to other methods
-     * (except for the {@link #isCooperative()} method.
+     * (except for the {@link #isCooperative()} method).
      * <p>
      * Even if this processor is cooperative, this method is allowed to do
      * blocking operations.
@@ -184,31 +186,125 @@ public interface Processor {
     }
 
     /**
-     * Tries to process the supplied watermark. The value is always greater
-     * than in the previous call. The watermark is delivered for processing
-     * after it has been received from all the edges.
+     * Tries to process the supplied watermark. The value is always greater than
+     * in a previous call with watermark with the same key. The watermark is
+     * delivered for processing after it has been received from all the input
+     * edges.
      * <p>
-     * The implementation may choose to process only partially and return
-     * {@code false}, in which case it will be called again later with the same
-     * {@code timestamp} before any other <em>processing method</em> is called.
-     * Before the method returns {@code true}, it should emit the watermark to
-     * the downstream processors. Sink processors can ignore the watermark and
-     * simply return {@code true}.
+     * The implementation may choose to process only partially and return {@code
+     * false}, in which case it will be called again later with the same
+     * watermark before any other <em>processing method</em> is called. Before
+     * the method returns {@code true}, it <em>should</em> emit the watermark to
+     * the downstream processors, though in general the processor can process
+     * the watermark in any way: drop it, delay it or move it ahead, change the
+     * key, or even emit a completely different watermark, as long as the output
+     * watermarks are monotonic. Any processing method can emit watermarks. Sink
+     * processors in general should ignore the watermark and simply return
+     * {@code true}.
+     *
+     * <h3>Difference between the overloaded {@code tryProcessWatermarks()}
+     * variants</h3>
+     *
+     * The method is available in two overloaded variants: with and without an
+     * edge ordinal:<ul>
+     *     <li>The variant <b>with ordinal</b> is called after the watermark was
+     *     received from all upstream processors contributing to that input
+     *     ordinal.
+     *     <li>The variant <b>without an ordinal</b> is called after the
+     *     watermark was received from all input ordinals.
+     * </ul>
+     *
+     * Which method to override depends on the purpose of the processor. For
+     * example, a join processor can receive different watermark from each
+     * input, so it needs to override the variant with the ordinal. A merging
+     * processor, on the other hand, expects the same watermarks from all
+     * inputs, so it overrides the variant without an ordinal. Each watermark is
+     * passed to both methods, so in most cases you need to override at most one
+     * method. However, if a watermark with some key is not received from all
+     * input edges, the variant without the ordinal is never called for that
+     * watermark key.
+     * <p>
+     * Also, please, pay attention to the default implementation in this class,
+     * and in {@link AbstractProcessor}, which handle the case of merging
+     * streams.
      *
      * <h3>Caution for Jobs With the At-Least-Once Guarantee</h3>
+     *
      * Jet propagates the value of the watermark by sending <em>watermark
-     * items</em> interleaved with the regular stream items. If a job
-     * configured with the <i>at-least-once</i> processing guarantee gets
-     * restarted, the same watermark, like any other stream item, can be
-     * delivered again. Therefore the processor may be asked to process
-     * a watermark older than the one it had already processed before the
-     * restart.
+     * items</em> interleaved with the regular stream items. If a job configured
+     * with the <i>at-least-once</i> processing guarantee gets restarted, the
+     * same watermark, like any other stream item, can be delivered again.
+     * Therefore, the processor may be asked to process a watermark older than
+     * the one it had already processed before the restart.
      *
      * @param watermark watermark to be processed
      * @return {@code true} if this watermark has now been processed,
      *         {@code false} to call this method again with the same watermark
      */
     boolean tryProcessWatermark(@Nonnull Watermark watermark);
+
+    /**
+     * Tries to process the supplied watermark. The value is always greater than
+     * in a previous call with watermark with the same key. The watermark is
+     * delivered for processing after it has been received from all upstream
+     * processors connected to the edge with the given {@code ordinal}.
+     * <p>
+     * The implementation may choose to process only partially and return {@code
+     * false}, in which case it will be called again later with the same
+     * watermark before any other <em>processing method</em> is called. Before
+     * the method returns {@code true}, it <em>should</em> emit the watermark to
+     * the downstream processors, though in general the processor can process
+     * the watermark in any way: drop it, delay it or move it ahead, change the
+     * key, or even emit a completely different watermark, as long as the output
+     * watermarks are monotonic. Any processing method can emit watermarks. Sink
+     * processors in general should ignore the watermark and simply return
+     * {@code true}.
+     *
+     * <h3>Difference between the overloaded {@code tryProcessWatermarks()}
+     * variants</h3>
+     *
+     * The method is available in two overloaded variants: with and without an
+     * edge ordinal:<ul>
+     *     <li>The variant <b>with ordinal</b> is called after the watermark was
+     *     received from all upstream processors contributing to that input
+     *     ordinal.
+     *     <li>The variant <b>without an ordinal</b> is called after the
+     *     watermark was received from all input ordinals.
+     * </ul>
+     *
+     * Which method to override depends on the purpose of the processor. For
+     * example, a join processor can receive different watermark from each
+     * input, so it needs to override the variant with the ordinal. A merging
+     * processor, on the other hand, expects the same watermarks from all
+     * inputs, so it overrides the variant without an ordinal. Each watermark is
+     * passed to both methods, so in most cases you need to override at most one
+     * method. However, if a watermark with some key is not received from all
+     * input edges, the variant without the ordinal is never called for that
+     * watermark key.
+     * <p>
+     * Also, please, pay attention to the default implementations in this class,
+     * and in {@link AbstractProcessor}, which handle the case of merging
+     * streams.
+     *
+     * <h3>Caution for Jobs With the At-Least-Once Guarantee</h3>
+     *
+     * Jet propagates the value of the watermark by sending <em>watermark
+     * items</em> interleaved with the regular stream items. If a job configured
+     * with the <i>at-least-once</i> processing guarantee gets restarted, the
+     * same watermark, like any other stream item, can be delivered again.
+     * Therefore, the processor may be asked to process a watermark older than
+     * the one it had already processed before the restart.
+     *
+     * @param ordinal the ordinal on which this watermark occurred
+     * @param watermark watermark to be processed
+     * @return {@code true} if this watermark has now been processed,
+     *         {@code false} to call this method again with the same watermark
+     * @since 5.2
+     */
+    @SuppressWarnings("unused")
+    default boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
+        return true;
+    }
 
     /**
      * This method will be called periodically and only when the current batch
@@ -314,7 +410,7 @@ public interface Processor {
      *     is called. If the implementation doesn't start a new active
      *     transaction, it can opt to not process more input or emit any output
      * </ul>
-     *
+     * <p>
      * This method is skipped if the snapshot was initiated using {@link
      * Job#exportSnapshot}. If this method is skipped, {@link
      * #snapshotCommitFinish} will be skipped too.
@@ -359,7 +455,7 @@ public interface Processor {
      * returns {@code true}.
      *
      * <h4>Error handling</h4>
-     *
+     * <p>
      * The two-phase commit protocol requires that the second phase must
      * eventually succeed. If you're not able to commit your transactions now,
      * you should either return {@code false} and try again later, or you can
@@ -398,7 +494,7 @@ public interface Processor {
      * occur. The processor must be ready to restore a transaction ID that no
      * longer exists in the remote system: either because the transaction was
      * already committed (this is the most common case) or because the
-     * transaction timed out in the remote system. Also the job ID, if it's
+     * transaction timed out in the remote system. Also, the job ID, if it's
      * part of the transaction ID, can be different from the current job ID, if
      * the job was {@linkplain JobConfig#setInitialSnapshotName started from an
      * exported state}. These cases should be handled gracefully.
@@ -446,7 +542,7 @@ public interface Processor {
      * See {@link #closeIsCooperative()} regarding the cooperative behavior of
      * this method.
      * <p>
-     * If this method throws an exception, it is logged but it won't be
+     * If this method throws an exception, it is logged, but it won't be
      * reported as a job failure or cause the job to fail.
      * <p>
      * The default implementation does nothing.
@@ -460,6 +556,13 @@ public interface Processor {
      * off-loaded to another thread.
      * <p>
      * This flag is ignored for non-cooperative processors.
+     * <p>
+     * By default, {@link #close()} is assumed to be non-cooperative to guarantee
+     * correct-by-default behavior for custom processors, even though default
+     * implementation of {@link #close()} is empty, so it's cooperative.
+     * Implementors are however encouraged to override this method if the
+     * default, empty {@link #close()} is used in a cooperative processor to
+     * avoid offloading an empty invocation to another thread.
      */
     default boolean closeIsCooperative() {
         return false;
@@ -474,7 +577,7 @@ public interface Processor {
     interface Context extends ProcessorSupplier.Context {
 
         /**
-         *  Return a logger for the processor
+         * Return a logger for the processor
          */
         @Nonnull
         ILogger logger();

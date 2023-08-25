@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,12 @@
 package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
-import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.hotrestart.HotRestartService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.persistence.PersistenceService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.version.Version;
@@ -70,7 +71,7 @@ public class ClientClusterProxy implements Cluster {
 
     @Override
     public long getClusterTime() {
-        return clusterService.getClusterTime();
+        return Clock.currentTimeMillis();
     }
 
     @Nonnull

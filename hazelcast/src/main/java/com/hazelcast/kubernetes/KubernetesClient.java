@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,16 @@
 
 package com.hazelcast.kubernetes;
 
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.util.HostnameUtil;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
+import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -28,14 +33,27 @@ import com.hazelcast.spi.exception.RestClientException;
 import com.hazelcast.spi.utils.RestClient;
 import com.hazelcast.spi.utils.RetryUtils;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.UNKNOWN;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Responsible for connecting to the Kubernetes API.
@@ -45,49 +63,99 @@ import static java.util.Collections.emptyList;
 @SuppressWarnings("checkstyle:methodcount")
 class KubernetesClient {
     private static final ILogger LOGGER = Logger.getLogger(KubernetesClient.class);
+    private static final int HTTP_GONE = 410;
+    private static final int HTTP_UNAUTHORIZED = 401;
+    private static final int HTTP_FORBIDDEN = 403;
+
+    private static final int CONNECTION_TIMEOUT_SECONDS = 10;
+    private static final int READ_TIMEOUT_SECONDS = 10;
 
     private static final List<String> NON_RETRYABLE_KEYWORDS = asList(
             "\"reason\":\"Forbidden\"",
-            "\"reason\":\"Unauthorized\"",
             "\"reason\":\"NotFound\"",
             "Failure in generating SSLSocketFactory");
 
+    private static final int STS_MONITOR_SHUTDOWN_AWAIT_TIMEOUT_MS = 1000;
+
+    private final String stsName;
     private final String namespace;
     private final String kubernetesMaster;
-    private final String apiToken;
     private final String caCertificate;
     private final int retries;
     private final KubernetesApiProvider apiProvider;
-    private ExposeExternallyMode exposeExternallyMode;
+    private final ExposeExternallyMode exposeExternallyMode;
     private final boolean useNodeNameAsExternalAddress;
     private final String servicePerPodLabelName;
     private final String servicePerPodLabelValue;
+    @Nullable
+    private final StsMonitorThread stsMonitorThread;
+
+    private final KubernetesTokenProvider tokenProvider;
+
+    @Nullable
+    private final ClusterTopologyIntentTracker clusterTopologyIntentTracker;
 
     private boolean isNoPublicIpAlreadyLogged;
     private boolean isKnownExceptionAlreadyLogged;
+    private boolean isNodePortWarningAlreadyLogged;
 
-    KubernetesClient(String namespace, String kubernetesMaster, String apiToken, String caCertificate, int retries,
-                     ExposeExternallyMode exposeExternallyMode, boolean useNodeNameAsExternalAddress,
-                     String servicePerPodLabelName, String servicePerPodLabelValue) {
+    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
+                     String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
+                     boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
+                     String servicePerPodLabelValue, @Nullable ClusterTopologyIntentTracker clusterTopologyIntentTracker) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
-        this.apiToken = apiToken;
+        this.tokenProvider = tokenProvider;
         this.caCertificate = caCertificate;
         this.retries = retries;
         this.exposeExternallyMode = exposeExternallyMode;
         this.useNodeNameAsExternalAddress = useNodeNameAsExternalAddress;
         this.servicePerPodLabelName = servicePerPodLabelName;
         this.servicePerPodLabelValue = servicePerPodLabelValue;
+        this.clusterTopologyIntentTracker = clusterTopologyIntentTracker;
+        if (clusterTopologyIntentTracker != null) {
+            clusterTopologyIntentTracker.initialize();
+        }
         this.apiProvider =  buildKubernetesApiUrlProvider();
+        this.stsName = extractStsName();
+        this.stsMonitorThread = (clusterTopologyIntentTracker != null && clusterTopologyIntentTracker.isEnabled())
+                ? new StsMonitorThread() : null;
     }
 
-    KubernetesClient(String namespace, String kubernetesMaster, String apiToken, String caCertificate, int retries,
-                     ExposeExternallyMode exposeExternallyMode, boolean useNodeNameAsExternalAddress,
-                     String servicePerPodLabelName, String servicePerPodLabelValue,
-                     KubernetesApiProvider apiProvider) {
+    // constructor that allows overriding detected statefulset name for usage in tests
+    @SuppressWarnings("checkstyle:parameternumber")
+    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
+                     String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
+                     boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
+                     String servicePerPodLabelValue, @Nullable ClusterTopologyIntentTracker clusterTopologyIntentTracker,
+                     String stsName) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
-        this.apiToken = apiToken;
+        this.tokenProvider = tokenProvider;
+        this.caCertificate = caCertificate;
+        this.retries = retries;
+        this.exposeExternallyMode = exposeExternallyMode;
+        this.useNodeNameAsExternalAddress = useNodeNameAsExternalAddress;
+        this.servicePerPodLabelName = servicePerPodLabelName;
+        this.servicePerPodLabelValue = servicePerPodLabelValue;
+        this.clusterTopologyIntentTracker = clusterTopologyIntentTracker;
+        if (clusterTopologyIntentTracker != null) {
+            clusterTopologyIntentTracker.initialize();
+        }
+        this.apiProvider =  buildKubernetesApiUrlProvider();
+        this.stsName = stsName;
+        this.stsMonitorThread = (clusterTopologyIntentTracker != null && clusterTopologyIntentTracker.isEnabled())
+                ? new StsMonitorThread() : null;
+    }
+
+    // test usage only
+    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
+                     String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
+                     boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
+                     String servicePerPodLabelValue, KubernetesApiProvider apiProvider) {
+        this.namespace = namespace;
+        this.kubernetesMaster = kubernetesMaster;
+        this.tokenProvider = tokenProvider;
         this.caCertificate = caCertificate;
         this.retries = retries;
         this.exposeExternallyMode = exposeExternallyMode;
@@ -95,6 +163,39 @@ class KubernetesClient {
         this.servicePerPodLabelName = servicePerPodLabelName;
         this.servicePerPodLabelValue = servicePerPodLabelValue;
         this.apiProvider = apiProvider;
+        this.stsMonitorThread = null;
+        this.stsName = extractStsName();
+        this.clusterTopologyIntentTracker = null;
+    }
+
+    public void start() {
+        if (stsMonitorThread != null) {
+            stsMonitorThread.start();
+        }
+    }
+
+    public void destroy() {
+        // It's important we interrupt the StsMonitorThread first, as the ClusterTopologyIntentTracker
+        // receives messages from this thread, and we want to let it process all available messages
+        // before the intent tracker is shutdown
+        if (stsMonitorThread != null) {
+            LOGGER.info("Interrupting StatefulSet monitor thread");
+            stsMonitorThread.interrupt();
+        }
+
+        if (clusterTopologyIntentTracker != null) {
+            // Join the StsMonitor thread to ensure it has completed processing all messages
+            // before shutting down our ClusterTopologyIntentTracker (which processes messages)
+            if (stsMonitorThread != null) {
+                try {
+                    stsMonitorThread.join(STS_MONITOR_SHUTDOWN_AWAIT_TIMEOUT_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            clusterTopologyIntentTracker.destroy();
+        }
     }
 
     KubernetesApiProvider buildKubernetesApiUrlProvider() {
@@ -126,23 +227,33 @@ class KubernetesClient {
     }
 
     /**
-     * Retrieves POD addresses for all services in the specified {@code namespace} filtered by {@code serviceLabel}
-     * and {@code serviceLabelValue}.
+     * Retrieves POD addresses for all services in the specified {@code namespace} filtered by {@code serviceLabels}
+     * and {@code serviceLabelValues}.
      *
-     * @param serviceLabel      label used to filter responses
-     * @param serviceLabelValue label value used to filter responses
-     * @return all POD addresses from the specified {@code namespace} filtered by the label
+     * @param serviceLabels      comma separated labels used to filter responses
+     * @param serviceLabelValues comma separated label values used to filter responses
+     * @return all POD addresses from the specified {@code namespace} filtered by the labels
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
-    List<Endpoint> endpointsByServiceLabel(String serviceLabel, String serviceLabelValue) {
+    List<Endpoint> endpointsByServiceLabel(String serviceLabels, String serviceLabelValues) {
         try {
-            String param = String.format("labelSelector=%s=%s", serviceLabel, serviceLabelValue);
+            String param = getLabelSelectorParameter(serviceLabels, serviceLabelValues);
             String urlString = String.format(apiProvider.getEndpointsByServiceLabelUrlString(),
                     kubernetesMaster, namespace, param);
             return enrichWithPublicAddresses(apiProvider.parseEndpointsList(callGet(urlString)));
         } catch (RestClientException e) {
             return handleKnownException(e);
         }
+    }
+
+    private static String getLabelSelectorParameter(String labelNames, String labelValues) {
+        List<String> labelNameList = new ArrayList<>(Arrays.asList(labelNames.split(",")));
+        List<String> labelValueList = new ArrayList<>(Arrays.asList(labelValues.split(",")));
+        List<String> selectorList = new ArrayList<>(labelNameList.size());
+        for (int i = 0; i < labelNameList.size(); i++) {
+            selectorList.add(i, String.format("%s=%s", labelNameList.get(i), labelValueList.get(i)));
+        }
+        return String.format("labelSelector=%s", String.join(",", selectorList));
     }
 
     /**
@@ -163,17 +274,17 @@ class KubernetesClient {
     }
 
     /**
-     * Retrieves POD addresses for all services in the specified {@code namespace} filtered by {@code podLabel}
-     * and {@code podLabelValue}.
+     * Retrieves POD addresses for all services in the specified {@code namespace} filtered by {@code podLabels}
+     * and {@code podLabelValues}.
      *
-     * @param podLabel      label used to filter responses
-     * @param podLabelValue label value used to filter responses
-     * @return all POD addresses from the specified {@code namespace} filtered by the label
+     * @param podLabels      comma separated labels used to filter responses
+     * @param podLabelValues comma separated label values used to filter responses
+     * @return all POD addresses from the specified {@code namespace} filtered by the labels
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
-    List<Endpoint> endpointsByPodLabel(String podLabel, String podLabelValue) {
+    List<Endpoint> endpointsByPodLabel(String podLabels, String podLabelValues) {
         try {
-            String param = String.format("labelSelector=%s=%s", podLabel, podLabelValue);
+            String param = getLabelSelectorParameter(podLabels, podLabelValues);
             String urlString = String.format("%s/api/v1/namespaces/%s/pods?%s", kubernetesMaster, namespace, param);
             return enrichWithPublicAddresses(parsePodsList(callGet(urlString)));
         } catch (RestClientException e) {
@@ -208,15 +319,38 @@ class KubernetesClient {
         return extractNodeName(callGet(podUrlString));
     }
 
+    // For test purpose
+    boolean isKnownExceptionAlreadyLogged() {
+        return isKnownExceptionAlreadyLogged;
+    }
+
+    private String extractStsName() {
+        String stsName = HostnameUtil.getLocalHostname();
+        int dashIndex = stsName.lastIndexOf('-');
+        if (dashIndex > 0) {
+            stsName = stsName.substring(0, dashIndex);
+        }
+        return stsName;
+    }
+
+    private RuntimeContext extractSts(JsonObject jsonObject) {
+        int specReplicas = jsonObject.get("spec").asObject().getInt("replicas", UNKNOWN);
+        int readyReplicas = jsonObject.get("status").asObject().getInt("readyReplicas", UNKNOWN);
+        String resourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion", null);
+        int replicas = jsonObject.get("status").asObject().getInt("currentReplicas", UNKNOWN);
+        return new RuntimeContext(specReplicas, readyReplicas, replicas, resourceVersion);
+    }
+
     private static List<Endpoint> parsePodsList(JsonObject podsListJson) {
         List<Endpoint> addresses = new ArrayList<>();
 
         for (JsonValue item : toJsonArray(podsListJson.get("items"))) {
+            String podName = item.asObject().get("metadata").asObject().get("name").asString();
             JsonObject status = item.asObject().get("status").asObject();
             String ip = toString(status.get("podIP"));
             if (ip != null) {
                 Integer port = extractContainerPort(item);
-                addresses.add(new Endpoint(new EndpointAddress(ip, port), isReady(status)));
+                addresses.add(new Endpoint(new EndpointAddress(ip, port, podName), isReady(status)));
             }
         }
         return addresses;
@@ -227,14 +361,25 @@ class KubernetesClient {
         // If multiple containers are in one POD, then use the default Hazelcast port from the configuration.
         if (containers.size() == 1) {
             JsonValue container = containers.get(0);
-            JsonArray ports = toJsonArray(container.asObject().get("ports"));
-            // If multiple ports are exposed by a container, then use the default Hazelcast port from the configuration.
-            if (ports.size() == 1) {
-                JsonValue port = ports.get(0);
-                JsonValue containerPort = port.asObject().get("containerPort");
-                if (containerPort != null && containerPort.isNumber()) {
-                    return containerPort.asInt();
+            return containerPort(container);
+        } else {
+            for (JsonValue container : containers) {
+                if (container.asObject().getString("name", "").equals("hazelcast")) {
+                    return containerPort(container);
                 }
+            }
+        }
+        return null;
+    }
+
+    private static Integer containerPort(JsonValue container) {
+        JsonArray ports = toJsonArray(container.asObject().get("ports"));
+        // If multiple ports are exposed by a container, then use the default Hazelcast port from the configuration.
+        if (ports.size() > 0) {
+            JsonValue port = ports.get(0);
+            JsonValue containerPort = port.asObject().get("containerPort");
+            if (containerPort != null && containerPort.isNumber()) {
+                return containerPort.asInt();
             }
         }
         return null;
@@ -301,12 +446,12 @@ class KubernetesClient {
             }
             JsonObject endpointsJson = callGet(endpointsUrl);
 
-            List<EndpointAddress> privateAddresses = privateAddresses(endpoints);
+            List<String> privateAddresses = privateAddresses(endpoints);
             Map<EndpointAddress, String> services = apiProvider.extractServices(endpointsJson, privateAddresses);
-            Map<EndpointAddress, String> nodes = apiProvider.extractNodes(endpointsJson, privateAddresses);
+            Map<EndpointAddress, String> nodeAddresses = apiProvider.extractNodes(endpointsJson, privateAddresses);
 
-            Map<EndpointAddress, String> publicIps = new HashMap<>();
-            Map<EndpointAddress, Integer> publicPorts = new HashMap<>();
+            Map<String, String> publicIps = new HashMap<>();
+            Map<String, Integer> publicPorts = new HashMap<>();
             Map<String, String> cachedNodePublicIps = new HashMap<>();
 
             for (Map.Entry<EndpointAddress, String> serviceEntry : services.entrySet()) {
@@ -317,12 +462,12 @@ class KubernetesClient {
                 try {
                     String loadBalancerAddress = extractLoadBalancerAddress(serviceJson);
                     Integer servicePort = extractServicePort(serviceJson);
-                    publicIps.put(privateAddress, loadBalancerAddress);
-                    publicPorts.put(privateAddress, servicePort);
+                    publicIps.put(privateAddress.getIp(), loadBalancerAddress);
+                    publicPorts.put(privateAddress.getIp(), servicePort);
                 } catch (Exception e) {
                     // Load Balancer public IP cannot be found, try using NodePort.
                     Integer nodePort = extractNodePort(serviceJson);
-                    String node = nodes.get(privateAddress);
+                    String node = extractNodeName(serviceEntry.getKey(), nodeAddresses);
                     String nodePublicAddress;
                     if (cachedNodePublicIps.containsKey(node)) {
                         nodePublicAddress = cachedNodePublicIps.get(node);
@@ -330,8 +475,14 @@ class KubernetesClient {
                         nodePublicAddress = externalAddressForNode(node);
                         cachedNodePublicIps.put(node, nodePublicAddress);
                     }
-                    publicIps.put(privateAddress, nodePublicAddress);
-                    publicPorts.put(privateAddress, nodePort);
+                    publicIps.put(privateAddress.getIp(), nodePublicAddress);
+                    publicPorts.put(privateAddress.getIp(), nodePort);
+                    // Log warning only once.
+                    if (!isNodePortWarningAlreadyLogged && exposeExternallyMode == ExposeExternallyMode.ENABLED) {
+                        LOGGER.warning("Using NodePort service type for public addresses may lead to connection issues from "
+                                + "outside of the Kubernetes cluster. Ensure external accessibility of the NodePort IPs.");
+                        isNodePortWarningAlreadyLogged = true;
+                    }
                 }
             }
 
@@ -344,19 +495,29 @@ class KubernetesClient {
             LOGGER.finest(e);
             // Log warning only once.
             if (!isNoPublicIpAlreadyLogged) {
-                LOGGER.warning(
-                        "Cannot fetch public IPs of Hazelcast Member PODs, you won't be able to use Hazelcast Smart Client from "
-                                + "outside of the Kubernetes network");
+                LOGGER.warning("Cannot fetch public IPs of Hazelcast Member PODs, you won't be able to use "
+                        + "Hazelcast Smart Client from outside of the Kubernetes network");
                 isNoPublicIpAlreadyLogged = true;
             }
             return endpoints;
         }
     }
 
-    private static List<EndpointAddress> privateAddresses(List<Endpoint> endpoints) {
-        List<EndpointAddress> result = new ArrayList<>();
+    @Nullable
+    private String extractNodeName(EndpointAddress endpointAddress, Map<EndpointAddress, String> nodes) {
+        String nodeName = nodes.get(endpointAddress);
+        if (nodeName == null) {
+            JsonObject podJson = callGet(String.format("%s/api/v1/namespaces/%s/pods/%s",
+                    kubernetesMaster, namespace, endpointAddress.getTargetRefName()));
+            return podJson.get("spec").asObject().get("nodeName").asString();
+        }
+        return nodeName;
+    }
+
+    private static List<String> privateAddresses(List<Endpoint> endpoints) {
+        List<String> result = new ArrayList<>();
         for (Endpoint endpoint : endpoints) {
-            result.add(endpoint.getPrivateAddress());
+            result.add(endpoint.getPrivateAddress().getIp());
         }
         return result;
     }
@@ -415,13 +576,13 @@ class KubernetesClient {
                 + " assigned", nodeJson.get("metadata").asObject().get("name")));
     }
 
-    private static List<Endpoint> createEndpoints(List<Endpoint> endpoints, Map<EndpointAddress, String> publicIps,
-                                                  Map<EndpointAddress, Integer> publicPorts) {
+    private static List<Endpoint> createEndpoints(List<Endpoint> endpoints, Map<String, String> publicIps,
+                                                  Map<String, Integer> publicPorts) {
         List<Endpoint> result = new ArrayList<>();
         for (Endpoint endpoint : endpoints) {
             EndpointAddress privateAddress = endpoint.getPrivateAddress();
-            EndpointAddress publicAddress = new EndpointAddress(publicIps.get(privateAddress),
-                    publicPorts.get(privateAddress));
+            EndpointAddress publicAddress = new EndpointAddress(publicIps.get(privateAddress.getIp()),
+                    publicPorts.get(privateAddress.getIp()), privateAddress.getTargetRefName());
             result.add(new Endpoint(privateAddress, publicAddress, endpoint.isReady(), endpoint.getAdditionalProperties()));
         }
         return result;
@@ -436,22 +597,24 @@ class KubernetesClient {
      */
     private JsonObject callGet(final String urlString) {
         return RetryUtils.retry(() -> Json
-                .parse(RestClient.create(urlString).withHeader("Authorization", String.format("Bearer %s", apiToken))
+                .parse(RestClient.create(urlString)
+                        .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
                         .withCaCertificates(caCertificate)
+                        .withConnectTimeoutSeconds(CONNECTION_TIMEOUT_SECONDS)
+                        .withReadTimeoutSeconds(READ_TIMEOUT_SECONDS)
                         .get()
                         .getBody())
                 .asObject(), retries, NON_RETRYABLE_KEYWORDS);
     }
 
-    @SuppressWarnings("checkstyle:magicnumber")
     private List<Endpoint> handleKnownException(RestClientException e) {
-        if (e.getHttpErrorCode() == 401) {
+        if (e.getHttpErrorCode() == HTTP_UNAUTHORIZED) {
             if (!isKnownExceptionAlreadyLogged) {
                 LOGGER.warning("Kubernetes API authorization failure! To use Hazelcast Kubernetes discovery, "
                         + "please check your 'api-token' property. Starting standalone.");
                 isKnownExceptionAlreadyLogged = true;
             }
-        } else if (e.getHttpErrorCode() == 403) {
+        } else if (e.getHttpErrorCode() == HTTP_FORBIDDEN) {
             if (!isKnownExceptionAlreadyLogged) {
                 LOGGER.warning("Kubernetes API access is forbidden! Starting standalone. To use Hazelcast Kubernetes discovery,"
                         + " configure the required RBAC. For 'default' service account in 'default' namespace execute: "
@@ -535,9 +698,17 @@ class KubernetesClient {
         private final String ip;
         private final Integer port;
 
+        private String targetRefName;
+
         EndpointAddress(String ip, Integer port) {
             this.ip = ip;
             this.port = port;
+        }
+
+        EndpointAddress(String ip, Integer port, String targetRefName) {
+            this.ip = ip;
+            this.port = port;
+            this.targetRefName = targetRefName;
         }
 
         String getIp() {
@@ -546,6 +717,10 @@ class KubernetesClient {
 
         Integer getPort() {
             return port;
+        }
+
+        String getTargetRefName() {
+            return targetRefName;
         }
 
         @Override
@@ -559,22 +734,218 @@ class KubernetesClient {
 
             EndpointAddress address = (EndpointAddress) o;
 
-            if (ip != null ? !ip.equals(address.ip) : address.ip != null) {
+            if (!Objects.equals(ip, address.ip) || !Objects.equals(targetRefName, address.targetRefName)) {
                 return false;
             }
-            return port != null ? port.equals(address.port) : address.port == null;
+            return Objects.equals(port, address.port);
         }
 
         @Override
         public int hashCode() {
-            int result = ip != null ? ip.hashCode() : 0;
-            result = 31 * result + (port != null ? port.hashCode() : 0);
-            return result;
+            return Objects.hash(ip, port, targetRefName);
         }
 
         @Override
         public String toString() {
             return String.format("%s:%s", ip, port);
+        }
+    }
+
+    final class StsMonitorThread extends Thread {
+
+        // backoff properties when retrying
+        private static final int MAX_SPINS = 3;
+        private static final int MAX_YIELDS = 10;
+        private static final int MIN_PARK_PERIOD_MILLIS = 1;
+        private static final int MAX_PARK_PERIOD_SECONDS = 10;
+
+        // used only for tests
+        volatile boolean running = true;
+
+        String latestResourceVersion;
+        RuntimeContext latestRuntimeContext;
+        int idleCount;
+        RestClient.WatchResponse watchResponse;
+
+        private final String stsUrlString;
+        private final BackoffIdleStrategy backoffIdleStrategy;
+
+        // We offload reading to a separate Thread to allow us to interrupt the reading operation
+        // when this Thread needs to be shutdown, avoiding the need to terminate this thread in a
+        // non-graceful manner, which could lead to uncompleted message handling - without using a
+        // separate thread, BufferedReader#readLine() blocks until data is received and does not
+        // handle Thread#interrupt()
+        private final ExecutorService readExecutor;
+
+        StsMonitorThread() {
+            super("hz-k8s-sts-monitor");
+            stsUrlString = formatStsListUrl();
+            backoffIdleStrategy = new BackoffIdleStrategy(MAX_SPINS, MAX_YIELDS,
+                    MILLISECONDS.toNanos(MIN_PARK_PERIOD_MILLIS), SECONDS.toNanos(MAX_PARK_PERIOD_SECONDS));
+            readExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryImpl("hz-k8s-sts-monitor-reader"));
+        }
+
+        /**
+         * Initializes and watches information about the StatefulSet in which Hazelcast is being executed.
+         * See <a href="https://kubernetes.io/docs/reference/using-api/api-concepts/#efficient-detection-of-changes">
+         * Efficient detection of changes on Kubernetes API reference</a>.
+         * <p>
+         * Important: If this thread starves, then timely updates may be stalled and shutdown hook
+         * may not act on the latest cluster information.
+         */
+        @Override
+        public void run() {
+            String message;
+
+            while (running) {
+                if (Thread.interrupted()) {
+                    break;
+                }
+                try {
+                    // read initial statefulset list
+                    RuntimeContext previous = latestRuntimeContext;
+                    readInitialStsList();
+                    // update tracker
+                    updateTracker(previous, latestRuntimeContext);
+                    watchResponse = sendWatchRequest();
+                } catch (RestClientException e) {
+                    handleFailure(e);
+                    // always retry after a RestClientException
+                    continue;
+                }
+                // reset backoff-idle count
+                idleCount = 0;
+                try {
+                    while ((message = watchResponse.nextLine()) != null) {
+                        onMessage(message);
+                    }
+                } catch (IOException e) {
+                    LOGGER.info("Exception while watching for StatefulSet changes", e);
+                    try {
+                        watchResponse.disconnect();
+                    } catch (Exception t) {
+                        LOGGER.fine("Exception while closing connection after an IOException", t);
+                    }
+                }
+            }
+        }
+
+        private void handleFailure(RestClientException e) {
+            if (e.getHttpErrorCode() == HTTP_GONE) {
+                // occurs when the resource version we are watching for is stale
+                LOGGER.info("StatefulSet watcher has fallen behind, re-reading sts list and resuming watch: "
+                        + e.getMessage());
+            } else {
+                // watch failed with another HTTP error code, let's log at WARNING level,
+                // backoff and try to resume again
+                LOGGER.warning("Error while attempting to watch kubernetes API for StatefulSets: "
+                        + e.getHttpErrorCode() + " " + e.getMessage() + ". Backing off (n: " + idleCount
+                        + " ) before retrying.");
+                backoffIdleStrategy.idle(idleCount);
+                idleCount++;
+            }
+        }
+
+        String formatStsListUrl() {
+            String fieldSelectorValue = String.format("metadata.name=%s", stsName);
+            try {
+                fieldSelectorValue = URLEncoder.encode(fieldSelectorValue, StandardCharsets.UTF_8.name());
+            } catch (UnsupportedEncodingException e) {
+                throw new HazelcastException(e);
+            }
+            return String.format("%s/apis/apps/v1/namespaces/%s/statefulsets?fieldSelector=%s", kubernetesMaster,
+                    namespace, fieldSelectorValue);
+        }
+
+        // GET statefulsets list and update the latest runtime context
+        void readInitialStsList() {
+            JsonObject jsonObject = callGet(stsUrlString);
+            latestResourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion",
+                    null);
+            latestRuntimeContext = parseStsList(jsonObject);
+        }
+
+        /**
+         * Send a watch request
+         * @return a {@link com.hazelcast.spi.utils.RestClient.WatchResponse} that can be used to poll for watch events
+         *          from Kubernetes API server.
+         */
+        @Nonnull
+        RestClient.WatchResponse sendWatchRequest() {
+            RestClient restClient = RestClient.create(stsUrlString)
+                    .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
+                    .withCaCertificates(caCertificate);
+            return restClient.watch(latestResourceVersion, readExecutor);
+        }
+
+        @Nullable
+        RuntimeContext parseStsList(JsonObject jsonObject) {
+            String resourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion",
+                    null);
+            // identify stateful set this pod belongs to
+            for (JsonValue item : toJsonArray(jsonObject.get("items"))) {
+                String itemName = item.asObject().get("metadata").asObject().getString("name", null);
+                if (stsName.equals(itemName)) {
+                    // identified the stateful set
+                    int specReplicas = item.asObject().get("spec").asObject().getInt("replicas", UNKNOWN);
+                    int readyReplicas = item.asObject().get("status").asObject().getInt("readyReplicas", UNKNOWN);
+                    int replicas = item.asObject().get("status").asObject().getInt("currentReplicas", UNKNOWN);
+                    return new RuntimeContext(specReplicas, readyReplicas, replicas, resourceVersion);
+                }
+            }
+            return null;
+        }
+
+        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
+        void onMessage(String message) {
+            if (LOGGER.isFinestEnabled()) {
+                LOGGER.finest("Complete message from kubernetes API: " + message);
+            }
+            JsonObject jsonObject = Json.parse(message).asObject();
+            JsonObject sts = jsonObject.get("object").asObject();
+            String itemName = sts.asObject().get("metadata").asObject().getString("name", null);
+            if (!stsName.equals(itemName)) {
+                return;
+            }
+            String watchType = jsonObject.getString("type", null);
+            RuntimeContext ctx = null;
+            switch (watchType) {
+                case "MODIFIED":
+                    ctx = extractSts(sts);
+                    latestResourceVersion = ctx.getResourceVersion();
+                    break;
+                case "DELETED":
+                    ctx = extractSts(sts);
+                    latestResourceVersion = ctx.getResourceVersion();
+                    ctx = new RuntimeContext(0, ctx.getReadyReplicas(),
+                            ctx.getCurrentReplicas(), ctx.getResourceVersion());
+                    break;
+                case "ADDED":
+                    throw new IllegalStateException("A new sts with same name as this cannot be added");
+                default:
+                    LOGGER.info("Unknown watch type " + watchType + ", complete message:\n" + message);
+            }
+            if (latestRuntimeContext != null && ctx != null) {
+                updateTracker(latestRuntimeContext, ctx);
+            }
+            latestRuntimeContext = ctx;
+        }
+
+        void updateTracker(RuntimeContext previous, RuntimeContext updated) {
+            if (previous != null) {
+                LOGGER.info("Updating cluster topology tracker with previous: "
+                        + previous + ", updated: " + updated);
+                clusterTopologyIntentTracker.update(previous.getSpecifiedReplicaCount(),
+                        updated.getSpecifiedReplicaCount(),
+                        previous.getReadyReplicas(), updated.getReadyReplicas(),
+                        previous.getCurrentReplicas(), updated.getCurrentReplicas());
+            } else {
+                LOGGER.info("Initializing cluster topology tracker with initial context: "
+                        + latestRuntimeContext);
+                clusterTopologyIntentTracker.update(UNKNOWN, updated.getSpecifiedReplicaCount(),
+                        UNKNOWN, updated.getReadyReplicas(),
+                        UNKNOWN, updated.getCurrentReplicas());
+            }
         }
     }
 }

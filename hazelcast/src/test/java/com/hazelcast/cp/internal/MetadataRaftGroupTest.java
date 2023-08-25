@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,14 +69,12 @@ import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsToAddresses;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Collections.singletonList;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -552,7 +550,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
                 LINEARIZABLE);
 
         List<CPMember> activeEndpoints = f1.get();
-        assertThat(activeEndpoints, not(hasItem(endpoint)));
+        assertThat(activeEndpoints).doesNotContain(endpoint);
 
         InternalCompletableFuture<CPGroup> f2 = invocationService.query(metadataGroupId, new GetRaftGroupOp(metadataGroupId),
                 LINEARIZABLE);
@@ -599,8 +597,8 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         HazelcastInstance leader = getInstance(leaderNode.getLocalMember());
         CPGroup group3 = queryRaftGroupLocally(leader, groupId3);
         assertNotNull(group3);
-        assertThat(group3.members(), not(hasItem(endpoint3)));
-        assertThat(group3.members(), not(hasItem(endpoint4)));
+        assertThat(group3.members()).doesNotContain(endpoint3);
+        assertThat(group3.members()).doesNotContain(endpoint4);
 
         CPGroup group4 = queryRaftGroupLocally(leader, groupId4);
         assertNotNull(group4);

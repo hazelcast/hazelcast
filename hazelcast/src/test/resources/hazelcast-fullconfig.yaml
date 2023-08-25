@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -174,3 +174,7 @@ hazelcast:
           enabled: true
     memcache-protocol:
       enabled: true
+    tpc-socket:
+      port-range: 14000-16000
+      receive-buffer-size-kb: 256
+      send-buffer-size-kb: 256

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ public class ClusterStateChangeTest extends JetTestSupport {
 
         // Then
         assertEquals("Cluster state", PASSIVE, cluster.getClusterState());
-        assertTrue("ProcessorMetaSupplier should get closed", MockPMS.closeCalled.get());
+        assertTrue("ProcessorMetaSupplier should get closed", MockPMS.closeCount.get() > 0);
         assertEquals("ProcessorSupplier should get closed on each member", NODE_COUNT, MockPS.closeCount.get());
         assertEquals("Job status", NOT_RUNNING, job.getStatus());
 

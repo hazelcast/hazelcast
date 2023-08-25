@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,13 @@ import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.dataconnection.impl.DataConnectionServiceImplTest;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.Capacity;
-import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -53,7 +53,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import example.serialization.EmployeeDTO;
 import example.serialization.EmployeeDTOSerializer;
 import example.serialization.EmployerDTO;
 import org.junit.Test;
@@ -81,10 +80,10 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 // Please also take a look at the DynamicConfigXmlGeneratorTest.
@@ -109,17 +108,29 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         cfg.getNetworkConfig().setSymmetricEncryptionConfig(symmetricEncryptionConfig);
         cfg.setLicenseKey("HazelcastLicenseKey");
 
+        cfg.getSecurityConfig().addRealmConfig("simple",
+                new RealmConfig().setSimpleAuthenticationConfig(new SimpleAuthenticationConfig().addUser("test", "pass"))
+                        .setUsernamePasswordIdentityConfig("myidentity", "mypasswd"))
+                .addRealmConfig("ldap", new RealmConfig().setLdapAuthenticationConfig(
+                        new LdapAuthenticationConfig().setSystemUserDn("cn=test").setSystemUserPassword("ldappass")));
+
         Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         SSLConfig generatedSSLConfig = newConfigViaXMLGenerator.getNetworkConfig().getSSLConfig();
+        SecurityConfig secCfg = newConfigViaXMLGenerator.getSecurityConfig();
 
-        assertEquals(generatedSSLConfig.getProperty("keyStorePassword"), MASK_FOR_SENSITIVE_DATA);
-        assertEquals(generatedSSLConfig.getProperty("trustStorePassword"), MASK_FOR_SENSITIVE_DATA);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, generatedSSLConfig.getProperty("keyStorePassword"));
+        assertEquals(MASK_FOR_SENSITIVE_DATA, generatedSSLConfig.getProperty("trustStorePassword"));
 
         String secPassword = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getPassword();
         String theSalt = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
-        assertEquals(secPassword, MASK_FOR_SENSITIVE_DATA);
-        assertEquals(theSalt, MASK_FOR_SENSITIVE_DATA);
-        assertEquals(newConfigViaXMLGenerator.getLicenseKey(), MASK_FOR_SENSITIVE_DATA);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, secPassword);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, theSalt);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, newConfigViaXMLGenerator.getLicenseKey());
+        RealmConfig simpleRealm = secCfg.getRealmConfig("simple");
+        assertEquals(MASK_FOR_SENSITIVE_DATA, simpleRealm.getSimpleAuthenticationConfig().getPassword("test"));
+        assertEquals(MASK_FOR_SENSITIVE_DATA, simpleRealm.getUsernamePasswordIdentityConfig().getPassword());
+        assertEquals(MASK_FOR_SENSITIVE_DATA,
+                secCfg.getRealmConfig("ldap").getLdapAuthenticationConfig().getSystemUserPassword());
     }
 
     @Test
@@ -146,17 +157,17 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg, false);
         SSLConfig generatedSSLConfig = newConfigViaXMLGenerator.getNetworkConfig().getSSLConfig();
 
-        assertEquals(generatedSSLConfig.getProperty("keyStorePassword"), password);
-        assertEquals(generatedSSLConfig.getProperty("trustStorePassword"), password);
+        assertEquals(password, generatedSSLConfig.getProperty("keyStorePassword"));
+        assertEquals(password, generatedSSLConfig.getProperty("trustStorePassword"));
 
         String secPassword = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getPassword();
         String theSalt = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
-        assertEquals(secPassword, password);
-        assertEquals(theSalt, salt);
-        assertEquals(newConfigViaXMLGenerator.getLicenseKey(), licenseKey);
+        assertEquals(password, secPassword);
+        assertEquals(salt, theSalt);
+        assertEquals(licenseKey, newConfigViaXMLGenerator.getLicenseKey());
         SecurityConfig securityConfig = newConfigViaXMLGenerator.getSecurityConfig();
         RealmConfig realmConfig = securityConfig.getRealmConfig(securityConfig.getMemberRealm());
-        assertEquals(realmConfig.getUsernamePasswordIdentityConfig().getPassword(), password);
+        assertEquals(password, realmConfig.getUsernamePasswordIdentityConfig().getPassword());
     }
 
     private MemberAddressProviderConfig getMemberAddressProviderConfig(Config cfg) {
@@ -341,6 +352,17 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         @Override
         public void onConnect(Socket connectedSocket) throws IOException {
         }
+    }
+
+    @Test
+    public void testNetworkConfigTpcSocketConfig() {
+        Config expectedConfig = new Config();
+        expectedConfig.getNetworkConfig().getTpcSocketConfig()
+                .setPortRange("14000-16000")
+                .setReceiveBufferSizeKB(256)
+                .setSendBufferSizeKB(256);
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+        assertEquals(expectedConfig.getTpcConfig(), actualConfig.getTpcConfig());
     }
 
     @Test
@@ -647,7 +669,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("ldapRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
-        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -705,7 +727,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         );
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("simpleRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
-        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -831,37 +853,32 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config();
 
         CompactSerializationConfig expected = new CompactSerializationConfig();
-        expected.setEnabled(true);
-        expected.register(EmployerDTO.class);
-        expected.register(EmployeeDTO.class, "employee", new EmployeeDTOSerializer());
+        expected.addClass(EmployerDTO.class);
+        expected.addSerializer(new EmployeeDTOSerializer());
 
         config.getSerializationConfig().setCompactSerializationConfig(expected);
 
         CompactSerializationConfig actual = getNewConfigViaXMLGenerator(config).getSerializationConfig().getCompactSerializationConfig();
-        assertEquals(expected.isEnabled(), actual.isEnabled());
 
-        // Since we don't have APIs of the form register(String) or register(String, String, String) in the
-        // compact serialization config, when we read the config from XML/YAML, we store registered classes
-        // in a different map.
-        Map<String, TriTuple<String, String, String>> namedRegistries
-                = CompactSerializationConfigAccessor.getNamedRegistrations(actual);
+        // Since we don't have APIs to register string class names in the
+        // compact serialization config, when we read the config from XML/YAML,
+        // we store registered classes/serializers in different lists.
+        List<String> serializerClassNames
+                = CompactSerializationConfigAccessor.getSerializerClassNames(actual);
+        List<String> compactSerializableClassNames
+                = CompactSerializationConfigAccessor.getCompactSerializableClassNames(actual);
 
         Map<String, TriTuple<Class, String, CompactSerializer>> registrations
                 = CompactSerializationConfigAccessor.getRegistrations(actual);
 
-        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : registrations.entrySet()) {
-            String key = entry.getKey();
-            TriTuple<Class, String, CompactSerializer> expectedRegistration = entry.getValue();
-            TriTuple<String, String, String> actualRegistration = namedRegistries.get(key);
-
-            assertEquals(expectedRegistration.element1.getName(), actualRegistration.element1);
-            assertEquals(expectedRegistration.element2, actualRegistration.element2);
-
-            CompactSerializer serializer = expectedRegistration.element3;
+        for (TriTuple<Class, String, CompactSerializer> registration : registrations.values()) {
+            CompactSerializer serializer = registration.element3;
             if (serializer != null) {
-                assertEquals(serializer.getClass().getName(), actualRegistration.element3);
+                assertThat(serializerClassNames)
+                        .contains(serializer.getClass().getName());
             } else {
-                assertNull(actualRegistration.element3);
+                assertThat(compactSerializableClassNames)
+                        .contains(registration.element1.getName());
             }
         }
     }
@@ -934,7 +951,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expectedConfig.setMetadataSpacePercentage(12.5f);
         expectedConfig.setMinBlockSize(50);
         expectedConfig.setPageSize(100);
-        expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+        expectedConfig.setCapacity(new Capacity(20, MemoryUnit.MEGABYTES));
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
@@ -945,8 +962,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
         assertEquals(50, actualConfig.getMinBlockSize());
         assertEquals(100, actualConfig.getPageSize());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getCapacity().getUnit());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getCapacity().getValue());
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -958,7 +975,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expectedConfig.setMetadataSpacePercentage(12.5f);
         expectedConfig.setMinBlockSize(50);
         expectedConfig.setPageSize(100);
-        expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+        expectedConfig.setCapacity(new Capacity(20, MemoryUnit.MEGABYTES));
         PersistentMemoryConfig origPmemConfig = expectedConfig.getPersistentMemoryConfig();
         origPmemConfig.setEnabled(true);
         origPmemConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem0", 0));
@@ -973,8 +990,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
         assertEquals(50, actualConfig.getMinBlockSize());
         assertEquals(100, actualConfig.getPageSize());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getCapacity().getUnit());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getCapacity().getValue());
 
         PersistentMemoryConfig pmemConfig = actualConfig.getPersistentMemoryConfig();
         assertTrue(pmemConfig.isEnabled());
@@ -997,7 +1014,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expectedConfig.setMetadataSpacePercentage(12.5f);
         expectedConfig.setMinBlockSize(50);
         expectedConfig.setPageSize(100);
-        expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+        expectedConfig.setCapacity(new Capacity(20, MemoryUnit.MEGABYTES));
         expectedConfig.getPersistentMemoryConfig().setMode(PersistentMemoryMode.SYSTEM_MEMORY);
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
@@ -1009,8 +1026,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
         assertEquals(50, actualConfig.getMinBlockSize());
         assertEquals(100, actualConfig.getPageSize());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getCapacity().getUnit());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getCapacity().getValue());
 
         PersistentMemoryConfig pmemConfig = actualConfig.getPersistentMemoryConfig();
         assertFalse(pmemConfig.isEnabled());
@@ -1090,7 +1107,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMissingCPMemberAutoRemovalSeconds(120)
                 .setFailOnIndeterminateOperationState(true)
                 .setPersistenceEnabled(true)
-                .setBaseDir(new File("/custom-dir"));
+                .setBaseDir(new File("/custom-dir"))
+                .setCPMemberPriority(-1);
 
         config.getCPSubsystemConfig()
                 .getRaftAlgorithmConfig()
@@ -1155,10 +1173,12 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config();
 
         config.getSqlConfig().setStatementTimeoutMillis(30L);
+        config.getSqlConfig().setCatalogPersistenceEnabled(true);
 
         SqlConfig generatedConfig = getNewConfigViaXMLGenerator(config).getSqlConfig();
 
         assertEquals(config.getSqlConfig().getStatementTimeoutMillis(), generatedConfig.getStatementTimeoutMillis());
+        assertEquals(config.getSqlConfig().isCatalogPersistenceEnabled(), generatedConfig.isCatalogPersistenceEnabled());
     }
 
     @Test
@@ -1339,6 +1359,14 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expected.setSocketKeepAlive(true);
         expected.setSocketTcpNoDelay(true);
         expected.setSocketBufferDirect(true);
+        expected.setSocketKeepCount(2);
+        expected.setSocketKeepIntervalSeconds(3);
+        expected.setSocketKeepIdleSeconds(83);
+
+        expected.getTpcSocketConfig()
+                .setPortRange("14000-16000")
+                .setReceiveBufferSizeKB(256)
+                .setSendBufferSizeKB(256);
 
         cfg.getAdvancedNetworkConfig().setEnabled(true);
         cfg.getAdvancedNetworkConfig().addWanEndpointConfig(expected);
@@ -1467,6 +1495,34 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expected, actual);
     }
 
+    @Test
+    public void testDataConnectionConfig() {
+        Config expectedConfig = new Config();
+
+        Properties properties = new Properties();
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + DataConnectionServiceImplTest.class.getSimpleName());
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+                .setName("test-data-connection")
+                .setType("jdbc")
+                .setProperties(properties);
+
+        expectedConfig.addDataConnectionConfig(dataConnectionConfig);
+
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+
+        assertEquals(expectedConfig.getDataConnectionConfigs(), actualConfig.getDataConnectionConfigs());
+    }
+
+    @Test
+    public void testTpcConfig() {
+        Config expectedConfig = new Config();
+        expectedConfig.getTpcConfig()
+                .setEventloopCount(12)
+                .setEnabled(true);
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+        assertEquals(expectedConfig.getTpcConfig(), actualConfig.getTpcConfig());
+    }
+
     private Config getNewConfigViaXMLGenerator(Config config) {
         return getNewConfigViaXMLGenerator(config, true);
     }
@@ -1478,7 +1534,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         return new InMemoryXmlConfig(xml);
     }
 
-    private static TcpIpConfig tcpIpConfig() {
+    public static TcpIpConfig tcpIpConfig() {
         return new TcpIpConfig()
                 .setEnabled(true)
                 .setConnectionTimeoutSeconds(10)
@@ -1486,7 +1542,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setRequiredMember("10.11.11.2");
     }
 
-    private static MulticastConfig multicastConfig() {
+    public static MulticastConfig multicastConfig() {
         return new MulticastConfig()
                 .setEnabled(true)
                 .setMulticastTimeoutSeconds(10)
@@ -1497,7 +1553,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setTrustedInterfaces(newHashSet("*"));
     }
 
-    private static void assertFailureDetectorConfigEquals(IcmpFailureDetectorConfig expected,
+    public static void assertFailureDetectorConfigEquals(IcmpFailureDetectorConfig expected,
                                                           IcmpFailureDetectorConfig actual) {
         assertEquals(expected.isEnabled(), actual.isEnabled());
         assertEquals(expected.getIntervalMilliseconds(), actual.getIntervalMilliseconds());

@@ -3,7 +3,8 @@
     "hazelcast": {
       "sql": {
         "statement-timeout-millis": "100ms",
-        "unknown-prop": false
+        "unknown-prop": false,
+        "catalog-persistence-enabled": "potato"
       }
     }
   },
@@ -24,8 +25,15 @@
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Integer, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Sql/properties/catalog-persistence-enabled",
+        "pointerToViolation": "#/hazelcast/sql/catalog-persistence-enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
       }
     ],
-    "message": "2 schema violations found"
+    "message": "3 schema violations found"
   }
 }

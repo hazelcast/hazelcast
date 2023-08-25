@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -280,6 +280,12 @@ public class CPSubsystemConfig {
     private int dataLoadTimeoutSeconds = DEFAULT_DATA_LOAD_TIMEOUT_SECONDS;
 
     /**
+     * The CP member priority. The Raft leader's role eventually will be transferred to members with
+     * higher priorities within the CP group.
+     */
+    private int cpMemberPriority;
+
+    /**
      * Contains configuration options for Hazelcast's Raft consensus algorithm
      * implementation.
      */
@@ -311,6 +317,7 @@ public class CPSubsystemConfig {
         this.persistenceEnabled = config.persistenceEnabled;
         this.baseDir = config.baseDir;
         this.dataLoadTimeoutSeconds = config.dataLoadTimeoutSeconds;
+        this.cpMemberPriority = config.cpMemberPriority;
         for (SemaphoreConfig semaphoreConfig : config.semaphoreConfigs.values()) {
             this.semaphoreConfigs.put(semaphoreConfig.getName(), new SemaphoreConfig(semaphoreConfig));
         }
@@ -540,6 +547,27 @@ public class CPSubsystemConfig {
     }
 
     /**
+     * Sets the CP member priority. CP groups' leadership will be transferred to members with
+     * higher priorities within the CP group.
+     *
+     * @param cpMemberPriority can be any integer number
+     * @return this config instance
+     */
+    public CPSubsystemConfig setCPMemberPriority(int cpMemberPriority) {
+        this.cpMemberPriority = cpMemberPriority;
+        return this;
+    }
+
+    /**
+     * Returns the CP member priority.
+     *
+     * @return the CP member priority
+     */
+    public int getCPMemberPriority() {
+        return cpMemberPriority;
+    }
+
+    /**
      * Returns configuration options for Hazelcast's Raft consensus algorithm
      * implementation
      *
@@ -673,8 +701,9 @@ public class CPSubsystemConfig {
         return "CPSubsystemConfig{" + "cpMemberCount=" + cpMemberCount + ", groupSize=" + groupSize
                 + ", sessionTimeToLiveSeconds=" + sessionTimeToLiveSeconds + ", sessionHeartbeatIntervalSeconds="
                 + sessionHeartbeatIntervalSeconds + ", missingCPMemberAutoRemovalSeconds=" + missingCPMemberAutoRemovalSeconds
-                + ", failOnIndeterminateOperationState=" + failOnIndeterminateOperationState + ", raftAlgorithmConfig="
-                + raftAlgorithmConfig + ", semaphoreConfigs=" + semaphoreConfigs + ", lockConfigs=" + lockConfigs + '}';
+                + ", failOnIndeterminateOperationState=" + failOnIndeterminateOperationState
+                + ", cpMemberPriority=" + cpMemberPriority + ", raftAlgorithmConfig=" + raftAlgorithmConfig
+                + ", semaphoreConfigs=" + semaphoreConfigs + ", lockConfigs=" + lockConfigs + '}';
     }
 
     @Override
@@ -693,6 +722,7 @@ public class CPSubsystemConfig {
                 && missingCPMemberAutoRemovalSeconds == that.missingCPMemberAutoRemovalSeconds
                 && failOnIndeterminateOperationState == that.failOnIndeterminateOperationState
                 && persistenceEnabled == that.persistenceEnabled && dataLoadTimeoutSeconds == that.dataLoadTimeoutSeconds
+                && cpMemberPriority == that.cpMemberPriority
                 && Objects.equals(baseDir, that.baseDir)
                 && Objects.equals(raftAlgorithmConfig, that.raftAlgorithmConfig)
                 && Objects.equals(semaphoreConfigs, that.semaphoreConfigs)
@@ -703,7 +733,7 @@ public class CPSubsystemConfig {
     @Override
     public int hashCode() {
         return Objects.hash(cpMemberCount, groupSize, sessionTimeToLiveSeconds, sessionHeartbeatIntervalSeconds,
-                missingCPMemberAutoRemovalSeconds, failOnIndeterminateOperationState, persistenceEnabled, baseDir,
-                dataLoadTimeoutSeconds, raftAlgorithmConfig, semaphoreConfigs, lockConfigs, configPatternMatcher);
+                missingCPMemberAutoRemovalSeconds, failOnIndeterminateOperationState, persistenceEnabled, cpMemberPriority,
+                baseDir, dataLoadTimeoutSeconds, raftAlgorithmConfig, semaphoreConfigs, lockConfigs, configPatternMatcher);
     }
 }

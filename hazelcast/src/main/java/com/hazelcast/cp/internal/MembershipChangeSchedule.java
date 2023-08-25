@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,13 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * When there is a membership change in CP Subsystem,
@@ -163,11 +165,13 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
             groupId = in.readObject();
             membersCommitIndex = in.readLong();
             int len = in.readInt();
-            members = new HashSet<>(len);
+            // The initial incoming implementation for the 'members' variable in a constructor is LinkedHashSet
+            Set<RaftEndpoint> membersSet = new LinkedHashSet<>(len);
             for (int i = 0; i < len; i++) {
                 RaftEndpoint member = in.readObject();
-                members.add(member);
+                membersSet.add(member);
             }
+            members = unmodifiableSet(membersSet);
             memberToAdd = in.readObject();
             memberToRemove = in.readObject();
         }

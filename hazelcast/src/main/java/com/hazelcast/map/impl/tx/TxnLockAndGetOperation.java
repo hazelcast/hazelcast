@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,16 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.LockAwareOperation;
+import com.hazelcast.map.impl.operation.steps.TxnLockAndGetOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
 
@@ -60,7 +63,7 @@ public class TxnLockAndGetOperation
         if (!recordStore.txnLock(getKey(), ownerUuid, getThreadId(), getCallId(), ttl, blockReads)) {
             throw new TransactionException("Transaction couldn't obtain lock.");
         }
-        Record record = recordStore.getRecordOrNull(dataKey);
+        Record record = recordStore.getRecordOrNull(dataKey, false);
         if (record == null && shouldLoad) {
             record = recordStore.loadRecordOrNull(dataKey, false, getCallerAddress());
         }
@@ -68,6 +71,29 @@ public class TxnLockAndGetOperation
         response = new VersionedValue(value, record == null ? 0 : record.getVersion());
     }
 
+    @Override
+    public State createState() {
+        // TODO setWaitTimeout
+        return super.createState()
+                .setTtl(ttl)
+                .setOwnerUuid(ownerUuid)
+                .setShouldLoad(shouldLoad)
+                .setBlockReads(blockReads);
+    }
+
+    @Override
+    public void applyState(State state) {
+        Record record = recordStore.getRecord(state.getKey());
+        response = new VersionedValue(mapServiceContext.toData(state.getOldValue()),
+                record == null ? 0 : record.getVersion());
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return TxnLockAndGetOpSteps.READ;
+    }
+
+    @Override
     public boolean shouldWait() {
         return !recordStore.canAcquireLock(dataKey, ownerUuid, getThreadId());
     }

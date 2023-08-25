@@ -11,6 +11,7 @@
         "persistence-enabled": "true",
         "base-dir": null,
         "data-load-timeout-seconds": "30",
+        "cp-member-priority": "0",
         "raft-algorithm": {
           "leader-election-timeout-in-millis": "2000",
           "leader-heartbeat-period-in-millis": "5000",
@@ -227,8 +228,15 @@
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Integer, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/CPSubsystem/properties/cp-member-priority",
+        "pointerToViolation": "#/hazelcast/cp-subsystem/cp-member-priority",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
       }
     ],
-    "message": "22 schema violations found"
+    "message": "23 schema violations found"
   }
 }

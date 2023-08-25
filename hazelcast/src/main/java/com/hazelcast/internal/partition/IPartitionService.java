@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,21 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.internal.services.CoreService;
-
-import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+
+import javax.annotation.Nonnull;
 
 /**
  * An SPI service for accessing partition related information.
@@ -155,10 +158,21 @@ public interface IPartitionService extends CoreService {
      * Queries and returns if this member in a safe state or not.
      * <p>
      * This method just checks for a safe state, it doesn't force this member to be in a safe state.
+     * <p>
+     * This method performs the same checks as {@link #isPartitionTableSafe()}, and in addition also
+     * checks whether replica sync is required.
      *
      * @return {@code true} if this member in a safe state, otherwise {@code false}
      */
     boolean isMemberStateSafe();
+
+    /**
+     * Queries and returns if the partition table is safe, meaning partition replicas are assigned to owners,
+     * no migrations are ongoing and there is no need to fetch partition table from other members.
+     *
+     * @return {@code] true} is partition table is safe, otherwise {@code false}
+     */
+    boolean isPartitionTableSafe();
 
     /**
      * Returns maximum allowed backup count according to current
@@ -206,4 +220,32 @@ public interface IPartitionService extends CoreService {
      * @return array of {@link IPartition} instances
      */
     IPartition[] getPartitions();
+
+    /**
+     * Gets a PartitionIdSet from a collection of partition key objects
+     * @param keys the collection of key objects to map to an id set
+     * @return the mapped id set
+     */
+    default PartitionIdSet getPartitionIdSet(Collection<Object> keys) {
+        PartitionIdSet partitionIds = new PartitionIdSet(getPartitionCount());
+        keys.forEach(o -> partitionIds.add(getPartitionId(o)));
+        return partitionIds;
+    }
+
+    /**
+     * Gets a PartitionIdSet from a collection of partition key data objects
+     * @param keysData the stream of key data to map to an id set
+     * @return the mapped id set
+     */
+    default PartitionIdSet getPartitionIdSet(Stream<Data> keysData) {
+        PartitionIdSet partitionIds = new PartitionIdSet(getPartitionCount());
+        keysData.forEach(o -> partitionIds.add(getPartitionId(o)));
+        return partitionIds;
+    }
+
+    /**
+     * @return  {@code true} if initial partition assignment ("first arrangement")
+     *          is done, otherwise {@code false}.
+     */
+    boolean isPartitionAssignmentDone();
 }

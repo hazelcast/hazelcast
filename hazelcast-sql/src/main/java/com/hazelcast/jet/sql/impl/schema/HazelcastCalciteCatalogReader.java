@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
         HazelcastTable hzTable = table.unwrap(HazelcastTable.class);
         assert hzTable != null;
         if (hzTable.getTarget() instanceof ViewTable) {
-            return new HazelcastViewRelOptTable(table, ((ViewTable) hzTable.getTarget()).getViewQuery());
+            return new HazelcastViewRelOptTable(table, ((ViewTable) hzTable.getTarget()).getViewRel());
         }
 
         // Wrap it into our own table.

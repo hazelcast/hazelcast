@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,13 +90,13 @@ public class InitExecutionOperation extends AsyncJobOperation {
                 caller);
 
         ExecutionPlan plan = deserializePlan(serializedPlan);
+
         if (isLightJob) {
-            return service.getJobExecutionService().runLightJob(jobId(), executionId, caller,
+            return service.getJobExecutionService().runLightJob(jobId(), executionId, getCallerAddress(),
                     coordinatorMemberListVersion, participants, plan);
         } else {
-            service.getJobExecutionService().initExecution(jobId(), executionId, caller,
+            return service.getJobExecutionService().initExecution(jobId(), executionId, getCallerAddress(),
                     coordinatorMemberListVersion, participants, plan);
-            return CompletableFuture.completedFuture(null);
         }
     }
 
