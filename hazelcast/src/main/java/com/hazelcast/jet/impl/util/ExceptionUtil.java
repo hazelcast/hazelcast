@@ -147,50 +147,8 @@ public final class ExceptionUtil {
 
     @Nonnull
     public static RuntimeException rethrow(@Nonnull final Throwable t) {
-        if (t instanceof Error) {
-            if (t instanceof OutOfMemoryError) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
-            }
-            throw (Error) t;
-        } else {
-            throw peeledAndUnchecked(t);
-        }
-    }
-
-    /**
-     * Utility to make sure exceptions inside
-     * {@link java.util.concurrent.CompletionStage#whenComplete(BiConsumer)} are not swallowed.
-     * Exceptions will be caught and logged using the supplied logger.
-     */
-    @Nonnull
-    public static <T> BiConsumer<T, ? super Throwable> withTryCatch(
-            @Nonnull ILogger logger, @Nonnull BiConsumer<T, ? super Throwable> consumer
-    ) {
-        return withTryCatch(logger, "Exception during callback", consumer);
-    }
-
-    /**
-     * Utility to make sure exceptions inside
-     * {@link java.util.concurrent.CompletionStage#whenComplete(BiConsumer)} are not swallowed.
-     * Exceptions will be caught and logged using the supplied logger and message.
-     */
-    @Nonnull
-    public static <T> BiConsumer<T, ? super Throwable> withTryCatch(
-            @Nonnull ILogger logger, @Nonnull String message, @Nonnull BiConsumer<T, ? super Throwable> consumer
-    ) {
-        return (r, t) -> {
-            try {
-                consumer.accept(r, t);
-            } catch (Throwable e) {
-                logger.severe(message, e);
-            }
-        };
-    }
-
-    @SuppressWarnings("unchecked")
-    @Nonnull
-    public static <T extends Throwable> RuntimeException sneakyThrow(@Nonnull Throwable t) throws T {
-        throw (T) t;
+        com.hazelcast.internal.util.ExceptionUtil.rethrowIfError(t);
+        throw peeledAndUnchecked(t);
     }
 
     /**

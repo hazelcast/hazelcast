@@ -27,6 +27,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationInterceptorImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationProgressNotification;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -505,14 +506,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         waitAllForSafeState(hz1);
 
         Throwable t = exceptionRef.get();
-        Supplier<String> messageSupplier = () -> {
-            StringWriter sw = new StringWriter();
-            if (t != null) {
-                sw.write("Unexpected exception! Stacktrace: \n");
-                t.printStackTrace(new PrintWriter(sw));
-            }
-            return sw.toString();
-        };
+        Supplier<String> messageSupplier = () -> t == null ? "" : ExceptionUtil.stackTraceToString(t);
         assertNull(messageSupplier.get(), t);
     }
 

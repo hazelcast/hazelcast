@@ -53,7 +53,7 @@ import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 

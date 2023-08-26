@@ -31,7 +31,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isTechnicalCancellationE
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.stackTraceToString;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 

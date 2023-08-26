@@ -46,22 +46,12 @@ public final class MapOperationStatsUpdater {
 
         if (operation instanceof SetOperation) {
             localMapStats.incrementSetLatencyNanos(durationNanos);
-            return;
-        }
-
-        if (operation instanceof BasePutOperation) {
+        } else if (operation instanceof BasePutOperation) {
             localMapStats.incrementPutLatencyNanos(durationNanos);
-            return;
-        }
-
-        if (operation instanceof BaseRemoveOperation) {
+        } else if (operation instanceof BaseRemoveOperation) {
             localMapStats.incrementRemoveLatencyNanos(durationNanos);
-            return;
-        }
-
-        if (operation instanceof GetOperation) {
+        } else if (operation instanceof GetOperation) {
             localMapStats.incrementGetLatencyNanos(durationNanos);
-            return;
         }
     }
 
@@ -77,17 +67,10 @@ public final class MapOperationStatsUpdater {
 
         if (operation instanceof TxnSetOperation) {
             localMapStats.incrementSetLatencyNanos(durationNanos);
-            return;
-        }
-
-        if (operation instanceof TxnDeleteOperation) {
+        } else if (operation instanceof TxnDeleteOperation) {
             localMapStats.incrementRemoveLatencyNanos(durationNanos);
-            return;
-        }
-
-        if (operation instanceof GetOperation) {
+        } else if (operation instanceof GetOperation) {
             localMapStats.incrementGetLatencyNanos(durationNanos);
-            return;
         }
     }
 }

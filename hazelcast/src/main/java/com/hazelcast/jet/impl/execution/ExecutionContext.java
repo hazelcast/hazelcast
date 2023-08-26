@@ -68,7 +68,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TIME;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
