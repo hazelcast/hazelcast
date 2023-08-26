@@ -18,7 +18,7 @@ package com.hazelcast.jet.hadoop.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.internal.util.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.pipeline.file.impl.FileProcessorMetaSupplier;
 import com.hazelcast.logging.ILogger;
 
