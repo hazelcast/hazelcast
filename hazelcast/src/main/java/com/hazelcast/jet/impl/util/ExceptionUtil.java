@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.ClientExceptionFactory.ExceptionFactor
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.RestartableException;
@@ -37,7 +36,6 @@ import com.hazelcast.jet.impl.execution.TaskletExecutionException;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.sql.impl.ResultLimitReachedException;
