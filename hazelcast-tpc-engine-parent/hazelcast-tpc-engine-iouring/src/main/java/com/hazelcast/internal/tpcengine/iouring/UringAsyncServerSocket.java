@@ -33,8 +33,8 @@ import java.net.SocketAddress;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_SERVER_SOCKET;
-import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.encodeUserdata;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.EINVAL;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.iouring.LinuxSocket.AF_INET;
@@ -93,6 +93,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
     @SuppressWarnings({"checkstyle:MemberName"})
     static final class Handler {
 
+        int handlerIndex;
         private final UringAsyncServerSocket socket;
         private final LinuxSocket linuxSocket;
         private final SubmissionQueue submissionQueue;
@@ -102,8 +103,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
         private final TpcLogger logger;
         private final Consumer<AbstractAsyncSocket.AcceptRequest> acceptFn;
         private boolean closing;
-        private int pending = 0;
-        int handlerIndex;
+        private int pending;
 
         private Handler(Builder builder, UringAsyncServerSocket socket) {
             this.socket = socket;
@@ -337,7 +337,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
         private InetSocketAddress localAddress;
         private int localPort;
 
-        public Builder(){
+        public Builder() {
             this.linuxSocket = LinuxSocket.createNonBlockingTcpIpv4Socket();
             this.options = new UringOptions(linuxSocket);
         }

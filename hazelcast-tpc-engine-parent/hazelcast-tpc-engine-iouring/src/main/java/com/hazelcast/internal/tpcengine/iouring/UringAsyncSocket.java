@@ -36,8 +36,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_SOCKET;
-import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.encodeUserdata;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.EAGAIN;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNRESET;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IOV_MAX;
@@ -209,7 +209,7 @@ public final class UringAsyncSocket extends AsyncSocket {
     // In the future we could add a WriteHandler that is optimized
     // for when a Writer is set and bypasses the the whole ioVector ceremony
     // But the Writer API needs to harden a bit first.
-    @SuppressWarnings({"checkstyle:MemberName"})
+    @SuppressWarnings({"checkstyle:MemberName", "checkstyle:ExecutableStatementCount"})
     static final class Handler {
 
         private final Eventloop eventloop;

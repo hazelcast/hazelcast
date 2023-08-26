@@ -18,7 +18,6 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.Reactor_CreateDestroyTest;
-import org.junit.Ignore;
 
 public class UringReactor_CreateDestroyTest
         extends Reactor_CreateDestroyTest {

@@ -24,7 +24,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
@@ -69,7 +68,7 @@ public abstract class AsyncServerSocket_CreateDestroyTest {
     }
 
     @Test
-    public void test_whenSuccess() {
+    public void test() {
         for (long iteration = 0; iteration < iterations; iteration++) {
             if (iteration % 1000 == 0) {
                 System.out.println("at iteration:" + iteration);

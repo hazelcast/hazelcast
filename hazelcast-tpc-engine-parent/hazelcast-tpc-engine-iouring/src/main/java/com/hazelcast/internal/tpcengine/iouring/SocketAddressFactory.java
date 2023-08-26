@@ -26,7 +26,6 @@ import java.net.UnknownHostException;
 import java.nio.ByteOrder;
 
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IN_ADDRESS_OFFSETOF_S_ADDR;
-import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_SOCKADDR_IN;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCKADDR_IN_OFFSETOF_SIN_ADDR;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCKADDR_IN_OFFSETOF_SIN_FAMILY;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCKADDR_IN_OFFSETOF_SIN_PORT;
@@ -38,6 +37,9 @@ import static com.hazelcast.internal.tpcengine.iouring.LinuxSocket.AF_INET;
  */
 public final class SocketAddressFactory {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
+    private static final int IPV4_BYTES_LENGTH = 4;
+    // todo: from netty fix
+    private static final boolean BIG_ENDIAN_NATIVE_ORDER = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
     private SocketAddressFactory() {
     }
@@ -54,13 +56,12 @@ public final class SocketAddressFactory {
         return new InetSocketAddress(address, port);
     }
 
-    public static final boolean BIG_ENDIAN_NATIVE_ORDER = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
     public static void memSet(InetSocketAddress inetSocketAddress, long ptr) {
         UNSAFE.putShort(ptr + SOCKADDR_IN_OFFSETOF_SIN_FAMILY, (short) AF_INET);
 
         int port = inetSocketAddress.getPort();
-       // System.out.println("port:"+port);
+        // System.out.println("port:"+port);
         UNSAFE.putShort(ptr + SOCKADDR_IN_OFFSETOF_SIN_PORT, handleNetworkOrder((short) port));
 
         System.out.println(inetSocketAddress);
@@ -71,7 +72,7 @@ public final class SocketAddressFactory {
         }
 
         byte[] ipAddress = inetAddress.getAddress();
-        if (ipAddress.length != 4) {
+        if (ipAddress.length != IPV4_BYTES_LENGTH) {
             throw new RuntimeException();
         }
         UNSAFE.copyMemory(
@@ -80,9 +81,10 @@ public final class SocketAddressFactory {
                 // dst + offset
                 null, ptr + SOCKADDR_IN_OFFSETOF_SIN_ADDR + IN_ADDRESS_OFFSETOF_S_ADDR,
                 // length
-                4);
+                IPV4_BYTES_LENGTH);
     }
 
+    // from netty: fix
     private static short handleNetworkOrder(short v) {
         return BIG_ENDIAN_NATIVE_ORDER ? v : Short.reverseBytes(v);
     }

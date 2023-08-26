@@ -22,7 +22,6 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.nio.IOVector;
 import com.hazelcast.internal.tpcengine.util.Option;
-import org.jctools.queues.MpmcArrayQueue;
 import org.jctools.queues.MpscArrayQueue;
 
 import java.io.IOException;
@@ -411,8 +410,8 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
     @Override
     protected void close0() throws IOException {
-      //  localAddress = null;
-       // remoteAddress = null;
+        //  localAddress = null;
+        // remoteAddress = null;
     }
 //
 //    @Override
@@ -420,7 +419,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 //        return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
 //    }
 
-//     Do not remove this code. This exists for debugging purposes so it is easy to
+    //     Do not remove this code. This exists for debugging purposes so it is easy to
 //     distinguish the client from the server side communication.
     @Override
     public final String toString() {

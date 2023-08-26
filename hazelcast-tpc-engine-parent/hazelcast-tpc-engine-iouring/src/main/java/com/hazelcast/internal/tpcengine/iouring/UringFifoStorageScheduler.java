@@ -22,8 +22,6 @@ import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
-import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
-import sun.misc.Unsafe;
 
 import java.nio.charset.StandardCharsets;
 
@@ -207,8 +205,9 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
     public void complete(int res, int flags, long userdata) {
         byte opcode = decodeOpcode(userdata);
         int index = decodeIndex(userdata);
-
         UringStorageRequest req = requests[index];
+
+        // complete the req
         switch (opcode) {
             case IORING_OP_NOP:
                 completeNop(req, res);

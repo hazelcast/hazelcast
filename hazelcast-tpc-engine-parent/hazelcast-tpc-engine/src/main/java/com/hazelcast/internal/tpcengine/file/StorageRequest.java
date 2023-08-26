@@ -61,6 +61,7 @@ public class StorageRequest {
     public int rwFlags;
     public IntBiConsumer<Throwable> callback;
 
+    @SuppressWarnings({"checkstyle:ReturnCount"})
     public static String storageReqOpcodeToString(int opcode) {
         switch (opcode) {
             case STR_REQ_OP_NOP:

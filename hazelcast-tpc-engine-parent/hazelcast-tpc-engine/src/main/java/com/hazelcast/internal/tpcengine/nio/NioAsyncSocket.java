@@ -18,7 +18,6 @@ package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
-import com.hazelcast.internal.tpcengine.util.CloseUtil;
 import com.hazelcast.internal.tpcengine.util.Option;
 import jdk.net.ExtendedSocketOptions;
 

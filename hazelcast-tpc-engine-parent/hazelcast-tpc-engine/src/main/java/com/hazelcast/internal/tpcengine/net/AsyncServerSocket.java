@@ -264,7 +264,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
          * <p/>
          * https://man7.org/linux/man-pages/man2/listen.2.html
          */
-        public int backlog = 0;
+        public int backlog;
 
         /**
          * The address to bind to. bindAddress should be set or

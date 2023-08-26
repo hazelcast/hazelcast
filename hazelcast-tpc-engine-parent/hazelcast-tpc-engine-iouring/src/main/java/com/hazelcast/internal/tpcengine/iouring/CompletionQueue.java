@@ -45,7 +45,8 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  * {@link CompletionHandler#complete(int, int, long)}.
  * A CompletionQueue can only be accessed by the eventloop thread.
  */
-@SuppressWarnings("checkstyle:VisibilityModifier")
+// todo: fix magic number
+@SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MemberName", "checkstyle:MagicNumber"})
 public final class CompletionQueue {
 
     public static final byte TYPE_GENERIC = 0;
