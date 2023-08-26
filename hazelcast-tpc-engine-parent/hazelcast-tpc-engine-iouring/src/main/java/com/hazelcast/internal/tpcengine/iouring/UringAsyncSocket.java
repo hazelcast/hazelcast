@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 
+import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
@@ -36,6 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_SOCKET;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.toUserdata;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.EAGAIN;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNRESET;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IOV_MAX;
@@ -222,11 +224,11 @@ public final class UringAsyncSocket extends AsyncSocket {
         private final Metrics metrics;
         private final NetworkScheduler networkScheduler;
         private final ByteBuffer sndByteBuffer;
-        private final IOBuffer sndBuffer;
+        private final IOBuffer sndBuff;
         private boolean writerClean = true;
         private final ByteBuffer rcvBuff;
+        private final long rcvBuffAddr;
         private final Reader reader;
-        private final long rcvBuffAddress;
         private boolean closing;
         private int pending;
         private CompletableFuture<Void> connectFuture;
@@ -248,21 +250,21 @@ public final class UringAsyncSocket extends AsyncSocket {
             this.metrics = builder.metrics;
             this.reader = builder.reader;
             this.rcvBuff = ByteBuffer.allocateDirect(builder.options.get(SO_RCVBUF));
-            this.rcvBuffAddress = addressOf(rcvBuff);
+            this.rcvBuffAddr = addressOf(rcvBuff);
 
             if (writer != null) {
                 try {
                     // should go through an allocator
                     // if it goes through an allocator we need to ensure that
                     // the iovector doesn't release it
-                    this.sndBuffer = new IOBuffer(builder.linuxSocket.getSendBufferSize(), true);
+                    this.sndBuff = new IOBuffer(builder.linuxSocket.getSendBufferSize(), true);
                 } catch (IOException e) {
                     // todo: we need to deal with closing the underling socket.
                     throw new UncheckedIOException(e);
                 }
-                this.sndByteBuffer = sndBuffer.byteBuffer();
+                this.sndByteBuffer = sndBuff.byteBuffer();
             } else {
-                this.sndBuffer = null;
+                this.sndBuff = null;
                 this.sndByteBuffer = null;
             }
         }
@@ -316,7 +318,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                 }
 
                 int pos = rcvBuff.position();
-                long address = rcvBuffAddress + pos;
+                long address = rcvBuffAddr + pos;
                 int length = rcvBuff.remaining();
                 if (length == 0) {
                     throw new IllegalStateException(
@@ -383,9 +385,9 @@ public final class UringAsyncSocket extends AsyncSocket {
                     ioVector.populate(writeQueue);
                 } else {
                     writerClean = writer.onWrite(sndByteBuffer);
-                    sndBuffer.flip();
+                    sndBuff.flip();
                     // add it if isn't added already
-                    ioVector.offer(sndBuffer);
+                    ioVector.offer(sndBuff);
                 }
 
                 if (ioVector.cnt() == 1) {
@@ -413,11 +415,11 @@ public final class UringAsyncSocket extends AsyncSocket {
                 //System.out.println(socket + " written " + res);
 
                 boolean sndBufferClean = true;
-                if (sndBuffer != null) {
+                if (sndBuff != null) {
                     ioVector.clear();
-                    sndBuffer.position(sndBuffer.position() + res);
-                    sndBufferClean = !sndBuffer.byteBuffer().hasRemaining();
-                    compactOrClear(sndBuffer.byteBuffer());
+                    sndBuff.position(sndBuff.position() + res);
+                    sndBufferClean = !sndBuff.byteBuffer().hasRemaining();
+                    compactOrClear(sndBuff.byteBuffer());
                 } else {
                     ioVector.compact(res);
                 }
