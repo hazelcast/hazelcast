@@ -18,7 +18,9 @@ package com.hazelcast.internal.tpcengine.util;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class AbstractBuilderTest {
 
@@ -28,15 +30,36 @@ public class AbstractBuilderTest {
         builder.build();
 
         assertThrows(IllegalStateException.class, builder::build);
+        assertFalse(builder.closeCalled);
     }
 
     @Test
     public void test_whenConcludeFails() {
         FailConcludeBuilder builder = new FailConcludeBuilder();
+
         assertThrows(IllegalArgumentException.class, builder::build);
+
+        assertTrue(builder.closeCalled);
+    }
+
+    @Test
+    public void test_whenConstructFails() {
+        FailConstructBuilder builder = new FailConstructBuilder();
+
+        assertThrows(IllegalArgumentException.class, builder::build);
+
+        assertTrue(builder.closeCalled);
     }
 
     private class DummyBuilder extends AbstractBuilder {
+
+        private boolean closeCalled;
+
+        @Override
+        public void close() throws Exception {
+            closeCalled = true;
+        }
+
         @Override
         protected Object construct() {
             return "banana";
@@ -45,9 +68,32 @@ public class AbstractBuilderTest {
 
     private class FailConcludeBuilder extends AbstractBuilder {
 
+        private boolean closeCalled;
+
+
+        @Override
+        public void close() throws Exception {
+            closeCalled = true;
+        }
+
+        @Override
+        protected Object construct() {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private class FailConstructBuilder extends AbstractBuilder {
+
+        private boolean closeCalled;
+
         @Override
         protected void conclude() {
             throw new IllegalArgumentException();
+        }
+
+        @Override
+        public void close() throws Exception {
+            closeCalled = true;
         }
 
         @Override
