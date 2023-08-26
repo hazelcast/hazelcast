@@ -23,9 +23,8 @@ import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_EVENT_FD;
-import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_GENERIC;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_TIMEOUT;
-import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.toUserdata;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.encodeUserdata;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_KERNEL_TIMESPEC;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_TIMEOUT;
@@ -61,10 +60,11 @@ public final class UringEventloop extends Eventloop {
         this.completionQueue = uring.completionQueue();
 
         this.eventFdHandler = new EventFdHandler();
-        completionQueue.register(eventFdHandler);
-
         this.timeoutHandler = new TimeoutHandler();
+
+        completionQueue.register(eventFdHandler);
         completionQueue.register(timeoutHandler);
+        completionQueue.register((CompletionHandler) builder.storageScheduler);
     }
 
     public NetworkScheduler networkScheduler() {
@@ -148,7 +148,7 @@ public final class UringEventloop extends Eventloop {
         private final long readBufAddr = UNSAFE.allocateMemory(SIZEOF_LONG);
 
         private void prepareRead() {
-            long userdata = toUserdata(TYPE_EVENT_FD, IORING_OP_READ, 0);
+            long userdata = encodeUserdata(TYPE_EVENT_FD, IORING_OP_READ, 0);
             submissionQueue.prepareRead(eventFd.fd(), readBufAddr, SIZEOF_LONG, userdata);
         }
 
@@ -193,7 +193,7 @@ public final class UringEventloop extends Eventloop {
                 UNSAFE.putLong(addr, seconds);
                 UNSAFE.putLong(addr + SIZEOF_LONG, timeoutNanos - seconds * NS_PER_SECOND);
             }
-            long userdata = toUserdata(TYPE_TIMEOUT, IORING_OP_TIMEOUT, 0);
+            long userdata = encodeUserdata(TYPE_TIMEOUT, IORING_OP_TIMEOUT, 0);
             submissionQueue.prepareTimeout(addr, userdata);
         }
 

@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_SOCKET;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
-import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.toUserdata;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.encodeUserdata;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.EAGAIN;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNRESET;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IOV_MAX;
@@ -286,7 +286,7 @@ public final class UringAsyncSocket extends AsyncSocket {
 
                 SocketAddressFactory.memSet((InetSocketAddress) address, addressPtr);
 
-                long userdata = toUserdata(TYPE_SOCKET, IORING_OP_CONNECT, handlerIndex);
+                long userdata = encodeUserdata(TYPE_SOCKET, IORING_OP_CONNECT, handlerIndex);
                 submissionQueue.prepareConnect(linuxSocket.fd(), addressPtr, SIZEOF_SOCKADDR_STORAGE, userdata);
                 pending++;
             } catch (Exception e) {
@@ -325,7 +325,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                             "Can't call read when there is no space in the rcvBuff.");
                 }
 
-                long userdata = toUserdata(TYPE_SOCKET, IORING_OP_RECV, handlerIndex);
+                long userdata = encodeUserdata(TYPE_SOCKET, IORING_OP_RECV, handlerIndex);
                 submissionQueue.prepareRecv(linuxSocket.fd(), address, length, userdata);
                 pending++;
             } catch (Exception e) {
@@ -396,10 +396,10 @@ public final class UringAsyncSocket extends AsyncSocket {
                     ByteBuffer buffer = ioVector.get(0).byteBuffer();
                     long addr = addressOf(buffer) + buffer.position();
                     int length = buffer.remaining();
-                    long userdata = toUserdata(TYPE_SOCKET, IORING_OP_SEND, handlerIndex);
+                    long userdata = encodeUserdata(TYPE_SOCKET, IORING_OP_SEND, handlerIndex);
                     submissionQueue.prepareSend(linuxSocket.fd(), addr, length, userdata);
                 } else {
-                    long userdata = toUserdata(TYPE_SOCKET, IORING_OP_WRITEV, handlerIndex);
+                    long userdata = encodeUserdata(TYPE_SOCKET, IORING_OP_WRITEV, handlerIndex);
                     submissionQueue.prepareWritev(linuxSocket.fd(), ioVector.addr(), ioVector.cnt(), userdata);
                 }
                 pending++;
@@ -449,7 +449,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                     throw new IllegalArgumentException("Handler should be in closing state");
                 }
 
-                long userdata = toUserdata(TYPE_SOCKET, IORING_OP_CLOSE, handlerIndex);
+                long userdata = encodeUserdata(TYPE_SOCKET, IORING_OP_CLOSE, handlerIndex);
                 submissionQueue.prepareClose(linuxSocket.fd(), userdata);
 
                 pending++;
@@ -483,7 +483,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                 }
                 closing = true;
 
-                long userdata = toUserdata(TYPE_SOCKET, IORING_OP_SHUTDOWN, handlerIndex);
+                long userdata = encodeUserdata(TYPE_SOCKET, IORING_OP_SHUTDOWN, handlerIndex);
                 submissionQueue.prepareShutdown(linuxSocket.fd(), userdata);
                 pending++;
             } catch (Exception e) {

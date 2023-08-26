@@ -27,6 +27,19 @@ import sun.misc.Unsafe;
 
 import java.nio.charset.StandardCharsets;
 
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_CLOSE;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_FALLOCATE;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_FDATASYNC;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_FSYNC;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_NOP;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_OPEN;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_READ;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_WRITE;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.storageReqOpcodeToString;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_STORAGE;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.decodeIndex;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.decodeOpcode;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.encodeUserdata;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_addr;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_fd;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_flags;
@@ -45,7 +58,6 @@ import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_NOP;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_OPENAT;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITE;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_CHAR;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
@@ -79,21 +91,22 @@ import static java.lang.Math.min;
         "checkstyle:MemberName",
         "checkstyle:LocalVariableName",
         "checkstyle:MagicNumber"})
-public final class UringFifoStorageScheduler implements StorageScheduler {
+public final class UringFifoStorageScheduler implements StorageScheduler, CompletionHandler {
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
     private final IOBufferAllocator pathAllocator;
-    private final StringBuilder msgBuilder = new StringBuilder();
-    private final UringStorageRequest[] pool;
-    private final int poolCapacity;
-    private int poolAllocIndex;
+    private final StringBuilder errorMsgBuilder = new StringBuilder();
+    private final UringStorageRequest[] requests;
     private final StagingQueue stagingQueue;
     private final SubmissionQueue submissionQueue;
     private final CompletionQueue completionQueue;
     private final int submitLimit;
     private int submitCount;
+    private final UringStorageRequest[] pool;
+    private int poolAllocIndex;
+    private final int poolCapacity;
 
     public UringFifoStorageScheduler(Uring uring,
                                      int submitLimit,
@@ -103,15 +116,12 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
         this.stagingQueue = new StagingQueue(pendingLimit);
         this.submissionQueue = uring.submissionQueue();
         this.completionQueue = uring.completionQueue();
-
-        // All storage requests are preregistered on the completion queue. They
-        // never need to unregister. Removing that overhead.
+        this.requests = new UringStorageRequest[pendingLimit];
         this.poolCapacity = pendingLimit;
         this.pool = new UringStorageRequest[poolCapacity];
-        for (int k = 0; k < pool.length; k++) {
-            UringStorageRequest req = new UringStorageRequest();
-            req.handlerId = completionQueue.nextHandlerId();
-            completionQueue.register(req.handlerId, req);
+        for (int k = 0; k < requests.length; k++) {
+            UringStorageRequest req = new UringStorageRequest(k);
+            requests[k] = req;
             pool[k] = req;
         }
     }
@@ -153,7 +163,71 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
                 throw new IllegalStateException("No space in submission queue");
             }
             this.submitCount++;
-            req.prepareSqe(sqIndex);
+
+            // todo: this should be replaced by calls to the submission queue.
+            long sqeAddr = submissionQueue.sqesAddr + sqIndex * SIZEOF_SQE;
+            byte sqe_opcode;
+            int sqe_fd = 0;
+            long sqe_addr = 0;
+            int sqe_rw_flags = 0;
+            int sqe_len = 0;
+            switch (req.opcode) {
+                case STR_REQ_OP_NOP:
+                    sqe_opcode = IORING_OP_NOP;
+                    break;
+                case STR_REQ_OP_READ:
+                    sqe_opcode = IORING_OP_READ;
+                    sqe_fd = req.file.fd;
+                    sqe_addr = req.buffer.address();
+                    sqe_len = req.length;
+                    break;
+                case STR_REQ_OP_WRITE:
+                    sqe_opcode = IORING_OP_WRITE;
+                    sqe_fd = req.file.fd;
+                    sqe_addr = req.buffer.address();
+                    sqe_len = req.length;
+                    break;
+                case STR_REQ_OP_FSYNC:
+                    sqe_opcode = IORING_OP_FSYNC;
+                    sqe_fd = req.file.fd;
+                    break;
+                case STR_REQ_OP_FDATASYNC:
+                    sqe_opcode = IORING_OP_FSYNC;
+                    sqe_fd = req.file.fd;
+                    // todo: //            request.opcode = IORING_OP_FSYNC;
+                    ////            // The IOURING_FSYNC_DATASYNC maps to the same position as the rw-flags
+                    ////            request.rwFlags = IORING_FSYNC_DATASYNC;
+                    sqe_rw_flags = IORING_FSYNC_DATASYNC;
+                    break;
+                case STR_REQ_OP_OPEN:
+                    sqe_opcode = IORING_OP_OPENAT;
+                    req.buffer = pathAsIOBuffer(req);
+                    sqe_addr = req.buffer.address();
+                    sqe_len = req.permissions;
+                    sqe_rw_flags = req.flags;
+                    break;
+                case STR_REQ_OP_CLOSE:
+                    sqe_opcode = IORING_OP_CLOSE;
+                    sqe_fd = req.file.fd;
+                    break;
+                case STR_REQ_OP_FALLOCATE:
+                    sqe_opcode = IORING_OP_FALLOCATE;
+                    break;
+                default:
+                    throw new RuntimeException("Unknown opcode: " + req.opcode + " this=" + this);
+            }
+
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, sqe_opcode);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, sqe_fd);
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+            UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, sqe_fd);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, req.offset);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, sqe_addr);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, sqe_len);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, sqe_rw_flags);
+            long userdata = encodeUserdata(TYPE_STORAGE, sqe_opcode, req.index);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
         }
 
         // Completion events are processed in the eventloop, so we
@@ -162,210 +236,195 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
         return false;
     }
 
-    final class UringStorageRequest extends StorageRequest implements CompletionHandler {
+    @Override
+    public void complete(int res, int flags, long userdata) {
+        byte opcode = decodeOpcode(userdata);
+        int index = decodeIndex(userdata);
 
-        private int handlerId;
-
-        void prepareSqe(int sqIndex) {
-            long sqeAddr = submissionQueue.sqesAddr + sqIndex * SIZEOF_SQE;
-            byte sqe_opcode;
-            int sqe_fd = 0;
-            long sqe_addr = 0;
-            int sqe_rw_flags = 0;
-            int sqe_len = 0;
-            switch (opcode) {
-                case STR_REQ_OP_NOP:
-                    sqe_opcode = IORING_OP_NOP;
-                    break;
-                case STR_REQ_OP_READ:
-                    sqe_opcode = IORING_OP_READ;
-                    sqe_fd = file.fd;
-                    sqe_addr = buffer.address();
-                    sqe_len = length;
-                    break;
-                case STR_REQ_OP_WRITE:
-                    sqe_opcode = IORING_OP_WRITE;
-                    sqe_fd = file.fd;
-                    sqe_addr = buffer.address();
-                    sqe_len = length;
-                    break;
-                case STR_REQ_OP_FSYNC:
-                    sqe_opcode = IORING_OP_FSYNC;
-                    sqe_fd = file.fd;
-                    break;
-                case STR_REQ_OP_FDATASYNC:
-                    sqe_opcode = IORING_OP_FSYNC;
-                    sqe_fd = file.fd;
-                    // todo: //            request.opcode = IORING_OP_FSYNC;
-                    ////            // The IOURING_FSYNC_DATASYNC maps to the same position as the rw-flags
-                    ////            request.rwFlags = IORING_FSYNC_DATASYNC;
-                    sqe_rw_flags = IORING_FSYNC_DATASYNC;
-                    break;
-                case STR_REQ_OP_OPEN:
-                    sqe_opcode = IORING_OP_OPENAT;
-                    buffer = pathAsIOBuffer();
-                    sqe_addr = buffer.address();
-                    sqe_len = permissions;
-                    sqe_rw_flags = flags;
-                    break;
-                case STR_REQ_OP_CLOSE:
-                    sqe_opcode = IORING_OP_CLOSE;
-                    sqe_fd = file.fd;
-                    break;
-                case STR_REQ_OP_FALLOCATE:
-                    sqe_opcode = IORING_OP_FALLOCATE;
-                    break;
-                default:
-                    throw new RuntimeException("Unknown opcode: " + opcode + " this=" + this);
-            }
-
-            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, sqe_opcode);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, sqe_fd);
-            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-            UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, sqe_fd);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, offset);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, sqe_addr);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, sqe_len);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, sqe_rw_flags);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, handlerId);
+        UringStorageRequest req = requests[index];
+        switch (opcode) {
+            case IORING_OP_NOP:
+                completeNop(req, res);
+                break;
+            case IORING_OP_READ:
+                completeRead(req, res);
+                break;
+            case IORING_OP_WRITE:
+                completeWrite(req, res);
+                break;
+            case IORING_OP_FSYNC:
+                completeFSync(req, res);
+                break;
+            case IORING_OP_OPENAT:
+                completeOpenAt(req, res);
+                break;
+            case IORING_OP_CLOSE:
+                completeClose(req, res);
+                break;
+            case IORING_OP_FALLOCATE:
+                completeFallocate(req, res);
+                break;
+            default:
+                throw new IllegalStateException("Unknown opcode:" + Uring.opcodeToString(opcode));
         }
 
-        IOBuffer pathAsIOBuffer() {
-            // todo: unwanted litter.
-            byte[] chars = file.path().getBytes(StandardCharsets.UTF_8);
+        // since we just completed a submitted call, the number can be decreased.
+        submitCount--;
 
-            IOBuffer pathBuffer = pathAllocator.allocate(chars.length + SIZEOF_CHAR);
-            pathBuffer.writeBytes(chars);
-            // C strings end with \0
-            pathBuffer.writeChar('\0');
-            pathBuffer.flip();
-            return pathBuffer;
+        // clear the request.
+        clear(req);
+
+        // return the request to the pool
+        poolAllocIndex--;
+        pool[poolAllocIndex] = req;
+    }
+
+    private static void clear(UringStorageRequest req) {
+        req.rwFlags = 0;
+        req.flags = 0;
+        req.opcode = 0;
+        req.length = 0;
+        req.offset = 0;
+        req.permissions = 0;
+        req.buffer = null;
+        req.file = null;
+        req.callback = null;
+    }
+
+    private void completeNop(UringStorageRequest req, int res) {
+        AsyncFile.Metrics metrics = req.file.metrics();
+        if (res >= 0) {
+            metrics.incNops();
+            req.callback.accept(res, null);
+        } else {
+            errorMsgBuilder.append("Failed to perform a nop on file ").append(req.file.path()).append(". ");
+            String msg = completeErrorMsg(res, null);
+            req.callback.accept(res, newUncheckedIOException(msg, null));
+        }
+    }
+
+    private void completeWrite(UringStorageRequest req, int res) {
+        AsyncFile.Metrics metrics = req.file.metrics();
+        if (res >= 0) {
+            req.buffer.incPosition(res);
+            metrics.incWrites();
+            metrics.incBytesWritten(res);
+            req.callback.accept(res, null);
+        } else {
+            errorMsgBuilder.append("Failed to a write to file ").append(req.file.path()).append(". ");
+            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man3/pwrite.3p.html");
+            req.callback.accept(res, newUncheckedIOException(msg, null));
+        }
+    }
+
+    private void completeRead(UringStorageRequest req, int res) {
+        AsyncFile.Metrics metrics = req.file.metrics();
+        if (res >= 0) {
+            req.buffer.incPosition(res);
+            metrics.incReads();
+            metrics.incBytesRead(res);
+            req.callback.accept(res, null);
+        } else {
+            errorMsgBuilder.append("Failed to a read from file ").append(req.file.path()).append(". ");
+            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/read.2.html");
+            req.callback.accept(res, newUncheckedIOException(msg, null));
+        }
+    }
+
+    private void completeFallocate(UringStorageRequest req, int res) {
+        AsyncFile.Metrics metrics = req.file.metrics();
+        if (res >= 0) {
+            req.callback.accept(res, null);
+        } else {
+            errorMsgBuilder.append("Failed to fallocate on file ").append(req.file.path()).append(". ");
+            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/fallocate.2.html");
+            req.callback.accept(res, newUncheckedIOException(msg, null));
+        }
+    }
+
+    private void completeClose(UringStorageRequest req, int res) {
+        AsyncFile.Metrics metrics = req.file.metrics();
+        if (res >= 0) {
+            req.file.fd = -1;
+            req.callback.accept(res, null);
+        } else {
+            errorMsgBuilder.append("Failed to close file ").append(req.file.path()).append(". ");
+            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/close.2.html");
+            req.callback.accept(res, newUncheckedIOException(msg, null));
+        }
+    }
+
+    private void completeOpenAt(UringStorageRequest req, int res) {
+        AsyncFile.Metrics metrics = req.file.metrics();
+        if (res >= 0) {
+            // this buffer is not passed from the outside, it is passed in the writeSqe function above.
+            req.buffer.release();
+            req.file.fd = res;
+            req.callback.accept(res, null);
+        } else {
+            req.buffer.release();
+            errorMsgBuilder.append("Failed to open file ").append(req.file.path()).append(". ");
+            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/open.2.html");
+            req.callback.accept(res, newUncheckedIOException(msg, null));
+        }
+    }
+
+    private void completeFSync(UringStorageRequest req, int res) {
+        AsyncFile.Metrics metrics = req.file.metrics();
+        if (res >= 0) {
+            metrics.incFsyncs();
+            req.callback.accept(res, null);
+        } else {
+            errorMsgBuilder.append("Failed to perform a fsync on file ").append(req.file.path()).append(". ");
+            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/fsync.2.html");
+            req.callback.accept(res, newUncheckedIOException(msg, null));
+        }
+    }
+
+    private void completeFDataSync(UringStorageRequest req, int res) {
+        AsyncFile.Metrics metrics = req.file.metrics();
+        if (res >= 0) {
+            metrics.incFdatasyncs();
+            req.callback.accept(res, null);
+        } else {
+            errorMsgBuilder.append("Failed to perform a fdatasync on file ").append(req.file.path()).append(". ");
+            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/fsync.2.html");
+            req.callback.accept(res, newUncheckedIOException(msg, null));
+        }
+    }
+
+    private String completeErrorMsg(int res, String manUrl) {
+        errorMsgBuilder.append("Error-message '").append(Linux.strerror(-res)).append("' ")
+                .append("Error-code ").append(Linux.errorcode(-res)).append(". ")
+                .append(this);
+
+        if (manUrl != null) {
+            errorMsgBuilder.append(" See ").append(manUrl).append(" for more details. ");
         }
 
-        @Override
-        public void complete(int res, int flags, long userdata) {
-            submitCount--;
+        String msg = errorMsgBuilder.toString();
+        errorMsgBuilder.setLength(0);
+        return msg;
+    }
 
-            if (res >= 0) {
-                AsyncFile.Metrics metrics = file.metrics();
-                switch (opcode) {
-                    case STR_REQ_OP_NOP:
-                        metrics.incNops();
-                        break;
-                    case STR_REQ_OP_READ:
-                        buffer.incPosition(res);
-                        metrics.incReads();
-                        metrics.incBytesRead(res);
-                        break;
-                    case STR_REQ_OP_WRITE:
-                        buffer.incPosition(res);
-                        metrics.incWrites();
-                        metrics.incBytesWritten(res);
-                        break;
-                    case STR_REQ_OP_FSYNC:
-                        metrics.incFsyncs();
-                        break;
-                    case STR_REQ_OP_FDATASYNC:
-                        metrics.incFdatasyncs();
-                        break;
-                    case STR_REQ_OP_OPEN:
-                        // this buffer is not passed from the outside, it is passed in the writeSqe function above.
-                        buffer.release();
-                        file.fd = res;
-                        break;
-                    case STR_REQ_OP_CLOSE:
-                        file.fd = -1;
-                        break;
-                    case STR_REQ_OP_FALLOCATE:
-                        break;
-                    default:
-                        throw new IllegalStateException("Unknown opcode: " + opcode);
-                }
+    IOBuffer pathAsIOBuffer(UringStorageRequest req) {
+        // todo: unwanted litter.
+        byte[] chars = req.file.path().getBytes(StandardCharsets.UTF_8);
 
-                callback.accept(res, null);
-            } else {
-                handleError(res);
-            }
+        IOBuffer pathBuffer = pathAllocator.allocate(chars.length + SIZEOF_CHAR);
+        pathBuffer.writeBytes(chars);
+        // C strings end with \0
+        pathBuffer.writeChar('\0');
+        pathBuffer.flip();
+        return pathBuffer;
+    }
 
-            rwFlags = 0;
-            flags = 0;
-            opcode = 0;
-            length = 0;
-            offset = 0;
-            permissions = 0;
-            buffer = null;
-            file = null;
-            callback = null;
+    final class UringStorageRequest extends StorageRequest {
 
-            // return the request to the pool
-            poolAllocIndex--;
-            pool[poolAllocIndex] = this;
-        }
+        private final int index;
 
-        private void handleError(int res) {
-            msgBuilder.setLength(0);
-            String manUrl = null;
-            switch (opcode) {
-                case STR_REQ_OP_NOP:
-                    msgBuilder.append("Failed to perform a nop on file ").append(file.path()).append(". ");
-                    break;
-                case STR_REQ_OP_READ:
-                    msgBuilder.append("Failed to a read from file ").append(file.path()).append(". ");
-                    manUrl = "https://man7.org/linux/man-pages/man2/pwrite.2.html";
-                    break;
-                case STR_REQ_OP_WRITE:
-                    msgBuilder.append("Failed to a write to file ").append(file.path()).append(". ");
-                    manUrl = "https://man7.org/linux/man-pages/man3/pwrite.3p.html";
-                    break;
-                case STR_REQ_OP_FSYNC:
-                    msgBuilder.append("Failed to perform a fsync on file ").append(file.path()).append(". ");
-                    manUrl = "https://man7.org/linux/man-pages/man2/fsync.2.html";
-                    break;
-                case STR_REQ_OP_FDATASYNC:
-                    msgBuilder.append("Failed to perform a fdatasync on file ").append(file.path()).append(". ");
-                    manUrl = "https://man7.org/linux/man-pages/man2/fsync.2.html";
-                    break;
-                case STR_REQ_OP_OPEN:
-                    buffer.release();
-                    msgBuilder.append("Failed to open file ").append(file.path()).append(". ");
-                    manUrl = "https://man7.org/linux/man-pages/man2/open.2.html";
-                    break;
-                case STR_REQ_OP_CLOSE:
-                    msgBuilder.append("Failed to close file ").append(file.path()).append(". ");
-                    manUrl = "https://man7.org/linux/man-pages/man2/close.2.html";
-                    break;
-                case STR_REQ_OP_FALLOCATE:
-                    msgBuilder.append("Failed to fallocate on file ").append(file.path()).append(". ");
-                    manUrl = "https://man7.org/linux/man-pages/man2/fallocate.2.html";
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown opcode: " + opcode);
-            }
-
-            msgBuilder.append("Error-message '").append(Linux.strerror(-res)).append("' ")
-                    .append("Error-code ").append(Linux.errorcode(-res)).append(". ")
-                    .append(this);
-            if (manUrl != null) {
-                msgBuilder.append(" See ").append(manUrl).append(" for more details. ");
-            }
-
-            String msg = msgBuilder.toString();
-            callback.accept(res, newUncheckedIOException(msg, null));
-        }
-
-        @Override
-        public String toString() {
-            return "StorageRequest{"
-                    + "file=" + file
-                    + ", offset=" + offset
-                    + ", length=" + length
-                    + ", opcode=" + opcodeToString(opcode)
-                    + ", flags=" + flags
-                    + ", permissions=" + permissions
-                    + ", rwFlags=" + rwFlags
-                    + ", buf=" + (buffer == null ? "null" : buffer.toDebugString())
-                    + "}";
+        private UringStorageRequest(int index) {
+            this.index = index;
         }
     }
 

@@ -54,6 +54,7 @@ public final class CompletionQueue {
     public static final byte TYPE_FILE = 3;
     public static final byte TYPE_EVENT_FD = 4;
     public static final byte TYPE_TIMEOUT = 5;
+    public static final byte TYPE_STORAGE = 6;
 
     public static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
     public static final int OFFSET_CQE_USERDATA = 0;
@@ -81,6 +82,7 @@ public final class CompletionQueue {
 
     private UringEventloop.EventFdHandler eventFdHandler;
     private UringEventloop.TimeoutHandler timeoutHandler;
+    private CompletionHandler storageHandler;
 
     private final UringAsyncServerSocket.Handler[] serverSockets_handlers;
     private final int[] serverSockets_freeHandlers;
@@ -109,6 +111,10 @@ public final class CompletionQueue {
         for (int k = 0; k < sockets_handlers.length; k++) {
             sockets_freeHandlers[k] = k;
         }
+    }
+
+    public void register(CompletionHandler storageHandler) {
+        this.storageHandler = storageHandler;
     }
 
     public void register(UringEventloop.EventFdHandler eventFdHandler) {
@@ -148,24 +154,37 @@ public final class CompletionQueue {
     }
 
     // todo: fix magic numbers
-    public static long toUserdata(byte type, byte opcode, int index) {
+    public static long encodeUserdata(byte type, byte opcode, int index) {
         return ((long) type << (5 * 8))
                 + (((long) opcode) << (4 * 8))
                 + index;
     }
 
+    public static byte decodeOpcode(long userdata) {
+        return (byte) ((userdata >> (4 * 8)) & 0xff);
+    }
+
+    public static int decodeIndex(long userdata) {
+        return (int) (userdata & 0xFFFFFFFF);
+    }
+
+    public static byte decodeType(long userdata) {
+        return (byte) ((userdata >> (5 * 8)) & 0xff);
+    }
+
     // todo: remove
     public static void main(String[] args) {
-        long userdata = toUserdata(TYPE_SOCKET, IORING_OP_CLOSE, 502);
+        long userdata = encodeUserdata(TYPE_SOCKET, IORING_OP_CLOSE, 502);
 
-        byte type = (byte) ((userdata >> (5 * 8)) & 0xff);
-        byte opcode = (byte) ((userdata >> (4 * 8)) & 0xff);
-        int index = (int) (userdata & 0xFFFFFFFF);
+        byte type = decodeType(userdata);
+        byte opcode = decodeOpcode(userdata);
+        int index = decodeIndex(userdata);
 
         System.out.println("Type match:" + (type == TYPE_SOCKET));
         System.out.println("opcode match:" + (opcode == IORING_OP_CLOSE));
         System.out.println("index match:" + (index == 502));
     }
+
 
     public void unregister(UringAsyncSocket.Handler handler) {
         sockets_handlers[handler.handlerIndex] = null;
@@ -283,15 +302,18 @@ public final class CompletionQueue {
             int flags = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_FLAGS);
 
             // todo: fix magic numbers
-            byte type = (byte) ((userdata >> (5 * 8)) & 0xff);
-            byte opcode = (byte) ((userdata >> (4 * 8)) & 0xff);
-            int index = (int) (userdata & 0xFFFFFFFF);
+            byte type = decodeType(userdata);
+            byte opcode = decodeOpcode(userdata);
+            int index = decodeIndex(userdata);
 
 //            System.out.println("completing " + userdata + " res:" + res + " type:" + type
 //                    + " opcode:" + Uring.opcodeToString(opcode) + " index:" + index);
 
             try {
                 switch (type) {
+                    case TYPE_STORAGE:
+                        storageHandler.complete(res, flags, userdata);
+                        break;
                     case TYPE_TIMEOUT:
                         timeoutHandler.complete(opcode, res);
                         break;

@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_SERVER_SOCKET;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
-import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.toUserdata;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.encodeUserdata;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.EINVAL;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.iouring.LinuxSocket.AF_INET;
@@ -121,7 +121,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
                     return;
                 }
 
-                long userdata = toUserdata(TYPE_SERVER_SOCKET, IORING_OP_ACCEPT, handlerIndex);
+                long userdata = encodeUserdata(TYPE_SERVER_SOCKET, IORING_OP_ACCEPT, handlerIndex);
                 submissionQueue.prepareAccept(
                         linuxSocket.fd(), acceptMemory.addr, acceptMemory.lenAddr, userdata);
                 pending++;
@@ -191,7 +191,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
                 }
                 closing = true;
 
-                long userdata = toUserdata(TYPE_SERVER_SOCKET, IORING_OP_SHUTDOWN, handlerIndex);
+                long userdata = encodeUserdata(TYPE_SERVER_SOCKET, IORING_OP_SHUTDOWN, handlerIndex);
                 submissionQueue.prepareShutdown(linuxSocket.fd(), userdata);
                 pending++;
             } catch (Exception e) {
@@ -211,7 +211,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
 
         private void prepareClose() {
             try {
-                long userdata = toUserdata(TYPE_SERVER_SOCKET, IORING_OP_CLOSE, handlerIndex);
+                long userdata = encodeUserdata(TYPE_SERVER_SOCKET, IORING_OP_CLOSE, handlerIndex);
                 submissionQueue.prepareClose(linuxSocket.fd(), userdata);
                 pending++;
             } catch (Exception e) {

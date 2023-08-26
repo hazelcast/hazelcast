@@ -60,4 +60,41 @@ public class StorageRequest {
     public int flags;
     public int rwFlags;
     public IntBiConsumer<Throwable> callback;
+
+    public static String storageReqOpcodeToString(int opcode) {
+        switch (opcode) {
+            case STR_REQ_OP_NOP:
+                return "STR_REQ_OP_NOP";
+            case STR_REQ_OP_READ:
+                return "STR_REQ_OP_READ";
+            case STR_REQ_OP_WRITE:
+                return "STR_REQ_OP_WRITE";
+            case STR_REQ_OP_FSYNC:
+                return "STR_REQ_OP_FSYNC";
+            case STR_REQ_OP_FDATASYNC:
+                return "STR_REQ_OP_FDATASYNC";
+            case STR_REQ_OP_OPEN:
+                return "STR_REQ_OP_OPEN";
+            case STR_REQ_OP_CLOSE:
+                return "STR_REQ_OP_CLOSE";
+            case STR_REQ_OP_FALLOCATE:
+                return "STR_REQ_OP_FALLOCATE";
+            default:
+                return "unknown-opcode(" + opcode + ")";
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "StorageRequest{"
+                + "file=" + file
+                + ", offset=" + offset
+                + ", length=" + length
+                + ", opcode=" + storageReqOpcodeToString(opcode)
+                + ", flags=" + flags
+                + ", permissions=" + permissions
+                + ", rwFlags=" + rwFlags
+                + ", buf=" + (buffer == null ? "null" : buffer.toDebugString())
+                + "}";
+    }
 }
