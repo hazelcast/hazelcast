@@ -35,21 +35,10 @@ import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_NO
 import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_OPEN;
 import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_READ;
 import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_WRITE;
-import static com.hazelcast.internal.tpcengine.file.StorageRequest.storageReqOpcodeToString;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_STORAGE;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.decodeIndex;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.decodeOpcode;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.encodeUserdata;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_addr;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_fd;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_flags;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_ioprio;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_len;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_off;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_opcode;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_rw_flags;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_FSYNC_DATASYNC;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_CLOSE;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_FALLOCATE;
@@ -67,7 +56,7 @@ import static java.lang.Math.min;
 
 /**
  * A io_uring specific {@link StorageScheduler} that processes all requests
- * in FIFO order.
+ * for all files in FIFO order.
  * <p/>
  * There are 3 important queues:
  * <ol>
@@ -77,7 +66,8 @@ import static java.lang.Math.min;
  *     </li>
  *     <li>
  *         submissionQueue: on every scheduled tick, requests from the staging
- *         queue are moved to the submission queue.
+ *         queue are moved to the submission queue. The maximum number of request
+ *         to move to the submissionQueue is the submitLimit.
  *     </li>
  *     <li>
  *         completionQueue: once io_uring has completed the requests, the
@@ -93,10 +83,8 @@ import static java.lang.Math.min;
         "checkstyle:MagicNumber"})
 public final class UringFifoStorageScheduler implements StorageScheduler, CompletionHandler {
 
-    private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
-
-    // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
     private final IOBufferAllocator pathAllocator;
+    // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
     private final StringBuilder errorMsgBuilder = new StringBuilder();
     private final UringStorageRequest[] requests;
     private final StagingQueue stagingQueue;
@@ -150,7 +138,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
 
     @Override
     public boolean tick() {
-        // prepare as many staged requests as allowed in the submission queue.
+        // move as many staged requests as allowed in the submission queue.
         final StagingQueue stagingQueue = this.stagingQueue;
         final int toSubmit = min(submitLimit - submitCount, stagingQueue.size());
         final UringStorageRequest[] array = stagingQueue.array;
@@ -158,76 +146,55 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
         for (int k = 0; k < toSubmit; k++) {
             UringStorageRequest req = array[(int) (stagingQueue.head & mask)];
             stagingQueue.head++;
-            int sqIndex = submissionQueue.nextSqeIndex();
-            if (sqIndex < 0) {
-                throw new IllegalStateException("No space in submission queue");
-            }
-            this.submitCount++;
+            submitCount++;
 
-            // todo: this should be replaced by calls to the submission queue.
-            long sqeAddr = submissionQueue.sqesAddr + sqIndex * SIZEOF_SQE;
-            byte sqe_opcode;
-            int sqe_fd = 0;
-            long sqe_addr = 0;
-            int sqe_rw_flags = 0;
-            int sqe_len = 0;
+            long userdata;
             switch (req.opcode) {
                 case STR_REQ_OP_NOP:
-                    sqe_opcode = IORING_OP_NOP;
+                    userdata = encodeUserdata(TYPE_STORAGE, IORING_OP_NOP, req.index);
+                    submissionQueue.prepareNop(userdata);
                     break;
                 case STR_REQ_OP_READ:
-                    sqe_opcode = IORING_OP_READ;
-                    sqe_fd = req.file.fd;
-                    sqe_addr = req.buffer.address();
-                    sqe_len = req.length;
+                    userdata = encodeUserdata(TYPE_STORAGE, IORING_OP_READ, req.index);
+                    submissionQueue.prepareRead(
+                            req.file.fd, req.buffer.address(), req.length, req.offset, userdata);
                     break;
                 case STR_REQ_OP_WRITE:
-                    sqe_opcode = IORING_OP_WRITE;
-                    sqe_fd = req.file.fd;
-                    sqe_addr = req.buffer.address();
-                    sqe_len = req.length;
+                    userdata = encodeUserdata(TYPE_STORAGE, IORING_OP_WRITE, req.index);
+                    submissionQueue.prepareWrite(
+                            req.file.fd, req.buffer.address(), req.length, req.offset, userdata);
                     break;
                 case STR_REQ_OP_FSYNC:
-                    sqe_opcode = IORING_OP_FSYNC;
-                    sqe_fd = req.file.fd;
+                    userdata = encodeUserdata(TYPE_STORAGE, IORING_OP_FSYNC, req.index);
+                    submissionQueue.prepareFSync(req.file.fd, 0, userdata);
                     break;
                 case STR_REQ_OP_FDATASYNC:
-                    sqe_opcode = IORING_OP_FSYNC;
-                    sqe_fd = req.file.fd;
-                    // todo: //            request.opcode = IORING_OP_FSYNC;
-                    ////            // The IOURING_FSYNC_DATASYNC maps to the same position as the rw-flags
-                    ////            request.rwFlags = IORING_FSYNC_DATASYNC;
-                    sqe_rw_flags = IORING_FSYNC_DATASYNC;
+                    userdata = encodeUserdata(TYPE_STORAGE, IORING_OP_FSYNC, req.index);
+                    submissionQueue.prepareFSync(req.file.fd, IORING_FSYNC_DATASYNC, userdata);
                     break;
                 case STR_REQ_OP_OPEN:
-                    sqe_opcode = IORING_OP_OPENAT;
+                    userdata = encodeUserdata(TYPE_STORAGE, IORING_OP_OPENAT, req.index);
                     req.buffer = pathAsIOBuffer(req);
-                    sqe_addr = req.buffer.address();
-                    sqe_len = req.permissions;
-                    sqe_rw_flags = req.flags;
+                    submissionQueue.prepareOpenAt(
+                            req.buffer.address(), req.permissions, req.flags, userdata);
                     break;
                 case STR_REQ_OP_CLOSE:
-                    sqe_opcode = IORING_OP_CLOSE;
-                    sqe_fd = req.file.fd;
+                    userdata = encodeUserdata(TYPE_STORAGE, IORING_OP_CLOSE, req.index);
+                    submissionQueue.prepareClose(req.file.fd, userdata);
                     break;
                 case STR_REQ_OP_FALLOCATE:
-                    sqe_opcode = IORING_OP_FALLOCATE;
+                    //sqe_opcode = IORING_OP_FALLOCATE;
                     break;
                 default:
                     throw new RuntimeException("Unknown opcode: " + req.opcode + " this=" + this);
             }
 
-            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, sqe_opcode);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, sqe_fd);
-            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-            UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, sqe_fd);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, req.offset);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, sqe_addr);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, sqe_len);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, sqe_rw_flags);
-            long userdata = encodeUserdata(TYPE_STORAGE, sqe_opcode, req.index);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+//            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, sqe_opcode);
+//            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, req.offset);
+//            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, sqe_addr);
+//            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, sqe_len);
+//            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, sqe_rw_flags);
+
         }
 
         // Completion events are processed in the eventloop, so we
@@ -271,10 +238,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
         // since we just completed a submitted call, the number can be decreased.
         submitCount--;
 
-        // clear the request.
-        clear(req);
-
         // return the request to the pool
+        clear(req);
         poolAllocIndex--;
         pool[poolAllocIndex] = req;
     }
@@ -297,7 +262,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
             metrics.incNops();
             req.callback.accept(res, null);
         } else {
-            errorMsgBuilder.append("Failed to perform a nop on file ").append(req.file.path()).append(". ");
+            errorMsgBuilder.append("Failed to perform a nop on file ")
+                    .append(req.file.path()).append(". ");
             String msg = completeErrorMsg(res, null);
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
@@ -311,7 +277,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
             metrics.incBytesWritten(res);
             req.callback.accept(res, null);
         } else {
-            errorMsgBuilder.append("Failed to a write to file ").append(req.file.path()).append(". ");
+            errorMsgBuilder.append("Failed to a write to file ")
+                    .append(req.file.path()).append(". ");
             String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man3/pwrite.3p.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
@@ -325,7 +292,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
             metrics.incBytesRead(res);
             req.callback.accept(res, null);
         } else {
-            errorMsgBuilder.append("Failed to a read from file ").append(req.file.path()).append(". ");
+            errorMsgBuilder.append("Failed to a read from file ")
+                    .append(req.file.path()).append(". ");
             String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/read.2.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
@@ -336,7 +304,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
         if (res >= 0) {
             req.callback.accept(res, null);
         } else {
-            errorMsgBuilder.append("Failed to fallocate on file ").append(req.file.path()).append(". ");
+            errorMsgBuilder.append("Failed to fallocate on file ")
+                    .append(req.file.path()).append(". ");
             String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/fallocate.2.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
@@ -348,7 +317,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
             req.file.fd = -1;
             req.callback.accept(res, null);
         } else {
-            errorMsgBuilder.append("Failed to close file ").append(req.file.path()).append(". ");
+            errorMsgBuilder.append("Failed to close file ")
+                    .append(req.file.path()).append(". ");
             String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/close.2.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
@@ -358,24 +328,34 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
         AsyncFile.Metrics metrics = req.file.metrics();
         if (res >= 0) {
             // this buffer is not passed from the outside, it is passed in the writeSqe function above.
-            req.buffer.release();
             req.file.fd = res;
             req.callback.accept(res, null);
         } else {
-            req.buffer.release();
-            errorMsgBuilder.append("Failed to open file ").append(req.file.path()).append(". ");
+            errorMsgBuilder.append("Failed to open file ")
+                    .append(req.file.path()).append(". ");
             String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/open.2.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
+
+        // we need to release the path buffer.
+        req.buffer.release();
     }
 
     private void completeFSync(UringStorageRequest req, int res) {
         AsyncFile.Metrics metrics = req.file.metrics();
         if (res >= 0) {
-            metrics.incFsyncs();
+            if (req.opcode == STR_REQ_OP_FDATASYNC) {
+                metrics.incFdatasyncs();
+            } else {
+                metrics.incFsyncs();
+            }
             req.callback.accept(res, null);
         } else {
-            errorMsgBuilder.append("Failed to perform a fsync on file ").append(req.file.path()).append(". ");
+            String syncType = req.opcode == STR_REQ_OP_FDATASYNC
+                    ? "fdatasync"
+                    : "fsync";
+            errorMsgBuilder.append("Failed to perform a " + syncType + " on file ")
+                    .append(req.file.path()).append(". ");
             String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/fsync.2.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
@@ -387,7 +367,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
             metrics.incFdatasyncs();
             req.callback.accept(res, null);
         } else {
-            errorMsgBuilder.append("Failed to perform a fdatasync on file ").append(req.file.path()).append(". ");
+            errorMsgBuilder.append("Failed to perform a fdatasync on file ")
+                    .append(req.file.path()).append(". ");
             String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/fsync.2.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }

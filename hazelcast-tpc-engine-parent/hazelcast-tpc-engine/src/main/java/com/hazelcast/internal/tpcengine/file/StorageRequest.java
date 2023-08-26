@@ -26,7 +26,7 @@ import com.hazelcast.internal.tpcengine.util.IntBiConsumer;
  * litter.
  * <p/>
  * BlockRequests are 'generic' in the sense that the same BlockRequest object
- * can be interpreted in many different ways depending on the opcode. So there
+ * can be interpreted in different ways depending on the opcode. So there
  * are no different subclasses for e.g. a read or a write. Unlike C, Java
  * doesn't have support for unions and hence we end up with this approach. Having
  * a single type makes makes it a lot easier to pool N instances since just a

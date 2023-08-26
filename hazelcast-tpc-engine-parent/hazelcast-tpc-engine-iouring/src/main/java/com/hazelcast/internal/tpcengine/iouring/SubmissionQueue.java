@@ -29,12 +29,15 @@ import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_ENTER_REGIST
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_ACCEPT;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_CLOSE;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_CONNECT;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_FSYNC;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_NOP;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_OPENAT;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_RECV;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_SEND;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_SHUTDOWN;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_TIMEOUT;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITEV;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
@@ -190,7 +193,6 @@ public final class SubmissionQueue {
         }
 
         long sqeAddr = sqesAddr + ((long) sqeIndex) * SIZEOF_SQE;
-
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_CLOSE);
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
         UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
@@ -232,7 +234,6 @@ public final class SubmissionQueue {
         }
 
         long sqeAddr = sqesAddr + ((long) sqeIndex * SIZEOF_SQE);
-
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_WRITEV);
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
         UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
@@ -300,7 +301,6 @@ public final class SubmissionQueue {
         }
 
         long sqeAddr = sqesAddr + sqeIndex * SIZEOF_SQE;
-        //todo: revert
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_RECV);
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
         UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
@@ -312,22 +312,75 @@ public final class SubmissionQueue {
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
     }
 
-    public void prepareRead(int fd, long address, int length, long userdata) {
+    public void prepareRead(int fd, long address, int length, long offset, long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
             throw new IllegalStateException("No space in submission queue");
         }
 
         long sqeAddr = sqesAddr + sqeIndex * SIZEOF_SQE;
-        //todo: revert
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_READ);
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
         UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
         UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, fd);
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, offset);
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, address);
         UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, length);
         UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+    }
+    public void prepareWrite(int fd, long address, int length, long offset, long userdata) {
+        int sqeIndex = nextSqeIndex();
+        if (sqeIndex < 0) {
+            throw new IllegalStateException("No space in submission queue");
+        }
+
+        long sqeAddr = sqesAddr + sqeIndex * SIZEOF_SQE;
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_WRITE);
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, fd);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, offset);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, address);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, length);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+    }
+
+
+    public void prepareFSync(int fd, int syncFlags, long userdata) {
+        int sqeIndex = nextSqeIndex();
+        if (sqeIndex < 0) {
+            throw new IllegalStateException("No space in submission queue");
+        }
+
+        long sqeAddr = sqesAddr + sqeIndex * SIZEOF_SQE;
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_FSYNC);
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, 0);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags,  syncFlags);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+    }
+
+    public void prepareOpenAt(long pathnameAddr, int permissions, int flags, long userdata) {
+        int sqeIndex = nextSqeIndex();
+        if (sqeIndex < 0) {
+            throw new IllegalStateException("No space in submission queue");
+        }
+
+        long sqeAddr = sqesAddr + sqeIndex * SIZEOF_SQE;
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_OPENAT);
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, 0);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, pathnameAddr);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, permissions);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags,  flags);
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
     }
 
