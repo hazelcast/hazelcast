@@ -17,10 +17,10 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 
-import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
+import com.hazelcast.internal.tpcengine.util.Option;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
@@ -36,9 +36,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_SOCKET;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_RECV;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_SEND;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITEV;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.EAGAIN;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNRESET;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IOV_MAX;
@@ -147,6 +144,7 @@ public final class UringAsyncSocket extends AsyncSocket {
             logger.fine("Connect to address:" + address);
         }
 
+        // todo: this needs to become on blocking. Make use of the IORING_OP_CONNECT
         CompletableFuture<Void> future = new CompletableFuture<>();
         try {
 

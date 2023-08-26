@@ -94,13 +94,13 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
         return localAddress;
     }
 
+    @Override
+    protected void close0() throws IOException {
+        reactor.serverSockets().remove(this);
+    }
+
     /**
      * Gets the local port of the {@link AsyncServerSocket}.
-     * <p/>
-     * This method is threadsafe.
-     * <p/>
-     * This method will always return a value equal or larger than zero and will
-     * never change.
      * <p/>
      * The value returned isn't impacted by closing of the socket.
      *
@@ -116,7 +116,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     /**
      * Gets the {@link Reactor} this ServerSocket belongs to.
      * <p/>
-     * The returned value will never be <code>null</code>
+     * This can be made on any thread, but it isn't threadsafe.
      *
      * @return the Reactor.
      */
