@@ -22,7 +22,7 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.nio.IOVector;
 import com.hazelcast.internal.tpcengine.util.Option;
-import org.jctools.queues.MpmcArrayQueue;
+import org.jctools.queues.MpscArrayQueue;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -788,7 +788,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
             }
 
             if (writeQueue == null) {
-                writeQueue = new MpmcArrayQueue(writeQueueCapacity);
+                writeQueue = new MpscArrayQueue(writeQueueCapacity);
             }
 
             if (writer == null) {
