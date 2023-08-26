@@ -184,15 +184,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
                     //sqe_opcode = IORING_OP_FALLOCATE;
                     break;
                 default:
-                    throw new RuntimeException("Unknown opcode: " + req.opcode + " this=" + this);
+                    throw new RuntimeException("Unknown opcode: " + req.opcode + " this=" + req);
             }
-
-//            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, sqe_opcode);
-//            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, req.offset);
-//            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, sqe_addr);
-//            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, sqe_len);
-//            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, sqe_rw_flags);
-
         }
 
         // Completion events are processed in the eventloop, so we
