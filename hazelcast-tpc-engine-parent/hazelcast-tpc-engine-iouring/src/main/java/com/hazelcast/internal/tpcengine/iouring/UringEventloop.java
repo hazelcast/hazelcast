@@ -31,6 +31,7 @@ import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -244,6 +245,8 @@ public final class UringEventloop extends Eventloop {
                         reactorBuilder.storageSubmitLimit,
                         reactorBuilder.storagePendingLimit);
             }
+
+            checkInstanceOf(CompletionHandler.class, storageScheduler, "storageScheduler");
         }
 
         @Override

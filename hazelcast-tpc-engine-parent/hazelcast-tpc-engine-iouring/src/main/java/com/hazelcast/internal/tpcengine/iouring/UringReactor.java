@@ -27,6 +27,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import static com.hazelcast.internal.tpcengine.Reactor.State.RUNNING;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.errno;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.newSysCallFailedException;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 
 /**
