@@ -507,7 +507,6 @@ abstract class MapProxySupport<K, V>
                         .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState)
                         .invoke();
                 result = future.get();
-                System.err.println(result);
                 incrementOperationStats(operation, localMapStats, startTimeNanos);
             } else {
                 Future future = operationService
