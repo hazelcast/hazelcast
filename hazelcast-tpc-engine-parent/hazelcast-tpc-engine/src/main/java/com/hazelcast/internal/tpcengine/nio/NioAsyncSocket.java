@@ -16,16 +16,15 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.util.Option;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.util.Option;
 import jdk.net.ExtendedSocketOptions;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
@@ -86,26 +85,21 @@ public final class NioAsyncSocket extends AsyncSocket {
      */
     private boolean ioVectorWriteAllowed;
 
-    private NioAsyncSocket(Builder builder) {
+    private NioAsyncSocket(Builder builder) throws IOException {
         super(builder);
 
-        try {
-            this.socketChannel = builder.socketChannel;
-            if (!clientSide) {
-                this.localAddress = socketChannel.getLocalAddress();
-                this.remoteAddress = socketChannel.getRemoteAddress();
-            }
-            this.ioVector = builder.ioVector;
-            this.ioVectorWriteAllowed = ioVector != null;
-            this.handler = new Handler(builder, this);
-            this.key = socketChannel.register(builder.selector, 0, handler);
-            handler.key = key;
-            reader.init(this);
-            if (writer != null) {
-                writer.init(this);
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        this.socketChannel = builder.socketChannel;
+        if (!clientSide) {
+            this.localAddress = socketChannel.getLocalAddress();
+            this.remoteAddress = socketChannel.getRemoteAddress();
+        }
+        this.ioVector = builder.ioVector;
+        this.ioVectorWriteAllowed = ioVector != null;
+        this.handler = new Handler(builder, this);
+        this.key = handler.key;
+        reader.init(this);
+        if (writer != null) {
+            writer.init(this);
         }
     }
 
@@ -249,13 +243,13 @@ public final class NioAsyncSocket extends AsyncSocket {
         private final SocketChannel socketChannel;
         private final NioEventloop eventloop;
         private final IOVector ioVector;
-        private SelectionKey key;
+        private final SelectionKey key;
         private final Reader reader;
         private final Writer writer;
         private final Queue writeQueue;
         private final NioAsyncSocket socket;
 
-        private Handler(Builder builder, NioAsyncSocket socket) throws SocketException {
+        private Handler(Builder builder, NioAsyncSocket socket) throws IOException {
             this.socket = socket;
             this.metrics = socket.metrics();
             this.socketChannel = socket.socketChannel;
@@ -277,6 +271,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             } else {
                 this.sndBuffer = null;
             }
+            this.key = socketChannel.register(builder.selector, 0, this);
         }
 
         @Override
@@ -523,6 +518,11 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
 
         @Override
+        public void close() throws Exception {
+            closeQuietly(socketChannel);
+        }
+
+        @Override
         protected void conclude() {
             super.conclude();
 
@@ -534,7 +534,11 @@ public final class NioAsyncSocket extends AsyncSocket {
         @Override
         protected AsyncSocket construct() {
             if (currentThread() == reactor.eventloopThread()) {
-                return new NioAsyncSocket(Builder.this);
+                try {
+                    return new NioAsyncSocket(Builder.this);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
             } else {
                 return reactor.submit(() -> new NioAsyncSocket(Builder.this)).join();
             }

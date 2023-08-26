@@ -52,6 +52,7 @@ import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITEV;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
+import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNull;
 
@@ -541,6 +542,11 @@ public final class UringAsyncSocket extends AsyncSocket {
                 this.clientSide = false;
             }
             this.options = new UringOptions(linuxSocket);
+        }
+
+        @Override
+        public void close() throws Exception {
+            closeQuietly(linuxSocket);
         }
 
         @Override

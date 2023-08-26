@@ -218,11 +218,10 @@ public abstract class ReactorTest {
         Reactor reactor = newReactor();
         reactor.start();
         AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocketBuilder.acceptFn = acceptRequest -> {
         };
         AsyncServerSocket serverSocket = serverSocketBuilder.build();
-
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         reactor.shutdown();
@@ -234,11 +233,11 @@ public abstract class ReactorTest {
         Reactor serverReactor = newReactor();
         serverReactor.start();
         AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocketBuilder.acceptFn = acceptRequest -> {
         };
         AsyncServerSocket serverSocket = serverSocketBuilder.build();
 
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         Reactor clientReactor = newReactor();

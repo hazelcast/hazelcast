@@ -258,6 +258,7 @@ public class NetworkBenchmark {
             SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", port + k);
 
             AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
+            serverSocketBuilder.bindAddress = serverAddress;
             serverSocketBuilder.options.set(SO_RCVBUF, socketBufferSize);
             serverSocketBuilder.options.set(SO_REUSEPORT, true);
             serverSocketBuilder.acceptFn = acceptRequest -> {
@@ -271,7 +272,6 @@ public class NetworkBenchmark {
             };
 
             AsyncServerSocket serverSocket = serverSocketBuilder.build();
-            serverSocket.bind(serverAddress);
             serverSocket.start();
             serverSockets.add(serverSocket);
         }

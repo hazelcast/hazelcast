@@ -27,6 +27,8 @@ import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.BindException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.function.Consumer;
 
@@ -44,7 +46,7 @@ import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQ
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_ACCEPT;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
@@ -56,32 +58,12 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
     private final LinuxSocket linuxSocket;
     private final AcceptHandler acceptHandler;
     private final Uring uring;
-    // if the socket is already bound.
-    private boolean bound;
 
-    private UringAsyncServerSocket(Builder builder) {
-        super(builder);
+    private UringAsyncServerSocket(Builder builder) throws RuntimeException {
+        super(builder, builder.localAddress, builder.localPort);
         this.uring = builder.uring;
         this.linuxSocket = builder.linuxSocket;
         this.acceptHandler = new AcceptHandler(builder, this);
-    }
-
-    @Override
-    public int getLocalPort() {
-        if (bound) {
-            return linuxSocket.getLocalAddress().getPort();
-        } else {
-            return -1;
-        }
-    }
-
-    @Override
-    protected SocketAddress getLocalAddress0() {
-        if (bound) {
-            return linuxSocket.getLocalAddress();
-        } else {
-            return null;
-        }
     }
 
     @Override
@@ -92,20 +74,6 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
         reactor.offer(() -> {
             acceptHandler.closed = true;
         });
-    }
-
-    @Override
-    public void bind(SocketAddress localAddress, int backlog) {
-        checkNotNull(localAddress, "localAddress");
-        checkNotNegative(backlog, "backlog");
-
-        try {
-            linuxSocket.bind(localAddress);
-            linuxSocket.listen(backlog);
-            bound = true;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     @Override
@@ -181,18 +149,19 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
                     AbstractAsyncSocket.AcceptRequest acceptRequest = new AcceptRequest(linuxSocket);
                     try {
                         acceptFn.accept(acceptRequest);
-                    } catch (Throwable t) {
+                    } catch (Throwable throwable) {
+                        if (logger.isWarningEnabled()) {
+                            logger.warning(socket + " rejected: " + linuxSocket.getRemoteAddress()
+                                    + "->" + linuxSocket.getLocalAddress()
+                                    + " due to unhandled throwable.", throwable);
+                        }
 
-                        // todo: logging mismatch between this and NioAsyncServersocket.
-                        logger.severe(t);
-
-                        // If for whatever reason the socket isn't consumed, we need
-                        // to properly close the socket. Otherwise the socket remains
-                        // under a CLOSE_WAIT state and the port doesn't get released.
                         closeQuietly(acceptRequest);
 
-                        if (logger.isWarningEnabled()) {
-                            logger.warning("Closing socket " + address + "->" + socket.getLocalAddress());
+                        if (!(throwable instanceof Exception)) {
+                            // Anything that isn't an exception should be propaged because we can't
+                            // handle it here.
+                            throw sneakyThrow(throwable);
                         }
                     }
                 } else {
@@ -282,13 +251,20 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends AsyncServerSocket.Builder {
 
-        public final LinuxSocket linuxSocket;
+        public LinuxSocket linuxSocket;
         public Uring uring;
+        private InetSocketAddress localAddress;
+        private int localPort;
 
         Builder() {
             // to conclude.
             this.linuxSocket = LinuxSocket.createNonBlockingTcpIpv4Socket();
             this.options = new UringOptions(linuxSocket);
+        }
+
+        @Override
+        public void close() throws Exception {
+            closeQuietly(linuxSocket);
         }
 
         @Override
@@ -301,6 +277,41 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
             if (linuxSocket.isBlocking()) {
                 throw new IllegalArgumentException("The linux socket should be non blocking");
             }
+
+            if (bindAddress != null) {
+                try {
+                    linuxSocket.bind(bindAddress);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            } else {
+                int attempts = 0;
+                for (; ; ) {
+                    SocketAddress address = bindAddressGenerator.get();
+                    if (address == null) {
+                        throw new UncheckedIOException(
+                                new BindException(
+                                        "Failed to find an address to bind to after " + attempts + " attempts"));
+                    }
+                    attempts++;
+                    try {
+                        linuxSocket.bind(address);
+                        break;
+                    } catch (BindException e) {
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            }
+
+            try {
+                linuxSocket.listen(backlog);
+            } catch (Throwable e) {
+                throw sneakyThrow(e);
+            }
+
+            this.localAddress = linuxSocket.getLocalAddress();
+            this.localPort = linuxSocket.getLocalAddress().getPort();
         }
 
         @Override

@@ -24,22 +24,20 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.BindException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
-import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.CancelledKeyException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
-import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
@@ -51,26 +49,12 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private final ServerSocketChannel serverSocketChannel;
     private final SelectionKey key;
 
-    NioAsyncServerSocket(Builder builder) {
-        super(builder);
-        try {
-            this.serverSocketChannel = builder.serverSocketChannel;
-            Handler handler = new Handler(builder, this);
-            this.key = serverSocketChannel.register(builder.selector, 0, handler);
-            handler.key = key;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
+    NioAsyncServerSocket(Builder builder) throws IOException {
+        super(builder, builder.localAddress, builder.localPort);
 
-    @Override
-    protected SocketAddress getLocalAddress0() throws IOException {
-        return serverSocketChannel.getLocalAddress();
-    }
-
-    @Override
-    public int getLocalPort() {
-        return serverSocketChannel.socket().getLocalPort();
+        this.serverSocketChannel = builder.serverSocketChannel;
+        Handler handler = new Handler(builder, this);
+        this.key = handler.key;
     }
 
     @Override
@@ -79,23 +63,6 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
         closeQuietly(serverSocketChannel);
         key.cancel();
-    }
-
-    @Override
-    public void bind(SocketAddress localAddress, int backlog) {
-        checkNotNull(localAddress, "localAddress");
-        checkNotNegative(backlog, "backlog");
-
-        try {
-            if (logger.isInfoEnabled()) {
-                logger.info(eventloopThread.getName() + " Binding to " + localAddress);
-            }
-            serverSocketChannel.bind(localAddress, backlog);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to bind to " + localAddress, e);
-        } catch (AlreadyBoundException | UnsupportedAddressTypeException | SecurityException e) {
-            throw newUncheckedIOException("Failed to bind to " + localAddress, e);
-        }
     }
 
     @Override
@@ -111,14 +78,15 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         private final TpcLogger logger;
         private final ServerSocketChannel serverSocketChannel;
         private final Consumer<AbstractAsyncSocket.AcceptRequest> acceptFn;
-        private SelectionKey key;
+        private final SelectionKey key;
 
-        private Handler(Builder builder, NioAsyncServerSocket socket) {
+        private Handler(Builder builder, NioAsyncServerSocket socket) throws ClosedChannelException {
             this.socket = socket;
             this.metrics = builder.metrics;
             this.logger = builder.logger;
             this.serverSocketChannel = builder.serverSocketChannel;
             this.acceptFn = builder.acceptFn;
+            this.key = serverSocketChannel.register(builder.selector, 0, this);
         }
 
         @Override
@@ -142,9 +110,20 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             AcceptRequest acceptRequest = new AcceptRequest(socketChannel);
             try {
                 acceptFn.accept(acceptRequest);
-            } catch (Throwable t) {
+            } catch (Throwable throwable) {
+                if (logger.isWarningEnabled()) {
+                    logger.warning(socket + " rejected: " + socketChannel.getRemoteAddress()
+                            + "->" + socketChannel.getLocalAddress()
+                            + " due to unhandled throwable.", throwable);
+                }
+
                 closeQuietly(acceptRequest);
-                throw sneakyThrow(t);
+
+                if (!(throwable instanceof Exception)) {
+                    // Anything that isn't an exception should be propaged because we can't
+                    // handle it here.
+                    throw sneakyThrow(throwable);
+                }
             }
         }
     }
@@ -228,6 +207,8 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
         public ServerSocketChannel serverSocketChannel;
         public Selector selector;
+        private int localPort;
+        private SocketAddress localAddress;
 
         Builder() {
             try {
@@ -240,17 +221,60 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
 
         @Override
+        public void close() throws Exception {
+            closeQuietly(serverSocketChannel);
+        }
+
+        @Override
         protected void conclude() {
             super.conclude();
 
             checkNotNull(selector, "selector");
             checkNotNull(serverSocketChannel, "serverSocketChannel");
+
+            if (bindAddress != null) {
+                try {
+                    serverSocketChannel.bind(bindAddress, backlog);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            } else {
+                int attempts = 0;
+                for (; ; ) {
+                    SocketAddress address = bindAddressGenerator.get();
+                    if (address == null) {
+                        throw new UncheckedIOException(
+                                new BindException(
+                                        "Failed to find an address to bind to after " + attempts + " attempts"));
+                    }
+                    attempts++;
+                    try {
+                        serverSocketChannel.bind(address, backlog);
+                        break;
+                    } catch (BindException e) {
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            }
+
+            try {
+                localAddress = serverSocketChannel.getLocalAddress();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+
+            localPort = serverSocketChannel.socket().getLocalPort();
         }
 
         @Override
         public AsyncServerSocket construct() {
             if (Thread.currentThread() == reactor.eventloopThread()) {
-                return new NioAsyncServerSocket(this);
+                try {
+                    return new NioAsyncServerSocket(this);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
             } else {
                 return reactor.submit(() -> new NioAsyncServerSocket(Builder.this)).join();
             }

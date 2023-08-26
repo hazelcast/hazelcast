@@ -313,6 +313,7 @@ public abstract class RpcTest {
     private AsyncServerSocket newServer() {
         AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
         serverSocketBuilder.options.set(SO_RCVBUF, socketBufferSize);
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
             socketBuilder.options.set(TCP_NODELAY, true);
@@ -323,8 +324,6 @@ public abstract class RpcTest {
             socket.start();
         };
         AsyncServerSocket serverSocket = serverSocketBuilder.build();
-        // bind on an arbitrary free port.
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
         return serverSocket;
     }

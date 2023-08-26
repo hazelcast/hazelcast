@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
+import com.hazelcast.internal.tpcengine.AssertTask;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import org.junit.After;
@@ -105,9 +106,8 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_write_whenNoWriterSet_thenRejectNonIOBuffer() {
         Reactor reactor = newReactor();
-        AsyncServerSocket serverSocket = startServerSocket(reactor);
+        AsyncServerSocket serverSocket = startServerSocket(reactor, new InetSocketAddress("127.0.0.1", 0));
 
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
@@ -123,9 +123,8 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_insideWriteAndFlush_whenNoWriterSet_thenRejectNonIOBuffer() throws ExecutionException, InterruptedException {
         Reactor reactor = newReactor();
-        AsyncServerSocket serverSocket = startServerSocket(reactor);
+        AsyncServerSocket serverSocket = startServerSocket(reactor, new InetSocketAddress("127.0.0.1", 0));
 
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
@@ -150,9 +149,8 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_insideWriteAndFlush_whenNotOnEventloop() {
         Reactor reactor = newReactor();
-        AsyncServerSocket serverSocket = startServerSocket(reactor);
+        AsyncServerSocket serverSocket = startServerSocket(reactor, new InetSocketAddress("127.0.0.1", 0));
 
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
@@ -166,9 +164,10 @@ public abstract class AsyncSocketTest {
         assertThrows(IllegalStateException.class, () -> socket.insideWriteAndFlush(msg));
     }
 
-    private static AsyncServerSocket startServerSocket(Reactor reactor) {
+    private static AsyncServerSocket startServerSocket(Reactor reactor, SocketAddress bindAddress) {
         CompletableFuture<AsyncSocket> remoteSocketFuture = new CompletableFuture<>();
         AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.bindAddress = bindAddress;
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest);
             socketBuilder.reader = new DevNullAsyncSocketReader();
@@ -185,6 +184,7 @@ public abstract class AsyncSocketTest {
         Reactor reactor = newReactor();
         CompletableFuture<AsyncSocket> remoteSocketFuture = new CompletableFuture<>();
         AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest);
             socketBuilder.reader = new DevNullAsyncSocketReader();
@@ -194,7 +194,6 @@ public abstract class AsyncSocketTest {
         };
         AsyncServerSocket serverSocket = serverSocketBuilder.build();
 
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         AsyncSocket.Builder localSocketBuilder = reactor.newAsyncSocketBuilder();
@@ -254,7 +253,12 @@ public abstract class AsyncSocketTest {
 
         socket.close();
 
-        assertEquals(0, reactor.sockets().size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, reactor.sockets().size());
+            }
+        });
     }
 
     @Test
@@ -299,6 +303,7 @@ public abstract class AsyncSocketTest {
     public void test_readable() {
         Reactor reactor = newReactor();
         AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest);
             socketBuilder.reader = new DevNullAsyncSocketReader();
@@ -307,7 +312,6 @@ public abstract class AsyncSocketTest {
         };
 
         AsyncServerSocket serverSocket = serverSocketBuilder.build();
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
@@ -332,6 +336,7 @@ public abstract class AsyncSocketTest {
         Reactor serverReactor = newReactor(builder -> builder.socketsLimit = socketLimit);
 
         AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
             socketBuilder.reader = new DevNullAsyncSocketReader();
@@ -340,7 +345,6 @@ public abstract class AsyncSocketTest {
         };
 
         AsyncServerSocket serverSocket = serverSocketBuilder.build();
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         // make sure that the client reactor can handle at least this amount of sockets.
