@@ -24,6 +24,9 @@ import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 
+import static com.hazelcast.internal.tpcengine.Reactor.State.RUNNING;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.errno;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.newSysCallFailedException;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 
 /**
@@ -98,7 +101,10 @@ public final class UringReactor extends Reactor {
         }
 
         if (wakeupNeeded.get() && wakeupNeeded.compareAndSet(true, false)) {
-            eventFd.write(1L);
+            int res = eventFd.write(1L);
+            if (res == -1 && RUNNING.equals(state)) {
+                throw newSysCallFailedException("Failed to write to eventfd.", "eventfd_write(2)", errno());
+            }
         }
     }
 
