@@ -34,8 +34,8 @@ public class UringFlowTest {
     public void before() {
         uring = new Uring(16384, 0);
 
-        sq = uring.sq();
-        cq = uring.cq();
+        sq = uring.submissionQueue();
+        cq = uring.completionQueue();
     }
 
     @After
@@ -59,7 +59,7 @@ public class UringFlowTest {
             }
 
             for (int k = 0; k < batchSize; k++) {
-                sq.offer_NOP(10);
+                sq.prepareNop(10);
             }
             int submittedEntries = sq.submit();
             assertEquals(batchSize, submittedEntries);

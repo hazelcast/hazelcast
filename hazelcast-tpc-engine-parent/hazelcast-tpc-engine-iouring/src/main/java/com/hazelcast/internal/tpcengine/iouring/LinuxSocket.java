@@ -154,7 +154,6 @@ public final class LinuxSocket implements AutoCloseable {
 
     private static native int getSoLinger(int socketFd) throws IOException;
 
-
     public int getAddressFamily() {
         return addressFamily;
     }

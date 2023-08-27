@@ -67,7 +67,7 @@ public class NetworkBenchmark_Netty {
         IO_URING
     }
 
-    public int runtimeSeconds = 600;
+    public int runtimeSeconds = 5;
     public int payloadSize = 0;
     // the number of inflight packets per connection
     public int concurrency = 10;
@@ -152,6 +152,13 @@ public class NetworkBenchmark_Netty {
 
         countDownLatch.await();
         printResults(completedArray, start);
+
+        for(Channel channel:channels){
+            channel.close();
+        }
+
+        System.out.println("Sleeping");
+        Thread.sleep(10000000);
     }
 
     private void printConfig() {
@@ -174,7 +181,6 @@ public class NetworkBenchmark_Netty {
         long duration = currentTimeMillis() - start;
         System.out.println("Duration " + duration + " ms");
         System.out.println("Throughput:" + (count * 1000 / duration) + " ops");
-        System.exit(0);
     }
 
     private static Class<? extends Channel> newSocketChannel(Type type) {
@@ -301,6 +307,12 @@ public class NetworkBenchmark_Netty {
                 ctx.write(response, ctx.voidPromise());
                 payloadSize = -1;
                 response = null;
+
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
             receiveBuf.release();
         }

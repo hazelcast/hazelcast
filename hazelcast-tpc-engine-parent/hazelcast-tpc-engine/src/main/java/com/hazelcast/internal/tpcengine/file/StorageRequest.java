@@ -26,7 +26,7 @@ import com.hazelcast.internal.tpcengine.util.IntBiConsumer;
  * litter.
  * <p/>
  * BlockRequests are 'generic' in the sense that the same BlockRequest object
- * can be interpreted in many different ways depending on the opcode. So there
+ * can be interpreted in different ways depending on the opcode. So there
  * are no different subclasses for e.g. a read or a write. Unlike C, Java
  * doesn't have support for unions and hence we end up with this approach. Having
  * a single type makes makes it a lot easier to pool N instances since just a
@@ -60,4 +60,42 @@ public class StorageRequest {
     public int flags;
     public int rwFlags;
     public IntBiConsumer<Throwable> callback;
+
+    @SuppressWarnings({"checkstyle:ReturnCount"})
+    public static String storageReqOpcodeToString(int opcode) {
+        switch (opcode) {
+            case STR_REQ_OP_NOP:
+                return "STR_REQ_OP_NOP";
+            case STR_REQ_OP_READ:
+                return "STR_REQ_OP_READ";
+            case STR_REQ_OP_WRITE:
+                return "STR_REQ_OP_WRITE";
+            case STR_REQ_OP_FSYNC:
+                return "STR_REQ_OP_FSYNC";
+            case STR_REQ_OP_FDATASYNC:
+                return "STR_REQ_OP_FDATASYNC";
+            case STR_REQ_OP_OPEN:
+                return "STR_REQ_OP_OPEN";
+            case STR_REQ_OP_CLOSE:
+                return "STR_REQ_OP_CLOSE";
+            case STR_REQ_OP_FALLOCATE:
+                return "STR_REQ_OP_FALLOCATE";
+            default:
+                return "unknown-opcode(" + opcode + ")";
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "StorageRequest{"
+                + "file=" + file
+                + ", offset=" + offset
+                + ", length=" + length
+                + ", opcode=" + storageReqOpcodeToString(opcode)
+                + ", flags=" + flags
+                + ", permissions=" + permissions
+                + ", rwFlags=" + rwFlags
+                + ", buf=" + (buffer == null ? "null" : buffer.toDebugString())
+                + "}";
+    }
 }

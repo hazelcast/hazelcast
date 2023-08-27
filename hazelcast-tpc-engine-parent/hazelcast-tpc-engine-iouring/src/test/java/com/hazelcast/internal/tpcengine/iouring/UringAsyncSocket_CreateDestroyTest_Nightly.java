@@ -20,9 +20,10 @@ import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class UringLargePayloadTest_Nightly extends UringLargePayloadTest {
+public class UringAsyncSocket_CreateDestroyTest_Nightly
+        extends UringAsyncSocket_CreateDestroyTest {
 
-    public UringLargePayloadTest_Nightly() {
-        iterations = 20000;
+    public UringAsyncSocket_CreateDestroyTest_Nightly() {
+        iterations = 1_000_000L;
     }
 }

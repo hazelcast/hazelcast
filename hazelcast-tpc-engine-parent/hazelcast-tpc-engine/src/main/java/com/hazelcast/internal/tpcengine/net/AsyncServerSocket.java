@@ -81,6 +81,13 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     /**
      * Gets the local address: the socket address that this channel's socket
      * is bound to.
+     * <p/>
+     * This method is threadsafe.
+     * <p/>
+     * This method will always return a not null value and will always be
+     * exactly the same cached instance (so is very cheap).
+     * <p/>
+     * The value returned isn't impacted by closing of the socket.
      *
      * @return the local address.
      */
@@ -96,8 +103,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     /**
      * Gets the local port of the {@link AsyncServerSocket}.
      * <p/>
-     * If {@link #bind(SocketAddress)} has not been called, then -1 is
-     * returned.
+     * The value returned isn't impacted by closing of the socket.
      *
      * @return the local port.
      * @throws UncheckedIOException if something failed while obtaining the
@@ -136,9 +142,9 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     public final void start() {
         try {
             if (Thread.currentThread() == eventloopThread) {
-                startInternal();
+                start0();
             } else {
-                reactor.submit(this::startInternal).join();
+                reactor.submit(this::start0).join();
             }
         } catch (Throwable t) {
             close("Problems during socket start", t);
@@ -146,7 +152,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
         }
     }
 
-    private void startInternal() {
+    private void start0() {
         if (started) {
             throw new IllegalStateException(this + " is already started");
         }
@@ -159,7 +165,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
 
         started = true;
 
-        start0();
+        start00();
 
         if (logger.isInfoEnabled()) {
             logger.info("ServerSocket listening at " + getLocalAddress());
@@ -170,7 +176,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      * Starts the actual server socket. Call is guaranteed to be made once and
      * always from the eventloop thread.
      */
-    protected abstract void start0();
+    protected abstract void start00();
 
     @Override
     public String toString() {
@@ -225,7 +231,8 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      * Cast to specific Builder for specialized options when available.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
-    public abstract static class Builder extends AbstractAsyncSocket.Builder<AsyncServerSocket> {
+    public abstract static class Builder
+            extends AbstractAsyncSocket.Builder<AsyncServerSocket> {
 
         /**
          * Sets the accept function to process accept requests.
@@ -247,7 +254,18 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
          */
         public Metrics metrics;
 
-        public int backlog = Integer.MAX_VALUE;
+        /**
+         * The backlog defines the maximum length to which the queue of pending
+         * connections for socket may grow.
+         * <p/>
+         * Semantics are implementation specific. An implementation can impose
+         * a maximum or ignore it completely.
+         * <p/>
+         * A value of 0 means that some kind of default will be used.
+         * <p/>
+         * https://man7.org/linux/man-pages/man2/listen.2.html
+         */
+        public int backlog;
 
         /**
          * The address to bind to. bindAddress should be set or

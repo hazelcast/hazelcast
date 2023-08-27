@@ -16,19 +16,16 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
-
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
 
 @Category(NightlyTest.class)
-public class NioRpcTest_Nightly extends NioRpcTest {
+public class Nio_LargePayloadTest_Nightly extends Nio_LargePayloadTest {
 
-    public NioRpcTest_Nightly() {
-        durationMillis = TimeUnit.SECONDS.toMillis(60);
+    public Nio_LargePayloadTest_Nightly() {
+        iterations = 20000;
         testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
     }
 }

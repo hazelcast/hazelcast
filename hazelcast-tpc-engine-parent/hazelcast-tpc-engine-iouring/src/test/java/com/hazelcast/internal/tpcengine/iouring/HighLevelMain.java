@@ -22,16 +22,16 @@ public class HighLevelMain {
     public static void main(String[] args) throws InterruptedException {
         Uring uring = new Uring(16384, 0);
 
-        SubmissionQueue sq = uring.sq();
+        SubmissionQueue sq = uring.submissionQueue();
 
         int count = 10;
         for (int k = 0; k < count; k++) {
-            sq.offer_NOP(10);
+            sq.prepareNop(10);
         }
         int submittedEntries = sq.submit();
 
         System.out.println("submittedEntries:" + submittedEntries);
-        CompletionQueue cq = uring.cq();
+        CompletionQueue cq = uring.completionQueue();
         int head = cq.acquireHead();
 
         for (; ; ) {

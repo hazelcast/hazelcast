@@ -16,20 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import org.junit.Test;
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.experimental.categories.Category;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
+@Category(NightlyTest.class)
+public class Uring_LargePayloadTest_Nightly extends Uring_LargePayloadTest {
 
-public class UringLibraryTest {
-
-    @Test
-    public void test() {
-        assumeTrue(UringLibrary.isAvailable());
-
-        // ensure that we can actually load the Uring.
-        Uring uring = new Uring(16, 0);
-        assertNotNull(uring.submissionQueue());
-        assertNotNull(uring.completionQueue());
+    public Uring_LargePayloadTest_Nightly() {
+        iterations = 20000;
     }
 }

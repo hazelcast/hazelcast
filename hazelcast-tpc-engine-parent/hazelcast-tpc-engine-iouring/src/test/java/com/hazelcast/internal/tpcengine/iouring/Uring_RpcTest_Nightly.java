@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.nio;
+package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.experimental.categories.Category;
 
-public class NioLargeVariablePayloadTest
-        extends com.hazelcast.internal.tpcengine.net.LargeVariablePayloadTest {
-    @Override
-    public Reactor.Builder newReactorBuilder() {
-        return new NioReactor.Builder();
+import java.util.concurrent.TimeUnit;
+
+@Category(NightlyTest.class)
+public class Uring_RpcTest_Nightly extends Uring_RpcTest {
+    public Uring_RpcTest_Nightly() {
+        durationMillis = TimeUnit.SECONDS.toMillis(60);
     }
 }

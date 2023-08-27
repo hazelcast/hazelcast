@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.iouring;
+package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.experimental.categories.Category;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocket_CreateDestroyTest;
 
-@Category(NightlyTest.class)
-public class UringLargeVariablePayloadTest_Nightly
-        extends UringLargeVariablePayloadTest {
+public class NioAsyncServerSocket_CreateDestroyTest
+        extends AsyncServerSocket_CreateDestroyTest {
 
-    public UringLargeVariablePayloadTest_Nightly() {
-        iterations = 2000;
+    @Override
+    public Reactor.Builder newReactorBuilder() {
+        return new NioReactor.Builder();
     }
 }

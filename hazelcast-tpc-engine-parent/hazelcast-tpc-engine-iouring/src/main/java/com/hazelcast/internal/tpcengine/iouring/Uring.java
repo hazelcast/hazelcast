@@ -23,10 +23,13 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPowerOf2;
 /**
  * The JNI wrapper around an io_uring instance.
  * <p>
+ * The Uring/SubmissionQueue and CompletionQueue instances are not threadsafe.
+ * <p>
  * Good read:
  * https://github.com/axboe/liburing/issues/536
  * https://tchaloupka.github.io/during/during.io_uring.RegisterOpCode.html
  * https://nick-black.com/dankwiki/index.php/Io_uring
+ * https://man.archlinux.org/man/io_uring.7.en
  * <p>
  * TODO:
  * IORING_SETUP_SINGLE_ISSUER
@@ -190,11 +193,8 @@ public final class Uring implements AutoCloseable {
     int features;
 
     private boolean closed;
-    private final SubmissionQueue sq;
-    private final CompletionQueue cq;
-
-    // private final SubmissionQueue sq = new SubmissionQueue();
-    // https://man.archlinux.org/man/io_uring.7.en
+    private final SubmissionQueue submissionQueue;
+    private final CompletionQueue completionQueue;
 
     /**
      * Creates a new Uring with the given number of entries.
@@ -216,10 +216,10 @@ public final class Uring implements AutoCloseable {
 
         this.entries = entries;
         init(entries, flags);
-        sq = new SubmissionQueue(this);
-        cq = new CompletionQueue(this, entries);
-        sq.init(ringAddr);
-        cq.init(ringAddr);
+        submissionQueue = new SubmissionQueue(this);
+        completionQueue = new CompletionQueue(this, entries);
+        submissionQueue.init(ringAddr);
+        completionQueue.init(ringAddr);
     }
 
     /**
@@ -351,8 +351,8 @@ public final class Uring implements AutoCloseable {
      *
      * @return the submission queue.
      */
-    public SubmissionQueue sq() {
-        return sq;
+    public SubmissionQueue submissionQueue() {
+        return submissionQueue;
     }
 
     /**
@@ -360,8 +360,8 @@ public final class Uring implements AutoCloseable {
      *
      * @return the completion queue.
      */
-    public CompletionQueue cq() {
-        return cq;
+    public CompletionQueue completionQueue() {
+        return completionQueue;
     }
 
     @Override
@@ -374,8 +374,8 @@ public final class Uring implements AutoCloseable {
         exit(ringAddr);
         ringAddr = 0;
         ringFd = -1;
-        sq.onClose();
-        cq.onClose();
+        submissionQueue.onClose();
+        completionQueue.onClose();
     }
 
     /**
@@ -388,8 +388,8 @@ public final class Uring implements AutoCloseable {
      */
     public void registerRingFd() {
         enterRingFd = registerRingFd(ringAddr);
-        sq.enterRingFd = enterRingFd;
-        sq.ringBufferRegistered = true;
+        submissionQueue.enterRingFd = enterRingFd;
+        submissionQueue.ringBufferRegistered = true;
     }
 
     public void register(int opcode, long arg, int nr_args) {

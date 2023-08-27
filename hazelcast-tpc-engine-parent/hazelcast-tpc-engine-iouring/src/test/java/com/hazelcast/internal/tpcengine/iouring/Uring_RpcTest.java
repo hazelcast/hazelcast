@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.nio;
+package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorCreateDestroyTest;
+import com.hazelcast.internal.tpcengine.net.RpcTest;
 
-public class NioReactorCreateDestroyTest
-        extends ReactorCreateDestroyTest {
+public class Uring_RpcTest extends RpcTest {
 
     @Override
     public Reactor.Builder newReactorBuilder() {
-        return new NioReactor.Builder();
+        return new UringReactor.Builder();
     }
 }

@@ -17,11 +17,10 @@
 package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.file.FileCopyTest;
 
-public class NioFileCopyTest extends FileCopyTest {
+public class Nio_LargePayloadTest extends com.hazelcast.internal.tpcengine.net.LargePayloadTest {
     @Override
-    public Reactor newReactor() {
-        return new NioReactor.Builder().build();
+    public Reactor.Builder newReactorBuilder() {
+        return new NioReactor.Builder();
     }
 }

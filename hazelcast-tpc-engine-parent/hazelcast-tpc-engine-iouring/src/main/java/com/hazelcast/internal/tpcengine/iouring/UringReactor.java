@@ -50,7 +50,7 @@ public final class UringReactor extends Reactor {
     private UringReactor(Builder builder) {
         super(builder);
         this.eventloop = (UringEventloop) eventloop();
-        this.eventFd = eventloop.eventFdHandler.eventFd;
+        this.eventFd = eventloop.eventFdHandler.eventFd();
     }
 
     @Override
@@ -91,6 +91,7 @@ public final class UringReactor extends Reactor {
         UringAsyncServerSocket.Builder serverSocketBuilder = new UringAsyncServerSocket.Builder();
         serverSocketBuilder.reactor = this;
         serverSocketBuilder.uring = eventloop.uring;
+        serverSocketBuilder.networkScheduler = (UringNetworkScheduler) eventloop.networkScheduler();
         return serverSocketBuilder;
     }
 

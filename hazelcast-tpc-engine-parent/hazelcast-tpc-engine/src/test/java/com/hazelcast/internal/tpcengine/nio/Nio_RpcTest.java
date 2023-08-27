@@ -16,14 +16,12 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.experimental.categories.Category;
+import com.hazelcast.internal.tpcengine.Reactor;
 
-@Category(NightlyTest.class)
-public class NioReactorCreateDestroyTest_Nightly
-        extends NioReactorCreateDestroyTest {
+public class Nio_RpcTest extends com.hazelcast.internal.tpcengine.net.RpcTest {
 
-    public NioReactorCreateDestroyTest_Nightly() {
-        iterations = 1_000_000L;
+    @Override
+    public Reactor.Builder newReactorBuilder() {
+        return new NioReactor.Builder();
     }
 }

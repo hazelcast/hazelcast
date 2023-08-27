@@ -136,7 +136,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    protected void start0() {
+    protected void start00() {
         if (!clientSide) {
             // on the server side we immediately start reading.
             key.interestOps(key.interestOps() | OP_READ);
@@ -208,16 +208,16 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    protected boolean insideWrite(Object buf) {
+    protected boolean insideWrite(Object msg) {
         if (ioVectorWriteAllowed) {
-            if (ioVector.offer((IOBuffer) buf)) {
+            if (ioVector.offer((IOBuffer) msg)) {
                 return true;
             } else {
                 ioVectorWriteAllowed = false;
-                return writeQueue.offer(buf);
+                return writeQueue.offer(msg);
             }
         } else {
-            return writeQueue.offer(buf);
+            return writeQueue.offer(msg);
         }
     }
 
@@ -227,6 +227,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         closeQuietly(socketChannel);
         key.cancel();
+        reactor.sockets().remove(this);
     }
 
     @SuppressWarnings("java:S125")

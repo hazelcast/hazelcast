@@ -28,7 +28,7 @@
     <artifactId>hazelcast-tpc-engine-parent</artifactId>
     <name>hazelcast-tpc-engine-parent</name>
     <packaging>pom</packaging>
-    <description>The parent of all the TPC Engine modules</description>
+    <description>The Hazelcast Thread Per Core engine: the parent Maven module</description>
 
     <modules>
         <module>hazelcast-tpc-engine</module>

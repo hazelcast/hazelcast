@@ -220,6 +220,9 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
     @SuppressWarnings({"checkstyle:NPathComplexity",
             "checkstyle:MethodLength"})
+    /**
+     * Runs as much work from the TaskQueue as allowed.
+     */
     void run(RunContext context) throws Exception {
         final Reactor.Metrics reactorMetrics = context.reactorMetrics;
 

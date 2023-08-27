@@ -28,6 +28,7 @@ import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.toManPagesUrl;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
  * Represent the io_uring ringbuffer for completion queue events (cqe's).
@@ -40,20 +41,20 @@ import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIO
  * handler id is needs to be made and then a {@link CompletionHandler}
  * is registered under this handler id. And when the cqe's are processed, a
  * lookup is done that translates the userdata into a handler and then the
- * {@link CompletionHandler#completeRequest(int, int, long)}.
- * <p/>
- * There are 2 flavors of handlers:
- * <ol>
- *     <li>temp handlers: handlers that automatically get unregistered
- *     after completion.</li>
- *     <li>permanent handlers: handlers that do not automatically get
- *     unregistered on completion.</li>
- * </ol>
- * <p/>
+ * {@link CompletionHandler#complete(int, int, long)}.
  * A CompletionQueue can only be accessed by the eventloop thread.
  */
-@SuppressWarnings("checkstyle:VisibilityModifier")
+// todo: fix magic number
+@SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MemberName", "checkstyle:MagicNumber"})
 public final class CompletionQueue {
+
+    public static final byte TYPE_GENERIC = 0;
+    public static final byte TYPE_SERVER_SOCKET = 1;
+    public static final byte TYPE_SOCKET = 2;
+    public static final byte TYPE_FILE = 3;
+    public static final byte TYPE_EVENT_FD = 4;
+    public static final byte TYPE_TIMEOUT = 5;
+    public static final byte TYPE_STORAGE = 6;
 
     public static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
     public static final int OFFSET_CQE_USERDATA = 0;
@@ -72,19 +73,45 @@ public final class CompletionQueue {
     private final TpcLogger logger = TpcLoggerLocator.getLogger(CompletionQueue.class);
     private final Uring uring;
 
-    private final CompletionHandler[] handlers;
+    private final CompletionHandler[] generic_handlers;
     // an array that shows which positions in the handlers array are
     // not used.
-    private final int[] freeHandlers;
-    private int freeHandlersIndex;
+    private final int[] generic_freeHandlers;
+    private int generic_freeHandlersIndex;
+
+    private EventFdHandler eventFdHandler;
+    private TimeoutHandler timeoutHandler;
+    private CompletionHandler storageHandler;
+    private CompletionHandler socketHandler;
+    private CompletionHandler serverSocketHandler;
 
     CompletionQueue(Uring uring, int handlerCount) {
         this.uring = uring;
-        this.handlers = new CompletionHandler[handlerCount];
-        this.freeHandlers = new int[handlerCount];
+        this.generic_handlers = new CompletionHandler[handlerCount];
+        this.generic_freeHandlers = new int[handlerCount];
         for (int k = 0; k < handlerCount; k++) {
-            freeHandlers[k] = k;
+            generic_freeHandlers[k] = k;
         }
+    }
+
+    public void registerStorageHandler(CompletionHandler storageHandler) {
+        this.storageHandler = checkNotNull(storageHandler, "storageHandler");
+    }
+
+    public void registerSocketHandler(CompletionHandler socketHandler) {
+        this.socketHandler = checkNotNull(socketHandler, "socketHandler");
+    }
+
+    public void registerServerSocketHandler(CompletionHandler serverSocketHandler) {
+        this.serverSocketHandler = checkNotNull(serverSocketHandler, "serverSocketHandler");
+    }
+
+    public void register(EventFdHandler eventFdHandler) {
+        this.eventFdHandler = checkNotNull(eventFdHandler, "eventFdHandler");
+    }
+
+    public void register(TimeoutHandler timeoutHandler) {
+        this.timeoutHandler = checkNotNull(timeoutHandler, "timeoutHandler");
     }
 
     static UncheckedIOException newCQEFailedException(String msg, String syscall, int opcode, int errnum) {
@@ -95,6 +122,26 @@ public final class CompletionQueue {
                 + "and then check " + toManPagesUrl(syscall) + " for more detail.");
     }
 
+
+    // todo: fix magic numbers
+    public static long encodeUserdata(byte type, byte opcode, int index) {
+        return ((long) type << (5 * 8))
+                + (((long) opcode) << (4 * 8))
+                + index;
+    }
+
+    public static byte decodeOpcode(long userdata) {
+        return (byte) ((userdata >> (4 * 8)) & 0xff);
+    }
+
+    public static int decodeIndex(long userdata) {
+        return (int) (userdata & 0xFFFFFFFF);
+    }
+
+    public static byte decodeType(long userdata) {
+        return (byte) ((userdata >> (5 * 8)) & 0xff);
+    }
+
     /**
      * Gets the next handler id. The handler id is typically used as user_data so that the
      * appropriate handler can be found based on the user_data in the cqe.
@@ -102,8 +149,8 @@ public final class CompletionQueue {
      * @return the next handler id.
      */
     public int nextHandlerId() {
-        int handlerId = freeHandlers[freeHandlersIndex];
-        freeHandlersIndex++;
+        int handlerId = generic_freeHandlers[generic_freeHandlersIndex];
+        generic_freeHandlersIndex++;
         return handlerId;
     }
 
@@ -114,7 +161,7 @@ public final class CompletionQueue {
      * @param handler   the CompletionHandler to register.
      */
     public void register(int handlerId, CompletionHandler handler) {
-        handlers[handlerId] = handler;
+        generic_handlers[handlerId] = handler;
     }
 
     /**
@@ -123,9 +170,9 @@ public final class CompletionQueue {
      * @param handlerId the id of the CompletionHandler to remove.
      */
     public void unregister(int handlerId) {
-        handlers[handlerId] = null;
-        freeHandlersIndex--;
-        freeHandlers[freeHandlersIndex] = handlerId;
+        generic_handlers[handlerId] = null;
+        generic_freeHandlersIndex--;
+        generic_freeHandlers[generic_freeHandlersIndex] = handlerId;
     }
 
     /**
@@ -158,11 +205,12 @@ public final class CompletionQueue {
             long cqeAddress = cqesAddr + (long) cqeIndex * CQE_SIZE;
 
             long userdata = UNSAFE.getLong(null, cqeAddress + OFFSET_CQE_USERDATA);
+
             int res = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_RES);
             int flags = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_FLAGS);
 
             try {
-                completionHandler.completeRequest(res, flags, userdata);
+                completionHandler.complete(res, flags, userdata);
             } catch (Exception e) {
                 logger.severe("Failed to process " + completionHandler + " res:" + res + " flags:"
                         + flags + " userdata:" + userdata, e);
@@ -187,6 +235,7 @@ public final class CompletionQueue {
      *
      * @return the number of processed cqe's.
      */
+    @SuppressWarnings({"checkstyle:AvoidNestedBlocks"})
     public int process() {
         // acquire load.
         int tail = UNSAFE.getIntVolatile(null, tailAddr);
@@ -201,16 +250,40 @@ public final class CompletionQueue {
             long userdata = UNSAFE.getLong(null, cqeAddress + OFFSET_CQE_USERDATA);
             int res = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_RES);
             int flags = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_FLAGS);
+            byte type = decodeType(userdata);
 
-            CompletionHandler handler = handlers[(int) userdata];
-            if (handler == null) {
-                logger.warning("no handler found for: " + userdata);
-            } else {
-                try {
-                    handler.completeRequest(res, flags, userdata);
-                } catch (Exception e) {
-                    logger.severe("Failed to process " + handler + " res:" + res + " flags:"
-                            + flags + " userdata:" + userdata, e);
+//            System.out.println("completing " + userdata + " res:" + res + " type:" + type
+//                    + " opcode:" + Uring.opcodeToString(opcode) + " index:" + index);
+
+            try {
+                switch (type) {
+                    case TYPE_GENERIC:
+                        int index = decodeIndex(userdata);
+                        generic_handlers[index].complete(res, flags, userdata);
+                        break;
+                    case TYPE_STORAGE:
+                        storageHandler.complete(res, flags, userdata);
+                        break;
+                    case TYPE_TIMEOUT:
+                        timeoutHandler.complete(res, flags, res);
+                        break;
+                    case TYPE_EVENT_FD:
+                        eventFdHandler.complete(res, flags, res);
+                        break;
+                    case TYPE_SERVER_SOCKET:
+                        serverSocketHandler.complete(res, flags, userdata);
+                        break;
+                    case TYPE_SOCKET:
+                        socketHandler.complete(res, flags, userdata);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unrecognized type:" + type);
+                }
+            } catch (Exception e) {
+                // The handlers should take care of exception handling; but if that failed
+                // we have a catch all so that the eventloop is more robust.
+                if (logger.isWarningEnabled()) {
+                    logger.warning("Failed to process handler", e);
                 }
             }
 
@@ -251,4 +324,5 @@ public final class CompletionQueue {
         cqesAddr = 0;
         ringMask = 0;
     }
+
 }

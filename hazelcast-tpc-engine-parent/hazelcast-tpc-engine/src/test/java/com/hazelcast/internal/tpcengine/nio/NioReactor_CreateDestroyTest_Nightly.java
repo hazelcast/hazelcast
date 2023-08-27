@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.iouring;
+package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class UringReactorCreateDestroyTest_Nightly
-        extends UringReactorCreateDestroyTest {
+public class NioReactor_CreateDestroyTest_Nightly
+        extends NioReactor_CreateDestroyTest {
 
-    public UringReactorCreateDestroyTest_Nightly() {
+    public NioReactor_CreateDestroyTest_Nightly() {
         iterations = 1_000_000L;
     }
 }

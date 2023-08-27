@@ -29,6 +29,9 @@ public interface NetworkScheduler<S extends AsyncSocket> {
     /**
      * Schedules a dirty socket to be written to the network at some point in
      * the future.
+     * <p/>
+     * A dirty socket should only schedule itself once when it is dirty. If
+     * a socket schedules itself more than once, there is a bug.
      *
      * @param socket the AsyncSocket to schedule.
      * @throws IllegalStateException if the scheduler exceeds the limit of
@@ -42,7 +45,17 @@ public interface NetworkScheduler<S extends AsyncSocket> {
         schedule(socket);
     }
 
+    /**
+     * Checks if there are any dirty sockets pending.
+     *
+     * @return true if there are any dirty sockets pending.
+     */
     boolean hasPending();
 
+    /**
+     * Gives the NetworkScheduler to do some work by giving it a tick.
+     *
+     * @return true if any work was done, false otherwise.
+     */
     boolean tick();
 }

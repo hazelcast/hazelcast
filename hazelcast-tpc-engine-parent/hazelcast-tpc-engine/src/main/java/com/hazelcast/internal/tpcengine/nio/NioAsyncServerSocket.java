@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.util.Option;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.util.Option;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -59,14 +59,14 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected void close0() throws IOException {
-        super.close0();
-
         closeQuietly(serverSocketChannel);
         key.cancel();
+
+        reactor.serverSockets().remove(this);
     }
 
     @Override
-    protected void start0() {
+    protected void start00() {
         key.interestOps(key.interestOps() | OP_ACCEPT);
     }
 

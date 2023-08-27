@@ -22,7 +22,7 @@
 
     <name>hazelcast-tpc-engine-iouring</name>
     <artifactId>hazelcast-tpc-engine-iouring</artifactId>
-    <description>The Hazelcast thread per core engine: the io_uring Reactor</description>
+    <description>The Hazelcast Thread-Per-Core engine: the io_uring Reactor</description>
     <packaging>jar</packaging>
 
     <parent>
@@ -35,7 +35,6 @@
     <properties>
         <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}/..</main.basedir>
-        <jctools.version>4.0.1</jctools.version>
         <maven.ant-run-plugin>3.1.0</maven.ant-run-plugin>
         <lib.name>libiouring_hz.so</lib.name>
     </properties>
@@ -48,6 +47,7 @@
         </resources>
 
         <plugins>
+            <!-- Includes generation of JNI headers -->
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
@@ -62,6 +62,7 @@
                 </configuration>
             </plugin>
 
+            <!-- Compilation of the C code -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -107,50 +108,11 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <index>true</index>
-                        <compress>true</compress>
-                        <manifest>
-                            <addClasspath>false</addClasspath>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                        </manifest>
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>test-jar</id>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <!-- We must generate a -javadoc JAR file to publish on Maven Central -->
-                        <id>empty-javadoc-jar</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                        <configuration>
-                            <classifier>javadoc</classifier>
-                            <classesDirectory>${project.basedir}/src/main/javadoc</classesDirectory>
-                            <excludes>
-                                <exclude>.*</exclude>
-                            </excludes>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
         </plugins>
     </build>
 
     <dependencies>
+
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-tpc-engine</artifactId>

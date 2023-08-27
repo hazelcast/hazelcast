@@ -17,10 +17,10 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorCreateDestroyTest;
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocket_CreateDestroyTest;
 
-public class UringReactorCreateDestroyTest
-        extends ReactorCreateDestroyTest {
+public class UringAsyncServerSocket_CreateDestroyTest
+        extends AsyncServerSocket_CreateDestroyTest {
 
     @Override
     public Reactor.Builder newReactorBuilder() {

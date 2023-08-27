@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_NOP;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -41,12 +42,10 @@ public class UringNopBenchmark {
 
     public static void main(String[] args) throws InterruptedException {
         UringNopBenchmark benchmark = new UringNopBenchmark();
-
         benchmark.run();
     }
 
     private void run() throws InterruptedException {
-
         CountDownLatch latch = new CountDownLatch(1);
 
         long startTimeMs = System.currentTimeMillis();
@@ -72,13 +71,13 @@ public class UringNopBenchmark {
         public void run() {
             try {
                 final Uring uring = new Uring(4096, 0);
-                final SubmissionQueue sq = uring.sq();
-                final CompletionQueue cq = uring.cq();
+                final SubmissionQueue sq = uring.submissionQueue();
+                final CompletionQueue cq = uring.completionQueue();
                 final NopCompletionHandler handler = new NopCompletionHandler(sq, latch);
                 final boolean spin = UringNopBenchmark.this.spin;
 
                 for (int k = 0; k < concurrency; k++) {
-                    sq.offer(Uring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, 0);
+                    sq.prepare(IORING_OP_NOP, 0, 0, 0, 0, 0, 0, 0);
                 }
 
                 while (!stop) {
@@ -109,14 +108,12 @@ public class UringNopBenchmark {
         }
 
         @Override
-        public void completeRequest(int res, int flags, long userdata) {
+        public void complete(int res, int flags, long userdata) {
             if (res < 0) {
                 throw new UncheckedIOException(new IOException(Linux.strerror(-res)));
             }
 
-            if (!sq.offer(Uring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, 0)) {
-                throw new UncheckedIOException(new IOException("failed to offer"));
-            }
+            sq.prepare(IORING_OP_NOP, 0, 0, 0, 0, 0, 0, 0);
         }
     }
 
@@ -179,7 +176,6 @@ public class UringNopBenchmark {
                 sb.append("[cnt=");
                 sb.append(FormatUtil.humanReadableCountSI(readsThp));
                 sb.append("/s]");
-
 
                 System.out.println(sb);
                 sb.setLength(0);

@@ -211,9 +211,9 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     public final void start() {
         try {
             if (Thread.currentThread() == eventloopThread) {
-                startInternal();
+                start0();
             } else {
-                reactor.submit(this::startInternal).join();
+                reactor.submit(this::start0).join();
             }
         } catch (Throwable t) {
             close("Problems during socket start", t);
@@ -221,9 +221,9 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         }
     }
 
-    private void startInternal() {
+    private void start0() {
         if (started) {
-            throw new IllegalStateException(this + " is already started");
+            throw new IllegalStateException(this + " is already started.");
         }
 
         if (!reactor.sockets().add(this)) {
@@ -233,11 +233,11 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         }
 
         started = true;
-        start0();
+        start00();
     }
 
     // Guaranteed to be running on the eventloop thread.
-    protected abstract void start0();
+    protected abstract void start00();
 
 
     /**
@@ -293,32 +293,31 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         flush();
     }
 
-
     /**
-     * Writes a {@link IOBuffer} to this AsyncSocket without flushing (scheduling)
+     * Writes a message to this AsyncSocket without flushing (scheduling)
      * the AsyncSocket.
      * <p>
-     * This call can be used to buffer a series of IOBuffers and then call
+     * This call can be used to buffer a series of messages and then call
      * {@link #flush()} to trigger the actual writing to the socket.
      * <p>
-     * There is no guarantee that IOBuffer is actually going to be received by
-     * the caller after the AsyncSocket has accepted the IOBuffer. E.g. when
+     * There is no guarantee that message is actually going to be received by
+     * the caller after the AsyncSocket has accepted the message. E.g. when
      * the TCP/IP connection is dropped.
      * <p>
      * This method is thread-safe.
      *
-     * @param buf the IOBuffer to write.
-     * @return true if the IOBuffer was accepted, false otherwise.
+     * @param msg the message to write.
+     * @return true if the message was accepted, false otherwise.
      */
-    public final boolean write(Object buf) {
-        checkNotNull(buf, "buf");
+    public final boolean write(Object msg) {
+        checkNotNull(msg, "msg");
 
-        if (writer == null && !(buf instanceof IOBuffer)) {
+        if (writer == null && !(msg instanceof IOBuffer)) {
             throw new IllegalArgumentException(
                     "Message needs to be an IOBuffer is writer is not set.");
         }
 
-        if (writeQueue.add(buf)) {
+        if (writeQueue.add(msg)) {
             return true;
         } else {
             // lets trigger a flush since the writeQueue is full.
@@ -328,42 +327,37 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     }
 
     /**
-     * Writes a {@link IOBuffer} to this AsyncSocket and flushes it. Flushing
-     * causes the AsyncSocket
-     * to be scheduled in the {@link Reactor}.
+     * Writes a message to this AsyncSocket and flushes it. Flushing
+     * causes the AsyncSocket to be scheduled in the {@link Reactor}.
      * <p>
      * This is the same as calling {@link #write(Object)} followed by a
      * {@link #flush()}.
      * <p>
-     * There is no guarantee that IOBuffer is actually going to be received by
-     * the caller if the AsyncSocket has accepted the IOBuffer. E.g. when the
-     * connection closes.
-     * <p>
      * This method is thread-safe.
      *
-     * @param buf the IOBuffer to write.
-     * @return true if the IOBuffer was accepted, false otherwise.
+     * @param msg the message to write.
+     * @return true if the message was accepted, false otherwise.
      */
-    public final boolean writeAndFlush(Object buf) {
-        boolean offered = write(buf);
+    public final boolean writeAndFlush(Object msg) {
+        boolean offered = write(msg);
         flush();
         return offered;
     }
 
     /**
-     * Writes an {@link IOBuffer} and ensure it gets written from the eventloop
+     * Writes a message and ensure it gets written from the eventloop
      * thread.
      * <p>
      * This call can only be made inside the eventloop.
      *
-     * @return true if the buf was successfully offered, false otherwise.
+     * @return true if the msg was successfully offered, false otherwise.
      * @throws IllegalStateException if the current thread isn't the eventloop
      *                               thread.
      */
-    public final boolean insideWriteAndFlush(Object buf) {
-        checkNotNull(buf, "buf");
+    public final boolean insideWriteAndFlush(Object msg) {
+        checkNotNull(msg, "msg");
 
-        if (writer == null && !(buf instanceof IOBuffer)) {
+        if (writer == null && !(msg instanceof IOBuffer)) {
             throw new IllegalArgumentException(
                     "Only accepting IOBuffers if writer isn't set.");
         }
@@ -388,10 +382,10 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
             triggeredFlush = false;
         }
 
-        boolean offered = insideWrite(buf);
+        boolean offered = insideWrite(msg);
 
         if (triggeredFlush && offered) {
-            // We only want to schedule the socket if the buf was successfully
+            // We only want to schedule the socket if the msg was successfully
             // offered and we triggered the flush. Since we are on the eventloop
             // thread, unsafeSchedule can be called.
             networkScheduler.unsafeSchedule(this);
@@ -400,16 +394,13 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         return offered;
     }
 
-    protected abstract boolean insideWrite(Object buf);
+    protected abstract boolean insideWrite(Object msg);
 
     /**
      * Connects asynchronously to some address.
      * <p/>
-     * This method is not thread-safe.
-     * <p/>
-     * This method should be called after {@link #start()}.
-     * <p>
-     * todo: Instead of returning a CompletableFuture, a promise should be returned.
+     * This method should be called after {@link #start()} on only on the active
+     * side of the socket (clientside).
      *
      * @param address the address to connect to.
      * @return a {@link CompletableFuture}
@@ -419,27 +410,25 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
     @Override
     protected void close0() throws IOException {
-        reactor.sockets().remove(this);
-        localAddress = null;
-        remoteAddress = null;
+        //  localAddress = null;
+        // remoteAddress = null;
     }
-
-    @Override
-    public final String toString() {
-        return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
-    }
-
-    // Do not remove this code. This exists for debugging purposes so it is easy to
-    // distinguish the client from the server side communication.
+//
 //    @Override
 //    public final String toString() {
-//        if (clientSide) {
-//            return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
-//        } else {
-//            return "            " + getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
-//        }
+//        return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
 //    }
 
+    //     Do not remove this code. This exists for debugging purposes so it is easy to
+//     distinguish the client from the server side communication.
+    @Override
+    public final String toString() {
+        if (clientSide) {
+            return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+        } else {
+            return "            " + getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+        }
+    }
 
     /**
      * Contains the metrics for an {@link AsyncSocket}.
