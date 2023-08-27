@@ -26,7 +26,6 @@ import java.io.UncheckedIOException;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.errorcode;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.toManPagesUrl;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_CLOSE;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -80,8 +79,8 @@ public final class CompletionQueue {
     private final int[] generic_freeHandlers;
     private int generic_freeHandlersIndex;
 
-    private UringEventloop.EventFdHandler eventFdHandler;
-    private UringEventloop.TimeoutHandler timeoutHandler;
+    private EventFdHandler eventFdHandler;
+    private TimeoutHandler timeoutHandler;
     private CompletionHandler storageHandler;
     private CompletionHandler socketHandler;
     private CompletionHandler serverSocketHandler;
@@ -107,11 +106,11 @@ public final class CompletionQueue {
         this.serverSocketHandler = checkNotNull(serverSocketHandler, "serverSocketHandler");
     }
 
-    public void register(UringEventloop.EventFdHandler eventFdHandler) {
+    public void register(EventFdHandler eventFdHandler) {
         this.eventFdHandler = checkNotNull(eventFdHandler, "eventFdHandler");
     }
 
-    public void register(UringEventloop.TimeoutHandler timeoutHandler) {
+    public void register(TimeoutHandler timeoutHandler) {
         this.timeoutHandler = checkNotNull(timeoutHandler, "timeoutHandler");
     }
 
@@ -142,20 +141,6 @@ public final class CompletionQueue {
     public static byte decodeType(long userdata) {
         return (byte) ((userdata >> (5 * 8)) & 0xff);
     }
-
-    // todo: remove
-    public static void main(String[] args) {
-        long userdata = encodeUserdata(TYPE_SOCKET, IORING_OP_CLOSE, 502);
-
-        byte type = decodeType(userdata);
-        byte opcode = decodeOpcode(userdata);
-        int index = decodeIndex(userdata);
-
-        System.out.println("Type match:" + (type == TYPE_SOCKET));
-        System.out.println("opcode match:" + (opcode == IORING_OP_CLOSE));
-        System.out.println("index match:" + (index == 502));
-    }
-
 
     /**
      * Gets the next handler id. The handler id is typically used as user_data so that the
@@ -265,28 +250,25 @@ public final class CompletionQueue {
             long userdata = UNSAFE.getLong(null, cqeAddress + OFFSET_CQE_USERDATA);
             int res = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_RES);
             int flags = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_FLAGS);
-
-            // todo: fix magic numbers
             byte type = decodeType(userdata);
-            byte opcode = decodeOpcode(userdata);
-            int index = decodeIndex(userdata);
 
 //            System.out.println("completing " + userdata + " res:" + res + " type:" + type
 //                    + " opcode:" + Uring.opcodeToString(opcode) + " index:" + index);
 
             try {
                 switch (type) {
+                    case TYPE_GENERIC:
+                        int index = decodeIndex(userdata);
+                        generic_handlers[index].complete(res, flags, userdata);
+                        break;
                     case TYPE_STORAGE:
                         storageHandler.complete(res, flags, userdata);
                         break;
                     case TYPE_TIMEOUT:
-                        timeoutHandler.complete(opcode, res);
+                        timeoutHandler.complete(res, flags, res);
                         break;
                     case TYPE_EVENT_FD:
-                        eventFdHandler.complete(opcode, res);
-                        break;
-                    case TYPE_GENERIC:
-                        generic_handlers[index].complete(res, flags, userdata);
+                        eventFdHandler.complete(res, flags, res);
                         break;
                     case TYPE_SERVER_SOCKET:
                         serverSocketHandler.complete(res, flags, userdata);

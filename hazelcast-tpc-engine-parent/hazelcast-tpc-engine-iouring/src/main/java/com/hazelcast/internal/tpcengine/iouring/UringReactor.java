@@ -50,7 +50,7 @@ public final class UringReactor extends Reactor {
     private UringReactor(Builder builder) {
         super(builder);
         this.eventloop = (UringEventloop) eventloop();
-        this.eventFd = eventloop.eventFdHandler.eventFd;
+        this.eventFd = eventloop.eventFdHandler.eventFd();
     }
 
     @Override

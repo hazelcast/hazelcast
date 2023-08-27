@@ -126,6 +126,7 @@ public final class SubmissionQueue {
         UNSAFE.putInt(arrayAddr + SIZEOF_INT * pos, value);
     }
 
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_ACCEPT
     public void prepareAccept(int fd, long addr, long lenAddr, long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
@@ -144,6 +145,7 @@ public final class SubmissionQueue {
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
     }
 
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_NOP
     public void prepareNop(long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
@@ -164,6 +166,7 @@ public final class SubmissionQueue {
         //System.out.println("Writing " + Uring.opcodeToString(IORING_OP_NOP) + " fd:" + 0);
     }
 
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_TIMEOUT
     public void prepareTimeout(long timeoutAddr, long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
@@ -186,6 +189,7 @@ public final class SubmissionQueue {
         //System.out.println("SubmissionQueue: userdata:" + userData + " index:" + index + " op:" + opcode);
     }
 
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_CLOSE
     public void prepareClose(int fd, long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
@@ -206,6 +210,7 @@ public final class SubmissionQueue {
         //System.out.println("Writing -------- " + Uring.opcodeToString(IORING_OP_CLOSE) + " fd:" + fd + " userdata "+userdata);
     }
 
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_SHUTDOWN
     public void prepareShutdown(int fd, long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
@@ -227,6 +232,7 @@ public final class SubmissionQueue {
         //System.out.println("SubmissionQueue: userdata:" + userData + " index:" + index + " op:" + opcode);
     }
 
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_WRITEV
     public void prepareWritev(int fd, long ioVecAddr, int ioVecCnt, long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
@@ -246,6 +252,7 @@ public final class SubmissionQueue {
     }
 
     // OP_SEND is faster than OP_WRITE.
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_SENDMSG
     public void prepareSend(int fd, long addr, int length, long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
@@ -265,6 +272,7 @@ public final class SubmissionQueue {
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
     }
 
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_CONNECT
     public void prepareConnect(int fd, long addressPtr, int size, long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
@@ -312,6 +320,7 @@ public final class SubmissionQueue {
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
     }
 
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_READ
     public void prepareRead(int fd, long address, int length, long offset, long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
@@ -329,6 +338,8 @@ public final class SubmissionQueue {
         UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
     }
+
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_WRITE
     public void prepareWrite(int fd, long address, int length, long offset, long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
@@ -347,7 +358,7 @@ public final class SubmissionQueue {
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
     }
 
-
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_FSYNC
     public void prepareFSync(int fd, int syncFlags, long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
@@ -366,6 +377,7 @@ public final class SubmissionQueue {
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
     }
 
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_OPENAT
     public void prepareOpenAt(long pathnameAddr, int permissions, int flags, long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {

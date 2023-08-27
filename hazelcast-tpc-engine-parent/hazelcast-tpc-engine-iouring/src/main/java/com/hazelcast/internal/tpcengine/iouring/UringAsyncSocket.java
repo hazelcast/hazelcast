@@ -206,9 +206,6 @@ public final class UringAsyncSocket extends AsyncSocket {
 //        return future;
 //    }
 
-    // In the future we could add a WriteHandler that is optimized
-    // for when a Writer is set and bypasses the the whole ioVector ceremony
-    // But the Writer API needs to harden a bit first.
     @SuppressWarnings({"checkstyle:MemberName", "checkstyle:ExecutableStatementCount"})
     static final class Handler {
 

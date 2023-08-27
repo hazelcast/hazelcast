@@ -23,7 +23,6 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.TaskQueue;
@@ -35,14 +34,11 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.TpcPartitionOperationThread;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import org.jctools.util.PaddedAtomicLong;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -274,11 +270,14 @@ public class TpcServerBootstrap {
         }
     }
 
-    private class BindAddressGenerator implements Supplier<SocketAddress>{
+    /**
+     * Finds a free port in a range of available ports.
+     */
+    private final class BindAddressGenerator implements Supplier<SocketAddress> {
         private int port;
         private int limit;
 
-        public BindAddressGenerator(int port, int limit) {
+        private BindAddressGenerator(int port, int limit) {
             this.port = port;
             this.limit = limit;
         }
