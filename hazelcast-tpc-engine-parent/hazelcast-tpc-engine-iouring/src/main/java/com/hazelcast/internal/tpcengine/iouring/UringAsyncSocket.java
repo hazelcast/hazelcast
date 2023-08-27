@@ -103,7 +103,7 @@ public final class UringAsyncSocket extends AsyncSocket {
 
     @Override
     protected void start00() {
-        uring.completionQueue().register(handler);
+        ((UringNetworkScheduler) networkScheduler).register(handler);
 
         if (!clientSide) {
             handler.prepareRead();
@@ -532,7 +532,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                 pending--;
 
                 if (closing && pending == 0) {
-                    completionQueue.unregister(this);
+                    ((UringNetworkScheduler) socket.networkScheduler).unregister(this);
                     socket.reactor.sockets().remove(socket);
                 }
             } catch (Exception e) {

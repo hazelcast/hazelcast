@@ -20,7 +20,6 @@ import com.hazelcast.internal.tpcengine.AssertTask;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.util.CloseUtil;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -207,7 +206,6 @@ public abstract class AsyncServerSocketTest {
         });
     }
 
-    @Ignore
     @Test
     public void test_tooManySockets() {
         int serverSocketLimit = 10;

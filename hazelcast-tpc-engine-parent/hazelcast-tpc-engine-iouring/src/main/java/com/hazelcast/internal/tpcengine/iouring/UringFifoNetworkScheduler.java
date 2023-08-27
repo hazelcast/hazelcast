@@ -21,16 +21,26 @@ import org.jctools.queues.MpscArrayQueue;
 
 import java.util.Queue;
 
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.decodeIndex;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.decodeOpcode;
+
 /**
  * The {@link NetworkScheduler} for the {@link UringReactor}. Dirty sockets are
  * processed in FIFO order.
  */
-public final class UringFifoNetworkScheduler implements NetworkScheduler<UringAsyncSocket> {
+public final class UringFifoNetworkScheduler
+        extends UringNetworkScheduler {
 
     private final Queue<UringAsyncSocket> stagingQueue;
 
-    public UringFifoNetworkScheduler(int socketLimit) {
+    public UringFifoNetworkScheduler(Uring uring,
+                                     int socketLimit,
+                                     int serverSocketLimit) {
+        super(socketLimit, serverSocketLimit);
         this.stagingQueue = new MpscArrayQueue<>(socketLimit);
+
+        uring.completionQueue().registerSocketHandler(this::completeSocket);
+        uring.completionQueue().registerServerSocketHandler(this::completeServerSocket);
     }
 
     @Override
@@ -38,6 +48,18 @@ public final class UringFifoNetworkScheduler implements NetworkScheduler<UringAs
         if (!stagingQueue.offer(socket)) {
             throw new IllegalStateException("Socket limit has been exceeded.");
         }
+    }
+
+    public void completeSocket(int res, int flags, long userdata) {
+        int index = decodeIndex(userdata);
+        byte opcode = decodeOpcode(userdata);
+        sockets_handlers[index].complete(opcode, res);
+    }
+
+    public void completeServerSocket(int res, int flags, long userdata) {
+        int index = decodeIndex(userdata);
+        byte opcode = decodeOpcode(userdata);
+        serverSockets_handlers[index].complete(opcode, res);
     }
 
     @Override

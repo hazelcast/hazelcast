@@ -91,6 +91,7 @@ public final class UringReactor extends Reactor {
         UringAsyncServerSocket.Builder serverSocketBuilder = new UringAsyncServerSocket.Builder();
         serverSocketBuilder.reactor = this;
         serverSocketBuilder.uring = eventloop.uring;
+        serverSocketBuilder.networkScheduler = (UringNetworkScheduler) eventloop.networkScheduler();
         return serverSocketBuilder;
     }
 

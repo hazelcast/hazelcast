@@ -79,7 +79,7 @@ import static java.lang.Math.min;
         "checkstyle:MemberName",
         "checkstyle:LocalVariableName",
         "checkstyle:MagicNumber"})
-public final class UringFifoStorageScheduler implements StorageScheduler, CompletionHandler {
+public final class UringFifoStorageScheduler implements StorageScheduler {
 
     private final IOBufferAllocator pathAllocator;
     // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
@@ -110,6 +110,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
             requests[k] = req;
             pool[k] = req;
         }
+
+        completionQueue.registerStorageHandler(this::complete);
     }
 
     @Override
@@ -194,7 +196,6 @@ public final class UringFifoStorageScheduler implements StorageScheduler, Comple
         return false;
     }
 
-    @Override
     public void complete(int res, int flags, long userdata) {
         byte opcode = decodeOpcode(userdata);
         int index = decodeIndex(userdata);

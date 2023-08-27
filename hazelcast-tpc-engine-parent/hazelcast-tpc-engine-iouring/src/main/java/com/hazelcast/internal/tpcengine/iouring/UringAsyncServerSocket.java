@@ -55,11 +55,13 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
     private final LinuxSocket linuxSocket;
     private final Handler handler;
     private final Uring uring;
+    private final UringNetworkScheduler networkScheduler;
 
     private UringAsyncServerSocket(Builder builder) throws RuntimeException {
         super(builder, builder.localAddress, builder.localPort);
         this.uring = builder.uring;
         this.linuxSocket = builder.linuxSocket;
+        this.networkScheduler = builder.networkScheduler;
         this.handler = new Handler(builder, this);
     }
 
@@ -86,7 +88,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected void start00() {
-        uring.completionQueue().register(handler);
+        networkScheduler.register(handler);
         handler.prepareAccept();
     }
 
@@ -250,7 +252,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
                 if (closing && pending == 0) {
                     // if the socket is closing and this is the last request to
                     // complete, we can do deregister the resources.
-                    completionQueue.unregister(this);
+                    socket.networkScheduler.unregister(this);
                     socket.reactor.serverSockets().remove(socket);
                 }
             } catch (Exception e) {
@@ -334,6 +336,8 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
 
         public LinuxSocket linuxSocket;
         public Uring uring;
+        public UringNetworkScheduler networkScheduler;
+
         private InetSocketAddress localAddress;
         private int localPort;
 
@@ -352,6 +356,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
             super.conclude();
 
             checkNotNull(uring, "uring");
+            checkNotNull(networkScheduler, "networkScheduler");
 
             if (linuxSocket.isBlocking()) {
                 throw new IllegalArgumentException("The linux socket should be non blocking");

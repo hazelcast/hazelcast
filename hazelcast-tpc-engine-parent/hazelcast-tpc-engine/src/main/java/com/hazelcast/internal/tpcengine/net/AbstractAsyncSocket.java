@@ -265,7 +265,9 @@ public abstract class AbstractAsyncSocket implements Closeable {
     }
 
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
-    public abstract static class Builder<S extends AbstractAsyncSocket> extends AbstractBuilder<S> {
+    public abstract static class Builder<S extends AbstractAsyncSocket>
+            extends AbstractBuilder<S> {
+
         public TpcLogger logger;
 
         @Override

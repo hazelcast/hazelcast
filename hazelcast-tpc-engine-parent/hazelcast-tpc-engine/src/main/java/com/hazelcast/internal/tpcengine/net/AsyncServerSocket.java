@@ -231,7 +231,8 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      * Cast to specific Builder for specialized options when available.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
-    public abstract static class Builder extends AbstractAsyncSocket.Builder<AsyncServerSocket> {
+    public abstract static class Builder
+            extends AbstractAsyncSocket.Builder<AsyncServerSocket> {
 
         /**
          * Sets the accept function to process accept requests.

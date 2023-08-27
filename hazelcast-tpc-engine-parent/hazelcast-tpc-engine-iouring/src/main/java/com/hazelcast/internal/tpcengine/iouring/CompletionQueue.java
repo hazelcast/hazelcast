@@ -75,7 +75,6 @@ public final class CompletionQueue {
     private final Uring uring;
 
     private final CompletionHandler[] generic_handlers;
-
     // an array that shows which positions in the handlers array are
     // not used.
     private final int[] generic_freeHandlers;
@@ -84,14 +83,8 @@ public final class CompletionQueue {
     private UringEventloop.EventFdHandler eventFdHandler;
     private UringEventloop.TimeoutHandler timeoutHandler;
     private CompletionHandler storageHandler;
-
-    private final UringAsyncServerSocket.Handler[] serverSockets_handlers;
-    private final int[] serverSockets_freeHandlers;
-    private int serverSockets_freeHandlersIndex;
-
-    private final UringAsyncSocket.Handler[] sockets_handlers;
-    private final int[] sockets_freeHandlers;
-    private int sockets_freeHandlersIndex;
+    private CompletionHandler socketHandler;
+    private CompletionHandler serverSocketHandler;
 
     CompletionQueue(Uring uring, int handlerCount) {
         this.uring = uring;
@@ -100,22 +93,18 @@ public final class CompletionQueue {
         for (int k = 0; k < handlerCount; k++) {
             generic_freeHandlers[k] = k;
         }
-
-        this.serverSockets_handlers = new UringAsyncServerSocket.Handler[1024];
-        this.serverSockets_freeHandlers = new int[serverSockets_handlers.length];
-        for (int k = 0; k < serverSockets_handlers.length; k++) {
-            serverSockets_freeHandlers[k] = k;
-        }
-
-        this.sockets_handlers = new UringAsyncSocket.Handler[1024];
-        this.sockets_freeHandlers = new int[sockets_handlers.length];
-        for (int k = 0; k < sockets_handlers.length; k++) {
-            sockets_freeHandlers[k] = k;
-        }
     }
 
-    public void register(CompletionHandler storageHandler) {
-        this.storageHandler = storageHandler;
+    public void registerStorageHandler(CompletionHandler storageHandler) {
+        this.storageHandler = checkNotNull(storageHandler, "storageHandler");
+    }
+
+    public void registerSocketHandler(CompletionHandler socketHandler) {
+        this.socketHandler = checkNotNull(socketHandler, "socketHandler");
+    }
+
+    public void registerServerSocketHandler(CompletionHandler serverSocketHandler) {
+        this.serverSocketHandler = checkNotNull(serverSocketHandler, "serverSocketHandler");
     }
 
     public void register(UringEventloop.EventFdHandler eventFdHandler) {
@@ -134,25 +123,6 @@ public final class CompletionQueue {
                 + "and then check " + toManPagesUrl(syscall) + " for more detail.");
     }
 
-    public void register(UringAsyncServerSocket.Handler handler) {
-        int index = serverSockets_freeHandlers[serverSockets_freeHandlersIndex];
-        serverSockets_freeHandlersIndex++;
-        serverSockets_handlers[index] = handler;
-        handler.handlerIndex = index;
-    }
-
-    public void unregister(UringAsyncServerSocket.Handler handler) {
-        serverSockets_handlers[handler.handlerIndex] = null;
-        serverSockets_freeHandlersIndex--;
-        serverSockets_freeHandlers[serverSockets_freeHandlersIndex] = handler.handlerIndex;
-    }
-
-    public void register(UringAsyncSocket.Handler handler) {
-        int index = sockets_freeHandlers[sockets_freeHandlersIndex];
-        sockets_freeHandlersIndex++;
-        sockets_handlers[index] = handler;
-        handler.handlerIndex = index;
-    }
 
     // todo: fix magic numbers
     public static long encodeUserdata(byte type, byte opcode, int index) {
@@ -186,12 +156,6 @@ public final class CompletionQueue {
         System.out.println("index match:" + (index == 502));
     }
 
-
-    public void unregister(UringAsyncSocket.Handler handler) {
-        sockets_handlers[handler.handlerIndex] = null;
-        sockets_freeHandlersIndex--;
-        sockets_freeHandlers[sockets_freeHandlersIndex] = handler.handlerIndex;
-    }
 
     /**
      * Gets the next handler id. The handler id is typically used as user_data so that the
@@ -325,10 +289,10 @@ public final class CompletionQueue {
                         generic_handlers[index].complete(res, flags, userdata);
                         break;
                     case TYPE_SERVER_SOCKET:
-                        serverSockets_handlers[index].complete(opcode, res);
+                        serverSocketHandler.complete(res, flags, userdata);
                         break;
                     case TYPE_SOCKET:
-                        sockets_handlers[index].complete(opcode, res);
+                        socketHandler.complete(res, flags, userdata);
                         break;
                     default:
                         throw new IllegalArgumentException("Unrecognized type:" + type);
@@ -378,4 +342,5 @@ public final class CompletionQueue {
         cqesAddr = 0;
         ringMask = 0;
     }
+
 }

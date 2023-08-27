@@ -31,7 +31,6 @@ import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -59,13 +58,8 @@ public final class UringEventloop extends Eventloop {
 
         this.submissionQueue = uring.submissionQueue();
         this.completionQueue = uring.completionQueue();
-
         this.eventFdHandler = new EventFdHandler();
         this.timeoutHandler = new TimeoutHandler();
-
-        completionQueue.register(eventFdHandler);
-        completionQueue.register(timeoutHandler);
-        completionQueue.register((CompletionHandler) builder.storageScheduler);
     }
 
     public NetworkScheduler networkScheduler() {
@@ -148,6 +142,10 @@ public final class UringEventloop extends Eventloop {
         final EventFd eventFd = new EventFd();
         private final long readBufAddr = UNSAFE.allocateMemory(SIZEOF_LONG);
 
+        EventFdHandler() {
+            completionQueue.register(this);
+        }
+
         private void prepareRead() {
             long userdata = encodeUserdata(TYPE_EVENT_FD, IORING_OP_READ, 0);
             submissionQueue.prepareRead(eventFd.fd(), readBufAddr, SIZEOF_LONG, userdata, userdata);
@@ -171,6 +169,10 @@ public final class UringEventloop extends Eventloop {
 
     class TimeoutHandler implements AutoCloseable {
         private final long addr = UNSAFE.allocateMemory(SIZEOF_KERNEL_TIMESPEC);
+
+        TimeoutHandler() {
+            completionQueue.register(this);
+        }
 
         @Override
         public void close() {
@@ -212,10 +214,6 @@ public final class UringEventloop extends Eventloop {
         protected void conclude() {
             super.conclude();
 
-            if (networkScheduler == null) {
-                networkScheduler = new UringFifoNetworkScheduler(reactorBuilder.socketsLimit);
-            }
-
             if (uring == null) {
                 // The uring instance needs to be created on the eventloop thread.
                 // This is required for some of the setup flags.
@@ -239,14 +237,19 @@ public final class UringEventloop extends Eventloop {
                 this.uring = new Uring(nextPowerOfTwo(entries), reactorBuilder.setupFlags);
             }
 
+            if (networkScheduler == null) {
+                networkScheduler = new UringFifoNetworkScheduler(
+                        uring,
+                        reactorBuilder.socketsLimit,
+                        reactorBuilder.serverSocketsLimit);
+            }
+
             if (storageScheduler == null) {
                 storageScheduler = new UringFifoStorageScheduler(
                         uring,
                         reactorBuilder.storageSubmitLimit,
                         reactorBuilder.storagePendingLimit);
             }
-
-            checkInstanceOf(CompletionHandler.class, storageScheduler, "storageScheduler");
         }
 
         @Override
