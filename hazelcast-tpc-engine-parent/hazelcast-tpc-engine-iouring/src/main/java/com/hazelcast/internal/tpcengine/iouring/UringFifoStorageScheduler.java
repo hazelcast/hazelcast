@@ -101,8 +101,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
         this.submitLimit = submitLimit;
         this.pathAllocator = new NonConcurrentIOBufferAllocator(512, true);
         this.stagingQueue = new StagingQueue(pendingLimit);
-        this.submissionQueue = uring.sq();
-        this.completionQueue = uring.cq();
+        this.submissionQueue = uring.submissionQueue();
+        this.completionQueue = uring.completionQueue();
 
         // All storage requests are preregistered on the completion queue. They
         // never need to unregister. Removing that overhead.

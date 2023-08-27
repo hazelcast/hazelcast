@@ -100,8 +100,8 @@ public class NetworkBenchmark_Naked_IOUring {
         @Override
         public void run() {
             uring = new Uring(4096, iouringSetupFlags);
-            sq = uring.sq();
-            cq = uring.cq();
+            sq = uring.submissionQueue();
+            cq = uring.completionQueue();
 
             try {
                 ThreadAffinity threadAffinity = cpuAffinityClient == null ? null : new ThreadAffinity(cpuAffinityClient);
@@ -228,8 +228,8 @@ public class NetworkBenchmark_Naked_IOUring {
         @Override
         public void run() {
             uring = new Uring(4096, iouringSetupFlags);
-            sq = uring.sq();
-            cq = uring.cq();
+            sq = uring.submissionQueue();
+            cq = uring.completionQueue();
             try {
                 ThreadAffinity threadAffinity = cpuAffinityServer == null ? null : new ThreadAffinity(cpuAffinityServer);
                 if (threadAffinity != null) {

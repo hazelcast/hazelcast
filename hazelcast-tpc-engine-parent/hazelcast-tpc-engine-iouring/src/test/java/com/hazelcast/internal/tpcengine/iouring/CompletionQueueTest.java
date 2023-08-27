@@ -27,7 +27,7 @@ public class CompletionQueueTest {
     public void test() {
         int entries = 16384;
         Uring uring = new Uring(entries, 0);
-        CompletionQueue cq = uring.cq();
+        CompletionQueue cq = uring.completionQueue();
 
         assertSame(uring, cq.uring());
         Assert.assertEquals(2 * entries - 1, cq.ringMask());

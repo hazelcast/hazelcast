@@ -107,7 +107,7 @@ public final class UringAsyncSocket extends AsyncSocket {
 
     @Override
     protected void start0() {
-        CompletionQueue cq = uring.cq();
+        CompletionQueue cq = uring.completionQueue();
         writeHandler.handlerId = cq.nextHandlerId();
         cq.register(writeHandler.handlerId, writeHandler);
 
@@ -201,7 +201,7 @@ public final class UringAsyncSocket extends AsyncSocket {
         WriteHandler(UringAsyncSocket.Builder builder, UringAsyncSocket socket) {
             this.socket = socket;
             this.flushThread = socket.flushThread;
-            this.submissionQueue = builder.uring.sq();
+            this.submissionQueue = builder.uring.submissionQueue();
             this.ioVector = builder.ioVector;
             this.linuxSocket = builder.linuxSocket;
             this.writer = builder.writer;
@@ -340,7 +340,7 @@ public final class UringAsyncSocket extends AsyncSocket {
             this.metrics = builder.metrics;
             this.linuxSocket = builder.linuxSocket;
             this.eventloop = (UringEventloop) builder.reactor.eventloop();
-            this.submissionQueue = builder.uring.sq();
+            this.submissionQueue = builder.uring.submissionQueue();
             this.rcvBuff = ByteBuffer.allocateDirect(builder.options.get(SO_RCVBUF));
             this.rcvBuffAddress = addressOf(rcvBuff);
         }

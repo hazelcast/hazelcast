@@ -29,7 +29,7 @@ public class UringLibraryTest {
 
         // ensure that we can actually load the Uring.
         Uring uring = new Uring(16, 0);
-        assertNotNull(uring.sq());
-        assertNotNull(uring.cq());
+        assertNotNull(uring.submissionQueue());
+        assertNotNull(uring.completionQueue());
     }
 }

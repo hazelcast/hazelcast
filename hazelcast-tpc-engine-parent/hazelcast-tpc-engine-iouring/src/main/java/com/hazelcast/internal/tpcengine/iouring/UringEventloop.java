@@ -53,8 +53,8 @@ public final class UringEventloop extends Eventloop {
             uring.registerRingFd();
         }
 
-        this.submissionQueue = uring.sq();
-        this.completionQueue = uring.cq();
+        this.submissionQueue = uring.submissionQueue();
+        this.completionQueue = uring.completionQueue();
 
         this.eventFdHandler = new EventFdHandler();
         eventFdHandler.handlerId = completionQueue.nextHandlerId();

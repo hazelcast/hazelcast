@@ -34,8 +34,8 @@ public class UringFlowTest {
     public void before() {
         uring = new Uring(16384, 0);
 
-        sq = uring.sq();
-        cq = uring.cq();
+        sq = uring.submissionQueue();
+        cq = uring.completionQueue();
     }
 
     @After

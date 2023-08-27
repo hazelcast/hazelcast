@@ -1,7 +1,5 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.iouring.SubmissionQueue;
-import com.hazelcast.internal.tpcengine.iouring.Uring;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -31,7 +29,7 @@ public class EnterBenchmark {
         if (registerRingFd) {
             uring.registerRingFd();
         }
-        this.sq = uring.sq();
+        this.sq = uring.submissionQueue();
     }
 
     @Benchmark

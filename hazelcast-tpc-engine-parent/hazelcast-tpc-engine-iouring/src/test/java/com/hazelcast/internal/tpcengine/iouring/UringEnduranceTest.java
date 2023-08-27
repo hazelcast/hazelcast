@@ -58,8 +58,8 @@ public class UringEnduranceTest {
     @Before
     public void before() {
         uring = new Uring(nextPowerOfTwo(concurrency), 0);
-        sq = uring.sq();
-        cq = uring.cq();
+        sq = uring.submissionQueue();
+        cq = uring.completionQueue();
         completionHandler = new NopCompletionHandler();
         monitorThread = new MonitorThread();
         monitorThread.start();

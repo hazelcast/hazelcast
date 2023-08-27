@@ -72,8 +72,8 @@ public class UringNopBenchmark {
         public void run() {
             try {
                 final Uring uring = new Uring(4096, 0);
-                final SubmissionQueue sq = uring.sq();
-                final CompletionQueue cq = uring.cq();
+                final SubmissionQueue sq = uring.submissionQueue();
+                final CompletionQueue cq = uring.completionQueue();
                 final NopCompletionHandler handler = new NopCompletionHandler(sq, latch);
                 final boolean spin = UringNopBenchmark.this.spin;
 

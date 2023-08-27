@@ -78,7 +78,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected void start0() {
-        CompletionQueue cq = uring.cq();
+        CompletionQueue cq = uring.completionQueue();
         acceptHandler.handlerId = cq.nextHandlerId();
         cq.register(acceptHandler.handlerId, acceptHandler);
         acceptHandler.prepareSqe();
@@ -99,11 +99,11 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
 
         private AcceptHandler(Builder builder, UringAsyncServerSocket socket) {
             this.socket = socket;
-            this.completionQueue = builder.uring.cq();
+            this.completionQueue = builder.uring.completionQueue();
             this.acceptFn = builder.acceptFn;
             this.metrics = builder.metrics;
             this.linuxSocket = builder.linuxSocket;
-            this.submissionQueue = builder.uring.sq();
+            this.submissionQueue = builder.uring.submissionQueue();
             this.logger = builder.logger;
         }
 
