@@ -1,0 +1,276 @@
+name: Assign to test failure
+
+on:
+  issues:
+    types: labeled
+env:
+  ORGANIZATION_NAME  : "${{ github.repository_owner }}"
+  BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+jobs:
+  assign-to-test-failure:
+    if: contains(github.event.label.name, 'Test-Failure') &&  join(github.issue.assignees) == ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find commit from failure body or use master branch
+        id: find-failure-commit-reference
+        uses: actions/github-script@v6
+        continue-on-error: true
+        with:
+          result-encoding: string
+          script: |
+            //Extract text from function - between /*! and */ characters
+            function parseAsString(f) {
+              return f.toString().
+                replace(/^[^\/]+\/\*!?/, '').
+                replace(/\*\/[^\/]+$/, '');
+            }
+            // Insert GH variable as multi-line comment into function to support special characters (due to no escaping from GH)
+            // Proper text value is extracted by parseAsString function 
+            const testDescription = parseAsString(function() {/*!
+              ${{ github.event.issue.body }}
+            */});
+            //Regex: "commit: <match>"
+            const commitRegex = /commit\s([^)\s]+)/;
+            const match = testDescription.match(commitRegex);
+            let checkoutRef = "master"
+            if (match && match[1]) {
+              checkoutRef = match[1].trim();
+            }
+            console.log(`Using ${checkoutRef} as git checkout reference`);
+            return checkoutRef
+            
+      - name: Checkout
+        uses: actions/checkout@v2
+        continue-on-error: true
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.find-failure-commit-reference.outputs.result }}
+          
+      - name: Find path to affected test
+        id: find-affected-test
+        uses: actions/github-script@v6
+        continue-on-error: true
+        with:
+          result-encoding: string
+          script: |
+            //Extract text between /*! and */
+            function parseAsString(f) {
+              return f.toString().
+                replace(/^[^\/]+\/\*!?/, '').
+                replace(/\*\/[^\/]+$/, '')
+            }
+            function replaceQuotes(text) {
+              //Regex: ' or " from beginning or end
+              return text.replace(/^['"]|['"]$/g, '');
+            }
+            function extractNameFromTitleWithoutPackage(title){
+              //Check if title contains class with Test suffix
+              //Regex: Capitalized word, ending with Test and match word only (\b)
+              const match = title.match(/[A-Z]\w+Test*\b/)
+              if (match) {
+                return replaceQuotes(match[0]) + ".java"
+              }
+              return '';
+            }
+            function extractNameFromPackageString(testRef) {
+              //Check if contains class name
+              if (testRef.toLowerCase() !== testRef) {
+                const testPath = testRef.split(".").join("/")
+                //Remove testName/case from name
+                //Regex: Everything before and capitalized word
+                const match = testRef.match(/(.*?[A-Z]\w*)/)
+                return replaceQuotes(match ? match[1] : testRef) + ".java"
+              }
+              //Return package path
+              return replaceQuotes(testRef.split(".").join("/"))
+            }
+            // Insert GH variable as multi-line comment into function to support special characters (due to no escaping from GH)
+            // Proper text value is extracted by parseAsString function 
+            const title = parseAsString(function() {/*!
+              ${{ github.event.issue.title }}
+            */}).trim() 
+            const packageRef = title.split(" ").find(ref => ref.indexOf("com.hazelcast")!== -1)
+            if (packageRef !== undefined) {
+              return extractNameFromPackageString(packageRef)
+            } else {
+              return extractNameFromTitleWithoutPackage(title)
+            }
+            
+      - name: Find the last commit for failed test
+        if: steps.find-affected-test.outputs.result != ''
+        id: find-last-commit
+        continue-on-error: true
+        run: |
+          FILENAME=${{steps.find-affected-test.outputs.result}}
+          FOUND_FILE=""
+          LAST_COMMIT_DATE=""
+          FILES=$(find . -wholename "*$FILENAME*" -type f)
+          for FILE in $FILES; do
+            COMMIT_DATE=$(git log -1 --pretty=format:"%ad" --date=iso -- "$FILE")
+            if [[ "$COMMIT_DATE" > "$LAST_COMMIT_DATE" ]]; then
+              LAST_COMMIT_DATE=$COMMIT_DATE
+              FOUND_FILE=$FILE
+            fi
+          done
+          LAST_COMMIT=$(git log -1 --pretty=format:"%h" -- "$FOUND_FILE")
+          echo "Found last commit: $LAST_COMMIT for $FOUND_FILE file"
+          echo "FOUND_FILE=$FOUND_FILE" >> "$GITHUB_OUTPUT"
+          echo "LAST_COMMIT=$LAST_COMMIT" >> "$GITHUB_OUTPUT"
+                    
+      - name: Find author of the commit 
+        if: steps.find-affected-test.outputs.result != ''
+        uses: actions/github-script@v6
+        id: find-author-username
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            const commitSHA = "${{ steps.find-last-commit.outputs.LAST_COMMIT }}"
+            const commitDetails = await github.rest.repos.getCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: commitSHA,
+            });
+            const username = commitDetails.data.author.login
+            console.log(`Found username: ${username} for commit: ${commitSHA}`)
+            return username
+            
+      - name: Check if author belongs to organization
+        if: steps.find-affected-test.outputs.result != ''
+        id: author-is-organization-member
+        uses: actions/github-script@v6
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            const organization = "${{ env.ORGANIZATION_NAME }}"
+            const username = "${{ steps.find-author-username.outputs.result }}"
+            let authorBelongsToOrganization = false
+            try {
+              const response = await github.request('GET /orgs/{org}/members/{username}', {
+                org: organization,
+                username: username,
+                headers: {
+                    'X-GitHub-Api-Version': '2022-11-28'
+                }
+              })
+              if (response.status == 204) {
+                  authorBelongsToOrganization = true
+                  console.log(`Author: ${username} - is organization member`);
+              } else {
+                  console.log(`Author: ${username} is not a member of the organization.`);
+              }
+            } catch (error) {
+              console.log(`Author: ${username} is not a member of the organization. Details: ${error}`);
+            }
+            return authorBelongsToOrganization;
+            
+      - name: Summarize
+        uses: actions/github-script@v6
+        id : summary
+        with:
+          result-encoding: json
+          script: |
+            //Extract text between /*! and */
+            function parseAsString(f) {
+              return f.toString().
+                replace(/^[^\/]+\/\*!?/, '').
+                replace(/\*\/[^\/]+$/, '')
+            }
+            // Insert GH variable as multi-line comment into function to support special characters (due to no escaping from GH)
+            // Proper text value is extracted by parseAsString function
+            const title = parseAsString(function() {/*!
+            ${{ github.event.issue.title }}
+            */}).trim();
+            const summary = {
+              issue : {
+                key   : "${{ github.event.issue.number }}",
+                title : title
+              },
+              checkoutRef : "${{ steps.find-failure-commit-reference.outputs.result }}",
+              test : {
+                initialPath : "${{ steps.find-affected-test.outputs.result }}",
+                foundFile   : "${{ steps.find-last-commit.outputs.FOUND_FILE }}",
+                lastCommit : {
+                    sha    :  "${{ steps.find-last-commit.outputs.LAST_COMMIT }}",
+                    author : {
+                      username              :  "${{ steps.find-author-username.outputs.result }}",
+                      belongsToOrganization :  "${{ steps.author-is-organization-member.outputs.result }}"
+                    }
+                }
+              }
+            }
+            console.log(JSON.stringify(summary, null, 2))
+            return summary
+      - name: One of previous steps was failed
+        uses: actions/github-script@v6      
+        id: run-for-failure
+        if: contains(steps.*.outcome, 'failure')
+        with:
+          result-encoding: string
+          script: |
+            console.log("One of previous steps was failed")
+            return true
+          
+      - name: Evaluate suggested assignement
+        uses: actions/github-script@v6
+        id: evaluate-suggested-assignement
+        with:
+          result-encoding: json
+          script: |
+            const issueAuthor = "${{ github.event.issue.user.login }}"
+            if("${{steps.run-for-failure.outputs.result}}" !== "") {
+              return { 
+                comment: `Assigned @${issueAuthor} due to failed step in github action`,
+                finalAssignement: issueAuthor
+              }
+            }
+            if ("${{ fromJson(steps.summary.outputs.result).test.foundFile }}" === "") {
+              return { 
+                comment: `Assigned @${issueAuthor} due to not found reference to code in the issue `,
+                finalAssignement: issueAuthor
+              }
+            }
+            const commit = "${{ fromJson(steps.summary.outputs.result).test.lastCommit.sha }}"
+            const commitAuthor = "${{ fromJson(steps.summary.outputs.result).test.lastCommit.author.username }}"
+            if ("${{ fromJson(steps.summary.outputs.result).test.lastCommit.author.belongsToOrganization }}" !== "true") {
+              return { 
+                comment: `Assigned @${issueAuthor}, because identified author (${commitAuthor}) of last commit (${commit}) is not a member of the organization`, 
+                finalAssignement: issueAuthor
+              }
+            }
+            //Proper case
+            return {
+              comment: `Assigned @${commitAuthor} due to being the author of last commit (${commit})`, 
+              finalAssignement: commitAuthor
+            }
+            
+      - name: Assign user
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |         
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: "${{ fromJson(steps.summary.outputs.result).issue.key }}",
+              assignees: ["${{ fromJson(steps.evaluate-suggested-assignement.outputs.result).finalAssignement }}"]
+            });
+            
+      - name: Comment on issue
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |       
+            const comment = "${{ fromJson(steps.evaluate-suggested-assignement.outputs.result).comment }}"
+            const buildUrl = "${{ env.BUILD_URL }}"
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${comment}
+              Details: ${buildUrl}`
+            })            
