@@ -396,13 +396,15 @@ class DefaultAddressPicker
         }
         InetAddress ia = address.inetAddress;
         boolean isIpv6 = ia instanceof Inet6Address;
-        int priority = 5;
+        int priority;
         if (ia.isLoopbackAddress()) {
-            priority -= 4;
+            priority = 1;
         } else if (ia.isLinkLocalAddress()) {
-            priority -= 3;
+            priority = 2;
         } else if (ia.isSiteLocalAddress()) {
-            priority -= 2;
+            priority = 3;
+        } else {
+            priority = 5;
         }
         if (isIpv6 ^ !preferIPv6Addresses) {
             priority += 10;
