@@ -51,30 +51,38 @@ import static org.testcontainers.containers.BindMode.READ_WRITE;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
-public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
+public class MongoDataConnectionMutualSslTest extends SimpleTestInClusterSupport {
 
     private static final String DATABASE = "MongoDataConnectionSslTest";
     private static final String TEST_COLLECTION = "testCollection";
-    private static final Logger LOGGER = LoggerFactory.getLogger(MongoDataConnectionSslTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MongoDataConnectionMutualSslTest.class);
     private static final MongoDBContainer mongoContainer = new MyMongoContainer()
             .withEnv("MONGO_INITDB_DATABASE", DATABASE)
             .withClasspathResourceMapping("certs/localhost.pem", "/data/ssl/key.pem", READ_WRITE)
-            .withClasspathResourceMapping("tlsMongo.yaml", "/etc/mongo/mongod.conf", READ_WRITE)
+            .withClasspathResourceMapping("certs/ca-cert.pem", "/data/ssl/ca.pem", READ_WRITE)
+            .withClasspathResourceMapping("tlsMongoMutual.yaml", "/etc/mongo/mongod.conf", READ_WRITE)
             .withExposedPorts(27017)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
             .withCommand("--config", "/etc/mongo/mongod.conf");
     private static String connectionString;
     private static String trustStoreLocation;
+    private static String keyStoreLocation;
 
     @BeforeClass
     public static void setUp() {
-        try (InputStream resourceTS = MongoDataConnectionSslTest.class.getResourceAsStream("/certs/ca.p12")) {
+        try (
+                InputStream resourceTS = MongoDataConnectionMutualSslTest.class.getResourceAsStream("/certs/ca.p12");
+                InputStream resourceKS = MongoDataConnectionMutualSslTest.class.getResourceAsStream("/certs/localhost.p12")
+        ) {
             File tempFileTS = File.createTempFile("MongoDataConnectionSslTest", "jks");
             Files.copy(resourceTS, tempFileTS.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            File tempFileKS = File.createTempFile("MongoDataConnectionSslTest", "jks");
+            Files.copy(resourceKS, tempFileKS.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
             System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2,TLSv1.3");
             System.setProperty("javax.net.debug", "ssl:handshake");
             trustStoreLocation = tempFileTS.toString();
+            keyStoreLocation = tempFileKS.toString();
         } catch (IOException e) {
             throw rethrow(e);
         }
@@ -95,6 +103,9 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
                 .setProperty("trustStore", trustStoreLocation)
                 .setProperty("trustStoreType", "pkcs12")
                 .setProperty("trustStorePassword", "123456")
+                .setProperty("keyStore", keyStoreLocation)
+                .setProperty("keyStoreType", "pkcs12")
+                .setProperty("keyStorePassword", "123456")
                 .setShared(true);
     }
 
@@ -126,7 +137,7 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
                 .applyConnectionString(new ConnectionString(connectionString))
                 .applyToSslSettings(b -> {
                     b.enabled(true).invalidHostNameAllowed(true);
-                    b.context(SslConf.createSSLContext(null, null, null,
+                    b.context(SslConf.createSSLContext(keyStoreLocation, "pkcs12", "123456".toCharArray(),
                             trustStoreLocation, "pkcs12", "123456".toCharArray()));
                 })
                 .codecRegistry(defaultCodecRegistry())
