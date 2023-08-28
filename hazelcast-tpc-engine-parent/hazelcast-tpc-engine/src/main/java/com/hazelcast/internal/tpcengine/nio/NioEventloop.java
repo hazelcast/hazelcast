@@ -185,7 +185,6 @@ final class NioEventloop extends Eventloop {
         closeQuietly(selector);
     }
 
-
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends Eventloop.Builder {
         public Selector selector;

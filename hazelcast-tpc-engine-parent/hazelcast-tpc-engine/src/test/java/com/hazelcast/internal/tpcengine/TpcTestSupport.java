@@ -156,6 +156,10 @@ public class TpcTestSupport {
         assertTrueAllTheTime(task, 2);
     }
 
+    public static void assertTrueOneSecond(AssertTask task) {
+        assertTrueAllTheTime(task, 1);
+    }
+
     public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
         for (int i = 0; i <= durationSeconds; i++) {
             try {

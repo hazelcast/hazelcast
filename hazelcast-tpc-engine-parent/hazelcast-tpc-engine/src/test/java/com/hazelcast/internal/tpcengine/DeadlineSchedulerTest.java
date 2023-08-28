@@ -20,6 +20,8 @@ import com.hazelcast.internal.tpcengine.util.Promise;
 import org.junit.After;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,7 +31,10 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertEqualsEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertSuccessEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueOneSecond;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.sleepMillis;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
+import static java.lang.Math.abs;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -39,34 +44,70 @@ import static org.mockito.Mockito.mock;
 
 public abstract class DeadlineSchedulerTest {
 
-    private Reactor reactor;
-
-    public void before() {
-        reactor = newReactor();
-    }
+    private final List<Reactor> reactors = new ArrayList<>();
 
     @After
     public void after() throws InterruptedException {
-        terminate(reactor);
+        terminateAll(reactors);
     }
 
     public abstract Reactor.Builder newReactorBuilder();
 
-    public Reactor newReactor() {
+    private Reactor newReactor() {
         return newReactor(null);
     }
 
-    public Reactor newReactor(Consumer<Reactor.Builder> configFn) {
+    private Reactor newReactor(Consumer<Reactor.Builder> configFn) {
         Reactor.Builder reactorBuilder = newReactorBuilder();
         if (configFn != null) {
             configFn.accept(reactorBuilder);
         }
         Reactor reactor = reactorBuilder.build();
+        reactors.add(reactor);
         return reactor;
     }
 
+    private static final class CountingRunnable implements Runnable {
+        private final AtomicLong count = new AtomicLong();
+
+        @Override
+        public void run() {
+            count.incrementAndGet();
+        }
+    }
+
+    public class FirstTimeExceptionCallable implements Callable<Boolean> {
+        private AtomicLong calls = new AtomicLong();
+        private int iteration;
+
+        @Override
+        public Boolean call() throws Exception {
+            calls.incrementAndGet();
+            if (calls.get() == 1) {
+                throw new RuntimeException();
+            }
+            return true;
+        }
+    }
+
+    private static class SleepingCallable implements Callable<Boolean> {
+        private final long sleepMs;
+        private final AtomicInteger count = new AtomicInteger();
+
+        private SleepingCallable(long sleepMs) {
+            this.sleepMs = sleepMs;
+        }
+
+        @Override
+        public Boolean call() throws Exception {
+            count.incrementAndGet();
+            Thread.sleep(sleepMs);
+            return true;
+        }
+    }
+
     @Test
-    public void test_runQueueOverload() {
+    public void test_schedule_runQueueOverload() {
         int deadlineRunQueueLimit = 100;
         Reactor reactor = newReactor(new Consumer<Reactor.Builder>() {
             @Override
@@ -90,7 +131,56 @@ public abstract class DeadlineSchedulerTest {
     }
 
     @Test
+    public void test_scheduleAtFixedRate_whenRunQueueOverload() {
+        int deadlineRunQueueLimit = 100;
+        Reactor reactor = newReactor(new Consumer<Reactor.Builder>() {
+            @Override
+            public void accept(Reactor.Builder builder) {
+                builder.deadlineRunQueueLimit = deadlineRunQueueLimit;
+            }
+        });
+        reactor.start();
+
+        CompletableFuture<Void> success = reactor.submit(() -> {
+            Eventloop eventloop = reactor.eventloop;
+            DeadlineScheduler deadlineScheduler = eventloop.deadlineScheduler();
+            for (int k = 0; k < deadlineRunQueueLimit; k++) {
+                assertTrue(deadlineScheduler.schedule(mock(Runnable.class), 100, SECONDS));
+            }
+
+            assertFalse(deadlineScheduler.scheduleAtFixedRate(
+                    mock(Callable.class), 0, 100, SECONDS, reactor.defaultTaskQueue));
+        });
+
+        assertSuccessEventually(success);
+    }
+
+    @Test
     public void test_scheduleAtFixedRate() {
+        Reactor reactor = newReactor();
+        reactor.start();
+        int periodMillis = 100;
+
+        SleepingCallable sleepingCallable = new SleepingCallable(80);
+        CompletableFuture<Void> success = reactor.submit(() -> {
+            Eventloop eventloop = reactor.eventloop;
+            DeadlineScheduler deadlineScheduler = eventloop.deadlineScheduler();
+
+            assertTrue(deadlineScheduler.scheduleAtFixedRate(
+                    sleepingCallable, 0, periodMillis, MILLISECONDS, reactor.defaultTaskQueue));
+        });
+
+        assertSuccessEventually(success);
+        // the shorter the test, the bigger the chance you run into a false positive.
+        long durationMillis = SECONDS.toMillis(5);
+        sleepMillis(durationMillis);
+        long actual = sleepingCallable.count.get();
+        long expected = durationMillis / periodMillis;
+        assertTrue("actual:" + actual + " expected:" + expected, abs(actual - expected) < 5);
+    }
+
+    @Test
+    public void test_scheduleAtFixedRate_whenCallableReturnsFalse_thenNotRescheduled() {
         Reactor reactor = newReactor();
         reactor.start();
 
@@ -104,10 +194,83 @@ public abstract class DeadlineSchedulerTest {
         });
 
         assertSuccessEventually(countdownCallable.future);
+        assertTrueOneSecond(() -> {
+            assertEquals(countdownCallable.limit, countdownCallable.calls.get());
+        });
     }
 
     @Test
-    public void test_scheduleAtFixedDelay() {
+    public void test_scheduleAtFixedRate_whenCallableFails_thenStopRunning() {
+        int deadlineRunQueueLimit = 100;
+        Reactor reactor = newReactor();
+        reactor.start();
+
+        FirstTimeExceptionCallable firstTimeException = new FirstTimeExceptionCallable();
+        CompletableFuture<Void> success = reactor.submit(() -> {
+            Eventloop eventloop = reactor.eventloop;
+            DeadlineScheduler deadlineScheduler = eventloop.deadlineScheduler();
+            deadlineScheduler.scheduleAtFixedRate(
+                    firstTimeException, 1, 1, SECONDS, reactor.defaultTaskQueue);
+        });
+
+        assertSuccessEventually(success);
+        assertTrueEventually(() -> {
+            assertEquals(1, firstTimeException.calls.get());
+        });
+        assertTrueOneSecond(() -> {
+            assertEquals(1, firstTimeException.calls.get());
+        });
+    }
+
+    @Test
+    public void test_scheduleWithFixedDelay_whenRunQueueOverload() {
+        int deadlineRunQueueLimit = 100;
+        Reactor reactor = newReactor(new Consumer<Reactor.Builder>() {
+            @Override
+            public void accept(Reactor.Builder builder) {
+                builder.deadlineRunQueueLimit = deadlineRunQueueLimit;
+            }
+        });
+        reactor.start();
+
+        CompletableFuture<Void> success = reactor.submit(() -> {
+            Eventloop eventloop = reactor.eventloop;
+            DeadlineScheduler deadlineScheduler = eventloop.deadlineScheduler();
+            for (int k = 0; k < deadlineRunQueueLimit; k++) {
+                assertTrue(deadlineScheduler.schedule(mock(Runnable.class), 100, SECONDS));
+            }
+
+            assertFalse(deadlineScheduler.scheduleWithFixedDelay(
+                    mock(Callable.class), 0, 100, SECONDS, reactor.defaultTaskQueue));
+        });
+
+        assertSuccessEventually(success);
+    }
+
+    @Test
+    public void test_scheduleWithFixedDelay_whenCallableFailsThenStopRunning() {
+        Reactor reactor = newReactor();
+        reactor.start();
+
+        FirstTimeExceptionCallable firstTimeException = new FirstTimeExceptionCallable();
+        CompletableFuture<Void> success = reactor.submit(() -> {
+            Eventloop eventloop = reactor.eventloop;
+            DeadlineScheduler deadlineScheduler = eventloop.deadlineScheduler();
+            deadlineScheduler.scheduleWithFixedDelay(
+                    firstTimeException, 1, 1, SECONDS, reactor.defaultTaskQueue);
+        });
+
+        assertSuccessEventually(success);
+        assertTrueEventually(() -> {
+            assertEquals(1, firstTimeException.calls.get());
+        });
+        assertTrueOneSecond(() -> {
+            assertEquals(1, firstTimeException.calls.get());
+        });
+    }
+
+    @Test
+    public void test_scheduleAtFixedDelay_whenCallableReturnsFalse_thenNotRescheduled() {
         Reactor reactor = newReactor();
         reactor.start();
 
@@ -122,12 +285,39 @@ public abstract class DeadlineSchedulerTest {
         });
 
         assertSuccessEventually(countdownCallable.future);
+        assertTrueOneSecond(() -> {
+            assertEquals(countdownCallable.limit, countdownCallable.calls.get());
+        });
+    }
+
+    @Test
+    public void test_scheduleWithFixedDelay() {
+        Reactor reactor = newReactor();
+        reactor.start();
+        int delayMillis = 100;
+
+        int sleepMs = 50;
+        SleepingCallable sleepingCallable = new SleepingCallable(sleepMs);
+        CompletableFuture<Void> success = reactor.submit(() -> {
+            Eventloop eventloop = reactor.eventloop;
+            DeadlineScheduler deadlineScheduler = eventloop.deadlineScheduler();
+
+            assertTrue(deadlineScheduler.scheduleWithFixedDelay(
+                    sleepingCallable, 0, delayMillis, MILLISECONDS, reactor.defaultTaskQueue));
+        });
+
+        assertSuccessEventually(success);
+        long durationMillis = SECONDS.toMillis(2);
+        sleepMillis(durationMillis);
+        long actual = sleepingCallable.count.get();
+        long expected = durationMillis / (delayMillis + sleepMs);
+        assertTrue("actual:" + actual + " expected:" + expected, abs(actual - expected) < 3);
     }
 
     private static final class CountdownCallable implements Callable<Boolean> {
         private final int limit;
         private final CompletableFuture future = new CompletableFuture();
-        private int current;
+        private final AtomicLong calls = new AtomicLong();
 
         private CountdownCallable(int limit) {
             this.limit = limit;
@@ -135,11 +325,13 @@ public abstract class DeadlineSchedulerTest {
 
         @Override
         public Boolean call() throws Exception {
-            if (current == limit - 1) {
+            calls.incrementAndGet();
+
+            if (calls.get() == limit) {
                 future.complete(null);
                 return false;
             }
-            current++;
+
             return true;
         }
     }
@@ -149,20 +341,11 @@ public abstract class DeadlineSchedulerTest {
         Reactor reactor = newReactor();
         reactor.start();
 
-        Task task = new Task();
+        CountingRunnable task = new CountingRunnable();
 
         reactor.offer(() -> reactor.eventloop.deadlineScheduler().schedule(task, 1, SECONDS));
 
         assertTrueEventually(() -> assertEquals(1, task.count.get()));
-    }
-
-    private static final class Task implements Runnable {
-        private final AtomicLong count = new AtomicLong();
-
-        @Override
-        public void run() {
-            count.incrementAndGet();
-        }
     }
 
     @Test
@@ -183,5 +366,4 @@ public abstract class DeadlineSchedulerTest {
         long duration = System.currentTimeMillis() - startMs;
         System.out.println("duration:" + duration + " ms");
     }
-
 }

@@ -188,7 +188,7 @@ public final class DeadlineScheduler {
      * Creates a periodically executing cmd with a fixed delay between the start
      * of the cmd.
      *
-     * @param cmd          the cmd to periodically execute.As long as true is
+     * @param cmd          the cmd to periodically execute. As long as true is
      *                     returned, the task will reschedule itself.
      * @param initialDelay the initial delay
      * @param period       the period between executions.
@@ -221,6 +221,7 @@ public final class DeadlineScheduler {
     public boolean sleep(long delay, TimeUnit unit, BiConsumer<Void, Exception> consumer) {
         checkNotNegative(delay, "delay");
         checkNotNull(unit, "unit");
+        checkNotNull(consumer, "consumer");
 
         DeadlineTask task = allocate();
         if (task == null) {
@@ -282,9 +283,6 @@ public final class DeadlineScheduler {
             // the task first needs to be removed from the run queue since we peeked it.
             runQueue.poll();
 
-            // offer the task to its taskQueue.
-            // this will trigger the taskQueue to schedule itself if needed.
-
             // todo: return value is ignored.
             task.taskQueue.offerInside(task);
 
@@ -340,7 +338,7 @@ public final class DeadlineScheduler {
 
             if (consumer != null) {
                 try {
-                    consumer.accept(null, null);
+                    consumer.accept(null, exception);
                 } catch (Exception e) {
                     LOGGER.warning(e);
                 }
