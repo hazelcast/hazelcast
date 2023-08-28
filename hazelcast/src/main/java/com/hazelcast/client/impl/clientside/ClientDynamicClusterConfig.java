@@ -34,6 +34,10 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfig
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddWanReplicationConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.holder.WanBatchPublisherConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanConsumerConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanCustomPublisherConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder;
@@ -41,6 +45,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHold
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.WanReplicationConfigTransformer;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.AdvancedNetworkConfig;
@@ -102,8 +107,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -351,9 +358,27 @@ public class ClientDynamicClusterConfig extends Config {
         return this;
     }
 
+
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+        WanReplicationConfigTransformer transformer = new WanReplicationConfigTransformer(serializationService);
+        WanConsumerConfigHolder consumerConfig = transformer.toHolder(wanReplicationConfig.getConsumerConfig());
+        List<WanCustomPublisherConfigHolder> customPublisherConfigs =
+                wanReplicationConfig.getCustomPublisherConfigs()
+                                    .stream()
+                                    .filter(Objects::nonNull)
+                                    .map(transformer::toHolder)
+                                    .collect(Collectors.toList());
+        List<WanBatchPublisherConfigHolder> batchPublisherConfigs =
+                wanReplicationConfig.getBatchPublisherConfigs()
+                                    .stream()
+                                    .filter(Objects::nonNull)
+                                    .map(transformer::toHolder)
+                                    .collect(Collectors.toList());
+        ClientMessage request = DynamicConfigAddWanReplicationConfigCodec.encodeRequest(
+                wanReplicationConfig.getName(), consumerConfig, customPublisherConfigs, batchPublisherConfigs);
+        invoke(request);
+        return this;
     }
 
     @Override

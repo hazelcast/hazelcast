@@ -16,10 +16,25 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
+import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
+import com.hazelcast.spi.impl.NodeEngine;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * Shared logic for PartitioningStrategies and classes using parts of their logic.
  */
 public final class PartitioningStrategyUtil {
+    /**
+     * Partitioning strategy that ignores {@link PartitionAware} for keys.
+     */
+    private static final PartitioningStrategy IDENTITY_PARTITIONING_STRATEGY = v -> v;
+
     private PartitioningStrategyUtil() { }
 
     /**
@@ -31,5 +46,52 @@ public final class PartitioningStrategyUtil {
      */
     public static Object constructAttributeBasedKey(Object[] keyAttributes) {
         return keyAttributes.length == 1 ? keyAttributes[0] : keyAttributes;
+    }
+
+    /**
+     * Gets partition for given key specified as key components. Supports
+     * {@link AttributePartitioningStrategy} and {@link
+     * DefaultPartitioningStrategy}.
+     * @return Partition id to which the key belongs or null if the partition
+     *         cannot be determined.
+     */
+    @Nullable
+    public static Integer getPartitionIdFromKeyComponents(@Nonnull NodeEngine nodeEngine,
+                                                          @Nullable PartitioningStrategy<?> strategy,
+                                                          @Nonnull Object[] partitionKeyComponents) {
+        assert strategy == null
+                || strategy instanceof DefaultPartitioningStrategy
+                || strategy instanceof AttributePartitioningStrategy
+                : "Unsupported strategy";
+
+        // constructAttributeBasedKey gives needed result also for DefaultPartitioningStrategy (__key = ?)
+        Object finalKey = constructAttributeBasedKey(partitionKeyComponents);
+        if (finalKey == null) {
+            // __key = ? condition with null parameter. The result of comparison will be always NULL.
+            // Similar situation is possible for AttributePartitioningStrategy with single attribute
+            // - single attribute is not wrapped in an array.
+            // We cannot assign meaningful partition, so just disable pruning in this case.
+            // It might be possible to use any partition id to speed up execution
+            // but this should be a rare case in practice.
+            return null;
+        }
+
+        if (strategy instanceof AttributePartitioningStrategy) {
+            // Mimic calculation performed for IMap put/get operations
+            // in AbstractSerializationService.calculatePartitionHash.
+            // IMap partitioning strategy is passed there.
+            //
+            // We cannot pass AttributePartitioningStrategy because we do not have full key object, but
+            // IDENTITY_PARTITIONING_STRATEGY on partitionKeyComponents will give the same result
+            // as AttributePartitioningStrategy would on a full key.
+            // We also cannot use the default calculation because finalKey might be PartitionAware, which
+            // we must ignore to be in line with partition calculation for IMap.
+            Data keyData = nodeEngine.getSerializationService()
+                    .toData(finalKey, IDENTITY_PARTITIONING_STRATEGY);
+            return nodeEngine.getPartitionService().getPartitionId(keyData);
+        } else {
+            // For other IMap strategies we use default calculation
+            return nodeEngine.getPartitionService().getPartitionId(finalKey);
+        }
     }
 }

@@ -24,7 +24,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,7 +39,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class})
+@Category({NightlyTest.class})
 public class PartitionMigrationComputeIntensiveTest extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(PartitionMigrationComputeIntensiveTest.class);
@@ -52,7 +52,6 @@ public class PartitionMigrationComputeIntensiveTest extends HazelcastTestSupport
         HazelcastInstance[] instances = factory.newInstances(config, 10);
 
         assertClusterSizeEventually(instances.length, instances);
-        waitAllForSafeState(instances);
 
         LOGGER.info("Cluster formed and in safe state, warming up partitions...");
         warmUpPartitions(instances);

@@ -124,7 +124,8 @@ public class UpdateProcessorTest extends SqlTestSupport {
                 PrimitiveUpsertTargetDescriptor.INSTANCE,
                 emptyList(),
                 false,
-                Collections.emptyList());
+                Collections.emptyList(),
+                false);
     }
 
     private Object executeUpdate(

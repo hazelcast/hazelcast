@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.impl.execution.init;
+package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.FixedCapacityIntArrayList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,6 +48,21 @@ public class FixedCapacityIntArrayListTest {
                 fixedCapacityIntArrayList.add(j);
             }
             int[] filledElements = fixedCapacityIntArrayList.asArray();
+            for (int j = 0; j < i; j++) {
+                assertEquals(j, filledElements[j]);
+            }
+        }
+    }
+
+    @Test
+    public void when_elementsAdded_then_properElementsInStream() {
+        for (int i = 0; i < TEST_ARRAY_SIZE; i++) {
+            FixedCapacityIntArrayList fixedCapacityIntArrayList = new FixedCapacityIntArrayList(TEST_ARRAY_SIZE);
+            for (int j = 0; j < i; j++) {
+                fixedCapacityIntArrayList.add(j);
+            }
+
+            int[] filledElements = fixedCapacityIntArrayList.stream().toArray();
             for (int j = 0; j < i; j++) {
                 assertEquals(j, filledElements[j]);
             }

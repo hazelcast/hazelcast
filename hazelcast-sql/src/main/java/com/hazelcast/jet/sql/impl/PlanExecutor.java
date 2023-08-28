@@ -75,7 +75,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
@@ -147,6 +146,7 @@ import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyIterator;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 
@@ -159,6 +159,7 @@ public class PlanExecutor {
     private final HazelcastInstance hazelcastInstance;
     private final NodeEngine nodeEngine;
     private final QueryResultRegistry resultRegistry;
+    private final List<SqlJobInvocationObserver> sqlJobInvocationObservers = new ArrayList<>();
 
     private final ILogger logger;
 
@@ -517,61 +518,11 @@ public class PlanExecutor {
                 .setArgument(KEY_SQL_UNBOUNDED, plan.isStreaming())
                 .setTimeoutMillis(timeout);
 
-        final Set<Integer> partitions = new HashSet<>();
-        boolean allVariantsValid = true;
-        for (final String mapName : plan.getPartitionStrategyCandidates().keySet()) {
-            var perMapCandidates = plan.getPartitionStrategyCandidates().get(mapName);
-            final PartitioningStrategy<?> strategy = ((MapProxyImpl) hazelcastInstance.getMap(mapName))
-                    .getPartitionStrategy();
-
-            // We only support Default and Attribute strategies, even if one of the maps uses non-Default/Attribute
-            // strategy, we should abort the process and clear list of already populated partitions so that partition
-            // pruning doesn't get activated at all for this query.
-            if (strategy != null
-                    && !(strategy instanceof DefaultPartitioningStrategy)
-                    && !(strategy instanceof AttributePartitioningStrategy)) {
-                allVariantsValid = false;
-                break;
+        if (!plan.getPartitionStrategyCandidates().isEmpty()) {
+            final Set<Integer> partitions = tryUsePrunability(plan, evalContext);
+            if (!partitions.isEmpty()) {
+                jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_PARTITIONS, partitions);
             }
-
-            // ordering of attributes matters for partitioning (1,2) produces different partition than (2,1).
-            final List<String> orderedKeyAttributes = new ArrayList<>();
-            if (strategy instanceof AttributePartitioningStrategy) {
-                final var attributeStrategy = (AttributePartitioningStrategy) strategy;
-                orderedKeyAttributes.addAll(asList(attributeStrategy.getPartitioningAttributes()));
-            } else {
-                orderedKeyAttributes.add(KEY_ATTRIBUTE_NAME.value());
-            }
-
-            for (final Map<String, Expression<?>> perMapCandidate : perMapCandidates) {
-                Object[] partitionKeyComponents = new Object[orderedKeyAttributes.size()];
-                for (int i = 0; i < orderedKeyAttributes.size(); i++) {
-                    final String attribute = orderedKeyAttributes.get(i);
-                    if (!perMapCandidate.containsKey(attribute)) {
-                        // Shouldn't happen, defensive check in case Opt logic breaks and produces variants
-                        // that do not contain all the required partitioning attributes.
-                        throw new HazelcastException("Partition Pruning candidate"
-                                + " does not contain mandatory attribute: " + attribute);
-                    }
-
-                    partitionKeyComponents[i] = perMapCandidate.get(attribute).eval(null, evalContext);
-                }
-
-                final Partition partition = hazelcastInstance.getPartitionService().getPartition(
-                        PartitioningStrategyUtil.constructAttributeBasedKey(partitionKeyComponents)
-                );
-                if (partition == null) {
-                    // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to
-                    // non-pruning logic. Alternative scenario is if the produced partitioning key somehow invalid.
-                    allVariantsValid = false;
-                    break;
-                }
-                partitions.add(partition.getPartitionId());
-            }
-        }
-
-        if (!partitions.isEmpty() && allVariantsValid) {
-            jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_PARTITIONS, partitions);
         }
 
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
@@ -580,6 +531,7 @@ public class PlanExecutor {
         Object oldValue = resultRegistry.store(jobId, queryResultProducer);
         assert oldValue == null : oldValue;
         try {
+            sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
             Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
             job.getFuture().whenComplete((r, t) -> {
                 // make sure the queryResultProducer is cleaned up after the job completes. This normally
@@ -612,6 +564,7 @@ public class PlanExecutor {
                 .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows())
                 .setTimeoutMillis(timeout);
 
+        sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
         Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
         job.join();
 
@@ -799,6 +752,70 @@ public class PlanExecutor {
         catalog.createType(type, plan.replace(), plan.ifNotExists());
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    // package-private for test purposes
+    @Nonnull
+    @SuppressWarnings("java:S3776")
+    Set<Integer> tryUsePrunability(SelectPlan plan, ExpressionEvalContext evalContext) {
+        Set<Integer> partitions = new HashSet<>();
+        boolean allVariantsValid = true;
+        for (final String mapName : plan.getPartitionStrategyCandidates().keySet()) {
+            var perMapCandidates = plan.getPartitionStrategyCandidates().get(mapName);
+            final PartitioningStrategy<?> strategy = ((MapProxyImpl) hazelcastInstance.getMap(mapName))
+                    .getPartitionStrategy();
+
+            // We only support Default and Attribute strategies, even if one of the maps uses non-Default/Attribute
+            // strategy, we should abort the process and clear list of already populated partitions so that partition
+            // pruning doesn't get activated at all for this query.
+            if (strategy != null
+                    && !(strategy instanceof DefaultPartitioningStrategy)
+                    && !(strategy instanceof AttributePartitioningStrategy)) {
+                allVariantsValid = false;
+                break;
+            }
+
+            // ordering of attributes matters for partitioning (1,2) produces different partition than (2,1).
+            final List<String> orderedKeyAttributes = new ArrayList<>();
+            if (strategy instanceof AttributePartitioningStrategy) {
+                final var attributeStrategy = (AttributePartitioningStrategy) strategy;
+                orderedKeyAttributes.addAll(asList(attributeStrategy.getPartitioningAttributes()));
+            } else {
+                orderedKeyAttributes.add(KEY_ATTRIBUTE_NAME.value());
+            }
+
+            for (final Map<String, Expression<?>> perMapCandidate : perMapCandidates) {
+                Object[] partitionKeyComponents = new Object[orderedKeyAttributes.size()];
+                for (int i = 0; i < orderedKeyAttributes.size(); i++) {
+                    final String attribute = orderedKeyAttributes.get(i);
+                    if (!perMapCandidate.containsKey(attribute)) {
+                        // Shouldn't happen, defensive check in case Opt logic breaks and produces variants
+                        // that do not contain all the required partitioning attributes.
+                        throw new HazelcastException("Partition Pruning candidate"
+                                + " does not contain mandatory attribute: " + attribute);
+                    }
+
+                    partitionKeyComponents[i] = perMapCandidate.get(attribute).eval(null, evalContext);
+                }
+
+                final Integer partitionId = PartitioningStrategyUtil.getPartitionIdFromKeyComponents(
+                        nodeEngine, strategy, partitionKeyComponents);
+
+                if (partitionId == null) {
+                    // The produced partitioning key is somehow invalid, most likely null.
+                    // In this case we revert to non-pruning logic.
+                    allVariantsValid = false;
+                    break;
+                }
+                partitions.add(partitionId);
+            }
+        }
+        return allVariantsValid && partitions.size() > 0 ? partitions : emptySet();
+    }
+
+    // package-private for test purposes
+    void registerJobInvocationObserver(SqlJobInvocationObserver jobInvocationObserver) {
+        sqlJobInvocationObservers.add(jobInvocationObserver);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {

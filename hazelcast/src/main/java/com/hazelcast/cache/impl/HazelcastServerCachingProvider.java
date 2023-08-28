@@ -18,7 +18,9 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigBuilder;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
@@ -133,8 +135,10 @@ public final class HazelcastServerCachingProvider extends AbstractHazelcastCachi
     }
 
     private Config getConfig(URL configURL, ClassLoader theClassLoader, String instanceName) throws IOException {
-        Config config = new XmlConfigBuilder(configURL).build()
-                .setClassLoader(theClassLoader);
+        ConfigBuilder configBuilder = isYamlConfiguration(configURL)
+                ? new YamlConfigBuilder(configURL)
+                : new XmlConfigBuilder(configURL);
+        Config config = configBuilder.build().setClassLoader(theClassLoader);
         if (instanceName != null) {
             // if the instance name is specified via properties use it,
             // even though instance name is specified in the config

@@ -22,26 +22,26 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
-import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import com.hazelcast.internal.services.ServiceNamespaceAware;
-import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
-import com.hazelcast.internal.partition.IPartitionService;
 
 import javax.cache.CacheException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
@@ -59,7 +59,7 @@ public class CacheLoadAllOperation
     private boolean replaceExistingValues;
     private boolean shouldBackup;
 
-    private transient Map<Data, CacheRecord> backupRecords;
+    private transient List backupPairs;
     private transient ICacheRecordStore cache;
 
     private Object response;
@@ -99,16 +99,17 @@ public class CacheLoadAllOperation
             Set<Data> keysLoaded = cache.loadAll(filteredKeys, replaceExistingValues);
             int loadedKeyCount = keysLoaded.size();
             if (loadedKeyCount > 0) {
-                backupRecords = createHashMap(loadedKeyCount);
+                backupPairs = new ArrayList<>(loadedKeyCount * 2);
                 for (Data key : keysLoaded) {
                     CacheRecord record = cache.getRecord(key);
                     // Loaded keys may have been evicted, then record will be null.
                     // So if the loaded key is evicted, don't send it to backup.
                     if (record != null) {
-                        backupRecords.put(key, record);
+                        backupPairs.add(key);
+                        backupPairs.add(record);
                     }
                 }
-                shouldBackup = !backupRecords.isEmpty();
+                shouldBackup = !backupPairs.isEmpty();
             }
         } catch (CacheException e) {
             response = new CacheClearResponse(e);
@@ -127,7 +128,7 @@ public class CacheLoadAllOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new CachePutAllBackupOperation(name, backupRecords);
+        return new CachePutAllBackupOperation(name, backupPairs);
     }
 
     @Override

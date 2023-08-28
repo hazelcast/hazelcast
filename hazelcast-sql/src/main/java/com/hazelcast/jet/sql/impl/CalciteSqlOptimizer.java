@@ -237,6 +237,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final IMapResolver iMapResolver;
     private final List<TableResolver> tableResolvers;
+    private final List<QueryPlanListener> queryPlanListeners;
     private final PlanExecutor planExecutor;
     private final RelationsStorage relationsStorage;
 
@@ -258,6 +259,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 nodeEngine.getHazelcastInstance().getConfig().getSecurityConfig().isEnabled()
         );
         this.tableResolvers = Arrays.asList(tableResolverImpl, dataConnectionResolver);
+        this.queryPlanListeners = new ArrayList<>();
         this.planExecutor = new PlanExecutor(
                 nodeEngine,
                 tableResolverImpl,
@@ -807,6 +809,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
         }
+
+        PhysicalRel finalPhysicalRel = physicalRel;
+        queryPlanListeners.forEach(l -> l.onQueryPlanBuilt(finalPhysicalRel));
         return physicalRel;
     }
 
