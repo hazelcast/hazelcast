@@ -281,6 +281,7 @@ public final class CompletionQueue {
      * Callback interface to consume the completion events from the
      * {@link CompletionQueue}.
      */
+    @FunctionalInterface
     public interface CompletionCallback {
 
         void complete(int res, int flags, long userdata);
