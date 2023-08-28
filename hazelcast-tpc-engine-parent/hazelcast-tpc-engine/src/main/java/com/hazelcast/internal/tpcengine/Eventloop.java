@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.DeadlineScheduler.DeadlineTask;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
@@ -245,18 +246,21 @@ public abstract class Eventloop {
      */
     public abstract AsyncFile newAsyncFile(String path);
 
-
+    /**
+     * Override this method if you want to add behavior before the {@link #run()}
+     * is called.
+     */
     protected void beforeRun() {
     }
 
     /**
      * Runs the actual eventloop.
      * <p/>
-     * Is called from the reactor thread.
+     * Is called from the eventloop thread.
      * <p>
      *
      * @throws Exception if something fails while running the eventloop.
-     *                   The reactor terminates when this happens.
+     *                   The reactor will terminate when this happens.
      */
     public final void run() throws Exception {
         final TaskQueue.RunContext runContext = this.runContext;
@@ -374,7 +378,7 @@ public abstract class Eventloop {
         checkNotNull(unit);
         checkNotNull(taskQueue);
 
-        DeadlineScheduler.DeadlineTask task = new DeadlineScheduler.DeadlineTask(deadlineScheduler);
+        DeadlineTask task = new DeadlineTask(deadlineScheduler);
         task.cmd = cmd;
         task.taskQueue = taskQueue;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
@@ -402,7 +406,7 @@ public abstract class Eventloop {
         checkNotNull(unit);
         checkNotNull(taskQueue);
 
-        DeadlineScheduler.DeadlineTask task = new DeadlineScheduler.DeadlineTask(deadlineScheduler);
+        DeadlineTask task = new DeadlineTask(deadlineScheduler);
         task.cmd = cmd;
         task.taskQueue = taskQueue;
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
@@ -430,7 +434,7 @@ public abstract class Eventloop {
         checkNotNull(unit);
         checkNotNull(taskQueue);
 
-        DeadlineScheduler.DeadlineTask task = new DeadlineScheduler.DeadlineTask(deadlineScheduler);
+        DeadlineTask task = new DeadlineTask(deadlineScheduler);
         task.cmd = cmd;
         task.taskQueue = taskQueue;
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
@@ -443,7 +447,7 @@ public abstract class Eventloop {
         checkNotNull(unit, "unit");
 
         Promise promise = promiseAllocator.allocate();
-        DeadlineScheduler.DeadlineTask task = new DeadlineScheduler.DeadlineTask(deadlineScheduler);
+        DeadlineTask task = new DeadlineTask(deadlineScheduler);
         task.promise = promise;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
         task.taskQueue = defaultTaskQueue;
