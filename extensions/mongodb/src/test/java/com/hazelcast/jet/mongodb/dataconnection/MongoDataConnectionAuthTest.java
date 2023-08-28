@@ -60,14 +60,11 @@ public class MongoDataConnectionAuthTest extends SimpleTestInClusterSupport {
             .withExposedPorts(27017)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
             .waitingFor(Wait.forLogMessage("(?i).*Waiting for connections*.*", 1));
-    private static String connectionString;
 
     @BeforeClass
     public static void setUp() {
         assumeDockerEnabled();
         mongoContainer.start();
-        connectionString = "mongodb://" + mongoContainer.getHost() + ":" + mongoContainer.getMappedPort(27017)
-        + "/";
     }
 
     private static DataConnectionConfig getDataConnectionConfig() {
@@ -75,7 +72,7 @@ public class MongoDataConnectionAuthTest extends SimpleTestInClusterSupport {
                 .setType("MongoDB")
                 .setName("mongoDB")
                 .setProperty("database", DATABASE)
-                .setProperty("host", connectionString)
+                .setProperty("host", mongoContainer.getHost() + ":" + mongoContainer.getMappedPort(27017))
                 .setProperty("username", USERNAME)
                 .setProperty("password", PASSWORD)
                 .setShared(true);
