@@ -73,6 +73,13 @@ import static java.lang.Math.min;
  *         is processed by the {@link UringEventloop}.
  *     </li>
  * </ol>
+ * There is also a 'requests' array. All requests that exist in the scheduler can
+ * be looked up by their index index. The content of this array will never change. The
+ * primary purpose of this array is so that completions can look up the appropriate
+ * request.
+ * <p/>
+ * The same requests are also put in a 'pool' array. The items are allocated
+ * and freed from left to right in this pool array.
  */
 // todo: remove magic number
 @SuppressWarnings({"checkstyle:MethodLength",
@@ -193,6 +200,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
         // Completion events are processed in the eventloop, so we
         // don't need to deal with that here.
 
+        // todo: the return value of this method needs to be verified. What is
+        // the exact purpuse.
         return false;
     }
 
@@ -395,6 +404,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
 
     final class UringStorageRequest extends StorageRequest {
 
+        // The index of the storage request within the 'requests' array.
         private final int index;
 
         private UringStorageRequest(int index) {

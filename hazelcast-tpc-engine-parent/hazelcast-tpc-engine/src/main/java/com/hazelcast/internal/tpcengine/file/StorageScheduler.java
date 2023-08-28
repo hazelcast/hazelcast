@@ -33,7 +33,7 @@ package com.hazelcast.internal.tpcengine.file;
 public interface StorageScheduler {
 
     /**
-     * Allocates a single StorageRequest instance.
+     * Allocates a single {@link StorageRequest} instance.
      * <p/>
      * If a non <code>null</code> value is returned, it is guaranteed that
      * {@link #schedule(StorageRequest)} will complete successfully;
@@ -45,9 +45,9 @@ public interface StorageScheduler {
     StorageRequest allocate();
 
     /**
-     * Schedules a StorageRequest so that it is processed at some point in the
-     * future. Only StorageRequest that have been allocated using the
-     * {@link #allocate()} method on this StorageScheduler should be
+     * Schedules a  {@link StorageRequest} so that it is processed at some
+     * point in the future. Only StorageRequest that have been allocated using
+     * the {@link #allocate()} method on this StorageScheduler should be
      * scheduled.
      *
      * @param req the BlockRequest.
@@ -55,7 +55,7 @@ public interface StorageScheduler {
     void schedule(StorageRequest req);
 
     /**
-     * A period call that is done to the scheduler to submit staged requests
+     * A periodic call that is done to the scheduler to submit staged requests
      * and deal with completed requests if needed.
      */
     boolean tick();
