@@ -73,11 +73,11 @@ public final class CompletionQueue {
     private final TpcLogger logger = TpcLoggerLocator.getLogger(CompletionQueue.class);
     private final Uring uring;
 
-    private final CompletionHandler[] generic_handlers;
+    private final CompletionHandler[] handlers;
     // an array that shows which positions in the handlers array are
     // not used.
-    private final int[] generic_freeHandlers;
-    private int generic_freeHandlersIndex;
+    private final int[] freeHandlers;
+    private int freeHandlersIndex;
 
     private EventFdHandler eventFdHandler;
     private TimeoutHandler timeoutHandler;
@@ -87,10 +87,10 @@ public final class CompletionQueue {
 
     CompletionQueue(Uring uring, int handlerCount) {
         this.uring = uring;
-        this.generic_handlers = new CompletionHandler[handlerCount];
-        this.generic_freeHandlers = new int[handlerCount];
+        this.handlers = new CompletionHandler[handlerCount];
+        this.freeHandlers = new int[handlerCount];
         for (int k = 0; k < handlerCount; k++) {
-            generic_freeHandlers[k] = k;
+            freeHandlers[k] = k;
         }
     }
 
@@ -106,11 +106,11 @@ public final class CompletionQueue {
         this.serverSocketHandler = checkNotNull(serverSocketHandler, "serverSocketHandler");
     }
 
-    public void register(EventFdHandler eventFdHandler) {
+    public void registerEventFdHandler(EventFdHandler eventFdHandler) {
         this.eventFdHandler = checkNotNull(eventFdHandler, "eventFdHandler");
     }
 
-    public void register(TimeoutHandler timeoutHandler) {
+    public void registerTimeoutHandler(TimeoutHandler timeoutHandler) {
         this.timeoutHandler = checkNotNull(timeoutHandler, "timeoutHandler");
     }
 
@@ -149,30 +149,30 @@ public final class CompletionQueue {
      * @return the next handler id.
      */
     public int nextHandlerId() {
-        int handlerId = generic_freeHandlers[generic_freeHandlersIndex];
-        generic_freeHandlersIndex++;
+        int handlerId = freeHandlers[freeHandlersIndex];
+        freeHandlersIndex++;
         return handlerId;
     }
 
     /**
-     * Registers a CompletionHandler with the given handlerId.
+     * Registers a generic CompletionHandler with the given handlerId.
      *
      * @param handlerId the id to register the CompletionHandler on.
      * @param handler   the CompletionHandler to register.
      */
     public void register(int handlerId, CompletionHandler handler) {
-        generic_handlers[handlerId] = handler;
+        handlers[handlerId] = handler;
     }
 
     /**
-     * Unregisters the CompletionHandler with the given handlerId.
+     * Unregisters the generic CompletionHandler with the given handlerId.
      *
      * @param handlerId the id of the CompletionHandler to remove.
      */
     public void unregister(int handlerId) {
-        generic_handlers[handlerId] = null;
-        generic_freeHandlersIndex--;
-        generic_freeHandlers[generic_freeHandlersIndex] = handlerId;
+        handlers[handlerId] = null;
+        freeHandlersIndex--;
+        freeHandlers[freeHandlersIndex] = handlerId;
     }
 
     /**
@@ -259,7 +259,7 @@ public final class CompletionQueue {
                 switch (type) {
                     case TYPE_GENERIC:
                         int index = decodeIndex(userdata);
-                        generic_handlers[index].complete(res, flags, userdata);
+                        handlers[index].complete(res, flags, userdata);
                         break;
                     case TYPE_STORAGE:
                         storageHandler.complete(res, flags, userdata);

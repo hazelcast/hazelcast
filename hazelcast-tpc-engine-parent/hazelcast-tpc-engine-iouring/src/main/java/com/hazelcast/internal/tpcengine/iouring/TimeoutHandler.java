@@ -56,7 +56,7 @@ public final class TimeoutHandler implements CompletionHandler {
         this.timeoutBuffer = allocateDirect(SIZEOF_KERNEL_TIMESPEC);
         this.timeoutAddr = addressOf(timeoutBuffer);
 
-        uring.completionQueue().register(this);
+        uring.completionQueue().registerTimeoutHandler(this);
     }
 
     // todo: I'm questioning of this is not going to lead to problems. Can

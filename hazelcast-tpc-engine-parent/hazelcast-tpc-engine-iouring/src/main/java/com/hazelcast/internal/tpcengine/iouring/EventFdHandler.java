@@ -49,7 +49,7 @@ public final class EventFdHandler implements AutoCloseable, CompletionHandler {
         this.readBufBuffer = allocateDirect(SIZEOF_LONG);
         this.readBufAddr = addressOf(readBufBuffer);
 
-        uring.completionQueue().register(this);
+        uring.completionQueue().registerEventFdHandler(this);
     }
 
     public EventFd eventFd() {
