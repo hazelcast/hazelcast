@@ -5249,6 +5249,16 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="reuse-destroyed-objects-names" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Allows to reuse the name of a destroyed CP data structure.
+                        If enabled, the CP subsystem will not track the names of destroyed CP objects.
+                        WARNING! When a CP object is destroyed and re-created, it's linearizable history will be broken.
+                        Not all users of the CP object may be aware of this and they can observe an inconsistent state.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="raft-algorithm" type="raft-algorithm" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>

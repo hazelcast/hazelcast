@@ -286,6 +286,14 @@ public class CPSubsystemConfig {
     private int cpMemberPriority;
 
     /**
+     * Allows to reuse the name of a destroyed CP data structure.
+     * If enabled, the CP subsystem will not track the names of destroyed CP objects.
+     * <p><b>Warning! When a CP object is destroyed and re-created, it's linearizable history will be broken.
+     * Not all users of the CP object may be aware of this and they can observe an inconsistent state.</b>
+     */
+    private boolean reuseDestroyedObjectsNames;
+
+    /**
      * Contains configuration options for Hazelcast's Raft consensus algorithm
      * implementation.
      */
@@ -318,6 +326,7 @@ public class CPSubsystemConfig {
         this.baseDir = config.baseDir;
         this.dataLoadTimeoutSeconds = config.dataLoadTimeoutSeconds;
         this.cpMemberPriority = config.cpMemberPriority;
+        this.reuseDestroyedObjectsNames = config.reuseDestroyedObjectsNames;
         for (SemaphoreConfig semaphoreConfig : config.semaphoreConfigs.values()) {
             this.semaphoreConfigs.put(semaphoreConfig.getName(), new SemaphoreConfig(semaphoreConfig));
         }
@@ -568,6 +577,25 @@ public class CPSubsystemConfig {
     }
 
     /**
+     * Sets whether the names of destroyed CP data structures can be reused.
+     *
+     * @return this config instance
+     */
+    public CPSubsystemConfig setReuseDestroyedObjectsNames(boolean reuseDestroyedObjectsNames) {
+        this.reuseDestroyedObjectsNames = reuseDestroyedObjectsNames;
+        return this;
+    }
+
+    /**
+     * Returns whether the names of destroyed CP data structures can be reused.
+     *
+     * @return true if allows to reuse the name of a destroyed CP data structure, false otherwise
+     */
+    public boolean isReuseDestroyedObjectsNames() {
+        return reuseDestroyedObjectsNames;
+    }
+
+    /**
      * Returns configuration options for Hazelcast's Raft consensus algorithm
      * implementation
      *
@@ -702,7 +730,8 @@ public class CPSubsystemConfig {
                 + ", sessionTimeToLiveSeconds=" + sessionTimeToLiveSeconds + ", sessionHeartbeatIntervalSeconds="
                 + sessionHeartbeatIntervalSeconds + ", missingCPMemberAutoRemovalSeconds=" + missingCPMemberAutoRemovalSeconds
                 + ", failOnIndeterminateOperationState=" + failOnIndeterminateOperationState
-                + ", cpMemberPriority=" + cpMemberPriority + ", raftAlgorithmConfig=" + raftAlgorithmConfig
+                + ", cpMemberPriority=" + cpMemberPriority + ", reuseDestroyedObjects=" + reuseDestroyedObjectsNames
+                + ", raftAlgorithmConfig=" + raftAlgorithmConfig
                 + ", semaphoreConfigs=" + semaphoreConfigs + ", lockConfigs=" + lockConfigs + '}';
     }
 
@@ -723,6 +752,7 @@ public class CPSubsystemConfig {
                 && failOnIndeterminateOperationState == that.failOnIndeterminateOperationState
                 && persistenceEnabled == that.persistenceEnabled && dataLoadTimeoutSeconds == that.dataLoadTimeoutSeconds
                 && cpMemberPriority == that.cpMemberPriority
+                && reuseDestroyedObjectsNames == that.reuseDestroyedObjectsNames
                 && Objects.equals(baseDir, that.baseDir)
                 && Objects.equals(raftAlgorithmConfig, that.raftAlgorithmConfig)
                 && Objects.equals(semaphoreConfigs, that.semaphoreConfigs)
@@ -734,6 +764,7 @@ public class CPSubsystemConfig {
     public int hashCode() {
         return Objects.hash(cpMemberCount, groupSize, sessionTimeToLiveSeconds, sessionHeartbeatIntervalSeconds,
                 missingCPMemberAutoRemovalSeconds, failOnIndeterminateOperationState, persistenceEnabled, cpMemberPriority,
-                baseDir, dataLoadTimeoutSeconds, raftAlgorithmConfig, semaphoreConfigs, lockConfigs, configPatternMatcher);
+                reuseDestroyedObjectsNames, baseDir, dataLoadTimeoutSeconds, raftAlgorithmConfig, semaphoreConfigs, lockConfigs,
+                configPatternMatcher);
     }
 }

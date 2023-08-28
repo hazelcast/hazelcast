@@ -149,7 +149,8 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
     @Override
     public boolean destroyRaftObject(CPGroupId groupId, String name) {
-        Collection<W> keys = getOrInitRegistry(groupId).destroyResource(name);
+        boolean reuseDestroyed = raftService.getConfig().isReuseDestroyedObjectsNames();
+        Collection<W> keys = getOrInitRegistry(groupId).destroyResource(name, reuseDestroyed);
         if (keys == null) {
             return false;
         }

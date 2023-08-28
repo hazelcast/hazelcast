@@ -39,7 +39,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.4.xsd">
 
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
@@ -1037,6 +1037,7 @@
         <base-dir>data</base-dir>
         <data-load-timeout-seconds>30</data-load-timeout-seconds>
         <cp-member-priority>-1</cp-member-priority>
+        <reuse-destroyed-objects-names>false</reuse-destroyed-objects-names>
         <raft-algorithm>
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
             <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>

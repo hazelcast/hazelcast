@@ -146,7 +146,9 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
     @Override
     public final boolean destroyRaftObject(CPGroupId groupId, String name) {
         BiTuple<CPGroupId, String> key = BiTuple.of(groupId, name);
-        destroyedValues.add(key);
+        if (!raftService.getConfig().isReuseDestroyedObjectsNames()) {
+            destroyedValues.add(key);
+        }
         return atomicValues.remove(key) != null;
     }
 

@@ -21,7 +21,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.3.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.4.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -1041,6 +1041,7 @@
                 <hz:base-dir>/custom-dir</hz:base-dir>
                 <hz:data-load-timeout-seconds>30</hz:data-load-timeout-seconds>
                 <hz:cp-member-priority>-1</hz:cp-member-priority>
+                <hz:reuse-destroyed-objects-names>false</hz:reuse-destroyed-objects-names>
                 <hz:raft-algorithm>
                     <hz:leader-election-timeout-in-millis>500</hz:leader-election-timeout-in-millis>
                     <hz:leader-heartbeat-period-in-millis>100</hz:leader-heartbeat-period-in-millis>

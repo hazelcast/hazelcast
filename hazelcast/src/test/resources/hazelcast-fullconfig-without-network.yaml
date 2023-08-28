@@ -977,6 +977,7 @@ hazelcast:
     base-dir: data
     data-load-timeout-seconds: 30
     cp-member-priority: -1
+    reuse-destroyed-objects-names: false
     raft-algorithm:
       leader-election-timeout-in-millis: 2000
       leader-heartbeat-period-in-millis: 5000

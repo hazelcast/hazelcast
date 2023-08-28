@@ -206,8 +206,10 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         return sessions;
     }
 
-    final Collection<W> destroyResource(String name) {
-        destroyedNames.add(name);
+    final Collection<W> destroyResource(String name, boolean reuseDestroyed) {
+        if (!reuseDestroyed) {
+            destroyedNames.add(name);
+        }
         BlockingResource<W> resource = resources.remove(name);
         if (resource == null) {
             return null;

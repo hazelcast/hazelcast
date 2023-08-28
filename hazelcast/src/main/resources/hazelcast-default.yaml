@@ -714,6 +714,11 @@ hazelcast:
     # The CP member priority. The CP groups' leadership will be eventually
     # transferred to members with higher priorities within the CP group.
     cp-member-priority: 0
+    # Allows to reuse the name of a destroyed CP data structure.
+    # If enabled, the CP subsystem will not track the names of destroyed CP objects.
+    # WARNING! When a CP object is destroyed and re-created, it's linearizable history will be broken.
+    # Not all users of the CP object may be aware of this and they can observe an inconsistent state
+    reuse-destroyed-objects-names: false
     raft-algorithm:
       # Leader election timeout in milliseconds. If a candidate cannot win
       # majority of the votes in time, a new leader election round is initiated.

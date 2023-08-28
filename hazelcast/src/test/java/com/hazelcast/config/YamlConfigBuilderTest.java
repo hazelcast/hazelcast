@@ -4185,6 +4185,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    base-dir: /mnt/cp-data\n"
                 + "    data-load-timeout-seconds: 30\n"
                 + "    cp-member-priority: -1\n"
+                + "    reuse-destroyed-objects-names: true\n"
                 + "    raft-algorithm:\n"
                 + "      leader-election-timeout-in-millis: 500\n"
                 + "      leader-heartbeat-period-in-millis: 100\n"
@@ -4217,6 +4218,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(new File("/mnt/cp-data").getAbsoluteFile(), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
         assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
         assertEquals(-1, cpSubsystemConfig.getCPMemberPriority());
+        assertTrue(cpSubsystemConfig.isReuseDestroyedObjectsNames());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());

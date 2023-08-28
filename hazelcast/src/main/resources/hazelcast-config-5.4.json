@@ -2488,6 +2488,11 @@
           "default": 0,
           "description": "The CP member priority. The CP groups' leadership will be eventually transferred to members with higher priorities within the CP group."
         },
+        "reuse-destroyed-objects-names": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allows to reuse the name of a destroyed CP data structure. If enabled, the CP subsystem will not track the names of destroyed CP objects. WARNING! When a CP object is destroyed and re-created, it's linearizable history will be broken. Not all users of the CP object may be aware of this and they can observe an inconsistent state."
+        },
         "raft-algorithm": {
           "type": "object",
           "additionalProperties": false,
