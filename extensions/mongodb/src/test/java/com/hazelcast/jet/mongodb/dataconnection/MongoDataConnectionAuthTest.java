@@ -75,7 +75,7 @@ public class MongoDataConnectionAuthTest extends SimpleTestInClusterSupport {
                 .setType("MongoDB")
                 .setName("mongoDB")
                 .setProperty("database", DATABASE)
-                .setProperty("host", mongoContainer.getHost() + ":" + mongoContainer.getMappedPort(27017))
+                .setProperty("host", connectionString)
                 .setProperty("username", USERNAME)
                 .setProperty("password", PASSWORD)
                 .setShared(true);
