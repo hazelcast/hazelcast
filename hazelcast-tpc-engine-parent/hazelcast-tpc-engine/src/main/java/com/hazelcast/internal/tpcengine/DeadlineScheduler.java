@@ -18,32 +18,42 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpcengine.util.Promise;
 
 import java.util.PriorityQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.tpcengine.util.EpochClock.epochNanos;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
  * A scheduler that schedules {@link DeadlineTask} instances based on their
  * deadline (some point in time in the future).
  * <p/>
- * The scheduler is not thread-safe.
+ * The DeadlineScheduler is not thread-safe.
  * <p/>
- * The scheduler contains a run queue with tasks ordered by their deadline.
+ * The DeadlineScheduler contains a run queue with tasks ordered by their deadline.
  * So the task with the earliest deadline, is at the beginning of the queue.
+ * <p/>
+ * The DeadlineScheduler pools and DeadlineTasks and creates them up front.
+ * If the pool is empty, no further DeadlineTasks can be scheduled.
  */
 public final class DeadlineScheduler {
+    private static final TpcLogger LOGGER = TpcLoggerLocator.getLogger(DeadlineScheduler.class);
 
-    // the current size of the runQueue.
-    private int runQueueSize;
-    // the maximum number of items in the run Queue.
-    private final int runQueueLimit;
+    TaskQueue defaultTaskQueue;
+
     // -1 indicates that there is no task in the deadline scheduler.
     private long earliestDeadlineNanos = -1;
     // The DeadlineTasks are ordered by their deadline. So smallest deadline first.
     private final PriorityQueue<DeadlineTask> runQueue;
+
+    private final int poolCapacity;
+    private final DeadlineTask[] pool;
+    private int poolAllocIndex;
 
     /**
      * Creates a new scheduler with the given runQueue limit.
@@ -51,9 +61,41 @@ public final class DeadlineScheduler {
      * @param runQueueLimit the limit on the number of items in the runQueue.
      * @throws IllegalArgumentException when the runQueueLimit is smaller than 1.
      */
-    public DeadlineScheduler(int runQueueLimit) {
-        this.runQueueLimit = checkPositive(runQueueLimit, "runQueueLimit");
+    DeadlineScheduler(int runQueueLimit) {
+        checkPositive(runQueueLimit, "runQueueLimit");
         this.runQueue = new PriorityQueue<>(runQueueLimit);
+
+        this.poolCapacity = runQueueLimit;
+        this.pool = new DeadlineTask[poolCapacity];
+        for (int k = 0; k < poolCapacity; k++) {
+            pool[k] = new DeadlineTask(this);
+        }
+    }
+
+    private static long toDeadlineNanos(long delay, TimeUnit unit) {
+        long deadlineNanos = epochNanos() + unit.toNanos(delay);
+        if (deadlineNanos < 0) {
+            // protection against overflow
+            deadlineNanos = Long.MAX_VALUE;
+        }
+        return deadlineNanos;
+    }
+
+    private DeadlineTask allocate() {
+        if (poolAllocIndex == poolCapacity) {
+            return null;
+        }
+
+        DeadlineTask task = pool[poolAllocIndex];
+        poolAllocIndex++;
+        return task;
+    }
+
+    private void free(DeadlineTask task) {
+        task.clear();
+        poolAllocIndex--;
+        pool[poolAllocIndex] = task;
+        return;
     }
 
     /**
@@ -67,36 +109,155 @@ public final class DeadlineScheduler {
     }
 
     /**
+     * Schedules a task to be performed with some delay.
+     *
+     * @param cmd   the task to perform.
+     * @param delay the delay
+     * @param unit  the unit of the delay
+     * @return true if the task was scheduled, false if the task was rejected.
+     * @throws NullPointerException     if cmd or unit is null.
+     * @throws IllegalArgumentException when delay smaller than 0.
+     */
+    public boolean schedule(Runnable cmd, long delay, TimeUnit unit) {
+        return schedule(cmd, delay, unit, defaultTaskQueue);
+    }
+
+    /**
+     * Schedules a one shot action with the given delay.
+     *
+     * @param cmd       the cmd to execute.
+     * @param delay     the delay
+     * @param unit      the unit of the delay
+     * @param taskQueue the handle of the TaskQueue the cmd belongs to.
+     * @return true if the cmd was successfully scheduled.
+     * @throws NullPointerException     if cmd or unit is null
+     * @throws IllegalArgumentException when delay smaller than 0.
+     */
+    public boolean schedule(Runnable cmd, long delay, TimeUnit unit, TaskQueue taskQueue) {
+        checkNotNull(cmd);
+        checkNotNegative(delay, "delay");
+        checkNotNull(unit);
+        checkNotNull(taskQueue);
+
+        DeadlineTask task = allocate();
+        if (task == null) {
+            return false;
+        }
+        task.runnable = cmd;
+        task.taskQueue = taskQueue;
+        task.deadlineNanos = toDeadlineNanos(delay, unit);
+        put(task);
+        return true;
+    }
+
+    /**
+     * Creates a periodically executing cmd with a fixed delay between the
+     * completion and start of the cmd.
+     *
+     * @param cmd          the cmd to periodically execute. As long as true is
+     *                     returned, the task will reschedule itself.
+     * @param initialDelay the initial delay
+     * @param delay        the delay between executions.
+     * @param unit         the unit of the initial delay and delay
+     * @return true if the cmd was successfully executed.
+     */
+    public boolean scheduleWithFixedDelay(Callable<Boolean> cmd,
+                                          long initialDelay,
+                                          long delay,
+                                          TimeUnit unit,
+                                          TaskQueue taskQueue) {
+        checkNotNull(cmd);
+        checkNotNegative(initialDelay, "initialDelay");
+        checkNotNegative(delay, "delay");
+        checkNotNull(unit);
+        checkNotNull(taskQueue);
+
+        DeadlineTask task = allocate();
+        if (task == null) {
+            return false;
+        }
+        task.callable = cmd;
+        task.taskQueue = taskQueue;
+        task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
+        task.delayNanos = unit.toNanos(delay);
+        put(task);
+        return true;
+    }
+
+    /**
+     * Creates a periodically executing cmd with a fixed delay between the start
+     * of the cmd.
+     *
+     * @param cmd          the cmd to periodically execute.As long as true is
+     *                     returned, the task will reschedule itself.
+     * @param initialDelay the initial delay
+     * @param period       the period between executions.
+     * @param unit         the unit of the initial delay and delay
+     * @return true if the cmd was successfully executed.
+     */
+    public boolean scheduleAtFixedRate(Callable<Boolean> cmd,
+                                       long initialDelay,
+                                       long period,
+                                       TimeUnit unit,
+                                       TaskQueue taskQueue) {
+        checkNotNull(cmd);
+        checkNotNegative(initialDelay, "initialDelay");
+        checkNotNegative(period, "period");
+        checkNotNull(unit);
+        checkNotNull(taskQueue);
+
+        DeadlineTask task = allocate();
+        if (task == null) {
+            return false;
+        }
+        task.callable = cmd;
+        task.taskQueue = taskQueue;
+        task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
+        task.periodNanos = unit.toNanos(period);
+        put(task);
+        return true;
+    }
+
+    public boolean sleep(long delay, TimeUnit unit, BiConsumer<Void, Exception> consumer) {
+        checkNotNegative(delay, "delay");
+        checkNotNull(unit, "unit");
+
+        DeadlineTask task = allocate();
+        if (task == null) {
+            return false;
+        }
+        task.consumer = consumer;
+        task.deadlineNanos = toDeadlineNanos(delay, unit);
+        task.taskQueue = defaultTaskQueue;
+        put(task);
+        return true;
+    }
+
+    /**
      * Offers a DeadlineTask to the scheduler. The task will be scheduled based
      * on its deadline.
      *
      * @param task the task to schedule
      * @return true if the task was added to the scheduler, false otherwise.
      */
-    public boolean offer(DeadlineTask task) {
+    void put(DeadlineTask task) {
         assert task.deadlineNanos >= 0;
 
-        if (runQueueSize == runQueueLimit) {
-            return false;
-        }
-
         runQueue.offer(task);
-        runQueueSize++;
 
         if (task.deadlineNanos < earliestDeadlineNanos) {
             earliestDeadlineNanos = task.deadlineNanos;
         }
-
-        return true;
     }
 
     /**
      * Gives the DeadlineScheduler a chance to schedule tasks. This method should be
-     * called periodically.
+     * called periodically. Every deadline task that is ready to be scheduled, is
+     * scheduled on its configured TaskQueue.
      *
      * @param nowNanos the current epoch time in nanos.
      */
-    public void tick(long nowNanos) {
+    void tick(long nowNanos) {
         assert nowNanos >= 0;
 
         // We keep removing items from the runQueue until we find a task that is
@@ -120,7 +281,6 @@ public final class DeadlineScheduler {
 
             // the task first needs to be removed from the run queue since we peeked it.
             runQueue.poll();
-            runQueueSize--;
 
             // offer the task to its taskQueue.
             // this will trigger the taskQueue to schedule itself if needed.
@@ -146,11 +306,10 @@ public final class DeadlineScheduler {
      */
     static final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
 
-        private static final TpcLogger LOGGER = TpcLoggerLocator.getLogger(DeadlineTask.class);
-
-        Promise promise;
+        BiConsumer<?, Exception> consumer;
         long deadlineNanos;
-        Runnable cmd;
+        Runnable runnable;
+        Callable<Boolean> callable;
         long periodNanos = -1;
         long delayNanos = -1;
         TaskQueue taskQueue;
@@ -162,11 +321,32 @@ public final class DeadlineScheduler {
 
         @Override
         public void run() {
-            if (cmd != null) {
-                cmd.run();
+            boolean again = false;
+            Exception exception = null;
+
+            if (callable != null) {
+                try {
+                    again = callable.call();
+                } catch (Exception e) {
+                    exception = e;
+                }
+            } else if (runnable != null) {
+                try {
+                    runnable.run();
+                } catch (Exception e) {
+                    exception = e;
+                }
             }
 
-            if (periodNanos != -1 || delayNanos != -1) {
+            if (consumer != null) {
+                try {
+                    consumer.accept(null, null);
+                } catch (Exception e) {
+                    LOGGER.warning(e);
+                }
+            }
+
+            if (again && (periodNanos != -1 || delayNanos != -1)) {
                 if (periodNanos != -1) {
                     deadlineNanos += periodNanos;
                 } else {
@@ -177,15 +357,20 @@ public final class DeadlineScheduler {
                     deadlineNanos = Long.MAX_VALUE;
                 }
 
-                if (!deadlineScheduler.offer(this)) {
-                    LOGGER.warning("Failed schedule task: " + this + " because there "
-                            + "is no space in deadlineScheduler");
-                }
+                deadlineScheduler.put(this);
             } else {
-                if (promise != null) {
-                    promise.complete(null);
-                }
+                deadlineScheduler.free(this);
             }
+        }
+
+        void clear() {
+            consumer = null;
+            deadlineNanos = 0;
+            runnable = null;
+            callable = null;
+            periodNanos = -1;
+            delayNanos = -1;
+            taskQueue = null;
         }
 
         @Override
@@ -196,9 +381,10 @@ public final class DeadlineScheduler {
         @Override
         public String toString() {
             return "DeadlineTask{"
-                    + "promise=" + promise
+                    + "consumer=" + consumer
+                    + ", runnable=" + runnable
+                    + ", callable=" + callable
                     + ", deadlineNanos=" + deadlineNanos
-                    + ", task=" + cmd
                     + ", periodNanos=" + periodNanos
                     + ", delayNanos=" + delayNanos
                     + '}';

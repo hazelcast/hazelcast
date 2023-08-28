@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.util;
+package com.hazelcast.internal.tpcengine.nio;
 
-/**
- * A consumer that concepts an 'int' and some kind of object of type U.
- *
- * @param <U>
- */
-public interface IntBiConsumer<U> {
+import com.hazelcast.internal.tpcengine.DeadlineSchedulerSoakTest;
+import com.hazelcast.internal.tpcengine.Reactor;
 
-    /**
-     * Performs this operation on the given arguments.
-     *
-     * @param t the first input argument
-     */
-    void accept(int t, U u);
+public class Nio_DeadlineSchedulerSoakTest
+        extends DeadlineSchedulerSoakTest {
 
+    @Override
+    public Reactor.Builder newReactorBuilder() {
+        return new NioReactor.Builder();
+    }
 }

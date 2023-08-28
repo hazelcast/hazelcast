@@ -41,7 +41,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  * @param <E>
  */
 @SuppressWarnings("checkstyle:VisibilityModifier")
-public class Promise<E> {
+public class Promise<E> implements BiConsumer<E, Exception> {
     private static final TpcLogger LOGGER = TpcLoggerLocator.getLogger(IntPromise.class);
 
     private static final Object EMPTY = new Object();
@@ -82,6 +82,15 @@ public class Promise<E> {
 
         if (this.value != EMPTY) {
             release();
+        }
+    }
+
+    @Override
+    public void accept(E v, Exception exception) {
+        if (exception == null) {
+            complete(v);
+        } else {
+            completeExceptionally(exception);
         }
     }
 

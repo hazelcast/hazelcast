@@ -146,6 +146,17 @@ public abstract class Reactor implements Executor {
     }
 
     /**
+     * Returns the default TaskQueue for this reactor.
+     * <p/>
+     * This method is threadsafe.
+     *
+     * @return the default TaskQueue.
+     */
+    public TaskQueue defaultTaskQueue() {
+        return defaultTaskQueue;
+    }
+
+    /**
      * Gets the sockets that belong to this Reactor.
      * <p/>
      * This method is threadsafe.

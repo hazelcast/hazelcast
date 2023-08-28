@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.DeadlineScheduler.DeadlineTask;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
@@ -27,16 +26,13 @@ import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
 import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
 import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
-import com.hazelcast.internal.tpcengine.util.Promise;
 import com.hazelcast.internal.tpcengine.util.PromiseAllocator;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.tpcengine.util.EpochClock.epochNanos;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.lang.Math.max;
 
@@ -93,6 +89,7 @@ public abstract class Eventloop {
         TaskQueue.Builder defaultTaskQueueBuilder = builder.reactorBuilder.defaultTaskQueueBuilder;
         defaultTaskQueueBuilder.eventloop = this;
         this.defaultTaskQueue = defaultTaskQueueBuilder.build();
+        this.deadlineScheduler.defaultTaskQueue = defaultTaskQueue;
 
         this.runContext = new TaskQueue.RunContext();
         runContext.stallHandler = stallHandler;
@@ -124,6 +121,15 @@ public abstract class Eventloop {
      */
     public final Reactor reactor() {
         return reactor;
+    }
+
+    /**
+     * Returns the DeadlineScheduler that belongs to this eventloop.
+     *
+     * @return the DeadlineScheduler.
+     */
+    public final DeadlineScheduler deadlineScheduler() {
+        return deadlineScheduler;
     }
 
     /**
@@ -343,126 +349,6 @@ public abstract class Eventloop {
      * @throws IOException
      */
     protected abstract void park(long timeoutNanos) throws IOException;
-
-    /**
-     * Schedules a task to be performed with some delay.
-     *
-     * @param cmd   the task to perform.
-     * @param delay the delay
-     * @param unit  the unit of the delay
-     * @return true if the task was scheduled, false if the task was rejected.
-     * @throws NullPointerException     if cmd or unit is null.
-     * @throws IllegalArgumentException when delay smaller than 0.
-     */
-    public final boolean schedule(Runnable cmd, long delay, TimeUnit unit) {
-        return schedule(cmd, delay, unit, defaultTaskQueue);
-    }
-
-    /**
-     * Schedules a one shot action with the given delay.
-     *
-     * @param cmd       the cmd to execute.
-     * @param delay     the delay
-     * @param unit      the unit of the delay
-     * @param taskQueue the handle of the TaskQueue the cmd belongs to.
-     * @return true if the cmd was successfully scheduled.
-     * @throws NullPointerException     if cmd or unit is null
-     * @throws IllegalArgumentException when delay smaller than 0.
-     */
-    public final boolean schedule(Runnable cmd,
-                                  long delay,
-                                  TimeUnit unit,
-                                  TaskQueue taskQueue) {
-        checkNotNull(cmd);
-        checkNotNegative(delay, "delay");
-        checkNotNull(unit);
-        checkNotNull(taskQueue);
-
-        DeadlineTask task = new DeadlineTask(deadlineScheduler);
-        task.cmd = cmd;
-        task.taskQueue = taskQueue;
-        task.deadlineNanos = toDeadlineNanos(delay, unit);
-        return deadlineScheduler.offer(task);
-    }
-
-    /**
-     * Creates a periodically executing cmd with a fixed delay between the completion and start of
-     * the cmd.
-     *
-     * @param cmd          the cmd to periodically execute.
-     * @param initialDelay the initial delay
-     * @param delay        the delay between executions.
-     * @param unit         the unit of the initial delay and delay
-     * @return true if the cmd was successfully executed.
-     */
-    public final boolean scheduleWithFixedDelay(Runnable cmd,
-                                                long initialDelay,
-                                                long delay,
-                                                TimeUnit unit,
-                                                TaskQueue taskQueue) {
-        checkNotNull(cmd);
-        checkNotNegative(initialDelay, "initialDelay");
-        checkNotNegative(delay, "delay");
-        checkNotNull(unit);
-        checkNotNull(taskQueue);
-
-        DeadlineTask task = new DeadlineTask(deadlineScheduler);
-        task.cmd = cmd;
-        task.taskQueue = taskQueue;
-        task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
-        task.delayNanos = unit.toNanos(delay);
-        return deadlineScheduler.offer(task);
-    }
-
-    /**
-     * Creates a periodically executing cmd with a fixed delay between the start of the cmd.
-     *
-     * @param cmd          the cmd to periodically execute.
-     * @param initialDelay the initial delay
-     * @param period       the period between executions.
-     * @param unit         the unit of the initial delay and delay
-     * @return true if the cmd was successfully executed.
-     */
-    public final boolean scheduleAtFixedRate(Runnable cmd,
-                                             long initialDelay,
-                                             long period,
-                                             TimeUnit unit,
-                                             TaskQueue taskQueue) {
-        checkNotNull(cmd);
-        checkNotNegative(initialDelay, "initialDelay");
-        checkNotNegative(period, "period");
-        checkNotNull(unit);
-        checkNotNull(taskQueue);
-
-        DeadlineTask task = new DeadlineTask(deadlineScheduler);
-        task.cmd = cmd;
-        task.taskQueue = taskQueue;
-        task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
-        task.periodNanos = unit.toNanos(period);
-        return deadlineScheduler.offer(task);
-    }
-
-    public final Promise sleep(long delay, TimeUnit unit) {
-        checkNotNegative(delay, "delay");
-        checkNotNull(unit, "unit");
-
-        Promise promise = promiseAllocator.allocate();
-        DeadlineTask task = new DeadlineTask(deadlineScheduler);
-        task.promise = promise;
-        task.deadlineNanos = toDeadlineNanos(delay, unit);
-        task.taskQueue = defaultTaskQueue;
-        deadlineScheduler.offer(task);
-        return promise;
-    }
-
-    private long toDeadlineNanos(long delay, TimeUnit unit) {
-        long deadlineNanos = epochNanos() + unit.toNanos(delay);
-        if (deadlineNanos < 0) {
-            // protection against overflow
-            deadlineNanos = Long.MAX_VALUE;
-        }
-        return deadlineNanos;
-    }
 
     @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MagicNumber"})
     public abstract static class Builder extends AbstractBuilder<Eventloop> {

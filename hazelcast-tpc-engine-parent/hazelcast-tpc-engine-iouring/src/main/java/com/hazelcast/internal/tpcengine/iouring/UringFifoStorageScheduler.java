@@ -123,6 +123,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
 
     @Override
     public StorageRequest allocate() {
+        // todo: remove the -1; add test. Problem already fixed with deadline scheduler
         if (poolAllocIndex == poolCapacity - 1) {
             return null;
         }

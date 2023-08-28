@@ -23,17 +23,11 @@ import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.Eventloop.getThreadLocalEventloop;
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertEqualsEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertSuccessEventually;
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.TestCase.assertSame;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
@@ -82,35 +76,6 @@ public abstract class EventloopTest {
         future.join();
     }
 
-    @Test
-    public void test_schedule() {
-        Task task = new Task();
-
-        reactor.offer(() -> reactor.eventloop.schedule(task, 1, SECONDS));
-
-        assertTrueEventually(() -> assertEquals(1, task.count.get()));
-    }
-
-    private static final class Task implements Runnable {
-        private final AtomicLong count = new AtomicLong();
-
-        @Override
-        public void run() {
-            count.incrementAndGet();
-        }
-    }
-
-    @Test
-    public void test_sleep() {
-        AtomicInteger executedCount = new AtomicInteger();
-        long startMs = System.currentTimeMillis();
-        reactor.offer(() -> reactor.eventloop().sleep(1, SECONDS)
-                .then((o, ex) -> executedCount.incrementAndGet()));
-
-        assertEqualsEventually(1, executedCount);
-        long duration = System.currentTimeMillis() - startMs;
-        System.out.println("duration:" + duration + " ms");
-    }
 
     @Test
     public void test_checkOnEventloopThread_whenNotOnEventloopThread() {

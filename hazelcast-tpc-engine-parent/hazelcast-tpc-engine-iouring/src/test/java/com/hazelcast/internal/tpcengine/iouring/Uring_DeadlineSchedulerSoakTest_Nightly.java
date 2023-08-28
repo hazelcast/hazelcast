@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.util;
+package com.hazelcast.internal.tpcengine.iouring;
 
-/**
- * A consumer that concepts an 'int' and some kind of object of type U.
- *
- * @param <U>
- */
-public interface IntBiConsumer<U> {
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.experimental.categories.Category;
 
-    /**
-     * Performs this operation on the given arguments.
-     *
-     * @param t the first input argument
-     */
-    void accept(int t, U u);
+@Category(NightlyTest.class)
+public class Uring_DeadlineSchedulerSoakTest_Nightly
+        extends Uring_DeadlineSchedulerSoakTest {
 
+    public Uring_DeadlineSchedulerSoakTest_Nightly() {
+        iterations = 60000;
+    }
 }

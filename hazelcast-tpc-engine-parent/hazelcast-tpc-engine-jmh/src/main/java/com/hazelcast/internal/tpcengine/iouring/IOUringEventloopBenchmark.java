@@ -79,7 +79,7 @@ public class IOUringEventloopBenchmark {
         CountDownLatch latch = new CountDownLatch(concurrency);
         reactor.execute(() -> {
             // schedule task far in the future.
-            reactor.eventloop().schedule(() -> {
+            reactor.eventloop().deadlineScheduler().schedule(() -> {
             }, 1000, SECONDS);
 
             for (int k = 0; k < concurrency; k++) {
