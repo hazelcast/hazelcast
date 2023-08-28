@@ -59,7 +59,7 @@ public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
     void appendMatchedClause(StringBuilder sb) {
         sb.append("WHEN MATCHED THEN ");
         sb.append("UPDATE ");
-        sb.append(" SET");
+        sb.append("SET");
         Iterator<String> it = jdbcTable.dbFieldNames().iterator();
         while (it.hasNext()) {
             String dbFieldName = it.next();
@@ -83,10 +83,10 @@ public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
         for (int i = 0; i < pkFields.size(); i++) {
             String field = pkFields.get(i);
             dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
-            sb.append(".")
-                    .append(field)
-                    .append(" = source.")
-                    .append(field);
+            sb.append(".");
+            dialect.quoteIdentifier(sb, field);
+            sb.append(" = source.");
+            dialect.quoteIdentifier(sb, field);
             if (i < pkFields.size() - 1) {
                 sb.append(" AND ");
             }

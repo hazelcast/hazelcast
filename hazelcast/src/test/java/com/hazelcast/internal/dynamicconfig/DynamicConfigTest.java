@@ -91,6 +91,7 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -100,6 +101,7 @@ import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
 import static com.hazelcast.test.TestConfigUtils.NON_DEFAULT_BACKUP_COUNT;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -457,6 +459,25 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         driver.getConfig().addMapConfig(config);
 
         assertConfigurationsEqualOnAllMembers(config);
+    }
+
+    @Test
+    public void testMapConfig_withDifferentOrderOfIndexes() {
+        MapConfig config = new MapConfig(name);
+        IndexConfig idx1 = new IndexConfig(IndexType.SORTED, "foo");
+        idx1.setName("idx1");
+        IndexConfig idx2 = new IndexConfig(IndexType.SORTED, "bar");
+        idx2.setName("idx2");
+        config.setIndexConfigs(List.of(idx1, idx2));
+
+        MapConfig reordered = new MapConfig(name);
+        reordered.setIndexConfigs(List.of(idx2, idx1));
+
+        driver.getConfig().addMapConfig(config);
+        assertThatNoException().isThrownBy(() -> driver.getConfig().addMapConfig(reordered));
+
+        assertConfigurationsEqualOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(reordered);
     }
 
     @Test
