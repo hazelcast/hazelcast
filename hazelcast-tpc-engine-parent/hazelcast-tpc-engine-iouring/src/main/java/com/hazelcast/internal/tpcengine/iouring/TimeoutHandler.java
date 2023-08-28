@@ -40,7 +40,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p/>
  * This class is not thread-safe.
  */
-public final class TimeoutHandler implements CompletionQueue.CompletionHandler {
+public final class TimeoutHandler {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
     private static final long NS_PER_SECOND = SECONDS.toNanos(1);
 
@@ -56,7 +56,7 @@ public final class TimeoutHandler implements CompletionQueue.CompletionHandler {
         this.timeoutBuffer = allocateDirect(SIZEOF_KERNEL_TIMESPEC);
         this.timeoutAddr = addressOf(timeoutBuffer);
 
-        uring.completionQueue().registerTimeoutHandler(this);
+        uring.completionQueue().registerTimeoutHandler(this::complete);
     }
 
     // todo: I'm questioning of this is not going to lead to problems. Can
@@ -79,9 +79,7 @@ public final class TimeoutHandler implements CompletionQueue.CompletionHandler {
         submissionQueue.prepareTimeout(timeoutAddr, userdata);
     }
 
-    @Override
     public void complete(int res, int flags, long userdata) {
         // todo: negative res..
     }
-
 }

@@ -97,7 +97,7 @@ public class UringNopBenchmark {
         }
     }
 
-    private static class NopCompletionHandler implements CompletionQueue.CompletionHandler {
+    private static class NopCompletionHandler implements CompletionQueue.CompletionCallback {
         private final SubmissionQueue sq;
         private final CountDownLatch latch;
         private long iteration = 0;

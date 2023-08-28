@@ -34,7 +34,7 @@ import static java.nio.ByteBuffer.allocateDirect;
  * <p/>
  * This class is not thread-safe.
  */
-public final class EventFdHandler implements AutoCloseable, CompletionQueue.CompletionHandler {
+public final class EventFdHandler implements AutoCloseable {
 
     private final TpcLogger logger;
     private final SubmissionQueue submissionQueue;
@@ -49,7 +49,7 @@ public final class EventFdHandler implements AutoCloseable, CompletionQueue.Comp
         this.readBufBuffer = allocateDirect(SIZEOF_LONG);
         this.readBufAddr = addressOf(readBufBuffer);
 
-        uring.completionQueue().registerEventFdHandler(this);
+        uring.completionQueue().registerEventFdHandler(this::complete);
     }
 
     public EventFd eventFd() {
@@ -71,7 +71,6 @@ public final class EventFdHandler implements AutoCloseable, CompletionQueue.Comp
         closeQuietly(eventFd);
     }
 
-    @Override
     public void complete(int res, int flags, long userdata) {
         if (res >= 0) {
             prepareRead();

@@ -158,7 +158,7 @@ public class NetworkBenchmark_Naked_IOUring {
             }
         }
 
-        private class CompletionHandler implements CompletionQueue.CompletionHandler {
+        private class CompletionHandler implements CompletionQueue.CompletionCallback {
 
             @Override
             public void complete(int res, int flags, long userdata) {
@@ -271,7 +271,7 @@ public class NetworkBenchmark_Naked_IOUring {
             }
         }
 
-        private class CompletionHandler implements CompletionQueue.CompletionHandler {
+        private class CompletionHandler implements CompletionQueue.CompletionCallback {
 
             @Override
             public void complete(int res, int flags, long userdata_id) {

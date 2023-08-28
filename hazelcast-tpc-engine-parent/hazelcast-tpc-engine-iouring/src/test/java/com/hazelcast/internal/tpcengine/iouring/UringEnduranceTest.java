@@ -134,7 +134,7 @@ public class UringEnduranceTest {
         }
     }
 
-    private class NopCompletionHandler implements CompletionQueue.CompletionHandler {
+    private class NopCompletionHandler implements CompletionQueue.CompletionCallback {
         private long completions;
         private long errors;
 

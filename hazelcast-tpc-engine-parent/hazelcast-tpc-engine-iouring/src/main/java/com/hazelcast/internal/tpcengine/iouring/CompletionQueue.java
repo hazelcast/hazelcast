@@ -38,10 +38,10 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  * way the sqe and cqe can be correlated. In C you can pass anything like
  * a 'long int' or a pointer. Unfortunately in Java reference to objects
  * can't be passed as userdata. So what is done is that first a unique
- * handler id is needs to be made and then a {@link CompletionHandler}
+ * handler id is needs to be made and then a {@link CompletionCallback}
  * is registered under this handler id. And when the cqe's are processed, a
  * lookup is done that translates the userdata into a handler and then the
- * {@link CompletionHandler#complete(int, int, long)}.
+ * {@link CompletionCallback#complete(int, int, long)}.
  * A CompletionQueue can only be accessed by the eventloop thread.
  */
 // todo: fix magic number
@@ -73,44 +73,44 @@ public final class CompletionQueue {
     private final TpcLogger logger = TpcLoggerLocator.getLogger(CompletionQueue.class);
     private final Uring uring;
 
-    private final CompletionHandler[] handlers;
-    // an array that shows which positions in the handlers array are
-    // not used.
+    // The generic handlers. Testing purposes only.
+    private final CompletionCallback[] handlers;
+    // an array that shows which positions in the handlers array are not used.
     private final int[] freeHandlers;
     private int freeHandlersIndex;
 
-    private EventFdHandler eventFdHandler;
-    private TimeoutHandler timeoutHandler;
-    private CompletionHandler storageHandler;
-    private CompletionHandler socketHandler;
-    private CompletionHandler serverSocketHandler;
+    private CompletionCallback eventFdHandler;
+    private CompletionCallback timeoutHandler;
+    private CompletionCallback storageHandler;
+    private CompletionCallback socketHandler;
+    private CompletionCallback serverSocketHandler;
 
     CompletionQueue(Uring uring, int handlerCount) {
         this.uring = uring;
-        this.handlers = new CompletionHandler[handlerCount];
+        this.handlers = new CompletionCallback[handlerCount];
         this.freeHandlers = new int[handlerCount];
         for (int k = 0; k < handlerCount; k++) {
             freeHandlers[k] = k;
         }
     }
 
-    public void registerStorageHandler(CompletionHandler storageHandler) {
+    public void registerStorageHandler(CompletionCallback storageHandler) {
         this.storageHandler = checkNotNull(storageHandler, "storageHandler");
     }
 
-    public void registerSocketHandler(CompletionHandler socketHandler) {
+    public void registerSocketHandler(CompletionCallback socketHandler) {
         this.socketHandler = checkNotNull(socketHandler, "socketHandler");
     }
 
-    public void registerServerSocketHandler(CompletionHandler serverSocketHandler) {
+    public void registerServerSocketHandler(CompletionCallback serverSocketHandler) {
         this.serverSocketHandler = checkNotNull(serverSocketHandler, "serverSocketHandler");
     }
 
-    public void registerEventFdHandler(EventFdHandler eventFdHandler) {
+    public void registerEventFdHandler(CompletionCallback eventFdHandler) {
         this.eventFdHandler = checkNotNull(eventFdHandler, "eventFdHandler");
     }
 
-    public void registerTimeoutHandler(TimeoutHandler timeoutHandler) {
+    public void registerTimeoutHandler(CompletionCallback timeoutHandler) {
         this.timeoutHandler = checkNotNull(timeoutHandler, "timeoutHandler");
     }
 
@@ -160,7 +160,7 @@ public final class CompletionQueue {
      * @param handlerId the id to register the CompletionHandler on.
      * @param handler   the CompletionHandler to register.
      */
-    public void register(int handlerId, CompletionHandler handler) {
+    public void register(int handlerId, CompletionCallback handler) {
         handlers[handlerId] = handler;
     }
 
@@ -194,7 +194,7 @@ public final class CompletionQueue {
      * @param completionHandler callback for every completion entry.
      * @return the number of processed cqe's.
      */
-    public int process(CompletionHandler completionHandler) {
+    public int process(CompletionCallback completionHandler) {
         // acquire load.
         int tail = UNSAFE.getIntVolatile(null, tailAddr);
         int readyCnt = tail - head;
@@ -229,7 +229,7 @@ public final class CompletionQueue {
 
     /**
      * Processes all completion queue events (cqe). For every cqe, the
-     * {@link CompletionHandler} is lookup up based on the userdata included in
+     * {@link CompletionCallback} is lookup up based on the userdata included in
      * the cqe and then called. If the handler doesn't exist, the completion is
      * ignored.
      *
@@ -329,7 +329,7 @@ public final class CompletionQueue {
      * Callback interface to consume the completion events from the
      * {@link CompletionQueue}.
      */
-    public interface CompletionHandler {
+    public interface CompletionCallback {
 
         void complete(int res, int flags, long userdata);
     }
