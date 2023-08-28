@@ -92,8 +92,8 @@ public abstract class MongoDataConnectionSslTestBase extends SimpleTestInCluster
                 .withClasspathResourceMapping(getConfigurationFile(), "/etc/mongo/mongod.conf", READ_WRITE)
                 .withExposedPorts(27017)
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER))
-                .withCommand("--config", "/etc/mongo/mongod.conf"))
-        {
+                .withCommand("--config", "/etc/mongo/mongod.conf")
+        ) {
             mongoContainer.start();
             connectionString = "mongodb://" + mongoContainer.getHost() + ":" + mongoContainer.getMappedPort(27017)
                     + "/";
