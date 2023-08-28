@@ -27,6 +27,7 @@ import static com.hazelcast.internal.tpcengine.iouring.Linux.errorcode;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.toManPagesUrl;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
+import static com.hazelcast.internal.tpcengine.util.BitUtil.BITS_IN_BYTE;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
@@ -48,7 +49,6 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MemberName", "checkstyle:MagicNumber"})
 public final class CompletionQueue {
 
-    public static final byte TYPE_GENERIC = 0;
     public static final byte TYPE_SERVER_SOCKET = 1;
     public static final byte TYPE_SOCKET = 2;
     public static final byte TYPE_FILE = 3;
@@ -73,25 +73,14 @@ public final class CompletionQueue {
     private final TpcLogger logger = TpcLoggerLocator.getLogger(CompletionQueue.class);
     private final Uring uring;
 
-    // The generic handlers. Testing purposes only.
-    private final CompletionCallback[] handlers;
-    // an array that shows which positions in the handlers array are not used.
-    private final int[] freeHandlers;
-    private int freeHandlersIndex;
-
     private CompletionCallback eventFdHandler;
     private CompletionCallback timeoutHandler;
     private CompletionCallback storageHandler;
     private CompletionCallback socketHandler;
     private CompletionCallback serverSocketHandler;
 
-    CompletionQueue(Uring uring, int handlerCount) {
+    CompletionQueue(Uring uring) {
         this.uring = uring;
-        this.handlers = new CompletionCallback[handlerCount];
-        this.freeHandlers = new int[handlerCount];
-        for (int k = 0; k < handlerCount; k++) {
-            freeHandlers[k] = k;
-        }
     }
 
     public void registerStorageHandler(CompletionCallback storageHandler) {
@@ -125,13 +114,13 @@ public final class CompletionQueue {
 
     // todo: fix magic numbers
     public static long encodeUserdata(byte type, byte opcode, int index) {
-        return ((long) type << (5 * 8))
-                + (((long) opcode) << (4 * 8))
+        return ((long) type << (5 * BITS_IN_BYTE))
+                + (((long) opcode) << (4 * BITS_IN_BYTE))
                 + index;
     }
 
     public static byte decodeOpcode(long userdata) {
-        return (byte) ((userdata >> (4 * 8)) & 0xff);
+        return (byte) ((userdata >> (4 * BITS_IN_BYTE)) & 0xff);
     }
 
     public static int decodeIndex(long userdata) {
@@ -139,40 +128,7 @@ public final class CompletionQueue {
     }
 
     public static byte decodeType(long userdata) {
-        return (byte) ((userdata >> (5 * 8)) & 0xff);
-    }
-
-    /**
-     * Gets the next handler id. The handler id is typically used as user_data so that the
-     * appropriate handler can be found based on the user_data in the cqe.
-     *
-     * @return the next handler id.
-     */
-    public int nextHandlerId() {
-        int handlerId = freeHandlers[freeHandlersIndex];
-        freeHandlersIndex++;
-        return handlerId;
-    }
-
-    /**
-     * Registers a generic CompletionHandler with the given handlerId.
-     *
-     * @param handlerId the id to register the CompletionHandler on.
-     * @param handler   the CompletionHandler to register.
-     */
-    public void register(int handlerId, CompletionCallback handler) {
-        handlers[handlerId] = handler;
-    }
-
-    /**
-     * Unregisters the generic CompletionHandler with the given handlerId.
-     *
-     * @param handlerId the id of the CompletionHandler to remove.
-     */
-    public void unregister(int handlerId) {
-        handlers[handlerId] = null;
-        freeHandlersIndex--;
-        freeHandlers[freeHandlersIndex] = handlerId;
+        return (byte) ((userdata >> (5 * BITS_IN_BYTE)) & 0xff);
     }
 
     /**
@@ -186,15 +142,15 @@ public final class CompletionQueue {
 
     /**
      * Processes all completion queue events (cqe). For every cqe, the
-     * completionHandler is called.
+     * completionCallback is called.
      * <p/>
      * The primary purpose this method exists is for benchmarking purposes
      * to exclude the overhead of the handler lookup.
      *
-     * @param completionHandler callback for every completion entry.
+     * @param completionCallback callback for every completion entry.
      * @return the number of processed cqe's.
      */
-    public int process(CompletionCallback completionHandler) {
+    public int process(CompletionCallback completionCallback) {
         // acquire load.
         int tail = UNSAFE.getIntVolatile(null, tailAddr);
         int readyCnt = tail - head;
@@ -210,9 +166,9 @@ public final class CompletionQueue {
             int flags = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_FLAGS);
 
             try {
-                completionHandler.complete(res, flags, userdata);
+                completionCallback.complete(res, flags, userdata);
             } catch (Exception e) {
-                logger.severe("Failed to process " + completionHandler + " res:" + res + " flags:"
+                logger.severe("Failed to process " + completionCallback + " res:" + res + " flags:"
                         + flags + " userdata:" + userdata, e);
             }
 
@@ -257,10 +213,6 @@ public final class CompletionQueue {
 
             try {
                 switch (type) {
-                    case TYPE_GENERIC:
-                        int index = decodeIndex(userdata);
-                        handlers[index].complete(res, flags, userdata);
-                        break;
                     case TYPE_STORAGE:
                         storageHandler.complete(res, flags, userdata);
                         break;

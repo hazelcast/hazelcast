@@ -88,7 +88,7 @@ public class NetworkBenchmark_Naked_IOUring {
         private ByteBuffer sendBuffer;
         private long sendBufferAddress;
         final LinuxSocket socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
-        final CompletionHandler handler = new CompletionHandler();
+        final CompletionCallbackImpl callback = new CompletionCallbackImpl();
         private Uring uring;
         private SubmissionQueue sq;
         private CompletionQueue cq;
@@ -148,17 +148,17 @@ public class NetworkBenchmark_Naked_IOUring {
 
                 final SubmissionQueue sq = this.sq;
                 final CompletionQueue cq = this.cq;
-                final CompletionHandler handler = this.handler;
+                final CompletionCallbackImpl callback = this.callback;
                 for (; ; ) {
                     sq.submitAndWait();
-                    cq.process(handler);
+                    cq.process(callback);
                 }
             } catch (Throwable t) {
                 t.printStackTrace();
             }
         }
 
-        private class CompletionHandler implements CompletionQueue.CompletionCallback {
+        private class CompletionCallbackImpl implements CompletionQueue.CompletionCallback {
 
             @Override
             public void complete(int res, int flags, long userdata) {
@@ -259,19 +259,19 @@ public class NetworkBenchmark_Naked_IOUring {
                         acceptHandler.id
                 );
 
-                CompletionHandler handler = new CompletionHandler();
+                CompletionCallback callback = new CompletionCallback();
                 SubmissionQueue sq = this.sq;
                 CompletionQueue cq = this.cq;
                 for (; ; ) {
                     sq.submitAndWait();
-                    cq.process(handler);
+                    cq.process(callback);
                 }
             } catch (Throwable t) {
                 t.printStackTrace();
             }
         }
 
-        private class CompletionHandler implements CompletionQueue.CompletionCallback {
+        private class CompletionCallback implements CompletionQueue.CompletionCallback {
 
             @Override
             public void complete(int res, int flags, long userdata_id) {
@@ -315,7 +315,6 @@ public class NetworkBenchmark_Naked_IOUring {
                         writeHandler.bufferAddress = addressOf(writeHandler.buffer);
                         writeHandler.socket = clientSocket;
                         handlers[writeHandler.id] = writeHandler;
-
 
                         sq.prepare(
                                 IORING_OP_RECV,                         // op

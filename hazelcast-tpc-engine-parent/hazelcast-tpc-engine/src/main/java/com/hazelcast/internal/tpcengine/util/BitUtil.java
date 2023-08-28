@@ -18,6 +18,8 @@ package com.hazelcast.internal.tpcengine.util;
 
 @SuppressWarnings("checkstyle:MagicNumber")
 public final class BitUtil {
+
+    public static final int BITS_IN_BYTE = 8;
     public static final int SIZEOF_BYTE = Byte.BYTES;
     public static final int SIZEOF_CHAR = Character.BYTES;
     public static final int SIZEOF_INT = Integer.BYTES;

@@ -52,7 +52,7 @@ public class UringEnduranceTest {
     private Uring uring;
     private SubmissionQueue sq;
     private CompletionQueue cq;
-    private NopCompletionHandler completionHandler;
+    private NopCompletionCallback completionHandler;
     private MonitorThread monitorThread;
 
     @Before
@@ -60,7 +60,7 @@ public class UringEnduranceTest {
         uring = new Uring(nextPowerOfTwo(concurrency), 0);
         sq = uring.submissionQueue();
         cq = uring.completionQueue();
-        completionHandler = new NopCompletionHandler();
+        completionHandler = new NopCompletionCallback();
         monitorThread = new MonitorThread();
         monitorThread.start();
     }
@@ -82,20 +82,17 @@ public class UringEnduranceTest {
             fail("operations is not a multiple of the concurrency");
         }
 
-        int handlerId = cq.nextHandlerId();
-        cq.register(handlerId, completionHandler);
-
         for (long round = 0; round < rounds; round++) {
             // offer the requests.
             for (int l = 0; l < concurrency; l++) {
-                sq.prepare(Uring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, handlerId);
+                sq.prepare(Uring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, 0);
             }
 
             // submit them to the uring; uring will immediately complete them
             sq.submit();
 
             // process the completion events.
-            int cnt = cq.process();
+            int cnt = cq.process(completionHandler);
             // make sure that all the submitted nops were received.
             assertEquals(concurrency, cnt);
 
@@ -134,7 +131,7 @@ public class UringEnduranceTest {
         }
     }
 
-    private class NopCompletionHandler implements CompletionQueue.CompletionCallback {
+    private class NopCompletionCallback implements CompletionQueue.CompletionCallback {
         private long completions;
         private long errors;
 

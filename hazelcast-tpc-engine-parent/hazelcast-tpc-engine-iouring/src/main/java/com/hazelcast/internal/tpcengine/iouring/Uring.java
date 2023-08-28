@@ -217,7 +217,7 @@ public final class Uring implements AutoCloseable {
         this.entries = entries;
         init(entries, flags);
         submissionQueue = new SubmissionQueue(this);
-        completionQueue = new CompletionQueue(this, entries);
+        completionQueue = new CompletionQueue(this);
         submissionQueue.init(ringAddr);
         completionQueue.init(ringAddr);
     }

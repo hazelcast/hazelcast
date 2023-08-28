@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.FormatUtil;
+import com.hazelcast.internal.tpcengine.iouring.CompletionQueue.CompletionCallback;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -73,7 +74,7 @@ public class UringNopBenchmark {
                 final Uring uring = new Uring(4096, 0);
                 final SubmissionQueue sq = uring.submissionQueue();
                 final CompletionQueue cq = uring.completionQueue();
-                final NopCompletionHandler handler = new NopCompletionHandler(sq, latch);
+                final NopCompletionCallback handler = new NopCompletionCallback(sq, latch);
                 final boolean spin = UringNopBenchmark.this.spin;
 
                 for (int k = 0; k < concurrency; k++) {
@@ -97,12 +98,12 @@ public class UringNopBenchmark {
         }
     }
 
-    private static class NopCompletionHandler implements CompletionQueue.CompletionCallback {
+    private static class NopCompletionCallback implements CompletionCallback {
         private final SubmissionQueue sq;
         private final CountDownLatch latch;
         private long iteration = 0;
 
-        public NopCompletionHandler(SubmissionQueue sq, CountDownLatch latch) {
+        public NopCompletionCallback(SubmissionQueue sq, CountDownLatch latch) {
             this.sq = sq;
             this.latch = latch;
         }
