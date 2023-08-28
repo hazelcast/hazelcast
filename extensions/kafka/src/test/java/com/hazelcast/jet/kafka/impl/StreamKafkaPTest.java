@@ -324,7 +324,6 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             Properties kafkaProperties
     ) {
         String sinkListName = randomName();
-        // Send messages synchronously
         for (int i = 0; i < messageCount; i++) {
                 kafkaTestSupport.produceSync(topic1Name, i, String.valueOf(i));
         }
@@ -337,12 +336,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         long oldExecutionId = assertJobRunningEventually(instance(), job, null);
         assertTrueEventually(() -> assertEquals(expectedCountBeforeRestart, instance().getList(sinkListName).size()));
 
-        // This will create a new KafkaConsumer, and consumer will resume
-        // according to value of "auto.offset.reset" configuration
-        // In this test, the value is set to "earliest", so it will start from the beginning
         job.restart();
 
-        // Send twice as many messages synchronously
         for (int i = messageCount; i < messageCount * 2; i++) {
             kafkaTestSupport.produceSync(topic1Name, i, String.valueOf(i));
         }
