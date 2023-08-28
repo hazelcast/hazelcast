@@ -325,4 +325,12 @@ public final class CompletionQueue {
         ringMask = 0;
     }
 
+    /**
+     * Callback interface to consume the completion events from the
+     * {@link CompletionQueue}.
+     */
+    public interface CompletionHandler {
+
+        void complete(int res, int flags, long userdata);
+    }
 }

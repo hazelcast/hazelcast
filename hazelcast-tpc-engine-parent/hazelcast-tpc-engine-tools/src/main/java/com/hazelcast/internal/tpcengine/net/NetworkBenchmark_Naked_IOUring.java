@@ -158,7 +158,7 @@ public class NetworkBenchmark_Naked_IOUring {
             }
         }
 
-        private class CompletionHandler implements com.hazelcast.internal.tpcengine.iouring.CompletionHandler {
+        private class CompletionHandler implements CompletionQueue.CompletionHandler {
 
             @Override
             public void complete(int res, int flags, long userdata) {
@@ -271,7 +271,7 @@ public class NetworkBenchmark_Naked_IOUring {
             }
         }
 
-        private class CompletionHandler implements com.hazelcast.internal.tpcengine.iouring.CompletionHandler {
+        private class CompletionHandler implements CompletionQueue.CompletionHandler {
 
             @Override
             public void complete(int res, int flags, long userdata_id) {

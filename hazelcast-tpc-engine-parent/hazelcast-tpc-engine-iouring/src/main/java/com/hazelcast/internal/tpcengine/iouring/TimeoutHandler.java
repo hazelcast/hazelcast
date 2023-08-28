@@ -40,7 +40,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p/>
  * This class is not thread-safe.
  */
-public final class TimeoutHandler implements CompletionHandler {
+public final class TimeoutHandler implements CompletionQueue.CompletionHandler {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
     private static final long NS_PER_SECOND = SECONDS.toNanos(1);
 

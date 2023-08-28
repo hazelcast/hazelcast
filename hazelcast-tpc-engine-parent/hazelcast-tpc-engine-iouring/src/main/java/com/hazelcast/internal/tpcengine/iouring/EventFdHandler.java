@@ -34,7 +34,7 @@ import static java.nio.ByteBuffer.allocateDirect;
  * <p/>
  * This class is not thread-safe.
  */
-public final class EventFdHandler implements AutoCloseable, CompletionHandler {
+public final class EventFdHandler implements AutoCloseable, CompletionQueue.CompletionHandler {
 
     private final TpcLogger logger;
     private final SubmissionQueue submissionQueue;
