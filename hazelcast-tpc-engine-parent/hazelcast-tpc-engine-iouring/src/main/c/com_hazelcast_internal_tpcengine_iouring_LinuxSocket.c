@@ -34,7 +34,7 @@
 #include "include/com_hazelcast_internal_tpcengine_iouring_LinuxSocket.h"
 
 
-static jclass class_SocketAddressFactory;
+static jclass class_SocketAddressUtil;
 static jmethodID method_createIPv4Address;
 
 
@@ -53,7 +53,7 @@ static jobject create_java_socket_address(JNIEnv* env, struct sockaddr_storage* 
         struct sockaddr_in* sin = (struct sockaddr_in*)addr;
         int ip = ntohl(sin->sin_addr.s_addr);
         int port = ntohs(sin->sin_port);
-        return (*env)->CallStaticObjectMethod(env, class_SocketAddressFactory, method_createIPv4Address, ip, port);
+        return (*env)->CallStaticObjectMethod(env, class_SocketAddressUtil, method_createIPv4Address, ip, port);
     }
 
     throw_io_exception(env, "Unknown type of socket address", errno);
@@ -71,10 +71,10 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_toInetSocketAddress(JN
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_initNative(JNIEnv* env, jclass this_class) {
-    class_SocketAddressFactory = (*env)->NewGlobalRef(env, (*env)->FindClass(
-        env, "com/hazelcast/internal/tpcengine/iouring/SocketAddressFactory"));
+    class_SocketAddressUtil = (*env)->NewGlobalRef(env, (*env)->FindClass(
+        env, "com/hazelcast/internal/tpcengine/iouring/SocketAddressUtil"));
     method_createIPv4Address = (*env)->GetStaticMethodID(
-        env, class_SocketAddressFactory, "createIPv4Address", "(II)Ljava/net/InetSocketAddress;");
+        env, class_SocketAddressUtil, "createIPv4Address", "(II)Ljava/net/InetSocketAddress;");
 }
 
 JNIEXPORT jint JNICALL

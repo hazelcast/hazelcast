@@ -39,6 +39,7 @@ import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_SOCK
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.encodeUserdata;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.EAGAIN;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNREFUSED;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNRESET;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IOV_MAX;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_SOCKADDR_STORAGE;
@@ -142,69 +143,24 @@ public final class UringAsyncSocket extends AsyncSocket {
 
     @Override
     public CompletableFuture<Void> connect(SocketAddress address) {
+        checkNotNull(address, "address");
+
         if (logger.isFineEnabled()) {
             logger.fine("Connect to address:" + address);
         }
 
-        // todo: this needs to become on blocking. Make use of the IORING_OP_CONNECT
         CompletableFuture<Void> future = new CompletableFuture<>();
-        try {
 
-            boolean oldBlocking = linuxSocket.isBlocking();
-            if (!oldBlocking) {
-                linuxSocket.setBlocking(true);
+        // todo: return value
+        reactor.offer(new Runnable() {
+            @Override
+            public void run() {
+                handler.prepareConnect(future, address);
             }
-
-            boolean connect = linuxSocket.connect(address);
-            if (!oldBlocking) {
-                linuxSocket.setBlocking(false);
-            }
-
-            if (connect) {
-                this.remoteAddress = linuxSocket.getRemoteAddress();
-                this.localAddress = linuxSocket.getLocalAddress();
-
-                if (logger.isInfoEnabled()) {
-                    logger.info("Connected from " + localAddress + "->" + remoteAddress);
-                }
-
-                reactor.offer(new Runnable() {
-                    @Override
-                    public void run() {
-                        handler.prepareRead();
-                    }
-                });
-
-                future.complete(null);
-            } else {
-                future.completeExceptionally(new IOException("Could not connect to " + address));
-            }
-        } catch (Exception e) {
-            logger.warning(e);
-            future.completeExceptionally(e);
-        }
+        });
 
         return future;
     }
-//
-//    @Override
-//    public CompletableFuture<Void> connect(SocketAddress address) {
-//        if (logger.isFineEnabled()) {
-//            logger.fine("Connect to address:" + address);
-//        }
-//
-//        CompletableFuture<Void> future = new CompletableFuture<>();
-//
-//        // todo: return value
-//        reactor.offer(new Runnable() {
-//            @Override
-//            public void run() {
-//                handler.prepareConnect(future, address);
-//            }
-//        });
-//
-//        return future;
-//    }
 
     @SuppressWarnings({"checkstyle:MemberName", "checkstyle:ExecutableStatementCount"})
     static final class Handler {
@@ -274,14 +230,11 @@ public final class UringAsyncSocket extends AsyncSocket {
 
             this.connectFuture = future;
             try {
-                System.out.println(socket + " issuing " + opcodeToString(IORING_OP_CONNECT) + " on socket: " + linuxSocket.fd());
-
                 addressBuffer = ByteBuffer.allocateDirect(SIZEOF_SOCKADDR_STORAGE);
                 addressBuffer.order(ByteOrder.nativeOrder());
                 addressPtr = addressOf(addressBuffer);
-                UNSAFE.setMemory(addressPtr, SIZEOF_SOCKADDR_STORAGE, (byte) 0);
 
-                SocketAddressFactory.memSet((InetSocketAddress) address, addressPtr);
+                SocketAddressUtil.memsetSocketAddrIn((InetSocketAddress) address, addressPtr);
 
                 long userdata = encodeUserdata(TYPE_SOCKET, IORING_OP_CONNECT, handlerIndex);
                 submissionQueue.prepareConnect(linuxSocket.fd(), addressPtr, SIZEOF_SOCKADDR_STORAGE, userdata);
@@ -302,9 +255,13 @@ public final class UringAsyncSocket extends AsyncSocket {
 
                 prepareRead();
                 connectFuture.complete(null);
+            } else if (res == -ECONNREFUSED) {
+                connectFuture.completeExceptionally(new IOException("Connection refused."));
             } else {
-                throw newCQEFailedException(
+                UncheckedIOException e = newCQEFailedException(
                         "Failed to connect.", "connect(2)", IORING_OP_CONNECT, -res);
+                connectFuture.completeExceptionally(e);
+                throw e;
             }
         }
 

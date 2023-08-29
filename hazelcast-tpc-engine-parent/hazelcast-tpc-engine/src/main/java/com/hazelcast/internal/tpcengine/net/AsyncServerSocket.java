@@ -95,11 +95,6 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
         return localAddress;
     }
 
-    @Override
-    protected void close0() throws IOException {
-        reactor.serverSockets().remove(this);
-    }
-
     /**
      * Gets the local port of the {@link AsyncServerSocket}.
      * <p/>
@@ -113,6 +108,10 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
         return localPort;
     }
 
+    @Override
+    protected void close0() throws IOException {
+        reactor.serverSockets().remove(this);
+    }
 
     /**
      * Gets the {@link Reactor} this ServerSocket belongs to.

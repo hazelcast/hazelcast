@@ -414,21 +414,21 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         // remoteAddress = null;
     }
 //
-//    @Override
-//    public final String toString() {
-//        return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
-//    }
+    @Override
+    public final String toString() {
+        return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+    }
 
     //     Do not remove this code. This exists for debugging purposes so it is easy to
 //     distinguish the client from the server side communication.
-    @Override
-    public final String toString() {
-        if (clientSide) {
-            return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
-        } else {
-            return "            " + getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
-        }
-    }
+//    @Override
+//    public final String toString() {
+//        if (clientSide) {
+//            return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+//        } else {
+//            return "            " + getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+//        }
+//    }
 
     /**
      * Contains the metrics for an {@link AsyncSocket}.
