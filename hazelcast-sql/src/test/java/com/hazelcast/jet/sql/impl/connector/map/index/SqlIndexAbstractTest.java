@@ -37,6 +37,8 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.assertj.core.api.Assertions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -76,6 +78,7 @@ import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicate
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.or;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -104,6 +107,8 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     private Class<? extends ExpressionBiValue> valueClass;
     private int runIdGen;
 
+    private List<Throwable> testErrors = new ArrayList<>();
+
     @BeforeClass
     public static void beforeClass() {
         initialize(DEFAULT_MEMBERS_COUNT, null);
@@ -119,6 +124,13 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         instance().getConfig().addMapConfig(mapConfig);
         map = instance().getMap(mapName);
         fill();
+    }
+
+    @After
+    public void after() {
+        // set deeper stack trace to see line where the query was invoked
+        Assertions.setMaxStackTraceElementsDisplayed(10);
+        assertThat(testErrors).as("Queries should produce expected results").isEmpty();
     }
 
     @Test
@@ -557,24 +569,29 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             boolean expectedUseIndex,
             Predicate<ExpressionValue> expectedKeysPredicate
     ) {
-        int runId = runIdGen++;
-        checkPlan(expectedUseIndex, sql);
+        try {
+            int runId = runIdGen++;
+            checkPlan(expectedUseIndex, sql);
 
-        // SQL might return duplicates, expectedMapKeys never contains duplicates
-        Multiset<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
-        Set<Integer> expectedMapKeys = expectedMapKeys(expectedKeysPredicate);
+            // SQL might return duplicates, expectedMapKeys never contains duplicates
+            Multiset<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
+            Set<Integer> expectedMapKeys = expectedMapKeys(expectedKeysPredicate);
 
-        if (!sqlKeys.equals(HashMultiset.create(expectedMapKeys))) {
-            failOnDifference(
-                    runId,
-                    sql,
-                    params,
-                    sqlKeys,
-                    expectedMapKeys,
-                    "actual SQL keys differ from expected map keys",
-                    "actual SQL keys",
-                    "expected map keys"
-            );
+            if (!sqlKeys.equals(HashMultiset.create(expectedMapKeys))) {
+                failOnDifference(
+                        runId,
+                        sql,
+                        params,
+                        sqlKeys,
+                        expectedMapKeys,
+                        "actual SQL keys differ from expected map keys",
+                        "actual SQL keys",
+                        "expected map keys"
+                );
+            }
+        } catch (Throwable e) {
+            logger.severe("Test failed for query " + sql, e);
+            testErrors.add(e);
         }
     }
 
