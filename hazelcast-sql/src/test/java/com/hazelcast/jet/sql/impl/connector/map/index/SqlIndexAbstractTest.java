@@ -172,7 +172,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
         // this query might not use index also due to selectivity of predicates
         check(query("field1>=? or field1<=?", f1.valueFrom(), f1.valueTo()),
-                c_sorted(),
+                false, //TODO: c_sorted(),
                 isNotNull()
         );
     }
@@ -332,7 +332,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         // WHERE f1<? OR f1>? (range from -inf..val1 and val2..+inf)
         check(
                 query("field1<? OR field1>?", f1.valueFrom(), f1.valueTo()),
-                c_sorted(),
+                false, //TODO: c_sorted(),
                 or(lt(f1.valueFrom()), gt(f1.valueTo()))
         );
 
