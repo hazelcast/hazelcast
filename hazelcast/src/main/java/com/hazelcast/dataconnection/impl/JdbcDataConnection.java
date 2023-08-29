@@ -119,9 +119,13 @@ public class JdbcDataConnection extends DataConnectionBase {
     @Nonnull
     @Override
     public List<DataConnectionResource> listResources() {
+        // Get the tables for the current catalog and schema
         try (Connection connection = getConnection();
              ResultSet tables = connection.getMetaData()
-                     .getTables(null, null, "%", null)) {
+                     .getTables(connection.getCatalog(),
+                             connection.getSchema(),
+                             null,
+                             new String[]{"TABLE"})) {
             List<DataConnectionResource> result = new ArrayList<>();
             while (tables.next()) {
                 // Format DataConnectionResource name as catalog + schema+ + table_name
