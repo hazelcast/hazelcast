@@ -1,0 +1,195 @@
+= Deny permissions
+:lang: en
+:toc:
+
+== Background
+=== Description
+
+This document introduces the possibility of using the subtraction of client permissions as an extension to the existing additive-only model.
+
+The current model has a limited expression ability and can lead to "fail open" cases due to granted unintended permissions.
+
+Here are a few examples of problematic scenarios of the additive-only approach:
+
+* give a client access to all Maps, but not the protected one;
+* provide a client with all permissions, but not the management ones;
+* give a client's Jet job to access all external databases but not the ones on a specific host.
+
+Permission configurations will be extended by a flag saying if the permission is granted (default) or denied.
+
+Similar architecture limitations are present in the default Java Security Manager implementation (using the `PolicyFile` class).
+
+The permission additive-only approach is also listed as a medium-severity issue in the Kubernetes security review published in 2023.
+
+=== Terminology
+
+[options="header"]
+|=====================================================================================================
+| Term               | Definition
+| Role               | Hazelcast Clients are assigned roles during the authentication. Roles group together sets of permissions that are relevant to those roles.
+| Permission         | Protects access to specific resources. A permission could be something like "everyone can access the Map ABC", "role XYZ can deploy and run jobs", "Role XYZ can run SQL queries".
+| Grant (Permission) | Default permission type. It allows (adds) access to the protected resource.
+| Deny (Permission)  | Access to resource/action described by the permission is forbidden  (subtracted) instead of granted.
+| Priority           | Defines which kind of permissions takes precedence - Grant or Deny.
+|=====================================================================================================
+
+=== Actors and Scenarios
+
+As a _Cluster Administrator_, I want to allow clients _access to all data structures but the Hazelcast internal ones_.
+
+As a _Cluster Administrator_, I want to allow Management Center to fully manage the members, but I don't
+want to _prevent it from reading files on the member's local filesystem_.
+
+[[functional-design]]
+== Functional Design
+
+=== Summary of Functionality
+
+* allow specifying the Deny permissions in client permission configuration;
+* add permission priority to security configuration;
+* extend the `DefaultPermissionPolicy` to support the Deny permissions and the permission priority.
+
+==== Permission evaluation
+
+Let's first review the original behavior without the Deny permissions.
+The business logic is present in the `DefaultPermissionPolicy` class provided
+as our default (out-of-the-box) implementation of `PermissionPolicy` interface.
+And here are the evaluation rules:
+
+[options="header"]
+|=====================================================================================================
+| Is the checked permission implied?   | Evaluation result
+| No Grant implies the permission. | denied
+| A Grant implies the permission. | granted
+|=====================================================================================================
+
+The rules change after allowing the permission subtraction
+(by Deny permissions) and also specifying global priority
+between Grant and Deny permissions. 
+The following table lists new permission evaluation rules for the `DefaultPermissionPolicy`:
+
+[options="header"]
+|=====================================================================================================
+| What implies the checked permission?   | Priority=deny (default) | Priority=grant
+| Neither a Grant nor a Deny implies it. | denied | granted
+| A Grant implies, but no Deny does. | granted | granted
+| A Deny implies, but no Grant does. | denied | denied
+| Both, a Deny and a Grant imply. | denied | granted
+|=====================================================================================================
+
+==== Notes/Questions/Issues
+
+The `DefaultPermissionPolicy` will behave in a backward-compatible way.
+If users don't configure Deny permissions or priority for Grants, then
+there will be no difference in Hazelcast permission evaluation.
+
+An alternative approach would be to introduce the `deny` permission support
+in a new `PermissionPolicy` implementation besides the `DefaultPermissionPolicy`.
+It would have the following consequences:
+
+* `DefaultPermissionPolicy` stays unchanged and it's not able to process (or recognize) the Deny permissions;
+* We have to maintain two implementations and only one of them supports Deny permissions;
+* There has to be an additional logic deciding which policy should be used by default. Or we would need to transfer the decision to users (which goes against simplicity).
+
+Following the simplicity rule, changing the `DefaultPermissionPolicy` to support Deny permissions (in backward-compatible way) seems as the best solution.
+
+== User Interaction
+
+=== API design and/or Prototypes
+
+Two new configuration attributes items will be added:
+
+* _deny_ permission flag
+* _permission priority_ flag
+
+==== Deny flag
+
+The deny flag is configured on a permission level.
+It's represented by a new `deny` attribute in `PermissionConfig` class.
+
+[source,java]
+----
+/**
+ * Returns {@code true} when the permission should be subtracted (denied) instead of added (granted).
+ */
+public boolean isDeny();
+
+/**
+ * Configures if this permission config is for a grant ({@code false}, default) permission or deny ({@code true})
+ * @param deny value to set
+ */
+public PermissionConfig setDeny(boolean deny);
+----
+
+==== Permission Priority flag
+
+The permission priority flag is configured on a security configuration level by attribute named `permissionPriorityGrant` in the `SecurityConfig`.
+
+[source,java]
+----
+/**
+ * Returns {@code true} when grant permissions should take precedence over deny ones. Default value is {@code false}.
+ */
+public boolean isPermissionPriorityGrant();
+
+/**
+ * Sets if grant permissions should take precedence over deny ones.
+ */
+public SecurityConfig setPermissionPriorityGrant(boolean permissionPriorityGrant);
+----
+
+When stored in XML or YAML the value is listed as a child of the `client-permissions` node.
+
+=== Configuration example
+
+[source,yaml]
+----
+hazelcast:
+  security:
+    enabled: true
+    client-permissions:
+      priority-grant: false
+      map:
+        - name: *
+          actions:
+            - all
+      map:
+        - name: protected
+          deny: true
+          actions:
+            - all
+----
+
+[source,xml]
+----
+<hazelcast>
+    <security enabled="false">
+        <client-permissions priority-grant="false">
+            <map-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </map-permission>
+            <map-permission name="protected" deny="true">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </map-permission>
+        </client-permission>
+    </security>
+</hazelcast>
+----
+
+== Technical Design
+
+The necessary changes are already described in the <<functional-design>> section.
+
+== Testing Criteria
+
+* Existing security permission tests remain unchanged to check the backward compatibility of the new implementation;
+* New tests for Deny permissions and permission priority will be added;
+
+== Other Artifacts
+
+* https://pro-grade.sourceforge.net/pro-grade.html[ProGrade Security Policy] and research in the related https://is.muni.cz/th/324879/fi_m/[Master thesis] solve the same problem on Java Security Manager Level
+* The *Additive Access Controls* issues are described in the https://github.com/kubernetes/sig-security/blob/main/sig-security-external-audit/security-audit-2021-2022/findings/Kubernetes%20v1.24%20Final%20Report.pdf[Kubernetes 1.24 Security Audit] (https://www.cncf.io/blog/2023/04/19/new-kubernetes-security-audit-complete-and-open-sourced/[open-sourced in April 2023])

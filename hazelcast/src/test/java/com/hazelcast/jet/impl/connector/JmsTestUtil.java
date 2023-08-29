@@ -26,7 +26,7 @@ import jakarta.jms.TextMessage;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static java.util.Collections.synchronizedList;
 import static jakarta.jms.Session.AUTO_ACKNOWLEDGE;
