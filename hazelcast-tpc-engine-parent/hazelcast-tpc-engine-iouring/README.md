@@ -1,12 +1,14 @@
-# Runtime requirements
+# OS requirements
 
 The hazelcast-tpc-engine-iouring can only be build and run on Linux and
 requires a kernel version of 5.7 or higher.
 
-For running the hazelcast-tpc-engine-iouring, you also need to have liburing
+# Libraries
+
+When using hazelcast-tpc-engine-iouring, you also need to have liburing
 installed.
 
-Ubuntu:
+For Ubuntu, Debian:
 
 ```
 sudo apt-get install liburing
