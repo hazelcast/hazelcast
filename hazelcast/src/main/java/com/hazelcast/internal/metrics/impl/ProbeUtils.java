@@ -35,21 +35,25 @@ import java.util.concurrent.atomic.LongAdder;
  * Utility functions for probes.
  */
 enum ProbeUtils {
-    TYPE_PRIMITIVE_LONG(byte.class, short.class, int.class, long.class),
-    TYPE_LONG_NUMBER(Byte.class, Integer.class, Short.class, Long.class, AtomicInteger.class, AtomicLong.class, LongAdder.class,
-            LongAccumulator.class),
-    TYPE_DOUBLE_PRIMITIVE(double.class, float.class),
-    TYPE_DOUBLE_NUMBER(Double.class, Float.class),
-    TYPE_COLLECTION(Collection.class),
-    TYPE_MAP(Map.class),
-    TYPE_COUNTER(Counter.class),
-    TYPE_SEMAPHORE(Semaphore.class);
+    TYPE_LONG_PRIMITIVE(long.class, true, byte.class, short.class, int.class, long.class),
+    TYPE_LONG_NUMBER(long.class, false, Byte.class, Integer.class, Short.class, Long.class, AtomicInteger.class,
+            AtomicLong.class, LongAdder.class, LongAccumulator.class),
+    TYPE_DOUBLE_PRIMITIVE(double.class, true, double.class, float.class),
+    TYPE_DOUBLE_NUMBER(double.class, false, Double.class, Float.class),
+    TYPE_COLLECTION(long.class, false, Collection.class),
+    TYPE_MAP(long.class, false, Map.class),
+    TYPE_COUNTER(long.class, false, Counter.class),
+    TYPE_SEMAPHORE(long.class, false, Semaphore.class);
 
     private static final Map<Class<?>, ProbeUtils> TYPES;
 
-    private Class<?>[] types;
+    private final Class<?> mapsTo;
+    private final boolean primitive;
+    private final Class<?>[] types;
 
-    ProbeUtils(final Class<?>... types) {
+    ProbeUtils(final Class<?> mapsTo, final boolean primitive, final Class<?>... types) {
+        this.mapsTo = mapsTo;
+        this.primitive = primitive;
         this.types = types;
     }
 
@@ -65,11 +69,12 @@ enum ProbeUtils {
         TYPES = unmodifiableMap(types);
     }
 
-    ProbeUtils() {
+    Class<?> getMapsTo() {
+        return mapsTo;
     }
 
-    static boolean isDouble(final ProbeUtils type) {
-        return (type == TYPE_DOUBLE_PRIMITIVE) || (type == TYPE_DOUBLE_NUMBER);
+    boolean isPrimitive() {
+        return primitive;
     }
 
     /**

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.metrics.impl;
 
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.isDouble;
 import static java.lang.String.format;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
@@ -30,6 +29,7 @@ import com.hazelcast.internal.util.counters.Counter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
@@ -42,7 +42,7 @@ import java.util.concurrent.Semaphore;
 abstract class MethodProbe implements ProbeFunction {
     private static final Lookup LOOKUP = MethodHandles.lookup();
 
-    final MethodHandle method;
+    MethodHandle method;
     final boolean isMethodStatic;
     final CachedProbe probe;
     final ProbeUtils type;
@@ -53,7 +53,20 @@ abstract class MethodProbe implements ProbeFunction {
         try {
             method.setAccessible(true);
             this.method = LOOKUP.unreflect(method);
+
             isMethodStatic = Modifier.isStatic(method.getModifiers());
+
+            // Support invokeExact
+            if (type.isPrimitive()) {
+                MethodType methodType = this.method.type().changeReturnType(type.getMapsTo());
+
+                if (!isMethodStatic) {
+                    methodType = methodType.changeParameterType(0, Object.class);
+                }
+
+                this.method = this.method.asType(methodType);
+            }
+
             this.probe = new CachedProbe(probe);
             this.type = type;
             this.sourceMetadata = sourceMetadata;
@@ -91,10 +104,12 @@ abstract class MethodProbe implements ProbeFunction {
                     method.getDeclaringClass().getName(), method.getName()));
         }
 
-        if (isDouble(type)) {
+        if (type.getMapsTo() == double.class) {
             return new DoubleMethodProbe<S>(method, probe, type, sourceMetadata);
-        } else {
+        } else if (type.getMapsTo() == long.class) {
             return new LongMethodProbe<S>(method, probe, type, sourceMetadata);
+        } else {
+            throw new IllegalArgumentException(type.toString());
         }
     }
 
@@ -106,7 +121,8 @@ abstract class MethodProbe implements ProbeFunction {
         @Override
         public long get(final S source) throws Exception {
             switch (type) {
-                case TYPE_PRIMITIVE_LONG:
+                case TYPE_LONG_PRIMITIVE:
+                    return invokeLongPrimitive(source);
                 case TYPE_LONG_NUMBER:
                     final Number longNumber = invoke(source);
                     return longNumber == null ? 0 : longNumber.longValue();
@@ -137,6 +153,7 @@ abstract class MethodProbe implements ProbeFunction {
         public double get(final S source) throws Exception {
             switch (type) {
                 case TYPE_DOUBLE_PRIMITIVE:
+                    return invokeDoublePrimitive(source);
                 case TYPE_DOUBLE_NUMBER:
                     final Number result = invoke(source);
                     return result == null ? 0 : result.doubleValue();
@@ -148,11 +165,27 @@ abstract class MethodProbe implements ProbeFunction {
 
     protected <T> T invoke(final Object source) throws Exception {
         try {
-            if (isMethodStatic) {
-                return (T) method.invoke();
-            } else {
-                return (T) method.invoke(source);
-            }
+            return isMethodStatic ? (T) method.invoke() : (T) method.invoke(source);
+        } catch (final Exception e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
+    protected double invokeDoublePrimitive(final Object source) throws Exception {
+        try {
+            return isMethodStatic ? (double) method.invokeExact() : (double) method.invokeExact(source);
+        } catch (final Exception e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
+    protected long invokeLongPrimitive(final Object source) throws Exception {
+        try {
+            return isMethodStatic ? (long) method.invokeExact() : (long) method.invokeExact(source);
         } catch (final Exception e) {
             throw e;
         } catch (final Throwable t) {
