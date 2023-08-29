@@ -49,9 +49,9 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
             @Nullable Comparable<?> to,
             @Nullable Data lastEntryKeyData
     ) {
-        assert from == null || to == null || ((Comparable)from).compareTo(to) <= 0 : "from must be <= than to";
-        assert (from == NULL && to == NULL) || (from != NULL && to != NULL) :
-                "IS NULL pointer must point lookup without range or unspecified end: " + from + " ... " + to;
+        assert from == null || to == null || ((Comparable) from).compareTo(to) <= 0 : "from must be <= than to";
+        assert (from == NULL && to == NULL) || (from != NULL && to != NULL)
+                : "IS NULL pointer must point lookup without range or unspecified end: " + from + " ... " + to;
         this.flags = flags;
         this.from = from;
         this.to = to;
@@ -137,10 +137,10 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "IndexIterationPointer{" +
-                (isFromInclusive() ? "[" : "(") + from + ", " + to + (isToInclusive() ? "]" : ")") +
-                (isDescending() ? " DESC" : " ASC")
+        return "IndexIterationPointer{"
+                + (isFromInclusive() ? "[" : "(") + from + ", " + to + (isToInclusive() ? "]" : ")")
+                + (isDescending() ? " DESC" : " ASC")
                 + ", lastEntryKeyData=" + lastEntryKeyData
-                +"}";
+                + "}";
     }
 }
