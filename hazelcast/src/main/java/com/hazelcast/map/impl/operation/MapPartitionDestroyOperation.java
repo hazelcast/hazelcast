@@ -21,6 +21,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 /**
  * Operation to destroy the map data on the partition thread
@@ -47,5 +48,10 @@ public class MapPartitionDestroyOperation extends AbstractMapLocalOperation
     @Override
     public boolean validatesTarget() {
         return false;
+    }
+
+    @Override
+    public TenantControl getTenantControl() {
+        return TenantControl.NOOP_TENANT_CONTROL;
     }
 }

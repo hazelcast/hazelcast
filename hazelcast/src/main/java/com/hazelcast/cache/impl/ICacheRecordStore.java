@@ -539,9 +539,9 @@ public interface ICacheRecordStore {
      * @param mergingEntry     the {@link CacheMergeTypes} instance to merge
      * @param mergePolicy      the {@link SplitBrainMergePolicy} instance to apply
      * @param callerProvenance
-     * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
+     * @return {@link CacheMergeResponse} indicating the result of the merge
      */
-    CacheRecord merge(CacheMergeTypes<Object, Object> mergingEntry,
+    CacheMergeResponse merge(CacheMergeTypes<Object, Object> mergingEntry,
                       SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy,
                       CallerProvenance callerProvenance);
 

@@ -18,11 +18,11 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.jet.JobInvocationObserver;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobCoordinationService;
+import com.hazelcast.jet.impl.JobInvocationObserver;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -63,14 +63,14 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
     protected SqlServiceImpl sqlService;
     protected PlanExecutor planExecutor;
     protected JobCoordinationService jobCoordinationService;
-    protected PreJobInvocationObserverImpl preJobInvocationObserver;
+    protected SqlJobInvocationObserverImpl preJobInvocationObserver;
     protected JobInvocationObserverImpl jobInvocationObserver;
 
 
     @Before
     public void setUp() throws Exception {
         nodeEngine = getNodeEngineImpl(instance());
-        preJobInvocationObserver = new PreJobInvocationObserverImpl();
+        preJobInvocationObserver = new SqlJobInvocationObserverImpl();
         jobInvocationObserver = new JobInvocationObserverImpl();
         sqlService = (SqlServiceImpl) instance().getSql();
         planExecutor = sqlService.getOptimizer().getPlanExecutor();
@@ -123,7 +123,7 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         return actualRows;
     }
 
-    public static class PreJobInvocationObserverImpl implements PreJobInvocationObserver {
+    protected static class SqlJobInvocationObserverImpl implements SqlJobInvocationObserver {
         public DAG dag;
         public JobConfig jobConfig;
 
@@ -134,14 +134,14 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         }
     }
 
-    public static class JobInvocationObserverImpl implements JobInvocationObserver {
+    protected static class JobInvocationObserverImpl implements JobInvocationObserver {
         public long jobId;
         public Set<MemberInfo> members;
         public DAG dag;
         public JobConfig jobConfig;
 
         @Override
-        public void onJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig) {
+        public void onLightJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig) {
             this.jobId = jobId;
             this.members = members;
             this.dag = dag;

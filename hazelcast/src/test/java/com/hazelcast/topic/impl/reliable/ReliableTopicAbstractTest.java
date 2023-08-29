@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -84,6 +85,25 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
     }
 
     // ============== removeMessageListener ==============================
+    @Test
+    public void addRemoveMessageListeners() {
+        // Add and remove a lot of listeners without sending a message
+        final List<String> objects = new CopyOnWriteArrayList<>();
+        for (int index = 0; index < 100; index++) {
+            UUID id = topic.addMessageListener(message -> objects.add(message.getMessageObject()));
+
+            boolean removed = topic.removeMessageListener(id);
+            assertTrue(removed);
+        }
+        // The listener map should be empty
+        assertEquals(0, topic.runnersMap.size());
+
+        // Now send a message
+        topic.publish("1");
+
+        // No listener should receive the message
+        assertTrueDelayed5sec(() -> assertEquals(0, objects.size()));
+    }
 
     @Test
     public void removeMessageListener_whenExisting() {
@@ -137,9 +157,9 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
 
-        final List<String> items = new ArrayList<String>();
+        final List<String> items = new ArrayList<>();
         for (int k = 0; k < 5; k++) {
-            items.add("" + k);
+            items.add(String.valueOf(k));
         }
 
         for (String item : items) {

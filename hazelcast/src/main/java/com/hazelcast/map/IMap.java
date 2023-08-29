@@ -2501,6 +2501,49 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
     Collection<V> values(@Nonnull Predicate<K, V> predicate);
 
     /**
+     * Returns an immutable collection locally owned values contained in this map.
+     * <p>
+     * <b>Warning:</b>
+     * <p>
+     * The collection is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the collection.
+     * <p>
+     * This method is always executed by a distributed query,
+     * so it may throw a {@link QueryResultSizeExceededException}
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     *
+     * @return an immutable collection clone of the values contained in this map
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
+     * @since 5.4.0
+     */
+    Collection<V> localValues();
+
+   /**
+    * Queries the map of locally owned keys based on the specified predicate and returns an immutable
+    * collection of the values of matching entries.
+    * <p>
+    * Specified predicate runs on local member.
+    * <p>
+    * <b>Warning:</b>
+    * <p>
+    * The collection is <b>NOT</b> backed by the map,
+    * so changes to the map are <b>NOT</b> reflected in the collection.
+    * <p>
+    * This method is always executed by a distributed query,
+    * so it may throw a {@link QueryResultSizeExceededException}
+    * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+    *
+    * @param predicate specified query criteria
+    * @return result value collection of the query
+    * @throws QueryResultSizeExceededException if query result size limit is exceeded
+    * @throws NullPointerException             if the predicate is {@code null}
+    * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
+    * @since 5.4.0
+    */
+    Collection<V> localValues(@Nonnull Predicate<K, V> predicate);
+
+    /**
      * Returns the locally owned immutable set of keys.
      * <p>
      * Each key in this map is owned and managed by a specific

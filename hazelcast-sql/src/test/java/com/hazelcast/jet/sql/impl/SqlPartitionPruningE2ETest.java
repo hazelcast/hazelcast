@@ -21,7 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.sql.impl.misc.Pojo;
+import com.hazelcast.jet.sql.impl.module.Pojo;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.partition.PartitionService;
@@ -191,7 +191,7 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
     }
 
     @Test
-    public void when_fullyComarePartitionAwareKeyWithNestedPAKey_then_prunable() {
+    public void when_fullyComparePartitionAwareKeyWithNestedPAKey_then_prunable() {
         final long c = 2;
         final PAKey key = new PAKey(c, "" + c);
         final String query = "SELECT this FROM " + mapName + " WHERE __key = ? AND this IS NOT NULL";
@@ -318,7 +318,7 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
 
     @Ignore("https://hazelcast.atlassian.net/browse/HZ-2796")
     @Test
-    public void when_unionForWithSimplePruningKey_then_non_prunable() {
+    public void when_unionWithSimplePruningKey_then_non_prunable() {
         // Note: it is a test for the future implementation of prunable Aggregation.
         //  Union converts to UnionAll + Aggregation, and  prunable Aggregation implementor
         //  easily may miss that fact during testing.

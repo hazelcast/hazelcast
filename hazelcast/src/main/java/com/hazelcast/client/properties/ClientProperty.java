@@ -328,6 +328,17 @@ public final class ClientProperty {
     public static final HazelcastProperty PARTITION_ARGUMENT_CACHE_SIZE
             = new HazelcastProperty("hazelcast.client.sql.partition.argument.cache.size", 1024);
 
+    /**
+     * Class name implementing {@link com.hazelcast.partition.PartitioningStrategy}, which
+     * defines key to partition mapping. Client-side equivalent of member property
+     * {@link com.hazelcast.spi.properties.ClusterProperty#PARTITIONING_STRATEGY_CLASS}.
+     * <p>
+     * This property does not contain the "hazelcast.client" prefix as has been used on the client with
+     * this property name for over 8 years, so it is maintained for backwards compatibility.
+     */
+    public static final HazelcastProperty PARTITIONING_STRATEGY_CLASS
+            = new HazelcastProperty("hazelcast.partitioning.strategy.class", "");
+
     private ClientProperty() {
     }
 }

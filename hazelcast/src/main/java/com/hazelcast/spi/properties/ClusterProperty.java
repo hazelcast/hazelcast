@@ -737,7 +737,8 @@ public final class ClusterProperty {
 
     /**
      * Class name implementing {@link com.hazelcast.partition.PartitioningStrategy}, which
-     * defines key to partition mapping.
+     * defines key to partition mapping. Member-side equivalent of client property
+     * {@link com.hazelcast.client.properties.ClientProperty#PARTITIONING_STRATEGY_CLASS}.
      */
     public static final HazelcastProperty PARTITIONING_STRATEGY_CLASS
             = new HazelcastProperty("hazelcast.partitioning.strategy.class", "");

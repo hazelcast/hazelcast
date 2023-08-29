@@ -411,20 +411,21 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
              PreparedStatement stmt = conn.prepareStatement("select id from " + tableName)
         ) {
             SinkStressTestUtil.test_withRestarts(instance(), logger, sink, graceful, exactlyOnce, () -> {
-                ResultSet resultSet = stmt.executeQuery();
-                List<Integer> actualRows = new ArrayList<>();
-                while (resultSet.next()) {
-                    actualRows.add(resultSet.getInt(1));
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    List<Integer> actualRows = new ArrayList<>();
+                    while (resultSet.next()) {
+                        actualRows.add(resultSet.getInt(1));
+                    }
+                    return actualRows;
                 }
-                return actualRows;
             });
         }
     }
 
     private int rowCount() throws SQLException {
         try (Connection connection = ((DataSource) createDataSource(false)).getConnection();
-             Statement statement = connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM " + tableName);
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM " + tableName)) {
             if (!resultSet.next()) {
                 return 0;
             }
@@ -443,7 +444,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     private static SupplierEx<DataSource> failTwiceDataSourceSupplier() {
-        return new SupplierEx<DataSource>() {
+        return new SupplierEx<>() {
             int remainingFailures = 2;
 
             @Override
@@ -462,7 +463,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     private static BiConsumerEx<PreparedStatement, Entry<Integer, String>> failOnceBindFn() {
-        return new BiConsumerEx<PreparedStatement, Entry<Integer, String>>() {
+        return new BiConsumerEx<>() {
             int remainingFailures = 1;
 
             @Override

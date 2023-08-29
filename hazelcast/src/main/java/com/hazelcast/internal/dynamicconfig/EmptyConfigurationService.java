@@ -34,6 +34,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.List;
@@ -215,6 +216,16 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, DataConnectionConfig> getDataConnectionConfigs() {
+        return emptyMap();
+    }
+
+    @Override
+    public WanReplicationConfig findWanReplicationConfig(String name) {
+        return null;
+    }
+
+    @Override
+    public Map<String, WanReplicationConfig> getWanReplicationConfigs() {
         return emptyMap();
     }
 
