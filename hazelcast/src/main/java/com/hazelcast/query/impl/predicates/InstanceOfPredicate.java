@@ -77,11 +77,7 @@ public class InstanceOfPredicate
 
     @Override
     public int getFactoryId() {
-<<<<<<< Upstream, based on master
         return AbstractPredicate.FACTORY_ID;
-=======
-        return AbstractPredicate.FACTORY_ID;
->>>>>>> b7eb62c Make `getFactoryId()` result final
     }
 
     @Override
