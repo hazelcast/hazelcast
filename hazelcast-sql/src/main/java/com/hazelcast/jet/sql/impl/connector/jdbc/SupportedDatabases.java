@@ -20,7 +20,12 @@ import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.dialect.*;
+import org.apache.calcite.sql.dialect.H2SqlDialect;
+import org.apache.calcite.sql.dialect.MssqlSqlDialect;
+import org.apache.calcite.sql.dialect.MysqlSqlDialect;
+import org.apache.calcite.sql.dialect.OracleSqlDialect;
+import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
+
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
