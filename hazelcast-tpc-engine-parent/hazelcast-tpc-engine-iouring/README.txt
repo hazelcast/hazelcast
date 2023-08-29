@@ -1,3 +1,21 @@
+The hazelcast-tpc-engine-iouring can only be build and run on Linux and
+requires a kernel version of 5.7 or higher.
+
+For running the hazelcast-tpc-engine-iouring, you also need to have liburing
+installed.
+
+Ubuntu:
+
+sudo apt-get install liburing
+
+For RHEL, Fedora:
+
+sudo yum install liburing
+
+For Arch Linux:
+
+sudo pacman -S liburing
+
 If you run into uring startup problems because memory can't be acquired for
 uring, first run:
 
