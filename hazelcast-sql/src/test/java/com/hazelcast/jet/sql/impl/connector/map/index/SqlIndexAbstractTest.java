@@ -38,6 +38,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.assertj.core.api.JUnitSoftAssertions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -125,6 +126,16 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         instance().getConfig().addMapConfig(mapConfig);
         map = instance().getMap(mapName);
         fill();
+    }
+
+    @After
+    public void after() {
+        if (map != null) {
+            // keep memory usage low, especially important for TS
+            map.clear();
+            map.destroy();
+            map = null;
+        }
     }
 
     @Test
