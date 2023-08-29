@@ -16,7 +16,10 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -24,6 +27,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -37,7 +44,23 @@ public class AnalyzeStatementTest extends SqlTestSupport {
     public void test_select() {
         createMapping("test", Long.class, String.class);
         instance().getSql().execute("INSERT INTO test VALUES (1, 'testVal')");
-        // TODO: assert job metrics from retrieved jobId
-        assertRowsAnyOrder("ANALYZE SELECT * FROM test", rows(2, 1L, "testVal"));
+
+        final SqlResult result = instance().getSql().execute("ANALYZE SELECT * FROM test");
+        final SqlRow row = result.iterator().next();
+        assertNotNull(row);
+        assertEquals(1L, (long) row.getObject("__key"));
+        assertEquals("testVal", row.getObject("this"));
+        result.close();
+
+        final Job job = instance().getJet().getJob(result.jobId());
+        assertNotNull(job);
+    }
+
+    @Test
+    public void test_selectStreaming() {
+        final SqlResult result = instance().getSql().execute("ANALYZE SELECT * FROM TABLE(GENERATE_STREAM(1))");
+        assertNotEquals(-1L, result.jobId());
+        final Job job = instance().getJet().getJob(result.jobId());
+        assertNotNull(job);
     }
 }

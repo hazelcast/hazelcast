@@ -28,6 +28,7 @@ public final class UpdateSqlResultImpl extends AbstractSqlResult {
 
     private final long updateCount;
     private final int partitionArgumentIndex;
+    // TODO: jobId
 
     private UpdateSqlResultImpl(long updateCount, int partitionArgumentIndex) {
         this.updateCount = checkNotNegative(updateCount, "the updateCount must be >= 0");

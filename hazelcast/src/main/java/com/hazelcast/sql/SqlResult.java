@@ -113,6 +113,15 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
     long updateCount();
 
     /**
+     * Optional jobId, returned only for CREATE JOB and ANALYZE statements.
+     *
+     * @return id of the created job or -1 if there is no jobId
+     */
+    default long jobId() {
+        return -1L;
+    }
+
+    /**
      * Release the resources associated with the query result.
      * <p>
      * The query engine delivers the rows asynchronously. The query may become inactive even before all rows are

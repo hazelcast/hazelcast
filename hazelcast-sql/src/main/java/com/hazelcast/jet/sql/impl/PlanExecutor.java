@@ -532,7 +532,9 @@ public class PlanExecutor {
         assert oldValue == null : oldValue;
         try {
             sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-            Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
+            Job job = plan.isAnalyzed()
+                    ? jet.newJob(jobId, plan.getDag(), jobConfig)
+                    : jet.newLightJob(jobId, plan.getDag(), jobConfig);
             job.getFuture().whenComplete((r, t) -> {
                 // make sure the queryResultProducer is cleaned up after the job completes. This normally
                 // takes effect when the job fails before the QRP is removed by the RootResultConsumerSink
@@ -552,7 +554,9 @@ public class PlanExecutor {
                 queryId,
                 queryResultProducer,
                 plan.getRowMetadata(),
-                plan.isStreaming()
+                plan.isStreaming(),
+                -1,
+                plan.isAnalyzed() ? jobId : -1
         );
     }
 

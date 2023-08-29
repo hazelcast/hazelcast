@@ -122,6 +122,7 @@ class SqlResultImpl extends AbstractSqlResult {
         rootResultConsumer.onError(exception);
     }
 
+    @Override
     public long jobId() {
         return jobId;
     }

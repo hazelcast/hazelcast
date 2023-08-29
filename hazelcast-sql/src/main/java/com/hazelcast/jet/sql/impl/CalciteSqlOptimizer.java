@@ -390,7 +390,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     convertResult.getFieldNames(),
                     context,
                     false,
-                    task.getSql());
+                    task.getSql(),
+                    analyze);
         }
     }
 
@@ -480,7 +481,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 dmlConvertedResult.getFieldNames(),
                 context,
                 true,
-                query);
+                query,
+                false);
         assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
 
         return new CreateJobPlan(
@@ -592,7 +594,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             List<String> fieldNames,
             OptimizerContext context,
             boolean isCreateJob,
-            String query
+            String query,
+            boolean analyze
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
 
@@ -743,7 +746,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     rowMetadata,
                     planExecutor,
                     permissions,
-                    partitionStrategyCandidates(physicalRel, parameterMetadata)
+                    partitionStrategyCandidates(physicalRel, parameterMetadata),
+                    analyze
             );
         }
     }

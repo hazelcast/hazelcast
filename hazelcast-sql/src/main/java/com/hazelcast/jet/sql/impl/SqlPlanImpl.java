@@ -1062,6 +1062,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         // map of per-table partition pruning candidates, structured as
         // mapName -> { columnName -> RexLiteralOrDynamicParam }
         private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
+        private final boolean analyze;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         SelectPlan(
@@ -1074,7 +1075,8 @@ abstract class SqlPlanImpl extends SqlPlan {
                 SqlRowMetadata rowMetadata,
                 PlanExecutor planExecutor,
                 List<Permission> permissions,
-                Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates) {
+                Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates,
+                final boolean analyze) {
             super(planKey);
 
             this.objectKeys = objectKeys;
@@ -1086,6 +1088,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.planExecutor = planExecutor;
             this.permissions = permissions;
             this.partitionStrategyCandidates = partitionStrategyCandidates;
+            this.analyze = analyze;
         }
 
         QueryParameterMetadata getParameterMetadata() {
@@ -1120,6 +1123,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         public Map<String, List<Map<String, Expression<?>>>> getPartitionStrategyCandidates() {
             return partitionStrategyCandidates;
+        }
+
+        public boolean isAnalyzed() {
+            return analyze;
         }
 
         @Override
