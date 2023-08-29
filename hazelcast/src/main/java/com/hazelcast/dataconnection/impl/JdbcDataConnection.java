@@ -119,13 +119,17 @@ public class JdbcDataConnection extends DataConnectionBase {
     @Nonnull
     @Override
     public List<DataConnectionResource> listResources() {
-        // Get the tables for the current catalog and schema
+        // Get the tables and views for the current catalog
+        // Note : We need to specify the current catalog
+        // 1. For Postgres : It does not matter because only my database is available
+        // 2. For MySQL : It matters because a database called "sys" is automatically created and populated with tables
+        //  and If catalog is not specified, "sys" catalog is also included into the result
         try (Connection connection = getConnection();
              ResultSet tables = connection.getMetaData()
                      .getTables(connection.getCatalog(),
-                             connection.getSchema(),
                              null,
-                             new String[]{"TABLE"})) {
+                             null,
+                             new String[]{"TABLE", "VIEW"})) {
             List<DataConnectionResource> result = new ArrayList<>();
             while (tables.next()) {
                 // Format DataConnectionResource name as catalog + schema+ + table_name
