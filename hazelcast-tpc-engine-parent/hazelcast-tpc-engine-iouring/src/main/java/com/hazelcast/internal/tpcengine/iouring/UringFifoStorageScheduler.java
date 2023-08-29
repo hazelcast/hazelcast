@@ -48,6 +48,7 @@ import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_CHAR;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.Math.min;
 
@@ -70,21 +71,20 @@ import static java.lang.Math.min;
  *     <li>
  *         completionQueue: once io_uring has completed the requests, the
  *         completed requests end up at the completion queue. The completionQueue
- *         is processed by the {@link UringEventloop}.
+ *         is processed by the {@link UringEventloop} and triggers a call to
+ *         {@link #complete(int, int, long)}.
  *     </li>
  * </ol>
  * There is also a 'requests' array. All requests that exist in the scheduler can
  * be looked up by their index index. The content of this array will never change. The
  * primary purpose of this array is so that completions can look up the appropriate
- * request.
+ * request based on the request index.
  * <p/>
  * The same requests are also put in a 'pool' array. The items are allocated
  * and freed from left to right in this pool array.
  */
 // todo: remove magic number
 @SuppressWarnings({"checkstyle:MethodLength",
-        "checkstyle:MemberName",
-        "checkstyle:LocalVariableName",
         "checkstyle:MagicNumber"})
 public final class UringFifoStorageScheduler implements StorageScheduler {
 
@@ -98,8 +98,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
     private final int submitLimit;
     private int submitCount;
     private final UringStorageRequest[] pool;
-    private int poolAllocIndex;
     private final int poolCapacity;
+    private int poolAllocIndex;
 
     public UringFifoStorageScheduler(Uring uring,
                                      int submitLimit,
@@ -139,9 +139,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
 
     @Override
     public void schedule(StorageRequest req) {
-        if (!stagingQueue.offer((UringStorageRequest) req)) {
-            throw new IllegalStateException("Too many concurrent requests");
-        }
+        stagingQueue.enqueue((UringStorageRequest) req);
     }
 
     @Override
@@ -391,7 +389,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
         return msg;
     }
 
-    IOBuffer pathAsIOBuffer(UringStorageRequest req) {
+    private IOBuffer pathAsIOBuffer(UringStorageRequest req) {
         // todo: unwanted litter.
         byte[] chars = req.file.path().getBytes(StandardCharsets.UTF_8);
 
@@ -403,7 +401,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
         return pathBuffer;
     }
 
-    final class UringStorageRequest extends StorageRequest {
+    private static final class UringStorageRequest extends StorageRequest {
 
         // The index of the storage request within the 'requests' array.
         private final int index;
@@ -427,16 +425,20 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
             this.mask = fixedCapacity - 1;
         }
 
-        private boolean offer(UringStorageRequest req) {
+        private void enqueue(UringStorageRequest req) {
+            checkNotNull(req, "req");
+
             if (tail - head + 1 == capacity) {
-                return false;
+                // This should never happen because there can't be more requests
+                // than the number of requests in the pool and pool capacity is
+                // the same as the stagingQueue capacity
+                throw new IllegalStateException("Too many staged requests");
             }
 
             long t = tail + 1;
             int index = (int) (t & mask);
             array[index] = req;
             tail = t;
-            return true;
         }
 
         private int size() {
