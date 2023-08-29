@@ -17,13 +17,10 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.JobCoordinationService;
+import com.hazelcast.jet.sql.impl.SqlEndToEndTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -47,10 +44,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
-import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
-import static com.hazelcast.jet.sql.impl.SqlEndToEndTestSupport.JobInvocationObserverImpl;
 import static com.hazelcast.jet.sql.impl.connector.map.SpecificPartitionsImapReaderPms.mapReader;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -58,7 +52,7 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupport {
+public class SpecificPartitionsImapReaderPmsTest extends SqlEndToEndTestSupport {
     private static final int MEMBERS = 5;
     private static final int ITERATIONS = 1000;
 
@@ -74,10 +68,6 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
 
     private IMap<Integer, Integer> sourceMap;
     private IMap<Integer, Integer> sinkMap;
-
-    private JobConfig jobConfig;
-
-    private JobInvocationObserverImpl jobInvocationObserver;
 
     Map<Address, int[]> partitionAssignment;
     Map<Integer, Address> reversedPartitionAssignment;
@@ -101,16 +91,6 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         sinkName = randomName();
         sourceMap = instance().getMap(mapName);
         sinkMap = instance().getMap(sinkName);
-
-        // By this, we ensure that PMS works without member pruning being used.
-        jobConfig = new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList());
-
-        JobCoordinationService jobCoordinationService = ((JetServiceBackend) getNodeEngineImpl(instance())
-                .getService(JetServiceBackend.SERVICE_NAME))
-                .getJobCoordinationService();
-
-        jobInvocationObserver = new JobInvocationObserverImpl();
-        jobCoordinationService.registerInvocationObserver(jobInvocationObserver);
 
         perMemberOwnedPKey = new int[MEMBERS - 1];
         perMemberOwnedPId = new int[MEMBERS - 1];
@@ -139,9 +119,9 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         }
     }
 
-    // Note: basic functionality must work even without member pruning used.
+    // We test basic code path for IMap scan
     @Test
-    public void test_basic() {
+    public void test_nonPrunableScan() {
         // Basic test is performed as submitting job by DAG.
         sourceMap.put(0, 0);
 
@@ -151,7 +131,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         Vertex sink = dag.newVertex("sink", writeMapP(sinkName));
 
         dag.edge(between(source, sink));
-        instance().getJet().newLightJob(dag, jobConfig).join();
+        instance().getJet().newLightJob(dag).join();
 
         assertEquals(0, instance().getMap(sinkName).get(0));
 
@@ -163,7 +143,8 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         assertInstanceOf(SpecificPartitionsImapReaderPms.class, metaSupplier);
 
         SpecificPartitionsImapReaderPms pms = (SpecificPartitionsImapReaderPms) metaSupplier;
-        // Ensure we scan all partitions.
+
+        // Ensure that we scan all partitions (.
         assertNull(pms.partitionsToScan);
     }
 
@@ -171,11 +152,10 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
     public void test_prunableSinglePartition() {
         // Given
         int partitionsToUse = 1;
-        IMap<Integer, Integer> map = instance().getMap(mapName);
         DAG dag = setupPrunableDag(sourceMap, partitionsToUse);
 
         // When
-        instance().getJet().newLightJob(dag, jobConfig).join();
+        instance().getJet().newLightJob(dag).join();
 
         // Then
         assertPrunability(partitionsToUse);
@@ -188,7 +168,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         DAG dag = setupPrunableDag(sourceMap, partitionsToUse);
 
         // When
-        instance().getJet().newLightJob(dag, jobConfig).join();
+        instance().getJet().newLightJob(dag).join();
 
         // Then
         assertPrunability(partitionsToUse);

@@ -63,14 +63,14 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
     protected SqlServiceImpl sqlService;
     protected PlanExecutor planExecutor;
     protected JobCoordinationService jobCoordinationService;
-    protected SqlJobInvocationObserverImpl preJobInvocationObserver;
+    protected SqlJobInvocationObserverImpl sqlJobInvocationObserver;
     protected JobInvocationObserverImpl jobInvocationObserver;
 
 
     @Before
     public void setUp() throws Exception {
         nodeEngine = getNodeEngineImpl(instance());
-        preJobInvocationObserver = new SqlJobInvocationObserverImpl();
+        sqlJobInvocationObserver = new SqlJobInvocationObserverImpl();
         jobInvocationObserver = new JobInvocationObserverImpl();
         sqlService = (SqlServiceImpl) instance().getSql();
         planExecutor = sqlService.getOptimizer().getPlanExecutor();
@@ -78,7 +78,7 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
                 .getService(JetServiceBackend.SERVICE_NAME))
                 .getJobCoordinationService();
 
-        planExecutor.registerJobInvocationObserver(preJobInvocationObserver);
+        planExecutor.registerJobInvocationObserver(sqlJobInvocationObserver);
         jobCoordinationService.registerInvocationObserver(jobInvocationObserver);
 
         eec = new ExpressionEvalContextImpl(
