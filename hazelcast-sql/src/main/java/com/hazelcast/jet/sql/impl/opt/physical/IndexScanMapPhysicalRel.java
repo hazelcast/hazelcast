@@ -92,7 +92,7 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
 
     public ComparatorEx<JetSqlRow> getComparator() {
         if (index.getType() == IndexType.SORTED) {
-            RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+            RelCollation relCollation = getTraitSet().getCollation();
             assert relCollation != null;
             List<FieldCollation> collations;
             if (relCollation != RelCollations.EMPTY) {
