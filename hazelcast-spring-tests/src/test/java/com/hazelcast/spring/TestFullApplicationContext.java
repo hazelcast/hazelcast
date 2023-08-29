@@ -659,11 +659,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                 .setEndpoints(Collections.emptySet());
         assertContains(clientPermissionConfigs, pnCounterPermission);
 
-        PermissionConfig queueuPermission = new PermissionConfig(PermissionType.QUEUE, "*", "*")
+        PermissionConfig queuePermission = new PermissionConfig(PermissionType.QUEUE, "*", "*")
                 .addAction("all");
-        assertNotContains(clientPermissionConfigs, queueuPermission);
-        queueuPermission.setDeny(true);
-        assertContains(clientPermissionConfigs, queueuPermission);
+        assertNotContains(clientPermissionConfigs, queuePermission);
+        queuePermission.setDeny(true);
+        assertContains(clientPermissionConfigs, queuePermission);
 
         Set<PermissionType> permTypes = new HashSet<>(Arrays.asList(PermissionType.values()));
         for (PermissionConfig pc : clientPermissionConfigs) {
