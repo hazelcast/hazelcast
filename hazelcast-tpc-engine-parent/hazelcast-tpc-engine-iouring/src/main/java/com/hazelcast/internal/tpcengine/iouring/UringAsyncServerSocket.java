@@ -70,7 +70,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
         if (Thread.currentThread() == eventloopThread) {
             close00();
         } else {
-            // todo: handle this situation.
+            // todo: handle return
             reactor.offer(() -> {
                 close00();
             });

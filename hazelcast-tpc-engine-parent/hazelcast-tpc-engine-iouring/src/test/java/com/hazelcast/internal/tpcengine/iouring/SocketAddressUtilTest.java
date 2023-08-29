@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class SocketAddressFactoryTest {
+public class SocketAddressUtilTest {
 
     @Test
     public void test() throws UnknownHostException {
@@ -37,7 +37,7 @@ public class SocketAddressFactoryTest {
         byteBuffer.flip();
         int ip = byteBuffer.getInt();
 
-        InetSocketAddress socketAddress = SocketAddressFactory.createIPv4Address(ip, 4000);
+        InetSocketAddress socketAddress = SocketAddressUtil.createIPv4Address(ip, 4000);
 
         assertNotNull(socketAddress);
         assertEquals(4000, socketAddress.getPort());

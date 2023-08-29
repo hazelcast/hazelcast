@@ -21,7 +21,6 @@ import sun.misc.Unsafe;
 
 import java.io.UncheckedIOException;
 
-import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_SOCKADDR_STORAGE;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.errorcode;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_ENTER_GETEVENTS;
@@ -126,24 +125,6 @@ public final class SubmissionQueue {
         UNSAFE.putInt(arrayAddr + SIZEOF_INT * pos, value);
     }
 
-    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_ACCEPT
-    public void prepareAccept(int fd, long addr, long lenAddr, long userdata) {
-        int sqeIndex = nextSqeIndex();
-        if (sqeIndex < 0) {
-            throw new IllegalStateException("No space in submission queue");
-        }
-
-        long sqeAddr = sqesAddr + sqeIndex * SIZEOF_SQE;
-        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_ACCEPT);
-        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, fd);
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, lenAddr);
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, addr);
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
-    }
 
     // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_NOP
     public void prepareNop(long userdata) {
@@ -272,34 +253,6 @@ public final class SubmissionQueue {
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
     }
 
-    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_CONNECT
-    public void prepareConnect(int fd, long addressPtr, int size, long userdata) {
-        int sqeIndex = nextSqeIndex();
-        if (sqeIndex < 0) {
-            throw new IllegalStateException("No space in submission queue");
-        }
-
-        long sqeAddr = sqesAddr + sqeIndex * SIZEOF_SQE;
-        // ok
-        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_CONNECT);
-
-        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-        //
-        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-        // ok
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, fd);
-        // ok
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, SIZEOF_SOCKADDR_STORAGE);
-        // ok
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, addressPtr);
-        // ok
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
-        // ok
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-        // ok
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
-    }
-
     // IORING_OP_RECV provides better performance than IORING_OP_READ
     // https://github.com/axboe/liburing/issues/536
     public void prepareRecv(int fd, long address, int length, long userdata) {
@@ -373,7 +326,7 @@ public final class SubmissionQueue {
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, 0);
         UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags,  syncFlags);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, syncFlags);
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
     }
 
@@ -392,7 +345,54 @@ public final class SubmissionQueue {
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, pathnameAddr);
         UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, permissions);
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags,  flags);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, flags);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+    }
+
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_ACCEPT
+    public void prepareAccept(int fd, long addr, long lenAddr, long userdata) {
+        int sqeIndex = nextSqeIndex();
+        if (sqeIndex < 0) {
+            throw new IllegalStateException("No space in submission queue");
+        }
+
+        long sqeAddr = sqesAddr + sqeIndex * SIZEOF_SQE;
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_ACCEPT);
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, fd);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, lenAddr);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, addr);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+    }
+
+    // https://man.archlinux.org/man/io_uring_enter.2.en#IORING_OP_CONNECT
+
+    /**
+     * Prepares a connect
+     *
+     * @param fd       the filedescriptor of the socket to connect
+     * @param addr     the address to a sockaddr struct.
+     * @param addrLen  the length of the socketaddr struct.
+     * @param userdata
+     */
+    public void prepareConnect(int fd, long addr, int addrLen, long userdata) {
+        int sqeIndex = nextSqeIndex();
+        if (sqeIndex < 0) {
+            throw new IllegalStateException("No space in submission queue");
+        }
+
+        long sqeAddr = sqesAddr + sqeIndex * SIZEOF_SQE;
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_CONNECT);
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, fd);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, addrLen);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, addr);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
     }
 
@@ -434,13 +434,13 @@ public final class SubmissionQueue {
      * @return true if successfully offered, false if there was no space.
      */
     public void prepare(byte opcode,
-                           int flags,
-                           int rwFlags,
-                           int fd,
-                           long bufferAddress,
-                           int length,
-                           long offset,
-                           long userdata) {
+                        int flags,
+                        int rwFlags,
+                        int fd,
+                        long bufferAddress,
+                        int length,
+                        long offset,
+                        long userdata) {
         int sqeIndex = nextSqeIndex();
         if (sqeIndex < 0) {
             throw new IllegalStateException("No space in submission queue");
