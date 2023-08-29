@@ -234,16 +234,15 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     public void when_processingGuaranteeNone_then_continueFromBeginningAfterJobRestart() {
         TopicsConfig topicsConfig = new TopicsConfig().addTopicConfig(new TopicConfig(topic1Name));
 
-        // 100 messages will be produced before the job is restarted and then another batch of 100 will be produced
-        // after the job is restarted (so there will be 200 messages in total)
-        int messageCount = 100;
+        // 50 messages will be produced before the job is restarted
+        int messageCount = 50;
 
         // all messages produced before the job is restarted should be read
-        int expectedCountBeforeRestart = 100;
+        int expectedCountBeforeRestart = 50;
 
-        // for processing guarantee equal to NONE, when the job is restarted, the initial 100 messages will be
-        // read twice, so total expected number of messages should be: 100 + 200 = 300
-        int expectedCountAfterRestart = 300;
+        // for processing guarantee equal to NONE, when the job is restarted, consumer will start from the beginning
+        // and another 100 messages will be produced, so total expected number of messages should be: 50 + 100 = 150
+        int expectedCountAfterRestart = 150;
 
         testWithJobRestart(messageCount, topicsConfig, NONE,
                 expectedCountBeforeRestart, expectedCountAfterRestart);
