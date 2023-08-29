@@ -21,8 +21,8 @@ import static java.util.Collections.unmodifiableMap;
 
 import com.hazelcast.internal.util.counters.Counter;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Semaphore;
@@ -86,7 +86,7 @@ enum ProbeUtils {
             return type;
         }
 
-        final Collection<Class<?>> flattenedClasses = new ArrayList<>();
+        final Collection<Class<?>> flattenedClasses = new LinkedHashSet<>();
 
         flatten(classType, flattenedClasses);
 
@@ -94,19 +94,14 @@ enum ProbeUtils {
     }
 
     static void flatten(final Class<?> clazz, final Collection<Class<?>> result) {
-        if (!result.contains(clazz)) {
-            result.add(clazz);
-        }
+        result.add(clazz);
 
         if (clazz.getSuperclass() != null) {
             flatten(clazz.getSuperclass(), result);
         }
 
         for (final Class<?> interfaze : clazz.getInterfaces()) {
-            if (!result.contains(interfaze)) {
-                result.add(interfaze);
-            }
-
+            result.add(interfaze);
             flatten(interfaze, result);
         }
     }
