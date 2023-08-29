@@ -102,7 +102,6 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     @Rule
     public final JUnitSoftAssertions softly = new JUnitSoftAssertions();
 
-
     protected final String mapName = "map" + MAP_NAME_GEN.incrementAndGet();
 
     private IMap<Integer, ExpressionBiValue> map;
@@ -758,6 +757,8 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
     private Multiset<Integer> sqlKeys(boolean withIndex, String sql, List<Object> params) {
         SqlStatement query = new SqlStatement(sql);
+        // with some bugs the queries could hang, prevent long waiting in such cases
+        query.setTimeoutMillis(10_000);
 
         if (!params.isEmpty()) {
             query.setParameters(params);
