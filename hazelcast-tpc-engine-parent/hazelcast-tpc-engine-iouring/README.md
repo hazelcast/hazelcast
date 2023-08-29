@@ -1,7 +1,8 @@
 # OS requirements
 
 The hazelcast-tpc-engine-iouring can only be build and run on Linux and
-requires a kernel version of 5.7 or higher.
+requires a 64 bit kernel with version of 5.7 or higher. Currently there 
+is only a X86_64 build, in the future an ARM build needs to be added.
 
 # Libraries
 
