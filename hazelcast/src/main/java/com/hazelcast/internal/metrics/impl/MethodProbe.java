@@ -16,14 +16,6 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COLLECTION;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COUNTER;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_NUMBER;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_PRIMITIVE;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_LONG_NUMBER;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_MAP;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_PRIMITIVE_LONG;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_SEMAPHORE;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.isDouble;
 import static java.lang.String.format;
@@ -53,11 +45,11 @@ abstract class MethodProbe implements ProbeFunction {
     final MethodHandle method;
     final boolean isMethodStatic;
     final CachedProbe probe;
-    final int type;
+    final ProbeUtils type;
     final SourceMetadata sourceMetadata;
     final String probeName;
 
-    MethodProbe(final Method method, final Probe probe, final int type, final SourceMetadata sourceMetadata) {
+    MethodProbe(final Method method, final Probe probe, final ProbeUtils type, final SourceMetadata sourceMetadata) {
         try {
             method.setAccessible(true);
             this.method = LOOKUP.unreflect(method);
@@ -88,8 +80,8 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     static <S> MethodProbe createMethodProbe(final Method method, final Probe probe, final SourceMetadata sourceMetadata) {
-        final int type = getType(method.getReturnType());
-        if (type == -1) {
+        final ProbeUtils type = getType(method.getReturnType());
+        if (type == null) {
             throw new IllegalArgumentException(format("@Probe method '%s.%s() has an unsupported return type'",
                     method.getDeclaringClass().getName(), method.getName()));
         }
@@ -107,7 +99,7 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     static class LongMethodProbe<S> extends MethodProbe implements LongProbeFunction<S> {
-        LongMethodProbe(final Method method, final Probe probe, final int type, final SourceMetadata sourceMetadata) {
+        LongMethodProbe(final Method method, final Probe probe, final ProbeUtils type, final SourceMetadata sourceMetadata) {
             super(method, probe, type, sourceMetadata);
         }
 
@@ -137,7 +129,7 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     static class DoubleMethodProbe<S> extends MethodProbe implements DoubleProbeFunction<S> {
-        DoubleMethodProbe(final Method method, final Probe probe, final int type, final SourceMetadata sourceMetadata) {
+        DoubleMethodProbe(final Method method, final Probe probe, final ProbeUtils type, final SourceMetadata sourceMetadata) {
             super(method, probe, type, sourceMetadata);
         }
 
