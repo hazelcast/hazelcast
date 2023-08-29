@@ -35,14 +35,10 @@ import java.util.concurrent.atomic.LongAdder;
  * Utility functions for probes.
  */
 enum ProbeUtils {
-    TYPE_PRIMITIVE_BYTE(byte.class),
-    TYPE_PRIMITIVE_SHORT(short.class),
-    TYPE_PRIMITIVE_INT(int.class),
-    TYPE_PRIMITIVE_LONG(long.class),
+    TYPE_PRIMITIVE_LONG(byte.class, short.class, int.class, long.class),
     TYPE_LONG_NUMBER(Byte.class, Integer.class, Short.class, Long.class, AtomicInteger.class, AtomicLong.class, LongAdder.class,
             LongAccumulator.class),
-    TYPE_DOUBLE_PRIMITIVE(double.class),
-    TYPE_FLOAT_PRIMITIVE(float.class),
+    TYPE_DOUBLE_PRIMITIVE(double.class, float.class),
     TYPE_DOUBLE_NUMBER(Double.class, Float.class),
     TYPE_COLLECTION(Collection.class),
     TYPE_MAP(Map.class),
@@ -73,7 +69,7 @@ enum ProbeUtils {
     }
 
     static boolean isDouble(final ProbeUtils type) {
-        return (type == TYPE_DOUBLE_PRIMITIVE) || (type == TYPE_FLOAT_PRIMITIVE) || (type == TYPE_DOUBLE_NUMBER);
+        return (type == TYPE_DOUBLE_PRIMITIVE) || (type == TYPE_DOUBLE_NUMBER);
     }
 
     /**
