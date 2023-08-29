@@ -16,6 +16,10 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.isDouble;
+import static java.lang.String.format;
+
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricDescriptor;
@@ -28,18 +32,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COLLECTION;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COUNTER;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_NUMBER;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_PRIMITIVE;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_LONG_NUMBER;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_MAP;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_PRIMITIVE_LONG;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_SEMAPHORE;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.isDouble;
-import static java.lang.String.format;
-
 /**
  * A FieldProbe is a {@link ProbeFunction} that reads out a field that is annotated with {@link Probe}.
  */
@@ -47,11 +39,11 @@ abstract class FieldProbe implements ProbeFunction {
 
     final CachedProbe probe;
     final Field field;
-    final int type;
+    final ProbeUtils type;
     final SourceMetadata sourceMetadata;
     final String probeName;
 
-    FieldProbe(Field field, Probe probe, int type, SourceMetadata sourceMetadata) {
+    FieldProbe(Field field, Probe probe, ProbeUtils type, SourceMetadata sourceMetadata) {
         this.field = field;
         this.probe = new CachedProbe(probe);
         this.type = type;
@@ -79,8 +71,8 @@ abstract class FieldProbe implements ProbeFunction {
     }
 
     static <S> FieldProbe createFieldProbe(Field field, Probe probe, SourceMetadata sourceMetadata) {
-        int type = getType(field.getType());
-        if (type == -1) {
+        ProbeUtils type = getType(field.getType());
+        if (type == null) {
             throw new IllegalArgumentException(format("@Probe field '%s' is of an unhandled type", field));
         }
 
@@ -93,7 +85,7 @@ abstract class FieldProbe implements ProbeFunction {
 
     static class LongFieldProbe<S> extends FieldProbe implements LongProbeFunction<S> {
 
-        LongFieldProbe(Field field, Probe probe, int type, SourceMetadata sourceMetadata) {
+        LongFieldProbe(Field field, Probe probe, ProbeUtils type, SourceMetadata sourceMetadata) {
             super(field, probe, type, sourceMetadata);
         }
 
@@ -125,7 +117,7 @@ abstract class FieldProbe implements ProbeFunction {
 
     static class DoubleFieldProbe<S> extends FieldProbe implements DoubleProbeFunction<S> {
 
-        DoubleFieldProbe(Field field, Probe probe, int type, SourceMetadata sourceMetadata) {
+        DoubleFieldProbe(Field field, Probe probe, ProbeUtils type, SourceMetadata sourceMetadata) {
             super(field, probe, type, sourceMetadata);
         }
 
