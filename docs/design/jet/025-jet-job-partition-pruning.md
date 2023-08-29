@@ -140,9 +140,8 @@ We are interested on it for two cases:
 
 Based on described above, the result of DAG analysis may influence on partitions assignment: if DAG has
 `distributed-partitioned` edge, non-used partitions will be assigned to all required members to run the job.
-It is a trade-off between potential performance gains and functionality support coverage,
-but the next chapter describes how we optimize scan process: scan processors partition pruning.
-It closes this performance gap for `partitioned` edge case.
+The reader may think that it would make performance worse, but mixed member pruning is coupled with
+scan processors partition pruning, which closes this potential performance gap for `partitioned` edge case.
 
 Overall, the algorithm looks like:
 
@@ -222,17 +221,16 @@ namely scan and flatmap nodes.
 
 #### Solution design details
 
-##### Intra-member processor pruning
-
-Effectively, it was implemented earlier in `DagNodeUtil`.
-
-##### Inter-member processor pruning
+##### Intra-member && Inter-member processor pruning
 
 We decided NOT to support this kind of processor pruning, because it
 
 - is relatively ineffective since most DAGs with broadcast edges were created with algorithm correctness in mind,
 - is hard to implement for most use cases, and
 - doesn't fit the goal of general effort.
+
+Also, its worth mentioning, that `DagNodeUtil` effectively implements inter-member processor pruning,
+but it doesn't rely on partition pruning meta-information.
 
 ## Final scope
 
