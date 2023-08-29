@@ -70,17 +70,9 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
         Iterator<String> it = jdbcTable.dbFieldNames().iterator();
         while (it.hasNext()) {
             String dbFieldName = it.next();
-            boolean isPk = false;
             // Oracle doesn't allow updating the values referenced in the ON clause i.e. the primary keys
             // Skip the primary keys.
-            for (String field : pkList) {
-                if (field.equals(dbFieldName)) {
-                    isPk = true;
-                    break;
-                }
-            }
-
-            if (isPk) {
+            if (pkList.contains(dbFieldName)) {
                 continue;
             }
 
