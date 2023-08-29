@@ -745,10 +745,10 @@ public abstract class Reactor implements Executor {
         private static final String IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME
                 = "com.hazelcast.internal.tpcengine.iouring.UringReactor$Builder";
 
-        public static final int DEFAULT_INSIDE_TASK_QUEUE_LIMIT = 65536;
-        public static final int DEFAULT_OUTSIDE_TASK_QUEUE_LIMIT = 65536;
-        public static final int DEFAULT_DEADLINE_RUN_QUEUE_LIMIT = 4096;
-        public static final int DEFAULT_RUN_QUEUE_LIMIT = 1024;
+        public static final int DEFAULT_INSIDE_TASK_QUEUE_LIMIT = 1024;
+        public static final int DEFAULT_OUTSIDE_TASK_QUEUE_LIMIT = 1024;
+        public static final int DEFAULT_DEADLINE_RUN_QUEUE_LIMIT = 1024;
+        public static final int DEFAULT_RUN_QUEUE_LIMIT = 4096;
         public static final long DEFAULT_STALL_THRESHOLD_NANOS = MICROSECONDS.toNanos(500);
         public static final long DEFAULT_IO_INTERVAL_NANOS = MICROSECONDS.toNanos(50);
         public static final long DEFAULT_TARGET_LATENCY_NANOS = MILLISECONDS.toNanos(1);
@@ -858,7 +858,13 @@ public abstract class Reactor implements Executor {
 
         /**
          * Sets the limit on the number of items in the runqueue of the deadline
-         * scheduler.
+         * scheduler. This defines the number of deadline tasks that are waiting
+         * to be scheduled + the number of tasks that are currently being
+         * scheduled. Tasks above this limit will be rejected.
+         * <p/>
+         * If you are planning to have 1024 deadline tasks, you need to ensure
+         * that the taskQueue(s) that is going to perform this task, has a limit
+         * not smaller than 1024.
          */
         public int deadlineRunQueueLimit;
 
@@ -903,7 +909,7 @@ public abstract class Reactor implements Executor {
 
         /**
          * Sets the limit on the number of items in the run queue of the
-         * {@link Scheduler}.This defines the maximum number of TaskQueues
+         * {@link Scheduler}. This defines the maximum number of TaskQueues
          * that can be created within an {@link Eventloop}.
          */
         public int runQueueLimit;

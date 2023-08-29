@@ -56,7 +56,7 @@ public final class DeadlineScheduler {
     private int poolAllocIndex;
 
     /**
-     * Creates a new scheduler with the given runQueue limit.
+     * Creates a new DeadlineScheduler with the given runQueue limit.
      *
      * @param runQueueLimit the limit on the number of items in the runQueue.
      * @throws IllegalArgumentException when the runQueueLimit is smaller than 1.
@@ -104,7 +104,7 @@ public final class DeadlineScheduler {
      *
      * @return the epoch time in nanos of the earliest deadline.
      */
-    public long earliestDeadlineNs() {
+    long earliestDeadlineNs() {
         return earliestDeadlineNanos;
     }
 
@@ -146,7 +146,7 @@ public final class DeadlineScheduler {
         task.runnable = cmd;
         task.taskQueue = taskQueue;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
-        put(task);
+        addToRunQueue(task);
         return true;
     }
 
@@ -180,7 +180,7 @@ public final class DeadlineScheduler {
         task.taskQueue = taskQueue;
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
         task.delayNanos = unit.toNanos(delay);
-        put(task);
+        addToRunQueue(task);
         return true;
     }
 
@@ -214,7 +214,7 @@ public final class DeadlineScheduler {
         task.taskQueue = taskQueue;
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
         task.periodNanos = unit.toNanos(period);
-        put(task);
+        addToRunQueue(task);
         return true;
     }
 
@@ -230,18 +230,18 @@ public final class DeadlineScheduler {
         task.consumer = consumer;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
         task.taskQueue = defaultTaskQueue;
-        put(task);
+        addToRunQueue(task);
         return true;
     }
 
     /**
-     * Offers a DeadlineTask to the scheduler. The task will be scheduled based
-     * on its deadline.
+     * Puts a DeadlineTask on the run queue. The task will be scheduled based
+     * on its deadline. Only a task should be put that has been obtained through
+     * {@link #allocate()}.
      *
-     * @param task the task to schedule
-     * @return true if the task was added to the scheduler, false otherwise.
+     * @param task the task to put.
      */
-    void put(DeadlineTask task) {
+    void addToRunQueue(DeadlineTask task) {
         assert task.deadlineNanos >= 0;
 
         runQueue.offer(task);
@@ -293,14 +293,6 @@ public final class DeadlineScheduler {
     /**
      * A task that is going to be scheduled once or multiple times at some point
      * in the future.
-     * <p>
-     * todo: Should the DeadlineTask be a Task implementation? Or should the
-     * DeadlineTask allow for executing
-     * a Task?
-     * <p>
-     * todo: We need to deal with yielding of the task and we need to prevent the
-     * task from being executed due to the deadline and then being executed again
-     * due to the yield.
      */
     static final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
 
@@ -311,7 +303,7 @@ public final class DeadlineScheduler {
         long periodNanos = -1;
         long delayNanos = -1;
         TaskQueue taskQueue;
-        private final DeadlineScheduler deadlineScheduler;
+        final DeadlineScheduler deadlineScheduler;
 
         DeadlineTask(DeadlineScheduler deadlineScheduler) {
             this.deadlineScheduler = deadlineScheduler;
@@ -355,7 +347,7 @@ public final class DeadlineScheduler {
                     deadlineNanos = Long.MAX_VALUE;
                 }
 
-                deadlineScheduler.put(this);
+                deadlineScheduler.addToRunQueue(this);
             } else {
                 deadlineScheduler.free(this);
             }
