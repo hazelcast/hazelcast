@@ -134,25 +134,34 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         // SQL query must not return duplicate rows in such case.
 
         // WHERE f1=? or f1=?
-        check(query("field1=? or field1=?", f1.valueFrom(), f1.valueFrom()),
+        check(query("(field1=? or field1=?)", f1.valueFrom(), f1.valueFrom()),
                 c_notHashComposite(),
                 eq(f1.valueFrom())
+        );
+
+        // WHERE f1=? or (f1=? and f2=?)
+        check(query("((field1=? and field2=?) or (field1=? and field2=?))", f1.valueFrom(), f2.valueFrom(), f1.valueFrom(), f2.valueFrom()),
+                // OR is currently not converted to union of index results or index scan with many ranges.
+                // With literals Calcite produces Sarg which is single expression so is converted to a better plan.
+                false,
+                and(eq(f1.valueFrom()), eq_2(f2.valueFrom()))
         );
     }
 
     @Test
-    @Ignore("Disjunction index scan is currently supported only for equality predicates")
     public void testDisjunctionOverlappingRange() {
         // WHERE f1=? or (f1>=? and f1<=?) with eq value belonging to range
         check(query("field1=? or (field1>=? and field1<=?)", f1.valueFrom(), f1.valueFrom(), f1.valueTo()),
-                c_notHashComposite(),
+                // OR is currently not converted to union of index results or index scan with many ranges.
+                // With literals Calcite produces Sarg which is single expression so is converted to a better plan.
+                false,
                 and(gte(f1.valueFrom()), lte(f1.valueTo()))
         );
 
         // this query might not use index also due to selectivity of predicates
         check(query("field1>=? or field1<=?", f1.valueFrom(), f1.valueTo()),
-                c_notHashComposite(),
-                or(gte(f1.valueFrom()), lte(f1.valueTo()))
+                c_sorted(),
+                isNotNull()
         );
     }
 
@@ -189,8 +198,16 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check(query("field1=? or field1 is null", f1.valueFrom()),
                 c_notHashComposite(), or(eq(f1.valueFrom()), isNull()));
 
+        // WHERE f1 is null or f1=?
+        check(query("field1 is null or field1=?", f1.valueFrom()),
+                c_notHashComposite(), or(eq(f1.valueFrom()), isNull()));
+
         // WHERE f1=literal or f1 is null
         check(query("field1=" + toLiteral(f1, f1.valueFrom()) + " or field1 is null"),
+                c_notHashComposite(), or(eq(f1.valueFrom()), isNull()));
+
+        // WHERE f1 is null or f1=literal
+        check(query("field1 is null or field1=" + toLiteral(f1, f1.valueFrom())),
                 c_notHashComposite(), or(eq(f1.valueFrom()), isNull()));
 
         // WHERE f1!=literal
@@ -233,6 +250,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check(query("field1<=?", f1.valueFrom()), c_sorted(), lte(f1.valueFrom()));
         check(query("?>=field1", f1.valueFrom()), c_sorted(), lte(f1.valueFrom()));
 
+        ///// single range from...to
         if (!(f1 instanceof ExpressionType.BooleanType)) {
             // WHERE f1>literal AND f1<literal
             check(
@@ -291,12 +309,22 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 and(gte(f1.valueFrom()), lte(f1.valueTo()))
         );
 
+        ///// 2 disjoint unlimited ranges
+
         // WHERE f1<literal OR f1>literal (range from -inf..val1 and val2..+inf)
         check(
                 query("field1<" + toLiteral(f1, f1.valueFrom()) + " OR field1>" + toLiteral(f1, f1.valueTo())),
                 c_sorted(),
                 or(lt(f1.valueFrom()), gt(f1.valueTo()))
         );
+        // WHERE f1<? OR f1>? (range from -inf..val1 and val2..+inf)
+        check(
+                query("field1<? OR field1>?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(),
+                or(lt(f1.valueFrom()), gt(f1.valueTo()))
+        );
+
+        ///// 2 limited ranges - disjoint and overlapping
 
         if (!(f1 instanceof ExpressionType.BooleanType)) {
             // WHERE (f1>=literal and f1<=literal) OR f1=literal (range and equality)
@@ -306,6 +334,14 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                     c_sorted(),
                     or(and(gte(f1.valueFrom()), lte(f1.valueMiddle())), eq(f1.valueTo()))
             );
+            // WHERE (f1>=? and f1<=?) OR f1=? (range and equality)
+            check(
+                    query("(field1>=? AND field1<=?) OR field1=?", f1.valueFrom(), f1.valueMiddle(), f1.valueTo()),
+                    // OR is currently not converted to union of index results or index scan with many ranges.
+                    // With literals Calcite produces Sarg which is single expression so is converted to a better plan.
+                    false,
+                    or(and(gte(f1.valueFrom()), lte(f1.valueMiddle())), eq(f1.valueTo()))
+            );
 
             // WHERE (f1>=literal and f1<literal) OR (f1>literal and f1<=literal)  (non-overlapping ranges)
             check(
@@ -313,6 +349,31 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                             ") OR (field1>" + toLiteral(f1, f1.valueMiddle()) + " AND field1<=" + toLiteral(f1, f1.valueTo()) +
                             ")"),
                     c_sorted(),
+                    or(and(gte(f1.valueFrom()), lt(f1.valueMiddle())), and(gt(f1.valueMiddle()), lte(f1.valueTo())))
+            );
+            check(
+                    query("(field1>=? AND field1<?) OR (field1>? AND field1<=?)",
+                            f1.valueFrom(), f1.valueMiddle(), f1.valueMiddle(), f1.valueTo()),
+                    // OR is currently not converted to union of index results or index scan with many ranges.
+                    // With literals Calcite produces Sarg which is single expression so is converted to a better plan.
+                    false,
+                    or(and(gte(f1.valueFrom()), lt(f1.valueMiddle())), and(gt(f1.valueMiddle()), lte(f1.valueTo())))
+            );
+
+            // WHERE (f1>=literal and f1<literal) OR (f1>literal and f1<=literal)  (non-overlapping ranges, reverse order)
+            check(
+                    query("(field1>" + toLiteral(f1, f1.valueMiddle()) + " AND field1<=" + toLiteral(f1, f1.valueTo()) +
+                            ") OR (field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<" + toLiteral(f1, f1.valueMiddle()) +
+                            ")"),
+                    c_sorted(),
+                    or(and(gte(f1.valueFrom()), lt(f1.valueMiddle())), and(gt(f1.valueMiddle()), lte(f1.valueTo())))
+            );
+            check(
+                    query("(field1>? AND field1<=?) OR (field1>=? AND field1<?)",
+                            f1.valueMiddle(), f1.valueTo(), f1.valueFrom(), f1.valueMiddle()),
+                    // OR is currently not converted to union of index results or index scan with many ranges.
+                    // With literals Calcite produces Sarg which is single expression so is converted to a better plan.
+                    false,
                     or(and(gte(f1.valueFrom()), lt(f1.valueMiddle())), and(gt(f1.valueMiddle()), lte(f1.valueTo())))
             );
         }
@@ -567,7 +628,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             message.append("\tduplicated " + firstCaption + ":\n");
 
             for (Integer key : duplicates) {
-                message.append("\t\t" + key + " occurred " + first.count(key) + " times\n");
+                message.append("\t\t" + key + " -> " + map.get(key) + " occurred " + first.count(key) + " times\n");
             }
         }
 
