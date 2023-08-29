@@ -153,15 +153,15 @@ public final class IndexResolver {
                     fullScanRels.add(relDescending);
 
                     // For full scan we do not add unsorted scan (unlike in case of filters)
-                    // because it would be never chosen.
+                    // because it would never be chosen.
                     //
-                    // Full index scan will never be cheaper than full table scan.
-                    // This might be possible if the index covered all columns in the query.
-                    // However, we do not support this use (index scan always fetches entire entry)
-                    // and even if we did, full scan might still be cheaper.
-                    // The only use case where full index scan makes sense is if order is needed
-                    // but then EMPTY collation will not be beneficial: Sort + unsorted index scan
-                    // would be worse that just sorted index scan.
+                    // Full index scan will never be cheaper than full table scan. This might be
+                    // possible if the index covers all columns in the query. However, we do not
+                    // support this use (index scan always fetches entire entry) and even if we
+                    // did, full scan might still be cheaper. The only use case where full index
+                    // scan makes sense is if order is needed, but in that case, EMPTY collation
+                    // will not be beneficial since [Sort + unsorted index scan] would be worse
+                    // than just sorted index scan.
                 }
             }
         }
