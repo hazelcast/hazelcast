@@ -360,4 +360,69 @@ public abstract class AsyncFileTest {
         assertEquals(0, metrics.writes());
         assertEquals(0, metrics.bytesWritten());
     }
+
+    @Test
+    public void testFSync() throws Exception {
+        testFSync(true);
+    }
+
+    @Test
+    public void testFDataSync() throws Exception {
+        testFSync(false);
+    }
+
+    // The effects of an fsync can't easily be tested so we just check if the metrics
+    // are updated and no exceptions are thrown.
+    public void testFSync(boolean fsync) throws Exception {
+        File tmpFile = randomTmpFile();
+
+        CompletableFuture future = new CompletableFuture();
+        CompletableFuture<AsyncFile> fileFuture = new CompletableFuture<>();
+
+        Runnable task = () -> {
+            AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
+            fileFuture.complete(file);
+
+            IntPromise openPromise = new IntPromise(reactor.eventloop());
+            file.open(openPromise, O_WRONLY | O_CREAT, PERMISSIONS_ALL);
+            openPromise.then((integer, throwable1) -> {
+                if (throwable1 != null) {
+                    future.completeExceptionally(throwable1);
+                } else {
+                    IntPromise fsyncPromise = new IntPromise(reactor.eventloop());
+                    if (fsync) {
+                        file.fsync(fsyncPromise);
+                    } else {
+                        file.fdatasync(fsyncPromise);
+                    }
+                    fsyncPromise.then((result, throwable2) -> {
+                        if (throwable2 != null) {
+                            future.completeExceptionally(throwable2);
+                        } else {
+                            future.complete(null);
+                        }
+                    });
+                }
+            });
+        };
+        reactor.offer(task);
+
+        assertSuccessEventually(future);
+        AsyncFile file = fileFuture.get();
+
+        AsyncFile.Metrics metrics = file.metrics();
+        assertEquals(0, metrics.nops());
+        if (fsync) {
+            assertEquals(1, metrics.fsyncs());
+            assertEquals(0, metrics.fdatasyncs());
+        } else {
+            assertEquals(0, metrics.fsyncs());
+            assertEquals(1, metrics.fdatasyncs());
+        }
+        assertEquals(0, metrics.reads());
+        assertEquals(0, metrics.bytesRead());
+        assertEquals(0, metrics.writes());
+        assertEquals(0, metrics.bytesWritten());
+    }
+
 }

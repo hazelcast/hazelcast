@@ -322,7 +322,7 @@ public final class SubmissionQueue {
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_FSYNC);
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
         UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, fd);
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, 0);
         UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);

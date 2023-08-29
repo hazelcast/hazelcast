@@ -130,6 +130,8 @@ public abstract class AbstractAsyncSocket implements Closeable {
      * If the socket is already closed, the call is ignored.
      * <p/>
      * This method is thread-safe.
+     * <p/>
+     * The actual closing of the socket might happen asynchronously.
      *
      * @param reason the reason this socket is going to be closed.
      *               Is allowed to be <code>null</code>.

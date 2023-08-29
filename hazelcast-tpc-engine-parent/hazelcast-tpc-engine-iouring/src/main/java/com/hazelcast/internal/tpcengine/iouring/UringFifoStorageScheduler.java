@@ -265,7 +265,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
         } else {
             errorMsgBuilder.append("Failed to perform a nop on file ")
                     .append(req.file.path()).append(". ");
-            String msg = completeErrorMsg(res, null);
+            String msg = completeErrorMsg(req, res, null);
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
     }
@@ -280,7 +280,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
         } else {
             errorMsgBuilder.append("Failed to a write to file ")
                     .append(req.file.path()).append(". ");
-            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man3/pwrite.3p.html");
+            String msg = completeErrorMsg(req, res, "https://man7.org/linux/man-pages/man3/pwrite.3p.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
     }
@@ -295,7 +295,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
         } else {
             errorMsgBuilder.append("Failed to a read from file ")
                     .append(req.file.path()).append(". ");
-            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/read.2.html");
+            String msg = completeErrorMsg(req, res, "https://man7.org/linux/man-pages/man2/read.2.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
     }
@@ -307,7 +307,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
         } else {
             errorMsgBuilder.append("Failed to fallocate on file ")
                     .append(req.file.path()).append(". ");
-            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/fallocate.2.html");
+            String msg = completeErrorMsg(req, res, "https://man7.org/linux/man-pages/man2/fallocate.2.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
     }
@@ -320,7 +320,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
         } else {
             errorMsgBuilder.append("Failed to close file ")
                     .append(req.file.path()).append(". ");
-            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/close.2.html");
+            String msg = completeErrorMsg(req, res, "https://man7.org/linux/man-pages/man2/close.2.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
     }
@@ -334,7 +334,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
         } else {
             errorMsgBuilder.append("Failed to open file ")
                     .append(req.file.path()).append(". ");
-            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/open.2.html");
+            String msg = completeErrorMsg(req, res, "https://man7.org/linux/man-pages/man2/open.2.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
 
@@ -357,28 +357,15 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
                     : "fsync";
             errorMsgBuilder.append("Failed to perform a " + syncType + " on file ")
                     .append(req.file.path()).append(". ");
-            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/fsync.2.html");
+            String msg = completeErrorMsg(req, res, "https://man7.org/linux/man-pages/man2/fsync.2.html");
             req.callback.accept(res, newUncheckedIOException(msg, null));
         }
     }
 
-    private void completeFDataSync(UringStorageRequest req, int res) {
-        AsyncFile.Metrics metrics = req.file.metrics();
-        if (res >= 0) {
-            metrics.incFdatasyncs();
-            req.callback.accept(res, null);
-        } else {
-            errorMsgBuilder.append("Failed to perform a fdatasync on file ")
-                    .append(req.file.path()).append(". ");
-            String msg = completeErrorMsg(res, "https://man7.org/linux/man-pages/man2/fsync.2.html");
-            req.callback.accept(res, newUncheckedIOException(msg, null));
-        }
-    }
-
-    private String completeErrorMsg(int res, String manUrl) {
+    private String completeErrorMsg(UringStorageRequest req, int res, String manUrl) {
         errorMsgBuilder.append("Error-message '").append(Linux.strerror(-res)).append("' ")
                 .append("Error-code ").append(Linux.errorcode(-res)).append(". ")
-                .append(this);
+                .append(req);
 
         if (manUrl != null) {
             errorMsgBuilder.append(" See ").append(manUrl).append(" for more details. ");
