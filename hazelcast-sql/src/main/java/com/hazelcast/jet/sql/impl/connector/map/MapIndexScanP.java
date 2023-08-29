@@ -94,11 +94,11 @@ import static java.util.stream.Collectors.toList;
  */
 public final class MapIndexScanP extends AbstractProcessor {
 
-    private static final long DELAY_AFTER_MISSING_PARTITION = MILLISECONDS.toNanos(100);
-
     public static final String FETCH_SIZE_HINT_PROPERTY_NAME = "hazelcast.sql.index.hint.fetch.size";
     public static final HazelcastProperty FETCH_SIZE_HINT_PROPERTY
             = new HazelcastProperty(MapIndexScanP.FETCH_SIZE_HINT_PROPERTY_NAME, 128);
+
+    private static final long DELAY_AFTER_MISSING_PARTITION = MILLISECONDS.toNanos(100);
 
     private final MapIndexScanMetadata metadata;
 
