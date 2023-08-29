@@ -17,7 +17,6 @@
 package com.hazelcast.internal.metrics.impl;
 
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.isDouble;
 import static java.lang.String.format;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
@@ -76,10 +75,12 @@ abstract class FieldProbe implements ProbeFunction {
             throw new IllegalArgumentException(format("@Probe field '%s' is of an unhandled type", field));
         }
 
-        if (isDouble(type)) {
+        if (type.getMapsTo() == double.class) {
             return new DoubleFieldProbe<S>(field, probe, type, sourceMetadata);
-        } else {
+        } else if (type.getMapsTo() == long.class) {
             return new LongFieldProbe<S>(field, probe, type, sourceMetadata);
+        } else {
+            throw new IllegalArgumentException(type.toString());
         }
     }
 
@@ -92,7 +93,7 @@ abstract class FieldProbe implements ProbeFunction {
         @Override
         public long get(S source) throws Exception {
             switch (type) {
-                case TYPE_PRIMITIVE_LONG:
+                case TYPE_LONG_PRIMITIVE:
                     return field.getLong(source);
                 case TYPE_LONG_NUMBER:
                     Number longNumber = (Number) field.get(source);
