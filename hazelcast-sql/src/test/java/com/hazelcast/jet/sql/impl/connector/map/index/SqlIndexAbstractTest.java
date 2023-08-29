@@ -37,10 +37,10 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.assertj.core.api.Assertions;
-import org.junit.After;
+import org.assertj.core.api.JUnitSoftAssertions;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
@@ -78,7 +78,6 @@ import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicate
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.or;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -100,14 +99,16 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     @Parameterized.Parameter(3)
     public ExpressionType<?> f2;
 
+    @Rule
+    public final JUnitSoftAssertions softly = new JUnitSoftAssertions();
+
+
     protected final String mapName = "map" + MAP_NAME_GEN.incrementAndGet();
 
     private IMap<Integer, ExpressionBiValue> map;
     private Map<Integer, ExpressionBiValue> localMap;
     private Class<? extends ExpressionBiValue> valueClass;
     private int runIdGen;
-
-    private List<Throwable> testErrors = new ArrayList<>();
 
     @BeforeClass
     public static void beforeClass() {
@@ -124,13 +125,6 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         instance().getConfig().addMapConfig(mapConfig);
         map = instance().getMap(mapName);
         fill();
-    }
-
-    @After
-    public void after() {
-        // set deeper stack trace to see line where the query was invoked
-        Assertions.setMaxStackTraceElementsDisplayed(10);
-        assertThat(testErrors).as("Queries should produce expected results").isEmpty();
     }
 
     @Test
@@ -582,7 +576,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             boolean expectedUseIndex,
             Predicate<ExpressionValue> expectedKeysPredicate
     ) {
-        try {
+        softly.assertThatCode(() -> {
             int runId = runIdGen++;
             checkPlan(expectedUseIndex, sql);
 
@@ -602,10 +596,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                         "expected map keys"
                 );
             }
-        } catch (Throwable e) {
-            logger.severe("Test failed for query " + sql, e);
-            testErrors.add(e);
-        }
+        }).as("Test failed for query " + sql).doesNotThrowAnyException();
     }
 
     @SuppressWarnings("StringConcatenationInsideStringBufferAppend")
