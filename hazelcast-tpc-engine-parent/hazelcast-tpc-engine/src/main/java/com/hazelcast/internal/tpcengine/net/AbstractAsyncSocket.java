@@ -116,6 +116,8 @@ public abstract class AbstractAsyncSocket implements Closeable {
      * This method is thread-safe.
      * <p/>
      * This method doesn't throw an exception.
+     * <p/>
+     * The actual closing of the socket might happen asynchronously.
      */
     @Override
     public final void close() {

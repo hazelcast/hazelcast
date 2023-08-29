@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket.CloseListener;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -47,11 +48,12 @@ public class SocketTest {
     public void test_setCloseListener_whenAlreadySet() {
         MockSocket socket = new MockSocket.Builder().build();
 
-        AbstractAsyncSocket.CloseListener oldCloseListener = mock(AbstractAsyncSocket.CloseListener.class);
+        CloseListener oldCloseListener = mock(CloseListener.class);
         Executor oldExecutor = mock(Executor.class);
         socket.setCloseListener(oldCloseListener, oldExecutor);
 
-        assertThrows(IllegalStateException.class, () -> socket.setCloseListener(mock(AbstractAsyncSocket.CloseListener.class), mock(Executor.class)));
+        assertThrows(IllegalStateException.class,
+                () -> socket.setCloseListener(mock(CloseListener.class), mock(Executor.class)));
     }
 
     @Test
@@ -59,7 +61,8 @@ public class SocketTest {
         MockSocket socket = new MockSocket.Builder().build();
 
 
-        assertThrows(NullPointerException.class, () -> socket.setCloseListener(null, mock(Executor.class)));
+        assertThrows(NullPointerException.class,
+                () -> socket.setCloseListener(null, mock(Executor.class)));
     }
 
     @Test
@@ -67,7 +70,8 @@ public class SocketTest {
         MockSocket socket = new MockSocket.Builder().build();
 
 
-        assertThrows(NullPointerException.class, () -> socket.setCloseListener(mock(AbstractAsyncSocket.CloseListener.class), null));
+        assertThrows(NullPointerException.class,
+                () -> socket.setCloseListener(mock(CloseListener.class), null));
     }
 
     @Test
@@ -77,7 +81,7 @@ public class SocketTest {
         Executor executor = command -> {
             command.run();
         };
-        AbstractAsyncSocket.CloseListener listener = mock(AbstractAsyncSocket.CloseListener.class);
+        CloseListener listener = mock(CloseListener.class);
         socket.setCloseListener(listener, executor);
 
         socket.close();
@@ -94,7 +98,7 @@ public class SocketTest {
         Executor executor = command -> {
             command.run();
         };
-        AbstractAsyncSocket.CloseListener listener = mock(AbstractAsyncSocket.CloseListener.class);
+        CloseListener listener = mock(CloseListener.class);
         socket.setCloseListener(listener, executor);
 
         verify(listener).onClose(socket);
@@ -107,7 +111,7 @@ public class SocketTest {
         Executor executor = command -> {
             command.run();
         };
-        AbstractAsyncSocket.CloseListener listener = mock(AbstractAsyncSocket.CloseListener.class);
+        CloseListener listener = mock(CloseListener.class);
         socket.setCloseListener(listener, executor);
 
         doThrow(new RuntimeException()).when(listener).onClose(socket);

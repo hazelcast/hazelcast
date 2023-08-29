@@ -124,7 +124,9 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     /**
      * Gets the remote address.
      * <p>
-     * If the AsyncSocket isn't connected yet, null is returned.
+     * If the AsyncSocket isn't connected yet, null is returned. Once the socket
+     * is connected, the value is cached and will not change even if the socket
+     * closes.
      * <p>
      * This method is thread-safe.
      *
@@ -137,7 +139,9 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     /**
      * Gets the local address.
      * <p>
-     * If the AsyncSocket isn't connected yet, null is returned.
+     * If the AsyncSocket isn't connected yet, null is returned. Once the socket
+     * is connected, the value is cached and will not change even if the socket
+     * closes.
      * <p>
      * This method is thread-safe.
      *
@@ -410,8 +414,6 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
     @Override
     protected void close0() throws IOException {
-        //  localAddress = null;
-        // remoteAddress = null;
     }
 //
     @Override
