@@ -69,7 +69,6 @@ public class ListResourcesTest {
                         new MySQLDatabaseProvider(),
                         new DataConnectionResource[]{
                                 new DataConnectionResource("TABLE", "testdb", "my_table"),
-                                new DataConnectionResource("TABLE", "my_schema", "my_table")
                         }
                 },
         };
@@ -97,6 +96,8 @@ public class ListResourcesTest {
         );
 
         executeJdbc(jdbcUrl, "CREATE TABLE my_table (id INTEGER, name VARCHAR(255) )");
+        // In MySQL, the CREATE SCHEMA statement is synonymous with the CREATE DATABASE statement.
+        // We should not be able to list resources in another database
         executeJdbc(jdbcUrl, "CREATE SCHEMA my_schema");
         executeJdbc(jdbcUrl, "CREATE TABLE my_schema.my_table (id INTEGER, name VARCHAR(255) )");
 
