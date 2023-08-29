@@ -389,6 +389,16 @@ class DefaultAddressPicker
         return matchingAddress;
     }
 
+    /**
+     * The priority in desc-order:
+     * <ol>
+     * <li>IPv6-preference
+     * <li>global address
+     * <li>site-local address
+     * <li>link-local address
+     * <li>loopback address
+     * </ol>
+     */
     @SuppressWarnings("checkstyle:MagicNumber")
     private int getPriority(AddressDefinition address, boolean preferIPv6Addresses) {
         if (address == null) {
