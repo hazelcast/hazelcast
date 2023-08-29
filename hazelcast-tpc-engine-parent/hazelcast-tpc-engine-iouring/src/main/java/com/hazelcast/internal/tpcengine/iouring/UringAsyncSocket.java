@@ -43,6 +43,7 @@ import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNREFUSED;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNRESET;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IOV_MAX;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_SOCKADDR_STORAGE;
+import static com.hazelcast.internal.tpcengine.iouring.SocketAddressUtil.memsetSocketAddrIn;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_CLOSE;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_CONNECT;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_RECV;
@@ -223,18 +224,20 @@ public final class UringAsyncSocket extends AsyncSocket {
         }
 
         private void prepareConnect(CompletableFuture<Void> future, SocketAddress address) {
-            if (closing) {
-                future.completeExceptionally(new IOException("Failed to connect to " + address));
-                return;
-            }
-
-            this.connectFuture = future;
             try {
+                if (closing) {
+                    future.completeExceptionally(
+                            new IOException("Failed to connect to " + address + " because socket is closed."));
+                    return;
+                }
+
+                this.connectFuture = future;
+
                 addressBuffer = ByteBuffer.allocateDirect(SIZEOF_SOCKADDR_STORAGE);
                 addressBuffer.order(ByteOrder.nativeOrder());
                 addressPtr = addressOf(addressBuffer);
 
-                SocketAddressUtil.memsetSocketAddrIn((InetSocketAddress) address, addressPtr);
+                memsetSocketAddrIn((InetSocketAddress) address, addressPtr);
 
                 long userdata = encodeUserdata(TYPE_SOCKET, IORING_OP_CONNECT, handlerIndex);
                 submissionQueue.prepareConnect(linuxSocket.fd(), addressPtr, SIZEOF_SOCKADDR_STORAGE, userdata);
