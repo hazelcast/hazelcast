@@ -546,6 +546,7 @@
                                 -->
                                 <includedLicense>Apache-2.0</includedLicense>
                                 <includedLicense>MIT</includedLicense>
+                                <includedLicense>MIT-0</includedLicense>
                                 <includedLicense>BSD-2-Clause</includedLicense>
                                 <includedLicense>BSD-3-Clause</includedLicense>
                                 <includedLicense>CC0-1.0</includedLicense>
