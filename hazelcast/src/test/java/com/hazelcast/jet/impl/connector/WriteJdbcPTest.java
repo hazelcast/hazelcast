@@ -411,12 +411,13 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
              PreparedStatement stmt = conn.prepareStatement("select id from " + tableName)
         ) {
             SinkStressTestUtil.test_withRestarts(instance(), logger, sink, graceful, exactlyOnce, () -> {
-                ResultSet resultSet = stmt.executeQuery();
-                List<Integer> actualRows = new ArrayList<>();
-                while (resultSet.next()) {
-                    actualRows.add(resultSet.getInt(1));
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    List<Integer> actualRows = new ArrayList<>();
+                    while (resultSet.next()) {
+                        actualRows.add(resultSet.getInt(1));
+                    }
+                    return actualRows;
                 }
-                return actualRows;
             });
         }
     }

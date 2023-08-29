@@ -107,8 +107,8 @@ public final class LightMasterContext {
     private volatile boolean userInitiatedTermination;
 
     private LightMasterContext(NodeEngine nodeEngine, long jobId, ILogger logger, String jobIdString,
-                              JobConfig jobConfig, Map<MemberInfo, ExecutionPlan> executionPlanMap,
-                              Set<Vertex> vertices) {
+                               JobConfig jobConfig, Map<MemberInfo, ExecutionPlan> executionPlanMap,
+                               Set<Vertex> vertices) {
         this.nodeEngine = nodeEngine;
         this.jobEventService = nodeEngine.getService(JobEventService.SERVICE_NAME);
         this.jobId = jobId;
@@ -168,6 +168,10 @@ public final class LightMasterContext {
                     }
                     logFine(logger, "Built execution plans for %s", jobIdString);
                     Set<MemberInfo> participants = planMap.keySet();
+
+                    coordinationService.jobInvocationObservers.forEach(obs ->
+                            obs.onLightJobInvocation(jobId, participants, dag, jobConfig));
+
                     Function<ExecutionPlan, Operation> operationCtor = plan -> {
                         Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
                         return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), coordinatorVersion,
@@ -193,7 +197,7 @@ public final class LightMasterContext {
         // close ProcessorMetaSuppliers
         for (Vertex vertex : vertices) {
             ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
-            Executor executor  = metaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
+            Executor executor = metaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
             futures.add(runAsync(() -> invokeClose(failure, metaSupplier), executor));
         }
 
@@ -220,7 +224,7 @@ public final class LightMasterContext {
                     }
                     jobCompletionFuture.completeExceptionally(fail);
                     jobEventService.publishEvent(jobId, RUNNING, FAILED, requestedTerminationMode != null
-                                ? requestedTerminationMode.actionAfterTerminate().description() : fail.toString(),
+                                    ? requestedTerminationMode.actionAfterTerminate().description() : fail.toString(),
                             userInitiatedTermination);
                 }
                 jobEventService.removeAllEventListeners(jobId);
@@ -274,8 +278,8 @@ public final class LightMasterContext {
      *                           response (including a null response) or an
      *                           exception thrown from the operation; size will
      *                           be equal to participant count
-     * @param errorCallback A callback that will be called after each a
-     *                     failure of each individual operation
+     * @param errorCallback      A callback that will be called after each a
+     *                           failure of each individual operation
      */
     private void invokeOnParticipants(
             Function<ExecutionPlan, Operation> operationCtor,
@@ -300,8 +304,8 @@ public final class LightMasterContext {
             AtomicInteger remainingCount
     ) {
         InvocationFuture<Object> future = nodeEngine.getOperationService()
-                                                    .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, address)
-                                                    .invoke();
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, address)
+                .invoke();
 
         future.whenComplete((r, throwable) -> {
             Object response = r != null ? r : throwable != null ? peel(throwable) : NULL_OBJECT;
@@ -320,8 +324,8 @@ public final class LightMasterContext {
                     "Duplicate response for " + address + ". Old=" + oldResponse + ", new=" + response;
             if (remainingCount.decrementAndGet() == 0 && completionCallback != null) {
                 completionCallback.accept(collectedResponses.values().stream()
-                                                            .map(o -> o == NULL_OBJECT ? null : o)
-                                                            .collect(Collectors.toList()));
+                        .map(o -> o == NULL_OBJECT ? null : o)
+                        .collect(Collectors.toList()));
             }
         });
     }
@@ -336,8 +340,8 @@ public final class LightMasterContext {
         for (Object response : responses) {
             if (response instanceof Throwable
                     && (result == null
-                            || result instanceof JobTerminateRequestedException
-                            || result instanceof CancellationException)
+                    || result instanceof JobTerminateRequestedException
+                    || result instanceof CancellationException)
             ) {
                 result = (Throwable) response;
             }

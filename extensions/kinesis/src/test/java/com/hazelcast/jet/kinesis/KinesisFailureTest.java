@@ -45,7 +45,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAXIMUM_KEY_LENGTH;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAX_RECORD_SIZE;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;

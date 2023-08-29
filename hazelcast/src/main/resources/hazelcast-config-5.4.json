@@ -2885,6 +2885,7 @@
           "propertyNames": {
             "enum": [
               "on-join-operation",
+              "priority-grant",
               "all",
               "config",
               "transaction",
@@ -2924,6 +2925,11 @@
                 "NONE"
               ]
             },
+            "priority-grant": {
+              "type": "boolean",
+              "default": false,
+              "description": "When true, the grant permissions take priority over deny ones. When the value is true and neither grant nor deny implies explicitly the checked permission, the permission is implied implicitly."
+            },
             "all": {
               "$ref": "#/definitions/SecurityPermission"
             },
@@ -2956,6 +2962,11 @@
           "type": "array",
           "items": {
             "type": "string"
+          },
+        "deny": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, subtract/deny the permission instead of granting."
           }
         },
         "actions": {

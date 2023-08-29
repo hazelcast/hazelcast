@@ -39,6 +39,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
 
+import static org.assertj.core.util.Lists.newArrayList;
 import static java.util.Arrays.asList;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -107,6 +108,7 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("INSERT INTO " + mappingName + " VALUES(1, ?)", javaValue);
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, jdbcValue.getClass()),
                 new Row(0, jdbcValue),
                 new Row(1, jdbcValue)
         );

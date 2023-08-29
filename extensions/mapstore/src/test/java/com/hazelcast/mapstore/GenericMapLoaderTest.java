@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -560,7 +561,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     }
 
     private static void createSchema(String schemaName) throws SQLException {
-        executeJdbc("CREATE SCHEMA IF NOT EXISTS " + schemaName + " ");
+        executeJdbc(databaseProvider.createSchemaQuery(schemaName));
     }
 
     private <K> GenericMapLoader<K> createMapLoader() {

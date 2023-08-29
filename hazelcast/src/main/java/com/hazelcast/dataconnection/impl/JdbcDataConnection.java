@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
-import com.hazelcast.dataconnection.impl.jdbcproperties.DriverManagerTranslator;
 import com.hazelcast.dataconnection.impl.jdbcproperties.HikariTranslator;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.spi.annotation.Beta;
@@ -44,6 +43,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.hazelcast.dataconnection.impl.jdbcproperties.DataConnectionProperties.JDBC_URL;
+import static com.hazelcast.dataconnection.impl.jdbcproperties.DriverManagerTranslator.translate;
 
 /**
  * {@link DataConnection} implementation for JDBC.
@@ -91,8 +91,7 @@ public class JdbcDataConnection extends DataConnectionBase {
         validate(getConfig());
         Properties properties = getConfig().getProperties();
 
-        DriverManagerTranslator translator = new DriverManagerTranslator();
-        Properties translatedProperties = translator.translate(properties);
+        Properties translatedProperties = translate(properties);
 
         return () -> {
             try {

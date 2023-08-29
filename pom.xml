@@ -80,19 +80,18 @@
         <maven.jacoco.plugin.version>0.8.10</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>3.1.2</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
-        <maven.enforcer.plugin.version>3.3.0</maven.enforcer.plugin.version>
+        <maven.enforcer.plugin.version>3.4.0</maven.enforcer.plugin.version>
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
         <owasp.dependency-check.version>8.3.1</owasp.dependency-check.version>
-        <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.2.0</codehause.license.plugin.version>
 
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.2</avro.version>
-        <aws.sdk.version>1.12.526</aws.sdk.version>
+        <aws.sdk.version>1.12.531</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
         <classgraph.version>4.8.162</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
@@ -110,17 +109,18 @@
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>3.4.1</kafka.version>
-        <kotlin.version>1.9.0</kotlin.version>
+        <kotlin.version>1.9.10</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
+        <mssql.version>12.4.0.jre11</mssql.version>
         <mysql.connector.version>8.1.0</mysql.connector.version>
-        <netty.version>4.1.96.Final</netty.version>
+        <netty.version>4.1.97.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
         <picocli.version>4.7.4</picocli.version>
         <postgresql.version>42.6.0</postgresql.version>
-        <prometheus.version>0.19.0</prometheus.version>
+        <prometheus.version>0.20.0</prometheus.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
@@ -142,7 +142,7 @@
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.24.2</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
-        <bytebuddy.version>1.14.5</bytebuddy.version>
+        <bytebuddy.version>1.14.6</bytebuddy.version>
         <commons-codec.version>1.16.0</commons-codec.version>
         <commons-io.version>2.13.0</commons-io.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
@@ -155,13 +155,13 @@
         <junit.version>4.13.2</junit.version>
         <mockito.version>5.4.0</mockito.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.18.3</testcontainers.version>
+        <testcontainers.version>1.19.0</testcontainers.version>
         <jna.version>5.13.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.1.0</archunit.version>
         <errorprone.version>2.21.1</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
-        <kubernetes-server-mock.version>6.8.0</kubernetes-server-mock.version>
+        <kubernetes-server-mock.version>6.8.1</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -176,7 +176,7 @@
         <hazelcast.module.name>ALL-UNNAMED</hazelcast.module.name>
 
         <!-- needed for CheckStyle -->
-        <checkstyle.version>8.38</checkstyle.version>
+        <checkstyle.version>10.12.2</checkstyle.version>
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
@@ -328,13 +328,6 @@
                     <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
                     <excludes>**/module-info.java</excludes>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.puppycrawl.tools</groupId>
-                        <artifactId>checkstyle</artifactId>
-                        <version>${checkstyle.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
 
             <plugin>
@@ -553,6 +546,7 @@
                                 -->
                                 <includedLicense>Apache-2.0</includedLicense>
                                 <includedLicense>MIT</includedLicense>
+                                <includedLicense>MIT-0</includedLicense>
                                 <includedLicense>BSD-2-Clause</includedLicense>
                                 <includedLicense>BSD-3-Clause</includedLicense>
                                 <includedLicense>CC0-1.0</includedLicense>
@@ -1846,6 +1840,11 @@
                 <version>2.23.0</version>
             </dependency>
             <dependency>
+                <groupId>com.microsoft.sqlserver</groupId>
+                <artifactId>mssql-jdbc</artifactId>
+                <version>${mssql.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql.connector.version}</version>
@@ -1869,7 +1868,7 @@
             <dependency>
                 <groupId>com.google.auto.value</groupId>
                 <artifactId>auto-value-annotations</artifactId>
-                <version>1.10.2</version>
+                <version>1.10.3</version>
             </dependency>
             <dependency>
                 <groupId>com.nimbusds</groupId>
@@ -2141,7 +2140,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>10.1.11</version>
+            <version>10.1.12</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

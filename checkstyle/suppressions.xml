@@ -408,7 +408,7 @@
             checks="TypeName|MemberName|ConstantName|LocalVariableName|LocalFinalVariableName|MethodName"
             files="[\\/]src[\\/]test[\\/]"/>
     <suppress
-            checks="FinalClass|HideUtilityClassConstructor|InnerAssignment|EmptyBlock|DeclarationOrder|VisibilityModifier"
+            checks="HideUtilityClassConstructor|InnerAssignment|EmptyBlock|DeclarationOrder|VisibilityModifier"
             files="[\\/]src[\\/]test[\\/]"/>
     <suppress
             checks="ExplicitInitialization|EqualsHashCode|MissingSwitchDefault|TrailingComment"
