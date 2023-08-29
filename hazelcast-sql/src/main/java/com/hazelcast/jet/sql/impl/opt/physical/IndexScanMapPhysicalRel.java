@@ -218,7 +218,7 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
         // Note that no full sorting is performed, sorted row streams are only merged.
         double sortCpu = requiresSort ? CostUtils.INDEX_SCAN_CPU_MULTIPLIER_SORTED_ORDER_REQUIRED * projectCpu : 0;
 
-        // 4. Finally, return sum of both scan and project.
+        // 5. Finally, return sum of both scan and project.
         return planner.getCostFactory().makeCost(
                 filterRowCount,
                 scanCpu + filterCpu + projectCpu + sortCpu,
