@@ -41,7 +41,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
@@ -51,6 +50,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -540,10 +540,18 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     }
 
     private void check(Query query, boolean expectedUseIndex, Predicate<ExpressionValue> expectedKeysPredicate) {
+        check(query, expectedUseIndex, expectedUseIndex, expectedKeysPredicate);
+
+    }
+
+    private void check(Query query, boolean expectedUseIndex, boolean expectedUseIndexWithAndCondition,
+                       Predicate<ExpressionValue> expectedKeysPredicate) {
         // Prepare two additional queries with an additional AND/OR predicate
         String condition = "__key / 2 = 0";
         Query queryWithAnd = addConditionToQuery(query, condition, true);
         Query queryWithOr = addConditionToQuery(query, condition, false);
+        Query queryWithOrderBy = new Query(query.sql + " ORDER BY field1", query.parameters);
+        Query queryWithOrderByDesc = new Query(query.sql + " ORDER BY field1 DESC", query.parameters);
 
         Predicate<ExpressionValue> predicate = value -> value.key / 2 == 0;
         Predicate<ExpressionValue> expectedKeysPredicateWithAnd = and(expectedKeysPredicate, predicate);
@@ -553,10 +561,15 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check0(query, expectedUseIndex, expectedKeysPredicate);
 
         // Run query with AND, the same index should be used
-        check0(queryWithAnd, expectedUseIndex, expectedKeysPredicateWithAnd);
+        check0(queryWithAnd, expectedUseIndexWithAndCondition, expectedKeysPredicateWithAnd);
 
         // Run query with OR, no index should be used
         check0(queryWithOr, false, expectedKeysPredicateWithOr);
+
+        // Sorting is so costly that index should be preferred regardless of predicates
+        // For hash index sorting does not use index, but scan still can use it.
+        check0(queryWithOrderBy, expectedUseIndex || c_sorted(), expectedKeysPredicate);
+        check0(queryWithOrderByDesc, expectedUseIndex || c_sorted(), expectedKeysPredicate);
     }
 
     private void check0(Query query, boolean expectedUseIndex, Predicate<ExpressionValue> expectedKeysPredicate) {
@@ -666,14 +679,18 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 map.size()
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);
-        assertPlan(
-                optimizationResult.getLogical(),
-                plan(planRow(0, FullScanLogicalRel.class))
-        );
-        assertPlan(
-                optimizationResult.getPhysical(),
-                plan(planRow(0, withIndex ? IndexScanMapPhysicalRel.class : FullScanPhysicalRel.class))
-        );
+        if (sql.toLowerCase(Locale.ROOT).contains("order by")) {
+            // TODO: assert plan
+        } else {
+            assertPlan(
+                    optimizationResult.getLogical(),
+                    plan(planRow(0, FullScanLogicalRel.class))
+            );
+            assertPlan(
+                    optimizationResult.getPhysical(),
+                    plan(planRow(0, withIndex ? IndexScanMapPhysicalRel.class : FullScanPhysicalRel.class))
+            );
+        }
     }
 
     protected MapConfig getMapConfig() {
