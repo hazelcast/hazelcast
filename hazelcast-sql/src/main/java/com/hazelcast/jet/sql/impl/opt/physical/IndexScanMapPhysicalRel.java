@@ -99,7 +99,7 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
                 collations = FieldCollation.convertCollation(relCollation.getFieldCollations());
             } else {
                 // order is not forced, use default comparator for the index columns
-                collations = getIndex().getFieldOrdinals().stream()
+                collations = index.getFieldOrdinals().stream()
                         .map(i -> new FieldCollation(i, RelFieldCollation.Direction.ASCENDING,
                                 RelFieldCollation.NullDirection.UNSPECIFIED))
                         .collect(toList());
