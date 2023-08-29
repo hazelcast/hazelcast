@@ -21,8 +21,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class XmlNodeTest {
 
@@ -31,26 +30,26 @@ public class XmlNodeTest {
         // given
         //language=XML
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            + "<root xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\">\n"
-            + "    <parent>\n"
-            + "        <item>\n"
-            + "            <key>value</key>\n"
-            + "        </item>\n"
-            + "        <item>\n"
-            + "            <key>second-value</key>\n"
-            + "        </item>\n"
-            + "    </parent>\n"
-            + "</root>";
+                + "<root xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\">\n"
+                + "    <parent>\n"
+                + "        <item>\n"
+                + "            <key>value</key>\n"
+                + "        </item>\n"
+                + "        <item>\n"
+                + "            <key>second-value</key>\n"
+                + "        </item>\n"
+                + "    </parent>\n"
+                + "</root>";
 
         // when
         List<String> itemValues = XmlNode.create(xml)
-            .getSubNodes("parent").stream()
-            .flatMap(e -> e.getSubNodes("item").stream())
-            .map(item -> item.getValue("key"))
-            .collect(Collectors.toList());
+                                         .getSubNodes("parent").stream()
+                                         .flatMap(e -> e.getSubNodes("item").stream())
+                                         .map(item -> item.getValue("key"))
+                                         .collect(Collectors.toList());
 
         // then
-        assertThat(itemValues, hasItems("value", "second-value"));
+        assertThat(itemValues).containsExactlyInAnyOrder("value", "second-value");
     }
 
     @Test(expected = RuntimeException.class)

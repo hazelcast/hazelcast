@@ -88,9 +88,6 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
         assertContainsSensor("os.processCpuTime");
         assertContainsSensor("os.totalPhysicalMemorySize");
         assertContainsSensor("os.totalSwapSpaceSize");
-
-        assumeThatNoJDK6();
-        // only available in JDK 7+
         assertContainsSensor("os.processCpuLoad");
         assertContainsSensor("os.systemCpuLoad");
     }

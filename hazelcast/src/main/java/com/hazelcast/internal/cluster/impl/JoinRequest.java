@@ -41,10 +41,6 @@ import static java.util.Collections.unmodifiableSet;
 
 public class JoinRequest extends JoinMessage {
 
-    // RU_COMPAT 5.2
-    private static final String VERSION_5_3_0 = "5.3.0";
-    private static final MemberVersion CURRENT = MemberVersion.of(VERSION_5_3_0);
-
     private Credentials credentials;
     private int tryCount;
     private Map<String, String> attributes;
@@ -130,10 +126,7 @@ public class JoinRequest extends JoinMessage {
         this.excludedMemberUuids = unmodifiableSet(excludedMemberUuids);
         this.addresses = readMap(in);
         cpMemberUUID = UUIDSerializationUtil.readUUID(in);
-        // RU_COMPAT 5.2
-        if (MemberVersion.MAJOR_MINOR_VERSION_COMPARATOR.compare(this.memberVersion, CURRENT) >= 0) {
-            preJoinOperation = in.readObject();
-        }
+        preJoinOperation = in.readObject();
     }
 
     @Override

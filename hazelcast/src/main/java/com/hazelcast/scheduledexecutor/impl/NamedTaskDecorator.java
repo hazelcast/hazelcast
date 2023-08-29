@@ -16,17 +16,15 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.scheduledexecutor.NamedTask;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
 public class NamedTaskDecorator<V> extends AbstractTaskDecorator<V>
-        implements NamedTask, Versioned {
+        implements NamedTask {
 
     private String name;
 
@@ -58,25 +56,15 @@ public class NamedTaskDecorator<V> extends AbstractTaskDecorator<V>
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            super.writeData(out);
-            out.writeString(name);
-        } else {
-            out.writeString(name);
-            out.writeObject(delegate);
-        }
+        super.writeData(out);
+        out.writeString(name);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            super.readData(in);
-            name = in.readString();
-        } else {
-            name = in.readString();
-            delegate = in.readObject();
-        }
+        super.readData(in);
+        name = in.readString();
     }
 
     public static Runnable named(String name, Runnable runnable) {

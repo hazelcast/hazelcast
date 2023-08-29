@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -46,13 +47,14 @@ public class AppendRequest implements IdentifiedDataSerializable {
     private long leaderCommitIndex;
     private LogEntry[] entries;
     private long queryRound;
+    private long flowControlSequenceNumber;
 
     public AppendRequest() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public AppendRequest(RaftEndpoint leader, int term, int prevLogTerm, long prevLogIndex, long leaderCommitIndex,
-            LogEntry[] entries, long queryRound) {
+            LogEntry[] entries, long queryRound, long flowControlSequenceNumber) {
         this.leader = leader;
         this.term = term;
         this.prevLogTerm = prevLogTerm;
@@ -60,6 +62,7 @@ public class AppendRequest implements IdentifiedDataSerializable {
         this.leaderCommitIndex = leaderCommitIndex;
         this.entries = entries;
         this.queryRound = queryRound;
+        this.flowControlSequenceNumber = flowControlSequenceNumber;
     }
 
     public RaftEndpoint leader() {
@@ -95,6 +98,10 @@ public class AppendRequest implements IdentifiedDataSerializable {
         return queryRound;
     }
 
+    public long flowControlSequenceNumber() {
+        return flowControlSequenceNumber;
+    }
+
     @Override
     public int getFactoryId() {
         return RaftDataSerializerHook.F_ID;
@@ -119,6 +126,7 @@ public class AppendRequest implements IdentifiedDataSerializable {
         }
 
         out.writeLong(queryRound);
+        out.writeLong(flowControlSequenceNumber);
     }
 
     @Override
@@ -136,13 +144,20 @@ public class AppendRequest implements IdentifiedDataSerializable {
         }
 
         queryRound = in.readLong();
+
+        try {
+            flowControlSequenceNumber = in.readLong();
+            // TODO RU_COMPAT_5_3 added for Version 5.3 compatibility. Should be removed at Version 5.5
+        } catch (EOFException e) {
+            flowControlSequenceNumber = -1;
+        }
     }
 
     @Override
     public String toString() {
         return "AppendRequest{" + "leader=" + leader + ", term=" + term + ", prevLogTerm=" + prevLogTerm
                 + ", prevLogIndex=" + prevLogIndex + ", leaderCommitIndex=" + leaderCommitIndex + ", queryRound=" + queryRound
-                + ", entries=" + Arrays.toString(entries) + '}';
+                + ", flowControlSequenceNumber=" + flowControlSequenceNumber + ", entries=" + Arrays.toString(entries) + '}';
     }
 
 }

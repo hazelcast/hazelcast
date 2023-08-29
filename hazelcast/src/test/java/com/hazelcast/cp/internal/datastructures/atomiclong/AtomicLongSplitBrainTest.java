@@ -32,9 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.cp.internal.HazelcastRaftTestSupport.waitUntilCPDiscoveryCompleted;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -71,8 +69,8 @@ public class AtomicLongSplitBrainTest extends RaftSplitBrainTestSupport {
             future.get();
         }
         IAtomicLong atomic = instances[0].getCPSubsystem().getAtomicLong(name);
-        assertThat(atomic.get(), greaterThanOrEqualTo(increments.get()));
-        assertThat(atomic.get(), lessThanOrEqualTo(increments.get() + indeterminate.get()));
+        assertThat(atomic.get()).isGreaterThanOrEqualTo(increments.get());
+        assertThat(atomic.get()).isLessThanOrEqualTo(increments.get() + indeterminate.get());
     }
 
     private class Adder implements Runnable {

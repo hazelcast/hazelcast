@@ -242,4 +242,10 @@ public interface IPartitionService extends CoreService {
         keysData.forEach(o -> partitionIds.add(getPartitionId(o)));
         return partitionIds;
     }
+
+    /**
+     * @return  {@code true} if initial partition assignment ("first arrangement")
+     *          is done, otherwise {@code false}.
+     */
+    boolean isPartitionAssignmentDone();
 }

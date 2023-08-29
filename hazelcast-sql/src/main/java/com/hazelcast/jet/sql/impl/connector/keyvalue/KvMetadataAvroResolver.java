@@ -36,6 +36,8 @@ import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_RECORD_NAME;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_RECORD_NAME;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 
@@ -91,18 +93,21 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
+        String recordName = options.getOrDefault(isKey ? OPTION_KEY_AVRO_RECORD_NAME : OPTION_VALUE_AVRO_RECORD_NAME,
+                "jet.sql");
         return new KvMetadata(
                 fields,
                 AvroQueryTargetDescriptor.INSTANCE,
-                new AvroUpsertTargetDescriptor(schema(fields).toString())
+                new AvroUpsertTargetDescriptor(schema(recordName, fields))
         );
     }
 
-    private Schema schema(List<TableField> fields) {
+    // CREATE MAPPING <name> (<fields>) Type Kafka; INSERT INTO <name> ...
+    private Schema schema(String recordName, List<TableField> fields) {
         QueryPath[] paths = paths(fields);
         QueryDataType[] types = types(fields);
 
-        FieldAssembler<Schema> schema = SchemaBuilder.record("jet.sql").fields();
+        FieldAssembler<Schema> schema = SchemaBuilder.record(recordName).fields();
         for (int i = 0; i < fields.size(); i++) {
             String path = paths[i].getPath();
             if (path == null) {

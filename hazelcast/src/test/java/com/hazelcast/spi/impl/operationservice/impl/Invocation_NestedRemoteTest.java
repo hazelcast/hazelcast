@@ -17,22 +17,21 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CompletionException;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getOperationService;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -41,9 +40,6 @@ import static org.junit.Assert.assertNotEquals;
 public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
 
     private static final String RESPONSE = "someresponse";
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @Test
     public void invokeOnPartition_outerGeneric_innerGeneric_forbidden() {
@@ -54,10 +50,11 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         InnerOperation innerOperation = new InnerOperation(RESPONSE, GENERIC_OPERATION);
         OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
 
-        expected.expect(Exception.class);
-        InternalCompletableFuture<Object> future =
-                operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
-        future.join();
+        assertThatThrownBy(() -> {
+            InternalCompletableFuture<Object> future =
+                    operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
+            future.join();
+        }).isInstanceOf(Exception.class);
     }
 
     @Test
@@ -104,10 +101,10 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, outerPartitionId);
         InternalCompletableFuture future = operationService.invokeOnPartition(null, outerOperation, outerPartitionId);
 
-        expected.expect(CompletionException.class);
-        expected.expect(new RootCauseMatcher(IllegalThreadStateException.class));
-        expected.expectMessage("cannot make remote call");
-        future.join();
+        assertThatThrownBy(future::join)
+                .isInstanceOf(CompletionException.class)
+                .has(rootCause(IllegalThreadStateException.class))
+                .hasMessageContaining("cannot make remote call");
     }
 
     @Test
@@ -124,10 +121,10 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, outerPartitionId);
         InternalCompletableFuture future = operationService.invokeOnPartition(null, outerOperation, outerPartitionId);
 
-        expected.expect(CompletionException.class);
-        expected.expect(new RootCauseMatcher(IllegalThreadStateException.class));
-        expected.expectMessage("cannot make remote call");
-        future.join();
+        assertThatThrownBy(future::join)
+                .isInstanceOf(CompletionException.class)
+                .has(rootCause(IllegalThreadStateException.class))
+                .hasMessageContaining("cannot make remote call");
     }
 
     @Test
@@ -144,10 +141,10 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, outerPartitionId);
         InternalCompletableFuture future = operationService.invokeOnPartition(null, outerOperation, outerPartitionId);
 
-        expected.expect(CompletionException.class);
-        expected.expect(new RootCauseMatcher(IllegalThreadStateException.class));
-        expected.expectMessage("cannot make remote call");
-        future.join();
+        assertThatThrownBy(future::join)
+                .isInstanceOf(CompletionException.class)
+                .has(rootCause(IllegalThreadStateException.class))
+                .hasMessageContaining("cannot make remote call");
     }
 
     @Test

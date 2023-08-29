@@ -26,7 +26,6 @@ import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,12 +50,11 @@ import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static java.lang.Math.max;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
@@ -589,7 +587,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
         ReadResultSet<String> resultSet = f.get();
 
-        assertThat(f.get(), contains("1"));
+        assertThat(f.get()).containsExactlyInAnyOrder("1");
         assertEquals(1, resultSet.readCount());
         assertEquals(1, resultSet.getNextSequenceToReadFrom());
     }
@@ -610,7 +608,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ReadResultSet<String> resultSet = f.get();
         assertNotNull(resultSet);
 
-        assertThat(f.get(), contains("1", "2"));
+        assertThat(f.get()).containsExactlyInAnyOrder("1", "2");
         assertEquals(2, resultSet.readCount());
         assertEquals(2, resultSet.getNextSequenceToReadFrom());
     }
@@ -624,7 +622,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         assertCompletesEventually(f);
         ReadResultSet<String> resultSet = f.get();
         assertNotNull(resultSet);
-        assertThat(resultSet, contains("1"));
+        assertThat(resultSet).containsExactlyInAnyOrder("1");
         assertEquals(1, resultSet.getNextSequenceToReadFrom());
     }
 
@@ -652,7 +650,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ReadResultSet<String> resultSet = f.get();
 
         assertNotNull(resultSet);
-        Assert.assertThat(f.get(), contains("item2", "item3"));
+        assertThat(f.get()).containsExactlyInAnyOrder("item2", "item3");
         assertEquals(2, resultSet.readCount());
         assertEquals(3, resultSet.getNextSequenceToReadFrom());
     }
@@ -685,7 +683,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ReadResultSet<String> resultSet = f.get();
 
         assertNotNull(resultSet);
-        Assert.assertThat(f.get(), contains("good1", "good2", "good3"));
+        assertThat(f.get()).containsExactlyInAnyOrder("good1", "good2", "good3");
         assertEquals(6, resultSet.readCount());
         assertEquals(6, resultSet.getNextSequenceToReadFrom());
     }
@@ -730,7 +728,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
         ReadResultSet<String> resultSet = f.get();
 
-        assertThat(f.get(), contains("1", "2", "3"));
+        assertThat(f.get()).containsExactlyInAnyOrder("1", "2", "3");
 
         assertEquals(3, resultSet.readCount());
         assertEquals(3, resultSet.getNextSequenceToReadFrom());
@@ -748,7 +746,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ReadResultSet<String> resultSet = f.get();
 
         assertNotNull(resultSet);
-        assertThat(f.get(), contains("1", "2"));
+        assertThat(f.get()).containsExactlyInAnyOrder("1", "2");
         assertEquals(2, resultSet.readCount());
         assertEquals(2, resultSet.getNextSequenceToReadFrom());
     }

@@ -34,5 +34,12 @@ public final class JobConfigArguments {
      */
     public static final String KEY_SQL_UNBOUNDED = "__sql.queryUnbounded";
 
-    private JobConfigArguments() { }
+    /**
+     * The key under which the SQL engine stores detected partitions to apply
+     * member pruning technique.
+     */
+    public static final String KEY_REQUIRED_PARTITIONS = "__sql.requiredPartitions";
+
+    private JobConfigArguments() {
+    }
 }

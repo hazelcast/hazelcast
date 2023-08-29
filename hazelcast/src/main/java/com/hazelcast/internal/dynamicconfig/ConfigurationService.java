@@ -35,6 +35,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.List;
@@ -373,4 +374,19 @@ public interface ConfigurationService {
      * @return registered data connection configurations keyed by store's name
      */
     Map<String, DataConnectionConfig> getDataConnectionConfigs();
+
+    /**
+     * Finds existing WAN replication configuration by name.
+     *
+     * @param name name of the configuration
+     * @return WAN replication configuration or {@code null} when the requested configuration does not exist
+     */
+    WanReplicationConfig findWanReplicationConfig(String name);
+
+    /**
+     * Returns all registered WAN replication configurations keyed by configuration name.
+     *
+     * @return registered WAN replication configurations keyed by configuration name
+     */
+    Map<String, WanReplicationConfig> getWanReplicationConfigs();
 }

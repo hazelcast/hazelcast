@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
-import com.hazelcast.jet.function.QuadFunction;
+import com.hazelcast.jet.function.PentaFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.SqlExternalResource;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
@@ -66,17 +66,18 @@ public class TableResolverImpl implements TableResolver {
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
 
-    private static final List<QuadFunction<List<Mapping>, List<View>, List<Type>, NodeEngine, Table>> ADDITIONAL_TABLE_PRODUCERS
-            = asList(
-                    (m, v, t, hz) -> new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
-                    (m, v, t, hz) -> new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m,
-                            hz.getDataConnectionService()::typeForDataConnection,
-                            hz.getConfig().getSecurityConfig().isEnabled()),
-                    (m, v, t, hz) -> new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
-                    (m, v, t, hz) -> new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, v),
-                    (m, v, t, hz) -> new UserDefinedTypesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t),
-                    (m, v, t, hz) -> new UDTAttributesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t)
-            );
+    private static final List<PentaFunction<List<Mapping>, List<View>, List<Type>, SqlConnectorCache, NodeEngine, Table>>
+            ADDITIONAL_TABLE_PRODUCERS = asList(
+            (m, v, t, cc, hz) -> new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
+            (m, v, t, cc, hz) -> new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m,
+                    cc,
+                    hz.getDataConnectionService()::typeForDataConnection,
+                    hz.getConfig().getSecurityConfig().isEnabled()),
+            (m, v, t, cc, hz) -> new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
+            (m, v, t, cc, hz) -> new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, v),
+            (m, v, t, cc, hz) -> new UserDefinedTypesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t),
+            (m, v, t, cc, hz) -> new UDTAttributesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t)
+    );
 
     private final NodeEngine nodeEngine;
     private final RelationsStorage relationsStorage;
@@ -293,7 +294,7 @@ public class TableResolverImpl implements TableResolver {
         }
 
         ADDITIONAL_TABLE_PRODUCERS.forEach(
-                producer -> tables.add(producer.apply(mappings, views, types, nodeEngine)));
+                producer -> tables.add(producer.apply(mappings, views, types, connectorCache, nodeEngine)));
 
         this.lastViewsSize = views.size();
         this.lastMappingsSize = mappings.size();

@@ -33,31 +33,24 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.primitives.Ints.asList;
-import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapProjectionTest extends HazelcastTestSupport {
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
-
     protected HazelcastInstance instance0;
-
-    private AtomicBoolean isProjectionContextInjected = new AtomicBoolean(false);
 
     @Test(expected = NullPointerException.class)
     public void null_projection() {
@@ -77,7 +70,6 @@ public class MapProjectionTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    @SuppressWarnings("RedundantCast")
     public void pagingPredicate_fails() {
         getMapWithNodeCount(1).project(new NullReturningProjection(), Predicates.pagingPredicate(1));
     }
@@ -89,7 +81,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
 
         Collection<Double> result = map.project(new PrimitiveValueIncrementingProjection());
 
-        assertThat(result, containsInAnyOrder(2.0d, 5.0d, 8.0d));
+        assertThat(result).containsExactlyInAnyOrder(2.0d, 5.0d, 8.0d);
     }
 
     @Test
@@ -99,7 +91,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
 
         Collection<Double> result = map.project(new PrimitiveValueIncrementingProjection());
 
-        assertThat(result, containsInAnyOrder(2.0d, 5.0d, 8.0d));
+        assertThat(result).containsExactlyInAnyOrder(2.0d, 5.0d, 8.0d);
     }
 
     @Test
@@ -107,10 +99,9 @@ public class MapProjectionTest extends HazelcastTestSupport {
         IMap<String, Double> map = getMapWithNodeCount(3);
         populateMap(map);
 
-        expected.expect(RuntimeException.class);
-        expected.expectMessage("transform() exception");
-
-        map.project(new ExceptionThrowingProjection());
+        assertThatThrownBy(() -> map.project(new ExceptionThrowingProjection()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("transform() exception");
     }
 
     @Test
@@ -120,7 +111,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
 
         Collection<Double> result = map.project(new NullReturningProjection());
 
-        assertThat(result, containsInAnyOrder((Double) null, null, null));
+        assertThat(result).containsExactlyInAnyOrder(null, null, null);
     }
 
 
@@ -131,7 +122,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
 
         Collection<Double> result = map.project(new ObjectValueIncrementingProjection());
 
-        assertThat(result, containsInAnyOrder(2.0d, 5.0d, 8.0d));
+        assertThat(result).containsExactlyInAnyOrder(2.0d, 5.0d, 8.0d);
     }
 
     @Test
@@ -141,7 +132,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
 
         Collection<Double> result = map.project(new ObjectValueIncrementingProjection());
 
-        assertThat(result, containsInAnyOrder(2.0d, 5.0d, 8.0d));
+        assertThat(result).containsExactlyInAnyOrder(2.0d, 5.0d, 8.0d);
     }
 
     @Test
@@ -151,7 +142,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
 
         Collection<Object[]> result = map.project(Projections.multiAttribute("age", "state"));
 
-        assertThat(result, containsInAnyOrder(new Object[]{1.0d, "NY"}, new Object[]{4.0d, "DC"}, new Object[]{7.0d, "OH"}));
+        assertThat(result).containsExactlyInAnyOrder(new Object[]{1.0d, "NY"}, new Object[]{4.0d, "DC"}, new Object[]{7.0d, "OH"});
     }
 
     @Test
@@ -161,7 +152,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
 
         Collection<Double> result = map.project(new ObjectValueIncrementingProjection(), Predicates.greaterThan("age", 1.0d));
 
-        assertThat(result, containsInAnyOrder(5.0d, 8.0d));
+        assertThat(result).containsExactlyInAnyOrder(5.0d, 8.0d);
     }
 
     @Test
@@ -171,7 +162,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
 
         Collection<Double> result = map.project(new ObjectValueIncrementingProjection(), Predicates.greaterThan("age", 1.0d));
 
-        assertThat(result, containsInAnyOrder(5.0d, 8.0d));
+        assertThat(result).containsExactlyInAnyOrder(5.0d, 8.0d);
     }
 
     @Test
@@ -183,7 +174,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
         Collection<Double> result = ((MapProxyImpl<String, Person>) map)
                 .project(new ObjectValueIncrementingProjection(), Predicates.alwaysTrue(), partitionSubset);
 
-        assertThat(result, containsInAnyOrder(2.0d, 5.0d));
+        assertThat(result).containsExactlyInAnyOrder(2.0d, 5.0d);
     }
 
     @Test
@@ -195,7 +186,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
         Collection<Double> result = ((MapProxyImpl<String, Person>) map)
                 .project(new ObjectValueIncrementingProjection(), Predicates.alwaysTrue(), partitionSubset);
 
-        assertThat(result, containsInAnyOrder(2.0d, 5.0d));
+        assertThat(result).containsExactlyInAnyOrder(2.0d, 5.0d);
     }
 
     public <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount) {
@@ -211,12 +202,6 @@ public class MapProjectionTest extends HazelcastTestSupport {
         mapConfig.setName("aggr");
         mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         config.addMapConfig(mapConfig);
-        config.setManagedContext(obj -> {
-           if (obj instanceof ProjectionWithContext) {
-               isProjectionContextInjected.set(true);
-           }
-            return obj;
-        });
 
         doWithConfig(config);
 
@@ -299,10 +284,4 @@ public class MapProjectionTest extends HazelcastTestSupport {
         }
     }
 
-    public static class ProjectionWithContext implements Projection {
-        @Override
-        public Object transform(Object input) {
-            return input;
-        }
-    }
 }

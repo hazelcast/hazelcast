@@ -332,7 +332,10 @@ class DefaultAddressPicker
         }
         if (address != null) {
             address = address.trim();
-            if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
+            if (address.isEmpty()) {
+                throw new IllegalArgumentException("Public address cannot be blank. Configure it to a"
+                        + " non-blank value or remove it from configuration.");
+            } else if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
                 return pickLoopbackAddress(address, port);
             } else {
                 // allow port to be defined in same string in the form of <host>:<port>, e.g. 10.0.0.0:1234

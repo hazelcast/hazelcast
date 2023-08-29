@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.cluster;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.services.CoreService;
 
 import javax.annotation.Nonnull;
@@ -103,6 +103,15 @@ public interface ClusterService extends CoreService, Cluster {
      * @return {@code true} if this member is joined to a cluster, {@code false} otherwise
      */
     boolean isJoined();
+
+    /**
+     * Returns whether this member joined to a cluster before. If a member
+     * joins a cluster and then split brain resets the join state, still
+     * {@code true} will be returned.
+     *
+     * @return {@code true} if this member is joined to a cluster before, {@code false} otherwise
+     */
+    boolean isJoinedBefore();
 
     /**
      * Gets the address of this member.

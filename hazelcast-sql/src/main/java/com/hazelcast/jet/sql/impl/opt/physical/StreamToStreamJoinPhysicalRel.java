@@ -17,16 +17,12 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
-import org.apache.calcite.rel.core.JoinInfo;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 
@@ -54,22 +50,6 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
 
         this.postponeTimeMap = postponeTimeMap;
         assert !postponeTimeMap.isEmpty();
-    }
-
-    public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
-        JoinInfo joinInfo = analyzeCondition();
-        RexNode predicate = joinInfo.getRemaining(getCluster().getRexBuilder());
-        Expression<Boolean> nonEquiCondition = filter(schema(parameterMetadata), predicate, parameterMetadata);
-
-        Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
-
-        return new JetJoinInfo(
-                getJoinType(),
-                joinInfo.leftKeys.toIntArray(),
-                joinInfo.rightKeys.toIntArray(),
-                nonEquiCondition,
-                condition
-        );
     }
 
     public Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors() {

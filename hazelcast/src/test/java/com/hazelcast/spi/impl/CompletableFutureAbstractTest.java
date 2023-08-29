@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.spi.impl.operationservice.impl.CompletableFutureTestUtil;
 import com.hazelcast.spi.impl.operationservice.impl.CompletableFutureTestUtil.CountingExecutor;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -24,10 +23,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CancellationException;
@@ -40,27 +37,27 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.spi.impl.operationservice.impl.CompletableFutureTestUtil.ignore;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("Convert2MethodRef")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class CompletableFutureAbstractTest {
 
     private static final Executor REJECTING_EXECUTOR = new RejectingExecutor();
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    protected final Long returnValue = Long.valueOf(130);
+    protected final Long returnValue = 130L;
     protected final Object chainedReturnValue = new Object();
     protected CountingExecutor countingExecutor = new CountingExecutor();
 
@@ -144,9 +141,10 @@ public abstract class CompletableFutureAbstractTest {
 
         assertTrueEventually(() -> assertTrue(chained.isDone()));
         assertTrue(chained.isCompletedExceptionally());
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -156,9 +154,10 @@ public abstract class CompletableFutureAbstractTest {
 
         assertTrueEventually(() -> assertTrue(chained.isDone()));
         assertTrue(chained.isCompletedExceptionally());
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -181,9 +180,10 @@ public abstract class CompletableFutureAbstractTest {
         assertTrueEventually(() -> assertTrue(chained.isDone()));
         assertFalse(future.isCompletedExceptionally());
         assertTrue(chained.isCompletedExceptionally());
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -266,9 +266,10 @@ public abstract class CompletableFutureAbstractTest {
 
         assertTrueEventually(() -> assertTrue(chained.isDone()));
         assertTrue(chained.isCompletedExceptionally());
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -278,9 +279,10 @@ public abstract class CompletableFutureAbstractTest {
 
         assertTrueEventually(() -> assertTrue(chained.isDone()));
         assertTrue(chained.isCompletedExceptionally());
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -303,9 +305,10 @@ public abstract class CompletableFutureAbstractTest {
         assertTrueEventually(() -> assertTrue(chained.isDone()));
         assertFalse(future.isCompletedExceptionally());
         assertTrue(chained.isCompletedExceptionally());
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -374,9 +377,10 @@ public abstract class CompletableFutureAbstractTest {
 
         assertTrueEventually(() -> assertTrue(chained.isDone()));
         assertTrue(chained.isCompletedExceptionally());
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -386,9 +390,10 @@ public abstract class CompletableFutureAbstractTest {
 
         assertTrueEventually(() -> assertTrue(chained.isDone()));
         assertTrue(chained.isCompletedExceptionally());
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -400,9 +405,10 @@ public abstract class CompletableFutureAbstractTest {
 
         assertTrueEventually(() -> assertTrue(chained.isDone()));
         assertTrue(chained.isCompletedExceptionally());
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(IllegalStateException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(IllegalStateException.class));
     }
 
     @Test
@@ -425,9 +431,10 @@ public abstract class CompletableFutureAbstractTest {
         assertTrueEventually(() -> assertTrue(chained.isDone()));
         assertFalse(future.isCompletedExceptionally());
         assertTrue(chained.isCompletedExceptionally());
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -547,9 +554,10 @@ public abstract class CompletableFutureAbstractTest {
             throw new ExpectedRuntimeException();
         });
         assertTrueEventually(() -> assertTrue(chained.isCompletedExceptionally()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -559,9 +567,10 @@ public abstract class CompletableFutureAbstractTest {
             throw new IllegalArgumentException();
         });
         assertTrueEventually(() -> assertTrue(chained.isCompletedExceptionally()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -571,9 +580,10 @@ public abstract class CompletableFutureAbstractTest {
             throw new ExpectedRuntimeException();
         });
         assertTrueEventually(() -> assertTrue(chained.isCompletedExceptionally()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -583,9 +593,10 @@ public abstract class CompletableFutureAbstractTest {
             throw new IllegalArgumentException();
         });
         assertTrueEventually(() -> assertTrue(chained.isCompletedExceptionally()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -595,9 +606,10 @@ public abstract class CompletableFutureAbstractTest {
             throw new ExpectedRuntimeException();
         }, countingExecutor);
         assertTrueEventually(() -> assertTrue(chained.isCompletedExceptionally()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -607,9 +619,10 @@ public abstract class CompletableFutureAbstractTest {
             throw new IllegalArgumentException();
         }, countingExecutor);
         assertTrueEventually(() -> assertTrue(chained.isCompletedExceptionally()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -725,9 +738,10 @@ public abstract class CompletableFutureAbstractTest {
             throw new ExpectedRuntimeException();
         });
         assertTrueEventually(() -> assertTrue(chained.isCompletedExceptionally()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     // since handle* methods process and substitute processing outcome of first stage,
@@ -741,9 +755,10 @@ public abstract class CompletableFutureAbstractTest {
             throw new IllegalArgumentException();
         });
         assertTrueEventually(() -> assertTrue(chained.isCompletedExceptionally()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(IllegalArgumentException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(IllegalArgumentException.class));
     }
 
     @Test
@@ -753,9 +768,10 @@ public abstract class CompletableFutureAbstractTest {
             throw new ExpectedRuntimeException();
         });
         assertTrueEventually(() -> assertTrue(chained.isCompletedExceptionally()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -765,9 +781,10 @@ public abstract class CompletableFutureAbstractTest {
             throw new IllegalArgumentException();
         });
         assertTrueEventually(() -> assertTrue(chained.isCompletedExceptionally()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(IllegalArgumentException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(IllegalArgumentException.class));
     }
 
     @Test
@@ -777,9 +794,10 @@ public abstract class CompletableFutureAbstractTest {
             throw new ExpectedRuntimeException();
         }, countingExecutor);
         assertTrueEventually(() -> assertTrue(chained.isCompletedExceptionally()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -789,9 +807,9 @@ public abstract class CompletableFutureAbstractTest {
             throw new IllegalArgumentException();
         }, countingExecutor);
         assertTrueEventually(() -> assertTrue(chained.isCompletedExceptionally()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(IllegalArgumentException.class));
-        chained.join();
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(IllegalArgumentException.class));
     }
 
     @Test
@@ -820,9 +838,10 @@ public abstract class CompletableFutureAbstractTest {
         });
 
         assertTrueEventually(() -> assertTrue(chained.isDone()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(IllegalArgumentException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(IllegalArgumentException.class));
     }
 
     @Test
@@ -833,9 +852,10 @@ public abstract class CompletableFutureAbstractTest {
         });
 
         assertTrueEventually(() -> assertTrue(chained.isDone()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(IllegalArgumentException.class));
-        chained.join();
+
+        assertThatThrownBy(chained::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(IllegalArgumentException.class));
     }
 
     @Test
@@ -933,32 +953,31 @@ public abstract class CompletableFutureAbstractTest {
     public void thenCompose_whenExceptionFromFirstStage() {
         CompletableFuture<Object> future = newCompletableFuture(true, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        future.thenCompose(v -> null).join();
+        assertThatThrownBy(() -> future.thenCompose(v -> null).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
     public void thenCompose_whenExceptionFromUserFunction() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(IllegalStateException.class));
-        future.thenCompose(v -> {
+        assertThatThrownBy(() -> future.thenCompose(v -> {
             throw new IllegalStateException();
-        }).join();
+        }).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(IllegalStateException.class));
     }
 
     @Test
     public void thenCompose_whenExceptionFromFirstStageAndUserFunction_thenFirstStageExceptionBubbles() {
         CompletableFuture<Object> future = newCompletableFuture(true, 0L);
 
-        expectedException.expect(CompletionException.class);
-        // expect the exception thrown from first future
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        future.thenCompose(v -> {
+        assertThatThrownBy(() -> future.thenCompose(v -> {
             throw new IllegalStateException();
-        }).join();
+        }).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -970,9 +989,9 @@ public abstract class CompletableFutureAbstractTest {
             assertInstanceOf(CancellationException.class, t);
         });
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(CancellationException.class));
-        nextStage.join();
+        assertThatThrownBy(nextStage::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(CancellationException.class));
     }
 
     // Tests for exceptional completion of dependent stage due to executor rejecting execution
@@ -980,108 +999,108 @@ public abstract class CompletableFutureAbstractTest {
     public void thenRunAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.thenRunAsync(() -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.thenRunAsync(CompletableFutureTestUtil::ignore, REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void thenRunAsync_onIncompleteFuture_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.thenRunAsync(() -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.thenRunAsync(CompletableFutureTestUtil::ignore, REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void thenApplyAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.thenApplyAsync(v -> null, REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.thenApplyAsync(v -> null, REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void thenApplyAsync_onIncompleteFuture_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.thenApplyAsync(v -> null, REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.thenApplyAsync(v -> null, REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void thenAcceptAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.thenAcceptAsync(v -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.thenAcceptAsync(v -> ignore(), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void thenAcceptAsync_onIncompleteFuture_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.thenAcceptAsync(v -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.thenAcceptAsync(v -> ignore(), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void handleAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.handleAsync((v, t) -> null, REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.handleAsync((v, t) -> null, REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void handleAsync_onIncompleteFuture_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.handleAsync((v, t) -> null, REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.handleAsync((v, t) -> null, REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void whenCompleteAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.whenCompleteAsync((v, t) -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.whenCompleteAsync((v, t) -> ignore(), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void whenCompleteAsync_onIncompleteFuture_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.whenCompleteAsync((v, t) -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.whenCompleteAsync((v, t) -> ignore(), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void acceptEitherAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.acceptEitherAsync(newCompletedFuture(null), v -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.acceptEitherAsync(newCompletedFuture(null), v -> ignore(), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void acceptEitherAsync_onIncompleteFuture_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.acceptEitherAsync(newCompletedFuture(null), v -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.acceptEitherAsync(newCompletedFuture(null), v -> ignore(), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
@@ -1114,18 +1133,18 @@ public abstract class CompletableFutureAbstractTest {
     public void applyToEitherAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.applyToEitherAsync(newCompletedFuture(null), v -> null, REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.applyToEitherAsync(newCompletedFuture(null), v -> null, REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void applyToEitherAsync_onIncompleteFuture_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.applyToEitherAsync(newCompletedFuture(null), v -> null, REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.applyToEitherAsync(newCompletedFuture(null), v -> null, REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
@@ -1137,9 +1156,9 @@ public abstract class CompletableFutureAbstractTest {
         });
 
         assertTrueEventually(() -> assertTrue(nextStage.isDone()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        nextStage.join();
+        assertThatThrownBy(nextStage::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -1171,9 +1190,9 @@ public abstract class CompletableFutureAbstractTest {
         });
 
         assertTrueEventually(() -> assertTrue(nextStage.isDone()));
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        nextStage.join();
+        assertThatThrownBy(nextStage::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -1200,29 +1219,29 @@ public abstract class CompletableFutureAbstractTest {
     public void runAfterBothAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.runAfterBothAsync(newCompletedFuture(null), () -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.runAfterBothAsync(newCompletedFuture(null), () -> ignore(), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void runAfterBothAsync_onIncompleteFuture_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.runAfterBothAsync(newCompletedFuture(null), () -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.runAfterBothAsync(newCompletedFuture(null), () -> ignore(), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void runAfterBoth_whenActionThrowsException() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        future.runAfterBoth(newCompletedFuture(null), () -> {
+        assertThatThrownBy(() -> future.runAfterBoth(newCompletedFuture(null), () -> {
             throw new ExpectedRuntimeException();
-        }).join();
+        }).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -1247,29 +1266,29 @@ public abstract class CompletableFutureAbstractTest {
     public void runAfterEitherAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.runAfterEitherAsync(newCompletedFuture(null), () -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.runAfterEitherAsync(newCompletedFuture(null), () -> ignore(), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void runAfterEitherAsync_onIncompleteFuture_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.runAfterEitherAsync(newCompletedFuture(null), () -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.runAfterEitherAsync(newCompletedFuture(null), () -> ignore(), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void runAfterEither_whenActionThrowsException() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        future.runAfterEither(newCompletedFuture(null), () -> {
+        assertThatThrownBy(() -> future.runAfterEither(newCompletedFuture(null), () -> {
             throw new ExpectedRuntimeException();
-        }).join();
+        }).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -1294,30 +1313,30 @@ public abstract class CompletableFutureAbstractTest {
     public void thenAcceptBothAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.thenAcceptBothAsync(newCompletedFuture(null), (v, u)  -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.thenAcceptBothAsync(newCompletedFuture(null), (v, u)  -> ignore(), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void thenAcceptBothAsync_onIncompleteFuture_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.thenAcceptBothAsync(newCompletedFuture(null), (v, u)  -> ignore(), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.thenAcceptBothAsync(newCompletedFuture(null), (v, u)  -> ignore(), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void thenAcceptBoth_whenActionThrowsException() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        future.thenAcceptBoth(newCompletedFuture(null),
+        assertThatThrownBy(() -> future.thenAcceptBoth(newCompletedFuture(null),
                 (v, u) -> {
-            throw new ExpectedRuntimeException();
-        }).join();
+                    throw new ExpectedRuntimeException();
+                }).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -1344,58 +1363,58 @@ public abstract class CompletableFutureAbstractTest {
     public void thenCombineAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.thenCombineAsync(newCompletedFuture(null), (v, u)  -> null, REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.thenCombineAsync(newCompletedFuture(null), (v, u)  -> null, REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void thenCombineAsync_onIncompleteFuture_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.thenCombineAsync(newCompletedFuture(null), (v, u)  -> null, REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.thenCombineAsync(newCompletedFuture(null), (v, u)  -> null, REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void thenCombine_whenActionThrowsException() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        future.thenCombine(newCompletedFuture(null), (t, u) -> {
+        assertThatThrownBy(() -> future.thenCombine(newCompletedFuture(null), (t, u) -> {
             throw new ExpectedRuntimeException();
-        }).join();
+        }).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     @Test
     public void thenComposeAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.thenComposeAsync(v -> newCompletedFuture(null), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.thenComposeAsync(v -> newCompletedFuture(null), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void thenComposeAsync_onIncompleteFuture_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.thenComposeAsync(v -> newCompletedFuture(null), REJECTING_EXECUTOR).join();
+        assertThatThrownBy(() -> future.thenComposeAsync(v -> newCompletedFuture(null), REJECTING_EXECUTOR).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(RejectedExecutionException.class));
     }
 
     @Test
     public void thenCompose_whenActionThrowsException() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
-        expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-        future.thenCompose(v -> {
+        assertThatThrownBy(() -> future.thenCompose(v -> {
             throw new ExpectedRuntimeException();
-        }).join();
+        }).join())
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(ExpectedRuntimeException.class));
     }
 
     public static class RejectingExecutor implements Executor {

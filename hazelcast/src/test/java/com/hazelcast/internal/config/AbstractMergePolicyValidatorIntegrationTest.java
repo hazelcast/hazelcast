@@ -31,20 +31,16 @@ import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
 
-import static org.hamcrest.CoreMatchers.containsString;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests the integration of the {@link MergePolicyValidator}
  * into the proxy creation of split-brain capable data structures.
  */
 public abstract class AbstractMergePolicyValidatorIntegrationTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     MergePolicyConfig putIfAbsentMergePolicy;
     MergePolicyConfig hyperLogLogMergePolicy;
@@ -94,24 +90,28 @@ public abstract class AbstractMergePolicyValidatorIntegrationTest extends Hazelc
         return factory.newHazelcastInstance(config);
     }
 
-    void expectCardinalityEstimatorException() {
-        expectedException.expect(InvalidConfigurationException.class);
-        expectedException.expectMessage(containsString("CardinalityEstimator"));
+    void expectCardinalityEstimatorException(ThrowingCallable toRun) {
+        assertThatThrownBy(toRun)
+                .isInstanceOf(InvalidConfigurationException.class)
+                        .hasMessageContaining("CardinalityEstimator");
     }
 
-    void expectedHigherHitsException() {
-        expectedException.expect(InvalidConfigurationException.class);
-        expectedException.expectMessage(containsString(higherHitsMergePolicy.getPolicy()));
+    void expectedHigherHitsException(ThrowingCallable toRun) {
+        assertThatThrownBy(toRun)
+                .isInstanceOf(InvalidConfigurationException.class)
+                        .hasMessageContaining(higherHitsMergePolicy.getPolicy());
     }
 
-    void expectedInvalidMergePolicyException() {
-        expectedException.expect(InvalidConfigurationException.class);
-        expectedException.expectMessage(containsString(invalidMergePolicyConfig.getPolicy()));
+    void expectedInvalidMergePolicyException(ThrowingCallable toRun) {
+        assertThatThrownBy(toRun)
+                .isInstanceOf(InvalidConfigurationException.class)
+                        .hasMessageContaining(invalidMergePolicyConfig.getPolicy());
     }
 
-    void expectedMapStatisticsDisabledException(MergePolicyConfig mergePolicyConfig) {
-        expectedException.expect(InvalidConfigurationException.class);
-        expectedException.expectMessage(containsString(mergePolicyConfig.getPolicy()));
-        expectedException.expectMessage(containsString("perEntryStatsEnabled field of map-config"));
+    void expectedMapStatisticsDisabledException(MergePolicyConfig mergePolicyConfig, ThrowingCallable toRun) {
+        assertThatThrownBy(toRun)
+                .isInstanceOf(InvalidConfigurationException.class)
+                        .hasMessageContaining(mergePolicyConfig.getPolicy())
+                                .hasMessageContaining("perEntryStatsEnabled field of map-config");
     }
 }

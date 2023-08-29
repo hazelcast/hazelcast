@@ -17,7 +17,6 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterHeartbeatManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -29,11 +28,11 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.UUID;
 
 /** A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member */
+// RU_COMPAT_5_3 "implements Versioned" can be removed in 5.5
 public final class HeartbeatOp extends AbstractClusterOperation implements Versioned {
 
     private MembersViewMetadata senderMembersViewMetadata;
@@ -70,11 +69,9 @@ public final class HeartbeatOp extends AbstractClusterOperation implements Versi
         out.writeObject(senderMembersViewMetadata);
         UUIDSerializationUtil.writeUUID(out, targetUuid);
         out.writeLong(timestamp);
-        if (out.getVersion().isGreaterThan(Versions.V4_0)) {
-            out.writeInt(suspectedMembers.size());
-            for (MemberInfo m : suspectedMembers) {
-                out.writeObject(m);
-            }
+        out.writeInt(suspectedMembers.size());
+        for (MemberInfo m : suspectedMembers) {
+            out.writeObject(m);
         }
     }
 
@@ -84,15 +81,11 @@ public final class HeartbeatOp extends AbstractClusterOperation implements Versi
         senderMembersViewMetadata = in.readObject();
         targetUuid = UUIDSerializationUtil.readUUID(in);
         timestamp = in.readLong();
-        if (in.getVersion().isGreaterThan(Versions.V4_0)) {
-            int suspectedMemberCount = in.readInt();
-            suspectedMembers = new HashSet<>(suspectedMemberCount);
-            for (int i = 0; i < suspectedMemberCount; i++) {
-                MemberInfo m = in.readObject();
-                suspectedMembers.add(m);
-            }
-        } else {
-            suspectedMembers = Collections.emptySet();
+        int suspectedMemberCount = in.readInt();
+        suspectedMembers = new HashSet<>(suspectedMemberCount);
+        for (int i = 0; i < suspectedMemberCount; i++) {
+            MemberInfo m = in.readObject();
+            suspectedMembers.add(m);
         }
     }
 

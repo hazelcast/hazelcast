@@ -403,9 +403,9 @@ public final class MetricDescriptorConstants {
     public static final String OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_BROADCAST_PERIOD_MILLIS =
             "heartbeatBroadcastPeriodMillis";
     public static final String OPERATION_METRIC_INVOCATION_MONITOR_INVOCATION_SCAN_PERIOD_MILLIS = "invocationScanPeriodMillis";
-    public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_USED_PERCENTAGE = "invocations.usedPercentage";
-    public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_LAST_CALL_ID = "invocations.lastCallId";
-    public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_PENDING = "invocations.pending";
+    public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_USED_PERCENTAGE = "usedPercentage";
+    public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_LAST_CALL_ID = "lastCallId";
+    public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_PENDING = "pending";
     public static final String OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT = "executedOperationsCount";
     public static final String OPERATION_METRIC_OPERATION_SERVICE_ASYNC_OPERATIONS = "asyncOperations";
     public static final String OPERATION_METRIC_OPERATION_SERVICE_TIMEOUT_COUNT = "operationTimeoutCount";
@@ -450,6 +450,7 @@ public final class MetricDescriptorConstants {
     public static final String PERSISTENCE_METRIC_TOMB_GARBAGE = "tombGarbage";
     public static final String PERSISTENCE_METRIC_GC_LIVE_VALUES = "liveValues";
     public static final String PERSISTENCE_METRIC_GC_LIVE_TOMBSTONES = "liveTombstones";
+    public static final String PERSISTENCE_DISCRIMINATOR_STORE_NAME = "storeName";
     // ===[/PERSISTENCE]================================================
 
     // ===[PN COUNTER]==================================================

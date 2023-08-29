@@ -46,11 +46,6 @@ public interface AsyncSocketOptions {
     Option<Boolean> SO_REUSEPORT = new Option<>("SO_REUSEPORT", Boolean.class);
 
     /**
-     * See {@link java.net.SocketOptions#SO_TIMEOUT}
-     */
-    Option<Integer> SO_TIMEOUT = new Option<>("SO_TIMEOUT", Integer.class);
-
-    /**
      * See {@link java.net.SocketOptions#SO_REUSEADDR}
      */
     Option<Boolean> SO_REUSEADDR = new Option<>("SO_REUSEADDR", Boolean.class);
@@ -86,59 +81,25 @@ public interface AsyncSocketOptions {
     boolean isSupported(Option option);
 
     /**
-     * Sets an option value.
-     *
-     * @param option the option
-     * @param value  the value
-     * @param <T>    the type of the value
-     * @throws NullPointerException          if option or value is null.
-     * @throws UnsupportedOperationException if the option isn't supported.
-     * @throws java.io.UncheckedIOException  if the value could not be set.
-     */
-    default <T> void set(Option<T> option, T value) {
-        if (!setIfSupported(option, value)) {
-            throw new UnsupportedOperationException("'" + option.name() + "' not supported");
-        }
-    }
-
-    /**
      * Sets an option value if that option is supported.
      *
      * @param option the option
      * @param value  the value
      * @param <T>    the type of the value
-     * @return true if the option was supported, false otherwise.
-     * @throws NullPointerException         if option or value is null.
-     * @throws java.io.UncheckedIOException if the value could not be set.
+     * @return <code>true</code> if the option was supported, <code>false</code> otherwise.
+     * @throws NullPointerException          if option or value is null.
+     * @throws java.io.UncheckedIOException  if the value could not be set.
      */
-    <T> boolean setIfSupported(Option<T> option, T value);
+
+    <T> boolean set(Option<T> option, T value);
 
     /**
-     * Gets an option value if that option is supported. If option not supported,
-     * <code>null</code> is returned.
+     * Gets an option value. If option was not set or is not supported, <code>null</code> is returned.
      *
      * @param option the option
      * @param <T>    the type of the value
-     * @return null if value is null.
-     * @throws java.io.UncheckedIOException if the value could not be get.
+     * @return the value for the option, <code>null</code> if the option was not set or is not supported.
+     * @throws java.io.UncheckedIOException  if the value could not be gotten.
      */
-    <T> T getIfSupported(Option<T> option);
-
-    /**
-     * Gets an option value.
-     *
-     * @param option the option
-     * @param <T>    the type of the value
-     * @return the value for the option
-     * @throws UnsupportedOperationException if the option isn't supported.
-     * @throws java.io.UncheckedIOException  if the value could not be get.
-     */
-    default <T> T get(Option<T> option) {
-        T value = getIfSupported(option);
-        if (value == null) {
-            throw new UnsupportedOperationException("'" + option.name() + "' not supported");
-        } else {
-            return value;
-        }
-    }
+    <T> T get(Option<T> option);
 }

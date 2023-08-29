@@ -24,10 +24,10 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.Rule;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
+import org.assertj.core.util.Arrays;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
@@ -50,10 +50,9 @@ import static com.hazelcast.internal.serialization.impl.compact.reader.CompactVa
 import static com.hazelcast.internal.serialization.impl.compact.reader.CompactValueReaderTestStructure.nested;
 import static com.hazelcast.internal.serialization.impl.compact.reader.CompactValueReaderTestStructure.prim;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.isA;
-import static org.junit.Assert.assertThat;
-
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.util.Arrays.asObjectArray;
 /**
  * Tests that verifies the behavior of the DefaultObjectReader.
  * All tests cases are generated, since there's a lot of possible cases due to the long lists of read* method on the reader.
@@ -72,12 +71,10 @@ import static org.junit.Assert.assertThat;
  * - check the test output - analyse the test scenario
  * - check in which method the scenario is generated - narrow down the scope of the tests run
  */
+@SuppressWarnings("FieldMayBeFinal")
 @RunWith(HazelcastParametrizedRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     // input object
     private Object inputObject;
@@ -113,41 +110,50 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void executeTestScenario() throws Exception {
-        // handle result
-        Object resultToMatch = expectedResult;
-        if (expectedResult instanceof Class) {
-            // expected exception case
-            expected.expect(isA((Class) expectedResult));
-        } else if (expectedResult instanceof List) {
+    public void executeTestScenario() throws Throwable {
+        // handle resultz
+        Object resultToMatchVar = expectedResult;
+        if (expectedResult instanceof List) {
             // just convenience -> if result is a list if will be compared to an array, so it has to be converted
-            resultToMatch = ((List) resultToMatch).toArray();
+            resultToMatchVar = ((List<?>) resultToMatchVar).toArray();
         }
 
-        // print test scenario for debug purposes
-        // it makes debugging easier since all scenarios are generated
-        printlnScenarioDescription(resultToMatch);
+        final Object resultToMatch = resultToMatchVar;
 
-        InternalSerializationService ss = (InternalSerializationService) createSerializationService();
+        ThrowingCallable test = () -> {
+            // print test scenario for debug purposes
+            // it makes debugging easier since all scenarios are generated
+            printlnScenarioDescription(resultToMatch);
 
-        Data data = ss.toData(inputObject);
-        GenericRecordQueryReader reader = new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
+            InternalSerializationService ss = (InternalSerializationService) createSerializationService();
 
-        Object result = reader.read(pathToRead);
-        if (result instanceof MultiResult) {
-            MultiResult multiResult = (MultiResult) result;
-            if (multiResult.getResults().size() == 1
-                    && multiResult.getResults().get(0) == null && multiResult.isNullEmptyTarget()) {
-                // explode null in case of a single multi-result target result
-                result = null;
-            } else {
-                // in case of multi result while invoking generic "read" method deal with the multi results
-                result = ((MultiResult) result).getResults().toArray();
+            Data data = ss.toData(inputObject);
+            GenericRecordQueryReader reader = new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
+
+            Object result = reader.read(pathToRead);
+            if (result instanceof MultiResult) {
+                MultiResult<?> multiResult = (MultiResult<?>) result;
+                if (multiResult.getResults().size() == 1
+                        && multiResult.getResults().get(0) == null && multiResult.isNullEmptyTarget()) {
+                    // explode null in case of a single multi-result target result
+                    result = null;
+                } else {
+                    // in case of multi result while invoking generic "read" method deal with the multi results
+                    result = ((MultiResult<?>) result).getResults().toArray();
+                }
             }
-        }
-        assertThat(result, equalTo(resultToMatch));
+            if (Arrays.isArray(resultToMatch)) {
+                assertThat(asObjectArray((result))).containsExactlyInAnyOrder(asObjectArray(resultToMatch));
+            } else {
+                assertThat(result).isEqualTo(resultToMatch);
+            }
+        };
 
+        if (expectedResult instanceof Class) {
+            assertThatThrownBy(test).isInstanceOf((Class<?>) expectedResult);
+        } else {
+            test.call();
+        }
     }
 
     private void printlnScenarioDescription(Object resultToMatch) {
@@ -277,7 +283,6 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
      * The expected result should be the object that contains the object array - that's the general contract.
      * The result for assertion will be automatically calculated
      */
-    @SuppressWarnings({"unchecked"})
     private static Collection<Object[]> expandObjectArrayPrimitiveScenario(Object input, GroupObject result,
                                                                            String pathToExplode, String parent) {
         List<Object[]> scenarios = new ArrayList<>();
@@ -289,14 +294,14 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 // B. case with [any] operator on object array
                 // expansion of the primitive fields
                 for (CompactValueReaderTestStructure.PrimitiveFields primitiveFields : getPrimitives()) {
-                    List resultToMatch = new ArrayList();
+                    List<Object> resultToMatch = new ArrayList<>();
                     int objectCount = 0;
                     try {
                         objectCount = result.objects.length;
                     } catch (NullPointerException ignored) {
                     }
                     for (int i = 0; i < objectCount; i++) {
-                        PrimitiveObject object = (PrimitiveObject) result.objects[i];
+                        PrimitiveObject object = result.objects[i];
                         resultToMatch.add(object.getPrimitive(primitiveFields));
                     }
                     if (result == null || result.objects == null || result.objects.length == 0) {
@@ -313,8 +318,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                     try {
                         PrimitiveObject object = result.objects[Integer.parseInt(token)];
                         resultToMatch = object.getPrimitive(primitiveFields);
-                    } catch (NullPointerException ignored) {
-                    } catch (IndexOutOfBoundsException ignored) {
+                    } catch (NullPointerException | IndexOutOfBoundsException ignored) {
                     }
 
                     if (result == null || result.objects == null || result.objects.length == 0) {

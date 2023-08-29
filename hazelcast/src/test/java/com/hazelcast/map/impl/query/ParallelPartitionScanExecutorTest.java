@@ -27,6 +27,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.starter.ReflectionUtils;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,7 +35,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
 
 import java.util.List;
 import java.util.UUID;
@@ -79,11 +79,11 @@ public class ParallelPartitionScanExecutorTest {
     }
 
     @Test
-    public void execute_success() {
+    public void execute_success() throws Exception {
         IPartitionService partitionService = mock(IPartitionService.class);
         when(partitionService.getPartitionCount()).thenReturn(271);
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
-        Whitebox.setInternalState(runner, "partitionService", partitionService);
+        ReflectionUtils.setFieldValueReflectively(runner, "partitionService", partitionService);
         ParallelPartitionScanExecutor executor = executor(runner);
         Predicate predicate = Predicates.equal("attribute", 1);
         QueryResult queryResult = new QueryResult(IterationType.ENTRY, null, null, Long.MAX_VALUE, false);

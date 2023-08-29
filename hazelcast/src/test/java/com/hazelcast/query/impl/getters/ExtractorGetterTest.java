@@ -21,14 +21,12 @@ import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -37,16 +35,13 @@ public class ExtractorGetterTest {
 
     private static final InternalSerializationService UNUSED = null;
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
-
     @Test
     public void isCacheable() {
         // GIVEN
         ExtractorGetter getter = new ExtractorGetter(UNUSED, mock(ValueExtractor.class), "argument");
 
         // THEN
-        assertThat(getter.isCacheable(), is(true));
+        assertThat(getter.isCacheable()).isTrue();
     }
 
     @Test
@@ -54,10 +49,7 @@ public class ExtractorGetterTest {
         // GIVEN
         ExtractorGetter getter = new ExtractorGetter(UNUSED, mock(ValueExtractor.class), "argument");
 
-        // EXPECT
-        expected.expect(UnsupportedOperationException.class);
-
         // WHEN
-        getter.getReturnType();
+        assertThrows(UnsupportedOperationException.class, getter::getReturnType);
     }
 }

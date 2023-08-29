@@ -258,6 +258,18 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
+    protected InternalCompletableFuture<Boolean> deleteAsyncInternal(Object key) {
+        key = toNearCacheKey(key);
+        InternalCompletableFuture<Boolean> future;
+        try {
+            future = super.deleteAsyncInternal(key);
+        } finally {
+            invalidateNearCache(key);
+        }
+        return future;
+    }
+
+    @Override
     protected boolean tryRemoveInternal(long timeout, TimeUnit timeunit, Object key) {
         key = toNearCacheKey(key);
         boolean removed;

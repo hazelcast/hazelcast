@@ -28,25 +28,39 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
+
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 
 public class PutAllBackupOperation extends MapOperation
         implements PartitionAwareOperation, BackupOperation, Versioned {
 
     private boolean disableWanReplicationEvent;
     private List keyValueRecordExpiry;
+    @Nullable
+    private BitSet noWanReplicationKeys;
 
     private transient int lastIndex;
     private transient List keyRecordExpiry;
 
     public PutAllBackupOperation(String name,
                                  List keyValueRecordExpiry,
+                                 @Nullable BitSet noWanReplicationKeys,
                                  boolean disableWanReplicationEvent) {
         super(name);
         this.keyValueRecordExpiry = keyValueRecordExpiry;
         this.disableWanReplicationEvent = disableWanReplicationEvent;
+        this.noWanReplicationKeys = noWanReplicationKeys;
+    }
+
+    public PutAllBackupOperation(String name,
+                                 List keyValueRecordExpiry,
+                                 boolean disableWanReplicationEvent) {
+        this(name, keyValueRecordExpiry, null, disableWanReplicationEvent);
     }
 
     public PutAllBackupOperation() {
@@ -61,7 +75,8 @@ public class PutAllBackupOperation extends MapOperation
                 Data key = (Data) keyRecordExpiry.get(i);
                 Record record = (Record) keyRecordExpiry.get(i + 1);
                 ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.get(i + 2);
-                putBackup(key, record, expiryMetadata);
+                boolean wanReplicated = noWanReplicationKeys == null || !noWanReplicationKeys.get(i / 3);
+                putBackup(key, record, expiryMetadata, wanReplicated);
                 lastIndex = i;
             }
         } else {
@@ -74,19 +89,22 @@ public class PutAllBackupOperation extends MapOperation
                 Data key = (Data) keyValueRecordExpiry.get(i);
                 Record record = (Record) keyValueRecordExpiry.get(i + 2);
                 ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyValueRecordExpiry.get(i + 3);
-                putBackup(key, record, expiryMetadata);
+                boolean wanReplicated = noWanReplicationKeys == null || !noWanReplicationKeys.get(i / 4);
+                putBackup(key, record, expiryMetadata, wanReplicated);
                 lastIndex = i;
             }
         }
     }
 
-    private void putBackup(Data key, Record record, ExpiryMetadata expiryMetadata) {
+    private void putBackup(Data key, Record record, ExpiryMetadata expiryMetadata, boolean shouldWanReplicate) {
         Record currentRecord = recordStore.putBackup(key, record,
                 expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(),
                 expiryMetadata.getExpirationTime(),
                 getCallerProvenance());
         Records.copyMetadataFrom(record, currentRecord);
-        publishWanUpdate(key, record.getValue());
+        if (shouldWanReplicate) {
+            publishWanUpdate(key, record.getValue());
+        }
         evict(key);
     }
 
@@ -112,9 +130,20 @@ public class PutAllBackupOperation extends MapOperation
             Records.writeExpiry(out, expiryMetadata);
         }
         out.writeBoolean(disableWanReplicationEvent);
+
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            if (noWanReplicationKeys == null) {
+                out.writeBoolean(false);
+            } else {
+                out.writeBoolean(true);
+                out.writeByteArray(noWanReplicationKeys.toByteArray());
+            }
+        }
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
@@ -131,6 +160,14 @@ public class PutAllBackupOperation extends MapOperation
         }
         this.keyRecordExpiry = keyRecordExpiry;
         this.disableWanReplicationEvent = in.readBoolean();
+        this.noWanReplicationKeys = null;
+
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            if (in.readBoolean()) {
+                this.noWanReplicationKeys = BitSet.valueOf(in.readByteArray());
+            }
+        }
     }
 
     @Override

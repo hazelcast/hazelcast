@@ -39,11 +39,10 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -269,7 +268,7 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
     }
 
     public void assertEventuallySizeAtLeast(List<?> list, int expectedSize) {
-        assertTrueEventually(() -> assertThat("List: " + list, list.size(), greaterThanOrEqualTo(expectedSize)), 10);
+        assertTrueEventually(() -> assertThat(list.size()).isGreaterThanOrEqualTo(expectedSize), 10);
     }
 
     static class MembershipListenerImpl implements MembershipListener {

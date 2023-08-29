@@ -35,9 +35,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAwareService<String>
         implements ChunkedMigrationAwareService {
@@ -96,7 +95,7 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
         Collection<ServiceNamespace> knownNamespaces = getAllServiceNamespaces(event);
         Map<TestServiceNamespace, Integer> values = new HashMap<TestServiceNamespace, Integer>(namespaces.size());
         for (ServiceNamespace ns : namespaces) {
-            assertThat(ns, isIn(knownNamespaces));
+            assertThat(ns).isIn(knownNamespaces);
 
             TestServiceNamespace testNs = (TestServiceNamespace) ns;
             Integer value = get(testNs.name, event.getPartitionId());

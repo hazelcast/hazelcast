@@ -50,7 +50,8 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
 
             // everything from the Java package is OK - it's part of the Java SE platform
             "java.",
-
+            // everything from the jdk package is OK - it's part of the Java SE platform
+            "jdk",
             // with the "javax" package we have to be more specific - do not use just "javax."
             // as it contains e.g. javax.servlet which is not part of the SE platform!
             "javax.annotation",

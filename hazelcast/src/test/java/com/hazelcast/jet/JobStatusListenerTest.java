@@ -18,23 +18,20 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.core.Processor.Context;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.TestProcessors;
+import com.hazelcast.jet.core.TestProcessors.MockPS;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.JobEventService;
-import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.jet.pipeline.SourceBuilder;
-import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
-import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,15 +46,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.spi.impl.eventservice.impl.EventServiceTest.getEventService;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -71,9 +70,8 @@ import static org.junit.Assert.assertTrue;
 @Category(SlowTest.class)
 public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     private static final Function<String, String> SIMPLIFY = log -> log.replaceAll("(?<=\\().*: ", "");
-    private static final String ADVANCE_MAP_NAME = "advanceCount";
-    private static final String RUN_MAP_NAME = "runCount";
 
+    @SuppressWarnings("Convert2MethodRef")
     @Parameters(name = "{0}")
     public static Iterable<Object[]> parameters() {
         return asList(
@@ -100,47 +98,54 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         initializeWithClient(2, null, null);
     }
 
+    @Before
+    public void reset() {
+        TestProcessors.reset(1);
+    }
+
     @Test
     public void testListener_waitForCompletion() {
-        testListener(batchSource(),
-                Job::join,
-                "Jet: NOT_RUNNING -> STARTING",
-                "Jet: STARTING -> RUNNING",
-                "Jet: RUNNING -> COMPLETED");
+        new TestCase(batchSource())
+                .when(Job::join)
+                .expect("Jet: NOT_RUNNING -> STARTING",
+                        "Jet: STARTING -> RUNNING",
+                        "Jet: RUNNING -> COMPLETED")
+                .runJob();
     }
 
     @Test
     public void testListener_suspend_resume_restart_cancelJob() {
-        testListener(streamSource(),
-                (job, listener) -> {
-                    assertEqualsEventually(listener::runCount, 1);
+        NoOutputSourceP.executionStarted = new CountDownLatch(3);
+        new TestCase(streamSource())
+                .when(job -> {
+                    assertJobStatusEventually(job, RUNNING);
                     job.suspend();
                     assertJobStatusEventually(job, SUSPENDED);
                     job.resume();
-                    assertEqualsEventually(listener::runCount, 2);
+                    MockPS.unblock();
+                    assertJobStatusEventually(job, RUNNING);
                     job.restart();
-                    assertEqualsEventually(listener::runCount, 3);
+                    MockPS.unblock();
+                    NoOutputSourceP.executionStarted.await();
                     cancelAndJoin(job);
-                    assertTailEqualsEventually(listener.log,
-                            "Jet: NOT_RUNNING -> STARTING",
-                            "Jet: STARTING -> RUNNING",
-                            "User: RUNNING -> SUSPENDED (Suspend)",
-                            "User: SUSPENDED -> NOT_RUNNING (Resume)",
-                            "Jet: NOT_RUNNING -> STARTING",
-                            "Jet: STARTING -> RUNNING",
-                            "User: RUNNING -> NOT_RUNNING (Restart)",
-                            "Jet: NOT_RUNNING -> STARTING",
-                            "Jet: STARTING -> RUNNING",
-                            "User: RUNNING -> FAILED (Cancel)");
-                });
+                })
+                .expect("Jet: NOT_RUNNING -> STARTING",
+                        "Jet: STARTING -> RUNNING",
+                        "User: RUNNING -> SUSPENDED (Suspend)",
+                        "User: SUSPENDED -> NOT_RUNNING (Resume)",
+                        "Jet: NOT_RUNNING -> STARTING",
+                        "Jet: STARTING -> RUNNING",
+                        "User: RUNNING -> NOT_RUNNING (Restart)",
+                        "Jet: NOT_RUNNING -> STARTING",
+                        "Jet: STARTING -> RUNNING",
+                        "User: RUNNING -> FAILED (Cancel)")
+                .runJob();
     }
 
     @Test
     public void testListener_jobFails() {
-        testListener(batchSource(r -> {
-                    throw new JetException("mock error");
-                }),
-                (job, listener) -> {
+        new TestCase(batchSource(new JetException("mock error")))
+                .when((job, listener) -> {
                     Throwable failure = null;
                     try {
                         job.join();
@@ -152,17 +157,18 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
                             "Jet: RUNNING -> FAILED (" + failure + ")");
-                });
+                }).runJob();
     }
 
     @Test
     public void testListener_restartOnException() {
-        testListener(new JobConfig().setAutoScaling(true),
-                streamSource(r -> {
-                    throw new RestartableException();
-                }),
-                (job, listener) -> {
-                    assertEqualsEventually(listener::runCount, 2);
+        NoOutputSourceP.executionStarted = new CountDownLatch(2);
+        new TestCase(streamSource(new RestartableException()))
+                .config(new JobConfig().setAutoScaling(true))
+                .when((job, listener) -> {
+                    MockPS.unblock();
+                    MockPS.unblock();
+                    NoOutputSourceP.executionStarted.await();
                     cancelAndJoin(job);
                     assertTailEqualsEventually(listener.log.stream().map(SIMPLIFY).collect(toList()),
                             "Jet: NOT_RUNNING -> STARTING",
@@ -171,16 +177,14 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
                             "User: RUNNING -> FAILED (Cancel)");
-                });
+                }).runJob();
     }
 
     @Test
     public void testListener_suspendOnFailure() {
-        testListener(new JobConfig().setSuspendOnFailure(true),
-                batchSource(r -> {
-                    throw new JetException("mock error");
-                }),
-                (job, listener) -> {
+        new TestCase(batchSource(new JetException("mock error")))
+                .config(new JobConfig().setSuspendOnFailure(true))
+                .when((job, listener) -> {
                     assertJobSuspendedEventually(job);
                     String failure = job.getSuspensionCause().errorCause().split("\n", 3)[1];
                     cancelAndJoin(job);
@@ -189,23 +193,23 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                             "Jet: STARTING -> RUNNING",
                             "Jet: RUNNING -> SUSPENDED (" + failure + ")",
                             "User: SUSPENDED -> FAILED (Cancel)");
-                });
+                }).runJob();
     }
 
     @Test
     public void testListenerDeregistration() {
-        testListener(streamSource(),
-                (job, listener) -> {
+        new TestCase(streamSource())
+                .when((job, listener) -> {
                     assertTailEqualsEventually(listener.log,
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING");
                     listener.deregister();
                     cancelAndJoin(job);
                     assertHasNoListenerEventually(job.getIdString(), listener.registrationId);
-                    assertTailEqualsEventually(listener.log,
-                            "Jet: NOT_RUNNING -> STARTING",
-                            "Jet: STARTING -> RUNNING");
-                });
+                })
+                .expect("Jet: NOT_RUNNING -> STARTING",
+                        "Jet: STARTING -> RUNNING")
+                .runJob();
     }
 
     @Test
@@ -215,24 +219,24 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testLightListener_waitForCompletion() {
-        testLightListener(batchSource(),
-                Job::join,
-                "Jet: RUNNING -> COMPLETED");
+        new TestCase(batchSource())
+                .when(Job::join)
+                .expect("Jet: RUNNING -> COMPLETED")
+                .runLightJob();
     }
 
     @Test
     public void testLightListener_cancelJob() {
-        testLightListener(streamSource(),
-                Job::cancel,
-                "User: RUNNING -> FAILED (Cancel)");
+        new TestCase(streamSource())
+                .when(Job::cancel)
+                .expect("User: RUNNING -> FAILED (Cancel)")
+                .runLightJob();
     }
 
     @Test
     public void testLightListener_jobFails() {
-        testLightListener(batchSource(r -> {
-                    throw new JetException("mock error");
-                }),
-                (job, listener) -> {
+        new TestCase(batchSource(new JetException("mock error")))
+                .when((job, listener) -> {
                     Throwable failure = null;
                     try {
                         job.getFuture().get();
@@ -242,18 +246,18 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                     assertNotNull(failure);
                     assertEqualsEventually(listener.log,
                             "Jet: RUNNING -> FAILED (" + failure + ")");
-                });
+                }).runLightJob();
     }
 
     @Test
     public void testLightListenerDeregistration() {
-        testLightListener(streamSource(),
-                (job, listener) -> {
+        new TestCase(streamSource())
+                .when((job, listener) -> {
                     listener.deregister();
                     job.cancel();
                     assertHasNoListenerEventually(job.getIdString(), listener.registrationId);
                     assertTrue(listener.log.isEmpty());
-                });
+                }).runLightJob();
     }
 
     @Test
@@ -261,13 +265,9 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         testListenerLateRegistration(JetService::newLightJob);
     }
 
-    private void testListenerLateRegistration(BiFunction<JetService, Pipeline, Job> submit) {
-        Pipeline p = Pipeline.create();
-        p.readFrom(batchSource())
-                .writeTo(Sinks.noop());
-
-        Job job = submit.apply(instance.get().getJet(), p);
-        advance(job.getId(), 1);
+    private void testListenerLateRegistration(BiFunction<JetService, DAG, Job> submit) {
+        Job job = submit.apply(instance.get().getJet(), batchSource());
+        MockPS.unblock();
         jobIdString = job.getIdString();
         job.join();
         assertThatThrownBy(() -> job.addStatusListener(e -> { }))
@@ -289,51 +289,6 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         });
     }
 
-    protected void testListener(JobConfig config, Object source, BiConsumer<Job, JobStatusLogger> test) {
-        testListener(source, (jet, p) -> jet.newJob(p, config), test);
-    }
-
-    protected void testListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
-        testListener(new JobConfig(), source, test);
-    }
-
-    protected void testListener(Object source, Consumer<Job> test, String... log) {
-        testListener(source, (job, listener) -> {
-            test.accept(job);
-            assertTailEqualsEventually(listener.log, log);
-        });
-    }
-
-    protected void testLightListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
-        testListener(source, (jet, p) -> {
-            Job job = jet.newLightJob(p);
-            assertJobVisible(instance.get(), job, job.getIdString());
-            return job;
-        }, test);
-    }
-
-    protected void testLightListener(Object source, Consumer<Job> test, String log) {
-        testLightListener(source, (job, listener) -> {
-            test.accept(job);
-            assertEqualsEventually(listener.log, log);
-        });
-    }
-
-    private void testListener(Object source, BiFunction<JetService, Pipeline, Job> submit,
-                              BiConsumer<Job, JobStatusLogger> test) {
-        Pipeline p = Pipeline.create();
-        (source instanceof BatchSource
-                    ? p.readFrom((BatchSource<?>) source)
-                    : p.readFrom((StreamSource<?>) source).withoutTimestamps())
-                .writeTo(Sinks.noop());
-
-        Job job = submit.apply(instance.get().getJet(), p);
-        JobStatusLogger listener = new JobStatusLogger(job);
-        jobIdString = job.getIdString();
-        registrationId = listener.registrationId;
-        test.accept(job, listener);
-    }
-
     @SafeVarargs
     protected static <T> void assertEqualsEventually(List<T> actual, T... expected) {
         assertTrueEventually(() -> {
@@ -347,13 +302,34 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     protected static <T> void assertTailEqualsEventually(List<T> actual, T... expected) {
         assertTrueEventually(() -> {
             List<T> actualCopy = new ArrayList<>(actual);
-            assertBetween("length", actualCopy.size(), expected.length - 2, expected.length);
+            assertBetween("length", actualCopy.size(), expected.length - 1, expected.length);
             List<T> tail = asList(expected).subList(expected.length - actualCopy.size(), expected.length);
             assertEquals(tail, actualCopy);
         });
     }
 
-    protected class JobStatusLogger implements JobStatusListener {
+    protected static DAG batchSource() {
+        return batchSource(null);
+    }
+
+    protected static DAG batchSource(RuntimeException failure) {
+        NoOutputSourceP.proceedLatch.countDown();
+        NoOutputSourceP.failure.set(failure);
+        return new DAG().vertex(new Vertex("batchSource",
+                forceTotalParallelismOne(new MockPS(NoOutputSourceP::new, 1).initBlocks())));
+    }
+
+    protected static DAG streamSource() {
+        return streamSource(null);
+    }
+
+    protected static DAG streamSource(RuntimeException failure) {
+        NoOutputSourceP.failure.set(failure);
+        return new DAG().vertex(new Vertex("streamSource",
+                forceTotalParallelismOne(new MockPS(NoOutputSourceP::new, 1).initBlocks())));
+    }
+
+    protected static class JobStatusLogger implements JobStatusListener {
         public final List<String> log = Collections.synchronizedList(new ArrayList<>());
         public final UUID registrationId;
         final Job job;
@@ -362,7 +338,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         public JobStatusLogger(Job job) {
             this.job = job;
             registrationId = job.addStatusListener(this);
-            advance(1);
+            MockPS.unblock();
         }
 
         @Override
@@ -383,81 +359,64 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                     threadInfo));
         }
 
-        /**
-         * {@link JetTestSupport#assertJobStatusEventually assertJobStatusEventually(job, RUNNING)}
-         * is not reliable to wait for RESTART since the initial status is RUNNING. For such cases,
-         * {@link HazelcastTestSupport#assertEqualsEventually assertEqualsEventually(listener::runCount,
-         * lastRunCount + 1)} can be used.
-         */
-        public int runCount() {
-            return (int) instance.get().getMap(RUN_MAP_NAME).getOrDefault(job.getId(), 0);
-        }
-
-        public void advance(int count) {
-            JobStatusListenerTest.this.advance(job.getId(), count);
-        }
-
         public void deregister() {
             job.removeStatusListener(registrationId);
         }
     }
 
-    protected void advance(long jobId, int count) {
-        instance.get().getMap(ADVANCE_MAP_NAME).put(jobId, count);
-    }
+    protected class TestCase {
+        private final DAG dag;
+        private JobConfig config;
+        private BiConsumerEx<Job, JobStatusLogger> test;
+        private String[] log;
 
-    protected static BatchSource<Integer> batchSource() {
-        return batchSource(r -> { });
-    }
-
-    protected static BatchSource<Integer> batchSource(ConsumerEx<Integer> action) {
-        return SourceBuilder.batch("batchSource",
-                        ctx -> new TestSource(ctx, action, false))
-                .fillBufferFn(TestSource::fillBuffer)
-                .build();
-    }
-
-    protected static BatchSource<Integer> streamSource() {
-        return streamSource(r -> { });
-    }
-
-    protected static BatchSource<Integer> streamSource(ConsumerEx<Integer> action) {
-        return SourceBuilder.batch("streamSource",
-                        ctx -> new TestSource(ctx, action, true))
-                .fillBufferFn(TestSource::fillBuffer)
-                .build();
-    }
-
-    static class TestSource {
-        final Runnable incrementRunCount;
-        final Supplier<Boolean> advance;
-        final ConsumerEx<Integer> action;
-        final boolean streaming;
-        final int currentRun;
-        boolean firstRun = true;
-
-        TestSource(Context ctx, ConsumerEx<Integer> action, boolean streaming) {
-            IMap<Long, Integer> runCount = ctx.hazelcastInstance().getMap(RUN_MAP_NAME);
-            IMap<Long, Integer> allowedRunCount = ctx.hazelcastInstance().getMap(ADVANCE_MAP_NAME);
-            long jobId = ctx.jobId();
-            currentRun = runCount.getOrDefault(jobId, 0) + 1;
-            incrementRunCount = () -> runCount.compute(jobId, (id, count) -> count == null ? 1 : count + 1);
-            advance = () -> allowedRunCount.getOrDefault(jobId, 0) >= currentRun;
-            this.action = action;
-            this.streaming = streaming;
+        public TestCase(DAG dag) {
+            this.dag = dag;
         }
 
-        void fillBuffer(SourceBuffer<Integer> buf) {
-            if (firstRun) {
-                incrementRunCount.run();
-                firstRun = false;
-            }
-            if (advance.get()) {
-                action.accept(currentRun);
-                buf.add(currentRun);
-                if (!streaming) {
-                    buf.close();
-                }
+        public TestCase config(JobConfig config) {
+            this.config = config;
+            return this;
+        }
+
+        public TestCase when(BiConsumerEx<Job, JobStatusLogger> test) {
+            this.test = test;
+            return this;
+        }
+
+        public TestCase when(ConsumerEx<Job> test) {
+            this.test = (job, listener) -> test.accept(job);
+            return this;
+        }
+
+        public TestCase expect(String... log) {
+            this.log = log;
+            return this;
+        }
+
+        public void runJob() {
+            run((jet, p) -> jet.newJob(p, config != null ? config : new JobConfig()),
+                    JobStatusListenerTest::assertTailEqualsEventually);
+        }
+
+        public void runLightJob() {
+            run((jet, p) -> {
+                Job job = jet.newLightJob(p);
+                assertJobVisible(instance.get(), job, job.getIdString());
+                return job;
+            }, JobStatusListenerTest::assertEqualsEventually);
+        }
+
+        private void run(BiFunction<JetService, DAG, Job> submit,
+                         BiConsumer<List<String>, String[]> verify) {
+            assertNotNull("Use when() to specify a test", test);
+            Job job = submit.apply(instance.get().getJet(), dag);
+            JobStatusLogger listener = new JobStatusLogger(job);
+            jobIdString = job.getIdString();
+            registrationId = listener.registrationId;
+            test.accept(job, listener);
+            if (log != null) {
+                verify.accept(listener.log, log);
             }
         }
     }

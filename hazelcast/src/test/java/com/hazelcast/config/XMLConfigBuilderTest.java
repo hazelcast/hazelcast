@@ -152,8 +152,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testConfigurationWithFileName() throws Exception {
-        assumeThatNotZingJDK6(); // https://github.com/hazelcast/hazelcast/issues/9044
-
         File file = createTempFile("foo", "bar");
         file.deleteOnExit();
 
@@ -3353,7 +3351,22 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         int readIOThreadCount = 16;
         int writeIOThreadCount = 1;
 
-        String xml = HAZELCAST_START_TAG
+        String xml = HAZELCAST_START_TAG + HAZELCAST_END_TAG;
+        Config config = new InMemoryXmlConfig(xml);
+
+        // default device
+        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        System.out.println(localDeviceConfig);
+        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
+        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), localDeviceConfig.getBaseDir());
+        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
+        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
+        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
+
+
+
+        xml = HAZELCAST_START_TAG
                 + "<local-device name=\"my-device\">"
                 + "    <base-dir>" + baseDir + "</base-dir>"
                 + "    <block-size>" + blockSize + "</block-size>"
@@ -3363,8 +3376,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "</local-device>\n"
                 + HAZELCAST_END_TAG;
 
-        Config config = new InMemoryXmlConfig(xml);
-        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig("my-device");
+        config = new InMemoryXmlConfig(xml);
+        localDeviceConfig = config.getDeviceConfig("my-device");
 
         assertNotNull(localDeviceConfig);
         assertEquals("my-device", localDeviceConfig.getName());
@@ -3391,7 +3404,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         config = new InMemoryXmlConfig(xml);
-        assertEquals(3, config.getDeviceConfigs().size());
+        // default device removed
+        assertEquals(2, config.getDeviceConfigs().size());
+        assertNull(config.getDeviceConfig(DEFAULT_DEVICE_NAME));
 
         localDeviceConfig = config.getDeviceConfig("device0");
         assertEquals(blockSize * device0Multiplier, localDeviceConfig.getBlockSize());
@@ -3403,15 +3418,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(blockSize * device1Multiplier, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device1Multiplier, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device1Multiplier, localDeviceConfig.getWriteIOThreadCount());
-
-        // default device
-        localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
-        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
-        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), localDeviceConfig.getBaseDir());
-        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
-        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
-        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
 
         // override the default device config
         String newBaseDir = "/some/random/base/dir/for/tiered/store";

@@ -49,6 +49,7 @@ public interface Counter {
 
     /**
      * Increments the counter by one.
+     *
      * @return the new counter state
      */
     long inc();

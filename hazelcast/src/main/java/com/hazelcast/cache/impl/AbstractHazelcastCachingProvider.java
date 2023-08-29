@@ -386,4 +386,14 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
         }
         return (scheme != null && SUPPORTED_SCHEMES.contains(scheme.toLowerCase(StringUtil.LOCALE_INTERNAL)));
     }
+
+    /**
+     * Tests if the configuration file provided is a YAML file. The test is based on the file extension.
+     * @param configURL configuration URL to test.
+     * @return true if the configuration file extension is .yml or .yaml; otherwise, false.
+     */
+    protected static boolean isYamlConfiguration(URL configURL) {
+        String path = configURL.getPath();
+        return path.endsWith(".yml") || path.endsWith(".yaml");
+    }
 }

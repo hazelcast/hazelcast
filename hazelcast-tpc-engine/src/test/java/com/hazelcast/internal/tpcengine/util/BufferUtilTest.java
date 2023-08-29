@@ -20,7 +20,6 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
 import static org.junit.Assert.assertEquals;
 
 public class BufferUtilTest {
@@ -29,13 +28,13 @@ public class BufferUtilTest {
         ByteBuffer src = ByteBuffer.allocate(8);
         src.putInt(1);
         src.putInt(2);
-        upcast(src).flip();
+        src.flip();
         int srcPos = src.position();
         int srcLimit = src.limit();
 
         ByteBuffer dst = ByteBuffer.allocate(8);
         BufferUtil.put(dst, src);
-        upcast(dst).flip();
+        dst.flip();
         assertEquals(8, dst.remaining());
         assertEquals(1, dst.getInt());
         assertEquals(2, dst.getInt());
@@ -49,13 +48,13 @@ public class BufferUtilTest {
         ByteBuffer src = ByteBuffer.allocate(8);
         src.putInt(1);
         src.putInt(2);
-        upcast(src).flip();
+        src.flip();
         int srcPos = src.position();
         int srcLimit = src.limit();
 
         ByteBuffer dst = ByteBuffer.allocate(12);
         BufferUtil.put(dst, src);
-        upcast(dst).flip();
+        dst.flip();
         assertEquals(8, dst.remaining());
         assertEquals(1, dst.getInt());
         assertEquals(2, dst.getInt());
@@ -68,13 +67,13 @@ public class BufferUtilTest {
         ByteBuffer src = ByteBuffer.allocate(8);
         src.putInt(1);
         src.putInt(2);
-        upcast(src).flip();
+        src.flip();
         int srcPos = src.position();
         int srcLimit = src.limit();
 
         ByteBuffer dst = ByteBuffer.allocate(4);
         BufferUtil.put(dst, src);
-        upcast(dst).flip();
+        dst.flip();
         assertEquals(4, dst.remaining());
         assertEquals(1, dst.getInt());
 

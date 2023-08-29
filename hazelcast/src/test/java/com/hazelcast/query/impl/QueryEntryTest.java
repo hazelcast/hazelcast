@@ -16,11 +16,11 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryConstants;
@@ -38,13 +38,11 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -198,28 +196,28 @@ public class QueryEntryTest extends HazelcastTestSupport {
     public void getKey_caching() {
         QueryableEntry entry = createEntry("key", "value");
 
-        assertThat(entry.getKey(), not(sameInstance(entry.getKey())));
+        assertThat(entry.getKey()).isNotSameAs(entry.getKey());
     }
 
     @Test
     public void getValue_caching() {
         QueryableEntry entry = createEntry("key", "value");
 
-        assertThat(entry.getValue(), not(sameInstance(entry.getValue())));
+        assertThat(entry.getValue()).isNotSameAs(entry.getValue());
     }
 
     @Test
     public void getKeyData_caching() {
         QueryableEntry entry = createEntry("key", "value");
 
-        assertThat(entry.getKeyData(), sameInstance(entry.getKeyData()));
+        assertThat(entry.getKeyData()).isSameAs(entry.getKeyData());
     }
 
     @Test
     public void getValueData_caching() {
         QueryableEntry entry = createEntry("key", "value");
 
-        assertThat(entry.getValueData(), sameInstance(entry.getValueData()));
+        assertThat(entry.getValueData()).isSameAs(entry.getValueData());
     }
 
     @SuppressWarnings("unused")

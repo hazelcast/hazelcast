@@ -31,4 +31,10 @@ public final class ModuleImportOptions {
         Pattern projectModulePattern = Pattern.compile(".*/" + moduleName + "/target/classes/.*");
         return location -> location.matches(projectModulePattern);
     }
+
+    public static ImportOption onlyCurrentModuleTests() {
+        String moduleName = Paths.get("").toAbsolutePath().getFileName().toString();
+        Pattern projectModulePattern = Pattern.compile(".*/" + moduleName + "/target/test-classes/.*");
+        return location -> location.matches(projectModulePattern);
+    }
 }

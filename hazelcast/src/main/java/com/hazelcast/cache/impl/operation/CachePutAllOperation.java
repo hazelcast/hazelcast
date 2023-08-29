@@ -19,12 +19,12 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
-
 public class CachePutAllOperation extends CacheOperation
         implements BackupAwareOperation, MutableOperation, MutatingOperation {
 
@@ -43,7 +41,7 @@ public class CachePutAllOperation extends CacheOperation
     private ExpiryPolicy expiryPolicy;
     private int completionId;
 
-    private transient Map<Data, CacheRecord> backupRecords;
+    private transient List backupPairs;
 
     public CachePutAllOperation() {
     }
@@ -69,7 +67,7 @@ public class CachePutAllOperation extends CacheOperation
     @Override
     public void run() throws Exception {
         UUID callerUuid = getCallerUuid();
-        backupRecords = createHashMap(entries.size());
+        backupPairs = new ArrayList(entries.size() * 2);
 
         for (Map.Entry<Data, Data> entry : entries) {
             Data key = entry.getKey();
@@ -79,20 +77,22 @@ public class CachePutAllOperation extends CacheOperation
 
             // backupRecord may be null (eg expired on put)
             if (backupRecord != null) {
-                backupRecords.put(key, backupRecord);
                 publishWanUpdate(key, backupRecord);
+
+                backupPairs.add(key);
+                backupPairs.add(backupRecord);
             }
         }
     }
 
     @Override
     public boolean shouldBackup() {
-        return !backupRecords.isEmpty();
+        return !backupPairs.isEmpty();
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new CachePutAllBackupOperation(name, backupRecords);
+        return new CachePutAllBackupOperation(name, backupPairs);
     }
 
     @Override

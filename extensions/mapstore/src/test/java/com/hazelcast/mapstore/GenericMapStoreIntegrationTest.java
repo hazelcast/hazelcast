@@ -420,12 +420,15 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
 
         // create another member
+        logger.info("Starting third member instance");
         HazelcastInstance hz3 = factory().newHazelcastInstance(memberConfig);
         assertClusterSizeEventually(3, hz3);
+        logger.info("Third member instance started with name " + hz3.getName());
 
         ExceptionRecorder recorder = new ExceptionRecorder(hz3, Level.WARNING);
         // fill the map with some values so each member gets some items
         Integer itemSize = 1000;
+        logger.info("Putting data into the IMap");
         for (int i = 1; i < itemSize; i++) {
             map.put(i, new Person(i, "name-" + i));
         }
@@ -439,6 +442,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
                 }, itemSize.longValue()
         );
 
+        logger.info("Shutting down hz3");
         // shutdown the member - this will call destroy on the MapStore on this member,
         // which should not drop the mapping in this case
         hz3.shutdown();
@@ -446,9 +450,11 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         assertClusterSizeEventually(2, instances());
         // Ensure that the client has detected hz3 has shut down
         assertClusterSizeEventually(2, client);
+        logger.info("Hz3 was shut down");
 
         // The new item should still be loadable via the mapping
         executeJdbc("INSERT INTO " + tableName + " VALUES(1000, 'name-1000')");
+        logger.info("Executed the INSERT query");
         Person p = map.get(itemSize);
         assertThat(p.getId()).isEqualTo(itemSize);
         assertThat(p.getName()).isEqualTo("name-" + itemSize);

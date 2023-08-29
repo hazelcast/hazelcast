@@ -39,11 +39,9 @@
         <module>cdc-mysql</module>
         <module>cdc-postgres</module>
         <module>csv</module>
-        <module>elasticsearch/elasticsearch-6</module>
         <module>elasticsearch/elasticsearch-7</module>
         <module>hadoop</module>
         <module>hadoop-dist</module>
-        <module>hazelcast-3-connector</module>
         <module>kafka</module>
         <module>kafka-connect</module>
         <module>kinesis</module>
@@ -138,7 +136,7 @@
                     <configuration>
                         <createSourcesJar>true</createSourcesJar>
                         <shadeSourcesContent>true</shadeSourcesContent>
-                        <createDependencyReducedPom>true</createDependencyReducedPom>
+                        <createDependencyReducedPom>false</createDependencyReducedPom>
                         <shadedArtifactAttached>true</shadedArtifactAttached>
                         <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
                         <transformers>

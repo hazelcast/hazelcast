@@ -29,11 +29,9 @@ import java.util.Properties;
 
 import static com.hazelcast.config.replacer.AbstractPbeReplacer.DEFAULT_CIPHER_ALGORITHM;
 import static com.hazelcast.config.replacer.AbstractPbeReplacer.DEFAULT_SECRET_KEY_FACTORY_ALGORITHM;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * Unit tests for {@link AbstractPbeReplacer}.
@@ -124,9 +122,9 @@ public class AbstractPbeReplacerTest {
 
     protected void assertReplacerWorks(AbstractPbeReplacer replacer) throws Exception {
         String encryptedStr = replacer.encrypt("aTestString", 77);
-        assertThat("Iteration count should be present in the encrypted string", encryptedStr, containsString("77"));
-        assertThat("Sensitive string has not to be part of the encrypted string", encryptedStr,
-                not(containsString("aTestString")));
+        assertThat(encryptedStr).as("Iteration count should be present in the encrypted string").contains("77");
+        assertThat(encryptedStr).as("Sensitive string has not to be part of the encrypted string")
+                                .doesNotContain("aTestString");
         assertEquals("aTestString", replacer.getReplacement(encryptedStr));
     }
 

@@ -54,23 +54,20 @@ public class MergePolicyValidatorScheduledExecutorIntegrationTest extends Abstra
     public void testScheduledExecutor_withHyperLogLogMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("cardinalityEstimator", hyperLogLogMergePolicy);
 
-        expectCardinalityEstimatorException();
-        hz.getScheduledExecutorService("cardinalityEstimator");
+        expectCardinalityEstimatorException(() -> hz.getScheduledExecutorService("cardinalityEstimator"));
     }
 
     @Test
     public void testScheduledExecutor_withHigherHitsMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("higherHits", higherHitsMergePolicy);
 
-        expectedHigherHitsException();
-        hz.getScheduledExecutorService("higherHits");
+        expectedHigherHitsException(() -> hz.getScheduledExecutorService("higherHits"));
     }
 
     @Test
     public void testScheduledExecutor_withInvalidMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("invalid", invalidMergePolicyConfig);
 
-        expectedInvalidMergePolicyException();
-        hz.getScheduledExecutorService("invalid");
+        expectedInvalidMergePolicyException(() -> hz.getScheduledExecutorService("invalid"));
     }
 }

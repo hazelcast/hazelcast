@@ -549,4 +549,8 @@ public final class StringUtil {
         }
         return new String(chars, 0, pos);
     }
+
+    public static boolean isBoolean(String value) {
+        return value.equalsIgnoreCase("false") || value.equalsIgnoreCase("true");
+    }
 }

@@ -19,7 +19,6 @@ package com.hazelcast.internal.util;
 import static com.hazelcast.internal.util.XmlUtil.SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES;
 import static com.hazelcast.internal.util.XmlUtil.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
@@ -43,7 +42,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.validation.SchemaFactory;
 
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -56,6 +54,7 @@ import org.xml.sax.SAXException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({ QuickTest.class })
@@ -86,7 +85,7 @@ public class XmlUtilTest {
         } catch (Exception e) {
             // not important if it fails
         }
-        assertThat(server.getHits(), Matchers.greaterThan(0));
+        assertThat(server.getHits()).isGreaterThan(0);
     }
 
     @Test

@@ -54,23 +54,20 @@ public class MergePolicyValidatorSetIntegrationTest extends AbstractMergePolicyV
     public void testSet_withHyperLogLogMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("cardinalityEstimator", hyperLogLogMergePolicy);
 
-        expectCardinalityEstimatorException();
-        hz.getSet("cardinalityEstimator");
+        expectCardinalityEstimatorException(() -> hz.getSet("cardinalityEstimator"));
     }
 
     @Test
     public void testSet_withHigherHitsMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("higherHits", higherHitsMergePolicy);
 
-        expectedHigherHitsException();
-        hz.getSet("higherHits");
+        expectedHigherHitsException(() -> hz.getSet("higherHits"));
     }
 
     @Test
     public void testSet_withInvalidMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("invalid", invalidMergePolicyConfig);
 
-        expectedInvalidMergePolicyException();
-        hz.getSet("invalid");
+        expectedInvalidMergePolicyException(() -> hz.getSet("invalid"));
     }
 }

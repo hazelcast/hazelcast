@@ -290,6 +290,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     <S, R> GeneralStage<R> mapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -331,6 +332,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     default <S, R> GeneralStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -372,6 +374,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     <S, R> GeneralStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -423,6 +426,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     <S, R> GeneralStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -478,6 +482,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     <S, R> GeneralStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -531,6 +536,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     <S> GeneralStage<T> filterUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
@@ -584,6 +590,7 @@ public interface GeneralStageWithKey<T, K> {
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     <S, R> GeneralStage<R> flatMapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,

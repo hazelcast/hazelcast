@@ -34,6 +34,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @since Jet 3.0
  * @deprecated since 5.0, use {@link JetConfig} instead.
  */
+@Deprecated
 public class InstanceConfig {
 
     /**

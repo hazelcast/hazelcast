@@ -26,10 +26,6 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static org.junit.Assert.assertEquals;
 
-/**
- * If Unsafe is available, this will trigger the testing of the {@link SwCounter.UnsafeSwCounter} class. Otherwise
- * the {@link SwCounter.SafeSwCounter} is tested.
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class SwCounterTest {
@@ -42,19 +38,26 @@ public class SwCounterTest {
     }
 
     @Test
-    public void inc() {
+    public void test_inc() {
         assertEquals(1, counter.inc());
     }
 
     @Test
-    public void inc_withAmount() {
+    public void test_inc_withAmount() {
         assertEquals(10, counter.inc(10));
         assertEquals(10, counter.inc(0));
         assertEquals(0, counter.inc(-10));
     }
 
     @Test
-    public void set() {
+    public void test_getAndSet() {
+        counter.set(10);
+        assertEquals(10, counter.getAndSet(20));
+        assertEquals(20, counter.get());
+    }
+
+    @Test
+    public void test_set() {
         counter.set(100_000);
         assertEquals(100_000, counter.get());
     }

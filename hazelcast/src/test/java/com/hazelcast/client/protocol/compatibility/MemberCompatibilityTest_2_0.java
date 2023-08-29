@@ -520,7 +520,7 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MapDeleteCodec_encodeResponse() {
         int fileClientMessageIndex = 54;
-        ClientMessage encoded = MapDeleteCodec.encodeResponse();
+        ClientMessage encoded = MapDeleteCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

@@ -25,108 +25,86 @@ import com.hazelcast.internal.monitor.MemberState;
 public interface NearCacheStats extends LocalInstanceStats {
 
     /**
-     * Returns the creation time of this Near Cache on this member.
-     *
      * @return creation time of this Near Cache on this member
      */
     @Override
     long getCreationTime();
 
     /**
-     * Returns the number of Near Cache entries owned by this member.
-     *
      * @return number of Near Cache entries owned by this member
      */
     long getOwnedEntryCount();
 
     /**
-     * Returns memory cost (number of bytes) of Near Cache entries owned by this member.
-     *
      * @return memory cost (number of bytes) of Near Cache entries owned by this member
      */
     long getOwnedEntryMemoryCost();
 
     /**
-     * Returns the number of hits (reads) of Near Cache entries owned by this member.
-     *
      * @return number of hits (reads) of Near Cache entries owned by this member
      */
     long getHits();
 
     /**
-     * Returns the number of misses of Near Cache entries owned by this member.
-     *
      * @return number of misses of Near Cache entries owned by this member
      */
     long getMisses();
 
     /**
-     * Returns the hit/miss ratio of Near Cache entries owned by this member.
-     *
      * @return hit/miss ratio of Near Cache entries owned by this member
      */
     double getRatio();
 
     /**
-     * Returns the number of evictions of Near Cache entries owned by this member.
-     *
      * @return number of evictions of Near Cache entries owned by this member
      */
     long getEvictions();
 
     /**
-     * Returns the number of TTL and max-idle expirations of Near Cache entries owned by this member.
-     *
      * @return number of TTL and max-idle expirations of Near Cache entries owned by this member
      */
     long getExpirations();
 
     /**
-     * Returns the number of invalidations of Near Cache entries owned by this member.
-     *
-     * @return number of invalidations of Near Cache entries owned by this member
+     * @return number of successful invalidations of Near Cache entries owned by this member
      */
     long getInvalidations();
 
     /**
-     * Returns the number of Near Cache key persistences (when the pre-load feature is enabled).
-     *
-     * @return the number of Near Cache key persistences
+     * @return number of requested invalidations of Near Cache entries owned by this member.
+     * <p>
+     * One request may cover multiple keys (e.g. {@code clear}), includes failed invalidations (e.g. where they key
+     * isn't contained in the Near Cache).
+     */
+    long getInvalidationRequests();
+
+    /**
+     * @return the number of Near Cache key persistences (when the pre-load feature is enabled)
      */
     long getPersistenceCount();
 
     /**
-     * Returns the timestamp of the last Near Cache key persistence (when the pre-load feature is enabled).
-     *
-     * @return the timestamp of the last Near Cache key persistence
+     * @return the timestamp of the last Near Cache key persistence (when the pre-load feature is enabled)
      */
     long getLastPersistenceTime();
 
     /**
-     * Returns the duration in milliseconds of the last Near Cache key persistence (when the pre-load feature is enabled).
-     *
-     * @return the duration of the last Near Cache key persistence (in milliseconds)
+     * @return the duration in milliseconds of the last Near Cache key persistence (when the pre-load feature is enabled)
      */
     long getLastPersistenceDuration();
 
     /**
-     * Returns the written bytes of the last Near Cache key persistence (when the pre-load feature is enabled).
-     *
-     * @return the written bytes of the last Near Cache key persistence
+     * @return the written bytes of the last Near Cache key persistence (when the pre-load feature is enabled)
      */
     long getLastPersistenceWrittenBytes();
 
     /**
-     * Returns the number of persisted keys of the last Near Cache key persistence (when the pre-load feature is enabled).
-     *
-     * @return the number of persisted keys of the last Near Cache key persistence
+     * @return the number of persisted keys of the last Near Cache key persistence (when the pre-load feature is enabled)
      */
     long getLastPersistenceKeyCount();
 
     /**
-     * Returns the failure reason of the last Near Cache persistence (when the pre-load feature is enabled).
-     *
-     * @return the failure reason of the last Near Cache persistence
+     * @return the failure reason of the last Near Cache persistence (when the pre-load feature is enabled)
      */
     String getLastPersistenceFailure();
 }

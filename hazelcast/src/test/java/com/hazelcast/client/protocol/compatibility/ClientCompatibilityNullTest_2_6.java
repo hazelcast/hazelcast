@@ -622,6 +622,10 @@ public class ClientCompatibilityNullTest_2_6 {
     @Test
     public void test_MapDeleteCodec_decodeResponse() {
         int fileClientMessageIndex = 66;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MapDeleteCodec.ResponseParameters parameters = MapDeleteCodec.decodeResponse(fromFile);
+        assertTrue(parameters.isResponseExists);
+        assertTrue(isEqual(aBoolean, parameters.response));
     }
 
     @Test

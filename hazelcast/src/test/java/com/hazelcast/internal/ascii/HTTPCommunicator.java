@@ -127,7 +127,7 @@ public class HTTPCommunicator {
     private final String baseRestAddress;
     private TrustManager[] clientTrustManagers;
     private KeyManager[] clientKeyManagers;
-    private String tlsProtocol = "TLSv1.1";
+    private String tlsProtocol = "TLS";
     private final ILogger logger;
 
     public HTTPCommunicator(HazelcastInstance instance) {

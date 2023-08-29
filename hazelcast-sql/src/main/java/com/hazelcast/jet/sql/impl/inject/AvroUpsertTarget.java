@@ -35,8 +35,8 @@ class AvroUpsertTarget implements UpsertTarget {
 
     private GenericRecordBuilder record;
 
-    AvroUpsertTarget(String schema) {
-        this.schema = new Schema.Parser().parse(schema);
+    AvroUpsertTarget(Schema schema) {
+        this.schema = schema;
     }
 
     @Override

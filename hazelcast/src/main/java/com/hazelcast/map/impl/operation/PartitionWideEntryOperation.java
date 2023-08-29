@@ -111,17 +111,31 @@ public class PartitionWideEntryOperation extends MapOperation
 
     @Override
     protected void runInternal() {
-        if (mapContainer.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE) {
+        if (isHDMap()) {
             runForNative();
         } else {
             runWithPartitionScan();
         }
     }
 
+    public boolean isTieredStoreMap() {
+        return mapContainer.getMapConfig()
+                .getTieredStoreConfig().isEnabled();
+    }
+
+    private boolean isHDMap() {
+        return mapContainer.getMapConfig()
+                .getInMemoryFormat() == InMemoryFormat.NATIVE;
+    }
+
     private void runForNative() {
-        if (runWithIndex()) {
+        // try run with partitioned index
+        if (!isTieredStoreMap()
+                && runWithPartitionedIndex()) {
             return;
         }
+
+        // as a fallback scan whole partition
         runWithPartitionScanForNative();
     }
 
@@ -129,7 +143,7 @@ public class PartitionWideEntryOperation extends MapOperation
      * @return {@code true} if index has been used and the EP
      * has been executed on its keys, {@code false} otherwise
      */
-    private boolean runWithIndex() {
+    private boolean runWithPartitionedIndex() {
         // here we try to query the partitioned-index
         Predicate predicate = getPredicate();
         if (predicate == null) {

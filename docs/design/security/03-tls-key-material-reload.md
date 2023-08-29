@@ -25,7 +25,7 @@ We want to enable key material (keyStores and trustStores) rotation without
 needing a Hazelcast instance restart.
 
 The current process required for the key material update is described in the
-[Updating Certificates in the Running Cluster](https://docs.hazelcast.com/hazelcast/5.2/security/tls-configuration#updating-certificates-in-the-running-cluster)
+[Updating Certificates in the Running Cluster](https://docs.hazelcast.com/hazelcast/latest/security/tls-configuration#updating-certificates-in-the-running-cluster)
 section of the official documentation. It includes:
 
 * stopping each member;

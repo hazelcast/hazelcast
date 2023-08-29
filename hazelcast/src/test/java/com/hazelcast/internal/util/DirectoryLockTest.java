@@ -22,14 +22,12 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
@@ -37,15 +35,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 import static com.hazelcast.internal.util.DirectoryLock.lockForDirectory;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DirectoryLockTest {
 
     private static final ILogger logger = Logger.getLogger(DirectoryLockTest.class);
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -80,15 +76,14 @@ public class DirectoryLockTest {
     @Test
     public void test_lockForDirectory_whenAlreadyLocked() {
         directoryLock = lockForDirectory(directory, logger);
-        expectedException.expect(HazelcastException.class);
-        lockForDirectory(directory, logger);
+        assertThatThrownBy(() -> lockForDirectory(directory, logger)).isInstanceOf(HazelcastException.class);
     }
 
     @Test
     public void test_lockForDirectory_forNonExistingDir() {
-        expectedException.expect(HazelcastException.class);
-        expectedException.expectCause(Matchers.<Throwable>instanceOf(FileNotFoundException.class));
-        directoryLock = lockForDirectory(new File(UuidUtil.newUnsecureUuidString()), logger);
+        assertThatThrownBy(() -> lockForDirectory(new File(UuidUtil.newUnsecureUuidString()), logger))
+                .isInstanceOf(HazelcastException.class)
+                .hasCauseInstanceOf(FileNotFoundException.class);
     }
 
     @Test

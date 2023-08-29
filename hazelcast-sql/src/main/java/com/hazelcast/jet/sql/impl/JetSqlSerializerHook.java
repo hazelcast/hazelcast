@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.connector.map.LazyDefiningSpecificMemberPms;
 import com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier;
 import com.hazelcast.jet.sql.impl.expression.UdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
@@ -217,7 +218,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_GET_DDL = 90;
 
-    public static final int LEN = EXPRESSION_GET_DDL + 1;
+    public static final int LAZY_SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER = 91;
+
+    public static final int LEN = LAZY_SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER + 1;
 
     @Override
     public int getFactoryId() {
@@ -334,6 +337,8 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
         constructors[EXPRESSION_GET_DDL] = arg -> new GetDdlFunction();
+
+        constructors[LAZY_SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER] = arg -> new LazyDefiningSpecificMemberPms();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -77,7 +77,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiPredicate;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_ID;
@@ -92,7 +92,9 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -256,10 +258,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * After all expected rows are received, the method further waits a little
      * more if any extra rows are received, and fails, if they are.
      *
-     * @param instance     The HZ instance
-     * @param sql          The query
-     * @param arguments    The query arguments
-     * @param expectedRows Expected rows
+     * @param instance         The HZ instance
+     * @param sql              The query
+     * @param arguments        The query arguments
+     * @param expectedRows     Expected rows
      * @param timeoutForNextMs The number of ms to wait for more rows after all the
      *                         expected rows were received
      */
@@ -641,7 +643,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     public static void createMapping(HazelcastInstance instance, String name, String keyFormat, String valueFormat) {
-        String sql = "CREATE MAPPING " + name
+        String sql = "CREATE OR REPLACE MAPPING " + name
                 + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
                 + '\'' + OPTION_KEY_FORMAT + "'='" + keyFormat + "'\n"
@@ -659,7 +661,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         createIndex(instance(), name, mapName, type, attributes);
     }
 
-    static void createIndex(HazelcastInstance instance, String name, String mapName, IndexType type, String... attributes) {
+    public static void createIndex(HazelcastInstance instance, String name, String mapName, IndexType type, String... attributes) {
         SqlService sqlService = instance.getSql();
 
         StringBuilder sb = new StringBuilder("CREATE INDEX IF NOT EXISTS ");
@@ -719,7 +721,6 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
-     *
      * Compares two lists. The lists are expected to contain elements of type
      * {@link JetSqlRow} or {@link Watermark}.
      * Useful for {@link TestSupport#outputChecker(BiPredicate)}.
@@ -777,6 +778,11 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     public static List<Row> rows(final int rowLength, final Object... values) {
+        if (rowLength == 0) {
+            assertThat(values).isEmpty();
+            return emptyList();
+        }
+
         if ((values.length % rowLength) != 0) {
             throw new HazelcastException("Number of row value args is not divisible by row length");
         }
@@ -824,6 +830,52 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     protected static Object[] row(Object... values) {
         return values;
+    }
+
+    public static class SqlMapping {
+        protected final String name;
+        protected final String type;
+        protected final List<String> fields = new ArrayList<>();
+        protected final Map<Object, Object> options = new HashMap<>();
+
+        public SqlMapping(String name, String type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        public SqlMapping fields(String... fields) {
+            this.fields.addAll(asList(fields));
+            return this;
+        }
+
+        public SqlMapping options(Object... options) {
+            for (int i = 0; i < options.length / 2; i++) {
+                this.options.put(options[2 * i], options[2 * i + 1]);
+            }
+            return this;
+        }
+
+        public SqlMapping optionsIf(boolean condition, Object... options) {
+            return condition ? options(options) : this;
+        }
+
+        public void create() {
+            create(instance(), false);
+        }
+
+        public void createOrReplace() {
+            create(instance(), true);
+        }
+
+        protected void create(HazelcastInstance instance, boolean replace) {
+            instance.getSql().execute("CREATE " + (replace ? "OR REPLACE " : "") + "MAPPING " + name
+                    + (fields.isEmpty() ? " " : "(" + String.join(",", fields) + ") ")
+                    + "TYPE " + type + " "
+                    + "OPTIONS (" + options.entrySet().stream()
+                            .map(e -> "'" + e.getKey() + "'='" + e.getValue() + "'").collect(joining(","))
+                    + ")"
+            );
+        }
     }
 
     /**

@@ -18,13 +18,12 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.ThrottleWrappedP;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 
 import javax.annotation.Nonnull;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -81,9 +80,8 @@ public final class TestUtil {
         }
 
         if (!found) {
-            StringWriter caughtStr = new StringWriter();
-            caught.printStackTrace(new PrintWriter(caughtStr));
-            assertEquals("expected exception not found in causes chain", expected.toString(), caughtStr.toString());
+            assertEquals("expected exception not found in causes chain", expected.toString(),
+                    ExceptionUtil.stackTraceToString(caught));
         }
     }
 

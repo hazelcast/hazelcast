@@ -31,5 +31,6 @@ public interface JetCacheManager {
      * @deprecated since 5.0
      * Use {@link com.hazelcast.core.ICacheManager#getCache(String)} instead.
      */
+    @Deprecated
     <K, V> ICache<K, V> getCache(String name);
 }

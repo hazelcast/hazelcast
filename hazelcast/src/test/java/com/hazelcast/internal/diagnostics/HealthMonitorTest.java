@@ -80,6 +80,7 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     @Test
     public void exceedsThreshold_when_osProcessCpuLoad_tooHigh() {
         registerMetric(metrics.osProcessCpuLoad, 90);
+        metrics.update();
         boolean result = metrics.exceedsThreshold();
         assertTrue(result);
     }
@@ -87,6 +88,7 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     @Test
     public void exceedsThreshold_when_osSystemCpuLoad_TooHigh() {
         registerMetric(metrics.osSystemCpuLoad, 90);
+        metrics.update();
         boolean result = metrics.exceedsThreshold();
         assertTrue(result);
     }
@@ -94,6 +96,7 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     @Test
     public void exceedsThreshold_operationServicePendingInvocationsPercentage() {
         registerMetric(metrics.operationServicePendingInvocationsPercentage, 90);
+        metrics.update();
         boolean result = metrics.exceedsThreshold();
         assertTrue(result);
     }

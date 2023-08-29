@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.schema.view;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
 import com.hazelcast.nio.ObjectDataInput;
@@ -77,9 +76,6 @@ public class View implements Versioned, SqlCatalogObject {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(query);
-        if (out.getVersion().isLessThan(Versions.V5_2)) {
-            out.writeBoolean(false);
-        }
         SerializationUtil.writeList(viewColumnNames, out);
         SerializationUtil.writeList(viewColumnTypes, out);
     }
@@ -88,9 +84,6 @@ public class View implements Versioned, SqlCatalogObject {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         query = in.readString();
-        if (in.getVersion().isLessThan(Versions.V5_2)) {
-            in.readBoolean();
-        }
         viewColumnNames = SerializationUtil.readList(in);
         viewColumnTypes = SerializationUtil.readList(in);
     }

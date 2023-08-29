@@ -49,13 +49,12 @@ import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COU
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getClusterService;
 import static com.hazelcast.test.Accessors.getPartitionService;
-import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -89,7 +88,7 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test(expected = HazelcastInstanceNotActiveException.class)
-    public void test_getPartitionOwnerOrWait_throwsException_afterNodeShutdown() throws Exception {
+    public void test_getPartitionOwnerOrWait_throwsException_afterNodeShutdown() {
         instance.shutdown();
         partitionService.getPartitionOwnerOrWait(0);
     }
@@ -180,7 +179,7 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
     @Test
     public void test_getMemberPartitionsIfAssigned_whenNotInitialized() {
         List<Integer> partitions = partitionService.getMemberPartitionsIfAssigned(getAddress(instance));
-        assertThat(partitions, empty());
+        assertThat(partitions).isEmpty();
     }
 
     @Test

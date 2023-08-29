@@ -49,10 +49,8 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -76,17 +74,16 @@ import static com.hazelcast.test.TestCollectionUtils.setOfValuesBetween;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
-import static org.hamcrest.CoreMatchers.startsWith;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapLoaderTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Override
     protected Config getConfig() {
@@ -193,8 +190,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         keys.add("key");
         keys.add(null);
 
-        expectedException.expect(NullPointerException.class);
-        map.loadAll(keys, true);
+        assertThatThrownBy(() -> map.loadAll(keys, true)).isInstanceOf(NullPointerException.class);
     }
 
     @Ignore("See https://github.com/hazelcast/hazelcast/issues/11931")
@@ -252,9 +248,9 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage(startsWith("Key loaded by a MapLoader cannot be null"));
-        map.size();
+        assertThatThrownBy(map::size)
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageStartingWith("Key loaded by a MapLoader cannot be null");
     }
 
     @Ignore("See https://github.com/hazelcast/hazelcast/issues/11931")
@@ -312,13 +308,13 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage(startsWith("Neither key nor value can be loaded as null"));
-        map.size();
+        assertThatThrownBy(map::size)
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageStartingWith("Neither key nor value can be loaded as null");
 
         assertEquals(2, map.size());
         assertEquals("1", map.get("1"));
-        assertEquals(null, map.get("2"));
+        assertNull(map.get("2"));
         assertEquals("3", map.get("3"));
     }
 
@@ -379,9 +375,9 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         map.addInterceptor(new TestInterceptor());
 
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage(startsWith("Neither key nor value can be loaded as null"));
-        map.size();
+        assertThatThrownBy(map::size)
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageStartingWith("Neither key nor value can be loaded as null");
     }
 
     @Ignore("See https://github.com/hazelcast/hazelcast/issues/11931")
@@ -439,9 +435,9 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage(startsWith("Key loaded by a MapLoader cannot be null"));
-        map.size();
+        assertThatThrownBy(map::size)
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageStartingWith("Key loaded by a MapLoader cannot be null");
     }
 
     private void handleNpeFromKnownIssue(NullPointerException e) {
@@ -473,8 +469,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
-        expectedException.expect(NullPointerException.class);
-        map.loadAll(null, true);
+        assertThatThrownBy(() -> map.loadAll(null, true)).isInstanceOf(NullPointerException.class);
     }
 
     /**

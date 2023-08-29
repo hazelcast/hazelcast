@@ -58,10 +58,9 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.LAZY;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 /**
  * Test if a node joining a cluster which is loading data works.
@@ -73,7 +72,7 @@ import static org.junit.Assume.assumeThat;
 @Category(SlowTest.class)
 public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupport {
 
-    private static final String MAP_NAME = "testMap";
+    private static final String MAP_NAME = "default";
     private static final boolean SIMULATE_SECOND_NODE = true;
     private static final int WRITE_DELAY_SECONDS = 5;
     private static final int PRELOAD_SIZE = 1000;
@@ -85,7 +84,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
     @Parameter
     public InitialLoadMode initialLoadMode;
 
-    private final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(NODE_COUNT);
+    private final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<>(NODE_COUNT);
 
     @Parameters(name = "{0}")
     public static Collection<Object[]> parameters() {
@@ -108,8 +107,6 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
     @Test(timeout = 600000)
     public void testNoDeadLockDuringJoin() throws Exception {
-        // create shared hazelcast config
-        final Config config = createConfigWithDelayingMapStore();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
 
         final CountDownLatch node1Started = new CountDownLatch(1);
@@ -118,6 +115,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
         // thread 1: start a single member and load the data
         Thread thread1 = new Thread(() -> {
+            Config config = createConfigWithDelayingMapStore();
             HazelcastInstance hcInstance = factory.newHazelcastInstance(config);
             instances.set(0, hcInstance);
             node1Started.countDown();
@@ -131,6 +129,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
         node1Started.await();
         // thread 2: a second member joins the cluster
         Thread thread2 = new Thread(() -> {
+            Config config = createConfigWithDelayingMapStore();
             HazelcastInstance hcInstance = factory.newHazelcastInstance(config);
             try {
                 hcInstance.getMap(MAP_NAME);
@@ -152,10 +151,9 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
     @Test(timeout = 600000)
     public void testLoadingFinishes_whenMemberJoinsWhileLoading() throws Exception {
-        assumeThat("With LAZY InMemoryModel this test may fail due to a known issue reported in OS #11544 and #12384",
-                initialLoadMode, not(LAZY));
-
-        final Config config = createConfigWithDelayingMapStore();
+        assumeThat(initialLoadMode)
+                .as("With LAZY InMemoryModel this test may fail due to a known issue reported in OS #11544 and #12384")
+                .isNotEqualTo(LAZY);
 
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
@@ -168,6 +166,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
             @Override
             public void run() {
+                Config config = createConfigWithDelayingMapStore();
                 HazelcastInstance instance = factory.newHazelcastInstance(config);
                 instances.set(0, instance);
                 // get map and trigger loading the data
@@ -187,6 +186,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
         Thread thread2 = new Thread(new Runnable() {
             @Override
             public void run() {
+                Config config = createConfigWithDelayingMapStore();
                 HazelcastInstance instance = factory.newHazelcastInstance(config);
                 instances.set(1, instance);
                 try {
@@ -216,9 +216,6 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
     @Test(timeout = 600000)
     public void testDataLoadedCorrectly() throws Exception {
-        // create shared hazelcast config
-        final Config config = createConfigWithDelayingMapStore();
-
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         final CountDownLatch node1Started = new CountDownLatch(1);
@@ -230,6 +227,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
             @Override
             public void run() {
+                Config config = createConfigWithDelayingMapStore();
                 HazelcastInstance instance = factory.newHazelcastInstance(config);
                 instances.set(0, instance);
                 node1Started.countDown();
@@ -256,6 +254,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
             @Override
             public void run() {
+                Config config = createConfigWithDelayingMapStore();
                 HazelcastInstance instance = factory.newHazelcastInstance(config);
                 instances.set(1, instance);
                 try {
@@ -377,7 +376,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
         }
     }
 
-    private Config createConfigWithDelayingMapStore() {
+    public Config createConfigWithDelayingMapStore() {
         // create shared hazelcast config
         final Config config = new XmlConfigBuilder().build();
 

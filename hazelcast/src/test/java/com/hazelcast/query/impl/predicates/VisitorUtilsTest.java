@@ -28,11 +28,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.createMockVisitablePredicate;
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
-import static org.hamcrest.Matchers.arrayWithSize;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -57,7 +53,7 @@ public class VisitorUtilsTest extends HazelcastTestSupport {
         Predicate[] predicates = new Predicate[0];
         Predicate[] result = VisitorUtils.acceptVisitor(predicates, mockVisitor, mockIndexes);
 
-        assertThat(result, sameInstance(predicates));
+        assertThat(result).isSameAs(predicates);
     }
 
     @Test
@@ -69,7 +65,7 @@ public class VisitorUtilsTest extends HazelcastTestSupport {
         predicates[0] = predicate;
 
         Predicate[] result = VisitorUtils.acceptVisitor(predicates, mockVisitor, mockIndexes);
-        assertThat(result, sameInstance(predicates));
+        assertThat(result).isSameAs(predicates);
     }
 
     @Test
@@ -85,9 +81,9 @@ public class VisitorUtilsTest extends HazelcastTestSupport {
         predicates[1] = p2;
 
         Predicate[] result = VisitorUtils.acceptVisitor(predicates, mockVisitor, mockIndexes);
-        assertThat(result, not(sameInstance(predicates)));
-        assertThat(result, arrayWithSize(2));
-        assertThat(result, arrayContainingInAnyOrder(p1, transformed));
+        assertThat(result).isNotSameAs(predicates);
+        assertThat(result).hasSize(2);
+        assertThat(result).containsExactlyInAnyOrder(p1, transformed);
     }
 
     @Test
@@ -106,8 +102,8 @@ public class VisitorUtilsTest extends HazelcastTestSupport {
         predicates[2] = p3;
 
         Predicate[] result = VisitorUtils.acceptVisitor(predicates, mockVisitor, mockIndexes);
-        assertThat(result, not(sameInstance(predicates)));
-        assertThat(result, arrayWithSize(3));
-        assertThat(result, arrayContainingInAnyOrder(p1, transformed, p3));
+        assertThat(result).isNotSameAs(predicates);
+        assertThat(result).hasSize(3);
+        assertThat(result).containsExactlyInAnyOrder(p1, transformed, p3);
     }
 }

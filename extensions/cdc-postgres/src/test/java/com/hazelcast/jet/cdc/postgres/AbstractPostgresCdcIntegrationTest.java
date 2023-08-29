@@ -44,7 +44,7 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
-    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-postgres:1.7")
+    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-postgres:2.3.0.Final")
             .asCompatibleSubstituteFor("postgres");
 
     protected static final String DATABASE_NAME = "postgres";
@@ -61,24 +61,6 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
                     .withConnectTimeoutSeconds(300)
                     .withStartupTimeoutSeconds(300)
     );
-
-    @BeforeClass
-    public static void ignoreOnArm64() {
-        //There is no working arm64 version of example-postgres image
-        assumeNoArm64Architecture();
-    }
-
-    @Before
-    public void beforeEach() throws SQLException {
-        String dbConnectionUrl = postgres.getJdbcUrl();
-        try (Connection conn = getPostgreSqlConnection(dbConnectionUrl, postgres.getUsername(), postgres.getPassword());
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute("ALTER TABLE inventory.customers REPLICA IDENTITY FULL;");
-            stmt.execute("ALTER TABLE inventory.orders REPLICA IDENTITY FULL;");
-            stmt.execute("ALTER TABLE inventory.products REPLICA IDENTITY FULL;");
-        }
-    }
 
     protected PostgresCdcSources.Builder sourceBuilder(String name) {
         return PostgresCdcSources.postgres(name)
