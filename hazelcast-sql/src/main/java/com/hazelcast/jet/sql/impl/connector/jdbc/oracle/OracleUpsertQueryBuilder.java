@@ -66,14 +66,21 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
         sb.append("WHEN MATCHED THEN ");
         sb.append("UPDATE ");
         sb.append(" SET");
-        int pkCount = jdbcTable.getPrimaryKeyList().size();
+        List<String> pkList = jdbcTable.getPrimaryKeyList();
         Iterator<String> it = jdbcTable.dbFieldNames().iterator();
         while (it.hasNext()) {
             String dbFieldName = it.next();
+            boolean isPk = false;
             // Oracle doesn't allow updating the values referenced in the ON clause i.e. the primary keys
             // Skip the primary keys.
-            if (pkCount > 0) {
-                pkCount--;
+            for (String field : pkList) {
+                if (field.equals(dbFieldName)) {
+                    isPk = true;
+                    break;
+                }
+            }
+
+            if (isPk) {
                 continue;
             }
 
