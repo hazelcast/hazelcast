@@ -131,9 +131,14 @@ data: {
       "CURSOR_NAME"
       "DATA"
       "DATABASE"
+      "DATE_DIFF"
       "DATE_TRUNC"
+      "DATETIME_DIFF"
       "DATETIME_INTERVAL_CODE"
       "DATETIME_INTERVAL_PRECISION"
+      "DATETIME_TRUNC"
+      "DAYOFWEEK"
+      "DAYOFYEAR"
       "DAYS"
       "DECADE"
       "DEFAULTS"
@@ -252,6 +257,8 @@ data: {
       "PASSTHROUGH"
       "PAST"
       "PATH"
+      "PERCENTILE_CONT"
+      "PERCENTILE_DISC"
       "PIVOT"
       "PLACING"
       "PLAN"
@@ -500,6 +507,12 @@ data: {
       "SqlDropView"
     ]
 
+    # List of methods for parsing extensions to "TRUNCATE" calls.
+    # Each must accept arguments "(SqlParserPos pos)".
+    # Example: "SqlTruncate".
+    truncateStatementParserMethods: [
+    ]
+
     # Binary operators tokens.
     # Example: "< INFIX_CAST: \"::\" >".
     binaryOperatorsTokens: [
@@ -518,6 +531,10 @@ data: {
     implementationFiles: [
       "parserImpls.ftl"
     ]
+
+    # Custom identifier token.
+    # Example: "< IDENTIFIER: (<LETTER>|<DIGIT>)+ >".
+    customIdentifierToken: ""
 
     includePosixOperators: false
     includeCompoundIdentifier: true
