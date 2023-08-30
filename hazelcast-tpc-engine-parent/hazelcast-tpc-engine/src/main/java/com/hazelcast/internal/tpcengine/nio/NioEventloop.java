@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
@@ -33,7 +31,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Nio specific Eventloop implementation.
+ * Nio Eventloop implementation.
  */
 final class NioEventloop extends Eventloop {
 
@@ -188,22 +186,18 @@ final class NioEventloop extends Eventloop {
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends Eventloop.Builder {
         public Selector selector;
-        public Executor storageExecutor;
 
         @Override
         protected void conclude() {
             super.conclude();
 
             if (storageScheduler == null) {
-                if (storageExecutor == null) {
-                    storageExecutor = Executors.newSingleThreadExecutor();
-                }
-
+                NioReactor.Builder nioReactorBuilder = (NioReactor.Builder) reactorBuilder;
                 storageScheduler = new NioFifoStorageScheduler(
                         (NioReactor) reactor,
-                        storageExecutor,
-                        reactorBuilder.storagePendingLimit,
-                        reactorBuilder.storagePendingLimit);
+                        nioReactorBuilder.storageExecutor,
+                        nioReactorBuilder.storagePendingLimit,
+                        nioReactorBuilder.storagePendingLimit);
             }
 
             if (networkScheduler == null) {

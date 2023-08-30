@@ -21,6 +21,7 @@ import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.TpcTestSupport;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpcengine.nio.NioReactor;
 import com.hazelcast.internal.tpcengine.util.IntBiConsumer;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
 import com.hazelcast.internal.util.ThreadAffinity;
@@ -35,7 +36,8 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.tpcengine.FormatUtil.humanReadableByteCountSI;
@@ -116,6 +118,8 @@ public class StorageBenchmark {
     public int fsync;
     public int fdatasync;
     public int runtimeSeconds;
+    // the executor used to process storage requests when the Nio reactor is used.
+    public Executor nioStorageExecutor = Executors.newCachedThreadPool();
 
     //  private final Map<Reactor, List<AsyncFile>> filesMap = new ConcurrentHashMap<>();
     private final Map<Reactor, List<String>> pathsMap = new ConcurrentHashMap<>();
@@ -244,6 +248,10 @@ public class StorageBenchmark {
             Reactor.Builder reactorBuilder = newReactorBuilder(reactorType);
             reactorBuilder.threadAffinity = threadAffinity;
             reactorBuilder.spin = spin;
+            if(reactorBuilder instanceof NioReactor.Builder){
+                NioReactor.Builder nioReactorBuilder = (NioReactor.Builder)reactorBuilder;
+                nioReactorBuilder.storageExecutor = nioStorageExecutor;
+            }
             Reactor reactor = reactorBuilder.build();
             reactors.add(reactor);
             reactor.start();

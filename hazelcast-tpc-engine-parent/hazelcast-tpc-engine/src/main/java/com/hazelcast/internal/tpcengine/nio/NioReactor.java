@@ -23,6 +23,8 @@ import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
 import com.hazelcast.internal.tpcengine.nio.NioAsyncServerSocket.AcceptRequest;
 
 import java.nio.channels.Selector;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * Nio implementation of the {@link Reactor}.
@@ -98,10 +100,24 @@ public final class NioReactor extends Reactor {
     public static class Builder extends Reactor.Builder {
 
         /**
-         * Creates a new Builder.
+         * The Executor to use to process blocking storage requests.
+         *
+         * This executor isn't shut down when the reactor shuts down. So it needs
+         * to be managed externally.
          */
+        public Executor storageExecutor;
+
         public Builder() {
             super(ReactorType.NIO);
+        }
+
+        @Override
+        protected void conclude() {
+            super.conclude();
+
+            if (storageExecutor == null) {
+                storageExecutor = ForkJoinPool.commonPool();
+            }
         }
 
         @Override
