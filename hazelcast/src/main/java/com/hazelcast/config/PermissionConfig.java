@@ -22,8 +22,38 @@ import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.permission.AllPermissions;
+import com.hazelcast.security.permission.AtomicLongPermission;
+import com.hazelcast.security.permission.AtomicReferencePermission;
+import com.hazelcast.security.permission.CachePermission;
+import com.hazelcast.security.permission.CardinalityEstimatorPermission;
+import com.hazelcast.security.permission.ConfigPermission;
+import com.hazelcast.security.permission.ConnectorPermission;
+import com.hazelcast.security.permission.CountDownLatchPermission;
+import com.hazelcast.security.permission.DurableExecutorServicePermission;
+import com.hazelcast.security.permission.ExecutorServicePermission;
+import com.hazelcast.security.permission.FlakeIdGeneratorPermission;
+import com.hazelcast.security.permission.JobPermission;
+import com.hazelcast.security.permission.ListPermission;
+import com.hazelcast.security.permission.LockPermission;
+import com.hazelcast.security.permission.ManagementPermission;
+import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.permission.MultiMapPermission;
+import com.hazelcast.security.permission.PNCounterPermission;
+import com.hazelcast.security.permission.QueuePermission;
+import com.hazelcast.security.permission.ReliableTopicPermission;
+import com.hazelcast.security.permission.ReplicatedMapPermission;
+import com.hazelcast.security.permission.RingBufferPermission;
+import com.hazelcast.security.permission.ScheduledExecutorPermission;
+import com.hazelcast.security.permission.SemaphorePermission;
+import com.hazelcast.security.permission.SetPermission;
+import com.hazelcast.security.permission.SqlPermission;
+import com.hazelcast.security.permission.TopicPermission;
+import com.hazelcast.security.permission.TransactionPermission;
+import com.hazelcast.security.permission.UserCodeDeploymentPermission;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -70,129 +100,140 @@ public class PermissionConfig implements IdentifiedDataSerializable {
         /**
          * All
          */
-        ALL("all-permissions"),
+        ALL("all-permissions", AllPermissions.class),
         /**
          * Map
          */
-        MAP("map-permission"),
+        MAP("map-permission", MapPermission.class),
         /**
          * Queue
          */
-        QUEUE("queue-permission"),
+        QUEUE("queue-permission", QueuePermission.class),
         /**
          * Topic
          */
-        TOPIC("topic-permission"),
+        TOPIC("topic-permission", TopicPermission.class),
         /**
          * MultiMap
          */
-        MULTIMAP("multimap-permission"),
+        MULTIMAP("multimap-permission", MultiMapPermission.class),
         /**
          * List
          */
-        LIST("list-permission"),
+        LIST("list-permission", ListPermission.class),
         /**
          * Set
          */
-        SET("set-permission"),
+        SET("set-permission", SetPermission.class),
         /**
          * Flake ID generator
          */
-        FLAKE_ID_GENERATOR("flake-id-generator-permission"),
+        FLAKE_ID_GENERATOR("flake-id-generator-permission", FlakeIdGeneratorPermission.class),
         /**
          * Lock
          */
-        LOCK("lock-permission"),
+        LOCK("lock-permission", LockPermission.class),
         /**
          * Atomic long
          */
-        ATOMIC_LONG("atomic-long-permission"),
+        ATOMIC_LONG("atomic-long-permission", AtomicLongPermission.class),
         /**
          * Atomic long
          */
-        ATOMIC_REFERENCE("atomic-reference-permission"),
+        ATOMIC_REFERENCE("atomic-reference-permission", AtomicReferencePermission.class),
         /**
          * Countdown Latch
          */
-        COUNTDOWN_LATCH("countdown-latch-permission"),
+        COUNTDOWN_LATCH("countdown-latch-permission", CountDownLatchPermission.class),
         /**
          * Semaphore
          */
-        SEMAPHORE("semaphore-permission"),
+        SEMAPHORE("semaphore-permission", SemaphorePermission.class),
         /**
          * Executor Service
          */
-        EXECUTOR_SERVICE("executor-service-permission"),
+        EXECUTOR_SERVICE("executor-service-permission", ExecutorServicePermission.class),
         /**
          * Transaction
          */
-        TRANSACTION("transaction-permission"),
+        TRANSACTION("transaction-permission", TransactionPermission.class),
         /**
          * Durable Executor Service
          */
-        DURABLE_EXECUTOR_SERVICE("durable-executor-service-permission"),
+        DURABLE_EXECUTOR_SERVICE("durable-executor-service-permission", DurableExecutorServicePermission.class),
         /**
          * Cardinality Estimator
          */
-        CARDINALITY_ESTIMATOR("cardinality-estimator-permission"),
+        CARDINALITY_ESTIMATOR("cardinality-estimator-permission", CardinalityEstimatorPermission.class),
         /**
          * Scheduled executor service
          */
-        SCHEDULED_EXECUTOR("scheduled-executor-permission"),
+        SCHEDULED_EXECUTOR("scheduled-executor-permission", ScheduledExecutorPermission.class),
         /**
          * JCache/ICache
          */
-        CACHE("cache-permission"),
+        CACHE("cache-permission", CachePermission.class),
         /**
          * User code deployment
          */
-        USER_CODE_DEPLOYMENT("user-code-deployment-permission"),
+        USER_CODE_DEPLOYMENT("user-code-deployment-permission", UserCodeDeploymentPermission.class),
         /**
          * Configuration permission
          */
-        CONFIG("config-permission"),
+        CONFIG("config-permission", ConfigPermission.class),
         /**
          * CRDT PN Counter
          */
-        PN_COUNTER("pn-counter-permission"),
+        PN_COUNTER("pn-counter-permission", PNCounterPermission.class),
         /**
          * RingBuffer
          */
-        RING_BUFFER("ring-buffer-permission"),
+        RING_BUFFER("ring-buffer-permission", RingBufferPermission.class),
         /**
          * ReliableTopic
          */
-        RELIABLE_TOPIC("reliable-topic-permission"),
+        RELIABLE_TOPIC("reliable-topic-permission", ReliableTopicPermission.class),
         /**
          * ReplicatedMap
          */
-        REPLICATEDMAP("replicatedmap-permission"),
+        REPLICATEDMAP("replicatedmap-permission", ReplicatedMapPermission.class),
         /**
          * Cluster Management
          */
-        MANAGEMENT("management-permission"),
+        MANAGEMENT("management-permission", ManagementPermission.class),
         /**
          * Jet Job permission
          */
-        JOB("job-permission"),
+        JOB("job-permission", JobPermission.class),
         /**
          * Jet Connector permission
          */
-        CONNECTOR("connector-permission"),
+        CONNECTOR("connector-permission", ConnectorPermission.class),
         /**
          * Specific SQL permissions
          */
-        SQL("sql-permission");
+        SQL("sql-permission", SqlPermission.class);
 
         private final String nodeName;
+        private final String className;
 
-        PermissionType(String nodeName) {
+        PermissionType(String nodeName, Class<? extends Permission> permClass) {
             this.nodeName = nodeName;
+            this.className = permClass.getName();
         }
 
         public static PermissionType getType(String nodeName) {
             for (PermissionType type : PermissionType.values()) {
                 if (nodeName.equals(type.getNodeName())) {
+                    return type;
+                }
+            }
+            return null;
+        }
+
+        public static PermissionType getTypeByPermissionClassName(String permissionClassname) {
+            for (PermissionType type : PermissionType.values()) {
+                if (type.className.equals(permissionClassname)) {
                     return type;
                 }
             }
