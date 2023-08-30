@@ -85,10 +85,7 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
      * @throws IllegalArgumentException if source is {@code null}
      */
     public EntryEvent(Object source, Member member, int eventType, K key, V oldValue, V value, V mergingValue) {
-        super(source, member, eventType);
-        this.key = key;
-        this.oldValue = oldValue;
-        this.value = value;
+        this(source, member, eventType, key, oldValue, value);
         this.mergingValue = mergingValue;
     }
 
