@@ -98,7 +98,7 @@ public class PermissionConfig implements IdentifiedDataSerializable {
      */
     public enum PermissionType {
         /**
-         * All
+         * Type backed by {@link AllPermissions}, which implies all checked permissions.
          */
         ALL("all-permissions", AllPermissions.class),
         /**
