@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
+import com.hazelcast.dataconnection.databasediscovery.DiscoverDatabase;
 import com.hazelcast.dataconnection.impl.jdbcproperties.HikariTranslator;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.spi.annotation.Beta;
@@ -30,17 +31,13 @@ import com.zaxxer.hikari.HikariDataSource;
 import javax.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import static com.hazelcast.dataconnection.impl.jdbcproperties.DataConnectionProperties.JDBC_URL;
 import static com.hazelcast.dataconnection.impl.jdbcproperties.DriverManagerTranslator.translate;
@@ -119,32 +116,12 @@ public class JdbcDataConnection extends DataConnectionBase {
     @Nonnull
     @Override
     public List<DataConnectionResource> listResources() {
-        // Get the tables and views for the current catalog
-        // Note : We need to specify the current catalog
-        // 1. For Postgres : It does not matter because only my database is available
-        // 2. For MySQL : It matters because a database called "sys" is automatically created and populated with tables
-        //  and If catalog is not specified, "sys" catalog is also included into the result
-        try (Connection connection = getConnection();
-             ResultSet tables = connection.getMetaData()
-                     .getTables(connection.getCatalog(),
-                             null,
-                             null,
-                             new String[]{"TABLE", "VIEW"})) {
-            List<DataConnectionResource> result = new ArrayList<>();
-            while (tables.next()) {
-                // Format DataConnectionResource name as catalog + schema+ + table_name
-                String[] name = Stream.of(
-                                tables.getString("TABLE_CAT"),
-                                tables.getString("TABLE_SCHEM"),
-                                tables.getString("TABLE_NAME"))
-                        .filter(Objects::nonNull)
-                        .toArray(String[]::new);
 
-                result.add(new DataConnectionResource(OBJECT_TYPE_TABLE, name));
-            }
-            return result;
-        } catch (Exception e) {
-            throw new HazelcastException("Could not read resources for DataConnection " + getName(), e);
+        try {
+            DiscoverDatabase discoverDatabase = new DiscoverDatabase();
+            return discoverDatabase.listResources(this);
+        } catch (Exception exception) {
+            throw new HazelcastException("Could not read resources for DataConnection " + getName(), exception);
         }
     }
 
