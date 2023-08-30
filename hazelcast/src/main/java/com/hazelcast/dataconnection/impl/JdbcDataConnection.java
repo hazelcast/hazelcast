@@ -116,7 +116,6 @@ public class JdbcDataConnection extends DataConnectionBase {
     @Nonnull
     @Override
     public List<DataConnectionResource> listResources() {
-
         try {
             DiscoverDatabase discoverDatabase = new DiscoverDatabase();
             return discoverDatabase.listResources(this);
