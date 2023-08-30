@@ -28,11 +28,33 @@ import java.io.IOException;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
+/**
+ * Index iteration range or point lookup.
+ * <p>
+ * The following types of pointers are supported:
+ * <ul>
+ *     <li>unconstrained pointer: (null, null) - scans only not-null values!</li>
+ *     <li>IS NULL pointer: [NULL, NULL] - scans only NULL values. Can be used
+ *     in conjunction with unconstrained pointer to get index full scan</li>
+ *     <li>single side constrained ranges: (null, X) and (X, null)</li>
+ *     <li>constrained range: (X, Y)</li>
+ *     <li>equality pointer: (X, X) - IS NULL pointer is special case of that</li>
+ * </ul>
+ * Important conventions:
+ * <ol>
+ *     <li>null keys are returned only in IS NULL pointer</li>
+ *     <li>IS NULL pointer does not make sense for composite index because composite index
+ *     stores {@link com.hazelcast.query.impl.CompositeValue} which are never null, even if
+ *     they consist entirely of {@link com.hazelcast.query.impl.AbstractIndex#NULL} values.
+ *     </li>beware of distinction between Java null and NULL - it is not always obvious.
+ * </ol>
+ */
 public class IndexIterationPointer implements IdentifiedDataSerializable {
 
     private static final byte FLAG_DESCENDING = 1;
     private static final byte FLAG_FROM_INCLUSIVE = 1 << 1;
     private static final byte FLAG_TO_INCLUSIVE = 1 << 2;
+    // Note this flag is misleading, it is also set for unconstrained pointers
     private static final byte FLAG_POINT_LOOKUP = 1 << 3;
 
     private byte flags;
@@ -51,8 +73,14 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
     ) {
         assert from == null || to == null || ((Comparable) from).compareTo(to) <= 0 : "from must be <= than to";
         assert (from == NULL && to == NULL) || (from != NULL && to != NULL)
-                : "IS NULL pointer must point lookup without range or unspecified end: " + from + " ... " + to;
+                : "IS NULL pointer must be a point lookup without range or unspecified end: " + from + " ... " + to;
+
         this.flags = flags;
+
+        assert from == null || to == null || ((Comparable) from).compareTo(to) != 0
+                || (isFromInclusive() && isToInclusive())
+                : "Point lookup limits must be all inclusive";
+
         this.from = from;
         this.to = to;
         this.lastEntryKeyData = lastEntryKeyData;

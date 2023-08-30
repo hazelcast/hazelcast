@@ -30,6 +30,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.AbstractIndexReader;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionException;
@@ -46,6 +47,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -121,8 +123,12 @@ public final class MapIndexScanP extends AbstractProcessor {
         evalContext = ExpressionEvalContext.from(context);
         reader = new LocalMapIndexReader(hazelcastInstance, evalContext.getSerializationService(), metadata);
 
+        MapContainer mapContainer = QueryUtils.getMapContainer(hazelcastInstance.getMap(metadata.getMapName()));
+        boolean compositeIndex = mapContainer.getIndexes().getIndex(metadata.getIndexName()).isComposite();
+
         int[] memberPartitions = context.processorPartitions();
-        IndexIterationPointer[] pointers = indexFilterToPointers(metadata.getFilter(), metadata.isDescending(), evalContext);
+        IndexIterationPointer[] pointers = indexFilterToPointers(metadata.getFilter(), compositeIndex,
+                metadata.isDescending(), evalContext);
         splits.add(new Split(
                 new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), memberPartitions),
                 hazelcastInstance.getCluster().getLocalMember().getAddress(),

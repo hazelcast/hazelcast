@@ -139,10 +139,9 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             IndexIterationPointer pointer = pointers[i];
             Data lastEntryKeyData = pointer.getLastEntryKeyData();
 
-            Comparator<Data> comparator = OrderedIndexStore.DATA_COMPARATOR;
-            if (isDescendingEntryKey(pointer)) {
-                comparator = comparator.reversed();
-            }
+            Comparator<Data> comparator = pointer.isDescending()
+                    ? OrderedIndexStore.DATA_COMPARATOR_REVERSED
+                    : OrderedIndexStore.DATA_COMPARATOR;
 
             Iterator<IndexKeyEntries> entryIterator = getEntryIterator(index, pointer);
             while (entryIterator.hasNext()) {
@@ -217,17 +216,6 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         return new MapFetchIndexOperationResult(entries, new IndexIterationPointer[0]);
     }
 
-    private static boolean isDescendingEntryKey(IndexIterationPointer pointer) {
-        if (pointer.getFrom() != null && pointer.getTo() != null
-                && ((Comparable) pointer.getFrom()).compareTo(pointer.getTo()) == 0) {
-            assert pointer.isFromInclusive() && pointer.isToInclusive()
-                    : "Point lookup limits must be all inclusive";
-            return false;
-        } else {
-            return pointer.isDescending();
-        }
-    }
-
     private static Iterator<IndexKeyEntries> getEntryIterator(InternalIndex index, IndexIterationPointer pointer) {
         Iterator<IndexKeyEntries> entryIterator;
 
@@ -236,7 +224,11 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                 if (((Comparable) pointer.getFrom()).compareTo(pointer.getTo()) == 0) {
                     assert pointer.isFromInclusive() && pointer.isToInclusive()
                             : "If range scan is a point lookup then limits should be all inclusive";
-                    entryIterator = index.getSqlRecordIteratorBatch(pointer.getFrom());
+                    // Even though order should not matter for equality comparison,
+                    // this case may be the last stage of range scan when we have only single value left.
+                    // In the implementation we get point predicate but we have to keep the order of keys
+                    // as was used in previous iterations of scans, and range scans obey descending flag.
+                    entryIterator = index.getSqlRecordIteratorBatch(pointer.getFrom(), pointer.isDescending());
                 } else {
                     entryIterator = index.getSqlRecordIteratorBatch(
                             pointer.getFrom(),
@@ -262,7 +254,9 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                         pointer.isDescending()
                 );
             } else {
-                entryIterator = index.getSqlRecordIteratorBatch(pointer.isDescending());
+                // unconstrained scan
+                // we do not want NULLs here, they must be handled separately
+                entryIterator = index.getSqlRecordIteratorBatch(pointer.isDescending(), false);
             }
         }
         return entryIterator;

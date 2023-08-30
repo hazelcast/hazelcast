@@ -173,18 +173,22 @@ public interface IndexStore {
                                                   Comparable to, boolean toInclusive, boolean descending);
 
     /**
-     * @param value value
+     * @param value         value
+     * @param descending    whether the entries should come in the descending order.
+     *                      {@code true} means a descending order,
+     *                      {@code false} means an ascending order.
      * @return iterator over index entries that are equal to the given value
      */
-    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value);
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending);
 
     /**
-     * @param descending whether the entries should come in the descending order.
-     *                   {@code true} means a descending order,
-     *                   {@code false} means an ascending order.
+     * @param descending    whether the entries should come in the descending order.
+     *                      {@code true} means a descending order,
+     *                      {@code false} means an ascending order.
+     * @param includesNulls
      * @return iterator over all index entries
      */
-    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending);
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending, boolean includesNulls);
 
     /**
      * @param comparison comparison type

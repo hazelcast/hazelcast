@@ -179,12 +179,12 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
-    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending, boolean includesNulls) {
         throw new UnsupportedOperationException();
     }
 

@@ -46,6 +46,7 @@ import static java.util.Collections.emptySet;
 @SuppressWarnings("rawtypes")
 public class OrderedIndexStore extends BaseSingleValueIndexStore {
     public static final Comparator<Data> DATA_COMPARATOR = new DataComparator();
+    public static final Comparator<Data> DATA_COMPARATOR_REVERSED = new DataComparator().reversed();
 
     private final ConcurrentSkipListMap<Comparable, NavigableMap<Data, QueryableEntry>> recordMap =
         new ConcurrentSkipListMap<>(Comparables.COMPARATOR);
@@ -66,6 +67,14 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             addFunctor = new AddFunctor();
             removeFunctor = new RemoveFunctor();
             recordsWithNullValue = new ConcurrentSkipListMap<>(DATA_COMPARATOR);
+        }
+    }
+
+    private Map<Data, QueryableEntry> descendingRecordsWithNullValue() {
+        if (recordsWithNullValue instanceof TreeMap) {
+            return ((TreeMap<Data, QueryableEntry>) recordsWithNullValue).descendingMap();
+        } else {
+            return ((ConcurrentSkipListMap<Data, QueryableEntry>) recordsWithNullValue).descendingMap();
         }
     }
 
@@ -122,12 +131,12 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
-        return new IteratorFromBatch(getSqlRecordIteratorBatch(descending));
+        return new IteratorFromBatch(getSqlRecordIteratorBatch(descending, true));
     }
 
     @Override
     public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
-        return new IteratorFromBatch(getSqlRecordIteratorBatch(value));
+        return new IteratorFromBatch(getSqlRecordIteratorBatch(value, false));
     }
 
     @Override
@@ -147,24 +156,28 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
-    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending) {
         if (value == NULL) {
-            return Stream.of(new IndexKeyEntries(value, recordsWithNullValue.values().iterator())).iterator();
+            return Stream.of(new IndexKeyEntries(value,
+                    (descending ? descendingRecordsWithNullValue() : recordsWithNullValue).values().iterator())).iterator();
         } else {
-            Map<Data, QueryableEntry> entries = recordMap.get(value);
+            NavigableMap<Data, QueryableEntry> entries = recordMap.get(value);
 
             if (entries == null) {
                 return Collections.emptyIterator();
             } else {
-                return Stream.of(new IndexKeyEntries(value, entries.values().iterator())).iterator();
+                return Stream.of(new IndexKeyEntries(value,
+                        (descending ? entries.descendingMap() : entries).values().iterator())).iterator();
             }
         }
     }
 
     @Override
-    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
-        Stream<IndexKeyEntries> nullStream = Stream.of(
-                new IndexKeyEntries(null, recordsWithNullValue.values().iterator()));
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending, boolean includesNulls) {
+        Stream<IndexKeyEntries> nullStream = includesNulls
+                ? Stream.of(new IndexKeyEntries(null,
+                    (descending ? descendingRecordsWithNullValue() : recordsWithNullValue).values().iterator()))
+                : Stream.empty();
 
         if (descending) {
             Stream<IndexKeyEntries> nonNullStream = recordMap.descendingMap().entrySet()
