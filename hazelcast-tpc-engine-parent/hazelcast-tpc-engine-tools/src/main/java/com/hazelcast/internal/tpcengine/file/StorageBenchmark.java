@@ -641,26 +641,21 @@ public class StorageBenchmark {
                 long durationMs = nowMs - lastMs;
                 collect(metrics);
 
-                long completedMs = TimeUnit.MILLISECONDS.toSeconds(nowMs - startMs);
-                long completedMinutes = completedMs / 60;
-                long completedSeconds = completedMs % 60;
-
-                double completed = (100f * completedMs) / runtimeMs;
-                sb.append("  [etd ");
-                sb.append(completedMinutes);
+                long completedSeconds = MILLISECONDS.toSeconds(nowMs - startMs);
+                double completed = (100f * completedSeconds) / runtimeSeconds;
+                sb.append("[etd ");
+                sb.append(completedSeconds / 60);
                 sb.append("m:");
-                sb.append(completedSeconds);
+                sb.append(completedSeconds % 60);
                 sb.append("s ");
                 sb.append(String.format("%,.3f", completed));
                 sb.append("%]");
 
-                long eta = TimeUnit.MILLISECONDS.toSeconds(endMs - nowMs);
-                long etaMinutes = eta / 60;
-                long etaSeconds = eta % 60;
+                long eta = MILLISECONDS.toSeconds(endMs - nowMs);
                 sb.append("[eta ");
-                sb.append(etaMinutes);
+                sb.append(eta / 60);
                 sb.append("m:");
-                sb.append(etaSeconds);
+                sb.append(eta % 60);
                 sb.append("s]");
 
                 if (metrics.reads > 0) {

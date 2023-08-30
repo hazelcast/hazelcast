@@ -16,16 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.experimental.categories.Category;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.SchedulingSoakTest;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+public class Nio_SchedulingSoakTest extends SchedulingSoakTest {
 
-@Category(NightlyTest.class)
-public class Nio_SocketSchedulingSoakTest_Nightly
-        extends Nio_SocketSchedulingSoakTest {
-
-    public Nio_SocketSchedulingSoakTest_Nightly() {
-        durationMillis = SECONDS.toMillis(180);
+    @Override
+    public Reactor.Builder newReactorBuilder() {
+        return new NioReactor.Builder();
     }
 }
