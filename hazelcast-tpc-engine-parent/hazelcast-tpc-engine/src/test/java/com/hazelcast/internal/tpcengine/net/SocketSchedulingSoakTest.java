@@ -65,7 +65,6 @@ public abstract class SocketSchedulingSoakTest {
     public int reactorCount = 4;
     public boolean useWriter = false;
     public int loadGeneratorThreadCount = 20;
-    public boolean localWrite = false;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     private final AtomicLong callIdGenerator = new AtomicLong();
@@ -242,6 +241,8 @@ public abstract class SocketSchedulingSoakTest {
 
         @Override
         public void onRead(ByteBuffer src) {
+            Random random = new Random();
+
             for (; ; ) {
                 if (response == null) {
                     if (src.remaining() < SIZEOF_HEADER) {
@@ -273,7 +274,7 @@ public abstract class SocketSchedulingSoakTest {
                     }
                     future.complete(response);
                 } else {
-                    boolean offered = localWrite
+                    boolean offered = random.nextBoolean()
                             ? socket.insideWriteAndFlush(response)
                             : socket.writeAndFlush(response);
 
