@@ -279,9 +279,13 @@ public final class NioAsyncSocket extends AsyncSocket {
         public void run() {
             try {
                 handleWrite();
-            } catch (Throwable e) {
-                close(null, e);
-                throw sneakyThrow(e);
+            } catch (Throwable cause) {
+                close(null, cause);
+
+                if (!(cause instanceof Exception)) {
+                    // Anything that isn't an exception needs to be propagated.
+                    throw sneakyThrow(cause);
+                }
             }
         }
 
