@@ -40,7 +40,7 @@ public interface IndexStore {
      * The main difference comparing to {@link BaseIndexStore#canonicalizeScalarForStorage}
      * is that this method is specifically designed to support the
      * canonicalization of transient non-persistent values (think of query
-     * arguments), so a more efficient representation may chosen.
+     * arguments), so a more efficient representation may be chosen.
      *
      * @param value the value to canonicalize.
      * @return the canonicalized value.
@@ -155,7 +155,7 @@ public interface IndexStore {
      * @param descending whether the entries should come in the descending order.
      *                   {@code true} means a descending order,
      *                   {@code false} means an ascending order.
-     * @return iterator over index entries that are matching the given comparions type and value
+     * @return iterator over index entries that are matching the given comparisons type and value
      */
     Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending);
 
@@ -182,13 +182,14 @@ public interface IndexStore {
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending);
 
     /**
-     * @param descending    whether the entries should come in the descending order.
-     *                      {@code true} means a descending order,
-     *                      {@code false} means an ascending order.
-     * @param includesNulls
+     * Scan all records, including NULL.
+     *
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
      * @return iterator over all index entries
      */
-    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending, boolean includesNulls);
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending);
 
     /**
      * @param comparison comparison type
@@ -196,7 +197,7 @@ public interface IndexStore {
      * @param descending whether the entries should come in the descending order.
      *                   {@code true} means a descending order,
      *                   {@code false} means an ascending order.
-     * @return iterator over index entries that are matching the given comparions type and value
+     * @return iterator over index entries that are matching the given comparisons type and value
      */
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending);
 

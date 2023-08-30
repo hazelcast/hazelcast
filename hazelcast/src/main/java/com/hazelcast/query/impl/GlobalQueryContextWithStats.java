@@ -154,8 +154,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending, boolean includesNulls) {
-            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(descending, includesNulls);
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(descending);
             hasQueries = true;
             return result;
         }

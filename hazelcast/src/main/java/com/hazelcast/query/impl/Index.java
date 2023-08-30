@@ -139,13 +139,14 @@ public interface Index {
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending);
 
     /**
-     * @param descending    whether the entries should come in the descending order.
-     *                      {@code true} means a descending order,
-     *                      {@code false} means an ascending order.
-     * @param includesNulls whether NULL values should be returned
+     * Scans all entries, including NULL.
+     *
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
      * @return iterator over all index entries
      */
-    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending, boolean includesNulls);
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending);
 
     /**
      * @param comparison comparison type

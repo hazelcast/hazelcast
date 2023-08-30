@@ -255,8 +255,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                 );
             } else {
                 // unconstrained scan
-                // we do not want NULLs here, they must be handled separately
-                entryIterator = index.getSqlRecordIteratorBatch(pointer.isDescending(), false);
+                entryIterator = index.getSqlRecordIteratorBatch(pointer.isDescending());
             }
         }
         return entryIterator;

@@ -49,8 +49,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import static com.hazelcast.query.impl.AbstractIndex.NULL;
-
 public final class QueryUtil {
     private QueryUtil() {
     }
@@ -130,18 +128,7 @@ public final class QueryUtil {
     ) {
         if (indexFilter == null) {
             // Full index scan - should include nulls.
-            // NULL handling is different for composite and single-column indexes.
-            // For composite index (null, null) range cover also entries with NULL values
-            // while for single-column index NULL has to be requested specifically.
-            // We add pointer in correct order (before or after non-null pointer)
-            // to preserve expected ordering of the result with respect to NULLs.
-            if (!compositeIndex && !descending) {
-                result.add(IndexIterationPointer.create(NULL, true, NULL, true, descending, null));
-            }
             result.add(IndexIterationPointer.create(null, true, null, true, descending, null));
-            if (!compositeIndex && descending) {
-                result.add(IndexIterationPointer.create(NULL, true, NULL, true, descending, null));
-            }
         }
         if (indexFilter instanceof IndexRangeFilter) {
             IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;

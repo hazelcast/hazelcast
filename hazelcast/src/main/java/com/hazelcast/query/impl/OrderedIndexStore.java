@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Stream;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
+import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
 import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptySet;
 
@@ -48,13 +49,30 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     public static final Comparator<Data> DATA_COMPARATOR = new DataComparator();
     public static final Comparator<Data> DATA_COMPARATOR_REVERSED = new DataComparator().reversed();
 
+    private static final Comparator<Comparable> SPECIAL_AWARE_COMPARATOR = (left, right) -> {
+        // compare to explicit instances of special Comparables to avoid infinite loop
+        // NEGATIVE_INFINITY should not be used in the index or queries
+        // - the same result can be achieved by inclusive NULL or null.
+        if (right == NULL) {
+            return -NULL.compareTo(left);
+        } else if (right == POSITIVE_INFINITY) {
+            return -POSITIVE_INFINITY.compareTo(left);
+        } else if (left == null && right == null) {
+            return 0;
+        } else if (left != null && right != null) {
+            return Comparables.compare(left, right);
+        } else if (left == null) {
+            return -1;
+        } else {
+            return 1;
+        }
+    };
+
     private final ConcurrentSkipListMap<Comparable, NavigableMap<Data, QueryableEntry>> recordMap =
-        new ConcurrentSkipListMap<>(Comparables.COMPARATOR);
+        new ConcurrentSkipListMap<>(SPECIAL_AWARE_COMPARATOR);
 
     private final IndexFunctor<Comparable, QueryableEntry> addFunctor;
     private final IndexFunctor<Comparable, Data> removeFunctor;
-
-    private volatile SortedMap<Data, QueryableEntry> recordsWithNullValue;
 
     public OrderedIndexStore(IndexCopyBehavior copyOn) {
         super(copyOn, true);
@@ -62,19 +80,9 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
             addFunctor = new CopyOnWriteAddFunctor();
             removeFunctor = new CopyOnWriteRemoveFunctor();
-            recordsWithNullValue = new TreeMap<>(DATA_COMPARATOR);
         } else {
             addFunctor = new AddFunctor();
             removeFunctor = new RemoveFunctor();
-            recordsWithNullValue = new ConcurrentSkipListMap<>(DATA_COMPARATOR);
-        }
-    }
-
-    private Map<Data, QueryableEntry> descendingRecordsWithNullValue() {
-        if (recordsWithNullValue instanceof TreeMap) {
-            return ((TreeMap<Data, QueryableEntry>) recordsWithNullValue).descendingMap();
-        } else {
-            return ((ConcurrentSkipListMap<Data, QueryableEntry>) recordsWithNullValue).descendingMap();
         }
     }
 
@@ -107,7 +115,6 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     public void clear() {
         takeWriteLock();
         try {
-            recordsWithNullValue.clear();
             recordMap.clear();
         } finally {
             releaseWriteLock();
@@ -131,7 +138,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
-        return new IteratorFromBatch(getSqlRecordIteratorBatch(descending, true));
+        return new IteratorFromBatch(getSqlRecordIteratorBatch(descending));
     }
 
     @Override
@@ -157,42 +164,30 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending) {
-        if (value == NULL) {
-            return Stream.of(new IndexKeyEntries(value,
-                    (descending ? descendingRecordsWithNullValue() : recordsWithNullValue).values().iterator())).iterator();
-        } else {
-            NavigableMap<Data, QueryableEntry> entries = recordMap.get(value);
+        NavigableMap<Data, QueryableEntry> entries = recordMap.get(value);
 
-            if (entries == null) {
-                return Collections.emptyIterator();
-            } else {
-                return Stream.of(new IndexKeyEntries(value,
-                        (descending ? entries.descendingMap() : entries).values().iterator())).iterator();
-            }
+        if (entries == null) {
+            return Collections.emptyIterator();
+        } else {
+            return Stream.of(new IndexKeyEntries(value,
+                    (descending ? entries.descendingMap() : entries).values().iterator())).iterator();
         }
     }
 
     @Override
-    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending, boolean includesNulls) {
-        Stream<IndexKeyEntries> nullStream = includesNulls
-                ? Stream.of(new IndexKeyEntries(null,
-                    (descending ? descendingRecordsWithNullValue() : recordsWithNullValue).values().iterator()))
-                : Stream.empty();
-
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
         if (descending) {
-            Stream<IndexKeyEntries> nonNullStream = recordMap.descendingMap().entrySet()
+            return recordMap.descendingMap().entrySet()
                     .stream()
                     .map((Entry<Comparable, NavigableMap<Data, QueryableEntry>> es) ->
-                            new IndexKeyEntries(es.getKey(), es.getValue().descendingMap().values().iterator()));
-
-            return Stream.concat(nonNullStream, nullStream).iterator();
+                            new IndexKeyEntries(es.getKey(), es.getValue().descendingMap().values().iterator()))
+                    .iterator();
         } else {
-            Stream<IndexKeyEntries> nonNullStream = recordMap.entrySet()
+            return recordMap.entrySet()
                     .stream()
                     .map((Entry<Comparable, NavigableMap<Data, QueryableEntry>> es) ->
-                            new IndexKeyEntries(es.getKey(), es.getValue().values().iterator()));
-
-            return Stream.concat(nullStream, nonNullStream).iterator();
+                            new IndexKeyEntries(es.getKey(), es.getValue().values().iterator()))
+                    .iterator();
         }
     }
 
@@ -206,51 +201,16 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
                 = descending ? recordMap.descendingMap() : recordMap;
         switch (comparison) {
             case LESS:
-                if (descending) {
-                    navigableMap = navigableMap.tailMap(searchedValue, false);
-                } else {
-                    navigableMap = navigableMap.headMap(searchedValue, false);
-                }
-                break;
+                return getSqlRecordIteratorBatch(NULL, false, searchedValue, false, descending);
             case LESS_OR_EQUAL:
-                if (descending) {
-                    navigableMap = navigableMap.tailMap(searchedValue, true);
-                } else {
-                    navigableMap = navigableMap.headMap(searchedValue, true);
-                }
-                break;
+                return getSqlRecordIteratorBatch(NULL, false, searchedValue, true, descending);
             case GREATER:
-                if (descending) {
-                    navigableMap = navigableMap.headMap(searchedValue, false);
-                } else {
-                    navigableMap = navigableMap.tailMap(searchedValue, false);
-                }
-                break;
+                return getSqlRecordIteratorBatch(searchedValue, false, POSITIVE_INFINITY, true, descending);
             case GREATER_OR_EQUAL:
-                if (descending) {
-                    navigableMap = navigableMap.headMap(searchedValue, true);
-                } else {
-                    navigableMap = navigableMap.tailMap(searchedValue, true);
-                }
-                break;
+                return getSqlRecordIteratorBatch(searchedValue, true, POSITIVE_INFINITY, true, descending);
             default:
                 throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
         }
-
-        if (descending) {
-            return navigableMap.entrySet()
-                    .stream()
-                    .map((Entry<Comparable, NavigableMap<Data, QueryableEntry>> es) ->
-                            new IndexKeyEntries(es.getKey(), es.getValue().descendingMap().values().iterator()))
-                    .iterator();
-        } else {
-            return navigableMap.entrySet()
-                    .stream()
-                    .map((Entry<Comparable, NavigableMap<Data, QueryableEntry>> es) ->
-                            new IndexKeyEntries(es.getKey(), es.getValue().values().iterator()))
-                    .iterator();
-        }
-
     }
 
     @Override
@@ -262,7 +222,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             boolean toInclusive,
             boolean descending
     ) {
-        int order = Comparables.compare(from, to);
+        int order = SPECIAL_AWARE_COMPARATOR.compare(from, to);
 
         if (order == 0) {
             if (!fromInclusive || !toInclusive) {
@@ -307,11 +267,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     public Set<QueryableEntry> getRecords(Comparable value) {
         takeReadLock();
         try {
-            if (value == NULL) {
-                return toSingleResultSet(recordsWithNullValue);
-            } else {
-                return toSingleResultSet(recordMap.get(value));
-            }
+            return toSingleResultSet(recordMap.get(value));
         } finally {
             releaseReadLock();
         }
@@ -324,11 +280,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             MultiResultSet results = createMultiResultSet();
             for (Comparable value : values) {
                 Map<Data, QueryableEntry> records;
-                if (value == NULL) {
-                    records = recordsWithNullValue;
-                } else {
-                    records = recordMap.get(value);
-                }
+                records = recordMap.get(value);
                 if (records != null) {
                     copyToMultiResultSet(results, records);
                 }
@@ -341,32 +293,17 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Set<QueryableEntry> getRecords(Comparison comparison, Comparable searchedValue) {
-        takeReadLock();
-        try {
-            MultiResultSet results = createMultiResultSet();
-            SortedMap<Comparable, NavigableMap<Data, QueryableEntry>> subMap;
-            switch (comparison) {
-                case LESS:
-                    subMap = recordMap.headMap(searchedValue, false);
-                    break;
-                case LESS_OR_EQUAL:
-                    subMap = recordMap.headMap(searchedValue, true);
-                    break;
-                case GREATER:
-                    subMap = recordMap.tailMap(searchedValue, false);
-                    break;
-                case GREATER_OR_EQUAL:
-                    subMap = recordMap.tailMap(searchedValue, true);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
-            }
-            for (Map<Data, QueryableEntry> value : subMap.values()) {
-                copyToMultiResultSet(results, value);
-            }
-            return results;
-        } finally {
-            releaseReadLock();
+        switch (comparison) {
+            case LESS:
+                return getRecords(NULL, false, searchedValue, false);
+            case LESS_OR_EQUAL:
+                return getRecords(NULL, false, searchedValue, true);
+            case GREATER:
+                return getRecords(searchedValue, false, POSITIVE_INFINITY, true);
+            case GREATER_OR_EQUAL:
+                return getRecords(searchedValue, true, POSITIVE_INFINITY, true);
+            default:
+                throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
         }
     }
 
@@ -374,7 +311,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
         takeReadLock();
         try {
-            int order = Comparables.compare(from, to);
+            int order = SPECIAL_AWARE_COMPARATOR.compare(from, to);
             if (order == 0) {
                 if (!fromInclusive || !toInclusive) {
                     return emptySet();
@@ -405,16 +342,12 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
         @Override
         public Object invoke(Comparable value, QueryableEntry entry) {
-            if (value == NULL) {
-                return recordsWithNullValue.put(entry.getKeyData(), entry);
-            } else {
-                NavigableMap<Data, QueryableEntry> records = recordMap.get(value);
-                if (records == null) {
-                    records = new ConcurrentSkipListMap<>(DATA_COMPARATOR);
-                    recordMap.put(value, records);
-                }
-                return records.put(entry.getKeyData(), entry);
+            NavigableMap<Data, QueryableEntry> records = recordMap.get(value);
+            if (records == null) {
+                records = new ConcurrentSkipListMap<>(DATA_COMPARATOR);
+                recordMap.put(value, records);
             }
+            return records.put(entry.getKeyData(), entry);
         }
 
     }
@@ -430,24 +363,17 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         @Override
         public Object invoke(Comparable value, QueryableEntry entry) {
             Object oldValue;
-            if (value == NULL) {
-                TreeMap<Data, QueryableEntry> copy = new TreeMap<>(recordsWithNullValue);
-                oldValue = copy.put(entry.getKeyData(), entry);
-                recordsWithNullValue = copy;
-            } else {
-                NavigableMap<Data, QueryableEntry> records = recordMap.get(value);
-                if (records == null) {
-                    records = new TreeMap<>(DATA_COMPARATOR);
-                }
-
-                records = new TreeMap<>(records);
-                oldValue = records.put(entry.getKeyData(), entry);
-
-                recordMap.put(value, records);
+            NavigableMap<Data, QueryableEntry> records = recordMap.get(value);
+            if (records == null) {
+                records = new TreeMap<>(DATA_COMPARATOR);
             }
+
+            records = new TreeMap<>(records);
+            oldValue = records.put(entry.getKeyData(), entry);
+
+            recordMap.put(value, records);
             return oldValue;
         }
-
     }
 
     /**
@@ -461,18 +387,14 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         @Override
         public Object invoke(Comparable value, Data indexKey) {
             Object oldValue;
-            if (value == NULL) {
-                oldValue = recordsWithNullValue.remove(indexKey);
-            } else {
-                Map<Data, QueryableEntry> records = recordMap.get(value);
-                if (records != null) {
-                    oldValue = records.remove(indexKey);
-                    if (records.isEmpty()) {
-                        recordMap.remove(value);
-                    }
-                } else {
-                    oldValue = null;
+            Map<Data, QueryableEntry> records = recordMap.get(value);
+            if (records != null) {
+                oldValue = records.remove(indexKey);
+                if (records.isEmpty()) {
+                    recordMap.remove(value);
                 }
+            } else {
+                oldValue = null;
             }
 
             return oldValue;
@@ -491,24 +413,18 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         @Override
         public Object invoke(Comparable value, Data indexKey) {
             Object oldValue;
-            if (value == NULL) {
-                TreeMap<Data, QueryableEntry> copy = new TreeMap<>(recordsWithNullValue);
-                oldValue = copy.remove(indexKey);
-                recordsWithNullValue = copy;
-            } else {
-                NavigableMap<Data, QueryableEntry> records = recordMap.get(value);
-                if (records != null) {
-                    records = new TreeMap<>(records);
-                    oldValue = records.remove(indexKey);
+            NavigableMap<Data, QueryableEntry> records = recordMap.get(value);
+            if (records != null) {
+                records = new TreeMap<>(records);
+                oldValue = records.remove(indexKey);
 
-                    if (records.isEmpty()) {
-                        recordMap.remove(value);
-                    } else {
-                        recordMap.put(value, records);
-                    }
+                if (records.isEmpty()) {
+                    recordMap.remove(value);
                 } else {
-                    oldValue = null;
+                    recordMap.put(value, records);
                 }
+            } else {
+                oldValue = null;
             }
 
             return oldValue;

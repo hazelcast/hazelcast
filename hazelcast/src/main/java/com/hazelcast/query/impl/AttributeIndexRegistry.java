@@ -244,7 +244,7 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending, boolean includesNulls) {
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
             throw new UnsupportedOperationException("Should not be called");
         }
 

@@ -26,24 +26,24 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
-import static com.hazelcast.query.impl.AbstractIndex.NULL;
-
 /**
  * Index iteration range or point lookup.
  * <p>
  * The following types of pointers are supported:
  * <ul>
- *     <li>unconstrained pointer: (null, null) - scans only not-null values!</li>
- *     <li>IS NULL pointer: [NULL, NULL] - scans only NULL values. Can be used
- *     in conjunction with unconstrained pointer to get index full scan</li>
+ *     <li>unconstrained pointer: (null, null) - scans null and not-null values</li>
  *     <li>single side constrained ranges: (null, X) and (X, null)</li>
  *     <li>constrained range: (X, Y)</li>
- *     <li>equality pointer: (X, X) - IS NULL pointer is special case of that</li>
+ *     <li>point lookup pointer: (X, X)</li>
+ *     <li>IS NULL pointer: [NULL, NULL] - scans only NULL values. Special case of point lookup pointer</li>
  * </ul>
  * Important conventions:
  * <ol>
- *     <li>null keys are returned only in IS NULL pointer</li>
- *     <li>IS NULL pointer does not make sense for composite index because composite index
+ *     <li>either end can be NULL and NULL end can be inclusive or not.
+ *     Inclusive NULL is equivalent to null (i.e. -Inf or +Inf - depending if this is from or to).
+ *     [null, NULL] is equivalent to  [NULL, NULL]. [null, NULL) should produce empty result.</li>
+ *     <li>null can be inclusive or not - both variants are treated in the same way</li>
+ *     <li>NULL end does not make sense for composite index because composite index
  *     stores {@link com.hazelcast.query.impl.CompositeValue} which are never null, even if
  *     they consist entirely of {@link com.hazelcast.query.impl.AbstractIndex#NULL} values.
  *     </li>beware of distinction between Java null and NULL - it is not always obvious.
@@ -72,8 +72,6 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
             @Nullable Data lastEntryKeyData
     ) {
         assert from == null || to == null || ((Comparable) from).compareTo(to) <= 0 : "from must be <= than to";
-        assert (from == NULL && to == NULL) || (from != NULL && to != NULL)
-                : "IS NULL pointer must be a point lookup without range or unspecified end: " + from + " ... " + to;
 
         this.flags = flags;
 
