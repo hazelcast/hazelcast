@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -39,6 +40,7 @@ public class PermissionConfig implements IdentifiedDataSerializable {
     private String principal;
     private Set<String> endpoints = newSetFromMap(new ConcurrentHashMap<>());
     private Set<String> actions = newSetFromMap(new ConcurrentHashMap<>());
+    private boolean deny;
 
     public PermissionConfig() {
     }
@@ -267,6 +269,26 @@ public class PermissionConfig implements IdentifiedDataSerializable {
         return ConfigDataSerializerHook.PERMISSION_CONFIG;
     }
 
+    /**
+     * Returns {@code true} when the permission should be subtracted (denied) instead of added (granted).
+     * @return {@code true} for deny permissions
+     * @since 5.4
+     */
+    public boolean isDeny() {
+        return deny;
+    }
+
+    /**
+     * Configures if this permission config is for a grant ({@code false}, default) permission or deny ({@code true})
+     * @param deny value to set
+     * @return this instance of the {@link PermissionConfig}
+     * @since 5.4
+     */
+    public PermissionConfig setDeny(boolean deny) {
+        this.deny = deny;
+        return this;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(type.getNodeName());
@@ -285,6 +307,10 @@ public class PermissionConfig implements IdentifiedDataSerializable {
         out.writeInt(actions.size());
         for (String action : actions) {
             out.writeString(action);
+        }
+
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_4)) {
+            out.writeBoolean(deny);
         }
     }
 
@@ -310,6 +336,10 @@ public class PermissionConfig implements IdentifiedDataSerializable {
                 actions.add(in.readString());
             }
             this.actions = actions;
+        }
+
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_4)) {
+            deny = in.readBoolean();
         }
     }
 
@@ -337,6 +367,9 @@ public class PermissionConfig implements IdentifiedDataSerializable {
         if (endpoints != null ? !endpoints.equals(that.endpoints) : that.endpoints != null) {
             return false;
         }
+        if (deny != that.deny) {
+            return false;
+        }
         return actions != null ? actions.equals(that.actions) : that.actions == null;
     }
 
@@ -347,6 +380,7 @@ public class PermissionConfig implements IdentifiedDataSerializable {
         result = 31 * result + (principal != null ? principal.hashCode() : 0);
         result = 31 * result + (endpoints != null ? endpoints.hashCode() : 0);
         result = 31 * result + (actions != null ? actions.hashCode() : 0);
+        result = 31 * result + Boolean.hashCode(deny);
         return result;
     }
 
@@ -358,6 +392,7 @@ public class PermissionConfig implements IdentifiedDataSerializable {
                 + ", clientUuid='" + principal + '\''
                 + ", endpoints=" + endpoints
                 + ", actions=" + actions
+                + ", deny=" + deny
                 + '}';
     }
 }

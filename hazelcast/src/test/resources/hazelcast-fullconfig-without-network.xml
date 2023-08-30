@@ -816,14 +816,14 @@
                 <property name="property">value</property>
             </properties>
         </client-permission-policy>
-        <client-permissions on-join-operation="SEND">
+        <client-permissions on-join-operation="SEND" priority-grant="true">
             <all-permissions principal="admin">
                 <endpoints>
                     <endpoint>127.0.0.1</endpoint>
                 </endpoints>
             </all-permissions>
             <config-permission principal="deployer"/>
-            <transaction-permission principal="deployer"/>
+            <transaction-permission principal="deployer" deny="true"/>
             <map-permission name="custom" principal="dev">
                 <endpoints>
                     <endpoint>127.0.0.1</endpoint>

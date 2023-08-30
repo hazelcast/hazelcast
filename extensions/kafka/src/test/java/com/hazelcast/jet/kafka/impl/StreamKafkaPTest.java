@@ -339,7 +339,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         job.restart();
 
         for (int i = messageCount; i < messageCount * 2; i++) {
-            kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
+            kafkaTestSupport.produceSync(topic1Name, i, String.valueOf(i));
         }
         assertJobRunningEventually(instance(), job, oldExecutionId);
         assertTrueEventually(() -> assertEquals(expectedCountAfterRestart, instance().getList(sinkListName).size()));

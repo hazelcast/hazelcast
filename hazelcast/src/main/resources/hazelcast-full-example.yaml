@@ -2451,8 +2451,10 @@ hazelcast:
         property: value
     client-permissions:
       on-join-operation: RECEIVE
+      priority-grant: false
       all:
         principal: admin
+        deny: true
         endpoints:
           - 127.0.0.1
       config:
