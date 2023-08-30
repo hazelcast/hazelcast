@@ -17,7 +17,7 @@
 package com.hazelcast.jet.function;
 
 
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
