@@ -45,11 +45,14 @@ public final class IntPromiseAllocator {
         return capacity - index;
     }
 
+    /**
+     * Allocates an IntPromise or null if there is no further space.
+     *
+     * @return the allocated IntPromise or null if there is no more space.
+     */
     public IntPromise allocate() {
         if (index == capacity) {
-            IntPromise promise = new IntPromise(eventloop);
-            promise.allocator = this;
-            return promise;
+            return null;
         }
 
         IntPromise promise = array[index];

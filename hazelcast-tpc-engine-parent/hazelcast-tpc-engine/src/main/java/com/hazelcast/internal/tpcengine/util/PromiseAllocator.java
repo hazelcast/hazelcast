@@ -45,11 +45,14 @@ public final class PromiseAllocator {
         return capacity - index;
     }
 
+    /**
+     * Allocates a Promise or null if there is no further space.
+     *
+     * @return the allocated Promise or null if there is no more space.
+     */
     public Promise allocate() {
         if (index == capacity) {
-            Promise promise = new Promise(eventloop);
-            promise.allocator = this;
-            return promise;
+            return null;
         }
 
         Promise promise = array[index];

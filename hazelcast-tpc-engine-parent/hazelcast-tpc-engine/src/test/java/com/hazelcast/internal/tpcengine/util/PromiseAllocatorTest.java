@@ -28,6 +28,8 @@ import java.util.List;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class PromiseAllocatorTest {
 
@@ -49,6 +51,17 @@ public class PromiseAllocatorTest {
     @Test
     public void testConstruction() {
         assertEquals(capacity, promiseAllocator.available());
+    }
+
+    @Test
+    public void test_noMoreSpace() {
+        for (int k = 0; k < capacity; k++) {
+            Promise promise = promiseAllocator.allocate();
+            assertNotNull(promise);
+        }
+
+        Promise promise = promiseAllocator.allocate();
+        assertNull(promise);
     }
 
     @Test
