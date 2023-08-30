@@ -20,15 +20,15 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 
 /**
- * Allows notifying Hazelcast that the processing unit implementing this interface will not do any modifications.
- * This marker interface allows optimizing the processing to gain more performance.
- *
+ * Allows notifying Hazelcast that the processing unit implementing this interface will not do any modifications. This marker
+ * interface allows optimizing the processing to gain more performance.
+ * <p>
  * If the processing processing unit implementing this interface does a modification an exception will be thrown.
- *
+ * <p>
  * Currently supported in:
  * <ul>
  * <li>{@link EntryProcessor} passed to {@link IMap#executeOnKey(Object, EntryProcessor)}</li>
- * <li>{@link EntryProcessor} passed to {@link IMap#submitToKey(Object, EntryProcessor)} </li>
+ * <li>{@link EntryProcessor} passed to {@link IMap#submitToKey(Object, EntryProcessor)}</li>
  * </ul>
  *
  * @see Offloadable
