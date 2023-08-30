@@ -45,8 +45,7 @@ public class DefaultDatabaseDiscovery {
                 String[] name = Stream.of(
                                 tables.getString("TABLE_CAT"),
                                 tables.getString("TABLE_SCHEM"),
-                                tables.getString("TABLE_NAME"),
-                                tables.getString("TABLE_TYPE")
+                                tables.getString("TABLE_NAME")
                         )
                         .filter(Objects::nonNull)
                         .toArray(String[]::new);
