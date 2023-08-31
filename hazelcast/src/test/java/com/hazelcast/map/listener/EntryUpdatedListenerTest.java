@@ -15,6 +15,7 @@ import com.hazelcast.test.annotation.SlowTest;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 @RunWith(HazelcastParallelClassRunner.class)
 // TODO Why is this a slow test? Why does it take 10 seconds?
@@ -30,9 +31,9 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
 
         final IMap<Object, AtomicInteger> map = instance.getMap(randomMapName());
 
-        final CompletableFuture<Object> entryListenerOldValue = new CompletableFuture<>();
-        map.addLocalEntryListener(
-                (EntryUpdatedListener<Object, AtomicInteger>) event -> entryListenerOldValue.complete(event.getOldValue()));
+        final CompletableFuture<Object> entryListenerOldValue = setMapListener(
+                listener -> map.addEntryListener(listener, true));
+        final CompletableFuture<Object> entryLocalListenerOldValue = setMapListener(map::addLocalEntryListener);
 
         final CompletableFuture<Object> interceptorOldValue = new CompletableFuture<>();
         map.addInterceptor(new MapInterceptor() {
@@ -91,7 +92,18 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
                 initial, entryListenerOldValue.get());
 
         assertEqualsStringFormat(
+                "Initial value provided (%s) does not match old value observed by Local EntryUpdatedListener.entryUpdated (%s) differ",
+                initial, entryLocalListenerOldValue.get());
+
+        assertEqualsStringFormat(
                 "Initial value provided (%s) does not match old value observed by MapInterceptor.interceptPut (%s)", initial,
                 interceptorOldValue.get());
+    }
+
+    private static <T> CompletableFuture<Object> setMapListener(
+            final Consumer<EntryUpdatedListener<Object, T>> listenerSetter) {
+        final CompletableFuture<Object> oldValue = new CompletableFuture<>();
+        listenerSetter.accept((EntryUpdatedListener<Object, T>) event -> oldValue.complete(event.getOldValue()));
+        return oldValue;
     }
 }
