@@ -359,6 +359,32 @@ public class SqlOrderByTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSelectWithOrderBy2FieldsAndWhere1Conditions() {
+        getTarget().getMap(mapName());
+        String intValField = "intVal";
+        String realValField = "realVal";
+        addIndex(Arrays.asList(intValField, realValField), SORTED);
+
+        String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
+                + " WHERE " + intValField + " = 1 ORDER BY " + intValField + ", " + realValField;
+
+        assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
+    }
+
+    @Test
+    public void testSelectWithOrderBy2FieldsAndWhere2Conditions() {
+        getTarget().getMap(mapName());
+        String intValField = "intVal";
+        String realValField = "realVal";
+        addIndex(Arrays.asList(intValField, realValField), SORTED);
+
+        String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
+                + " WHERE " + intValField + " = 1 AND " + realValField + " = 1 ORDER BY " + intValField + ", " + realValField;
+
+        assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
+    }
+
+    @Test
     public void testSelectWithOrderByAndWhere2ConditionsHashIndex() {
         getTarget().getMap(mapName());
         String intValField = "intVal";
