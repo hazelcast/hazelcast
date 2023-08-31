@@ -110,16 +110,18 @@ public final class QueryUtil {
 
     static IndexIterationPointer[] indexFilterToPointers(
             IndexFilter indexFilter,
+            boolean compositeIndex,
             boolean descending,
             ExpressionEvalContext evalContext
     ) {
         ArrayList<IndexIterationPointer> result = new ArrayList<>();
-        createFromIndexFilterInt(indexFilter, descending, evalContext, result);
+        createFromIndexFilterInt(indexFilter, compositeIndex, descending, evalContext, result);
         return result.toArray(new IndexIterationPointer[0]);
     }
 
     private static void createFromIndexFilterInt(
             IndexFilter indexFilter,
+            boolean compositeIndex,
             boolean descending,
             ExpressionEvalContext evalContext,
             List<IndexIterationPointer> result
@@ -162,7 +164,7 @@ public final class QueryUtil {
         } else if (indexFilter instanceof IndexCompositeFilter) {
             IndexCompositeFilter inFilter = (IndexCompositeFilter) indexFilter;
             for (IndexFilter filter : inFilter.getFilters()) {
-                createFromIndexFilterInt(filter, descending, evalContext, result);
+                createFromIndexFilterInt(filter, compositeIndex, descending, evalContext, result);
             }
         }
     }
