@@ -16,9 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-public class Nio_SchedulingSoakTest_Nightly extends Nio_SchedulingSoakTest{
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.experimental.categories.Category;
 
-    public Nio_SchedulingSoakTest_Nightly(){
+@Category(NightlyTest.class)
+public class Nio_SchedulingSoakTest_Nightly extends Nio_SchedulingSoakTest {
+
+    public Nio_SchedulingSoakTest_Nightly() {
         runtimeSeconds = 180;
     }
 }

@@ -52,21 +52,24 @@ public class AbstractAsyncSocketTest {
         Executor oldExecutor = mock(Executor.class);
         socket.setCloseListener(oldCloseListener, oldExecutor);
 
-        assertThrows(IllegalStateException.class, () -> socket.setCloseListener(mock(CloseListener.class), mock(Executor.class)));
+        assertThrows(IllegalStateException.class,
+                () -> socket.setCloseListener(mock(CloseListener.class), mock(Executor.class)));
     }
 
     @Test
     public void test_setCloseListener_whenListenerNull() {
         MockSocket socket = new MockSocket.Builder().build();
 
-        assertThrows(NullPointerException.class, () -> socket.setCloseListener(null, mock(Executor.class)));
+        assertThrows(NullPointerException.class,
+                () -> socket.setCloseListener(null, mock(Executor.class)));
     }
 
     @Test
     public void test_setCloseListener_whenExecutorNull() {
         MockSocket socket = new MockSocket.Builder().build();
 
-        assertThrows(NullPointerException.class, () -> socket.setCloseListener(mock(CloseListener.class), null));
+        assertThrows(NullPointerException.class,
+                () -> socket.setCloseListener(mock(CloseListener.class), null));
     }
 
     @Test

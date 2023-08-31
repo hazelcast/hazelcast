@@ -269,51 +269,53 @@ public abstract class Eventloop {
      *                   The reactor will terminate when this happens.
      */
     public final void run() throws Exception {
-        final TaskQueue.RunContext runContext = this.runContext;
+        final TaskQueue.RunContext runCtx = this.runContext;
         final DeadlineScheduler deadlineScheduler = this.deadlineScheduler;
         final Scheduler scheduler = this.scheduler;
         final Reactor.Metrics metrics = this.metrics;
         boolean timeUpdateNeeded = true;
 
-        runContext.nowNanos = epochNanos();
-        runContext.ioDeadlineNanos = runContext.nowNanos + runContext.ioIntervalNanos;
+        runCtx.nowNanos = epochNanos();
+        runCtx.ioDeadlineNanos = runCtx.nowNanos + runCtx.ioIntervalNanos;
         while (!stop) {
-            deadlineScheduler.tick(runContext.nowNanos);
+            deadlineScheduler.tick(runCtx.nowNanos);
 
             scheduler.scheduleOutsideBlocked();
 
             TaskQueue taskQueue = scheduler.pickNext();
-
+//            if(scheduler.containsOutsideBlocked(taskQueue)){
+//                throw new RuntimeException("Task is both outside blocked and registered.");
+//            }
 
             if (taskQueue == null) {
                 long epochNanosBeforePark = epochNanos();
-                runContext.nowNanos = epochNanosBeforePark;
+                runCtx.nowNanos = epochNanosBeforePark;
 
                 // There is no work and therefor we need to park.
                 long earliestDeadlineNs = deadlineScheduler.earliestDeadlineNs();
                 long timeoutNs = earliestDeadlineNs == -1
                         ? Long.MAX_VALUE
-                        : max(0, earliestDeadlineNs - runContext.nowNanos);
+                        : max(0, earliestDeadlineNs - runCtx.nowNanos);
                 park(timeoutNs);
 
                 // after a park we have to guarantee that the nowNanos is up to data.
-                runContext.nowNanos = epochNanos();
+                runCtx.nowNanos = epochNanos();
                 // and we need to update the ioDeadline
-                runContext.ioDeadlineNanos = runContext.nowNanos + runContext.ioIntervalNanos;
+                runCtx.ioDeadlineNanos = runCtx.nowNanos + runCtx.ioIntervalNanos;
                 // since we just update the time, no need to obtain
                 // it again whe the next taskQueue runs.
                 timeUpdateNeeded = false;
 
                 metrics.incParkCount();
-                metrics.incParkTimeNanos(runContext.nowNanos - epochNanosBeforePark);
+                metrics.incParkTimeNanos(runCtx.nowNanos - epochNanosBeforePark);
             } else {
                 // before a task group is run, its nowNanos needs to be up to date.
                 // this is either done here or after the park.
                 if (timeUpdateNeeded) {
-                    runContext.nowNanos = epochNanos();
+                    runCtx.nowNanos = epochNanos();
                 }
 
-                taskQueue.run(runContext);
+                taskQueue.run(runCtx);
                 // after a task group completes we need to ensure that the time gets
                 // updated unless a park is going to happen, because that will also
                 // update the time.

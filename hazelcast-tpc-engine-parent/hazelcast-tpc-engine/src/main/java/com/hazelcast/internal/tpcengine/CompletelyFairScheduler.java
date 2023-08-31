@@ -75,6 +75,11 @@ public class CompletelyFairScheduler extends Scheduler {
         this.minGranularityNanos = checkPositive(minGranularityNanos, "minGranularityNanos");
     }
 
+//    @Override
+//    public boolean onRunQueue(TaskQueue taskQueue) {
+//        return runQueue.contains(taskQueue);
+//    }
+
     @Override
     public int runQueueLimit() {
         return runQueueLimit;
@@ -109,7 +114,15 @@ public class CompletelyFairScheduler extends Scheduler {
     public TaskQueue pickNext() {
         assert active == null;
 
-        active = runQueue.peek();
+        active = runQueue.poll();
+
+//        // todo: remove
+//        if(active!=null) {
+//            if (containsOutsideBlocked(active)){
+//                throw new RuntimeException();
+//            }
+//        }
+
         return active;
     }
 
@@ -140,7 +153,10 @@ public class CompletelyFairScheduler extends Scheduler {
     public void dequeueActive() {
         assert active != null;
 
-        runQueue.poll();
+//        TaskQueue found = runQueue.poll();
+//        if(found!=active){
+//            throw new RuntimeException();
+//        }
         nrRunning--;
         totalWeight -= active.weight;
         active = null;
@@ -158,12 +174,12 @@ public class CompletelyFairScheduler extends Scheduler {
     public void yieldActive() {
         assert active != null;
 
-        if (nrRunning > 1) {
+        //if (nrRunning > 1) {
             // if there is only one taskQueue in the runQueue, then there is no
             // need to yield.
-            runQueue.poll();
+            //runQueue.poll();
             runQueue.offer(active);
-        }
+       // }
 
         active = null;
         min_virtualRuntimeNanos = runQueue.peek().virtualRuntimeNanos;

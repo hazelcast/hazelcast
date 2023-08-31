@@ -95,7 +95,6 @@ public class TpcEngineTest {
         assertThrows(IllegalStateException.class, () -> engine.start());
     }
 
-
     // ================= shut down =======================
 
     @Test

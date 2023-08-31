@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
@@ -24,15 +40,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public abstract class SchedulingSoakTest {
     // The public properties are the tunnables for this soak test.
-    public long runtimeSeconds = 500;
+    public long runtimeSeconds = 5;
     // total number of reactors
-    public int reactorCount = 2;
+    public int reactorCount = 5;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     // number of task queues per reactor
     public int taskQueueCount = 10;
 
-    public int taskCount = 10;
+    public int taskCount = 1000;
 
     private final List<PaddedAtomicLong> counters = new ArrayList<>();
     private final MonitorThread monitorThread = new MonitorThread();
