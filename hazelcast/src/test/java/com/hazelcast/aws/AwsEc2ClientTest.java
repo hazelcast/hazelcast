@@ -150,6 +150,7 @@ public class AwsEc2ClientTest {
                 .build();
         awsEc2Client = new AwsEc2Client(awsEc2Api, awsEcsApi, awsMetadataApi, awsCredentialsProvider, awsConfig);
         given(awsCredentialsProvider.credentials()).willReturn(credentials);
+        given(awsEc2Api.describeInstances(credentials)).willReturn(emptyMap());
         given(awsEcsApi.listTaskPrivateAddresses("CLUSTER", credentials)).willReturn(privateIps);
         given(awsEc2Api.describeNetworkInterfaces(privateIps, credentials)).willReturn(expectedResult);
 

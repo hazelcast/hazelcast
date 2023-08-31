@@ -138,6 +138,7 @@ public class AwsDiscoveryStrategyTest {
         // given
         given(awsClient.getAvailabilityZone()).willReturn(ZONE);
         given(awsClient.getPlacementGroup()).willReturn(Optional.empty());
+        given(awsClient.getPlacementPartitionNumber()).willReturn(Optional.empty());
 
         // when
         Map<String, String> localMetaData = awsDiscoveryStrategy.discoverLocalMetadata();
