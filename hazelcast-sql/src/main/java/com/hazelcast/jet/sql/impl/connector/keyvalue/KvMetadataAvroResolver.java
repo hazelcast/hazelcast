@@ -27,7 +27,6 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
@@ -157,37 +156,37 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
     // CREATE MAPPING <name> (<fields>) Type Kafka; INSERT INTO <name> ...
     private static Schema resolveSchema(String recordName, Stream<Field> fields) {
         return fields.reduce(SchemaBuilder.record(recordName).fields(), (schema, field) -> {
-            if (field.name == null) {
+            if (field.name() == null) {
                 return schema;
             }
-            switch (field.type.getTypeFamily()) {
+            switch (field.type().getTypeFamily()) {
                 case BOOLEAN:
-                    return schema.optionalBoolean(field.name);
+                    return schema.optionalBoolean(field.name());
                 case TINYINT:
                 case SMALLINT:
                 case INTEGER:
-                    return schema.optionalInt(field.name);
+                    return schema.optionalInt(field.name());
                 case BIGINT:
-                    return schema.optionalLong(field.name);
+                    return schema.optionalLong(field.name());
                 case REAL:
-                    return schema.optionalFloat(field.name);
+                    return schema.optionalFloat(field.name());
                 case DOUBLE:
-                    return schema.optionalDouble(field.name);
+                    return schema.optionalDouble(field.name());
                 case DECIMAL:
                 case TIME:
                 case DATE:
                 case TIMESTAMP:
                 case TIMESTAMP_WITH_TIME_ZONE:
                 case VARCHAR:
-                    return schema.optionalString(field.name);
+                    return schema.optionalString(field.name());
                 case OBJECT:
-                    Schema fieldSchema = field.type.isCustomType()
-                            ? resolveSchema(field.type.getObjectTypeName(),
-                                    field.type.getObjectFields().stream().map(Field::new))
+                    Schema fieldSchema = field.type().isCustomType()
+                            ? resolveSchema(field.type().getObjectTypeName(),
+                                    field.type().getObjectFields().stream().map(Field::new))
                             : Schemas.OBJECT_SCHEMA;
-                    return optionalField(field.name, fieldSchema).apply(schema);
+                    return optionalField(field.name(), fieldSchema).apply(schema);
                 default:
-                    throw new IllegalArgumentException("Unsupported type: " + field.type);
+                    throw new IllegalArgumentException("Unsupported type: " + field.type());
             }
         }, ExceptionUtil::notParallelizable).endRecord();
     }
@@ -196,7 +195,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         if (schema.getType() != Schema.Type.RECORD) {
             throw new IllegalArgumentException("Schema must be an Avro record");
         }
-        Set<String> mappingFields = fields.stream().map(field -> field.name).collect(toSet());
+        Set<String> mappingFields = fields.stream().map(Field::name).collect(toSet());
         for (Schema.Field schemaField : schema.getFields()) {
             if (!schemaField.hasDefaultValue() && !mappingFields.contains(schemaField.name())) {
                 throw new IllegalArgumentException("Mandatory field '" + schemaField.name()
@@ -204,8 +203,8 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
             }
         }
         for (Field field : fields) {
-            String path = field.name;
-            QueryDataType mappingFieldType = field.type;
+            String path = field.name();
+            QueryDataType mappingFieldType = field.type();
             QueryDataTypeFamily mappingFieldTypeFamily = mappingFieldType.getTypeFamily();
 
             List<Schema.Type> conversions = Schemas.CONVERSIONS.get(mappingFieldTypeFamily);
@@ -237,26 +236,5 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         return schema.isNullable()
                 ? builder -> builder.name(name).type(schema).withDefault(null)
                 : builder -> builder.name(name).type().optional().type(schema);
-    }
-
-    private static class Field {
-        final String name;
-        final QueryDataType type;
-
-        Field(Entry<QueryPath, MappingField> entry) {
-            name = entry.getKey().getPath();
-            type = entry.getValue().type();
-        }
-
-        Field(TableField field) {
-            name = field instanceof MapTableField
-                    ? ((MapTableField) field).getPath().getPath() : field.getName();
-            type = field.getType();
-        }
-
-        Field(QueryDataTypeField field) {
-            name = field.getName();
-            type = field.getDataType();
-        }
     }
 }

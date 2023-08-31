@@ -24,6 +24,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -32,30 +33,70 @@ import static java.util.stream.Collectors.toMap;
  * {@link org.apache.commons.collections.map.DefaultedMap} by <ol>
  * <li> forwarding operations that have a default implementation in {@link Map}
  *      to the delegated map, which can increase performance if the delegated
- *      map has a custom implementation, and
+ *      map has a custom implementation,
  * <li> using {@link #getOrDefault(K, V)} to implement {@link #getOrDefault(K)}.
  */
 public class DefaultedMap<K, V> implements Map<K, V> {
     private final Map<K, V> map;
-    private final V defaultValue;
+    private final V missingValuePlaceholder;
+    private final Function<K, V> missingValueComputer;
+
+    private DefaultedMap(Map<K, V> map, V missingValuePlaceholder, Function<K, V> missingValueComputer) {
+        this.map = map;
+        this.missingValuePlaceholder = missingValuePlaceholder;
+        this.missingValueComputer = missingValueComputer;
+    }
 
     public DefaultedMap(Map<K, V> map, V defaultValue) {
-        this.map = map;
-        this.defaultValue = defaultValue;
+        this(map, defaultValue, null);
     }
 
     public V getOrDefault(Object key) {
-        return map.getOrDefault(key, defaultValue);
-    }
-
-    public V getDefaultValue() {
-        return defaultValue;
+        V value = map.getOrDefault(key, missingValuePlaceholder);
+        if (value == missingValuePlaceholder && missingValueComputer != null) {
+            return missingValueComputer.apply((K) key);
+        }
+        return value;
     }
 
     public <K2, V2> DefaultedMap<K2, V2> mapKeysAndValues(Function<K, K2> keyMapper, Function<V, V2> valueMapper) {
+        assert missingValueComputer == null;
         return new DefaultedMap<>(map.entrySet().stream()
                         .collect(toMap(e -> keyMapper.apply(e.getKey()), e -> valueMapper.apply(e.getValue()))),
-                valueMapper.apply(defaultValue));
+                valueMapper.apply(missingValuePlaceholder));
+    }
+
+    public static class DefaultedMapBuilder<K, V> {
+        private final Map<K, V> map;
+        private V missingValuePlaceholder;
+
+        public DefaultedMapBuilder(Map<K, V> map) {
+            this.map = map;
+        }
+
+        /**
+         * The missing value placeholder is passed to {@link #getOrDefault(Object, Object)} to
+         * avoid querying the map twice. It is null by default and needs to be changed if the
+         * map contains null values.
+         */
+        public DefaultedMapBuilder<K, V> missingValuePlaceholder(V missingValuePlaceholder) {
+            this.missingValuePlaceholder = missingValuePlaceholder;
+            return this;
+        }
+
+        public DefaultedMap<K, V> orElse(V defaultValue) {
+            return new DefaultedMap<>(map, defaultValue);
+        }
+
+        public DefaultedMap<K, V> orElseGet(Function<K, V> missingValueComputer) {
+            return new DefaultedMap<>(map, missingValuePlaceholder, missingValueComputer);
+        }
+
+        public DefaultedMap<K, V> orElseThrow(Function<K, Throwable> keyNotFoundException) {
+            return new DefaultedMap<>(map, missingValuePlaceholder, key -> {
+                throw rethrow(keyNotFoundException.apply(key));
+            });
+        }
     }
 
     @Override

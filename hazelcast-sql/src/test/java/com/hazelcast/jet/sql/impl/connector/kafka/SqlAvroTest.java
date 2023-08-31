@@ -25,11 +25,7 @@ import com.hazelcast.jet.datamodel.Tuple4;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroDeserializer;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroSerializer;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
-import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
-import com.hazelcast.sql.impl.schema.Mapping;
-import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -37,7 +33,6 @@ import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -60,7 +55,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -77,7 +71,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_RECORD_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
 import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroSchemaEvolutionTest.NAME_SSN_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.OBJECT_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.optionalField;
@@ -87,7 +80,6 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -134,7 +126,6 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     @Parameter
     public boolean useSchemaRegistry;
 
-    private static RelationsStorage relationsStorage;
     private Type mapping;
     private Schema keySchema;
     private Schema valueSchema;
@@ -143,7 +134,6 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     @BeforeClass
     public static void setup() throws Exception {
         setup(1, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
-        relationsStorage = sqlServiceImpl(instance()).getOptimizer().relationsStorage();
         createSchemaRegistry();
     }
 
@@ -770,8 +760,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     }
 
     private void insertRecord(Object... values) {
-        sqlService.execute("INSERT INTO " + mapping.name + " VALUES (" +
-                Arrays.stream(values).map(SqlAvroTest::toSQL).collect(joining(", ")) + ")");
+        insertLiterals(instance(), mapping.name, values);
     }
 
     private void insertAndAssertRecord(Object... values) {
@@ -804,30 +793,6 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         );
     }
 
-    private static String toSQL(Object value) {
-        if (value instanceof Object[]) {
-            return "(" + Arrays.stream((Object[]) value).map(SqlAvroTest::toSQL).collect(joining(", ")) + ")";
-        }
-        return value == null || value instanceof Boolean || value instanceof Number
-                ? String.valueOf(value) : "'" + value + "'";
-    }
-
-    private static GenericRecord createRecord(Schema schema, Field[] fields, Object[] values) {
-        GenericRecordBuilder record = new GenericRecordBuilder(schema);
-        for (int i = 0; i < fields.length; i++) {
-            Schema.Field field = schema.getField(fields[i].name);
-            Schema fieldSchema = unwrapNullableType(field.schema());
-            record.set(field, fieldSchema.getType() == Schema.Type.RECORD
-                    ? createRecord(fieldSchema, fields[i].type.fields, (Object[]) values[i])
-                    : values[i]);
-        }
-        return record.build();
-    }
-
-    private static GenericRecord createRecord(Schema schema, Object... values) {
-        return createRecord(schema, new Type(schema).fields, values);
-    }
-
     @SuppressWarnings("unchecked")
     private static <T1, T2, T3, T4> List<Tuple4<T1, T2, T3, T4>> cartesian(List<Tuple2<T1, T2>> list1,
                                                                            List<Tuple2<T3, T4>> list2) {
@@ -845,48 +810,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         @Override
         protected void create(HazelcastInstance instance, boolean replace, boolean ifNotExists) {
             super.create(instance, replace, ifNotExists);
-            mapping = new Type(relationsStorage.getMapping(name));
-        }
-    }
-
-    private static class Type {
-        final String name;
-        final Field[] fields;
-
-        Type(Mapping mapping) {
-            name = mapping.name();
-            fields = mapping.fields().stream().map(Field::new).toArray(Field[]::new);
-        }
-
-        Type(QueryDataType type) {
-            name = type.getObjectTypeName();
-            fields = type.getObjectFields().stream().map(Field::new).toArray(Field[]::new);
-        }
-
-        Type(Schema schema) {
-            name = schema.getName();
-            fields = schema.getType() == Schema.Type.RECORD
-                    ? schema.getFields().stream().map(Field::new).toArray(Field[]::new) : null;
-        }
-    }
-
-    private static class Field {
-        final String name;
-        final Type type;
-
-        Field(MappingField field) {
-            name = field.plainExternalName();
-            type = new Type(field.type());
-        }
-
-        Field(QueryDataTypeField field) {
-            name = field.getName();
-            type = new Type(field.getDataType());
-        }
-
-        Field(Schema.Field field) {
-            name = field.name();
-            type = new Type(field.schema());
+            mapping = toTypeTree();
         }
     }
 }

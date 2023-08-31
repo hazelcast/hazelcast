@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.internal.util.collection.DefaultedMap;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
@@ -96,28 +97,25 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
             InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
-        ClassDefinition classDefinition = findClassDefinition(isKey, options, serializationService);
+        ClassDefinition classDefinition = serializationService.getPortableContext()
+                .lookupClassDefinition(portableId(options, isKey));
 
         return userFields.isEmpty()
-                ? resolveFields(isKey, classDefinition, serializationService)
+                ? resolveFields(isKey, classDefinition)
                 : resolveAndValidateFields(isKey, userFieldsByPath, classDefinition);
     }
 
-    Stream<MappingField> resolveFields(
-            boolean isKey,
-            @Nullable ClassDefinition clazz,
-            InternalSerializationService ss
-    ) {
-        if (clazz == null || clazz.getFieldCount() == 0) {
+    private static Stream<MappingField> resolveFields(boolean isKey, ClassDefinition classDefinition) {
+        if (classDefinition == null || classDefinition.getFieldCount() == 0) {
             // ClassDefinition does not exist, or it is empty, map the whole value
             String name = isKey ? KEY : VALUE;
             return Stream.of(new MappingField(name, QueryDataType.OBJECT, name));
         }
 
-        return clazz.getFieldNames().stream()
+        return classDefinition.getFieldNames().stream()
                 .map(name -> {
                     QueryPath path = new QueryPath(name, isKey);
-                    QueryDataType type = PORTABLE_TO_SQL.getOrDefault(clazz.getFieldType(name));
+                    QueryDataType type = PORTABLE_TO_SQL.getOrDefault(classDefinition.getFieldType(name));
 
                     return new MappingField(name, type, path.toString());
                 });
@@ -126,9 +124,9 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
     private static Stream<MappingField> resolveAndValidateFields(
             boolean isKey,
             Map<QueryPath, MappingField> userFieldsByPath,
-            @Nullable ClassDefinition clazz
+            @Nullable ClassDefinition classDefinition
     ) {
-        if (clazz == null) {
+        if (classDefinition == null) {
             // ClassDefinition does not exist, make sure there are no OBJECT fields
             return userFieldsByPath.values().stream()
                     .peek(mappingField -> {
@@ -139,9 +137,9 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
                     });
         }
 
-        for (String name : clazz.getFieldNames()) {
+        for (String name : classDefinition.getFieldNames()) {
             final QueryPath path = new QueryPath(name, isKey);
-            final QueryDataType type = PORTABLE_TO_SQL.getOrDefault(clazz.getFieldType(name));
+            final QueryDataType type = PORTABLE_TO_SQL.getOrDefault(classDefinition.getFieldType(name));
 
             MappingField userField = userFieldsByPath.get(path);
             if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
@@ -159,17 +157,9 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
             InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
-        ClassDefinition clazz = resolveClassDefinition(isKey, options, fieldsByPath.values(), serializationService);
+        ClassDefinition classDefinition = resolveClassDefinition(isKey, options, fieldsByPath.values(),
+                serializationService.getPortableContext());
 
-        return resolveMetadata(isKey, resolvedFields, fieldsByPath, clazz);
-    }
-
-    private static KvMetadata resolveMetadata(
-            boolean isKey,
-            List<MappingField> resolvedFields,
-            Map<QueryPath, MappingField> fieldsByPath,
-            @Nonnull ClassDefinition clazz
-    ) {
         List<TableField> fields = new ArrayList<>();
         for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
             QueryPath path = entry.getKey();
@@ -183,18 +173,8 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
         return new KvMetadata(
                 fields,
                 GenericQueryTargetDescriptor.DEFAULT,
-                new PortableUpsertTargetDescriptor(clazz)
+                new PortableUpsertTargetDescriptor(classDefinition)
         );
-    }
-
-    @Nullable
-    private static ClassDefinition findClassDefinition(
-            boolean isKey,
-            Map<String, String> options,
-            InternalSerializationService serializationService
-    ) {
-        return serializationService.getPortableContext()
-                .lookupClassDefinition(portableId(options, isKey));
     }
 
     @Nonnull
@@ -202,11 +182,10 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
             boolean isKey,
             Map<String, String> options,
             Collection<MappingField> fields,
-            InternalSerializationService serializationService
+            PortableContext context
     ) {
         PortableId portableId = portableId(options, isKey);
-        ClassDefinition classDefinition = serializationService.getPortableContext()
-                .lookupClassDefinition(portableId);
+        ClassDefinition classDefinition = context.lookupClassDefinition(portableId);
         if (classDefinition != null) {
             return classDefinition;
         }

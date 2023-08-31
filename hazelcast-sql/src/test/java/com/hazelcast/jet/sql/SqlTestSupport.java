@@ -51,9 +51,14 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.avro.Schema;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 
@@ -68,6 +73,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -107,7 +113,6 @@ import static org.mockito.Mockito.mock;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
-
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SqlTestSupport.class);
 
     @After
@@ -781,6 +786,32 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return values;
     }
 
+    /**
+     * Inserts the specified record into the given mapping by converting values
+     * into string and using row syntax {@code (...)} for nested fields.
+     */
+    public static void insertLiterals(HazelcastInstance instance, String mapping, Object... values) {
+        instance.getSql().execute("INSERT INTO " + mapping + " VALUES (" +
+                Arrays.stream(values).map(SqlTestSupport::toSQL).collect(joining(", ")) + ")");
+    }
+
+    /**
+     * Inserts the specified record into the given mapping by passing values
+     * as dynamic parameters ({@code ?}).
+     */
+    public static void insertParams(HazelcastInstance instance, String mapping, Object... values) {
+        instance.getSql().execute("INSERT INTO " + mapping + " VALUES ("
+                + String.join(", ", Collections.nCopies(values.length, "?")) + ")", values);
+    }
+
+    public static String toSQL(Object value) {
+        if (value instanceof Object[]) {
+            return "(" + Arrays.stream((Object[]) value).map(SqlTestSupport::toSQL).collect(joining(", ")) + ")";
+        }
+        return value == null || value instanceof Boolean || value instanceof Number
+                ? String.valueOf(value) : "'" + value + "'";
+    }
+
     public static class SqlMapping extends SqlStructure<SqlMapping> {
         private static final Map<Class<? extends SqlConnector>, String> TYPES = Map.of(
                 FileSqlConnector.class, FileSqlConnector.TYPE_NAME,
@@ -814,6 +845,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                     + type + " OPTIONS (" + options.entrySet().stream()
                             .map(e -> "'" + e.getKey() + "'='" + e.getValue() + "'").collect(joining(", "))
                     + ")");
+        }
+
+        public Type toTypeTree() {
+            return new Type(sqlServiceImpl(instance()).getOptimizer().relationsStorage().getMapping(name));
         }
     }
 
@@ -892,6 +927,47 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         protected abstract void create(HazelcastInstance instance, boolean replace, boolean ifNotExists);
+    }
+
+    public static class Type {
+        public final String name;
+        public final Field[] fields;
+
+        public Type(Mapping mapping) {
+            name = mapping.name();
+            fields = mapping.fields().stream().map(Field::new).toArray(Field[]::new);
+        }
+
+        public Type(QueryDataType type) {
+            name = type.getObjectTypeName();
+            fields = type.getObjectFields().stream().map(Field::new).toArray(Field[]::new);
+        }
+
+        public Type(Schema schema) {
+            name = schema.getName();
+            fields = schema.getType() == Schema.Type.RECORD
+                    ? schema.getFields().stream().map(Field::new).toArray(Field[]::new) : null;
+        }
+
+        public static class Field {
+            public final String name;
+            public final Type type;
+
+            public Field(MappingField field) {
+                name = field.plainExternalName();
+                type = new Type(field.type());
+            }
+
+            public Field(QueryDataTypeField field) {
+                name = field.getName();
+                type = new Type(field.getDataType());
+            }
+
+            public Field(Schema.Field field) {
+                name = field.name();
+                type = new Type(field.schema());
+            }
+        }
     }
 
     /**

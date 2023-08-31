@@ -23,11 +23,13 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 
 import javax.annotation.Nonnull;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
@@ -79,6 +81,35 @@ public interface KvMetadataResolver {
         String fieldName = isKey ? KEY : VALUE;
         if (resolvedFields.stream().noneMatch(field -> field.name().equals(fieldName))) {
             tableFields.add(new MapTableField(fieldName, type, true, QueryPath.create(fieldName)));
+        }
+    }
+
+    class Field {
+        private final String name;
+        private final QueryDataType type;
+
+        public Field(Entry<QueryPath, MappingField> entry) {
+            name = entry.getKey().getPath();
+            type = entry.getValue().type();
+        }
+
+        public Field(TableField field) {
+            name = field instanceof MapTableField
+                    ? ((MapTableField) field).getPath().getPath() : field.getName();
+            type = field.getType();
+        }
+
+        public Field(QueryDataTypeField field) {
+            name = field.getName();
+            type = field.getDataType();
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public QueryDataType type() {
+            return type;
         }
     }
 }
