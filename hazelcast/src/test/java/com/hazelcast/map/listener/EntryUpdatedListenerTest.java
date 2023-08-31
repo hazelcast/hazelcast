@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class EntryUpdatedListenerTest extends HazelcastTestSupport {
-    // TODO Why does this test take 10 seconds?!
     /**
      * <a href="https://hazelcast.atlassian.net/browse/HZ-2837">HZ-2837 - Field level mutation being taken by listener as old
      * value but not being considered by interceptor - Strange Behavior</a>
@@ -31,7 +30,7 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
         final CompletableFuture<Object> entryListenerOldValue = new CompletableFuture<>();
         final CompletableFuture<Object> interceptorOldValue = new CompletableFuture<>();
 
-        final IMap<Object, AtomicInteger> map = instance.getMap("test-map");
+        final IMap<Object, AtomicInteger> map = instance.getMap(randomMapName());
 
         map.addInterceptor(new MapInterceptor() {
             private static final long serialVersionUID = 1L;
