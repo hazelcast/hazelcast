@@ -90,7 +90,6 @@ class HazelcastOSGiIT {
      * Some versions of Intellij IDEA use a wrong working directory in multi-module Maven projects.
      * See this for a fix: https://youtrack.jetbrains.com/issue/IDEA-60965
      */
-    // Only execute on Java 8
     @EnabledOnJre({JRE.JAVA_8})
     @Test
     void serviceRetrievedSuccessfully() {
