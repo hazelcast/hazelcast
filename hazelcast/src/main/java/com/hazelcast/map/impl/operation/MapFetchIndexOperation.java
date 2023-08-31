@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -40,6 +41,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -85,18 +87,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
     @Override
     protected void runInternal() {
-        Indexes indexes = mapContainer.getIndexes();
-        if (indexes == null) {
-            throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + indexName
-                    + "\" of the IMap \"" + name + "\" because it is not global "
-                    + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
-                    + "\" is set to \"true\")");
-        }
-
-        InternalIndex index = indexes.getIndex(indexName);
-        if (index == null) {
-            throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Index \"" + indexName + "\" does not exist");
-        }
+        InternalIndex index = getInternalIndex(mapContainer, name, indexName);
 
         PartitionStamp indexStamp = index.getPartitionStamp();
         if (indexStamp == null) {
@@ -129,6 +120,25 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         if (!index.validatePartitionStamp(indexStamp.stamp)) {
             throw new MissingPartitionException("partition timestamp has changed");
         }
+    }
+
+    @Nonnull
+    public static InternalIndex getInternalIndex(@Nonnull MapContainer mapContainer,
+                                                 @Nonnull String mapName,
+                                                 @Nonnull String indexName) {
+        Indexes indexes = mapContainer.getIndexes();
+        if (indexes == null) {
+            throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + indexName
+                    + "\" of the IMap \"" + mapName + "\" because it is not global "
+                    + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
+                    + "\" is set to \"true\")");
+        }
+
+        InternalIndex index = indexes.getIndex(indexName);
+        if (index == null) {
+            throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Index \"" + indexName + "\" does not exist");
+        }
+        return index;
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})

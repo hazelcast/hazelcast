@@ -124,7 +124,8 @@ public final class MapIndexScanP extends AbstractProcessor {
         reader = new LocalMapIndexReader(hazelcastInstance, evalContext.getSerializationService(), metadata);
 
         MapContainer mapContainer = QueryUtils.getMapContainer(hazelcastInstance.getMap(metadata.getMapName()));
-        boolean compositeIndex = mapContainer.getIndexes().getIndex(metadata.getIndexName()).isComposite();
+        boolean compositeIndex = MapFetchIndexOperation.getInternalIndex(mapContainer,
+                        metadata.getMapName(), metadata.getIndexName()).isComposite();
 
         int[] memberPartitions = context.processorPartitions();
         IndexIterationPointer[] pointers = indexFilterToPointers(metadata.getFilter(), compositeIndex,
