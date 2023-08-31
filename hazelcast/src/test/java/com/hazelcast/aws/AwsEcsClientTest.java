@@ -62,6 +62,7 @@ public class AwsEcsClientTest {
 
     @Before
     public void setUp() {
+        given(awsMetadataApi.clusterEcs()).willReturn(CLUSTER);
         AwsConfig awsConfig = AwsConfig.builder()
                 .setDiscoveryMode(DiscoveryMode.Member)
                 .build();
@@ -141,6 +142,7 @@ public class AwsEcsClientTest {
         // given
         Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
         given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(emptyList());
+        given(awsEc2Api.describeInstances(CREDENTIALS)).willReturn(expectedResult);
 
         // when
         Map<String, String> result = awsEcsClient.getAddresses();
