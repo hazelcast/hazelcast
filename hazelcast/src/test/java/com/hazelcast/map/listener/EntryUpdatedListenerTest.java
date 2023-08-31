@@ -1,18 +1,32 @@
-package datest;
+package com.hazelcast.map.listener;
 
-import com.hazelcast.core.Hazelcast;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.listener.EntryUpdatedListener;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class App {
-    public static void main(final String args[]) throws InterruptedException, ExecutionException {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({SlowTest.class, ParallelJVMTest.class})
+public class EntryUpdatedListenerTest extends HazelcastTestSupport {
+    // TODO Why does this test take 10 seconds?!
+    /**
+     * <a href="https://hazelcast.atlassian.net/browse/HZ-2837">HZ-2837 - Field level mutation being taken by listener as old
+     * value but not being considered by interceptor - Strange Behavior</a>
+     */
+    @Test
+    public void testOldValues() throws InterruptedException, ExecutionException {
+        final HazelcastInstance instance = createHazelcastInstanceFactory().newHazelcastInstance();
 
         final CompletableFuture<Object> entryListenerOldValue = new CompletableFuture<>();
         final CompletableFuture<Object> interceptorOldValue = new CompletableFuture<>();
@@ -64,12 +78,11 @@ public class App {
         map.executeOnKey(key, entry -> {
             entry.getValue().set(Integer.MAX_VALUE);
             entry.setValue(new AtomicInteger(2));
-            return entry.getValue();
+            return null;
         });
 
-        System.out.println("Interceptor put called old: " + interceptorOldValue.get());
-        System.out.println("Entry Listener: Value updated from " + entryListenerOldValue.get());
-
-        instance.shutdown();
+        assertEqualsStringFormat(
+                "Old values observed by MapInterceptor.interceptPut (%s) & EntryUpdatedListener.entryUpdated (%s) differ",
+                interceptorOldValue.get(), entryListenerOldValue.get());
     }
 }
