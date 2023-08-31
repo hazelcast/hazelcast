@@ -41,7 +41,7 @@ import static java.lang.Math.max;
  * tasks that are waiting to be processed and deal with I/O. So both submitting and receiving I/O
  * requests.
  * <p/>
- * The Eventloop should only be touched by the Reactor-thread.
+ * The Eventloop should only be touched by the Eventloop-thread.
  * <p/>
  * External code should not rely on a particular Eventloop-type. This way the same code
  * can be run on top of difference eventloops. So casting to a specific Eventloop type
