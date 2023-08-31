@@ -84,15 +84,15 @@ public final class TypeUtils {
 
         @Override
         protected ClassDefinition getSchema(PortableId portableId) {
-            ClassDefinition classDef = context.lookupClassDefinition(portableId);
-            if (classDef == null) {
-                throw QueryException.error("The given factoryId/classId/version combination not known to the member");
-            }
-            return classDef;
+            return context.lookupClassDefinition(portableId);
         }
 
         @Override
         protected List<TypeField> resolveFields(ClassDefinition classDef) {
+            if (classDef == null) {
+                throw QueryException.error("Either a column list must be provided or the class "
+                        + "definition must be registered to create Portable-based types");
+            }
             return classDef.getFieldNames().stream().map(name -> {
                 FieldDefinition field = classDef.getField(name);
                 if (field.getType().equals(FieldType.PORTABLE)) {
@@ -104,12 +104,16 @@ public final class TypeUtils {
 
         @Override
         protected PortableId getFieldSchemaId(ClassDefinition classDef, String fieldName, String fieldTypeName) {
+            if (classDef == null) {
+                throw QueryException.error("Either a portable ID must be provided or the "
+                        + "class definition must be registered to create nested fields");
+            }
             return classDef.getField(fieldName).getPortableId();
         }
 
         @Override
         protected PortableId getSchemaId(Map<String, String> options, Boolean isKey) {
-            return isKey != null ? portableId(options, isKey) : null;
+            return portableId(options, isKey);
         }
     }
 

@@ -16,36 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.hazelcast.jet.impl.util.ReflectionUtils;
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import static com.hazelcast.jet.impl.util.ReflectionUtils.loadClass;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
-import static java.util.stream.Collectors.toMap;
 
 @NotThreadSafe
-class PojoUpsertTarget implements UpsertTarget {
+class PojoUpsertTarget extends AbstractPojoUpsertTarget {
+    private final Class<?> typeClass;
 
-    private final Class<?> clazz;
-    private final Map<String, Class<?>> typesByPaths;
+    private Object object;
 
-    private Object pojo;
-
-    PojoUpsertTarget(String className, Map<String, String> typeNamesByPaths) {
-        this.clazz = loadClass(className);
-        this.typesByPaths = typeNamesByPaths.entrySet().stream()
-                                            .collect(toMap(Entry::getKey, entry -> loadClass(entry.getValue())));
+    PojoUpsertTarget(String className) {
+        typeClass = loadClass(className);
     }
 
     @Override
@@ -53,78 +39,19 @@ class PojoUpsertTarget implements UpsertTarget {
         if (path == null) {
             return FAILING_TOP_LEVEL_INJECTOR;
         }
-
-        Method method = ReflectionUtils.findPropertySetter(clazz, path, typesByPaths.get(path));
-        if (method != null) {
-            return createMethodInjector(method, type);
-        } else {
-            Field field = ReflectionUtils.findPropertyField(clazz, path);
-            if (field != null) {
-                return createFieldInjector(field, type);
-            } else {
-                return createFailingInjector(path);
-            }
-        }
-    }
-
-    private UpsertInjector createMethodInjector(@Nonnull Method method, QueryDataType targetType) {
-        return value -> {
-            if (value == null && method.getParameterTypes()[0].isPrimitive()) {
-                throw QueryException.error("Cannot pass NULL to a method with a primitive argument: " + method);
-            }
-            try {
-                if (value instanceof RowValue) {
-                    method.invoke(pojo, UpsertTargetUtils.convertRowToJavaType(value, targetType));
-                } else {
-                    method.invoke(pojo, value);
-                }
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw QueryException.error("Invocation of '" + method + "' failed: " + e, e);
-            }
-        };
-    }
-
-    private UpsertInjector createFieldInjector(@Nonnull Field field, QueryDataType targetType) {
-        return value -> {
-            if (value == null && field.getType().isPrimitive()) {
-                throw QueryException.error("Cannot set NULL to a primitive field: " + field);
-            }
-            try {
-                if (value instanceof RowValue) {
-                    field.set(pojo, UpsertTargetUtils.convertRowToJavaType(value, targetType));
-                } else {
-                    field.set(pojo, value);
-                }
-            } catch (IllegalAccessException e) {
-                throw QueryException.error("Failed to set field " + field + ": " + e, e);
-            }
-        };
-    }
-
-    @Nonnull
-    private UpsertInjector createFailingInjector(String path) {
-        return value -> {
-            if (value != null) {
-                throw QueryException.error("Cannot set property \"" + path + "\" to class " + clazz.getName()
-                        + ": no set-method or public field available");
-            }
-        };
+        Injector<Object> injector = createInjector(typeClass, path, type);
+        return value -> injector.set(object, value);
     }
 
     @Override
     public void init() {
-        try {
-            pojo = clazz.newInstance();
-        } catch (Exception e) {
-            throw QueryException.error("Unable to instantiate class \"" + clazz.getName() + "\" : "
-                    + e.getMessage(), e);
-        }
+        object = createObject(typeClass);
     }
 
     @Override
     public Object conclude() {
-        Object pojo = this.pojo;
-        this.pojo = null;
-        return pojo;
+        Object object = this.object;
+        this.object = null;
+        return object;
     }
 }

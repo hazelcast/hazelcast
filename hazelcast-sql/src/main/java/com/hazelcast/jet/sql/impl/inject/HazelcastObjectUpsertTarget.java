@@ -23,20 +23,20 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import static com.hazelcast.jet.sql.impl.inject.UpsertTargetUtils.convertRowToJavaType;
+import java.util.function.UnaryOperator;
 
 @NotThreadSafe
-class HazelcastObjectUpsertTarget implements UpsertTarget {
+class HazelcastObjectUpsertTarget extends AbstractPojoUpsertTarget {
     private Object object;
 
     @Override
-    public UpsertInjector createInjector(@Nullable final String path, final QueryDataType queryDataType) {
-        final TypeKind typeKind = TypeKind.of(queryDataType.getObjectTypeKind());
-        switch (typeKind) {
-            case JAVA:
-                return value -> this.object = convertRowToJavaType(value, queryDataType);
-            default:
-                throw QueryException.error("TypeKind " + typeKind + " does not support top-level custom types");
+    public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
+        TypeKind typeKind = TypeKind.of(type.getObjectTypeKind());
+        if (typeKind == TypeKind.JAVA) {
+            UnaryOperator<Object> converter = customTypeConverter(type);
+            return value -> object = converter.apply(value);
+        } else {
+            throw QueryException.error("TypeKind " + typeKind + " does not support top-level custom types");
         }
     }
 

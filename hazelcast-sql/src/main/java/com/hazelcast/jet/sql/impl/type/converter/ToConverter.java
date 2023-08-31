@@ -25,23 +25,25 @@ import com.hazelcast.sql.impl.type.converter.Converter;
  * the class returned by {@link Converter#getValueClass()}.
  */
 public abstract class ToConverter {
-
+    // Normalized value class is not necessarily assignable from value class.
+    // For example, normalized value class of BigInteger is BigDecimal, which
+    // is not a superclass of it.
+    private final Class<?> valueClass;
     private final Class<?> normalizedValueClass;
 
     protected ToConverter(QueryDataType type) {
-        this.normalizedValueClass = type.getConverter().getNormalizedValueClass();
+        valueClass = type.getConverter().getValueClass();
+        normalizedValueClass = type.getConverter().getNormalizedValueClass();
     }
 
     public Object convert(Object value) {
-        if (value == null) {
-            return null;
+        if (value == null || valueClass.isInstance(value)) {
+            return value;
         }
 
-        Class<?> valueClass = value.getClass();
-
-        if (!normalizedValueClass.isAssignableFrom(valueClass)) {
+        if (!normalizedValueClass.isInstance(value)) {
             throw QueryException.dataException("Type mismatch [expectedClass=" + normalizedValueClass.getName()
-                    + ", actualClass=" + valueClass.getName() + ']');
+                    + ", actualClass=" + value.getClass().getName() + "]");
         }
 
         return from(value);

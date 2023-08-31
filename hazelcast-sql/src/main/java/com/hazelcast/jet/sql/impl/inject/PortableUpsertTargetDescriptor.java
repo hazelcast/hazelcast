@@ -26,12 +26,10 @@ import java.io.IOException;
 import java.util.Objects;
 
 public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
-
     private ClassDefinition classDefinition;
 
     @SuppressWarnings("unused")
-    private PortableUpsertTargetDescriptor() {
-    }
+    private PortableUpsertTargetDescriptor() { }
 
     public PortableUpsertTargetDescriptor(@Nonnull ClassDefinition classDefinition) {
         this.classDefinition = classDefinition;
@@ -39,7 +37,7 @@ public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new PortableUpsertTarget(classDefinition);
+        return new PortableUpsertTarget(classDefinition, serializationService);
     }
 
     @Override
@@ -49,7 +47,7 @@ public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.classDefinition = in.readObject();
+        classDefinition = in.readObject();
     }
 
     @Override

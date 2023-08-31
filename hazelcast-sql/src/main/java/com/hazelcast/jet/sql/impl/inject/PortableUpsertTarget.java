@@ -16,16 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.math.BigDecimal;
@@ -33,26 +33,19 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
 
 @NotThreadSafe
-class PortableUpsertTarget implements UpsertTarget {
-
-    private static final Object NOT_SET = new Object();
-
+class PortableUpsertTarget extends UpsertTarget {
+    private final PortableContext context;
     private final ClassDefinition classDefinition;
 
-    private final Object[] values;
-    private final Map<Integer, QueryDataType> dataTypeMap;
+    private PortableGenericRecordBuilder record;
 
-    PortableUpsertTarget(@Nonnull ClassDefinition classDef) {
-        this.classDefinition = classDef;
-        this.values = new Object[classDef.getFieldCount()];
-        this.dataTypeMap = new HashMap<>();
+    PortableUpsertTarget(ClassDefinition classDefinition, InternalSerializationService serializationService) {
+        context = serializationService != null ? serializationService.getPortableContext() : null;
+        this.classDefinition = classDefinition;
     }
 
     @Override
@@ -60,165 +53,121 @@ class PortableUpsertTarget implements UpsertTarget {
         if (path == null) {
             return FAILING_TOP_LEVEL_INJECTOR;
         }
-
-        int fieldIndex = classDefinition.hasField(path) ? classDefinition.getField(path).getIndex() : -1;
-
-        if (type.isCustomType() && type.getObjectTypeKind() == QueryDataType.OBJECT_TYPE_KIND_PORTABLE) {
-            dataTypeMap.put(fieldIndex, type);
+        if (!classDefinition.hasField(path)) {
+            return value -> {
+                if (value != null) {
+                    throw QueryException.error("Field \"" + path + "\" doesn't exist in Portable Class Definition");
+                }
+            };
         }
-
+        Injector<GenericRecordBuilder> injector = createInjector(classDefinition, path, type);
         return value -> {
-            if (fieldIndex == -1 && value != null) {
-                throw QueryException.error("Field \"" + path + "\" doesn't exist in Portable Class Definition");
-            }
-
-            if (fieldIndex > -1) {
-                values[fieldIndex] = value;
+            try {
+                injector.set(record, value);
+            } catch (Exception e) {
+                throw QueryException.error("Cannot set value " +
+                        (value == null ? "null" : "of type " + value.getClass().getName())
+                        + " to field \"" + path + "\" of type " + type + ": " + e.getMessage(), e);
             }
         };
     }
 
+    @SuppressWarnings("ReturnCount")
+    private Injector<GenericRecordBuilder> createInjector(ClassDefinition classDef, String path, QueryDataType type) {
+        FieldDefinition classField = classDef.getField(path);
+        switch (classField.getType()) {
+            case BOOLEAN:
+                return (record, value) -> record.setBoolean(path, (boolean) ensureNotNull(value));
+            case CHAR:
+                return (record, value) -> record.setChar(path, (char) ensureNotNull(value));
+            case BYTE:
+                return (record, value) -> record.setInt8(path, (byte) ensureNotNull(value));
+            case SHORT:
+                return (record, value) -> record.setInt16(path, (short) ensureNotNull(value));
+            case INT:
+                return (record, value) -> record.setInt32(path, (int) ensureNotNull(value));
+            case LONG:
+                return (record, value) -> record.setInt64(path, (long) ensureNotNull(value));
+            case FLOAT:
+                return (record, value) -> record.setFloat32(path, (float) ensureNotNull(value));
+            case DOUBLE:
+                return (record, value) -> record.setFloat64(path, (double) ensureNotNull(value));
+            case DECIMAL:
+                return (record, value) -> record.setDecimal(path, (BigDecimal) value);
+            case UTF:
+                return (record, value) -> record.setString(path, (String) QueryDataType.VARCHAR.convert(value));
+            case TIME:
+                return (record, value) -> record.setTime(path, (LocalTime) value);
+            case DATE:
+                return (record, value) -> record.setDate(path, (LocalDate) value);
+            case TIMESTAMP:
+                return (record, value) -> record.setTimestamp(path, (LocalDateTime) value);
+            case TIMESTAMP_WITH_TIMEZONE:
+                return (record, value) -> record.setTimestampWithTimezone(path, (OffsetDateTime) value);
+            case PORTABLE:
+                ClassDefinition fieldDef = context.lookupClassDefinition(classField.getPortableId());
+                Injector<GenericRecordBuilder> injector = createRecordInjector(type,
+                        (fieldName, fieldType) -> createInjector(fieldDef, fieldName, fieldType));
+                return (record, value) -> {
+                    if (value == null) {
+                        record.setGenericRecord(path, null);
+                        return;
+                    }
+                    GenericRecordBuilder nestedRecord = PortableGenericRecordBuilder.withDefaults(fieldDef);
+                    injector.set(nestedRecord, value);
+                    record.setGenericRecord(path, nestedRecord.build());
+                };
+            case BOOLEAN_ARRAY:
+                return (record, value) -> record.setArrayOfBoolean(path, (boolean[]) value);
+            case BYTE_ARRAY:
+                return (record, value) -> record.setArrayOfInt8(path, (byte[]) value);
+            case SHORT_ARRAY:
+                return (record, value) -> record.setArrayOfInt16(path, (short[]) value);
+            case CHAR_ARRAY:
+                return (record, value) -> record.setArrayOfChar(path, (char[]) value);
+            case INT_ARRAY:
+                return (record, value) -> record.setArrayOfInt32(path, (int[]) value);
+            case LONG_ARRAY:
+                return (record, value) -> record.setArrayOfInt64(path, (long[]) value);
+            case FLOAT_ARRAY:
+                return (record, value) -> record.setArrayOfFloat32(path, (float[]) value);
+            case DOUBLE_ARRAY:
+                return (record, value) -> record.setArrayOfFloat64(path, (double[]) value);
+            case DECIMAL_ARRAY:
+                return (record, value) -> record.setArrayOfDecimal(path, (BigDecimal[]) value);
+            case UTF_ARRAY:
+                return (record, value) -> record.setArrayOfString(path, (String[]) value);
+            case TIME_ARRAY:
+                return (record, value) -> record.setArrayOfTime(path, (LocalTime[]) value);
+            case DATE_ARRAY:
+                return (record, value) -> record.setArrayOfDate(path, (LocalDate[]) value);
+            case TIMESTAMP_ARRAY:
+                return (record, value) -> record.setArrayOfTimestamp(path, (LocalDateTime[]) value);
+            case TIMESTAMP_WITH_TIMEZONE_ARRAY:
+                return (record, value) -> record.setArrayOfTimestampWithTimezone(path, (OffsetDateTime[]) value);
+            case PORTABLE_ARRAY:
+                return (record, value) -> record.setArrayOfGenericRecord(path, (GenericRecord[]) value);
+            default:
+                throw QueryException.error("Unsupported type: " + type);
+        }
+    }
+
+    private static Object ensureNotNull(Object value) {
+        if (value == null) {
+            throw QueryException.error("Cannot set NULL to a primitive field");
+        }
+        return value;
+    }
+
     @Override
     public void init() {
-        Arrays.fill(values, NOT_SET);
+        record = PortableGenericRecordBuilder.withDefaults(classDefinition);
     }
 
     @Override
     public Object conclude() {
-        GenericRecord record = toRecord(classDefinition, values);
-        Arrays.fill(values, NOT_SET);
+        GenericRecord record = this.record.build();
+        this.record = null;
         return record;
-    }
-
-    private GenericRecord toRecord(ClassDefinition classDefinition, Object[] values) {
-        PortableGenericRecordBuilder portable = new PortableGenericRecordBuilder(classDefinition);
-        for (int i = 0; i < classDefinition.getFieldCount(); i++) {
-            FieldDefinition fieldDefinition = classDefinition.getField(i);
-            String name = fieldDefinition.getName();
-            FieldType type = fieldDefinition.getType();
-
-            Object value = values[i];
-            try {
-                switch (type) {
-                    case BOOLEAN:
-                        ensureNotNull(value);
-                        portable.setBoolean(name, value != NOT_SET && (boolean) value);
-                        break;
-                    case BYTE:
-                        ensureNotNull(value);
-                        portable.setInt8(name, value == NOT_SET ? (byte) 0 : (byte) value);
-                        break;
-                    case SHORT:
-                        ensureNotNull(value);
-                        portable.setInt16(name, value == NOT_SET ? (short) 0 : (short) value);
-                        break;
-                    case CHAR:
-                        ensureNotNull(value);
-                        portable.setChar(name, value == NOT_SET ? (char) 0 : (char) value);
-                        break;
-                    case INT:
-                        ensureNotNull(value);
-                        portable.setInt32(name, value == NOT_SET ? 0 : (int) value);
-                        break;
-                    case LONG:
-                        ensureNotNull(value);
-                        portable.setInt64(name, value == NOT_SET ? 0L : (long) value);
-                        break;
-                    case FLOAT:
-                        ensureNotNull(value);
-                        portable.setFloat32(name, value == NOT_SET ? 0F : (float) value);
-                        break;
-                    case DOUBLE:
-                        ensureNotNull(value);
-                        portable.setFloat64(name, value == NOT_SET ? 0D : (double) value);
-                        break;
-                    case DECIMAL:
-                        portable.setDecimal(name, value == NOT_SET ? null : (BigDecimal) value);
-                        break;
-                    case UTF:
-                        portable.setString(name, value == NOT_SET ? null : (String) QueryDataType.VARCHAR.convert(value));
-                        break;
-                    case TIME:
-                        portable.setTime(name, value == NOT_SET ? null : (LocalTime) value);
-                        break;
-                    case DATE:
-                        portable.setDate(name, value == NOT_SET ? null : (LocalDate) value);
-                        break;
-                    case TIMESTAMP:
-                        portable.setTimestamp(name, value == NOT_SET ? null : (LocalDateTime) value);
-                        break;
-                    case TIMESTAMP_WITH_TIMEZONE:
-                        portable.setTimestampWithTimezone(name, value == NOT_SET ? null : (OffsetDateTime) value);
-                        break;
-                    case PORTABLE:
-                        if (value instanceof RowValue) {
-                            portable.setGenericRecord(name, UpsertTargetUtils.convertRowToPortableType(
-                                    (RowValue) value, this.dataTypeMap.get(i))
-                            );
-                        } else {
-                            portable.setGenericRecord(name, value == NOT_SET ? null : (GenericRecord) value);
-                        }
-                        break;
-                    case BOOLEAN_ARRAY:
-                        portable.setArrayOfBoolean(name, value == NOT_SET ? null : (boolean[]) value);
-                        break;
-                    case BYTE_ARRAY:
-                        portable.setArrayOfInt8(name, value == NOT_SET ? null : (byte[]) value);
-                        break;
-                    case SHORT_ARRAY:
-                        portable.setArrayOfInt16(name, value == NOT_SET ? null : (short[]) value);
-                        break;
-                    case CHAR_ARRAY:
-                        portable.setArrayOfChar(name, value == NOT_SET ? null : (char[]) value);
-                        break;
-                    case INT_ARRAY:
-                        portable.setArrayOfInt32(name, value == NOT_SET ? null : (int[]) value);
-                        break;
-                    case LONG_ARRAY:
-                        portable.setArrayOfInt64(name, value == NOT_SET ? null : (long[]) value);
-                        break;
-                    case FLOAT_ARRAY:
-                        portable.setArrayOfFloat32(name, value == NOT_SET ? null : (float[]) value);
-                        break;
-                    case DOUBLE_ARRAY:
-                        portable.setArrayOfFloat64(name, value == NOT_SET ? null : (double[]) value);
-                        break;
-                    case DECIMAL_ARRAY:
-                        portable.setArrayOfDecimal(name, value == NOT_SET ? null : (BigDecimal[]) value);
-                        break;
-                    case UTF_ARRAY:
-                        portable.setArrayOfString(name, value == NOT_SET ? null : (String[]) value);
-                        break;
-                    case TIME_ARRAY:
-                        portable.setArrayOfTime(name, value == NOT_SET ? null : (LocalTime[]) value);
-                        break;
-                    case DATE_ARRAY:
-                        portable.setArrayOfDate(name, value == NOT_SET ? null : (LocalDate[]) value);
-                        break;
-                    case TIMESTAMP_ARRAY:
-                        portable.setArrayOfTimestamp(name, value == NOT_SET ? null : (LocalDateTime[]) value);
-                        break;
-                    case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                        portable.setArrayOfTimestampWithTimezone(name, value == NOT_SET ? null : (OffsetDateTime[]) value);
-                        break;
-                    case PORTABLE_ARRAY:
-                        portable.setArrayOfGenericRecord(name, value == NOT_SET ? null : (GenericRecord[]) value);
-                        break;
-                    default:
-                        throw QueryException.error("Unsupported type: " + type);
-                }
-            } catch (Exception e) {
-                throw QueryException.error("Cannot set value " +
-                        (value == null ? "null" : "of type " + value.getClass().getName())
-                        + " to field \"" + name + "\" of type " + type + ": " + e.getMessage(), e);
-            }
-        }
-        return portable.build();
-    }
-
-    private static void ensureNotNull(Object value) {
-        if (value == null) {
-            throw QueryException.error("Cannot set NULL to a primitive field");
-        }
     }
 }

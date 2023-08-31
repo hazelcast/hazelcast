@@ -29,12 +29,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
 
 @NotThreadSafe
-class HazelcastJsonUpsertTarget implements UpsertTarget {
-
+class HazelcastJsonUpsertTarget extends UpsertTarget {
     private JsonObject json;
-
-    HazelcastJsonUpsertTarget() {
-    }
 
     @Override
     @SuppressWarnings("checkstyle:ReturnCount")

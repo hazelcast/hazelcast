@@ -302,10 +302,7 @@ public class KvMetadataJavaResolverTest {
         );
         assertThat(metadata.getQueryTargetDescriptor()).isEqualTo(GenericQueryTargetDescriptor.DEFAULT);
         assertThat(metadata.getUpsertTargetDescriptor())
-                .isEqualToComparingFieldByField(new PojoUpsertTargetDescriptor(
-                        Type.class.getName(),
-                        ImmutableMap.of("field", int.class.getName())
-                ));
+                .isEqualToComparingFieldByField(new PojoUpsertTargetDescriptor(Type.class.getName()));
     }
 
     private static MappingField field(String name, QueryDataType type, String externalName) {

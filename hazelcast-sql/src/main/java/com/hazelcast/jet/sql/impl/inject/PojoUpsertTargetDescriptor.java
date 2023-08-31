@@ -21,38 +21,31 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Objects;
 
 public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
-
     private String className;
-    private Map<String, String> typeNamesByPaths;
 
     @SuppressWarnings("unused")
-    private PojoUpsertTargetDescriptor() {
-    }
+    private PojoUpsertTargetDescriptor() { }
 
-    public PojoUpsertTargetDescriptor(String className, Map<String, String> typeNamesByPaths) {
+    public PojoUpsertTargetDescriptor(String className) {
         this.className = className;
-        this.typeNamesByPaths = typeNamesByPaths;
     }
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new PojoUpsertTarget(className, typeNamesByPaths);
+        return new PojoUpsertTarget(className);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(className);
-        out.writeObject(typeNamesByPaths);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         className = in.readString();
-        typeNamesByPaths = in.readObject();
     }
 
     @Override
@@ -64,11 +57,11 @@ public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
             return false;
         }
         PojoUpsertTargetDescriptor that = (PojoUpsertTargetDescriptor) o;
-        return Objects.equals(className, that.className) && Objects.equals(typeNamesByPaths, that.typeNamesByPaths);
+        return Objects.equals(className, that.className);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(className, typeNamesByPaths);
+        return Objects.hash(className);
     }
 }

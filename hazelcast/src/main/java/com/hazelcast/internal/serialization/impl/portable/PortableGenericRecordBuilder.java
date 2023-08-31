@@ -30,9 +30,21 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.stream.IntStream;
 
 public class PortableGenericRecordBuilder implements GenericRecordBuilder {
-
+    private static final Map<FieldType, Object> DEFAULT_VALUES = new EnumMap<>(Map.of(
+            FieldType.BOOLEAN, false,
+            FieldType.CHAR, '\0',
+            FieldType.BYTE, (byte) 0,
+            FieldType.SHORT, (short) 0,
+            FieldType.INT, 0,
+            FieldType.LONG, 0L,
+            FieldType.FLOAT, 0F,
+            FieldType.DOUBLE, 0D
+    ));
     private final ClassDefinition classDefinition;
     private final Object[] objects;
     private final boolean[] isSet;
@@ -356,7 +368,7 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
             if (!isClone) {
                 throw new HazelcastSerializationException("It is illegal to the overwrite the field");
             } else {
-                throw new HazelcastSerializationException("Field can only overwritten once with `newBuilderWithClone`");
+                throw new HazelcastSerializationException("Field can only be overwritten once with `newBuilderWithClone`");
             }
         }
         objects[index] = value;
@@ -380,4 +392,10 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
         return fd;
     }
 
+    public static PortableGenericRecordBuilder withDefaults(ClassDefinition schema) {
+        Object[] values = IntStream.range(0, schema.getFieldCount())
+                .mapToObj(i -> DEFAULT_VALUES.get(schema.getField(i).getType()))
+                .toArray();
+        return new PortableGenericRecordBuilder(schema, values);
+    }
 }

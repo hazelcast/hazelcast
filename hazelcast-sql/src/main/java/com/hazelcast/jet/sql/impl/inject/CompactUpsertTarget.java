@@ -18,14 +18,11 @@ package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.internal.serialization.impl.compact.DeserializedSchemaBoundGenericRecordBuilder;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
-import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.math.BigDecimal;
@@ -37,79 +34,88 @@ import java.time.OffsetDateTime;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
 
 @NotThreadSafe
-class CompactUpsertTarget implements UpsertTarget {
-
+class CompactUpsertTarget extends UpsertTarget {
     private final Schema schema;
 
-    private GenericRecordBuilder builder;
+    private GenericRecordBuilder record;
 
-    CompactUpsertTarget(@Nonnull Schema schema) {
+    CompactUpsertTarget(Schema schema) {
         this.schema = schema;
     }
 
     @Override
-    @SuppressWarnings("checkstyle:ReturnCount")
-    public UpsertInjector createInjector(@Nullable String path, QueryDataType queryDataType) {
+    public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
         if (path == null) {
             return FAILING_TOP_LEVEL_INJECTOR;
         }
-        boolean hasField = schema.hasField(path);
-        if (!hasField) {
+        if (!schema.hasField(path)) {
             return value -> {
                 throw QueryException.error("Field \"" + path + "\" doesn't exist in Compact Schema");
             };
         }
+        Injector<GenericRecordBuilder> injector = createInjector0(path, type);
+        return value -> injector.set(record, value);
+    }
 
-        FieldKind kind = schema.getField(path).getKind();
-        switch (kind) {
-            case STRING:
-                return value -> builder.setString(path, (String) value);
-            case NULLABLE_BOOLEAN:
-                return value -> builder.setNullableBoolean(path, (Boolean) value);
-            case NULLABLE_INT8:
-                return value -> builder.setNullableInt8(path, (Byte) value);
-            case NULLABLE_INT16:
-                return value -> builder.setNullableInt16(path, (Short) value);
-            case NULLABLE_INT32:
-                return value -> builder.setNullableInt32(path, (Integer) value);
-            case NULLABLE_INT64:
-                return value -> builder.setNullableInt64(path, (Long) value);
+    @SuppressWarnings("ReturnCount")
+    private Injector<GenericRecordBuilder> createInjector0(String path, QueryDataType type) {
+        switch (type.getTypeFamily()) {
+            case VARCHAR:
+                return (record, value) -> record.setString(path, (String) value);
+            case BOOLEAN:
+                return (record, value) -> record.setNullableBoolean(path, (Boolean) value);
+            case TINYINT:
+                return (record, value) -> record.setNullableInt8(path, (Byte) value);
+            case SMALLINT:
+                return (record, value) -> record.setNullableInt16(path, (Short) value);
+            case INTEGER:
+                return (record, value) -> record.setNullableInt32(path, (Integer) value);
+            case BIGINT:
+                return (record, value) -> record.setNullableInt64(path, (Long) value);
             case DECIMAL:
-                return value -> builder.setDecimal(path, (BigDecimal) value);
-            case NULLABLE_FLOAT32:
-                return value -> builder.setNullableFloat32(path, (Float) value);
-            case NULLABLE_FLOAT64:
-                return value -> builder.setNullableFloat64(path, (Double) value);
+                return (record, value) -> record.setDecimal(path, (BigDecimal) value);
+            case REAL:
+                return (record, value) -> record.setNullableFloat32(path, (Float) value);
+            case DOUBLE:
+                return (record, value) -> record.setNullableFloat64(path, (Double) value);
             case TIME:
-                return value -> builder.setTime(path, (LocalTime) value);
+                return (record, value) -> record.setTime(path, (LocalTime) value);
             case DATE:
-                return value -> builder.setDate(path, (LocalDate) value);
+                return (record, value) -> record.setDate(path, (LocalDate) value);
             case TIMESTAMP:
-                return value -> builder.setTimestamp(path, (LocalDateTime) value);
-            case TIMESTAMP_WITH_TIMEZONE:
-                return value -> builder.setTimestampWithTimezone(path, (OffsetDateTime) value);
-            case COMPACT:
-                return createRowValueInjector(path, queryDataType);
+                return (record, value) -> record.setTimestamp(path, (LocalDateTime) value);
+            case TIMESTAMP_WITH_TIME_ZONE:
+                return (record, value) -> record.setTimestampWithTimezone(path, (OffsetDateTime) value);
+            case OBJECT:
+                Injector<GenericRecordBuilder> injector = createRecordInjector(type, this::createInjector0);
+                return (record, value) -> {
+                    if (value == null) {
+                        record.setGenericRecord(path, null);
+                        return;
+                    }
+                    GenericRecordBuilder nestedRecord = GenericRecordBuilder.compact(type.getObjectTypeMetadata());
+                    injector.set(nestedRecord, value);
+                    record.setGenericRecord(path, nestedRecord.build());
+                };
+            case INTERVAL_YEAR_MONTH:
+            case INTERVAL_DAY_SECOND:
+            case MAP:
+            case JSON:
+            case ROW:
             default:
-                throw QueryException.error(kind + " kind is not supported in SQL with Compact format!");
+                throw QueryException.error("Unsupported upsert type: " + type);
         }
     }
 
     @Override
     public void init() {
-        this.builder = new DeserializedSchemaBoundGenericRecordBuilder(schema);
+        record = new DeserializedSchemaBoundGenericRecordBuilder(schema);
     }
 
     @Override
     public Object conclude() {
-        GenericRecord record = builder.build();
-        builder = null;
+        GenericRecord record = this.record.build();
+        this.record = null;
         return record;
-    }
-
-    private UpsertInjector createRowValueInjector(String path, QueryDataType targetDataType) {
-        return value -> {
-            builder.setGenericRecord(path, UpsertTargetUtils.convertRowToCompactType((RowValue) value, targetDataType));
-        };
     }
 }

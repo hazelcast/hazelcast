@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -37,14 +36,7 @@ public class PojoUpsertTargetTest {
 
     @Test
     public void test_set() {
-        UpsertTarget target = new PojoUpsertTarget(
-                Pojo.class.getName(),
-                ImmutableMap.of(
-                        "intField", int.class.getName(),
-                        "longField", long.class.getName(),
-                        "stringField", String.class.getName()
-                )
-        );
+        UpsertTarget target = new PojoUpsertTarget(Pojo.class.getName());
         UpsertInjector intFieldInjector = target.createInjector("intField", QueryDataType.INT);
         UpsertInjector longFieldInjector = target.createInjector("longField", QueryDataType.BIGINT);
         UpsertInjector stringFieldInjector = target.createInjector("stringField", QueryDataType.VARCHAR);
@@ -60,10 +52,7 @@ public class PojoUpsertTargetTest {
 
     @Test
     public void when_injectNullValueWithPrimitiveField_then_throws() {
-        UpsertTarget target = new PojoUpsertTarget(
-                Pojo.class.getName(),
-                ImmutableMap.of("intField", int.class.getName())
-        );
+        UpsertTarget target = new PojoUpsertTarget(Pojo.class.getName());
         UpsertInjector injector = target.createInjector("intField", QueryDataType.INT);
 
         target.init();
@@ -74,10 +63,7 @@ public class PojoUpsertTargetTest {
 
     @Test
     public void when_injectNullValueWithPrimitiveSetter_then_throws() {
-        UpsertTarget target = new PojoUpsertTarget(
-                Pojo.class.getName(),
-                ImmutableMap.of("longField", long.class.getName())
-        );
+        UpsertTarget target = new PojoUpsertTarget(Pojo.class.getName());
         UpsertInjector injector = target.createInjector("longField", QueryDataType.BIGINT);
 
         target.init();
@@ -88,10 +74,7 @@ public class PojoUpsertTargetTest {
 
     @Test
     public void when_injectNonExistingPropertyValue_then_throws() {
-        UpsertTarget target = new PojoUpsertTarget(
-                Object.class.getName(),
-                ImmutableMap.of("field", int.class.getName())
-        );
+        UpsertTarget target = new PojoUpsertTarget(Object.class.getName());
         UpsertInjector injector = target.createInjector("field", QueryDataType.INT);
 
         target.init();
@@ -103,10 +86,7 @@ public class PojoUpsertTargetTest {
 
     @Test
     public void when_injectNonExistingPropertyNullValue_then_succeeds() {
-        UpsertTarget target = new PojoUpsertTarget(
-                Object.class.getName(),
-                ImmutableMap.of("field", int.class.getName())
-        );
+        UpsertTarget target = new PojoUpsertTarget(Object.class.getName());
         UpsertInjector injector = target.createInjector("field", QueryDataType.INT);
 
         target.init();

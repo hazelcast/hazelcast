@@ -22,12 +22,8 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
 @NotThreadSafe
-class PrimitiveUpsertTarget implements UpsertTarget {
-
+class PrimitiveUpsertTarget extends UpsertTarget {
     private Object object;
-
-    PrimitiveUpsertTarget() {
-    }
 
     @Override
     public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {

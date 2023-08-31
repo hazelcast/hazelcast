@@ -16,15 +16,37 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nullable;
+import java.util.List;
+import java.util.function.BiFunction;
 
-public interface UpsertTarget {
+import static java.util.stream.Collectors.toList;
 
-    UpsertInjector createInjector(@Nullable String path, QueryDataType type);
+public abstract class UpsertTarget {
 
-    void init();
+    protected <T> Injector<T> createRecordInjector(QueryDataType type,
+                                                   BiFunction<String, QueryDataType, Injector<T>> createFieldInjector) {
+        List<Injector<T>> injectors = type.getObjectFields().stream()
+                .map(field -> createFieldInjector.apply(field.getName(), field.getDataType()))
+                .collect(toList());
+        return (record, value) -> {
+            for (int i = 0; i < injectors.size(); i++) {
+                injectors.get(i).set(record, ((RowValue) value).getValues().get(i));
+            }
+        };
+    }
 
-    Object conclude();
+    public abstract UpsertInjector createInjector(@Nullable String path, QueryDataType type);
+
+    public abstract void init();
+
+    public abstract Object conclude();
+
+    @FunctionalInterface
+    protected interface Injector<T> {
+        void set(T record, Object value);
+    }
 }

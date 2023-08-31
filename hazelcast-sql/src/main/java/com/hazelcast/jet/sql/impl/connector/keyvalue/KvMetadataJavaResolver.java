@@ -33,7 +33,6 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -255,26 +254,20 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             Map<QueryPath, MappingField> fieldsByPath,
             Class<?> typeClass
     ) {
-        Map<String, Class<?>> typesByNames = FieldsUtil.resolveClass(typeClass);
-
         List<TableField> fields = new ArrayList<>();
-        Map<String, String> typeNamesByPaths = new HashMap<>();
         for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
             QueryPath path = entry.getKey();
             QueryDataType type = entry.getValue().type();
             String name = entry.getValue().name();
 
             fields.add(new MapTableField(name, type, false, path));
-            if (path.getPath() != null && typesByNames.get(path.getPath()) != null) {
-                typeNamesByPaths.put(path.getPath(), typesByNames.get(path.getPath()).getName());
-            }
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
         return new KvMetadata(
                 fields,
                 GenericQueryTargetDescriptor.DEFAULT,
-                new PojoUpsertTargetDescriptor(typeClass.getName(), typeNamesByPaths)
+                new PojoUpsertTargetDescriptor(typeClass.getName())
         );
     }
 

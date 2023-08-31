@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -26,19 +25,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PojoUpsertTargetDescriptorTest {
-
     private static final InternalSerializationService SERIALIZATION_SERVICE =
             new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void test_create() {
-        PojoUpsertTargetDescriptor descriptor = new PojoUpsertTargetDescriptor(Object.class.getName(), emptyMap());
+        PojoUpsertTargetDescriptor descriptor = new PojoUpsertTargetDescriptor(Object.class.getName());
 
         // when
         UpsertTarget target = descriptor.create(SERIALIZATION_SERVICE);
@@ -49,10 +46,7 @@ public class PojoUpsertTargetDescriptorTest {
 
     @Test
     public void test_serialization() {
-        PojoUpsertTargetDescriptor original = new PojoUpsertTargetDescriptor(
-                "com.hazelcast.class",
-                ImmutableMap.of("field", int.class.getName())
-        );
+        PojoUpsertTargetDescriptor original = new PojoUpsertTargetDescriptor("com.hazelcast.class");
 
         // when
         PojoUpsertTargetDescriptor serialized =

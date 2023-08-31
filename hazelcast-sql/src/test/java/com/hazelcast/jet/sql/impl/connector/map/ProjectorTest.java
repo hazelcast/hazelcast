@@ -76,13 +76,8 @@ public class ProjectorTest {
         assertThat(serialized).isEqualToComparingFieldByField(original);
     }
 
-    private static final class MultiplyingTarget implements UpsertTarget {
-
-        private Object value;
-
-        private MultiplyingTarget() {
-            value = -1;
-        }
+    private static final class MultiplyingTarget extends UpsertTarget {
+        private Object value = -1;
 
         @Override
         public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {

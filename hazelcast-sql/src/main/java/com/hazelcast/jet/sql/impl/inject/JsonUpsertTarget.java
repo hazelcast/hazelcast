@@ -33,15 +33,11 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
 
 @NotThreadSafe
-class JsonUpsertTarget implements UpsertTarget {
-
+class JsonUpsertTarget extends UpsertTarget {
     private static final JsonFactory JSON_FACTORY = new ObjectMapper().getFactory();
 
     private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     private JsonGenerator generator;
-
-    JsonUpsertTarget() {
-    }
 
     @Override
     @SuppressWarnings("checkstyle:ReturnCount")
