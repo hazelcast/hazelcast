@@ -32,15 +32,17 @@ import java.io.IOException;
  * The following types of pointers are supported:
  * <ul>
  *     <li>unconstrained pointer: (null, null) - scans null and not-null values</li>
- *     <li>single side constrained ranges: (null, X) and (X, null)</li>
+ *     <li>single side constrained ranges: (null, X) and (X, null). Note that (null, X)
+ *     includes also NULL</li>
  *     <li>constrained range: (X, Y)</li>
  *     <li>point lookup pointer: (X, X)</li>
  *     <li>IS NULL pointer: [NULL, NULL] - scans only NULL values. Special case of point lookup pointer</li>
+ *     <li>NOT NULL pointer: (NULL, null)</li>
  * </ul>
  * Important conventions:
  * <ol>
  *     <li>either end can be NULL and NULL end can be inclusive or not.
- *     Inclusive NULL is equivalent to null (i.e. -Inf or +Inf - depending if this is from or to).
+ *     Inclusive NULL on the left side is equivalent to null (i.e. -Inf).
  *     [null, NULL] is equivalent to  [NULL, NULL]. [null, NULL) should produce empty result.</li>
  *     <li>null can be inclusive or not - both variants are treated in the same way</li>
  *     <li>NULL end does not make sense for composite index because composite index

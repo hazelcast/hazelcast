@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -134,10 +135,15 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     private MapFetchIndexOperationResult runInternalSorted(InternalIndex index) {
         List<QueryableEntry<?, ?>> entries = new ArrayList<>(sizeLimit);
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
+        final ILogger logger = logger();
 
         for (int i = 0; i < pointers.length; i++) {
             IndexIterationPointer pointer = pointers[i];
             Data lastEntryKeyData = pointer.getLastEntryKeyData();
+
+            if (logger.isFinestEnabled()) {
+                logger.finest("Processing pointer: " + pointer);
+            }
 
             Comparator<Data> comparator = pointer.isDescending()
                     ? OrderedIndexStore.DATA_COMPARATOR_REVERSED
@@ -180,27 +186,24 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
                 if (entries.size() >= sizeLimit) {
                     IndexIterationPointer[] newPointers;
-                    if (entryIterator.hasNext() || lastEntryKeyData != null) {
+                    boolean moreDataWithCurrentKey = lastEntryKeyData != null;
+                    if (moreDataWithCurrentKey || entryIterator.hasNext()) {
                         Comparable<?> currentIndexKey = indexKeyEntries.getIndexKey();
                         newPointers = new IndexIterationPointer[pointers.length - i];
-                        if (lastEntryKeyData != null) {
-                            newPointers[0] = IndexIterationPointer.create(
-                                    pointer.isDescending() ? pointer.getFrom() : currentIndexKey,
-                                    !pointer.isDescending() || pointer.isFromInclusive(),
-                                    pointer.isDescending() ? currentIndexKey : pointer.getTo(),
-                                    pointer.isDescending() || pointer.isToInclusive(),
-                                    pointer.isDescending(),
-                                    lastEntryKeyData
-                            );
-                        } else {
-                            newPointers[0] = IndexIterationPointer.create(
-                                    pointer.isDescending() ? pointer.getFrom() : currentIndexKey,
-                                    pointer.isDescending() && pointer.isFromInclusive(),
-                                    pointer.isDescending() ? currentIndexKey : pointer.getTo(),
-                                    !pointer.isDescending() && pointer.isToInclusive(),
-                                    pointer.isDescending(),
-                                    null
-                            );
+                        // if there is more data for current key, keep appropriate range end inclusive,
+                        // if we just finished iterating current key, appropriate range end will be exclusive,
+                        // so we get next value in order.
+                        newPointers[0] = IndexIterationPointer.create(
+                                pointer.isDescending() ? pointer.getFrom() : currentIndexKey,
+                                pointer.isDescending() ? pointer.isFromInclusive() : moreDataWithCurrentKey,
+                                pointer.isDescending() ? currentIndexKey : pointer.getTo(),
+                                pointer.isDescending() ? moreDataWithCurrentKey : pointer.isToInclusive(),
+                                pointer.isDescending(),
+                                lastEntryKeyData
+                        );
+
+                        if (logger.isFinestEnabled()) {
+                            logger.finest("Generated pointer: " + newPointers[0]);
                         }
 
                         System.arraycopy(pointers, i + 1, newPointers, 1, newPointers.length - 1);
@@ -246,17 +249,15 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                         pointer.isDescending()
                 );
             }
+        } else if (pointer.getTo() != null) {
+            entryIterator = index.getSqlRecordIteratorBatch(
+                    pointer.isToInclusive() ? Comparison.LESS_OR_EQUAL : Comparison.LESS,
+                    pointer.getTo(),
+                    pointer.isDescending()
+            );
         } else {
-            if (pointer.getTo() != null) {
-                entryIterator = index.getSqlRecordIteratorBatch(
-                        pointer.isToInclusive() ? Comparison.LESS_OR_EQUAL : Comparison.LESS,
-                        pointer.getTo(),
-                        pointer.isDescending()
-                );
-            } else {
-                // unconstrained scan
-                entryIterator = index.getSqlRecordIteratorBatch(pointer.isDescending());
-            }
+            // unconstrained scan
+            entryIterator = index.getSqlRecordIteratorBatch(pointer.isDescending());
         }
         return entryIterator;
     }

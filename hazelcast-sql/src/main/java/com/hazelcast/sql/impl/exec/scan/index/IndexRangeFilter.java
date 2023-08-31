@@ -27,8 +27,12 @@ import java.util.Objects;
 
 /**
  * Filter the is used for range requests. Could have either lower bound, upper bound or both.
- * Matches only NOT NULL values. If any of the bounds is {@link com.hazelcast.query.impl.AbstractIndex#NULL},
- * matches nothing.
+ * <p>
+ * For non-composite index: matches only NOT NULL values. If any of the bounds
+ * is {@link com.hazelcast.query.impl.AbstractIndex#NULL}, matches nothing.
+ * <p>
+ * For composite index obeys {@link com.hazelcast.query.impl.CompositeValue} comparison rules,
+ * including special values (NULL, infinity).
  */
 @SuppressWarnings("rawtypes")
 public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable {
@@ -57,6 +61,10 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
     }
 
     public IndexRangeFilter(IndexFilterValue from, boolean fromInclusive, IndexFilterValue to, boolean toInclusive) {
+        assert from != null || to != null;
+        assert from != null || !fromInclusive : "Unspecified from end must not be inclusive";
+        assert to != null || !toInclusive : "Unspecified to end must not be inclusive";
+
         this.from = from;
         this.fromInclusive = fromInclusive;
         this.to = to;

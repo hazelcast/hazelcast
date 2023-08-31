@@ -142,7 +142,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
-    public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
+    public Iterator<QueryableEntry> getSqlRecordIterator(@Nonnull Comparable value) {
         return new IteratorFromBatch(getSqlRecordIteratorBatch(value, false));
     }
 
@@ -228,14 +228,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             if (!fromInclusive || !toInclusive) {
                 return emptyIterator();
             }
-
-            Map<Data, QueryableEntry> res = recordMap.get(from);
-
-            if (res == null) {
-                return emptyIterator();
-            }
-
-            return Stream.of(new IndexKeyEntries(from, res.values().iterator())).iterator();
+            return getSqlRecordIteratorBatch(from, descending);
         } else if (order > 0) {
             return emptyIterator();
         }

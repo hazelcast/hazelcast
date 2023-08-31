@@ -20,6 +20,7 @@ import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.query.Predicate;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -147,7 +148,7 @@ public interface IndexStore {
      * @param value value
      * @return iterator over index entries that are equal to the given value
      */
-    Iterator<QueryableEntry> getSqlRecordIterator(Comparable value);
+    Iterator<QueryableEntry> getSqlRecordIterator(@Nonnull Comparable value);
 
     /**
      * @param comparison comparison type
@@ -173,13 +174,14 @@ public interface IndexStore {
                                                   Comparable to, boolean toInclusive, boolean descending);
 
     /**
+     * Get records for given value. Value can be {@link AbstractIndex#NULL}.
      * @param value         value
      * @param descending    whether the entries should come in the descending order.
      *                      {@code true} means a descending order,
      *                      {@code false} means an ascending order.
      * @return iterator over index entries that are equal to the given value
      */
-    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending);
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(@Nonnull Comparable value, boolean descending);
 
     /**
      * Scan all records, including NULL.
@@ -192,6 +194,10 @@ public interface IndexStore {
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending);
 
     /**
+     * Returns records matching comparison. There are no records {@code < NULL}.
+     * Trying to get records {@code <= NULL} is invalid. However, you can get records {@code > NULL}
+     * (all non-null records) or {@code >= NULL} (all records).
+     *
      * @param comparison comparison type
      * @param value value
      * @param descending whether the entries should come in the descending order.
@@ -199,9 +205,14 @@ public interface IndexStore {
      *                   {@code false} means an ascending order.
      * @return iterator over index entries that are matching the given comparisons type and value
      */
-    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending);
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(@Nonnull Comparison comparison,
+                                                        @Nonnull Comparable value,
+                                                        boolean descending);
 
     /**
+     * Returns records in given range. Both bounds must be given, however they may be NULL.
+     * This method assumes that NULL is less than any NOT NULL value.
+     *
      * @param from lower bound
      * @param fromInclusive lower bound inclusive flag
      * @param to upper bound
@@ -212,9 +223,9 @@ public interface IndexStore {
      * @return iterator over index entries matching the given range
      */
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
-            Comparable from,
+            @Nonnull Comparable from,
             boolean fromInclusive,
-            Comparable to,
+            @Nonnull Comparable to,
             boolean toInclusive,
             boolean descending
     );

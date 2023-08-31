@@ -49,6 +49,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
+
 public final class QueryUtil {
     private QueryUtil() {
     }
@@ -128,7 +130,18 @@ public final class QueryUtil {
     ) {
         if (indexFilter == null) {
             // Full index scan - should include nulls.
-            result.add(IndexIterationPointer.create(null, true, null, true, descending, null));
+            //
+            // Note that from=null is treated differently for composite and non-composite index.
+            // This is a bit hacky and might be simplified in the future. IndexIterationPointers are updated
+            // during scanning and `[null, null] DESC` pointer might become `[null, X] DESC`.
+            // However, the latter one is treated as range pointer (<=X) and would not include NULLs!
+            // This duality is caused among others by implicit conversion from null to NULL for
+            // non-composite indexes but there are also checks which choose getSqlRecordIteratorBatch method variant
+            // based on null end (before conversion) meaning different things.
+            // The above affects only `from` because NULLs are smaller than any other value and only DESC sort order
+            // for which `to` is updated during the scan.
+            result.add(IndexIterationPointer.create(!compositeIndex && descending ? NULL : null, true,
+                    null, true, descending, null));
         }
         if (indexFilter instanceof IndexRangeFilter) {
             IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
