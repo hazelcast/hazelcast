@@ -161,11 +161,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                            "schema.registry.url", kafkaTestSupport.getSchemaRegistryURI())
                 .optionsIf(!useSchemaRegistry,
                            OPTION_KEY_AVRO_SCHEMA, keySchema,
-                           OPTION_VALUE_AVRO_SCHEMA, valueSchema,
-                           "key.serializer", HazelcastKafkaAvroSerializer.class.getCanonicalName(),
-                           "key.deserializer", HazelcastKafkaAvroDeserializer.class.getCanonicalName(),
-                           "value.serializer", HazelcastKafkaAvroSerializer.class.getCanonicalName(),
-                           "value.deserializer", HazelcastKafkaAvroDeserializer.class.getCanonicalName());
+                           OPTION_VALUE_AVRO_SCHEMA, valueSchema);
     }
 
     @Test
@@ -646,15 +642,17 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
     @Test
     public void test_explicitKeyAndValueSerializers() {
-        assumeTrue(useSchemaRegistry);
         String name = createRandomTopic();
+        Class<?> serializerClass = useSchemaRegistry ? KafkaAvroSerializer.class : HazelcastKafkaAvroSerializer.class;
+        Class<?> deserializerClass = useSchemaRegistry ? KafkaAvroDeserializer.class : HazelcastKafkaAvroDeserializer.class;
+
         kafkaMapping(name, NAME_SCHEMA, NAME_SCHEMA)
                 .fields("key_name VARCHAR EXTERNAL NAME \"__key.name\"",
                         "value_name VARCHAR EXTERNAL NAME \"this.name\"")
-                .options("key.serializer", KafkaAvroSerializer.class.getCanonicalName(),
-                         "key.deserializer", KafkaAvroDeserializer.class.getCanonicalName(),
-                         "value.serializer", KafkaAvroSerializer.class.getCanonicalName(),
-                         "value.deserializer", KafkaAvroDeserializer.class.getCanonicalName())
+                .options("key.serializer", serializerClass.getCanonicalName(),
+                         "key.deserializer", deserializerClass.getCanonicalName(),
+                         "value.serializer", serializerClass.getCanonicalName(),
+                         "value.deserializer", deserializerClass.getCanonicalName())
                 .create();
 
         insertAndAssertRecord("Alice", "Bob");
