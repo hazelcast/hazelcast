@@ -164,7 +164,7 @@
         <kubernetes-server-mock.version>6.8.1</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
 
-        <maven.test.redirectTestOutputToFile>false</maven.test.redirectTestOutputToFile>
+        <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
         <!-- The path to relocated external dependencies. -->
         <relocation.root>com.hazelcast.shaded</relocation.root>

@@ -88,7 +88,6 @@ class Queries {
         DIALECT.quoteIdentifier(sb, idColumn);
         sb.append(" FROM ");
         DIALECT.quoteIdentifier(sb, mapping);
-        System.err.println(sb.toString());
         return sb.toString();
     }
 
