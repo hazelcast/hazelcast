@@ -164,7 +164,7 @@ public class LinuxSocketTest {
         socket.setBlocking(true);
         socket.close();
 
-        InetSocketAddress address = new InetSocketAddress("127.0.0.1", 5000);
+        InetSocketAddress address = new InetSocketAddress("127.0.0.1", 5001);
 
         assertThrows(IOException.class, () -> socket.bind(address));
     }
@@ -175,7 +175,7 @@ public class LinuxSocketTest {
         socket.setBlocking(true);
         socket.close();
 
-        InetSocketAddress address = new InetSocketAddress(InetAddress.getByName("::1"), 5000);
+        InetSocketAddress address = new InetSocketAddress(InetAddress.getByName("::1"), 5002);
 
         assertThrows(IOException.class, () -> socket.bind(address));
     }

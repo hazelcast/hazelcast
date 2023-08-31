@@ -128,7 +128,8 @@ public class SchedulingBenchmark {
         long durationMs = currentTimeMillis() - startMs;
         System.out.println("Duration " + durationMs + " ms");
         System.out.println("Context switches:" + csCount);
-        System.out.println("Throughput:" + (csCount * 1000f / durationMs) + " tasks/second");
+        float thp = csCount * 1000f / durationMs;
+        System.out.println("Throughput:" + humanReadableCountSI(thp) + "/second");
         System.out.println("Avg context switch latency:" + (MILLISECONDS.toNanos(durationMs) / (csCount / reactorCount)) + " ns");
     }
 

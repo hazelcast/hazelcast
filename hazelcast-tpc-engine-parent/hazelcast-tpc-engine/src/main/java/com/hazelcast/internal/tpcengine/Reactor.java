@@ -766,7 +766,7 @@ public abstract class Reactor implements Executor {
 
         public static final ThreadFactory DEFAULT_THREAD_FACTORY = r -> {
             Thread thread = new Thread(r);
-            thread.setName("ReactorThread-" + THREAD_ID_GENERATOR.getAndIncrement());
+            thread.setName("EventloopThread-" + THREAD_ID_GENERATOR.getAndIncrement());
             return thread;
         };
 

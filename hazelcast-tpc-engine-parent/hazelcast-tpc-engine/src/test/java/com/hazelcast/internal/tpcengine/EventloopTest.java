@@ -30,6 +30,7 @@ import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static junit.framework.TestCase.assertSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.fail;
 
 public abstract class EventloopTest {
 
@@ -53,29 +54,25 @@ public abstract class EventloopTest {
 
     @Test
     public void test_tooManyTaskQueues() {
-        CompletableFuture future = new CompletableFuture();
-        reactor.offer(() -> {
+        CompletableFuture future = reactor.submit(() -> {
+            // there is already 1 existing runQueue namely the default one.
             for (int k = 0; k < runQueueCapacity - 1; k++) {
                 TaskQueue.Builder taskQueueBuilder = reactor.eventloop.newTaskQueueBuilder();
                 taskQueueBuilder.inside = new CircularQueue<>(10);
                 taskQueueBuilder.build();
             }
 
+            TaskQueue.Builder taskQueueBuilder = reactor.eventloop.newTaskQueueBuilder();
+            taskQueueBuilder.inside = new CircularQueue<>(10);
             try {
-                TaskQueue.Builder taskQueueBuilder = reactor.eventloop.newTaskQueueBuilder();
-                taskQueueBuilder.inside = new CircularQueue<>(10);
                 taskQueueBuilder.build();
-                future.completeExceptionally(
-                        new IllegalStateException(
-                                "Should not be able to create more than " + runQueueCapacity + " task queues"));
+                fail("Should not be able to create more than " + runQueueCapacity + " task queues");
             } catch (IllegalStateException e) {
-                future.complete(null);
             }
         });
 
-        future.join();
+        assertSuccessEventually(future);
     }
-
 
     @Test
     public void test_checkOnEventloopThread_whenNotOnEventloopThread() {

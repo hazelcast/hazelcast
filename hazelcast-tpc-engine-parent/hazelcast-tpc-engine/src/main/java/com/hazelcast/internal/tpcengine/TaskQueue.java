@@ -451,6 +451,11 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             TASK_ERROR_COUNT.setOpaque(this, (long) TASK_ERROR_COUNT.getOpaque(this) + 1);
         }
 
+        /**
+         * Returns the number of task context switches.
+         *
+         * @return the number of task context switches.
+         */
         public long taskCsCount() {
             return (long) TASK_CS_COUNT.getOpaque(this);
         }
@@ -459,10 +464,25 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             TASK_CS_COUNT.setOpaque(this, (long) TASK_CS_COUNT.getOpaque(this) + 1);
         }
 
+        /**
+         * Returns the amount of time in nanoseconds this TaskQueue was on the
+         * CPU. The actual time this task was on the CPU can't be measured
+         * because it could be that the OS ran other processes while tasks from
+         * this TaskQueue were being processed. So probably we need to come up
+         * with a less missleading name for this metric.
+         *
+         * @return the amount of time this TaskQueue was on the CPU.
+         */
         public long cpuTimeNanos() {
             return (long) CPU_TIME_NANOS.getOpaque(this);
         }
 
+        /**
+         * Increases the amount of time this TaskQueue was on the CPU with the
+         * given delta.
+         *
+         * @param delta
+         */
         public void incCpuTimeNanos(long delta) {
             CPU_TIME_NANOS.setOpaque(this, (long) CPU_TIME_NANOS.getOpaque(this) + delta);
         }

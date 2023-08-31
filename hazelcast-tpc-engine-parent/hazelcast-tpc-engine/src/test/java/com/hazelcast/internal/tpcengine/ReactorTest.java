@@ -91,6 +91,10 @@ public abstract class ReactorTest {
 
         assertNotNull(reactor.context());
         assertEquals(getType(), reactor.type());
+
+        Thread eventloopThread = reactor.eventloopThread();
+        assertNotNull(eventloopThread);
+        assertTrue(eventloopThread.getName().startsWith("EventloopThread-"));
     }
 
     @Test
