@@ -72,16 +72,23 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
 
         final Object key = Void.TYPE;
 
-        map.set(key, new AtomicInteger(1));
+        final AtomicInteger initial = new AtomicInteger(1);
+        map.set(key, initial);
 
         map.executeOnKey(key, entry -> {
+            // Mutate the value in the map directly
             entry.getValue().set(Integer.MAX_VALUE);
+            // Then write the new value back
             entry.setValue(new AtomicInteger(2));
             return null;
         });
 
         assertEqualsStringFormat(
-                "Old values observed by MapInterceptor.interceptPut (%s) & EntryUpdatedListener.entryUpdated (%s) differ",
-                interceptorOldValue.get(), entryListenerOldValue.get());
+                "Initial value provided (%s) does not match old value observed by EntryUpdatedListener.entryUpdated (%s) differ",
+                initial, entryListenerOldValue.get());
+
+        assertEqualsStringFormat(
+                "nitial value provided (%s) does not match old value observed by MapInterceptor.interceptPut (%s)",
+                entryListenerOldValue.get(), initial);
     }
 }
