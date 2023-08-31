@@ -453,38 +453,22 @@
                 <version>${maven.enforcer.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>enforce-tools</id>
+                        <id>enforce-version</id>
                         <goals>
                             <goal>enforce</goal>
                         </goals>
                         <configuration>
                             <rules>
-                                <requireJavaVersion>
-                                    <!-- JDK 11+ is required for compilation. -->
-                                    <version>[11,)</version>
-                                </requireJavaVersion>
-                                <enforceBytecodeVersion>
-                                    <maxJdkVersion>11</maxJdkVersion>
-                                    <excludes>
-                                        <!--
-                                        The archunit library containse several classes to process JDK9 modules.
-                                        It is a test dependency and can be ignored.
-                                        -->
-                                        <exclude>com.tngtech.archunit:archunit</exclude>
-                                    </excludes>
-                                    <ignoreClasses>
-                                        <!--
-                                        Some dependencies contain JDK9 specific classes with JDK9 in the name
-                                        e.g. wiremock.org.eclipse.jetty.alpn.java.server.JDK9ServerALPNProcessor
-                                        -->
-                                        <ignoreClass>*JDK9*</ignoreClass>
-                                        <!--
-                                        Classes from org:mongodb:bson-record-codec to map record to bson.
-                                        Ignoring whole package, because we shade the module into hazelcast-jet-mongodb.
-                                        -->
-                                        <ignoreClass>org.bson.codecs.record.*</ignoreClass>
-                                    </ignoreClasses>
-                                </enforceBytecodeVersion>
+                                    <dependencyConvergence>
+                                        <excludedScopes>
+                                            <scope>compile</scope>
+                                            <scope>runtime</scope>
+                                        </excludedScopes>
+                                        <includes>
+                                            <include>junit</include>
+                                        </includes>
+                                    </dependencyConvergence>
+
                             </rules>
                         </configuration>
                     </execution>
@@ -2017,13 +2001,6 @@
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
                 <version>${junit-jupiter.version}</version>
-            </dependency>
-            <!-- Specify the JUnit 4 API version we want to use -->
-            <!-- This is necessary because other test libraries may bring in an older version-->
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
