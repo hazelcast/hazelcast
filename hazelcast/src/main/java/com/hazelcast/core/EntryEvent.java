@@ -104,7 +104,7 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
      * @return the old value of the entry event
      */
     public V getOldValue() {
-        return this.oldValue;
+        return oldValue;
     }
 
     /**
