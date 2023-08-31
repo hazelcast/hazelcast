@@ -161,6 +161,8 @@ public class SelectProcessorSupplier
                 return "REAL";
             } else if (precision == 38 && scale == 0) {
                 return "INT";
+            } else if (precision == 126 && scale == -127) {
+                return "DOUBLE PRECISION";
             }
         }
         return type;

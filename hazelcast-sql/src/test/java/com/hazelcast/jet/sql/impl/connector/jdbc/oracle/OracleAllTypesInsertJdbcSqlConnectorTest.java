@@ -35,20 +35,25 @@ public class OracleAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbc
         initialize(new OracleDatabaseProvider());
     }
 
-    /*
     @Before
     public void setUp() throws Exception {
-        assumeThat(type).describedAs("TINYINT not supported on Postgres")
+        assumeThat(type).describedAs("TINYINT not supported on Oracle")
                 .isNotEqualTo("TINYINT");
 
-        assumeThat(type).describedAs("TIMESTAMP WITH TIME ZONE not supported on Postgres")
-                .isNotEqualTo("TIMESTAMP WITH TIME ZONE");
+        assumeThat(type).describedAs("BOOLEAN not supported on Oracle")
+                .isNotEqualTo("BOOLEAN");
+
+        assumeThat(type).describedAs("BIGINT not supported on Oracle")
+                .isNotEqualTo("BIGINT");
+
+        assumeThat(type).describedAs("TIME not supported on Oracle")
+                .isNotEqualTo("TIME");
 
 
         if (type.equals("DOUBLE")) {
             type = "DOUBLE PRECISION";
         }
     }
-    */
+
 }
 
