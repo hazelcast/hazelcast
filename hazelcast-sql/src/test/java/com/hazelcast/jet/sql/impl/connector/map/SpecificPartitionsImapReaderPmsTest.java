@@ -144,7 +144,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SqlEndToEndTestSupport 
 
         SpecificPartitionsImapReaderPms pms = (SpecificPartitionsImapReaderPms) metaSupplier;
 
-        // Ensure that we scan all partitions (.
+        // Ensure that we scan all partitions.
         assertNull(pms.partitionsToScan);
     }
 
