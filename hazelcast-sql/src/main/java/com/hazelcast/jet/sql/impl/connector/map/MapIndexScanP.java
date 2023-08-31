@@ -122,8 +122,7 @@ public final class MapIndexScanP extends AbstractProcessor {
         reader = new LocalMapIndexReader(hazelcastInstance, evalContext.getSerializationService(), metadata);
 
         int[] memberPartitions = context.processorPartitions();
-        IndexIterationPointer[] pointers = indexFilterToPointers(metadata.getFilter(),
-                metadata.isDescending(), evalContext);
+        IndexIterationPointer[] pointers = indexFilterToPointers(metadata.getFilter(), metadata.isDescending(), evalContext);
         splits.add(new Split(
                 new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), memberPartitions),
                 hazelcastInstance.getCluster().getLocalMember().getAddress(),

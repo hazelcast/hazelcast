@@ -27,6 +27,8 @@ import java.util.Objects;
 
 /**
  * Filter the is used for range requests. Could have either lower bound, upper bound or both.
+ * Matches only NOT NULL values. If any of the bounds is {@link com.hazelcast.query.impl.AbstractIndex#NULL},
+ * matches nothing.
  */
 @SuppressWarnings("rawtypes")
 public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable {
@@ -63,19 +65,12 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
 
     @Override
     public Comparable getComparable(ExpressionEvalContext evalContext) {
-        return from != null ? from.getValue(evalContext) : to.getValue(evalContext);
+        throw new UnsupportedOperationException("Should not be called");
     }
 
     @Override
     public boolean isCooperative() {
-        boolean ret = true;
-        if (from != null) {
-            ret = from.isCooperative();
-        }
-        if (to != null) {
-            ret &= to.isCooperative();
-        }
-        return ret;
+        return (from == null || from.isCooperative()) && (to == null || to.isCooperative());
     }
 
     public IndexFilterValue getFrom() {
