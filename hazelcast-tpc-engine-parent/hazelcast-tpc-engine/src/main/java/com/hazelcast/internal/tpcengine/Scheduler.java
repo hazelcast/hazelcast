@@ -90,6 +90,9 @@ public abstract class Scheduler {
     public final void removeOutsideBlocked(TaskQueue taskQueue) {
         assert taskQueue.outside != null;
         assert taskQueue.runState == RUN_STATE_BLOCKED;
+        assert taskQueue.inOutsideBlocked;
+
+        taskQueue.inOutsideBlocked = false;
 
         TaskQueue next = taskQueue.next;
         TaskQueue prev = taskQueue.prev;
@@ -109,11 +112,28 @@ public abstract class Scheduler {
         }
     }
 
+    // todo: for testing purposes
+    public boolean containsOutsideBlocked(TaskQueue taskQueue) {
+        TaskQueue n = blockedOutsideFirst;
+        while (n != null) {
+            if (n == taskQueue) {
+                return true;
+            }
+            n = n.next;
+        }
+        return false;
+    }
+
     public final void addOutsideBlocked(TaskQueue taskQueue) {
+        if (taskQueue.inOutsideBlocked) {
+            return;
+        }
+
         assert taskQueue.outside != null;
         assert taskQueue.runState == RUN_STATE_BLOCKED;
         assert taskQueue.prev == null;
         assert taskQueue.next == null;
+        assert !taskQueue.inOutsideBlocked;
 
         TaskQueue l = blockedOutsideLast;
         taskQueue.prev = l;
@@ -123,6 +143,7 @@ public abstract class Scheduler {
         } else {
             l.next = taskQueue;
         }
+        taskQueue.inOutsideBlocked = true;
     }
 
     /**

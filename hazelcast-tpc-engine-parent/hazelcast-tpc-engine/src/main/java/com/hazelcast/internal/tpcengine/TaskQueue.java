@@ -120,10 +120,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // isn't the actual amount of time spend on the CPU
     long virtualRuntimeNanos;
     long taskRunCount;
-    // the number of times this taskQueue has been blocked
-    long blockedCount;
-    // the number of times this taskQueue has been context switched.
-    long contextSwitchCount;
 
     // the start time of this TaskQueue
     long startNanos;
@@ -137,6 +133,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     //the weight is only used by the CfsTaskQueueScheduler.
     int weight = 1;
     Object activeTask;
+    boolean inOutsideBlocked;
 
     boolean isEmpty() {
         return (inside != null && inside.isEmpty()) && (outside != null && outside.isEmpty());
@@ -267,8 +264,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             }
             activeTask = null;
 
+            // periodically we need to tick the io schedulers.
             if (context.nowNanos >= context.ioDeadlineNanos) {
-                // periodically we need to tick the io schedulers.
                 eventloop.ioSchedulerTick();
                 reactorMetrics.incIoSchedulerTicks();
                 context.nowNanos = epochNanos();
@@ -277,7 +274,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         }
 
         scheduler.updateActive(cpuTimeNanos);
-        metrics.incTaskCsCount(taskRunCount);
         metrics.incCpuTimeNanos(cpuTimeNanos);
         reactorMetrics.incTaskQueueCsCount();
 
@@ -285,7 +281,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             // the taskQueue has been fully drained.
             scheduler.dequeueActive();
             runState = RUN_STATE_BLOCKED;
-            blockedCount++;
+            metrics.incBlockedCount();
             if (outside != null) {
                 // we also need to add it to the shared taskQueues so the
                 // eventloop will see any items that are written to outside
@@ -303,19 +299,17 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         try {
             runResult = taskRunner.run(activeTask);
         } catch (Throwable e) {
+            metrics.incTaskErrorCount();
             runResult = taskRunner.handleError(activeTask, e);
         }
 
+        metrics.incTaskCsCount();
+
         switch (runResult) {
             case RUN_BLOCKED:
-                // todo: there is no difference between BLOCKED and COMPLETED.
-                // a task queue with at least 1 blocked task should remain registered on the public
-                // task queues as long as there is at least 1 task that is blocked
-                // When a task unblocked, it should be removed from the list of
-                // blocked tasks so that when the count reaches zero, the task
-                // queue doesn't need to have itself registered.
                 break;
             case RUN_YIELD:
+                // put the task back onto the queue it came from
                 // todo: return
                 polledFrom.offer(activeTask);
                 break;
@@ -408,11 +402,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 + ", sumExecRuntimeNanos=" + actualRuntimeNanos
                 + ", vruntimeNanos=" + virtualRuntimeNanos
                 + ", tasksProcessed=" + taskRunCount
-                + ", blockedCount=" + blockedCount
-                + ", contextSwitchCount=" + contextSwitchCount
                 + ", startNanos=" + startNanos
-                + ", prev=" + prev
-                + ", next=" + next
                 + '}';
     }
 
@@ -425,26 +415,47 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     public static final class Metrics {
         private static final VarHandle TASK_CS_COUNT;
         private static final VarHandle CPU_TIME_NANOS;
+        private static final VarHandle TASK_ERROR_COUNT;
+        private static final VarHandle BLOCKED_COUNT;
 
         private volatile long taskCsCount;
+        private volatile long taskErrorCount;
         private volatile long cpuTimeNanos;
+        private volatile long blockedCount;
 
         static {
             try {
                 MethodHandles.Lookup l = MethodHandles.lookup();
                 TASK_CS_COUNT = l.findVarHandle(Metrics.class, "taskCsCount", long.class);
+                TASK_ERROR_COUNT = l.findVarHandle(Metrics.class, "taskErrorCount", long.class);
                 CPU_TIME_NANOS = l.findVarHandle(Metrics.class, "cpuTimeNanos", long.class);
+                BLOCKED_COUNT = l.findVarHandle(Metrics.class, "blockedCount", long.class);
             } catch (ReflectiveOperationException e) {
                 throw new ExceptionInInitializerError(e);
             }
+        }
+        public long blockedCount() {
+            return (long) BLOCKED_COUNT.getOpaque(this);
+        }
+
+        public void incBlockedCount() {
+            BLOCKED_COUNT.setOpaque(this, (long) BLOCKED_COUNT.getOpaque(this) + 1);
+        }
+
+        public long taskErrorCount() {
+            return (long) TASK_ERROR_COUNT.getOpaque(this);
+        }
+
+        public void incTaskErrorCount() {
+            TASK_ERROR_COUNT.setOpaque(this, (long) TASK_ERROR_COUNT.getOpaque(this) + 1);
         }
 
         public long taskCsCount() {
             return (long) TASK_CS_COUNT.getOpaque(this);
         }
 
-        public void incTaskCsCount(long delta) {
-            TASK_CS_COUNT.setOpaque(this, (long) TASK_CS_COUNT.getOpaque(this) + delta);
+        public void incTaskCsCount() {
+            TASK_CS_COUNT.setOpaque(this, (long) TASK_CS_COUNT.getOpaque(this) + 1);
         }
 
         public long cpuTimeNanos() {

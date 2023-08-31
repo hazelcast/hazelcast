@@ -283,6 +283,8 @@ public abstract class Eventloop {
             scheduler.scheduleOutsideBlocked();
 
             TaskQueue taskQueue = scheduler.pickNext();
+
+
             if (taskQueue == null) {
                 long epochNanosBeforePark = epochNanos();
                 runContext.nowNanos = epochNanosBeforePark;

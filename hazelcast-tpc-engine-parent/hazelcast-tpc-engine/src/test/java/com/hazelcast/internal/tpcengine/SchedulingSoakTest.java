@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.tpcengine.FormatUtil.humanReadableCountSI;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
@@ -23,15 +24,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public abstract class SchedulingSoakTest {
     // The public properties are the tunnables for this soak test.
-    public long runtimeSeconds = 5;
+    public long runtimeSeconds = 500;
     // total number of reactors
-    public int reactorCount = 4;
+    public int reactorCount = 2;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     // number of task queues per reactor
     public int taskQueueCount = 10;
 
-    public int taskCount = 10000;
+    public int taskCount = 10;
 
     private final List<PaddedAtomicLong> counters = new ArrayList<>();
     private final MonitorThread monitorThread = new MonitorThread();
@@ -52,20 +53,30 @@ public abstract class SchedulingSoakTest {
             List<TaskQueue> taskQueues = new ArrayList<>();
             taskQueueMap.put(reactor, taskQueues);
             for (int l = 0; l < taskQueueCount; l++) {
-                //todo: play with priorities.
-                TaskQueue.Builder taskQueueBuilder = reactor.eventloop().newTaskQueueBuilder();
-                taskQueueBuilder.outside = new MpscArrayQueue<>(1024);
-                taskQueueBuilder.inside = new CircularQueue<>(1024);
-                TaskQueue taskQueue = taskQueueBuilder.build();
-                taskQueues.add(taskQueue);
+                CompletableFuture<TaskQueue> future = reactor.submit(new Callable<TaskQueue>() {
+                    @Override
+                    public TaskQueue call() throws Exception {
+                        //todo: play with priorities.
+                        TaskQueue.Builder taskQueueBuilder = reactor.eventloop().newTaskQueueBuilder();
+                        taskQueueBuilder.outside = new MpscArrayQueue<>(taskCount + 100);
+                        taskQueueBuilder.inside = new CircularQueue<>(taskCount + 100);
+                        return taskQueueBuilder.build();
+                    }
+                });
+
+                taskQueues.add(future.join());
             }
         }
     }
 
-    public class MyTask extends Task {
-        private long iteration;
-        private PaddedAtomicLong counter;
+    public class DummyTask extends Task {
+        private final PaddedAtomicLong counter;
         private final Random random = new Random();
+        private long iteration;
+
+        public DummyTask(PaddedAtomicLong counter) {
+            this.counter = counter;
+        }
 
         @Override
         public int run() throws Throwable {
@@ -73,24 +84,23 @@ public abstract class SchedulingSoakTest {
             iteration++;
             if (iteration < 100) {
                 return RUN_YIELD;
-            } else if (iteration == 100) {
-                // todo:
-                return RUN_BLOCKED;
             } else {
-                // try to find a random taskQueue we can add this task to.
-                for (; ; ) {
-                    Reactor reactor = reactorList.get(random.nextInt(reactorCount));
-                    List<TaskQueue> taskQueueList = taskQueueMap.get(reactor);
-                    TaskQueue taskQueue = taskQueueList.get(random.nextInt(reactorCount));
-                    if (taskQueue.offer(taskQueue)) {
-                        break;
-                    }
+                TaskQueue taskQueue = randomTaskQueue(random);
+                if (!taskQueue.offer(this)) {
+                    throw new RuntimeException("Failed to add task to taskQueue");
                 }
 
                 return RUN_COMPLETED;
             }
-
         }
+    }
+
+    private TaskQueue randomTaskQueue(Random random) {
+        // try to find a random taskQueue we can add this task to.
+        Reactor reactor = reactorList.get(random.nextInt(reactorCount));
+        List<TaskQueue> taskQueueList = taskQueueMap.get(reactor);
+        TaskQueue taskQueue = taskQueueList.get(random.nextInt(reactorCount));
+        return taskQueue;
     }
 
     @After
@@ -100,10 +110,17 @@ public abstract class SchedulingSoakTest {
 
     @Test
     public void test() throws Exception {
+        Random random = new Random();
+
         for (int k = 0; k < taskCount; k++) {
-
+            TaskQueue taskQueue = randomTaskQueue(random);
+            PaddedAtomicLong counter = new PaddedAtomicLong();
+            counters.add(counter);
+            DummyTask task = new DummyTask(counter);
+            if (!taskQueue.offer(task)) {
+                throw new RuntimeException("Failed to add task to taskQueue");
+            }
         }
-
 
         monitorThread.start();
         monitorThread.join();
@@ -157,6 +174,10 @@ public abstract class SchedulingSoakTest {
 
                 printThp(metrics, lastMetrics, durationMs);
 
+                printTaskCsThp(metrics, lastMetrics, durationMs);
+
+                printTaskQueueCsThp(metrics, lastMetrics, durationMs);
+
                 System.out.println(sb);
                 sb.setLength(0);
 
@@ -170,7 +191,23 @@ public abstract class SchedulingSoakTest {
         private void printThp(Metrics metrics, Metrics lastMetrics, long durationMs) {
             long diff = metrics.count - lastMetrics.count;
             double thp = ((diff) * 1000d) / durationMs;
-            sb.append("[deadline-thp=");
+            sb.append("[thp=");
+            sb.append(humanReadableCountSI(thp));
+            sb.append("/s]");
+        }
+
+        private void printTaskCsThp(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            long diff = metrics.taskCsCount - lastMetrics.taskCsCount;
+            double thp = ((diff) * 1000d) / durationMs;
+            sb.append("[task-cs=");
+            sb.append(humanReadableCountSI(thp));
+            sb.append("/s]");
+        }
+
+        private void printTaskQueueCsThp(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            long diff = metrics.taskQueueCsCount - lastMetrics.taskQueueCsCount;
+            double thp = ((diff) * 1000d) / durationMs;
+            sb.append("[task-q-cs=");
             sb.append(humanReadableCountSI(thp));
             sb.append("/s]");
         }
@@ -208,14 +245,25 @@ public abstract class SchedulingSoakTest {
     private void collect(Metrics target) {
         target.clear();
 
+        for (int k = 0; k < reactorCount; k++) {
+            Reactor reactor = reactorList.get(k);
+            Reactor.Metrics metrics = reactor.metrics;
+            target.taskCsCount += metrics.taskCsSwitchCount();
+            target.taskQueueCsCount += metrics.taskCsSwitchCount();
+        }
+
         target.count = sum(counters);
     }
 
     private static class Metrics {
+        public long taskCsCount;
+        public long taskQueueCsCount;
         private long count;
 
         private void clear() {
             count = 0;
+            taskCsCount = 0;
+            taskQueueCsCount = 0;
         }
     }
 }
