@@ -52,12 +52,12 @@ public class IndexRangeFilterTest extends IndexFilterTestSupport {
         checkEquals(filter, new IndexRangeFilter(intValue(1, true), true, intValue(2, true), true), true);
 
         checkEquals(filter, new IndexRangeFilter(intValue(2, true), true, intValue(2, true), true), false);
-        checkEquals(filter, new IndexRangeFilter(null, true, intValue(2, true), true), false);
+        checkEquals(filter, new IndexRangeFilter(null, false, intValue(2, true), true), false);
 
         checkEquals(filter, new IndexRangeFilter(intValue(1, true), false, intValue(2, true), true), false);
 
         checkEquals(filter, new IndexRangeFilter(intValue(1, true), true, intValue(3, true), true), false);
-        checkEquals(filter, new IndexRangeFilter(intValue(1, true), true, null, true), false);
+        checkEquals(filter, new IndexRangeFilter(intValue(1, true), true, null, false), false);
 
         checkEquals(filter, new IndexRangeFilter(intValue(1, true), true, intValue(2, true), false), false);
     }
