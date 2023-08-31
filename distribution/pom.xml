@@ -288,6 +288,12 @@
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-files-azure</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-math3</artifactId>
+                </exclusion>
+            </exclusions>
             <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
