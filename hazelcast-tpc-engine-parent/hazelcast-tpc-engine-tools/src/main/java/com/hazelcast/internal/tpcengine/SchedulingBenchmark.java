@@ -222,6 +222,7 @@ public class SchedulingBenchmark {
     }
 
     private class MonitorThread extends Thread {
+        private final StringBuffer sb = new StringBuffer();
         public MonitorThread() {
             super("MonitorThread");
         }
@@ -244,39 +245,19 @@ public class SchedulingBenchmark {
             Metrics lastMetrics = new Metrics();
             Metrics metrics = new Metrics();
 
-            StringBuffer sb = new StringBuffer();
 
             while (currentTimeMillis() < endMs) {
                 Thread.sleep(SECONDS.toMillis(1));
                 long nowMs = currentTimeMillis();
                 collect(metrics);
 
-                long completedSeconds = MILLISECONDS.toSeconds(nowMs - startMs);
-                double completed = (100f * completedSeconds) / runtimeSeconds;
-                sb.append("[etd ");
-                sb.append(completedSeconds / 60);
-                sb.append("m:");
-                sb.append(completedSeconds % 60);
-                sb.append("s ");
-                sb.append(String.format("%,.3f", completed));
-                sb.append("%]");
+                printEtd(nowMs, startMs);
 
-                long eta = MILLISECONDS.toSeconds(endMs - nowMs);
-                sb.append("[eta ");
-                sb.append(eta / 60);
-                sb.append("m:");
-                sb.append(eta % 60);
-                sb.append("s]");
+                printEta(endMs, nowMs);
 
-                long diff = metrics.cs - lastMetrics.cs;
-                sb.append("[thp=");
-                sb.append(humanReadableCountSI(diff));
-                sb.append("/s]");
+                printThp(metrics, lastMetrics);
 
-                sb.append("[lat=");
-                double latencyNs = (SECONDS.toNanos(1) * 1d) / diff;
-                sb.append(humanReadableCountSI(latencyNs));
-                sb.append(" ns]");
+                printLatency(metrics, lastMetrics);
 
                 System.out.println(sb);
                 sb.setLength(0);
@@ -286,6 +267,42 @@ public class SchedulingBenchmark {
                 metrics = tmp;
                 lastMs = nowMs;
             }
+        }
+
+        private void printLatency(Metrics metrics, Metrics lastMetrics) {
+            long diff = metrics.cs - lastMetrics.cs;
+            sb.append("[lat=");
+            double latencyNs = (SECONDS.toNanos(1) * 1d) / diff;
+            sb.append(humanReadableCountSI(latencyNs));
+            sb.append(" ns]");
+        }
+
+        private void printThp(Metrics metrics, Metrics lastMetrics) {
+            long diff = metrics.cs - lastMetrics.cs;
+            sb.append("[thp=");
+            sb.append(humanReadableCountSI(diff));
+            sb.append("/s]");
+        }
+
+        private void printEta(long endMs, long nowMs) {
+            long eta = MILLISECONDS.toSeconds(endMs - nowMs);
+            sb.append("[eta ");
+            sb.append(eta / 60);
+            sb.append("m:");
+            sb.append(eta % 60);
+            sb.append("s]");
+        }
+
+        private void printEtd(long nowMs, long startMs) {
+            long completedSeconds = MILLISECONDS.toSeconds(nowMs - startMs);
+            double completed = (100f * completedSeconds) / runtimeSeconds;
+            sb.append("[etd ");
+            sb.append(completedSeconds / 60);
+            sb.append("m:");
+            sb.append(completedSeconds % 60);
+            sb.append("s ");
+            sb.append(String.format("%,.3f", completed));
+            sb.append("%]");
         }
     }
 

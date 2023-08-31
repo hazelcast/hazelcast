@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.nio;
+package com.hazelcast.internal.tpcengine.iouring;
 
-public class Nio_SchedulingSoakTest_Nightly extends Nio_SchedulingSoakTest{
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.experimental.categories.Category;
 
-    public Nio_SchedulingSoakTest_Nightly(){
+@Category(NightlyTest.class)
+public class Uring_SocketSchedulingSoakTest_Nightly extends Uring_SocketSchedulingSoakTest {
+
+    public Uring_SocketSchedulingSoakTest_Nightly() {
         runtimeSeconds = 180;
     }
 }

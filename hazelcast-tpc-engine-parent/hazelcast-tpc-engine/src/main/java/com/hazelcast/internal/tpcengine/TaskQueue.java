@@ -308,6 +308,12 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
         switch (runResult) {
             case RUN_BLOCKED:
+                // todo: there is no difference between BLOCKED and COMPLETED.
+                // a task queue with at least 1 blocked task should remain registered on the public
+                // task queues as long as there is at least 1 task that is blocked
+                // When a task unblocked, it should be removed from the list of
+                // blocked tasks so that when the count reaches zero, the task
+                // queue doesn't need to have itself registered.
                 break;
             case RUN_YIELD:
                 // todo: return

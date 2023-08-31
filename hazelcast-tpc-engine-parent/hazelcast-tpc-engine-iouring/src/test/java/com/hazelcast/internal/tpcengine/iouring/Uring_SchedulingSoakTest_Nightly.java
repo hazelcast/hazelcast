@@ -16,10 +16,6 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.experimental.categories.Category;
-
-@Category(NightlyTest.class)
 public class Uring_SchedulingSoakTest_Nightly extends Uring_SchedulingSoakTest {
 
     public Uring_SchedulingSoakTest_Nightly() {
