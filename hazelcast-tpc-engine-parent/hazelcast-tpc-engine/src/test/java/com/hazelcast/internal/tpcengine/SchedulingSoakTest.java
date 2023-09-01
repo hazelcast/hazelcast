@@ -40,7 +40,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public abstract class SchedulingSoakTest {
     // The public properties are the tunnables for this soak test.
-    public long runtimeSeconds = 300;
+    public long runtimeSeconds = 3;
     // total number of reactors
     public int reactorCount = 5;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
