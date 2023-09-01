@@ -25,7 +25,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP;
-import com.hazelcast.jet.sql.impl.SqlEndToEndTestSupport;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -60,7 +60,8 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SpecificPartitionsImapReaderPmsTest extends SqlEndToEndTestSupport {
+@SuppressWarnings({"rawtypes", "unchecked"})
+public class SpecificPartitionsImapReaderPmsTest extends SqlTestSupport {
     private static final int MEMBERS = 5;
     private static final int ITERATIONS = 1000;
 
@@ -291,7 +292,6 @@ public class SpecificPartitionsImapReaderPmsTest extends SqlEndToEndTestSupport 
         return dag;
     }
 
-    @SuppressWarnings("rawtypes")
     private void assertPrunability(int partitionCountUsed) {
         // Assert sink map read all results
         assertEquals(partitionCountUsed, sinkMap.size());
