@@ -137,7 +137,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SqlEndToEndTestSupport 
         assertNull(readPms.partitionsToScan);
         Function<Address, ProcessorSupplier> psf = readPms.get(new ArrayList<>(partitionAssignment.keySet()));
 
-        for(HazelcastInstance hz : instances()) {
+        for (HazelcastInstance hz : instances()) {
             TestProcessorSupplierContext psCtx = new TestProcessorSupplierContext().setHazelcastInstance(hz);
             Address address = Accessors.getAddress(hz);
             ReadMapOrCacheP.LocalProcessorSupplier ps = (ReadMapOrCacheP.LocalProcessorSupplier) psf.apply(address);
@@ -149,7 +149,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SqlEndToEndTestSupport 
 
     @Test
     public void test_prunableScan_unitTest() throws Exception {
-        for(int partitionCountToUse = 0; partitionCountToUse < perMemberOwnedPKey.length + 1; ++partitionCountToUse) {
+        for (int partitionCountToUse = 0; partitionCountToUse < perMemberOwnedPKey.length + 1; ++partitionCountToUse) {
             // given
             List<List<Expression<?>>> expressions = new ArrayList<>();
             if (partitionCountToUse > 0) {
