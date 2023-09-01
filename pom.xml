@@ -472,6 +472,42 @@
                             </rules>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>enforce-tools</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <!-- JDK 11+ is required for compilation. -->
+                                    <version>[11,)</version>
+                                </requireJavaVersion>
+                                <enforceBytecodeVersion>
+                                    <maxJdkVersion>11</maxJdkVersion>
+                                    <excludes>
+                                        <!--
+                                        The archunit library containse several classes to process JDK9 modules.
+                                        It is a test dependency and can be ignored.
+                                        -->
+                                        <exclude>com.tngtech.archunit:archunit</exclude>
+                                    </excludes>
+                                    <ignoreClasses>
+                                        <!--
+                                        Some dependencies contain JDK9 specific classes with JDK9 in the name
+                                        e.g. wiremock.org.eclipse.jetty.alpn.java.server.JDK9ServerALPNProcessor
+                                        -->
+                                        <ignoreClass>*JDK9*</ignoreClass>
+                                        <!--
+                                        Classes from org:mongodb:bson-record-codec to map record to bson.
+                                        Ignoring whole package, because we shade the module into hazelcast-jet-mongodb.
+                                        -->
+                                        <ignoreClass>org.bson.codecs.record.*</ignoreClass>
+                                    </ignoreClasses>
+                                </enforceBytecodeVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
                 </executions>
                 <dependencies>
                     <dependency>
