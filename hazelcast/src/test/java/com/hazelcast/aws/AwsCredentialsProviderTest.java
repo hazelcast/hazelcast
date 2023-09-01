@@ -69,6 +69,7 @@ public class AwsCredentialsProviderTest {
             .setIamRole(iamRole)
             .build();
         given(awsMetadataApi.credentialsEc2(iamRole)).willReturn(CREDENTIALS);
+        given(environment.isRunningOnEcs()).willReturn(false);
         AwsCredentialsProvider credentialsProvider = new AwsCredentialsProvider(awsConfig, awsMetadataApi, environment);
 
         // when
@@ -103,6 +104,7 @@ public class AwsCredentialsProviderTest {
             .setIamRole(iamRole)
             .build();
         given(awsMetadataApi.credentialsEc2(iamRole)).willThrow(new RuntimeException("Error fetching credentials"));
+        given(environment.isRunningOnEcs()).willReturn(false);
         AwsCredentialsProvider credentialsProvider = new AwsCredentialsProvider(awsConfig, awsMetadataApi, environment);
 
         // when
