@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
+import static java.lang.Math.abs;
 import static org.junit.Assert.assertEquals;
 
 public class FifoSchedulerNiceTest {
@@ -79,6 +80,8 @@ public class FifoSchedulerNiceTest {
 
         Thread.sleep(2000);
 
+        // every task should be performed roughly the same number of times because
+        // the fifoscheduler doesn't care for the nice level of the TaskQueue.
         boolean first = true;
         long firstCount = 0;
         int failures = 0;
@@ -90,12 +93,14 @@ public class FifoSchedulerNiceTest {
                 firstCount = current;
                 sb.append(k + " " + current).append('\n');
             } else {
-                double v = 100 * (1 - (1.0d * current / firstCount));
-                boolean success = v > -1.0 && v < 1.0;
+                double differencePercent = 100 * (1 - (1.0d * current / firstCount));
+                // If this test fails spuriously we could slightly increase the
+                // 1.0 value or run longer.
+                boolean success = abs(differencePercent) < 1.0;
                 if (!success) {
                     failures++;
                 }
-                sb.append(k + " " + current + " " + v + " success:" + success + "\n");
+                sb.append(k + " " + current + " " + differencePercent + "% success:" + success + "\n");
             }
             first = false;
         }
