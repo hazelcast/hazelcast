@@ -468,7 +468,6 @@
                                             <include>junit</include>
                                         </includes>
                                     </dependencyConvergence>
-
                             </rules>
                         </configuration>
                     </execution>
