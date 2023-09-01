@@ -121,7 +121,8 @@ public abstract class AsyncSocketTest {
     }
 
     @Test
-    public void test_insideWriteAndFlush_whenNoWriterSet_thenRejectNonIOBuffer() throws ExecutionException, InterruptedException {
+    public void test_insideWriteAndFlush_whenNoWriterSet_thenRejectNonIOBuffer()
+            throws ExecutionException, InterruptedException {
         Reactor reactor = newReactor();
         AsyncServerSocket serverSocket = startServerSocket(reactor, new InetSocketAddress("127.0.0.1", 0));
 

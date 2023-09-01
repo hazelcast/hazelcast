@@ -17,9 +17,10 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.SchedulingSoakTest;
+import com.hazelcast.internal.tpcengine.SocketSchedulingSoakTest;
 
-public class Uring_SchedulingSoakTest extends SchedulingSoakTest {
+public class Uring_SocketSchedulingSoakTest extends SocketSchedulingSoakTest {
+
     @Override
     public Reactor.Builder newReactorBuilder() {
         return new UringReactor.Builder();

@@ -347,6 +347,7 @@ public class NetworkBenchmark {
     }
 
     private class MonitorThread extends Thread {
+        private final StringBuffer sb = new StringBuffer();
         @Override
         public void run() {
             try {
@@ -365,68 +366,95 @@ public class NetworkBenchmark {
             Metrics lastMetrics = new Metrics();
             Metrics metrics = new Metrics();
 
-            StringBuffer sb = new StringBuffer();
             while (currentTimeMillis() < endMs) {
                 Thread.sleep(SECONDS.toMillis(1));
                 long nowMs = currentTimeMillis();
+                long durationMs = nowMs - lastMs;
 
                 collect(metrics);
 
-                long completedSeconds = MILLISECONDS.toSeconds(nowMs - startMs);
-                double completed = (100f * completedSeconds) / runtimeSeconds;
-                sb.append("[etd ");
-                sb.append(completedSeconds / 60);
-                sb.append("m:");
-                sb.append(completedSeconds % 60);
-                sb.append("s ");
-                sb.append(String.format("%,.3f", completed));
-                sb.append("%]");
+                printEtd(nowMs, startMs);
 
-                long eta = MILLISECONDS.toSeconds(endMs - nowMs);
-                sb.append("[eta ");
-                sb.append(eta / 60);
-                sb.append("m:");
-                sb.append(eta % 60);
-                sb.append("s]");
+                printEta(endMs, nowMs);
 
-                long diff = metrics.count - lastMetrics.count;
-                long durationMs = nowMs - lastMs;
-                double thp = ((diff) * 1000d) / durationMs;
-                sb.append("[thp=");
-                sb.append(humanReadableCountSI(thp));
-                sb.append("/s]");
+                printThp(metrics, lastMetrics, durationMs);
 
-                long reads = metrics.reads;
-                double readsThp = ((reads - lastMetrics.reads) * 1000d) / durationMs;
-                sb.append("[reads=");
-                sb.append(humanReadableCountSI(readsThp));
-                sb.append("/s]");
+                printReads(metrics, lastMetrics, durationMs);
 
-                long bytesRead = metrics.bytesRead;
-                double bytesReadThp = ((bytesRead - lastMetrics.bytesRead) * 1000d) / durationMs;
-                sb.append("[read-bytes=");
-                sb.append(humanReadableByteCountSI(bytesReadThp));
-                sb.append("/s]");
+                printReadBytes(metrics, lastMetrics, durationMs);
 
-                long writes = metrics.writes;
-                double writesThp = ((writes - lastMetrics.writes) * 1000d) / durationMs;
-                sb.append("[writes=");
-                sb.append(humanReadableCountSI(writesThp));
-                sb.append("/s]");
+                printWrites(metrics, lastMetrics, durationMs);
 
-                long bytesWritten = metrics.bytesWritten;
-                double bytesWrittehThp = ((bytesWritten - lastMetrics.bytesWritten) * 1000d) / durationMs;
-                sb.append("[write-bytes=");
-                sb.append(humanReadableByteCountSI(bytesWrittehThp));
-                sb.append("/s]");
-                System.out.println(sb);
-                sb.setLength(0);
+                printBytesWritten(metrics, lastMetrics, durationMs);
 
                 Metrics tmp = lastMetrics;
                 lastMetrics = metrics;
                 metrics = tmp;
                 lastMs = nowMs;
             }
+        }
+
+        private void printBytesWritten(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            long bytesWritten = metrics.bytesWritten;
+            double bytesWrittehThp = ((bytesWritten - lastMetrics.bytesWritten) * 1000d) / durationMs;
+            sb.append("[write-bytes=");
+            sb.append(humanReadableByteCountSI(bytesWrittehThp));
+            sb.append("/s]");
+            System.out.println(sb);
+            sb.setLength(0);
+        }
+
+        private void printWrites(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            long writes = metrics.writes;
+            double writesThp = ((writes - lastMetrics.writes) * 1000d) / durationMs;
+            sb.append("[writes=");
+            sb.append(humanReadableCountSI(writesThp));
+            sb.append("/s]");
+        }
+
+        private void printReadBytes(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            long bytesRead = metrics.bytesRead;
+            double bytesReadThp = ((bytesRead - lastMetrics.bytesRead) * 1000d) / durationMs;
+            sb.append("[read-bytes=");
+            sb.append(humanReadableByteCountSI(bytesReadThp));
+            sb.append("/s]");
+        }
+
+        private void printReads(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            long reads = metrics.reads;
+            double readsThp = ((reads - lastMetrics.reads) * 1000d) / durationMs;
+            sb.append("[reads=");
+            sb.append(humanReadableCountSI(readsThp));
+            sb.append("/s]");
+        }
+
+        private void printThp(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            long diff = metrics.count - lastMetrics.count;
+            double thp = ((diff) * 1000d) / durationMs;
+            sb.append("[thp=");
+            sb.append(humanReadableCountSI(thp));
+            sb.append("/s]");
+        }
+
+        private void printEta(long endMs, long nowMs) {
+            long eta = MILLISECONDS.toSeconds(endMs - nowMs);
+            sb.append("[eta ");
+            sb.append(eta / 60);
+            sb.append("m:");
+            sb.append(eta % 60);
+            sb.append("s]");
+        }
+
+        private void printEtd(long nowMs, long startMs) {
+            long completedSeconds = MILLISECONDS.toSeconds(nowMs - startMs);
+            double completed = (100f * completedSeconds) / runtimeSeconds;
+            sb.append("[etd ");
+            sb.append(completedSeconds / 60);
+            sb.append("m:");
+            sb.append(completedSeconds % 60);
+            sb.append("s ");
+            sb.append(String.format("%,.3f", completed));
+            sb.append("%]");
         }
     }
 

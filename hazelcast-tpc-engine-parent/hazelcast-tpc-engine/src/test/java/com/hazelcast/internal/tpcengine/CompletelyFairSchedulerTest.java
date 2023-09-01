@@ -142,17 +142,17 @@ public class CompletelyFairSchedulerTest {
         assertEquals(q2, scheduler.pickNext());
         scheduler.updateActive(100000);
         scheduler.yieldActive();
-        assertEquals(3, scheduler.nrRunning);
+        assertEquals(3, scheduler.runQueueSize);
 
         assertEquals(q1, scheduler.pickNext());
         scheduler.updateActive(10);
         scheduler.yieldActive();
-        assertEquals(3, scheduler.nrRunning);
+        assertEquals(3, scheduler.runQueueSize);
 
         assertEquals(q1, scheduler.pickNext());
         scheduler.updateActive(100000000);
         scheduler.yieldActive();
-        assertEquals(3, scheduler.nrRunning);
+        assertEquals(3, scheduler.runQueueSize);
 
         assertEquals(q3, scheduler.pickNext());
     }
@@ -176,17 +176,17 @@ public class CompletelyFairSchedulerTest {
 
         assertEquals(q1, scheduler.pickNext());
         scheduler.dequeueActive();
-        assertEquals(2, scheduler.nrRunning);
+        assertEquals(2, scheduler.runQueueSize);
         assertEquals(q2.weight + q3.weight, scheduler.totalWeight);
 
         assertEquals(q2, scheduler.pickNext());
         scheduler.dequeueActive();
-        assertEquals(1, scheduler.nrRunning);
+        assertEquals(1, scheduler.runQueueSize);
         assertEquals(q3.weight, scheduler.totalWeight);
 
         assertEquals(q3, scheduler.pickNext());
         scheduler.dequeueActive();
-        assertEquals(0, scheduler.nrRunning);
+        assertEquals(0, scheduler.runQueueSize);
         assertEquals(0, scheduler.totalWeight);
     }
 
@@ -199,11 +199,11 @@ public class CompletelyFairSchedulerTest {
         q2.weight = niceToWeight(0);
 
         scheduler.enqueue(q1);
-        assertEquals(1, scheduler.nrRunning);
+        assertEquals(1, scheduler.runQueueSize);
         assertEquals(q1.weight, scheduler.totalWeight);
 
         scheduler.enqueue(q2);
-        assertEquals(2, scheduler.nrRunning);
+        assertEquals(2, scheduler.runQueueSize);
         assertEquals(q1.weight + q2.weight, scheduler.totalWeight);
     }
 

@@ -248,8 +248,8 @@ public class StorageBenchmark {
             Reactor.Builder reactorBuilder = newReactorBuilder(reactorType);
             reactorBuilder.threadAffinity = threadAffinity;
             reactorBuilder.spin = spin;
-            if(reactorBuilder instanceof NioReactor.Builder){
-                NioReactor.Builder nioReactorBuilder = (NioReactor.Builder)reactorBuilder;
+            if (reactorBuilder instanceof NioReactor.Builder) {
+                NioReactor.Builder nioReactorBuilder = (NioReactor.Builder) reactorBuilder;
                 nioReactorBuilder.storageExecutor = nioStorageExecutor;
             }
             Reactor reactor = reactorBuilder.build();
@@ -618,6 +618,7 @@ public class StorageBenchmark {
     }
 
     private class MonitorThread extends Thread {
+        private final StringBuffer sb = new StringBuffer();
 
         public MonitorThread() {
             super("MonitorThread");
@@ -639,7 +640,6 @@ public class StorageBenchmark {
             long endMs = startMs + runtimeMs;
             long lastMs = startMs;
 
-            StringBuffer sb = new StringBuffer();
             Metrics lastMetrics = new Metrics();
             Metrics metrics = new Metrics();
             while (System.currentTimeMillis() < endMs) {
@@ -649,114 +649,33 @@ public class StorageBenchmark {
                 long durationMs = nowMs - lastMs;
                 collect(metrics);
 
-                long completedSeconds = MILLISECONDS.toSeconds(nowMs - startMs);
-                double completed = (100f * completedSeconds) / runtimeSeconds;
-                sb.append("[etd ");
-                sb.append(completedSeconds / 60);
-                sb.append("m:");
-                sb.append(completedSeconds % 60);
-                sb.append("s ");
-                sb.append(String.format("%,.3f", completed));
-                sb.append("%]");
+                printEtd(nowMs, startMs);
 
-                long eta = MILLISECONDS.toSeconds(endMs - nowMs);
-                sb.append("[eta ");
-                sb.append(eta / 60);
-                sb.append("m:");
-                sb.append(eta % 60);
-                sb.append("s]");
+                printEta(endMs, nowMs);
 
-                if (metrics.reads > 0) {
-                    double readsThp = ((metrics.reads - lastMetrics.reads) * 1000d) / durationMs;
-                    sb.append("[reads ");
-                    sb.append(FormatUtil.humanReadableCountSI(readsThp));
-                    sb.append("/s]");
-                }
+                printReads(metrics, lastMetrics, durationMs);
 
-                if (metrics.bytesRead > 0) {
-                    double bytesThp = ((metrics.bytesRead - lastMetrics.bytesRead) * 1000d) / durationMs;
-                    sb.append("[read-bytes ");
-                    sb.append(humanReadableByteCountSI(bytesThp));
-                    sb.append("/s]");
-                }
+                printBytesRead(metrics, lastMetrics, durationMs);
 
-                if (metrics.writes > 0) {
-                    double writeThp = ((metrics.writes - lastMetrics.writes) * 1000d) / durationMs;
-                    sb.append("[writes ");
-                    sb.append(FormatUtil.humanReadableCountSI(writeThp));
-                    sb.append("/s]");
-                }
+                printWrites(metrics, lastMetrics, durationMs);
 
-                if (metrics.bytesWritten > 0) {
-                    double bytesThp = ((metrics.bytesWritten - lastMetrics.bytesWritten) * 1000d) / durationMs;
-                    sb.append("[write-bytes ");
-                    sb.append(humanReadableByteCountSI(bytesThp));
-                    sb.append("/s]");
-                }
+                printBytesWritten(metrics, lastMetrics, durationMs);
 
-                if (metrics.fsyncs > 0) {
-                    double fsyncsThp = ((metrics.fsyncs - lastMetrics.fsyncs) * 1000d) / durationMs;
-                    sb.append("[fsyncs ");
-                    sb.append(FormatUtil.humanReadableCountSI(fsyncsThp));
-                    sb.append("/s]");
-                }
+                printFsyncs(metrics, lastMetrics, durationMs);
 
-                if (metrics.fdatasyncs > 0) {
-                    double fdataSyncsThp = ((metrics.fdatasyncs - lastMetrics.fdatasyncs) * 1000d) / durationMs;
-                    sb.append("[fdatasyncs ");
-                    sb.append(FormatUtil.humanReadableCountSI(fdataSyncsThp));
-                    sb.append("/s]");
-                }
+                printFDataSyncs(metrics, lastMetrics, durationMs);
 
-                if (metrics.nops > 0) {
-                    double nopsThp = ((metrics.nops - lastMetrics.nops) * 1000d) / durationMs;
-                    sb.append("[nop ");
-                    sb.append(FormatUtil.humanReadableCountSI(nopsThp));
-                    sb.append("/s]");
-                }
+                printNops(metrics, lastMetrics, durationMs);
 
-                if (metrics.taskQueueCsCount > 0) {
-                    double thp = ((metrics.taskQueueCsCount - lastMetrics.taskQueueCsCount) * 1000d) / durationMs;
-                    sb.append("[cs ");
-                    sb.append(FormatUtil.humanReadableCountSI(thp));
-                    sb.append("/s]");
-                }
+                printTaskQueueCsCount(metrics, lastMetrics, durationMs);
 
-                if (metrics.taskQueueCsCount > 0) {
-                    double thp = ((metrics.taskQueueCsCount - lastMetrics.taskQueueCsCount) * 1000d) / durationMs;
-                    sb.append("[task-q-cs ");
-                    sb.append(FormatUtil.humanReadableCountSI(thp));
-                    sb.append("/s]");
-                }
+                printTaskCsCount(metrics, lastMetrics, durationMs);
 
-                if (metrics.taskCsCount > 0) {
-                    double thp = ((metrics.taskCsCount - lastMetrics.taskCsCount) * 1000d) / durationMs;
-                    sb.append("[task-cs ");
-                    sb.append(FormatUtil.humanReadableCountSI(thp));
-                    sb.append("/s]");
-                }
+                printIoSchedulerTicks(metrics, lastMetrics, durationMs);
 
-                if (metrics.ioSchedulerTicks > 0) {
-                    double thp = ((metrics.ioSchedulerTicks - lastMetrics.ioSchedulerTicks) * 1000d) / durationMs;
-                    sb.append("[io-ticks ");
-                    sb.append(FormatUtil.humanReadableCountSI(thp));
-                    sb.append("/s]");
-                }
+                printParkCount(metrics, lastMetrics, durationMs);
 
-                if (metrics.parkCount > 0) {
-                    double thp = ((metrics.parkCount - lastMetrics.parkCount) * 1000d) / durationMs;
-                    sb.append("[parks ");
-                    sb.append(FormatUtil.humanReadableCountSI(thp));
-                    sb.append("/s]");
-                }
-
-                if (metrics.parkTimeNanos > 0) {
-                    long parkCount = metrics.parkCount - lastMetrics.parkCount;
-                    double avg = (metrics.parkTimeNanos - lastMetrics.parkTimeNanos) / parkCount;
-                    sb.append("[avg-park ");
-                    sb.append(String.format("%.2f", avg));
-                    sb.append(" ns]");
-                }
+                printParkTimeNanos(metrics, lastMetrics);
 
                 System.out.println(sb);
                 sb.setLength(0);
@@ -765,6 +684,136 @@ public class StorageBenchmark {
                 lastMetrics = metrics;
                 metrics = tmp;
                 lastMs = nowMs;
+            }
+        }
+
+        private void printTaskQueueCsCount(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            if (metrics.taskQueueCsCount > 0) {
+                double thp = ((metrics.taskQueueCsCount - lastMetrics.taskQueueCsCount) * 1000d) / durationMs;
+                sb.append("[cs ");
+                sb.append(FormatUtil.humanReadableCountSI(thp));
+                sb.append("/s]");
+            }
+        }
+
+        private void printIoSchedulerTicks(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            if (metrics.ioSchedulerTicks > 0) {
+                double thp = ((metrics.ioSchedulerTicks - lastMetrics.ioSchedulerTicks) * 1000d) / durationMs;
+                sb.append("[io-ticks ");
+                sb.append(FormatUtil.humanReadableCountSI(thp));
+                sb.append("/s]");
+            }
+        }
+
+        private void printNops(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            if (metrics.nops > 0) {
+                double nopsThp = ((metrics.nops - lastMetrics.nops) * 1000d) / durationMs;
+                sb.append("[nop ");
+                sb.append(FormatUtil.humanReadableCountSI(nopsThp));
+                sb.append("/s]");
+            }
+        }
+
+        private void printFsyncs(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            if (metrics.fsyncs > 0) {
+                double fsyncsThp = ((metrics.fsyncs - lastMetrics.fsyncs) * 1000d) / durationMs;
+                sb.append("[fsyncs ");
+                sb.append(FormatUtil.humanReadableCountSI(fsyncsThp));
+                sb.append("/s]");
+            }
+        }
+
+        private void printBytesWritten(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            if (metrics.bytesWritten > 0) {
+                double bytesThp = ((metrics.bytesWritten - lastMetrics.bytesWritten) * 1000d) / durationMs;
+                sb.append("[write-bytes ");
+                sb.append(humanReadableByteCountSI(bytesThp));
+                sb.append("/s]");
+            }
+        }
+
+        private void printReads(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            if (metrics.reads > 0) {
+                double readsThp = ((metrics.reads - lastMetrics.reads) * 1000d) / durationMs;
+                sb.append("[reads ");
+                sb.append(FormatUtil.humanReadableCountSI(readsThp));
+                sb.append("/s]");
+            }
+        }
+
+        private void printEta(long endMs, long nowMs) {
+            long eta = MILLISECONDS.toSeconds(endMs - nowMs);
+            sb.append("[eta ");
+            sb.append(eta / 60);
+            sb.append("m:");
+            sb.append(eta % 60);
+            sb.append("s]");
+        }
+
+        private void printEtd(long nowMs, long startMs) {
+            long completedSeconds = MILLISECONDS.toSeconds(nowMs - startMs);
+            double completed = (100f * completedSeconds) / runtimeSeconds;
+            sb.append("[etd ");
+            sb.append(completedSeconds / 60);
+            sb.append("m:");
+            sb.append(completedSeconds % 60);
+            sb.append("s ");
+            sb.append(String.format("%,.3f", completed));
+            sb.append("%]");
+        }
+
+        private void printTaskCsCount(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            if (metrics.taskCsCount > 0) {
+                double thp = ((metrics.taskCsCount - lastMetrics.taskCsCount) * 1000d) / durationMs;
+                sb.append("[task-cs ");
+                sb.append(FormatUtil.humanReadableCountSI(thp));
+                sb.append("/s]");
+            }
+        }
+
+        private void printParkTimeNanos(Metrics metrics, Metrics lastMetrics) {
+            if (metrics.parkTimeNanos > 0) {
+                long parkCount = metrics.parkCount - lastMetrics.parkCount;
+                double avg = (metrics.parkTimeNanos - lastMetrics.parkTimeNanos) / parkCount;
+                sb.append("[avg-park ");
+                sb.append(String.format("%.2f", avg));
+                sb.append(" ns]");
+            }
+        }
+
+        private void printParkCount(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            if (metrics.parkCount > 0) {
+                double thp = ((metrics.parkCount - lastMetrics.parkCount) * 1000d) / durationMs;
+                sb.append("[parks ");
+                sb.append(FormatUtil.humanReadableCountSI(thp));
+                sb.append("/s]");
+            }
+        }
+
+        private void printFDataSyncs(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            if (metrics.fdatasyncs > 0) {
+                double fdataSyncsThp = ((metrics.fdatasyncs - lastMetrics.fdatasyncs) * 1000d) / durationMs;
+                sb.append("[fdatasyncs ");
+                sb.append(FormatUtil.humanReadableCountSI(fdataSyncsThp));
+                sb.append("/s]");
+            }
+        }
+
+        private void printWrites(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            if (metrics.writes > 0) {
+                double writeThp = ((metrics.writes - lastMetrics.writes) * 1000d) / durationMs;
+                sb.append("[writes ");
+                sb.append(FormatUtil.humanReadableCountSI(writeThp));
+                sb.append("/s]");
+            }
+        }
+
+        private void printBytesRead(Metrics metrics, Metrics lastMetrics, long durationMs) {
+            if (metrics.bytesRead > 0) {
+                double bytesThp = ((metrics.bytesRead - lastMetrics.bytesRead) * 1000d) / durationMs;
+                sb.append("[read-bytes ");
+                sb.append(humanReadableByteCountSI(bytesThp));
+                sb.append("/s]");
             }
         }
     }

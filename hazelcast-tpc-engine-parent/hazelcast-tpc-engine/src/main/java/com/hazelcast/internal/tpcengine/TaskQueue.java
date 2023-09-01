@@ -120,16 +120,12 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // isn't the actual amount of time spend on the CPU
     long virtualRuntimeNanos;
     long taskRunCount;
-    // the number of times this taskQueue has been blocked
-    long blockedCount;
-    // the number of times this taskQueue has been context switched.
-    long contextSwitchCount;
 
     // the start time of this TaskQueue
     long startNanos;
 
-    // The TakGroup is an intrusive double-linked-list-node. This is used to keep track
-    // of blocked outside tasksGroups in the TaskQueueScheduler
+    // The TakGroup is an intrusive double-linked-list-node. This is used to
+    // keep track of blocked outside tasksGroups in the TaskQueueScheduler
     TaskQueue prev;
     TaskQueue next;
 
@@ -139,11 +135,13 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     Object activeTask;
 
     boolean isEmpty() {
-        return (inside != null && inside.isEmpty()) && (outside != null && outside.isEmpty());
+        return (inside != null && inside.isEmpty())
+                && (outside != null && outside.isEmpty());
     }
 
     int size() {
-        return (inside == null ? 0 : inside.size()) + (outside == null ? 0 : outside.size());
+        return (inside == null ? 0 : inside.size())
+                + (outside == null ? 0 : outside.size());
     }
 
     /**
@@ -192,41 +190,16 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         return activeTask != null;
     }
 
-    static class RunContext {
-        Eventloop eventloop;
-        Reactor.Metrics reactorMetrics;
-        Scheduler scheduler;
-        StallHandler stallHandler;
-        long minGranularityNanos;
-        long stallThresholdNanos;
-
-        // the last measured epoch time in nanos.
-        // {@link EpochClock#epochNanos()} is pretty expensive (+/-25ns)
-        // due to {@link System#nanoTime()}. For every task processed we do
-        // not want to call the {@link EpochClock#epochNanos()} more than
-        // once because the clock already dominates the context switch time.
-        long nowNanos;
-        // epoch time in nanos when the current task from the taskGroup started.
-        long ioIntervalNanos;
-        // the epoch time in nano seconds the next ioSchedulerTick needs to run
-        long ioDeadlineNanos;
-        // the epoch time in nanos the current task started. If no task is running,
-        // this value is undefined.
-        long taskStartNanos;
-        // the deadline in time for tasks in the current taskGroup. So no further
-        // task should be run and the taskGroup should yield (or complete).
-        long taskDeadlineNanos;
-    }
 
     @SuppressWarnings({"checkstyle:NPathComplexity",
             "checkstyle:MethodLength"})
     /**
      * Runs as much work from the TaskQueue as allowed.
      */
-    void run(RunContext context) throws Exception {
-        final Reactor.Metrics reactorMetrics = context.reactorMetrics;
+    void run(RunContext runCtx) throws Exception {
+        final Reactor.Metrics reactorMetrics = runCtx.reactorMetrics;
 
-        context.taskDeadlineNanos = context.nowNanos + scheduler.timeSliceNanosActive();
+        runCtx.taskDeadlineNanos = runCtx.nowNanos + scheduler.timeSliceNanosActive();
 
         // The time the taskGroup has spend on the CPU.
         long cpuTimeNanos = 0;
@@ -236,48 +209,47 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         int clockSampleRound = 1;
         // Process the tasks in a queue as long as the deadline is not exceeded.
 
-        while (context.nowNanos <= context.taskDeadlineNanos) {
+        while (runCtx.nowNanos <= runCtx.taskDeadlineNanos) {
             if (!pickActiveTask()) {
                 taskQueueEmpty = true;
                 // queue is empty, we are done.
                 break;
             }
 
-            context.taskStartNanos = context.nowNanos;
+            runCtx.taskStartNanos = runCtx.nowNanos;
 
             runActiveTask();
             reactorMetrics.incTaskCsCount();
             taskRunCount++;
 
             if (clockSampleRound == 1) {
-                context.nowNanos = epochNanos();
+                runCtx.nowNanos = epochNanos();
                 clockSampleRound = clockSampleInterval;
             } else {
                 clockSampleRound--;
             }
 
-            long taskEndNanos = context.nowNanos;
+            long taskEndNanos = runCtx.nowNanos;
             // make sure that a task always progresses the time.
-            long taskCpuTimeNanos = max(context.taskStartNanos - taskEndNanos, 1);
+            long taskCpuTimeNanos = max(runCtx.taskStartNanos - taskEndNanos, 1);
             cpuTimeNanos += taskCpuTimeNanos;
 
-            if (taskCpuTimeNanos > context.stallThresholdNanos) {
-                context.stallHandler.onStall(
-                        eventloop.reactor, this, activeTask, context.taskStartNanos, taskCpuTimeNanos);
+            if (taskCpuTimeNanos > runCtx.stallThresholdNanos) {
+                runCtx.stallHandler.onStall(
+                        eventloop.reactor, this, activeTask, runCtx.taskStartNanos, taskCpuTimeNanos);
             }
             activeTask = null;
 
-            if (context.nowNanos >= context.ioDeadlineNanos) {
-                // periodically we need to tick the io schedulers.
+            // periodically we need to tick the io schedulers.
+            if (runCtx.nowNanos >= runCtx.ioDeadlineNanos) {
                 eventloop.ioSchedulerTick();
                 reactorMetrics.incIoSchedulerTicks();
-                context.nowNanos = epochNanos();
-                context.ioDeadlineNanos = context.nowNanos + context.ioIntervalNanos;
+                runCtx.nowNanos = epochNanos();
+                runCtx.ioDeadlineNanos = runCtx.nowNanos + runCtx.ioIntervalNanos;
             }
         }
 
         scheduler.updateActive(cpuTimeNanos);
-        metrics.incTaskCsCount(taskRunCount);
         metrics.incCpuTimeNanos(cpuTimeNanos);
         reactorMetrics.incTaskQueueCsCount();
 
@@ -285,11 +257,10 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             // the taskQueue has been fully drained.
             scheduler.dequeueActive();
             runState = RUN_STATE_BLOCKED;
-            blockedCount++;
+            metrics.incBlockedCount();
             if (outside != null) {
-                // we also need to add it to the shared taskQueues so the
-                // eventloop will see any items that are written to outside
-                // queue.
+                // add it to the shared taskQueues so the eventloop will see
+                // any items that are written to outside queues
                 scheduler.addOutsideBlocked(this);
             }
         } else {
@@ -303,13 +274,17 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         try {
             runResult = taskRunner.run(activeTask);
         } catch (Throwable e) {
+            metrics.incTaskErrorCount();
             runResult = taskRunner.handleError(activeTask, e);
         }
+
+        metrics.incTaskCsCount();
 
         switch (runResult) {
             case RUN_BLOCKED:
                 break;
             case RUN_YIELD:
+                // put the task back onto the queue it came from
                 // todo: return
                 polledFrom.offer(activeTask);
                 break;
@@ -402,12 +377,34 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 + ", sumExecRuntimeNanos=" + actualRuntimeNanos
                 + ", vruntimeNanos=" + virtualRuntimeNanos
                 + ", tasksProcessed=" + taskRunCount
-                + ", blockedCount=" + blockedCount
-                + ", contextSwitchCount=" + contextSwitchCount
                 + ", startNanos=" + startNanos
-                + ", prev=" + prev
-                + ", next=" + next
                 + '}';
+    }
+
+    static class RunContext {
+        Eventloop eventloop;
+        Reactor.Metrics reactorMetrics;
+        Scheduler scheduler;
+        StallHandler stallHandler;
+        long minGranularityNanos;
+        long stallThresholdNanos;
+
+        // the last measured epoch time in nanos.
+        // {@link EpochClock#epochNanos()} is pretty expensive (+/-25ns)
+        // due to {@link System#nanoTime()}. For every task processed we do
+        // not want to call the {@link EpochClock#epochNanos()} more than
+        // once because the clock already dominates the context switch time.
+        long nowNanos;
+        // epoch time in nanos when the current task from the taskGroup started.
+        long ioIntervalNanos;
+        // the epoch time in nano seconds the next ioSchedulerTick needs to run
+        long ioDeadlineNanos;
+        // the epoch time in nanos the current task started. If no task is running,
+        // this value is undefined.
+        long taskStartNanos;
+        // the deadline in time for tasks in the current taskGroup. So no further
+        // task should be run and the taskGroup should yield (or complete).
+        long taskDeadlineNanos;
     }
 
     /**
@@ -419,18 +416,39 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     public static final class Metrics {
         private static final VarHandle TASK_CS_COUNT;
         private static final VarHandle CPU_TIME_NANOS;
+        private static final VarHandle TASK_ERROR_COUNT;
+        private static final VarHandle BLOCKED_COUNT;
 
         private volatile long taskCsCount;
+        private volatile long taskErrorCount;
         private volatile long cpuTimeNanos;
+        private volatile long blockedCount;
 
         static {
             try {
                 MethodHandles.Lookup l = MethodHandles.lookup();
                 TASK_CS_COUNT = l.findVarHandle(Metrics.class, "taskCsCount", long.class);
+                TASK_ERROR_COUNT = l.findVarHandle(Metrics.class, "taskErrorCount", long.class);
                 CPU_TIME_NANOS = l.findVarHandle(Metrics.class, "cpuTimeNanos", long.class);
+                BLOCKED_COUNT = l.findVarHandle(Metrics.class, "blockedCount", long.class);
             } catch (ReflectiveOperationException e) {
                 throw new ExceptionInInitializerError(e);
             }
+        }
+        public long blockedCount() {
+            return (long) BLOCKED_COUNT.getOpaque(this);
+        }
+
+        public void incBlockedCount() {
+            BLOCKED_COUNT.setOpaque(this, (long) BLOCKED_COUNT.getOpaque(this) + 1);
+        }
+
+        public long taskErrorCount() {
+            return (long) TASK_ERROR_COUNT.getOpaque(this);
+        }
+
+        public void incTaskErrorCount() {
+            TASK_ERROR_COUNT.setOpaque(this, (long) TASK_ERROR_COUNT.getOpaque(this) + 1);
         }
 
         /**
@@ -442,13 +460,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             return (long) TASK_CS_COUNT.getOpaque(this);
         }
 
-        /**
-         * Increases the number of task context switches.
-         *
-         * @param delta the number to increment with.
-         */
-        public void incTaskCsCount(long delta) {
-            TASK_CS_COUNT.setOpaque(this, (long) TASK_CS_COUNT.getOpaque(this) + delta);
+        public void incTaskCsCount() {
+            TASK_CS_COUNT.setOpaque(this, (long) TASK_CS_COUNT.getOpaque(this) + 1);
         }
 
         /**

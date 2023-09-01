@@ -151,6 +151,4 @@ public class FifoSchedulerTest {
         scheduler.enqueue(q2);
         assertEquals(2, scheduler.runQueueSize);
     }
-
-
 }

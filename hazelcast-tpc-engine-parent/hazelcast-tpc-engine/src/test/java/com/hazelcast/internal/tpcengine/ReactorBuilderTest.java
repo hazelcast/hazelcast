@@ -40,7 +40,6 @@ public abstract class ReactorBuilderTest {
 
     public abstract Reactor.Builder newReactorBuilder();
 
-
     @Test
     public void test_reactorName_whenNull() {
         Reactor.Builder builder = newReactorBuilder();
@@ -83,25 +82,10 @@ public abstract class ReactorBuilderTest {
 //        assertThrows(NullPointerException.class, () -> builder.setStallHandler(null));
 //    }
 //
-//
-//    @Test
-//    public void test_setStallHandler_whenAlreadyBuilt() {
-//        Reactor.Builder builder = newReactorContext();
-//        builder.build();
-//        assertThrows(IllegalStateException.class, () -> builder.setStallHandler(new LoggingStallHandler()));
-//    }
-//
 //    @Test
 //    public void test_setThreadFactory_whenNull() {
 //        Reactor.Builder builder = newReactorContext();
 //        assertThrows(NullPointerException.class, () -> builder.setThreadFactory(null));
-//    }
-//
-//    @Test
-//    public void test_setThreadFactory_whenAlreadyBuilt() {
-//        Reactor.Builder builder = newReactorContext();
-//        builder.build();
-//        assertThrows(IllegalStateException.class, () -> builder.setThreadFactory(Thread::new));
 //    }
 //
 //    @Test
@@ -119,13 +103,6 @@ public abstract class ReactorBuilderTest {
 //    }
 //
 //    @Test
-//    public void test_setThreadName_whenAlreadyBuilt() {
-//        Reactor.Builder builder = newReactorContext();
-//        builder.build();
-//        assertThrows(IllegalStateException.class, () -> builder.setThreadName("banana"));
-//    }
-//
-//    @Test
 //    public void test_setThreadName() {
 //        Reactor.Builder builder = newReactorContext();
 //
@@ -134,13 +111,6 @@ public abstract class ReactorBuilderTest {
 //
 //        Reactor reactor = builder.build();
 //        assertEquals(name, reactor.eventloopThread.getName());
-//    }
-//
-//    @Test
-//    public void test_setDeadlineRunQueueCapacity_whenAlreadyBuilt() {
-//        Reactor.Builder builder = newReactorContext();
-//        builder.build();
-//        assertThrows(IllegalStateException.class, () -> builder.setDeadlineRunQueueCapacity(10));
 //    }
 //
 //    @Test
@@ -162,13 +132,6 @@ public abstract class ReactorBuilderTest {
 //    }
 //
 //    @Test
-//    public void test_setDefaultTaskQueueBuilder_whenAlreadyBuilt() {
-//        Reactor.Builder builder = newReactorContext();
-//        builder.build();
-//        assertThrows(IllegalStateException.class, () -> builder.setDefaultTaskQueueContext(new TaskQueue.Context()));
-//    }
-//
-//    @Test
 //    public void test_setDefaultTaskQueueBuilder() {
 //        Reactor.Builder builder = newReactorContext();
 //        builder.setDefaultTaskQueueContext(new TaskQueue.Context()
@@ -187,15 +150,6 @@ public abstract class ReactorBuilderTest {
 //        assertNull(builder.threadAffinity);
 //    }
 //
-//
-//    @Test
-//    public void test_setAffinity_whenAlreadyBuilt() {
-//        Reactor.Builder builder = newReactorContext();
-//        builder.build();
-//        ThreadAffinity affinity = new ThreadAffinity("1-5");
-//        assertThrows(IllegalStateException.class, () -> builder.setThreadAffinity(affinity));
-//    }
-//
 //    @Test
 //    public void test_setThreadAffinity() {
 //        Reactor.Builder builder = newReactorContext();
@@ -203,13 +157,6 @@ public abstract class ReactorBuilderTest {
 //        builder.setThreadAffinity(affinity);
 //
 //        assertSame(affinity, builder.threadAffinity);
-//    }
-//
-//    @Test
-//    public void test_setSpin_whenAlreadyBuilt() {
-//        Reactor.Builder builder = newReactorContext();
-//        builder.build();
-//        assertThrows(IllegalStateException.class, () -> builder.setSpin(false));
 //    }
 //
 //    @Test

@@ -151,28 +151,11 @@ public class UringNopBenchmark {
                 long durationMs = nowMs - lastMs;
                 collect(metrics);
 
-                long completedSeconds = MILLISECONDS.toSeconds(nowMs - startMs);
-                double completed = (100f * completedSeconds) / runtimeSeconds;
-                sb.append("[etd ");
-                sb.append(completedSeconds / 60);
-                sb.append("m:");
-                sb.append(completedSeconds % 60);
-                sb.append("s ");
-                sb.append(String.format("%,.3f", completed));
-                sb.append("%]");
+                printEtd(nowMs, startMs, sb);
 
-                long eta = MILLISECONDS.toSeconds(endMs - nowMs);
-                sb.append("[eta ");
-                sb.append(eta / 60);
-                sb.append("m:");
-                sb.append(eta % 60);
-                sb.append("s]");
+                printEta(endMs, nowMs, sb);
 
-                long count = metrics.count;
-                double readsThp = ((count - lastMetrics.count) * 1000d) / durationMs;
-                sb.append("[cnt=");
-                sb.append(FormatUtil.humanReadableCountSI(readsThp));
-                sb.append("/s]");
+                printCount(metrics, lastMetrics, durationMs, sb);
 
                 System.out.println(sb);
                 sb.setLength(0);
@@ -182,6 +165,35 @@ public class UringNopBenchmark {
                 metrics = tmp;
                 lastMs = nowMs;
             }
+        }
+
+        private void printCount(Metrics metrics, Metrics lastMetrics, long durationMs, StringBuffer sb) {
+            long count = metrics.count;
+            double readsThp = ((count - lastMetrics.count) * 1000d) / durationMs;
+            sb.append("[cnt=");
+            sb.append(FormatUtil.humanReadableCountSI(readsThp));
+            sb.append("/s]");
+        }
+
+        private void printEta(long endMs, long nowMs, StringBuffer sb) {
+            long eta = MILLISECONDS.toSeconds(endMs - nowMs);
+            sb.append("[eta ");
+            sb.append(eta / 60);
+            sb.append("m:");
+            sb.append(eta % 60);
+            sb.append("s]");
+        }
+
+        private void printEtd(long nowMs, long startMs, StringBuffer sb) {
+            long completedSeconds = MILLISECONDS.toSeconds(nowMs - startMs);
+            double completed = (100f * completedSeconds) / runtimeSeconds;
+            sb.append("[etd ");
+            sb.append(completedSeconds / 60);
+            sb.append("m:");
+            sb.append(completedSeconds % 60);
+            sb.append("s ");
+            sb.append(String.format("%,.3f", completed));
+            sb.append("%]");
         }
     }
 
