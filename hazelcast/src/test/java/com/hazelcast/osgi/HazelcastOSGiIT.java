@@ -89,6 +89,8 @@ class HazelcastOSGiIT {
      * Is this test failing in your IDE?
      * Some versions of Intellij IDEA use a wrong working directory in multi-module Maven projects.
      * See this for a fix: https://youtrack.jetbrains.com/issue/IDEA-60965
+     * <p>
+     * An outdated PaxRunner used by the OSGi test prevents executing on Java 9+.
      */
     @EnabledOnJre({JRE.JAVA_8})
     @Test
