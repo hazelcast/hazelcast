@@ -37,7 +37,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class AwsEcsClientTest {
     private static final String CLUSTER = "cluster-arn";
     private static final AwsCredentials CREDENTIALS = AwsCredentials.builder()
