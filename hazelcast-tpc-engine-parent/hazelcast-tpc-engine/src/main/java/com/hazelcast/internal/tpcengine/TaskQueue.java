@@ -515,8 +515,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
      */
     public static final class Builder extends AbstractBuilder<TaskQueue> {
 
-        public static final int MIN_NICE = -20;
-        public static final int MAX_NICE = 20;
+        public static final int MIN_NICE = -10;
+        public static final int MAX_NICE = 10;
 
         private static final AtomicLong ID = new AtomicLong();
 
@@ -587,6 +587,12 @@ public final class TaskQueue implements Comparable<TaskQueue> {
          * you to run the tasks.
          */
         public TaskRunner taskRunner;
+
+        /**
+         * Builder needs to be created through {@link Eventloop#newTaskQueueBuilder()}.
+         */
+        protected Builder() {
+        }
 
         @Override
         protected void conclude() {

@@ -127,10 +127,6 @@ public class CompletelyFairScheduler extends Scheduler {
             //virtual runtime = real runtime * NICE_0_LOAD / weight of the process
 
             active.actualRuntimeNanos += cpuTimeNanos;
-            // todo: if the weight is very small, then the vruntimeDelta will be very big.
-            // and leads to an overflow faster. With 2^63 nanos, it takes 290 years to overflow.
-            // But with a minimal weight, the overflow happens at 290/88=3 years.
-            // So the bigger the weight of the task, the smaller the actual vruntime increment.
             long vruntimeDelta = max(1, cpuTimeNanos * NICE_0_LOAD / active.weight);
             active.virtualRuntimeNanos += vruntimeDelta;
         }
@@ -177,7 +173,8 @@ public class CompletelyFairScheduler extends Scheduler {
         totalWeight += taskQueue.weight;
         runQueueSize++;
         taskQueue.runState = RUN_STATE_RUNNING;
-        taskQueue.virtualRuntimeNanos = max(taskQueue.virtualRuntimeNanos, min_virtualRuntimeNanos);
+        taskQueue.virtualRuntimeNanos
+                = max(taskQueue.virtualRuntimeNanos, min_virtualRuntimeNanos);
         runQueue.add(taskQueue);
     }
 }
