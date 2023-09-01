@@ -60,7 +60,7 @@ public class CompletelyFairScheduler extends Scheduler {
     final long targetLatencyNanos;
     final long minGranularityNanos;
     long min_virtualRuntimeNanos;
-    int nrRunning;
+    int runQueueSize;
     // total weight of all the TaskGroups in this CfsScheduler (it is called
     // loadWeight in the kernel)
     long totalWeight;
@@ -75,11 +75,6 @@ public class CompletelyFairScheduler extends Scheduler {
         this.minGranularityNanos = checkPositive(minGranularityNanos, "minGranularityNanos");
     }
 
-//    @Override
-//    public boolean onRunQueue(TaskQueue taskQueue) {
-//        return runQueue.contains(taskQueue);
-//    }
-
     @Override
     public int runQueueLimit() {
         return runQueueLimit;
@@ -87,7 +82,7 @@ public class CompletelyFairScheduler extends Scheduler {
 
     @Override
     public int runQueueSize() {
-        return runQueue.size();
+        return runQueueSize;
     }
 
     public static int niceToWeight(int nice) {
@@ -115,14 +110,6 @@ public class CompletelyFairScheduler extends Scheduler {
         assert active == null;
 
         active = runQueue.poll();
-
-//        // todo: remove
-//        if(active!=null) {
-//            if (containsOutsideBlocked(active)){
-//                throw new RuntimeException();
-//            }
-//        }
-
         return active;
     }
 
@@ -153,15 +140,11 @@ public class CompletelyFairScheduler extends Scheduler {
     public void dequeueActive() {
         assert active != null;
 
-//        TaskQueue found = runQueue.poll();
-//        if(found!=active){
-//            throw new RuntimeException();
-//        }
-        nrRunning--;
+        runQueueSize--;
         totalWeight -= active.weight;
         active = null;
 
-        if (nrRunning > 0) {
+        if (runQueueSize > 0) {
             min_virtualRuntimeNanos = runQueue.peek().virtualRuntimeNanos;
         }
     }
@@ -174,12 +157,7 @@ public class CompletelyFairScheduler extends Scheduler {
     public void yieldActive() {
         assert active != null;
 
-        //if (nrRunning > 1) {
-            // if there is only one taskQueue in the runQueue, then there is no
-            // need to yield.
-            //runQueue.poll();
-            runQueue.offer(active);
-       // }
+        runQueue.offer(active);
 
         active = null;
         min_virtualRuntimeNanos = runQueue.peek().virtualRuntimeNanos;
@@ -194,10 +172,10 @@ public class CompletelyFairScheduler extends Scheduler {
     @Override
     public void enqueue(TaskQueue taskQueue) {
         // the eventloop should control the number of created taskQueues
-        assert nrRunning <= runQueueLimit;
+        assert runQueueSize <= runQueueLimit;
 
         totalWeight += taskQueue.weight;
-        nrRunning++;
+        runQueueSize++;
         taskQueue.runState = RUN_STATE_RUNNING;
         taskQueue.virtualRuntimeNanos = max(taskQueue.virtualRuntimeNanos, min_virtualRuntimeNanos);
         runQueue.add(taskQueue);

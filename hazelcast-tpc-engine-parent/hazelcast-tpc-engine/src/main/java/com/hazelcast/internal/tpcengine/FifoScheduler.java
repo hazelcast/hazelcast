@@ -58,11 +58,6 @@ public class FifoScheduler extends Scheduler {
         this.minGranularityNanos = minGranularityNanos;
     }
 
-//    @Override
-//    public boolean onRunQueue(TaskQueue taskQueue) {
-//        return runQueue.contains(taskQueue);
-//    }
-
     @Override
     public int runQueueLimit() {
         return runQueueLimit;

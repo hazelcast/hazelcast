@@ -79,7 +79,7 @@ public class SchedulingBenchmarkCli {
         String runtimeSec = runtime.substring(0, runtime.length() - 1).trim();
         benchmark.runtimeSeconds = Integer.parseInt(runtimeSec);
         benchmark.reactorType = ReactorType.fromString(options.valueOf(reactorTypeSpec));
-        benchmark.reactorCount = options.valueOf(reactorsSpec);
+        benchmark.reactorCnt = options.valueOf(reactorsSpec);
         benchmark.affinity = options.valueOf(affinitySpec);
         benchmark.run();
         System.exit(0);

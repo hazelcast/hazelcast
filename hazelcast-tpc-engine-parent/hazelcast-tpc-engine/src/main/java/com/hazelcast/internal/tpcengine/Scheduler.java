@@ -108,29 +108,12 @@ public abstract class Scheduler {
             taskQueue.next = null;
         }
     }
-//
-//    // todo: for testing purposes
-//    public boolean containsOutsideBlocked(TaskQueue taskQueue) {
-//        TaskQueue n = blockedOutsideFirst;
-//        while (n != null) {
-//            if (n == taskQueue) {
-//                return true;
-//            }
-//            n = n.next;
-//        }
-//        return false;
-//    }
 
     public final void addOutsideBlocked(TaskQueue taskQueue) {
-
         assert taskQueue.outside != null;
         assert taskQueue.runState == RUN_STATE_BLOCKED;
         assert taskQueue.prev == null;
         assert taskQueue.next == null;
-//
-//        if(onRunQueue(taskQueue)){
-//            throw new RuntimeException("Task both blocked and on taskQueue");
-//        }
 
         TaskQueue l = blockedOutsideLast;
         taskQueue.prev = l;

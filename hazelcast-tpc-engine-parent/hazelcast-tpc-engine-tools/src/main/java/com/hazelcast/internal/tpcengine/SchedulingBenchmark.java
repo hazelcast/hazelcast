@@ -34,31 +34,38 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Ideally the performance of the context switch should be bound to the time it takes to call
- * the {@link System#nanoTime()}. And that should be around the 25-30 ns on Linux.
+ * Ideally the performance of the taskqueue context switch should be bound to
+ * the time it takes to call the {@link System#nanoTime()}. And that should be
+ * around the 25-30 ns on Linux.
  * <p>
  * Make sure the following JVM parameter is added:
  * --add-opens java.base/sun.nio.ch=ALL-UNNAMED
  */
 public class SchedulingBenchmark {
 
-    public int runtimeSeconds = 20;
-    public int tasksPerTaskGroupCnt = 1;
+    // The type of the reactor
     public ReactorType reactorType = ReactorType.NIO;
+    // number of reactors
+    public int reactorCnt = 1;
+    // the duration of the benchmark
+    public int runtimeSeconds = 10;
+    // The number of task groups
+    public int taskGroupCnt = 1;
+    // number of tasks per task group
+    public int tasksPerTaskGroupCnt = 10;
     public boolean useTask = true;
     // this will force every task context switch from one task to the next
     // task in the same task group, to measure time. So effectively it is
     // maximum pressure on the clock.
     public int clockSampleInterval = 1;
-    public int taskGroupCnt = 1;
     public boolean randomNiceLevel = false;
+    // true of the completely fair scheduler, false for the fifo scheduler
     public boolean cfs = true;
     public String affinity = "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15";
     // When set to -1, value is ignored.
     public long minGranularityNanos = -1;
     // When set to -1, value is ignored.
     public long targetLatencyNanos = -1;
-    public int reactorCount = 1;
 
     private volatile boolean stop = false;
     private PaddedAtomicLong[] csCounters;
@@ -72,8 +79,8 @@ public class SchedulingBenchmark {
     public void run() throws InterruptedException {
         printConfig();
 
-        csCounters = new PaddedAtomicLong[reactorCount];
-        for (int k = 0; k < reactorCount; k++) {
+        csCounters = new PaddedAtomicLong[reactorCnt];
+        for (int k = 0; k < reactorCnt; k++) {
             csCounters[k] = new PaddedAtomicLong();
         }
 
@@ -81,7 +88,7 @@ public class SchedulingBenchmark {
 
         long start = currentTimeMillis();
 
-        for (int reactorIndex = 0; reactorIndex < reactorCount; reactorIndex++) {
+        for (int reactorIndex = 0; reactorIndex < reactorCnt; reactorIndex++) {
             Reactor reactor = reactors[reactorIndex];
             final PaddedAtomicLong counter = csCounters[reactorIndex];
             reactor.execute(() -> {
@@ -130,12 +137,12 @@ public class SchedulingBenchmark {
         System.out.println("Context switches:" + csCount);
         float thp = csCount * 1000f / durationMs;
         System.out.println("Throughput:" + humanReadableCountSI(thp) + "/second");
-        System.out.println("Avg context switch latency:" + (MILLISECONDS.toNanos(durationMs) / (csCount / reactorCount)) + " ns");
+        System.out.println("Avg context switch latency:" + (MILLISECONDS.toNanos(durationMs) / (csCount / reactorCnt)) + " ns");
     }
 
     private void printConfig() {
         System.out.println("ReactorType:" + reactorType);
-        System.out.println("reactorCount:" + reactorCount);
+        System.out.println("reactorCount:" + reactorCnt);
         System.out.println("minGranularityNanos:" + minGranularityNanos);
         System.out.println("targetLatencyNanos:" + targetLatencyNanos);
         System.out.println("runtimeSeconds:" + runtimeSeconds);
@@ -150,7 +157,7 @@ public class SchedulingBenchmark {
 
     private Reactor[] newReactors() {
         ThreadAffinity threadAffinity = affinity == null ? null : new ThreadAffinity(affinity);
-        Reactor[] reactors = new Reactor[reactorCount];
+        Reactor[] reactors = new Reactor[reactorCnt];
         for (int k = 0; k < reactors.length; k++) {
             Reactor.Builder reactorBuilder = Reactor.Builder.newReactorBuilder(reactorType);
             reactorBuilder.cfs = cfs;
@@ -224,6 +231,7 @@ public class SchedulingBenchmark {
 
     private class MonitorThread extends Thread {
         private final StringBuffer sb = new StringBuffer();
+
         public MonitorThread() {
             super("MonitorThread");
         }

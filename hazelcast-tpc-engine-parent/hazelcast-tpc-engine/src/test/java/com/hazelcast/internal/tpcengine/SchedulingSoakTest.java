@@ -40,14 +40,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public abstract class SchedulingSoakTest {
     // The public properties are the tunnables for this soak test.
-    public long runtimeSeconds = 5;
+    public long runtimeSeconds = 300;
     // total number of reactors
     public int reactorCount = 5;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
-
     // number of task queues per reactor
-    public int taskQueueCount = 10;
-
+    public int taskQueueCount = 1000;
+    // total number of tasks
     public int taskCount = 1000;
 
     private final List<PaddedAtomicLong> counters = new ArrayList<>();
@@ -61,11 +60,16 @@ public abstract class SchedulingSoakTest {
     @Before
     public void before() {
         for (int k = 0; k < reactorCount; k++) {
-            Reactor.Builder builder = newReactorBuilder();
-            Reactor reactor = builder.build();
+            Reactor.Builder reactorBuilder = newReactorBuilder();
+            reactorBuilder.runQueueLimit = taskQueueCount + 1;
+            Reactor reactor = reactorBuilder.build();
             reactorList.add(reactor);
             reactor.start();
+        }
 
+        // create the task groups
+        for (int k = 0; k < reactorCount; k++) {
+            Reactor reactor = reactorList.get(k);
             List<TaskQueue> taskQueues = new ArrayList<>();
             taskQueueMap.put(reactor, taskQueues);
             for (int l = 0; l < taskQueueCount; l++) {
@@ -101,6 +105,7 @@ public abstract class SchedulingSoakTest {
             if (iteration < 100) {
                 return RUN_YIELD;
             } else {
+                iteration = 0;
                 TaskQueue taskQueue = randomTaskQueue(random);
                 if (!taskQueue.offer(this)) {
                     throw new RuntimeException("Failed to add task to taskQueue");
