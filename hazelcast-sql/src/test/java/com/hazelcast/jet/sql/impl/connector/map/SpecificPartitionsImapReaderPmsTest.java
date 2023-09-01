@@ -17,23 +17,31 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
+import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP;
 import com.hazelcast.jet.sql.impl.SqlEndToEndTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,13 +49,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.sql.impl.connector.map.SpecificPartitionsImapReaderPms.mapReader;
-import static java.util.stream.Collectors.toSet;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -95,7 +103,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SqlEndToEndTestSupport 
         perMemberOwnedPKey = new int[MEMBERS - 1];
         perMemberOwnedPId = new int[MEMBERS - 1];
 
-        Address coordinatorAddress = instance().getCluster().getLocalMember().getAddress();
+        Address coordinatorAddress = Accessors.getAddress(instance());
         for (int i = 1; i < ITERATIONS; ++i) {
             int pIdCandidate = instance().getPartitionService().getPartition(i).getPartitionId();
             if (reversedPartitionAssignment.get(pIdCandidate).equals(coordinatorAddress)) {
@@ -119,6 +127,92 @@ public class SpecificPartitionsImapReaderPmsTest extends SqlEndToEndTestSupport 
         }
     }
 
+    @Test
+    public void test_nonPrunableScan_unitTest() throws Exception {
+        SpecificPartitionsImapReaderPms readPms = (SpecificPartitionsImapReaderPms) mapReader(mapName, null, null);
+
+        readPms.init(getMetaSupplierContext());
+
+        // Ensure that we scan all partitions.
+        assertNull(readPms.partitionsToScan);
+        Function<Address, ProcessorSupplier> psf = readPms.get(new ArrayList<>(partitionAssignment.keySet()));
+
+        for(HazelcastInstance hz : instances()) {
+            TestProcessorSupplierContext psCtx = new TestProcessorSupplierContext().setHazelcastInstance(hz);
+            Address address = Accessors.getAddress(hz);
+            ReadMapOrCacheP.LocalProcessorSupplier ps = (ReadMapOrCacheP.LocalProcessorSupplier) psf.apply(address);
+            ps.init(psCtx);
+            assertThat(ps.getPartitionsToScan()).as("Should scan all partitions owned by member")
+                    .containsExactly(psCtx.memberPartitions());
+        }
+    }
+
+    @Test
+    public void test_prunableScan_unitTest() throws Exception {
+        for(int partitionCountToUse = 0; partitionCountToUse < perMemberOwnedPKey.length + 1; ++partitionCountToUse) {
+            // given
+            List<List<Expression<?>>> expressions = new ArrayList<>();
+            if (partitionCountToUse > 0) {
+                expressions.add(List.of(ConstantExpression.create(coordinatorOwnedPartitionKey, QueryDataType.INT)));
+            }
+            for (int i = 0; i < partitionCountToUse - 1; ++i) {
+                expressions.add(List.of(ConstantExpression.create(perMemberOwnedPKey[i], QueryDataType.INT)));
+            }
+            SpecificPartitionsImapReaderPms readPms = (SpecificPartitionsImapReaderPms) mapReader(mapName, null, expressions);
+
+            // when
+            readPms.init(getMetaSupplierContext());
+
+            // then
+            int[] expected = partitionCountToUse > 0
+                    ? ArrayUtils.add(Arrays.copyOf(perMemberOwnedPId, partitionCountToUse - 1), coordinatorOwnedPartitionId)
+                    : new int[]{};
+            assertThat(readPms.partitionsToScan)
+                    .as("Should scan expected partitions").containsExactlyInAnyOrder(expected)
+                    .as("Partitions list should be sorted").isSorted();
+        }
+    }
+
+    @Test
+    public void test_prunableScan_psUnitTest() throws Exception {
+        // given
+        List<List<Expression<?>>> expressions = new ArrayList<>();
+        expressions.add(List.of(ConstantExpression.create(coordinatorOwnedPartitionKey, QueryDataType.INT)));
+        SpecificPartitionsImapReaderPms readPms = (SpecificPartitionsImapReaderPms) mapReader(mapName, null, expressions);
+
+        TestProcessorSupplierContext context = new TestProcessorSupplierContext().setHazelcastInstance(instance());
+        readPms.init(context);
+
+        Address coordinatorAddress = Accessors.getAddress(instance());
+        ReadMapOrCacheP.LocalProcessorSupplier ps = (ReadMapOrCacheP.LocalProcessorSupplier)
+                readPms.get(List.of(coordinatorAddress)).apply(coordinatorAddress);
+
+        // when
+        ps.init(context);
+
+        // then
+        assertThat(ps.getPartitionsToScan())
+                .as("Should scan only expected partitions").containsExactly(coordinatorOwnedPartitionId);
+    }
+
+    @Test
+    public void test_prunableScanDuplicates_unitTest() throws Exception {
+        // given
+        List<List<Expression<?>>> expressions = new ArrayList<>();
+        // simulate situation when many expressions produce the same partition
+        for (int i = 0; i < 5; ++i) {
+            expressions.add(List.of(ConstantExpression.create(coordinatorOwnedPartitionKey, QueryDataType.INT)));
+        }
+        SpecificPartitionsImapReaderPms readPms = (SpecificPartitionsImapReaderPms) mapReader(mapName, null, expressions);
+
+        // when
+        readPms.init(getMetaSupplierContext());
+
+        // then
+        assertThat(readPms.partitionsToScan)
+                .as("Should scan partition once").containsExactly(coordinatorOwnedPartitionId);
+    }
+
     // We test basic code path for IMap scan
     @Test
     public void test_nonPrunableScan() {
@@ -134,18 +228,6 @@ public class SpecificPartitionsImapReaderPmsTest extends SqlEndToEndTestSupport 
         instance().getJet().newLightJob(dag).join();
 
         assertEquals(0, instance().getMap(sinkName).get(0));
-
-        Vertex sourceV = dag.getVertex("source");
-        assertNotNull(sourceV);
-
-        ProcessorMetaSupplier metaSupplier = sourceV.getMetaSupplier();
-        assertNotNull(metaSupplier);
-        assertInstanceOf(SpecificPartitionsImapReaderPms.class, metaSupplier);
-
-        SpecificPartitionsImapReaderPms pms = (SpecificPartitionsImapReaderPms) metaSupplier;
-
-        // Ensure that we scan all partitions.
-        assertNull(pms.partitionsToScan);
     }
 
     @Test
@@ -174,12 +256,25 @@ public class SpecificPartitionsImapReaderPmsTest extends SqlEndToEndTestSupport 
         assertPrunability(partitionsToUse);
     }
 
-    private DAG setupPrunableDag(IMap<Integer, Integer> map, int partitionCountToUse) {
-        assertGreaterOrEquals("Should scan at least one partition", partitionCountToUse, 1);
+    @Test
+    public void test_prunableNoPartitions() {
+        // Given
+        int partitionsToUse = 0;
+        DAG dag = setupPrunableDag(sourceMap, partitionsToUse);
 
+        // When
+        instance().getJet().newLightJob(dag).join();
+
+        // Then
+        assertPrunability(partitionsToUse);
+    }
+
+    private DAG setupPrunableDag(IMap<Integer, Integer> map, int partitionCountToUse) {
         List<List<Expression<?>>> expressions = new ArrayList<>();
-        map.put(coordinatorOwnedPartitionKey, coordinatorOwnedPartitionKey);
-        expressions.add(List.of(ConstantExpression.create(coordinatorOwnedPartitionKey, QueryDataType.INT)));
+        if (partitionCountToUse > 0) {
+            map.put(coordinatorOwnedPartitionKey, coordinatorOwnedPartitionKey);
+            expressions.add(List.of(ConstantExpression.create(coordinatorOwnedPartitionKey, QueryDataType.INT)));
+        }
         for (int i = 0; i < partitionCountToUse - 1; ++i) {
             map.put(perMemberOwnedPKey[i], perMemberOwnedPKey[i]);
             expressions.add(List.of(ConstantExpression.create(perMemberOwnedPKey[i], QueryDataType.INT)));
@@ -200,35 +295,16 @@ public class SpecificPartitionsImapReaderPmsTest extends SqlEndToEndTestSupport 
     private void assertPrunability(int partitionCountUsed) {
         // Assert sink map read all results
         assertEquals(partitionCountUsed, sinkMap.size());
-        assertEquals(coordinatorOwnedPartitionKey, instance().getMap(sinkName).get(coordinatorOwnedPartitionKey));
+        if (partitionCountUsed > 0) {
+            assertEquals(coordinatorOwnedPartitionKey, instance().getMap(sinkName).get(coordinatorOwnedPartitionKey));
+        }
         for (int i = 0; i < partitionCountUsed - 1; i++) {
             assertEquals(perMemberOwnedPKey[i], instance().getMap(sinkName).get(perMemberOwnedPKey[i]));
         }
+    }
 
-        DAG dag = this.jobInvocationObserver.dag;
-        assertNotNull(dag);
-
-        // Assert received DAG has "source" vertex
-        Vertex sourceV = dag.getVertex("source");
-        assertNotNull(sourceV);
-
-        // Assert vertex has SpecificPartitionsImapReaderPms as PMS.
-        ProcessorMetaSupplier metaSupplier = sourceV.getMetaSupplier();
-        assertNotNull(metaSupplier);
-        assertInstanceOf(SpecificPartitionsImapReaderPms.class, metaSupplier);
-        SpecificPartitionsImapReaderPms pms = (SpecificPartitionsImapReaderPms) metaSupplier;
-
-        // Ensure we scan {@partitionCountUsed} partitions.
-        assertNotNull(pms.partitionsToScan);
-        assertEquals(partitionCountUsed, pms.partitionsToScan.length);
-
-        // Ensure we scan exact partitions used from SpecificPartitionsImapReaderPms ctor params.
-        Set<Integer> partitionsActual = Arrays.stream(pms.partitionsToScan).boxed().collect(toSet());
-        Set<Integer> partitionsUsed = new HashSet<>();
-        partitionsUsed.add(coordinatorOwnedPartitionId);
-        for (int i = 0; i < partitionCountUsed - 1; ++i) {
-            partitionsUsed.add(perMemberOwnedPId[i]);
-        }
-        assertCollection(partitionsUsed, partitionsActual);
+    @Nonnull
+    private static TestProcessorMetaSupplierContext getMetaSupplierContext() {
+        return new TestProcessorMetaSupplierContext().setHazelcastInstance(instance());
     }
 }
