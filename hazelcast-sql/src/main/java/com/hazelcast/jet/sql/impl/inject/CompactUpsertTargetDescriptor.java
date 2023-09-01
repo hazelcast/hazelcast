@@ -39,7 +39,7 @@ public class CompactUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new CompactUpsertTarget(schema);
+        return new CompactUpsertTarget(schema, serializationService);
     }
 
     @Override

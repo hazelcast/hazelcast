@@ -28,8 +28,8 @@ public class HazelcastObjectUpsertTargetDescriptor implements UpsertTargetDescri
     public HazelcastObjectUpsertTargetDescriptor() { }
 
     @Override
-    public UpsertTarget create(final InternalSerializationService serializationService) {
-        return new HazelcastObjectUpsertTarget();
+    public UpsertTarget create(InternalSerializationService serializationService) {
+        return new HazelcastObjectUpsertTarget(serializationService);
     }
 
     @Override

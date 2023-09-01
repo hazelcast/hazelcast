@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -28,6 +29,10 @@ import java.util.function.UnaryOperator;
 @NotThreadSafe
 class HazelcastObjectUpsertTarget extends AbstractPojoUpsertTarget {
     private Object object;
+
+    HazelcastObjectUpsertTarget(InternalSerializationService serializationService) {
+        super(serializationService);
+    }
 
     @Override
     public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {

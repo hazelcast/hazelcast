@@ -17,6 +17,7 @@
 package com.hazelcast.test;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
@@ -69,6 +70,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -76,6 +78,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
@@ -88,6 +91,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -99,6 +103,7 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -358,6 +363,35 @@ public abstract class HazelcastTestSupport {
      */
     public static List<Object[]> parameters(List<?>... lists) {
         return Lists.cartesianProduct(lists).stream().map(List::toArray).collect(toList());
+    }
+
+
+    /**
+     * Computes the cartesian product of the values of the specified maps and
+     * prepends each result array with the comma-separated list of corresponding keys.
+     */
+    @SafeVarargs
+    public static List<Object[]> parameters(Map<String, ?>... maps) {
+        return parameters(", ", maps);
+    }
+
+    /**
+     * Computes the cartesian product of the values of the specified maps and
+     * prepends each result array with the concatenated list of corresponding keys
+     * by the specified separator. If the separator is null, keys are not concatenated.
+     */
+    @SafeVarargs
+    public static List<Object[]> parameters(String separator, Map<String, ?>... maps) {
+        return Sets.cartesianProduct(
+                Arrays.stream(maps).map(Map::entrySet).collect(toList())
+        ).stream().map(pairs ->
+                Stream.concat(
+                        separator != null
+                                ? Stream.of(pairs.stream().map(Entry::getKey).collect(joining(separator)))
+                                : pairs.stream().map(Entry::getKey),
+                        pairs.stream().map(Entry::getValue)
+                ).toArray()
+        ).collect(toList());
     }
 
     // ###########################

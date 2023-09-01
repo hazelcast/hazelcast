@@ -16,25 +16,48 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.function.BiFunction;
 
+import static java.util.Map.entry;
 import static java.util.stream.Collectors.toList;
 
 public abstract class UpsertTarget {
+    private final Extractors extractors;
+
+    public UpsertTarget(InternalSerializationService serializationService) {
+        extractors = serializationService != null ? Extractors.newBuilder(serializationService).build() : null;
+    }
+
+    public UpsertTarget() {
+        this(null);
+    }
+
+    private Extractor getExtractor(Object value) {
+        if (value instanceof RowValue) {
+            List<Object> values = ((RowValue) value).getValues();
+            return (i, name) -> values.get(i);
+        } else {
+            return (i, name) -> extractors.extract(value, name, false);
+        }
+    }
 
     protected <T> Injector<T> createRecordInjector(QueryDataType type,
                                                    BiFunction<String, QueryDataType, Injector<T>> createFieldInjector) {
-        List<Injector<T>> injectors = type.getObjectFields().stream()
-                .map(field -> createFieldInjector.apply(field.getName(), field.getDataType()))
+        List<Entry<String, Injector<T>>> injectors = type.getObjectFields().stream()
+                .map(field -> entry(field.getName(), createFieldInjector.apply(field.getName(), field.getDataType())))
                 .collect(toList());
         return (record, value) -> {
+            Extractor extractor = getExtractor(value);
             for (int i = 0; i < injectors.size(); i++) {
-                injectors.get(i).set(record, ((RowValue) value).getValues().get(i));
+                injectors.get(i).getValue().set(record, extractor.get(i, injectors.get(i).getKey()));
             }
         };
     }
@@ -44,6 +67,11 @@ public abstract class UpsertTarget {
     public abstract void init();
 
     public abstract Object conclude();
+
+    @FunctionalInterface
+    private interface Extractor {
+        Object get(int index, String name);
+    }
 
     @FunctionalInterface
     protected interface Injector<T> {

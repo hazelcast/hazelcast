@@ -35,7 +35,7 @@ public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new PojoUpsertTarget(className);
+        return new PojoUpsertTarget(className, serializationService);
     }
 
     @Override

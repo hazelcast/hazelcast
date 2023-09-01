@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.sql.impl.type.converter.ToConverters;
 import com.hazelcast.sql.impl.QueryException;
@@ -32,6 +33,10 @@ import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 
 @NotThreadSafe
 abstract class AbstractPojoUpsertTarget extends UpsertTarget {
+
+    protected AbstractPojoUpsertTarget(InternalSerializationService serializationService) {
+        super(serializationService);
+    }
 
     protected Injector<Object> createInjector(Class<?> typeClass, String path, QueryDataType type) {
         UnaryOperator<Object> converter = type.isCustomType()

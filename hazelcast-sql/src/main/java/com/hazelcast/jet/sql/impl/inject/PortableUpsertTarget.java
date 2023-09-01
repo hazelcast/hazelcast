@@ -44,6 +44,7 @@ class PortableUpsertTarget extends UpsertTarget {
     private PortableGenericRecordBuilder record;
 
     PortableUpsertTarget(ClassDefinition classDefinition, InternalSerializationService serializationService) {
+        super(serializationService);
         context = serializationService != null ? serializationService.getPortableContext() : null;
         this.classDefinition = classDefinition;
     }

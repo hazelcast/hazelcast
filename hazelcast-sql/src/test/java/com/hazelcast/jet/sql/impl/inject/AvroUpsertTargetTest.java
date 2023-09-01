@@ -58,7 +58,7 @@ public class AvroUpsertTargetTest {
                 .optionalString("timestampTz")
                 .endRecord();
 
-        UpsertTarget target = new AvroUpsertTarget(schema);
+        UpsertTarget target = new AvroUpsertTarget(schema, null);
         UpsertInjector nullInjector = target.createInjector("null", QueryDataType.OBJECT);
         UpsertInjector stringInjector = target.createInjector("string", QueryDataType.VARCHAR);
         UpsertInjector booleanInjector = target.createInjector("boolean", QueryDataType.BOOLEAN);
@@ -137,7 +137,7 @@ public class AvroUpsertTargetTest {
         Schema schema = SchemaBuilder.record("name").fields()
                 .name("object").type(OBJECT_SCHEMA).withDefault(null)
                 .endRecord();
-        UpsertTarget target = new AvroUpsertTarget(schema);
+        UpsertTarget target = new AvroUpsertTarget(schema, null);
         UpsertInjector injector = target.createInjector("object", QueryDataType.OBJECT);
 
         target.init();

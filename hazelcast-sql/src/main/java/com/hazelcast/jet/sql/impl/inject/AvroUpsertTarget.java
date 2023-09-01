@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.DefaultedMap;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -75,7 +76,8 @@ public class AvroUpsertTarget extends UpsertTarget {
 
     private GenericRecordBuilder record;
 
-    AvroUpsertTarget(Schema schema) {
+    AvroUpsertTarget(Schema schema, InternalSerializationService serializationService) {
+        super(serializationService);
         this.schema = schema;
     }
 
