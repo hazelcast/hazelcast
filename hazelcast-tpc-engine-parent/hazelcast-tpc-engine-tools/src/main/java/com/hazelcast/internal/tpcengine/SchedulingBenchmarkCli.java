@@ -41,8 +41,8 @@ public class SchedulingBenchmarkCli {
             .withRequiredArg().ofType(String.class)
             .defaultsTo("nio");
 
-    private final OptionSpec<Integer> reactorsSpec = parser
-            .accepts("reactors", "The number of reactors.")
+    private final OptionSpec<Integer> reactorCntSpec = parser
+            .accepts("reactorCnt", "The number of reactors.")
             .withRequiredArg().ofType(Integer.class)
             .defaultsTo(1);
 
@@ -79,7 +79,7 @@ public class SchedulingBenchmarkCli {
         String runtimeSec = runtime.substring(0, runtime.length() - 1).trim();
         benchmark.runtimeSeconds = Integer.parseInt(runtimeSec);
         benchmark.reactorType = ReactorType.fromString(options.valueOf(reactorTypeSpec));
-        benchmark.reactorCnt = options.valueOf(reactorsSpec);
+        benchmark.reactorCnt = options.valueOf(reactorCntSpec);
         benchmark.affinity = options.valueOf(affinitySpec);
         benchmark.run();
         System.exit(0);

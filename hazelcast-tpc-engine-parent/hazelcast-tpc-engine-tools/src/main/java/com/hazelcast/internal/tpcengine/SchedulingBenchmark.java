@@ -52,7 +52,7 @@ public class SchedulingBenchmark {
     // The number of task groups
     public int taskGroupCnt = 1;
     // number of tasks per task group
-    public int tasksPerTaskGroupCnt = 10;
+    public int tasksPerTaskGroupCnt = 1;
     public boolean useTask = true;
     // this will force every task context switch from one task to the next
     // task in the same task group, to measure time. So effectively it is
@@ -67,6 +67,7 @@ public class SchedulingBenchmark {
     // When set to -1, value is ignored.
     public long targetLatencyNanos = -1;
 
+    // Internal state of the benchmark itself.
     private volatile boolean stop = false;
     private PaddedAtomicLong[] csCounters;
     private final Random random = new Random();
@@ -104,7 +105,7 @@ public class SchedulingBenchmark {
                 for (TaskQueue taskQueue : taskQueues) {
                     for (int k = 0; k < tasksPerTaskGroupCnt; k++) {
                         if (useTask) {
-                            RunnableJob task = new RunnableJob(taskQueue, counter);
+                            SchedulingRunnable task = new SchedulingRunnable(taskQueue, counter);
                             taskQueue.offer(task);
                         } else {
                             SchedulingTask task = new SchedulingTask(counter);
@@ -137,7 +138,8 @@ public class SchedulingBenchmark {
         System.out.println("Context switches:" + csCount);
         float thp = csCount * 1000f / durationMs;
         System.out.println("Throughput:" + humanReadableCountSI(thp) + "/second");
-        System.out.println("Avg context switch latency:" + (MILLISECONDS.toNanos(durationMs) / (csCount / reactorCnt)) + " ns");
+        long latencyMs = MILLISECONDS.toNanos(durationMs) / (csCount / reactorCnt);
+        System.out.println("Avg context switch latency:" + latencyMs + " ns");
     }
 
     private void printConfig() {
@@ -191,11 +193,11 @@ public class SchedulingBenchmark {
         return taskQueueBuilder.build();
     };
 
-    private class RunnableJob implements Runnable {
+    private class SchedulingRunnable implements Runnable {
         private final TaskQueue taskQueue;
         private final PaddedAtomicLong counter;
 
-        public RunnableJob(TaskQueue taskQueue, PaddedAtomicLong counter) {
+        public SchedulingRunnable(TaskQueue taskQueue, PaddedAtomicLong counter) {
             this.taskQueue = taskQueue;
             this.counter = counter;
         }
@@ -254,7 +256,6 @@ public class SchedulingBenchmark {
             Metrics lastMetrics = new Metrics();
             Metrics metrics = new Metrics();
 
-
             while (currentTimeMillis() < endMs) {
                 Thread.sleep(SECONDS.toMillis(1));
                 long nowMs = currentTimeMillis();
@@ -278,21 +279,6 @@ public class SchedulingBenchmark {
             }
         }
 
-        private void printLatency(Metrics metrics, Metrics lastMetrics) {
-            long diff = metrics.cs - lastMetrics.cs;
-            sb.append("[lat=");
-            double latencyNs = (SECONDS.toNanos(1) * 1d) / diff;
-            sb.append(humanReadableCountSI(latencyNs));
-            sb.append(" ns]");
-        }
-
-        private void printThp(Metrics metrics, Metrics lastMetrics) {
-            long diff = metrics.cs - lastMetrics.cs;
-            sb.append("[thp=");
-            sb.append(humanReadableCountSI(diff));
-            sb.append("/s]");
-        }
-
         private void printEta(long endMs, long nowMs) {
             long eta = MILLISECONDS.toSeconds(endMs - nowMs);
             sb.append("[eta ");
@@ -312,6 +298,21 @@ public class SchedulingBenchmark {
             sb.append("s ");
             sb.append(String.format("%,.3f", completed));
             sb.append("%]");
+        }
+
+        private void printLatency(Metrics metrics, Metrics lastMetrics) {
+            long diff = metrics.cs - lastMetrics.cs;
+            sb.append("[lat=");
+            double latencyNs = (SECONDS.toNanos(1) * 1d) / diff;
+            sb.append(humanReadableCountSI(latencyNs));
+            sb.append(" ns]");
+        }
+
+        private void printThp(Metrics metrics, Metrics lastMetrics) {
+            long diff = metrics.cs - lastMetrics.cs;
+            sb.append("[thp=");
+            sb.append(humanReadableCountSI(diff));
+            sb.append("/s]");
         }
     }
 
