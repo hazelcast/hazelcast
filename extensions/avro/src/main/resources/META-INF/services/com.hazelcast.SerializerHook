@@ -15,4 +15,5 @@
 #
 
 com.hazelcast.jet.avro.AvroSerializerHooks$GenericRecordHook
+com.hazelcast.jet.avro.AvroSerializerHooks$SchemaHook
 com.hazelcast.jet.avro.AvroSerializerHooks$Utf8Hook

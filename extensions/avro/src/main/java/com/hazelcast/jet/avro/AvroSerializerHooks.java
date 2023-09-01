@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.avro;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.jet.avro.impl.AvroSchemaStorage;
 import com.hazelcast.jet.impl.serialization.SerializerHookConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -24,7 +27,6 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import org.apache.avro.Schema;
-import org.apache.avro.SchemaNormalization;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
@@ -39,10 +41,10 @@ import org.apache.avro.util.Utf8;
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static org.apache.avro.SchemaNormalization.toParsingForm;
 
 /**
  * Hazelcast serializer hooks for the classes in the {@code com.hazelcast.jet.avro} package.
@@ -70,9 +72,8 @@ public final class AvroSerializerHooks {
         }
     }
 
-    public static class GenericRecordHook implements SerializerHook<GenericRecord> {
-        private final Map<String, Schema> jsonToSchema = new HashMap<>();
-        private final Map<Schema, String> schemaToJson = new HashMap<>();
+    public static class GenericRecordHook implements SerializerHook<GenericRecord>, HazelcastInstanceAware {
+        private AvroSchemaStorage schemas;
 
         @Override
         public Class<GenericRecord> getSerializationType() {
@@ -89,9 +90,8 @@ public final class AvroSerializerHooks {
 
                 @Override
                 public void write(@Nonnull ObjectDataOutput out, @Nonnull GenericRecord record) throws IOException {
-                    String schemaJson = schemaToJson.computeIfAbsent(record.getSchema(),
-                            SchemaNormalization::toParsingForm);
-                    out.writeString(schemaJson);
+                    long schemaId = schemas.put(record.getSchema());
+                    out.writeLong(schemaId);
                     out.writeByteArray(record instanceof LazyImmutableRecord
                             ? ((LazyImmutableRecord) record).serializedRecord
                             : serialize(new GenericDatumWriter<>(record.getSchema()), record));
@@ -100,10 +100,48 @@ public final class AvroSerializerHooks {
                 @Nonnull
                 @Override
                 public GenericRecord read(@Nonnull ObjectDataInput in) throws IOException {
-                    String schemaJson = in.readString();
-                    Schema schema = jsonToSchema.computeIfAbsent(schemaJson,
-                            json -> new Schema.Parser().parse(json));
+                    long schemaId = in.readLong();
+                    Schema schema = schemas.get(schemaId);
                     return new LazyImmutableRecord(in.readByteArray(), schema);
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return false;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            if (hazelcastInstance != null) {
+                schemas = new AvroSchemaStorage(hazelcastInstance);
+            }
+        }
+    }
+
+    public static final class SchemaHook implements SerializerHook<Schema> {
+        @Override
+        public Class<Schema> getSerializationType() {
+            return Schema.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new ByteArraySerializer<Schema>() {
+                @Override
+                public int getTypeId() {
+                    return SerializerHookConstants.AVRO_SCHEMA;
+                }
+
+                @Override
+                public byte[] write(Schema schema) {
+                    return toParsingForm(schema).getBytes(StandardCharsets.UTF_8);
+                }
+
+                @Override
+                public Schema read(byte[] buffer) {
+                    return new Schema.Parser().parse(new String(buffer, StandardCharsets.UTF_8));
                 }
             };
         }
