@@ -16,29 +16,69 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import org.jctools.queues.MpscArrayQueue;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertSuccessEventually;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
+import static org.junit.Assert.assertThrows;
+
 public class TaskQueueBuilderTest {
-//
-//    @Test
-//    public void test_setName_whenNull() {
-//        TaskQueue.Context ctx = new TaskQueue.Context();
-//        assertThrows(NullPointerException.class, () -> ctx.setName(null));
-//    }
-//
-//    @Test
-//    public void test_setTaskProcess_whenNull() {
-//        TaskQueue.Context ctx = new TaskQueue.Context();
-//        assertThrows(NullPointerException.class, () -> ctx.setTaskProcessor(null));
-//    }
-//
-//    @Test
-//    public void test_setLocal_whenNull() {
-//        TaskQueue.Context ctx = new TaskQueue.Context();
-//        assertThrows(NullPointerException.class, () -> ctx.setLocal(null));
-//    }
-//
-//    @Test
-//    public void test_setGlobal_whenNull() {
-//        TaskQueue.Context ctx = new TaskQueue.Context();
-//        assertThrows(NullPointerException.class, () -> ctx.setGlobal(null));
-//    }
+
+    private Reactor reactor;
+
+    @Before
+    public void before() {
+        reactor = Reactor.Builder.newReactorBuilder(ReactorType.NIO).build();
+        reactor.start();
+    }
+
+    @After
+    public void after() {
+        terminate(reactor);
+    }
+
+    @Test
+    public void test_whenTooLowNice() {
+        CompletableFuture f = reactor.submit(new Runnable() {
+            @Override
+            public void run() {
+                TaskQueue.Builder builder = reactor.eventloop().newTaskQueueBuilder();
+                builder.inside = new MpscArrayQueue<>(1024);
+                builder.nice = TaskQueue.Builder.MIN_NICE - 1;
+                assertThrows(IllegalArgumentException.class, () -> builder.build());
+            }
+        });
+        assertSuccessEventually(f);
+    }
+
+    @Test
+    public void test_whenTooHighNice() {
+        CompletableFuture f = reactor.submit(new Runnable() {
+            @Override
+            public void run() {
+                TaskQueue.Builder builder = reactor.eventloop().newTaskQueueBuilder();
+                builder.inside = new MpscArrayQueue<>(1024);
+                builder.nice = TaskQueue.Builder.MAX_NICE + 1;
+                assertThrows(IllegalArgumentException.class, () -> builder.build());
+            }
+        });
+        assertSuccessEventually(f);
+    }
+
+    @Test
+    public void test_whenNoQueuesSet() {
+        CompletableFuture f = reactor.submit(new Runnable() {
+            @Override
+            public void run() {
+                TaskQueue.Builder builder = reactor.eventloop().newTaskQueueBuilder();
+                assertThrows(IllegalArgumentException.class, () -> builder.build());
+            }
+        });
+        assertSuccessEventually(f);
+    }
 }

@@ -40,6 +40,6 @@ public final class UringAsyncFile extends AsyncFile {
 
     @Override
     public long size() {
-        return Linux.filesize(fd());
+        return Linux.filesize(fd);
     }
 }

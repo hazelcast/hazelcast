@@ -28,9 +28,9 @@ import static com.hazelcast.internal.tpcengine.Eventloop.getThreadLocalEventloop
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertSuccessEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static junit.framework.TestCase.assertSame;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.fail;
 
 public abstract class EventloopTest {
 
@@ -53,6 +53,20 @@ public abstract class EventloopTest {
     }
 
     @Test
+    public void test_contruction() {
+        CompletableFuture future = reactor.submit(new Runnable() {
+            @Override
+            public void run() {
+                Eventloop eventloop = reactor.eventloop();
+                assertNotNull(eventloop.promiseAllocator());
+                assertNotNull(eventloop.intPromiseAllocator());
+                assertNotNull(eventloop.defaultTaskQueue());
+            }
+        });
+        assertSuccessEventually(future);
+    }
+
+    @Test
     public void test_tooManyTaskQueues() {
         CompletableFuture future = reactor.submit(() -> {
             // there is already 1 existing runQueue namely the default one.
@@ -64,11 +78,7 @@ public abstract class EventloopTest {
 
             TaskQueue.Builder taskQueueBuilder = reactor.eventloop.newTaskQueueBuilder();
             taskQueueBuilder.inside = new CircularQueue<>(10);
-            try {
-                taskQueueBuilder.build();
-                fail("Should not be able to create more than " + runQueueCapacity + " task queues");
-            } catch (IllegalStateException e) {
-            }
+            assertThrows(IllegalArgumentException.class, () -> taskQueueBuilder.build());
         });
 
         assertSuccessEventually(future);
@@ -76,7 +86,8 @@ public abstract class EventloopTest {
 
     @Test
     public void test_checkOnEventloopThread_whenNotOnEventloopThread() {
-        assertThrows(IllegalThreadStateException.class, () -> reactor.eventloop.checkOnEventloopThread());
+        assertThrows(IllegalThreadStateException.class,
+                () -> reactor.eventloop.checkOnEventloopThread());
     }
 
     @Test

@@ -134,6 +134,15 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     int weight = 1;
     Object activeTask;
 
+    /**
+     * Returns the Metrics. This method is threadsafe.
+     *
+     * @return the Metrics.
+     */
+    public Metrics metrics() {
+        return metrics;
+    }
+
     boolean isEmpty() {
         return (inside != null && inside.isEmpty())
                 && (outside != null && outside.isEmpty());
@@ -243,7 +252,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             // periodically we need to tick the io schedulers.
             if (runCtx.nowNanos >= runCtx.ioDeadlineNanos) {
                 eventloop.ioSchedulerTick();
-                reactorMetrics.incIoSchedulerTicks();
                 runCtx.nowNanos = epochNanos();
                 runCtx.ioDeadlineNanos = runCtx.nowNanos + runCtx.ioIntervalNanos;
             }
@@ -609,11 +617,11 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             }
 
             if (inside == null && outside == null) {
-                throw new IllegalStateException("The inside and outside queue can't both be null.");
+                throw new IllegalArgumentException("The inside and outside queue can't both be null.");
             }
 
             if (eventloop.scheduler.taskQueues.size() == eventloop.scheduler.runQueueLimit()) {
-                throw new IllegalStateException("Too many taskgroups.");
+                throw new IllegalArgumentException("Too many taskgroups.");
             }
 
             if (name == null) {
@@ -642,6 +650,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             }
             taskQueue.clockSampleInterval = clockSampleInterval;
             taskQueue.taskRunner = taskRunner;
+            taskRunner.init(eventloop);
             taskQueue.name = name;
             taskQueue.eventloop = eventloop;
             taskQueue.scheduler = eventloop.scheduler;

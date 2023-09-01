@@ -63,6 +63,8 @@ public final class UringEventloop extends Eventloop {
 
     @Override
     protected void park(long timeoutNanos) {
+        metrics.incParkCount();
+
         networkScheduler.tick();
         storageScheduler.tick();
 
@@ -95,6 +97,8 @@ public final class UringEventloop extends Eventloop {
 
     @Override
     protected boolean ioSchedulerTick() {
+        metrics.incIoSchedulerTicks();
+
         networkScheduler.tick();
         storageScheduler.tick();
 

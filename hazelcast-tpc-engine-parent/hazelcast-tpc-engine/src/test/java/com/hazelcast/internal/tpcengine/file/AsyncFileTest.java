@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -161,7 +162,7 @@ public abstract class AsyncFileTest {
         assertSuccessEventually(future);
     }
 
-//    @Test
+    //    @Test
 //    public void testFallocate() {
 //        String path = randomTmpFile();
 //        System.out.println(path);
@@ -198,6 +199,42 @@ public abstract class AsyncFileTest {
 //
 //        assertSuccessEventually(future);
 //    }
+    @Test
+    public void testClose() throws ExecutionException, InterruptedException, IOException {
+        int pageSize = pageSize();
+
+        File tmpFile = randomTmpFile(100);
+        CompletableFuture future = new CompletableFuture();
+        CompletableFuture<AsyncFile> fileFuture = new CompletableFuture<>();
+        Runnable task = () -> {
+            Eventloop eventloop = reactor.eventloop();
+            IOBuffer buffer = eventloop.storageAllocator().allocate(pageSize);
+            AsyncFile file = eventloop.newAsyncFile(tmpFile.getAbsolutePath());
+            fileFuture.complete(file);
+
+            IntPromise openPromise = new IntPromise(reactor.eventloop());
+            file.open(openPromise, O_RDONLY, PERMISSIONS_ALL);
+            openPromise.then((result1, throwable1) -> {
+                if (throwable1 != null) {
+                    future.completeExceptionally(throwable1);
+                    return;
+                }
+
+                IntPromise closePromise = new IntPromise(reactor.eventloop());
+                file.close(closePromise);
+                closePromise.then((result2, throwable2) -> {
+                    if (throwable2 != null) {
+                        future.completeExceptionally(throwable2);
+                    } else {
+                        future.complete(null);
+                    }
+                });
+            });
+        };
+        reactor.offer(task);
+
+        assertSuccessEventually(future);
+    }
 
     @Test
     public void testNop() throws ExecutionException, InterruptedException {

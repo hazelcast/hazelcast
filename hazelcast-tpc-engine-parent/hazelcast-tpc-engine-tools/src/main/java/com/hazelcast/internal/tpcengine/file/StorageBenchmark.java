@@ -857,8 +857,8 @@ public class StorageBenchmark {
 
         for (Reactor reactor : reactors) {
             Reactor.Metrics reactorMetrics = reactor.metrics();
-            target.taskCsCount += reactorMetrics.taskCsSwitchCount();
-            target.taskQueueCsCount += reactorMetrics.taskQueueCsSwitchCount();
+            target.taskCsCount += reactorMetrics.taskCsCount();
+            target.taskQueueCsCount += reactorMetrics.taskQueueCsCount();
             target.ioSchedulerTicks += reactorMetrics.ioSchedulerTicks();
             target.parkCount += reactorMetrics.parkCount();
             target.parkTimeNanos += reactorMetrics.parkTimeNanos();

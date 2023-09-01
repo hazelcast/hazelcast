@@ -19,11 +19,6 @@ package com.hazelcast.internal.tpcengine.util;
 import java.util.AbstractQueue;
 import java.util.Iterator;
 import java.util.Queue;
-import java.util.Spliterator;
-import java.util.function.Consumer;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -195,36 +190,6 @@ public final class CircularQueue<E> extends AbstractQueue<E> {
 
     @Override
     public Iterator<E> iterator() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> T[] toArray(IntFunction<T[]> generator) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean removeIf(Predicate<? super E> filter) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Spliterator<E> spliterator() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Stream<E> stream() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Stream<E> parallelStream() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void forEach(Consumer<? super E> action) {
         throw new UnsupportedOperationException();
     }
 }

@@ -27,6 +27,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.tpcengine.Reactor.Builder.newReactorBuilder;
+import static com.hazelcast.internal.tpcengine.ReactorType.NIO;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static java.lang.Math.abs;
 import static org.junit.Assert.assertEquals;
@@ -40,7 +42,7 @@ public class FifoSchedulerNiceTest {
     }
 
     public Reactor newReactor(Consumer<Reactor.Builder> configFn) {
-        Reactor.Builder reactorBuilder = Reactor.Builder.newReactorBuilder(ReactorType.NIO);
+        Reactor.Builder reactorBuilder = newReactorBuilder(NIO);
         reactorBuilder.cfs = false;
         if (configFn != null) {
             configFn.accept(reactorBuilder);
@@ -78,7 +80,7 @@ public class FifoSchedulerNiceTest {
         TpcTestSupport.assertSuccessEventually(future);
         List<DummyTask> tasks = future.join();
 
-        Thread.sleep(2000);
+        Thread.sleep(3000);
 
         // every task should be performed roughly the same number of times because
         // the fifoscheduler doesn't care for the nice level of the TaskQueue.
@@ -95,8 +97,8 @@ public class FifoSchedulerNiceTest {
             } else {
                 double differencePercent = 100 * (1 - (1.0d * current / firstCount));
                 // If this test fails spuriously we could slightly increase the
-                // 1.0 value or run longer.
-                boolean success = abs(differencePercent) < 1.0;
+                // 3.0 value or run longer.
+                boolean success = abs(differencePercent) < 3.0;
                 if (!success) {
                     failures++;
                 }

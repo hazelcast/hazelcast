@@ -24,8 +24,19 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegati
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPowerOf2;
 
 public class PreconditionsTest {
+
+    @Test
+    public void test_checkPowerOfTwo_whenTrue() {
+        checkPowerOf2(4, "foobar");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_checkPowerOfTwo_whenFalse() {
+        checkPowerOf2(5, "foobar");
+    }
 
     @Test
     public void test_checkNotNegative_whenZero() {

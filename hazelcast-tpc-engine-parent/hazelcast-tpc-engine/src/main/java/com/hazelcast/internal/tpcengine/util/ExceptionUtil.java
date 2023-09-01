@@ -29,11 +29,15 @@ public final class ExceptionUtil {
     }
 
     public static UncheckedIOException newUncheckedIOException(String message) {
-        return new UncheckedIOException(new IOException(message));
+        return new UncheckedIOException(message, new IOException(message));
     }
 
     public static UncheckedIOException newUncheckedIOException(String message, Throwable cause) {
-        return new UncheckedIOException(new IOException(message, cause));
+        if (cause instanceof IOException) {
+            return new UncheckedIOException(message, (IOException) cause);
+        } else {
+            return new UncheckedIOException(message, new IOException(message, cause));
+        }
     }
 
     /**

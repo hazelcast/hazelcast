@@ -51,8 +51,7 @@ public final class ReflectionUtil {
     public static <E> E findStaticFieldValue(String className, String fieldName) {
         try {
             Class<?> clazz = Class.forName(className);
-            Field field = clazz.getField(fieldName);
-            return (E) field.get(null);
+            return findStaticFieldValue(clazz, fieldName);
         } catch (Exception ignore) {
             return null;
         }

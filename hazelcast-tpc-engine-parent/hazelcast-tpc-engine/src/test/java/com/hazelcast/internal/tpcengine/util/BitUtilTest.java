@@ -18,13 +18,27 @@ package com.hazelcast.internal.tpcengine.util;
 
 import org.junit.Test;
 
+import static com.hazelcast.internal.tpcengine.util.BitUtil.isPowerOfTwo;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class BitUtilTest {
 
     @Test
-    public void testNextPowerOfTwo() {
+    public void test_isPowerOfTwo() {
+        assertTrue(isPowerOfTwo(0));
+        assertTrue(isPowerOfTwo(1));
+        assertTrue(isPowerOfTwo(2));
+        assertTrue(isPowerOfTwo(4));
+        assertFalse(isPowerOfTwo(5));
+        assertFalse(isPowerOfTwo(9));
+        assertTrue(isPowerOfTwo(16));
+    }
+
+    @Test
+    public void test_nextPowerOfTwo() {
         assertEquals(1, nextPowerOfTwo(-9999999));
         assertEquals(1, nextPowerOfTwo(-1));
         assertEquals(1, nextPowerOfTwo(0));

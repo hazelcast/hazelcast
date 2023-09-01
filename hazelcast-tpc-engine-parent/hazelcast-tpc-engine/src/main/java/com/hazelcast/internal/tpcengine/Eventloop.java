@@ -300,7 +300,6 @@ public abstract class Eventloop {
                 // it again whe the next taskQueue runs.
                 timeUpdateNeeded = false;
 
-                metrics.incParkCount();
                 metrics.incParkTimeNanos(runCtx.nowNanos - epochNanosBeforePark);
             } else {
                 // before a task group is run, its nowNanos needs to be up to date.

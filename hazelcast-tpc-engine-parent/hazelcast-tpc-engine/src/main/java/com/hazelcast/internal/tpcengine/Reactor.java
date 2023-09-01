@@ -684,7 +684,7 @@ public abstract class Reactor implements Executor {
          *
          * @return the number of task context switches.
          */
-        public long taskQueueCsSwitchCount() {
+        public long taskQueueCsCount() {
             return (long) TASK_QUEUE_CS_SWITCH_COUNT.getOpaque(this);
         }
 
@@ -695,7 +695,7 @@ public abstract class Reactor implements Executor {
             TASK_QUEUE_CS_SWITCH_COUNT.setOpaque(this, (long) TASK_QUEUE_CS_SWITCH_COUNT.getOpaque(this) + 1);
         }
 
-        public long taskCsSwitchCount() {
+        public long taskCsCount() {
             return (long) TASK_CS_SWITCH_COUNT.getOpaque(this);
         }
 
@@ -938,6 +938,10 @@ public abstract class Reactor implements Executor {
          */
         public boolean cfs;
 
+        /**
+         * Every Reactor has a default TaskQueue and using this builder that
+         * default TaskQueue can be configured.
+         */
         public TaskQueue.Builder defaultTaskQueueBuilder;
 
         /**

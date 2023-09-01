@@ -50,8 +50,11 @@ public class ReflectionUtilTest {
 
     @Test
     public void test_whenClassAndFieldExist() {
-        Integer value = findStaticFieldValue(ClassWithStaticField.class, "staticField");
-        assertEquals(ClassWithStaticField.staticField, value);
+        Integer value1 = findStaticFieldValue(ClassWithStaticField.class, "staticField");
+        assertEquals(ClassWithStaticField.staticField, value1);
+
+        Integer value2 = findStaticFieldValue(ClassWithStaticField.class.getName(), "staticField");
+        assertEquals(ClassWithStaticField.staticField, value2);
     }
 
     public static class ClassWithStaticField {

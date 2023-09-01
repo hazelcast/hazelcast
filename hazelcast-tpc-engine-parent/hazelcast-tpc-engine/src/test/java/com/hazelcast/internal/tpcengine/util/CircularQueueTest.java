@@ -29,14 +29,20 @@ import static org.junit.Assert.assertTrue;
 
 public class CircularQueueTest {
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_construction_whenNegativeCapacity() {
-        new CircularQueue<>(-1);
+        assertThrows(IllegalArgumentException.class, () -> new CircularQueue<>(-1));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_construction_whenZeroCapacity() {
-        new CircularQueue<>(0);
+        assertThrows(IllegalArgumentException.class, () -> new CircularQueue<>(0));
+    }
+
+    @Test
+    public void test_iterator() {
+        CircularQueue<Integer> queue = new CircularQueue<>(128);
+        assertThrows(UnsupportedOperationException.class, () -> queue.iterator());
     }
 
     @Test

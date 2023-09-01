@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
-import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -39,14 +38,14 @@ final class NioEventloop extends Eventloop {
 
     final Selector selector;
 
-    private final Consumer<SelectionKey> selectorProcessor = key -> {
-        NioHandler handler = (NioHandler) key.attachment();
-        try {
-            handler.handle();
-        } catch (Exception e) {
-            handler.close(null, e);
-        }
-    };
+//    private final Consumer<SelectionKey> selectorProcessor = key -> {
+//        NioHandler handler = (NioHandler) key.attachment();
+//        try {
+//            handler.handle();
+//        } catch (Exception e) {
+//            handler.close(null, e);
+//        }
+//    };
 
     NioEventloop(NioEventloop.Builder builder) {
         super(builder);
@@ -65,6 +64,8 @@ final class NioEventloop extends Eventloop {
 
     @Override
     protected boolean ioSchedulerTick() throws IOException {
+        metrics.incIoSchedulerTicks();
+
         boolean worked = false;
 
         worked |= storageScheduler.tick();
@@ -98,6 +99,8 @@ final class NioEventloop extends Eventloop {
 
     @Override
     protected void park(long timeoutNanos) throws IOException {
+        metrics.incParkCount();
+
         // todo:
         networkScheduler.tick();
         storageScheduler.tick();
@@ -162,24 +165,8 @@ final class NioEventloop extends Eventloop {
 //    }
 
     @Override
-    protected void destroy() {
-        for (SelectionKey key : selector.keys()) {
-            NioHandler handler = (NioHandler) key.attachment();
-
-            if (handler == null) {
-                // There is no handler; so lets cancel the key to be sure it gets
-                // cancelled.
-                key.cancel();
-            } else {
-                // There is a handler; so it will take care of cancelling the key.
-                try {
-                    handler.close(reactor + " is terminating.", null);
-                } catch (Exception e) {
-                    logger.fine(e);
-                }
-            }
-        }
-
+    protected void destroy() throws Exception {
+        super.destroy();
         closeQuietly(selector);
     }
 

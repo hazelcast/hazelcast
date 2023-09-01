@@ -20,37 +20,16 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.isPowerOfTwo;
 
 public final class Preconditions {
 
-    public static final int MAX_PORT = 65335;
-
     private Preconditions() {
     }
 
-    public static int checkValidPort(int port, String paramName) {
-        if (port < 0) {
-            throw new IllegalArgumentException(paramName + " is " + port + " but must be >= 0");
-        } else if (port > MAX_PORT) {
-            throw new IllegalArgumentException(paramName + " is " + port + " but must be <= " + MAX_PORT);
-        } else {
-            return port;
-        }
-    }
-
-    public static <E> E checkInstanceOf(Class<E> type, Object object, String paramName) {
-        checkNotNull(type, "type");
-        checkNotNull(object, paramName);
-
-        if (!type.isInstance(object)) {
-            throw new IllegalArgumentException("object " + object + " of type " + object.getClass()
-                    + " is not an instanceof " + type);
-        }
-        return (E) object;
-    }
-
     /**
-     * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
+     * Tests if a {@code value} is positive, that is strictly larger than 0
+     * (value &gt; 0).
      *
      * @param value     the value tested to see if it is positive.
-     * @param paramName the the name of the checked parameter that will be in exception message
+     * @param paramName the the name of the checked parameter that will be in
+     *                 exception message
      * @param value     the value tested to see if it is positive.
      * @return the value
      * @throws IllegalArgumentException if the value is not positive.
@@ -71,10 +50,12 @@ public final class Preconditions {
     }
 
     /**
-     * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
+     * Tests if a {@code value} is positive, that is strictly larger than 0
+     * (value &gt; 0).
      *
      * @param value     the value tested to see if it is positive.
-     * @param paramName the the name of the checked parameter that will be in exception message
+     * @param paramName the the name of the checked parameter that will be in
+     *                 exception message
      * @param value     the value tested to see if it is positive.
      * @return the value
      * @throws IllegalArgumentException if the value is not positive.
@@ -90,7 +71,8 @@ public final class Preconditions {
      * Tests if the {@code value} is &gt;= 0.
      *
      * @param value     the  value tested to see if it is not negative.
-     * @param paramName the the name of the checked parameter that will be in exception message
+     * @param paramName the the name of the checked parameter that will be in
+     *                  exception message
      * @return the value
      * @throws java.lang.IllegalArgumentException if the value is negative.
      */
@@ -110,7 +92,8 @@ public final class Preconditions {
      */
     public static int checkPowerOf2(int value, String paramName) {
         if (!isPowerOfTwo(value)) {
-            throw new IllegalArgumentException(paramName + " is " + value + " but must be a power of 2.");
+            throw new IllegalArgumentException(paramName + " is " + value
+                    + " but must be a power of 2.");
         }
         return value;
     }
@@ -119,13 +102,15 @@ public final class Preconditions {
      * Tests if the {@code value} is &gt;= 0.
      *
      * @param value     the  value tested to see if it is not negative.
-     * @param paramName the the name of the checked parameter that will be in exception message
+     * @param paramName the the name of the checked parameter that will be in
+     *                  exception message
      * @return the value
      * @throws java.lang.IllegalArgumentException if the value is negative.
      */
     public static long checkNotNegative(long value, String paramName) {
         if (value < 0) {
-            throw new IllegalArgumentException(paramName + " is " + value + " but must be >= 0");
+            throw new IllegalArgumentException(paramName + " is " + value
+                    + " but must be >= 0");
         }
         return value;
     }

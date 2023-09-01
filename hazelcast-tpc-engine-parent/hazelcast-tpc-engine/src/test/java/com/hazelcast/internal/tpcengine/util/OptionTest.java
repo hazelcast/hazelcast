@@ -24,6 +24,13 @@ import static org.junit.Assert.assertNotEquals;
 public class OptionTest {
 
     @Test
+    public void test_toString() {
+        String name = "foo";
+        Option option = new Option(name, Integer.class);
+        assertEquals(name, option.toString());
+    }
+
+    @Test
     public void test_name_type() {
         String name = "foo";
         Class type = Integer.class;

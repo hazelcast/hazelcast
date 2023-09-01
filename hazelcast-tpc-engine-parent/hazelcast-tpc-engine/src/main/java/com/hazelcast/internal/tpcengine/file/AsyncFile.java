@@ -60,6 +60,8 @@ public abstract class AsyncFile {
 
     public static final int PERMISSIONS_ALL = 0666;
 
+    // todo: in the future we want to have a more
+    // OS neutral approach for the options and permissions
     // https://elixir.bootlin.com/linux/latest/source/arch/alpha/include/uapi/asm/fcntl.h#L5
     public static final int O_RDONLY = 00;
     public static final int O_WRONLY = 01;
@@ -78,8 +80,6 @@ public abstract class AsyncFile {
     protected final StorageScheduler scheduler;
     protected final Eventloop eventloop;
 
-    // todo: Using path as a string forces creating litter.
-
     /**
      * Creates an AsyncFile. The constructor should not be called directly, use the
      * {@link Eventloop#newAsyncFile(String)} to create instances.
@@ -95,17 +95,6 @@ public abstract class AsyncFile {
 
         // todo: deal with rejection
         this.eventloop.reactor().files().add(this);
-    }
-
-    /**
-     * Returns the file descriptor.
-     * <p/>
-     * If the file isn't opened, the fd is -1.
-     *
-     * @return the file descriptor.
-     */
-    public final int fd() {
-        return fd;
     }
 
     /**
@@ -279,6 +268,7 @@ public abstract class AsyncFile {
 
         eventloop.reactor().files().remove(this);
 
+        // TODO: Nio open doesn't set the fd.
         if (fd == -1) {
             callback.accept(0, null);
             return;

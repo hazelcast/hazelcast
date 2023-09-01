@@ -269,8 +269,8 @@ public abstract class SchedulingSoakTest {
         for (int k = 0; k < reactorCount; k++) {
             Reactor reactor = reactorList.get(k);
             Reactor.Metrics metrics = reactor.metrics;
-            target.taskCsCount += metrics.taskCsSwitchCount();
-            target.taskQueueCsCount += metrics.taskCsSwitchCount();
+            target.taskCsCount += metrics.taskCsCount();
+            target.taskQueueCsCount += metrics.taskCsCount();
         }
 
         target.count = sum(counters);

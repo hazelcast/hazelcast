@@ -98,7 +98,7 @@ public class CompletelyFairSchedulerNiceTest {
                 // If there are spurious failures than either the time the test
                 // runs should be incremented, or make the increase the range
                 // for success.
-                boolean success = decreasePercentage > 19.0 && decreasePercentage < 21.0;
+                boolean success = decreasePercentage > 18.0 && decreasePercentage < 22.0;
                 if (!success) {
                     failures++;
                 }

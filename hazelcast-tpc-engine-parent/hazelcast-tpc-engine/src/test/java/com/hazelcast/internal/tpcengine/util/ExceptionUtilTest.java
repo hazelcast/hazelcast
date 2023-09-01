@@ -18,9 +18,35 @@ package com.hazelcast.internal.tpcengine.util;
 
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertInstanceOf;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.ignore;
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 public class ExceptionUtilTest {
+
+    @Test
+    public void test_newUncheckedIOException() {
+        String msg = "foo";
+        UncheckedIOException e1 = newUncheckedIOException(msg);
+        assertEquals(msg, e1.getMessage());
+        assertInstanceOf(IOException.class, e1.getCause());
+
+        IOException cause = new IOException();
+        UncheckedIOException e2 = newUncheckedIOException(msg, cause);
+        assertEquals(msg, e2.getMessage());
+        assertSame(cause, e2.getCause());
+
+        RuntimeException throwable = new RuntimeException();
+        UncheckedIOException e3 = newUncheckedIOException(msg, throwable);
+        assertEquals(msg, e3.getMessage());
+        assertInstanceOf(IOException.class, e3.getCause());
+        assertSame(throwable, e3.getCause().getCause());
+    }
 
     @Test
     public void test_ignore() {
