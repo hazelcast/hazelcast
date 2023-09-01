@@ -172,8 +172,7 @@ public abstract class Eventloop {
      */
     public final boolean shouldYield() {
         long nowNanos = epochNanos();
-        // since we paid for getting the time, lets update the time int the
-        // runContext.
+        // since we paid for getting the time, lets update the time
         runContext.nowNanos = nowNanos;
         return nowNanos > runContext.taskDeadlineNanos;
     }
@@ -263,7 +262,6 @@ public abstract class Eventloop {
      * Runs the actual eventloop.
      * <p/>
      * Is called from the eventloop thread.
-     * <p>
      *
      * @throws Exception if something fails while running the eventloop.
      *                   The reactor will terminate when this happens.
@@ -283,10 +281,6 @@ public abstract class Eventloop {
             scheduler.scheduleOutsideBlocked();
 
             TaskQueue taskQueue = scheduler.pickNext();
-//            if(scheduler.containsOutsideBlocked(taskQueue)){
-//                throw new RuntimeException("Task is both outside blocked and registered.");
-//            }
-
             if (taskQueue == null) {
                 long epochNanosBeforePark = epochNanos();
                 runCtx.nowNanos = epochNanosBeforePark;

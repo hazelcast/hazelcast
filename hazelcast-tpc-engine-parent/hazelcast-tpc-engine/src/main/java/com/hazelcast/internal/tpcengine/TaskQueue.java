@@ -32,8 +32,8 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.lang.Math.max;
 
 /**
- * A TaskQueue is the unit of scheduling within the eventloop. Each eventloop
- * has a default TaskQueue. But it is also possible to create additional
+ * A TaskQueue is the unit of scheduling within the {@link Scheduler}. Each
+ * eventloop has a default TaskQueue. But it is also possible to create additional
  * TaskQueues. For example when you have tasks for clients, but also long
  * running tasks from e.g. some compaction process, you could give the clients
  * and the compaction process their own taskQueues. If no clients are busy,
@@ -435,18 +435,37 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 throw new ExceptionInInitializerError(e);
             }
         }
+
+        /**
+         * Returns the number of times this TaskQueue was blocked (so didn't
+         * have any work to do).
+         *
+         * @return the number of times blocked.
+         */
         public long blockedCount() {
             return (long) BLOCKED_COUNT.getOpaque(this);
         }
 
+        /**
+         * Increases the number of times this TaskQueue was blocked by 1.
+         */
         public void incBlockedCount() {
             BLOCKED_COUNT.setOpaque(this, (long) BLOCKED_COUNT.getOpaque(this) + 1);
         }
 
+        /**
+         * Returns the number of errors the TaskQueue encountered while processing
+         * tasks.
+         *
+         * @return the number of errors.
+         */
         public long taskErrorCount() {
             return (long) TASK_ERROR_COUNT.getOpaque(this);
         }
 
+        /**
+         * Increases the number of errors the TaskQueue encountered by 1.
+         */
         public void incTaskErrorCount() {
             TASK_ERROR_COUNT.setOpaque(this, (long) TASK_ERROR_COUNT.getOpaque(this) + 1);
         }
@@ -460,6 +479,9 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             return (long) TASK_CS_COUNT.getOpaque(this);
         }
 
+        /**
+         * Increases the number of task context switches by 1.
+         */
         public void incTaskCsCount() {
             TASK_CS_COUNT.setOpaque(this, (long) TASK_CS_COUNT.getOpaque(this) + 1);
         }
