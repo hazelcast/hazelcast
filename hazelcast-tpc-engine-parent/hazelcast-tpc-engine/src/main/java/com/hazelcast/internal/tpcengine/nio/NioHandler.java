@@ -20,10 +20,8 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 
 /**
- * A handler that gets signalled when something interesting happens on a {@link SelectionKey}
- * for example data has arrived at a socket.
- * <p>
- * todo: Unify the NioHandler to process both AsyncServerSocket/AsyncSocket
+ * A handler that gets signalled when something interesting happens on a
+ * {@link SelectionKey} for example data has arrived at a socket.
  */
 public interface NioHandler {
 
