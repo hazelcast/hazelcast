@@ -385,7 +385,6 @@ class DefaultAddressPicker
                 }
             }
         }
-        // nothing matched to IP version preference, return what we have.
         return matchingAddress;
     }
 
