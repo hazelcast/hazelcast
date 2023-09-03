@@ -54,8 +54,10 @@ import com.hazelcast.security.permission.UserCodeDeploymentPermission;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.newSetFromMap;
@@ -223,25 +225,19 @@ public class PermissionConfig implements IdentifiedDataSerializable {
         }
 
         public static PermissionType getType(String nodeName) {
-            for (PermissionType type : PermissionType.values()) {
-                if (nodeName.equals(type.getNodeName())) {
-                    return type;
-                }
-            }
-            return null;
+            return findPermissionTypeByFilter(v -> v.nodeName.equals(nodeName));
         }
 
         public static PermissionType getTypeByPermissionClassName(String permissionClassname) {
-            for (PermissionType type : PermissionType.values()) {
-                if (type.className.equals(permissionClassname)) {
-                    return type;
-                }
-            }
-            return null;
+            return findPermissionTypeByFilter(v -> v.className.equals(permissionClassname));
         }
 
         public String getNodeName() {
             return nodeName;
+        }
+
+        private static PermissionType findPermissionTypeByFilter(Predicate<PermissionType> filterPredicate) {
+            return Arrays.stream(values()).filter(filterPredicate).findFirst().orElse(null);
         }
     }
 
