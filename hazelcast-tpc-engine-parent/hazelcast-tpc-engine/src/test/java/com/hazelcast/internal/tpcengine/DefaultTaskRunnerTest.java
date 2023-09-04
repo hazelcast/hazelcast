@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.util.Reference;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -29,7 +30,7 @@ public class DefaultTaskRunnerTest {
     @Test
     public void test_run_whenTaskNotRunnable() {
         DefaultTaskRunner runner = new DefaultTaskRunner();
-        assertThrows(ClassCastException.class, () -> runner.run("banana"));
+        assertThrows(ClassCastException.class, () -> runner.run(new Reference("banana")));
     }
 
     @Test
@@ -38,7 +39,7 @@ public class DefaultTaskRunnerTest {
         Task task = mock(Task.class);
         when(task.run()).thenReturn(Task.RUN_YIELD);
 
-        int runResult = runner.run(task);
+        int runResult = runner.run(new Reference(task));
         assertEquals(Task.RUN_YIELD, runResult);
     }
 
@@ -47,7 +48,7 @@ public class DefaultTaskRunnerTest {
         DefaultTaskRunner runner = new DefaultTaskRunner();
 
         Runnable task = mock(Runnable.class);
-        int result = runner.run(task);
+        int result = runner.run(new Reference(task));
         assertEquals(Task.RUN_COMPLETED, result);
     }
 
@@ -58,7 +59,7 @@ public class DefaultTaskRunnerTest {
         Runnable task = mock(Runnable.class);
         doThrow(new StackOverflowError()).when(task).run();
 
-        assertThrows(StackOverflowError.class, () -> runner.run(task));
+        assertThrows(StackOverflowError.class, () -> runner.run(new Reference(task)));
     }
 
     @Test

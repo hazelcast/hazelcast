@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
+import com.hazelcast.internal.tpcengine.util.Reference;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -133,6 +134,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     //the weight is only used by the CfsTaskQueueScheduler.
     int weight = 1;
     Object activeTask;
+    final Reference taskRef = new Reference();
 
     /**
      * Returns the Metrics. This method is threadsafe.
@@ -280,7 +282,10 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     private void runActiveTask() {
         int runResult;
         try {
-            runResult = taskRunner.run(activeTask);
+            taskRef.value = activeTask;
+            runResult = taskRunner.run(taskRef);
+            activeTask = taskRef.value;
+            taskRef.value = null;
         } catch (Throwable e) {
             metrics.incTaskErrorCount();
             runResult = taskRunner.handleError(activeTask, e);
@@ -599,7 +604,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         /**
          * Builder needs to be created through {@link Eventloop#newTaskQueueBuilder()}.
          */
-        protected Builder() {
+        public Builder() {
         }
 
         @Override

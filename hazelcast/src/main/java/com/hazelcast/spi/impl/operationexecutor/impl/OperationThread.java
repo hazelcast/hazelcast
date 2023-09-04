@@ -26,6 +26,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Task;
 import com.hazelcast.internal.tpcengine.TaskRunner;
+import com.hazelcast.internal.tpcengine.util.Reference;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
@@ -151,6 +152,10 @@ public abstract class OperationThread extends HazelcastManagedThread
     }
 
     @Override
+    public int run(Reference taskRef) throws Throwable {
+        return run(taskRef.value);
+    }
+
     public int run(Object task) {
         try {
             if (task.getClass() == Packet.class) {

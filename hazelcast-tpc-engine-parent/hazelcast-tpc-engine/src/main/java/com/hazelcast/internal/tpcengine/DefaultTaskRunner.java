@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpcengine.util.Reference;
 
 import static com.hazelcast.internal.tpcengine.Task.RUN_COMPLETED;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
@@ -41,7 +42,8 @@ public final class DefaultTaskRunner implements TaskRunner {
     }
 
     @Override
-    public int run(Object task) throws Throwable {
+    public int run(final Reference taskRef) throws Throwable {
+        final Object task = taskRef.value;
         if (task instanceof Task) {
             return ((Task) task).run();
         } else {

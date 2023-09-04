@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.util.Reference;
+
 /**
  * Every {@link TaskQueue} has a {@link TaskRunner} which will run tasks
  * issued to that TaskQueue.
@@ -36,10 +38,16 @@ public interface TaskRunner {
      * Process a single task. It depends on the TaskRunner implementation which
      * type of tasks it can run.
      *
-     * @param task the task.
+     * Instead of passing a task, a reference to the task is passed so that
+     * the function can replace the object by something else. For example an
+     * IOBuffer with a request is received, then the TaskRunner could decide
+     * to deserialize the object and put it into a Task, and if that task yields,
+     * this task is going to be scheduled and not the IOBuffer.
+     *
+     * @param the reference to the task.
      * @return the task state. See {@link Task}.
      */
-    int run(Object task) throws Throwable;
+    int run(Reference taskRef) throws Throwable;
 
     /**
      * Handles the throwable thrown by the {@link #run(Object)}. If you don't
