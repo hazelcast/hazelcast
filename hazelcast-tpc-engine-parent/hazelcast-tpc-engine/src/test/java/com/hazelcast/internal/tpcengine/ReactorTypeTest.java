@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpcengine;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 public class ReactorTypeTest {
 
@@ -32,13 +33,13 @@ public class ReactorTypeTest {
         assertEquals(ReactorType.IOURING, ReactorType.fromString("uring"));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_fromString_whenNull() {
-        ReactorType.fromString(null);
+        assertThrows(NullPointerException.class, () -> ReactorType.fromString(null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_fromString_whenBogusString() {
-        ReactorType.fromString("bogus");
+        assertThrows(IllegalArgumentException.class, () -> ReactorType.fromString("bogus"));
     }
 }

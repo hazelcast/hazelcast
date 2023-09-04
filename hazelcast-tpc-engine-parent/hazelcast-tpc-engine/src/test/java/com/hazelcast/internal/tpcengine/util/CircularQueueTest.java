@@ -91,10 +91,10 @@ public class CircularQueueTest {
         assertEquals(128, queue.capacity());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_offer_whenNull() {
         CircularQueue<Integer> queue = new CircularQueue<>(128);
-        queue.offer(null);
+        assertThrows(NullPointerException.class, () -> queue.offer(null));
     }
 
     @Test
@@ -134,10 +134,11 @@ public class CircularQueueTest {
         assertThrows(IllegalStateException.class, () -> queue.add(1234));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_add_whenNull() {
         CircularQueue<Integer> queue = new CircularQueue<>(128);
-        queue.add(null);
+
+        assertThrows(NullPointerException.class, () -> queue.add(null));
     }
 
     @Test

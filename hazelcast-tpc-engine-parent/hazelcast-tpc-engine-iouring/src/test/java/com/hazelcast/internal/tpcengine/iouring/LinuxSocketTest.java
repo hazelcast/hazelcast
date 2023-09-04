@@ -428,11 +428,11 @@ public class LinuxSocketTest {
         socket.listen(10);
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void test_listen_whenClosed() {
         socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
 
-        socket.listen(-1);
+        assertThrows(IOException.class, () -> socket.listen(-1));
     }
 }

@@ -18,14 +18,16 @@ package com.hazelcast.internal.tpcengine;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertThrows;
+
 /**
  * A test that verifies the behavior when the IOURING reactor type is used,
  * but the IOUringReactor isn't on the classpath.
  */
 public class TpcEngineIOUringNotFoundTest {
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test() {
-        Reactor.Builder.newReactorBuilder(ReactorType.IOURING);
+        assertThrows(IllegalStateException.class, () -> Reactor.Builder.newReactorBuilder(ReactorType.IOURING));
     }
 }

@@ -30,6 +30,7 @@ import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class IntPromiseTest {
@@ -67,11 +68,11 @@ public class IntPromiseTest {
         assertNull(throwableRef.get());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_completeExceptionallyWhenNull() {
         IntPromise promise = new IntPromise(reactor.eventloop());
 
-        promise.completeExceptionally(null);
+        assertThrows(NullPointerException.class, () -> promise.completeExceptionally(null));
     }
 
     @Test
@@ -97,12 +98,13 @@ public class IntPromiseTest {
     }
 
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test_completeExceptionally_whenAlreadyCompleted() {
         IntPromise promise = new IntPromise(reactor.eventloop());
 
         promise.completeExceptionally(new Throwable());
-        promise.completeExceptionally(new Throwable());
+
+        assertThrows(IllegalStateException.class, () -> promise.completeExceptionally(new Throwable()));
     }
 
     @Test
@@ -126,11 +128,11 @@ public class IntPromiseTest {
         assertNull(throwableRef.get());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test_complete_whenAlreadyCompleted() {
         IntPromise promise = new IntPromise(reactor.eventloop());
 
         promise.complete(1);
-        promise.complete(2);
+        assertThrows(IllegalStateException.class, () -> promise.complete(2));
     }
 }

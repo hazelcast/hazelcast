@@ -69,7 +69,7 @@ public abstract class AsyncServerSocketTest {
     @Test
     public void test_build() {
         Reactor reactor = newReactor();
-        InetSocketAddress bindAddress = new InetSocketAddress("127.0.0.1", 5000);
+        InetSocketAddress bindAddress = new InetSocketAddress("127.0.0.1", 5004);
         AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
         serverSocketBuilder.bindAddress = bindAddress;
         serverSocketBuilder.acceptFn = acceptRequest -> {

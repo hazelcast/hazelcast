@@ -28,24 +28,24 @@ import static org.junit.Assert.assertThrows;
 
 public class SlabAllocatorTest {
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_construct_whenNegativeCapacity() {
-        new SlabAllocator<>(-1, () -> "foo");
+        assertThrows(IllegalArgumentException.class, () -> new SlabAllocator<>(-1, () -> "foo"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_construct_whenZeroCapacity() {
-        new SlabAllocator<>(0, () -> "foo");
+        assertThrows(IllegalArgumentException.class, () -> new SlabAllocator<>(0, () -> "foo"));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_construct_whenNullConstructorFn() {
-        new SlabAllocator<>(10, null);
+        assertThrows(NullPointerException.class, () -> new SlabAllocator<>(10, null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_construct_whenConstructorFnReturnsNull() {
-        new SlabAllocator<>(10, () -> null);
+        assertThrows(NullPointerException.class, () -> new SlabAllocator<>(10, () -> null));
     }
 
     @Test

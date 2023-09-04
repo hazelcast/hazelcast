@@ -30,6 +30,7 @@ import java.util.function.BiConsumer;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertOpenEventually;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class PromiseTest {
@@ -70,11 +71,11 @@ public class PromiseTest {
         assertNull(throwableRef.get());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_completeExceptionallyWhenNull() {
         Promise promise = new Promise(reactor.eventloop());
 
-        promise.completeExceptionally(null);
+        assertThrows(NullPointerException.class, () -> promise.completeExceptionally(null));
     }
 
     @Test
@@ -100,12 +101,13 @@ public class PromiseTest {
     }
 
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test_completeExceptionally_whenAlreadyCompleted() {
         Promise promise = new Promise(reactor.eventloop());
 
         promise.completeExceptionally(new Throwable());
-        promise.completeExceptionally(new Throwable());
+
+        assertThrows(IllegalStateException.class, () -> promise.completeExceptionally(new Throwable()));
     }
 
     @Test
@@ -129,11 +131,11 @@ public class PromiseTest {
         assertNull(throwableRef.get());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test_complete_whenAlreadyCompleted() {
         Promise promise = new Promise(reactor.eventloop());
 
         promise.complete("first");
-        promise.complete("second");
+        assertThrows(IllegalStateException.class, () -> promise.complete("second"));
     }
 }

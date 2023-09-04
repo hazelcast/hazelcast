@@ -25,6 +25,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPowerOf2;
+import static org.junit.Assert.assertThrows;
 
 public class PreconditionsTest {
 
@@ -33,9 +34,9 @@ public class PreconditionsTest {
         checkPowerOf2(4, "foobar");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_checkPowerOfTwo_whenFalse() {
-        checkPowerOf2(5, "foobar");
+        assertThrows(IllegalArgumentException.class, () -> checkPowerOf2(5, "foobar"));
     }
 
     @Test
@@ -48,14 +49,14 @@ public class PreconditionsTest {
         checkNotNegative(1, "foo");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_checkNotNegative_whenNegative() {
-        checkNotNegative(-1, "foo");
+        assertThrows(IllegalArgumentException.class, () -> checkNotNegative(-1, "foo"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_checkPositive_whenZero() {
-        checkPositive(0, "foo");
+        assertThrows(IllegalArgumentException.class, () -> checkPositive(0, "foo"));
     }
 
     @Test
@@ -63,14 +64,14 @@ public class PreconditionsTest {
         checkNotNegative(1, "foo");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_checkPositive_whenNegative() {
-        checkPositive(-1, "foo");
+        assertThrows(IllegalArgumentException.class, () -> checkPositive(-1, "foo"));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_checkNotNull2_whenNull() {
-        checkNotNull(null, "foo");
+        assertThrows(NullPointerException.class, () -> checkNotNull(null, "foo"));
     }
 
     @Test
@@ -78,9 +79,9 @@ public class PreconditionsTest {
         checkNotNull(new LinkedList(), "foo");
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_checkNotNull1_whenNull() {
-        checkNotNull(null);
+        assertThrows(NullPointerException.class, () -> checkNotNull(null));
     }
 
     @Test
@@ -93,8 +94,8 @@ public class PreconditionsTest {
         checkNull(null, "foo");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_checkNull_whenNotNull() {
-        checkNull(new LinkedList(), "foo");
+        assertThrows(IllegalArgumentException.class, () -> checkNull(new LinkedList(), "foo"));
     }
 }

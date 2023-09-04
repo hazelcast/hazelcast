@@ -38,20 +38,19 @@ public class UringTest {
         assertThrows(IllegalArgumentException.class, () -> new Uring(5, 0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_constructor_withZeroEntries() {
-        new Uring(0, 0);
+        assertThrows(IllegalArgumentException.class, () -> new Uring(0, 0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_constructor_withNegativeEntries() {
-        new Uring(-1, 0);
+        assertThrows(IllegalArgumentException.class, () -> new Uring(-1, 0));
     }
 
-
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_constructor_withNegativeFlags() {
-        new Uring(16, -1);
+        assertThrows(IllegalArgumentException.class, () -> new Uring(16, -1));
     }
 
     @Test

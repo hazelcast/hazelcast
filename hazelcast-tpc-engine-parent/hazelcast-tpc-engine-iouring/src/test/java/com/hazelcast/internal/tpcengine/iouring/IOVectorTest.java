@@ -22,6 +22,7 @@ import org.junit.Test;
 
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class IOVectorTest {
@@ -35,16 +36,16 @@ public class IOVectorTest {
         assertTrue(v.isEmpty());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_offer_whenNull() {
         IOVector v = new IOVector(16);
-        v.offer(null);
+        assertThrows(NullPointerException.class, () -> v.offer(null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_offer_whenNotDirect() {
         IOVector v = new IOVector(16);
-        v.offer(new IOBuffer(1024, false));
+        assertThrows(IllegalArgumentException.class, () -> v.offer(new IOBuffer(1024, false)));
     }
 
     @Test
@@ -75,10 +76,10 @@ public class IOVectorTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_compact_whenNegativeWritten() {
         IOVector v = new IOVector(16);
-        v.compact(-1);
+        assertThrows(IllegalArgumentException.class, () -> v.compact(-1));
     }
 
     @Test

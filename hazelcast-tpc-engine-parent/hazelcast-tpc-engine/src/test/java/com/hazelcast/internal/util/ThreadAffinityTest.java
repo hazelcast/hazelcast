@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.util.ThreadAffinity.InvalidAffinitySyntaxException;
 import org.junit.Test;
 
 import javax.annotation.Nonnull;
@@ -24,6 +25,7 @@ import java.util.BitSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 
@@ -45,20 +47,20 @@ public class ThreadAffinityTest {
         assertNull(threadAffinity.nextAllowedCpus());
     }
 
-    @Test(expected = ThreadAffinity.InvalidAffinitySyntaxException.class)
+    @Test
     public void whenSyntaxError() {
-        new ThreadAffinity("abc");
+        assertThrows(InvalidAffinitySyntaxException.class, () -> new ThreadAffinity("abc"));
     }
 
 
-    @Test(expected = ThreadAffinity.InvalidAffinitySyntaxException.class)
+    @Test
     public void whenTrailingComma() {
-        new ThreadAffinity("10,");
+        assertThrows(InvalidAffinitySyntaxException.class, () -> new ThreadAffinity("10,"));
     }
 
-    @Test(expected = ThreadAffinity.InvalidAffinitySyntaxException.class)
+    @Test
     public void whenTrailingText() {
-        new ThreadAffinity("1a");
+        assertThrows(InvalidAffinitySyntaxException.class, () -> new ThreadAffinity("1a"));
     }
 
     @Test
@@ -73,9 +75,9 @@ public class ThreadAffinityTest {
         assertEquals(threadAffinity.allowedCpusList.get(3), newBitset(8));
     }
 
-    @Test(expected = ThreadAffinity.InvalidAffinitySyntaxException.class)
+    @Test
     public void whenIndividualCoresAndNegative() {
-        new ThreadAffinity("-10");
+        assertThrows(InvalidAffinitySyntaxException.class, () -> new ThreadAffinity("-10"));
     }
 
     @Test
@@ -113,29 +115,29 @@ public class ThreadAffinityTest {
         assertEquals(threadAffinity.allowedCpusList.get(1), newBitset(1, 2, 3, 4, 5));
     }
 
-    @Test(expected = ThreadAffinity.InvalidAffinitySyntaxException.class)
+    @Test
     public void whenGroupAndNegativeThreadCount() {
-        new ThreadAffinity("[1-10]:-2");
+        assertThrows(InvalidAffinitySyntaxException.class, () -> new ThreadAffinity("[1-10]:-2"));
     }
 
-    @Test(expected = ThreadAffinity.InvalidAffinitySyntaxException.class)
+    @Test
     public void whenGroupAndThreadCountZero() {
-        new ThreadAffinity("[1-5]:0");
+        assertThrows(InvalidAffinitySyntaxException.class, () -> new ThreadAffinity("[1-5]:0"));
     }
 
-    @Test(expected = ThreadAffinity.InvalidAffinitySyntaxException.class)
+    @Test
     public void whenGroupAndThreadTooLarge() {
-        new ThreadAffinity("[1,2]:3");
+        assertThrows(InvalidAffinitySyntaxException.class, () -> new ThreadAffinity("[1,2]:3"));
     }
 
-    @Test(expected = ThreadAffinity.InvalidAffinitySyntaxException.class)
+    @Test
     public void whenInvalidRange() {
-        new ThreadAffinity("4-3");
+        assertThrows(InvalidAffinitySyntaxException.class, () -> new ThreadAffinity("4-3"));
     }
 
-    @Test(expected = ThreadAffinity.InvalidAffinitySyntaxException.class)
+    @Test
     public void whenDuplicate() {
-        new ThreadAffinity("1,1");
+        assertThrows(InvalidAffinitySyntaxException.class, () -> new ThreadAffinity("1,1"));
     }
 
     @Test
