@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Adapts a generated <a

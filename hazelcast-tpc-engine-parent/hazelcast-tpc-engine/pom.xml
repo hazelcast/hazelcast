@@ -33,8 +33,8 @@
     </parent>
 
     <properties>
-        <!-- Needed for CheckStyle -->
-        <main.basedir>${project.parent.basedir}/..</main.basedir>
+        <main.basedir>${project.parent.basedir}</main.basedir>
+        <jctools.version>4.0.1</jctools.version>
     </properties>
 
     <build>
