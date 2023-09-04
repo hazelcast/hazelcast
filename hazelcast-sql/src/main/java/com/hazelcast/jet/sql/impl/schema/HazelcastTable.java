@@ -85,8 +85,6 @@ import static java.util.stream.Collectors.joining;
  * properties, thus making further optimization more complex.
  */
 public class HazelcastTable extends AbstractTable {
-
-    private final HazelcastInstance instance;
     private final Table target;
     private final Supplier<Statistic> statisticSupplier;
     private final RexNode filter;
@@ -95,28 +93,21 @@ public class HazelcastTable extends AbstractTable {
     private RelDataType rowType;
     private final Set<String> hiddenFieldNames = new HashSet<>();
 
-    public HazelcastTable(Table target, HazelcastInstance instance) {
-        this.instance = instance;
-        this.target = target;
-        this.statisticSupplier = () -> createTableStatistic(target, instance);
-        this.filter = null;
+    public HazelcastTable(Table target, Statistic statistic) {
+        this(target, () -> statistic, null, null, null);
     }
 
-    public HazelcastTable(Table target, Statistic statistic) {
-        this.instance = null;
-        this.target = target;
-        this.statisticSupplier = () -> statistic;
-        this.filter = null;
+    public HazelcastTable(Table target, HazelcastInstance instance) {
+        this(target, () -> createTableStatistic(target, instance), null, null, null);
     }
 
     private HazelcastTable(
             Table target,
             Supplier<Statistic> statisticSupplier,
-            @Nonnull List<RexNode> projects,
+            List<RexNode> projects,
             @Nullable RelDataType rowType,
             @Nullable RexNode filter
     ) {
-        this.instance = null;
         this.target = target;
         this.statisticSupplier = statisticSupplier;
         this.projects = projects;
