@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.discovery.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -41,8 +42,7 @@ import java.util.Set;
 
 import static com.hazelcast.internal.util.CollectionUtil.nullToEmpty;
 
-public class DefaultDiscoveryService
-        implements DiscoveryService {
+public class DefaultDiscoveryService implements DiscoveryService {
 
     private static final String SERVICE_LOADER_TAG = DiscoveryStrategyFactory.class.getCanonicalName();
 
@@ -96,6 +96,28 @@ public class DefaultDiscoveryService
         for (DiscoveryStrategy discoveryStrategy : discoveryStrategies) {
             discoveryStrategy.destroy();
         }
+    }
+
+    @Override
+    public void markEndpointAsUnhealthy(Address address) {
+        for (DiscoveryStrategy discoveryStrategy : discoveryStrategies) {
+            discoveryStrategy.markEndpointAsUnhealthy(address);
+        }
+    }
+
+    @Override
+    public Set<Address> getUnhealthyEndpoints() {
+        Set<Address> addresses = null;
+        for (DiscoveryStrategy strategy : discoveryStrategies) {
+            Set<Address> local = strategy.getUnhealthyEndpoints();
+            if (!local.isEmpty()) {
+                if (addresses == null) {
+                    addresses = new HashSet<>(local.size());
+                }
+                addresses.addAll(local);
+            }
+        }
+        return addresses == null ? Collections.emptySet() : addresses;
     }
 
     public Iterable<DiscoveryStrategy> getDiscoveryStrategies() {
