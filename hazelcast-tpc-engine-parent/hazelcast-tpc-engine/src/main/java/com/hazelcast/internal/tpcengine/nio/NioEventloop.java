@@ -118,7 +118,7 @@ final class NioEventloop extends Eventloop {
             // thread goes to sleep even though there is work that it should have
             // processed and this can lead to stalled behavior like stalled socket
             //todo: ugly hack with the storage scheduler
-            if (scheduler.hasOutsidePending()
+            if (scheduler.hasConcurrentPending()
                     || ((NioFifoStorageScheduler) storageScheduler).hasPending()
                     || networkScheduler.hasPending()) {
                 keyCount = selector.selectNow();

@@ -189,7 +189,7 @@ public class SchedulingBenchmark {
         TaskQueue.Builder taskQueueBuilder = eventloop.newTaskQueueBuilder();
         taskQueueBuilder.nice = nice;
         taskQueueBuilder.clockSampleInterval = clockSampleInterval;
-        taskQueueBuilder.inside = new CircularQueue<>(1024);
+        taskQueueBuilder.queue = new CircularQueue<>(1024);
         return taskQueueBuilder.build();
     };
 

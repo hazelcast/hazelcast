@@ -285,7 +285,7 @@ public final class DeadlineScheduler {
             runQueue.poll();
 
             // todo: return value is ignored.
-            task.taskQueue.offerInside(task);
+            task.taskQueue.offer(task);
 
             // and go to the next task.
         }

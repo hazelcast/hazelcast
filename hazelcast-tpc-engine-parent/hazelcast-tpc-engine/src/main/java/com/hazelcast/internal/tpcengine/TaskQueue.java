@@ -17,7 +17,9 @@
 package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
+import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.Reference;
+import org.jctools.queues.MpscArrayQueue;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -41,21 +43,21 @@ import static java.lang.Math.max;
  * the compaction process can get all resources. But when clients need to CPU,
  * they can get it.
  * <p>
- * The TaskQueue can be configured with either either (or both):
+ * The TaskQueue can be configured as concurrent. When it is concurrent it
+ * is threadsafe (the Queue needs to be threadsafe) and tasks can be offered
+ * outside of the eventloop. Concurrent TaskQueues are more expensive than
+ * non concurrent one because:
  * <ol>
- *     <li>inside queue: for tasks submitted within the eventloop. This queue
- *     doesn't need to be thread safe.</li>
- *     <li>outside queue: for tasks submitted outside of the eventloop. This
- *     queue needs to be thread safe.</li>
+ *     <li>the overhead of the thread-safe queue.</li>
+ *     <li>the overhead of registering the queue for checking for outside
+ *     events periodically.</li>
  * </ol>
  * <p/>
- * When there is only 1 queue, Tasks in the same TaskQueue will be processed in
- * FIFO order. When there are 2 queues, tasks will be picked in round robin
- * fashion and tasks in the same queue will be picked in FIFO order.
+ * Tasks are processed in FIFO order.
  * <p>
  * TaskGroups are relatively cheap. A task group that is blocked, will not be
- * on the run queue of the scheduler. But if the task group has a outside queue,
- * periodically a check will be done to see if there are tasks on the outside
+ * on the run queue of the scheduler. But if the taskqueue is concurrent,
+ * periodically a check will be done to see if there are tasks on the queue
  * queue.
  * <p>
  * Every TaskQueue has a vruntime which stands for virtual runtime. This is used
@@ -71,35 +73,21 @@ import static java.lang.Math.max;
  * <p>
  * The TaskQueue is inspired by the <a href="https://github.com/DataDog/glommio">Glommio</>
  * TaskQueue.
- * <p>
- * The TaskQueue isn't threadsafe and should only be used from the eventloop thread.
- * The only method which is threadsafe is the {@link #offerOutside(Object)} since
- * jobs can be offered outside of the eventloop.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public final class TaskQueue implements Comparable<TaskQueue> {
 
-    static final int POLL_INSIDE_ONLY = 1;
-    static final int POLL_OUTSIDE_ONLY = 2;
-    static final int POLL_INSIDE_FIRST = 3;
-    static final int POLL_OUTSIDE_FIRST = 4;
-
-    static final int RUN_STATE_RUNNING = 1;
-    static final int RUN_STATE_BLOCKED = 2;
-
-    int pollState;
+    static final int STATE_RUNNING = 1;
+    static final int STATE_BLOCKED = 2;
 
     // the interval in which the time on the CPU is measured. 1 means every
     // interval.
     int clockSampleInterval;
-    int runState = RUN_STATE_BLOCKED;
+    int runState = STATE_BLOCKED;
     String name;
-    // the queue for tasks offered within the eventloop
-    Queue<Object> inside;
-    // the queue for tasks offered outside of the eventloop
-    Queue<Object> outside;
-
-    Queue<Object> polledFrom;
+    // the queue for tasks
+    Queue<Object> queue;
+    boolean concurrent;
     // any runnable on the queue will be processed as is.
     // any Task on the queue will also be processed according to the contract
     // of the task. anything else is offered to the taskFactory to be wrapped
@@ -144,62 +132,20 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     }
 
     boolean isEmpty() {
-        return (inside != null && inside.isEmpty())
-                && (outside != null && outside.isEmpty());
+        return queue.isEmpty();
     }
 
     int size() {
-        return (inside == null ? 0 : inside.size())
-                + (outside == null ? 0 : outside.size());
+        return queue.size();
     }
-
-    /**
-     * Picks the next active tasks from the inside/outside queues.
-     */
-    Object pickNextTask() {
-        switch (pollState) {
-            case POLL_INSIDE_ONLY:
-                return inside.poll();
-            case POLL_OUTSIDE_ONLY:
-                return outside.poll();
-            case POLL_OUTSIDE_FIRST:
-                polledFrom = outside;
-                Object task = outside.poll();
-                if (task != null) {
-                    pollState = POLL_INSIDE_FIRST;
-                } else {
-                    polledFrom = inside;
-                    task = inside.poll();
-                    if (task == null) {
-                        pollState = POLL_INSIDE_FIRST;
-                    }
-                }
-                return task;
-            case POLL_INSIDE_FIRST:
-                polledFrom = inside;
-                task = inside.poll();
-                if (task != null) {
-                    pollState = POLL_OUTSIDE_FIRST;
-                } else {
-                    polledFrom = outside;
-                    task = outside.poll();
-                    if (task == null) {
-                        pollState = POLL_OUTSIDE_FIRST;
-                    }
-                }
-                return task;
-            default:
-                throw new IllegalStateException("Unknown pollState:" + pollState);
-        }
-    }
-
 
     /**
      * Runs as much work from the TaskQueue as allowed.
-     *
+     * <p>
      * This loop is very sensitive to changes; especially when there are many
      * tasks that can be processed in batch. So don't try to pull out methods
-     * if you don't have an extensive set of benchmarks to back it up.
+     * or make modifications if you don't have an extensive set of benchmarks
+     * to back it up.
      */
     @SuppressWarnings({"checkstyle:NPathComplexity",
             "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
@@ -209,6 +155,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         final Reference taskRef = this.taskRef;
         final Metrics metrics = this.metrics;
         final Scheduler scheduler = this.scheduler;
+        final Queue queue = this.queue;
 
         runCtx.taskDeadlineNanos = runCtx.nowNanos + scheduler.timeSliceNanosActive();
 
@@ -222,7 +169,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
         while (runCtx.nowNanos <= runCtx.taskDeadlineNanos) {
             // Find the next task to perform
-            Object task = pickNextTask();
+            Object task = queue.poll();
             if (task == null) {
                 // queue is empty, we are done.
                 taskQueueEmpty = true;
@@ -248,9 +195,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 case RUN_BLOCKED:
                     break;
                 case RUN_YIELD:
-                    // put the task back onto the queue it came from
                     // todo: return
-                    polledFrom.offer(task);
+                    queue.offer(task);
                     break;
                 case RUN_COMPLETED:
                     break;
@@ -293,62 +239,17 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         if (taskQueueEmpty || isEmpty()) {
             // the taskQueue has been fully drained.
             scheduler.dequeueActive();
-            runState = RUN_STATE_BLOCKED;
+            runState = STATE_BLOCKED;
             metrics.incBlockedCount();
-            if (outside != null) {
+            if (queue != null) {
                 // add it to the shared taskQueues so the eventloop will see
                 // any items that are written to outside queues
-                scheduler.addOutsideBlocked(this);
+                scheduler.addConcurrentBlocked(this);
             }
         } else {
             // Task queue wasn't fully drained, so the taskQueue is going to yield.
             scheduler.yieldActive();
         }
-    }
-
-    /**
-     * Offers a task to the inside queue
-     * <p>
-     * Should only be done from the eventloop thread.
-     *
-     * @param task the task to offer.
-     * @return true if task was successfully offered, false if the task was
-     * rejected.
-     * @throws NullPointerException throws if task is null or when inside queue
-     *                              is null.
-     */
-    boolean offerInside(Object task) {
-        if (!inside.offer(task)) {
-            return false;
-        }
-
-        if (runState == RUN_STATE_RUNNING) {
-            return true;
-        }
-
-        if (outside != null) {
-            // If there is an outside queue, we don't need to notified
-            // of any events because the queue will register itself
-            // if it blocks.
-            scheduler.removeOutsideBlocked(this);
-        }
-
-        scheduler.enqueue(this);
-        return true;
-    }
-
-    /**
-     * Offers a task to the outside queue.
-     * <p>
-     * This method is threadsafe since it can be called outside of the eventloop.
-     *
-     * @param task the task to offer.
-     * @return true if task was successfully offered, false if the task was
-     * rejected.
-     * @throws NullPointerException if task or outside is null.
-     */
-    boolean offerOutside(Object task) {
-        return outside.offer(task);
     }
 
     @Override
@@ -363,18 +264,45 @@ public final class TaskQueue implements Comparable<TaskQueue> {
      *
      * @param task the task to offer.
      * @return true if the task was successfully offered, false otherwise.
+     * @throws IllegalStateException if the method was called outside of the
+     *                               eventloop thread and the TaskQueue isn't
+     *                               concurrent.
      */
     public boolean offer(Object task) {
         checkNotNull(task, "task");
 
         if (Thread.currentThread() == eventloop.eventloopThread) {
-            // todo: only set when there is a inside queue
-            return offerInside(task);
-        } else if (offerOutside(task)) {
-            eventloop.reactor.wakeup();
+            if (!queue.offer(task)) {
+                return false;
+            }
+
+            if (runState == STATE_RUNNING) {
+                return true;
+            }
+
+            if (concurrent) {
+                // If is concurrent, we don't need to notified of any events
+                // because the queue will register itself if it blocks.
+                scheduler.removeConcurrentBlocked(this);
+            }
+
+            scheduler.enqueue(this);
             return true;
         } else {
-            return false;
+            if (!concurrent) {
+                throw new IllegalStateException(
+                        "Can't offer a task to non concurrent TaskGroup " + name
+                                + " outside of the EventloopThread. "
+                                + "Current thread is " + Thread.currentThread().getName());
+            }
+
+            if (!queue.offer(task)) {
+                return false;
+            }
+
+            // by waking up the reactor, the queue of is guaranteed to be scanned.
+            eventloop.reactor.wakeup();
+            return true;
         }
     }
 
@@ -382,7 +310,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     public String toString() {
         return "TaskQueue{"
                 + "name='" + name + '\''
-                + ", pollState=" + pollState
                 + ", runState=" + runState
                 + ", weight=" + weight
                 + ", sumExecRuntimeNanos=" + actualRuntimeNanos
@@ -527,6 +454,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
         public static final int MIN_NICE = -10;
         public static final int MAX_NICE = 10;
+        public static final int DEFAULT_QUEUE_CAPACITY = 16384;
 
         private static final AtomicLong ID = new AtomicLong();
 
@@ -557,18 +485,17 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         public int nice;
 
         /**
-         * Sets the inside queue of the TaskQueue. The inside queue is should be
-         * used for tasks generated within the eventloop. The inside queue doesn't
-         * need to be thread-safe.
+         * Sets queue for the task Queue.
          */
-        public Queue<Object> inside;
+        public Queue<Object> queue;
 
         /**
-         * Sets the outside queue of the TaskQueue. The outside queue is should be
-         * used for tasks generated outside of the eventloop and therefor must
-         * be thread-safe.
+         * If the Queue can be accessed outside of the eventloop. If concurrent
+         * is set to true, then the queue needs to be a threadsafe queue (mpsc is
+         * sufficient), and otherwise it doesn't and a {@link CircularQueue} is
+         * a good option.
          */
-        public Queue<Object> outside;
+        public boolean concurrent = true;
 
         /**
          * Measuring the execution time of every task in a TaskQueue can be
@@ -618,8 +545,12 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 throw new IllegalArgumentException("nice can't be larger than " + MAX_NICE);
             }
 
-            if (inside == null && outside == null) {
-                throw new IllegalArgumentException("The inside and outside queue can't both be null.");
+            if (queue == null) {
+                if (concurrent) {
+                    queue = new MpscArrayQueue<>(DEFAULT_QUEUE_CAPACITY);
+                } else {
+                    queue = new CircularQueue<>(DEFAULT_QUEUE_CAPACITY);
+                }
             }
 
             if (eventloop.scheduler.taskQueues.size() == eventloop.scheduler.runQueueLimit()) {
@@ -639,28 +570,19 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         protected TaskQueue construct() {
             TaskQueue taskQueue = new TaskQueue();
             taskQueue.startNanos = epochNanos();
-            taskQueue.inside = inside;
-            taskQueue.outside = outside;
-            if (inside == null) {
-                taskQueue.pollState = POLL_OUTSIDE_ONLY;
-                taskQueue.polledFrom = outside;
-            } else if (outside == null) {
-                taskQueue.pollState = POLL_INSIDE_ONLY;
-                taskQueue.polledFrom = inside;
-            } else {
-                taskQueue.pollState = POLL_OUTSIDE_FIRST;
-            }
+            taskQueue.queue = queue;
+            taskQueue.concurrent = concurrent;
             taskQueue.clockSampleInterval = clockSampleInterval;
             taskQueue.taskRunner = taskRunner;
             taskRunner.init(eventloop);
             taskQueue.name = name;
             taskQueue.eventloop = eventloop;
             taskQueue.scheduler = eventloop.scheduler;
-            taskQueue.runState = RUN_STATE_BLOCKED;
+            taskQueue.runState = STATE_BLOCKED;
             taskQueue.weight = niceToWeight(nice);
 
-            if (taskQueue.outside != null) {
-                eventloop.scheduler.addOutsideBlocked(taskQueue);
+            if (taskQueue.queue != null) {
+                eventloop.scheduler.addConcurrentBlocked(taskQueue);
             }
 
             eventloop.scheduler.taskQueues.add(taskQueue);

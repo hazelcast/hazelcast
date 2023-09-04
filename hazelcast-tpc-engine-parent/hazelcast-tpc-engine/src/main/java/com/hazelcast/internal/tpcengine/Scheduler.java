@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpcengine;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_BLOCKED;
+import static com.hazelcast.internal.tpcengine.TaskQueue.STATE_BLOCKED;
 
 /**
  * The {@link Scheduler} is a cooperative scheduler (unlike the
@@ -46,19 +46,19 @@ public abstract class Scheduler {
 
     // A double linked list of TaskQueues that have an outside queue and are
     // currently blocked (so waiting for some external event).
-    private TaskQueue blockedOutsideFirst;
-    private TaskQueue blockedOutsideLast;
+    private TaskQueue blockedConcurrentFirst;
+    private TaskQueue blockedBlockedLast;
 
-    public final boolean scheduleOutsideBlocked() {
+    public final boolean scheduleBlockedConcurrent() {
         boolean scheduled = false;
-        TaskQueue queue = blockedOutsideFirst;
+        TaskQueue queue = blockedConcurrentFirst;
 
         while (queue != null) {
-            assert queue.runState == RUN_STATE_BLOCKED : "taskQueue.state" + queue.runState;
+            assert queue.runState == STATE_BLOCKED : "taskQueue.state" + queue.runState;
             TaskQueue next = queue.next;
 
-            if (!queue.outside.isEmpty()) {
-                removeOutsideBlocked(queue);
+            if (!queue.queue.isEmpty()) {
+                removeConcurrentBlocked(queue);
                 scheduled = true;
                 enqueue(queue);
             }
@@ -70,15 +70,15 @@ public abstract class Scheduler {
     }
 
     /**
-     * Checks if there are any outside taskQueues with pending work.
+     * Checks if there are any concurrent taskQueues with pending work.
      *
      * @return true if there are outside task queue, false otherwise.
      */
-    public final boolean hasOutsidePending() {
-        TaskQueue queue = blockedOutsideFirst;
+    public final boolean hasConcurrentPending() {
+        TaskQueue queue = blockedConcurrentFirst;
 
         while (queue != null) {
-            if (!queue.outside.isEmpty()) {
+            if (!queue.queue.isEmpty()) {
                 return true;
             }
             queue = queue.next;
@@ -87,39 +87,39 @@ public abstract class Scheduler {
         return false;
     }
 
-    public final void removeOutsideBlocked(TaskQueue taskQueue) {
-        assert taskQueue.outside != null;
-        assert taskQueue.runState == RUN_STATE_BLOCKED;
+    public final void removeConcurrentBlocked(TaskQueue taskQueue) {
+        assert taskQueue.queue != null;
+        assert taskQueue.runState == STATE_BLOCKED;
 
         TaskQueue next = taskQueue.next;
         TaskQueue prev = taskQueue.prev;
 
         if (prev == null) {
-            blockedOutsideFirst = next;
+            blockedConcurrentFirst = next;
         } else {
             prev.next = next;
             taskQueue.prev = null;
         }
 
         if (next == null) {
-            blockedOutsideLast = prev;
+            blockedBlockedLast = prev;
         } else {
             next.prev = prev;
             taskQueue.next = null;
         }
     }
 
-    public final void addOutsideBlocked(TaskQueue taskQueue) {
-        assert taskQueue.outside != null;
-        assert taskQueue.runState == RUN_STATE_BLOCKED;
+    public final void addConcurrentBlocked(TaskQueue taskQueue) {
+        assert taskQueue.concurrent;
+        assert taskQueue.runState == STATE_BLOCKED;
         assert taskQueue.prev == null;
         assert taskQueue.next == null;
 
-        TaskQueue l = blockedOutsideLast;
+        TaskQueue l = blockedBlockedLast;
         taskQueue.prev = l;
-        blockedOutsideLast = taskQueue;
+        blockedBlockedLast = taskQueue;
         if (l == null) {
-            blockedOutsideFirst = taskQueue;
+            blockedConcurrentFirst = taskQueue;
         } else {
             l.next = taskQueue;
         }

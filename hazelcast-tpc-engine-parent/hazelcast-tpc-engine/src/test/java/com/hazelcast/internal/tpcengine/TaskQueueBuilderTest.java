@@ -48,7 +48,7 @@ public class TaskQueueBuilderTest {
             @Override
             public void run() {
                 TaskQueue.Builder builder = reactor.eventloop().newTaskQueueBuilder();
-                builder.inside = new MpscArrayQueue<>(1024);
+                builder.queue = new MpscArrayQueue<>(1024);
                 builder.nice = TaskQueue.Builder.MIN_NICE - 1;
                 assertThrows(IllegalArgumentException.class, () -> builder.build());
             }
@@ -62,7 +62,7 @@ public class TaskQueueBuilderTest {
             @Override
             public void run() {
                 TaskQueue.Builder builder = reactor.eventloop().newTaskQueueBuilder();
-                builder.inside = new MpscArrayQueue<>(1024);
+                builder.queue = new MpscArrayQueue<>(1024);
                 builder.nice = TaskQueue.Builder.MAX_NICE + 1;
                 assertThrows(IllegalArgumentException.class, () -> builder.build());
             }
@@ -76,7 +76,7 @@ public class TaskQueueBuilderTest {
             @Override
             public void run() {
                 TaskQueue.Builder builder = reactor.eventloop().newTaskQueueBuilder();
-                assertThrows(IllegalArgumentException.class, () -> builder.build());
+                builder.build();
             }
         });
         assertSuccessEventually(f);

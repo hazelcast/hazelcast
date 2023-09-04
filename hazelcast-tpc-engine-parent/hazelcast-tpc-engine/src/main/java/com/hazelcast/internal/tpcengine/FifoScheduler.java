@@ -18,7 +18,7 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 
-import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_RUNNING;
+import static com.hazelcast.internal.tpcengine.TaskQueue.STATE_RUNNING;
 import static java.lang.Math.max;
 
 /**
@@ -117,7 +117,7 @@ public class FifoScheduler extends Scheduler {
         // the eventloop should control the number of created taskQueues
         assert runQueueSize <= runQueueLimit;
 
-        taskQueue.runState = RUN_STATE_RUNNING;
+        taskQueue.runState = STATE_RUNNING;
         runQueue.add(taskQueue);
         runQueueSize++;
     }

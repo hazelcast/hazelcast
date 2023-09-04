@@ -18,7 +18,7 @@ package com.hazelcast.internal.tpcengine;
 
 import java.util.PriorityQueue;
 
-import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_RUNNING;
+import static com.hazelcast.internal.tpcengine.TaskQueue.STATE_RUNNING;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.Math.max;
 import static java.lang.Math.pow;
@@ -172,7 +172,7 @@ public class CompletelyFairScheduler extends Scheduler {
 
         totalWeight += taskQueue.weight;
         runQueueSize++;
-        taskQueue.runState = RUN_STATE_RUNNING;
+        taskQueue.runState = STATE_RUNNING;
         taskQueue.virtualRuntimeNanos
                 = max(taskQueue.virtualRuntimeNanos, min_virtualRuntimeNanos);
         runQueue.add(taskQueue);

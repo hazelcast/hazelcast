@@ -278,7 +278,7 @@ public abstract class Eventloop {
         while (!stop) {
             deadlineScheduler.tick(runCtx.nowNanos);
 
-            scheduler.scheduleOutsideBlocked();
+            scheduler.scheduleBlockedConcurrent();
 
             TaskQueue taskQueue = scheduler.pickNext();
             if (taskQueue == null) {

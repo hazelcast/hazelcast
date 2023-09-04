@@ -25,11 +25,9 @@ import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.nio.NioReactor;
 import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
-import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.EpochClock;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
-import org.jctools.queues.MpscArrayQueue;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -745,8 +743,6 @@ public abstract class Reactor implements Executor {
         private static final String IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME
                 = "com.hazelcast.internal.tpcengine.iouring.UringReactor$Builder";
 
-        public static final int DEFAULT_INSIDE_TASK_QUEUE_LIMIT = 1024;
-        public static final int DEFAULT_OUTSIDE_TASK_QUEUE_LIMIT = 1024;
         public static final int DEFAULT_DEADLINE_RUN_QUEUE_LIMIT = 1024;
         public static final int DEFAULT_RUN_QUEUE_LIMIT = 4096;
         public static final long DEFAULT_STALL_THRESHOLD_NANOS = MICROSECONDS.toNanos(500);
@@ -934,13 +930,18 @@ public abstract class Reactor implements Executor {
         /**
          * The scheduler to use. If cfs is true, the {@link CompletelyFairScheduler}
          * it used. Otherwise the {@link FifoScheduler} is used. The primary
-         * reason to set cfs=false is for performance testing and debugging purposes.
+         * reason to set cfs=false is for performance testing and debugging
+         * purposes.
          */
         public boolean cfs;
 
         /**
          * Every Reactor has a default TaskQueue and using this builder that
          * default TaskQueue can be configured.
+         * <p/>
+         * By default the defaultTaskQueueBuilder will be concurrent. If you
+         * configure it as non concurrent and do not make any other TaskQueues,
+         * the reactor can't receive any tasks from outside.
          */
         public TaskQueue.Builder defaultTaskQueueBuilder;
 
@@ -1069,10 +1070,7 @@ public abstract class Reactor implements Executor {
             if (defaultTaskQueueBuilder == null) {
                 defaultTaskQueueBuilder = new TaskQueue.Builder();
                 defaultTaskQueueBuilder.name = "default";
-                defaultTaskQueueBuilder.outside
-                        = new MpscArrayQueue<>(DEFAULT_OUTSIDE_TASK_QUEUE_LIMIT);
-                defaultTaskQueueBuilder.inside
-                        = new CircularQueue<>(DEFAULT_INSIDE_TASK_QUEUE_LIMIT);
+                defaultTaskQueueBuilder.concurrent = true;
             }
 
             if (stallHandler == null) {

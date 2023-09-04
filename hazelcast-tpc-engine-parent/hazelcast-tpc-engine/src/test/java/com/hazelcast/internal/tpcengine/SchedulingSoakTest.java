@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.jctools.queues.MpscArrayQueue;
 import org.jctools.util.PaddedAtomicLong;
 import org.junit.After;
@@ -78,8 +77,8 @@ public abstract class SchedulingSoakTest {
                     public TaskQueue call() throws Exception {
                         //todo: play with priorities.
                         TaskQueue.Builder taskQueueBuilder = reactor.eventloop().newTaskQueueBuilder();
-                        taskQueueBuilder.outside = new MpscArrayQueue<>(taskCount + 100);
-                        taskQueueBuilder.inside = new CircularQueue<>(taskCount + 100);
+                        taskQueueBuilder.queue = new MpscArrayQueue<>(taskCount + 100);
+                        taskQueueBuilder.concurrent = true;
                         return taskQueueBuilder.build();
                     }
                 });

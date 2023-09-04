@@ -163,9 +163,8 @@ public class TpcServerBootstrap {
 
                 reactorBuilder.defaultTaskQueueBuilder = new TaskQueue.Builder();
                 reactorBuilder.defaultTaskQueueBuilder.taskRunner = operationThread;
-                reactorBuilder.defaultTaskQueueBuilder.outside = operationThread.getQueue();
-                //ugly, but needed for now
-                reactorBuilder.defaultTaskQueueBuilder.inside = operationThread.getQueue();
+                reactorBuilder.defaultTaskQueueBuilder.queue = operationThread.getQueue();
+                reactorBuilder.defaultTaskQueueBuilder.concurrent = true;
                 threadIndex++;
             }
         };

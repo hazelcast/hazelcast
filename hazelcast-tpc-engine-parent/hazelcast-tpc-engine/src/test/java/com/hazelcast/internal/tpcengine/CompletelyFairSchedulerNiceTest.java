@@ -67,8 +67,8 @@ public class CompletelyFairSchedulerNiceTest {
                 for (int nice = TaskQueue.Builder.MIN_NICE; nice < TaskQueue.Builder.MAX_NICE; nice++) {
                     TaskQueue.Builder taskQueueBuilder = eventloop.newTaskQueueBuilder();
                     taskQueueBuilder.nice = nice;
-                    taskQueueBuilder.inside = new MpscArrayQueue<>(1024);
-                    taskQueueBuilder.outside = new MpscArrayQueue<>(1024);
+                    taskQueueBuilder.queue = new MpscArrayQueue<>(1024);
+                    taskQueueBuilder.concurrent = true;
                     TaskQueue taskQueue = taskQueueBuilder.build();
                     DummyTask dummyTask = new DummyTask();
                     tasks.add(dummyTask);
