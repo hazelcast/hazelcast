@@ -69,6 +69,7 @@ final class GettersProvider {
         DEFAULT_GETTERS.put("TIMESTAMP", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
         DEFAULT_GETTERS.put("TIMESTAMP_WITH_TIMEZONE",
                 (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
+        DEFAULT_GETTERS.put("TIMESTAMP WITH TIME ZONE", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
 
         // Override some getters for MS SQL
         Map<String, BiFunctionEx<ResultSet, Integer, Object>> msSql = new HashMap<>(DEFAULT_GETTERS);
@@ -76,6 +77,7 @@ final class GettersProvider {
         msSql.put("DATETIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
         msSql.put("DATETIMEOFFSET", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
         GETTERS_BY_DATABASE.put(HazelcastMSSQLDialect.class.getSimpleName(), msSql);
+
     }
 
     private GettersProvider() {
