@@ -37,9 +37,9 @@ public interface TaskRunner {
     /**
      * Process a single task. It depends on the TaskRunner implementation which
      * type of tasks it can run.
-     *
+     * <p/>
      * Instead of passing a task, a reference to the task is passed so that
-     * the function can replace the object by something else. For example an
+     * the function can replace the value by something else. For example an
      * IOBuffer with a request is received, then the TaskRunner could decide
      * to deserialize the object and put it into a Task, and if that task yields,
      * this task is going to be scheduled and not the IOBuffer.
@@ -53,9 +53,13 @@ public interface TaskRunner {
      * Handles the throwable thrown by the {@link #run(Object)}. If you don't
      * want to handle the cause, rethrow it. But this will effectively mean that
      * the reactor is going to be terminated.
+     * <p/>
+     * The task can be changed by updating the value of the taskRef. See the
+     * run method for more info.
      *
+     * @param a reference to the task.
      * @param cause
      * @return the run state of the task.
      */
-    int handleError(Object task, Throwable cause);
+    int handleError(Reference taskRef, Throwable cause);
 }

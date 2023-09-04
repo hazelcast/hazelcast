@@ -65,13 +65,13 @@ public class DefaultTaskRunnerTest {
     @Test
     public void test_handleError_whenNotException() {
         DefaultTaskRunner runner = new DefaultTaskRunner();
-        assertThrows(Error.class, () -> runner.handleError(this, new Error()));
+        assertThrows(Error.class, () -> runner.handleError(new Reference(this), new Error()));
     }
 
     @Test
     public void test_handleError_whenException() {
         DefaultTaskRunner runner = new DefaultTaskRunner();
-        int runState = runner.handleError(this, new IndexOutOfBoundsException());
+        int runState = runner.handleError(new Reference(this), new IndexOutOfBoundsException());
         assertEquals(Task.RUN_COMPLETED, runState);
     }
 }

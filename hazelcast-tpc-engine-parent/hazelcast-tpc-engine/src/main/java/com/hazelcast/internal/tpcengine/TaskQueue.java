@@ -120,7 +120,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // the tree, the vruntime is always updated to the min_vruntime. So the vruntime
     // isn't the actual amount of time spend on the CPU
     long virtualRuntimeNanos;
-    long taskRunCount;
 
     // the start time of this TaskQueue
     long startNanos;
@@ -133,7 +132,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     final Metrics metrics = new Metrics();
     //the weight is only used by the CfsTaskQueueScheduler.
     int weight = 1;
-    Object activeTask;
     final Reference taskRef = new Reference();
 
     /**
@@ -157,58 +155,60 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
     /**
      * Picks the next active tasks from the inside/outside queues.
-     *
-     * @return true if there was a task, false otherwise.
      */
-    boolean pickActiveTask() {
+    Object pickNextTask() {
         switch (pollState) {
             case POLL_INSIDE_ONLY:
-                activeTask = inside.poll();
-                break;
+                return inside.poll();
             case POLL_OUTSIDE_ONLY:
-                activeTask = outside.poll();
-                break;
+                return outside.poll();
             case POLL_OUTSIDE_FIRST:
                 polledFrom = outside;
-                activeTask = outside.poll();
-                if (activeTask != null) {
+                Object task = outside.poll();
+                if (task != null) {
                     pollState = POLL_INSIDE_FIRST;
                 } else {
                     polledFrom = inside;
-                    activeTask = inside.poll();
-                    if (activeTask == null) {
+                    task = inside.poll();
+                    if (task == null) {
                         pollState = POLL_INSIDE_FIRST;
                     }
                 }
-                break;
+                return task;
             case POLL_INSIDE_FIRST:
                 polledFrom = inside;
-                activeTask = inside.poll();
-                if (activeTask != null) {
+                task = inside.poll();
+                if (task != null) {
                     pollState = POLL_OUTSIDE_FIRST;
                 } else {
                     polledFrom = outside;
-                    activeTask = outside.poll();
-                    if (activeTask == null) {
+                    task = outside.poll();
+                    if (task == null) {
                         pollState = POLL_OUTSIDE_FIRST;
                     }
                 }
-                break;
+                return task;
             default:
                 throw new IllegalStateException("Unknown pollState:" + pollState);
         }
-
-        return activeTask != null;
     }
 
 
-    @SuppressWarnings({"checkstyle:NPathComplexity",
-            "checkstyle:MethodLength"})
     /**
      * Runs as much work from the TaskQueue as allowed.
+     *
+     * This loop is very sensitive to changes; especially when there are many
+     * tasks that can be processed in batch. So don't try to pull out methods
+     * if you don't have an extensive set of benchmarks to back it up.
      */
-    void run(RunContext runCtx) throws Exception {
+    @SuppressWarnings({"checkstyle:NPathComplexity",
+            "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
+    void run(final RunContext runCtx) throws Exception {
         final Reactor.Metrics reactorMetrics = runCtx.reactorMetrics;
+        final TaskRunner taskRunner = this.taskRunner;
+        final Reference taskRef = this.taskRef;
+        final Metrics metrics = this.metrics;
+        final Scheduler scheduler = this.scheduler;
 
         runCtx.taskDeadlineNanos = runCtx.nowNanos + scheduler.timeSliceNanosActive();
 
@@ -221,18 +221,45 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         // Process the tasks in a queue as long as the deadline is not exceeded.
 
         while (runCtx.nowNanos <= runCtx.taskDeadlineNanos) {
-            if (!pickActiveTask()) {
-                taskQueueEmpty = true;
+            // Find the next task to perform
+            Object task = pickNextTask();
+            if (task == null) {
                 // queue is empty, we are done.
+                taskQueueEmpty = true;
                 break;
             }
 
             runCtx.taskStartNanos = runCtx.nowNanos;
 
-            runActiveTask();
-            reactorMetrics.incTaskCsCount();
-            taskRunCount++;
+            // process the task and handle potential exceptions
+            int runResult;
+            taskRef.value = task;
+            try {
+                runResult = taskRunner.run(taskRef);
+            } catch (Throwable e) {
+                metrics.incTaskErrorCount();
+                runResult = taskRunner.handleError(taskRef, e);
+            }
+            task = taskRef.value;
+            metrics.incTaskCsCount();
 
+            // deal with the runResult.
+            switch (runResult) {
+                case RUN_BLOCKED:
+                    break;
+                case RUN_YIELD:
+                    // put the task back onto the queue it came from
+                    // todo: return
+                    polledFrom.offer(task);
+                    break;
+                case RUN_COMPLETED:
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+            reactorMetrics.incTaskCsCount();
+
+            // Updat the time if needed
             if (clockSampleRound == 1) {
                 runCtx.nowNanos = epochNanos();
                 clockSampleRound = clockSampleInterval;
@@ -245,11 +272,11 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             long taskCpuTimeNanos = max(runCtx.taskStartNanos - taskEndNanos, 1);
             cpuTimeNanos += taskCpuTimeNanos;
 
+            // handle stall violations.
             if (taskCpuTimeNanos > runCtx.stallThresholdNanos) {
                 runCtx.stallHandler.onStall(
-                        eventloop.reactor, this, activeTask, runCtx.taskStartNanos, taskCpuTimeNanos);
+                        eventloop.reactor, this, task, runCtx.taskStartNanos, taskCpuTimeNanos);
             }
-            activeTask = null;
 
             // periodically we need to tick the io schedulers.
             if (runCtx.nowNanos >= runCtx.ioDeadlineNanos) {
@@ -258,7 +285,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 runCtx.ioDeadlineNanos = runCtx.nowNanos + runCtx.ioIntervalNanos;
             }
         }
-
+        taskRef.value = null;
         scheduler.updateActive(cpuTimeNanos);
         metrics.incCpuTimeNanos(cpuTimeNanos);
         reactorMetrics.incTaskQueueCsCount();
@@ -276,35 +303,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         } else {
             // Task queue wasn't fully drained, so the taskQueue is going to yield.
             scheduler.yieldActive();
-        }
-    }
-
-    private void runActiveTask() {
-        int runResult;
-        try {
-            taskRef.value = activeTask;
-            runResult = taskRunner.run(taskRef);
-            activeTask = taskRef.value;
-            taskRef.value = null;
-        } catch (Throwable e) {
-            metrics.incTaskErrorCount();
-            runResult = taskRunner.handleError(activeTask, e);
-        }
-
-        metrics.incTaskCsCount();
-
-        switch (runResult) {
-            case RUN_BLOCKED:
-                break;
-            case RUN_YIELD:
-                // put the task back onto the queue it came from
-                // todo: return
-                polledFrom.offer(activeTask);
-                break;
-            case RUN_COMPLETED:
-                break;
-            default:
-                throw new IllegalStateException();
         }
     }
 
@@ -389,7 +387,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 + ", weight=" + weight
                 + ", sumExecRuntimeNanos=" + actualRuntimeNanos
                 + ", vruntimeNanos=" + virtualRuntimeNanos
-                + ", tasksProcessed=" + taskRunCount
                 + ", startNanos=" + startNanos
                 + '}';
     }

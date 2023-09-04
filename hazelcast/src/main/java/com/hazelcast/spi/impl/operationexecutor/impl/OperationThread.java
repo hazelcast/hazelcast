@@ -152,7 +152,7 @@ public abstract class OperationThread extends HazelcastManagedThread
     }
 
     @Override
-    public int run(Reference taskRef) throws Throwable {
+    public int run(final Reference taskRef) throws Throwable {
         return run(taskRef.value);
     }
 
@@ -185,8 +185,8 @@ public abstract class OperationThread extends HazelcastManagedThread
     }
 
     @Override
-    public int handleError(Object task, Throwable cause) {
-        logger.severe("Failed to execute task " + task, cause);
+    public int handleError(Reference taskRef, Throwable cause) {
+        logger.severe("Failed to execute task " + taskRef.value, cause);
         return Task.RUN_COMPLETED;
     }
 

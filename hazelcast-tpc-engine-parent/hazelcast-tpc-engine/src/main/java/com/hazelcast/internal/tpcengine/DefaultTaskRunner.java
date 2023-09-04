@@ -53,10 +53,10 @@ public final class DefaultTaskRunner implements TaskRunner {
     }
 
     @Override
-    public int handleError(Object task, Throwable cause) {
+    public int handleError(final Reference taskRef, final Throwable cause) {
         if (cause instanceof Exception) {
             if (logger.isWarningEnabled()) {
-                logger.warning("Task " + task + " failed with an exception.", cause);
+                logger.warning("Task " + taskRef.value + " failed with an exception.", cause);
             }
             return RUN_COMPLETED;
         } else {

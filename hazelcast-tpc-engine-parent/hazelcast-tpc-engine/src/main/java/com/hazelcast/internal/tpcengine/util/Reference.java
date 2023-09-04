@@ -17,7 +17,9 @@
 package com.hazelcast.internal.tpcengine.util;
 
 /**
- * A general purpose reference to some object.
+ * A general purpose reference to some object that is comparable to an
+ * {@link java.util.concurrent.atomic.AtomicReference} but has plain
+ * load/store semantics.
  * <p/>
  * The primary purpose of this Reference is to be able to pass a reference to
  * a callee and allow the callee to modify the value of the reference.
