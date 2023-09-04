@@ -18,6 +18,8 @@ package com.hazelcast.test.jdbc;
 
 import org.testcontainers.containers.MSSQLServerContainer;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeNoArm64Architecture;
+
 public class MSSQLDatabaseProvider implements TestDatabaseProvider {
 
     public static final String TEST_MSSQLSERVER_VERSION = System.getProperty("test.mssqlserver.version", "2017-CU12");
@@ -28,6 +30,7 @@ public class MSSQLDatabaseProvider implements TestDatabaseProvider {
 
     @Override
     public String createDatabase(String dbName) {
+        assumeNoArm64Architecture();
         container = new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:" + TEST_MSSQLSERVER_VERSION);
         container.acceptLicense()
                  // See https://learn.microsoft.com/en-us/sql/connect/jdbc/using-basic-data-types?view=sql-server-ver16
