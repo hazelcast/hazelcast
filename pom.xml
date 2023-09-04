@@ -94,7 +94,7 @@
         <avro.version>1.11.0</avro.version>
         <aws.sdk.version>1.12.267</aws.sdk.version>
         <classgraph.version>4.8.139</classgraph.version>
-        <grpc.version>1.43.0</grpc.version>
+        <grpc.version>1.57.0</grpc.version>
         <guava.version>32.0.1-jre</guava.version>
         <hadoop.version>3.3.5</hadoop.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
