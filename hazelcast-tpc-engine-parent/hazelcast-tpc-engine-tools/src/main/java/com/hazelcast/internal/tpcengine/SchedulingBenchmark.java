@@ -23,8 +23,12 @@ import org.jctools.util.PaddedAtomicLong;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.tpcengine.FormatUtil.humanReadableCountSI;
 import static com.hazelcast.internal.tpcengine.TaskQueue.Builder.MAX_NICE;
@@ -44,15 +48,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class SchedulingBenchmark {
 
     // The type of the reactor
-    public ReactorType reactorType = ReactorType.NIO;
+    public ReactorType reactorType = ReactorType.IOURING;
     // number of reactors
     public int reactorCnt = 1;
     // the duration of the benchmark
     public int runtimeSeconds = 1000;
     // The number of task groups
     public int taskGroupCnt = 1;
-    // number of tasks per task group
-    public int tasksPerTaskGroupCnt = 100;
+    // number of tasks per task queue
+    public int taskCntPerTaskQueue = 100;
     public boolean useTask = true;
     // this will force every task context switch from one task to the next
     // task in the same task group, to measure time. So effectively it is
@@ -66,6 +70,23 @@ public class SchedulingBenchmark {
     public long minGranularityNanos = -1;
     // When set to -1, value is ignored.
     public long targetLatencyNanos = -1;
+
+    // for the best performance you want to use a non concurrent queue
+    // if you set taskQueueConcurrent to true, you also should set a
+    // thread safe queue.
+    public Consumer<TaskQueue.Builder> taskQueueInitFn = new Consumer<TaskQueue.Builder>() {
+        @Override
+        public void accept(TaskQueue.Builder builder) {
+            Random random = ThreadLocalRandom.current();
+            int nice = randomNiceLevel
+                    ? random.nextInt(MAX_NICE - MIN_NICE + 1) + MIN_NICE
+                    : 0;
+            builder.nice = nice;
+            builder.clockSampleInterval = clockSampleInterval;
+            builder.concurrent = false;
+            builder.queue = new CircularQueue<>(16384);
+        }
+    };
 
     // Internal state of the benchmark itself.
     private volatile boolean stop = false;
@@ -94,22 +115,23 @@ public class SchedulingBenchmark {
             final PaddedAtomicLong counter = csCounters[reactorIndex];
             reactor.execute(() -> {
                 List<TaskQueue> taskQueues = new ArrayList<>();
+                Eventloop eventloop = reactor.eventloop();
                 if (taskGroupCnt == 0) {
-                    taskQueues.add(reactor.eventloop().defaultTaskQueue());
+                    taskQueues.add(eventloop.defaultTaskQueue());
                 } else {
                     for (int k = 0; k < taskGroupCnt; k++) {
-                        taskQueues.add(taskGroupFactory.apply(reactor.eventloop()));
+                        TaskQueue.Builder taskQueueBuilder = eventloop.newTaskQueueBuilder();
+                        taskQueueInitFn.accept(taskQueueBuilder);
+                        taskQueues.add(taskQueueBuilder.build());
                     }
                 }
 
                 for (TaskQueue taskQueue : taskQueues) {
-                    for (int k = 0; k < tasksPerTaskGroupCnt; k++) {
+                    for (int k = 0; k < taskCntPerTaskQueue; k++) {
                         if (useTask) {
-                            SchedulingRunnable task = new SchedulingRunnable(taskQueue, counter);
-                            taskQueue.offer(task);
+                            taskQueue.offer(new SchedulingRunnable(taskQueue, counter));
                         } else {
-                            SchedulingTask task = new SchedulingTask(counter);
-                            taskQueue.offer(task);
+                            taskQueue.offer(new SchedulingTask(counter));
                         }
                     }
                 }
@@ -150,7 +172,7 @@ public class SchedulingBenchmark {
         System.out.println("runtimeSeconds:" + runtimeSeconds);
         System.out.println("clockSampleInterval:" + clockSampleInterval);
         System.out.println("taskGroupCnt:" + taskGroupCnt);
-        System.out.println("tasksPerTaskGroupCnt:" + tasksPerTaskGroupCnt);
+        System.out.println("tasksPerTaskGroupCnt:" + taskCntPerTaskQueue);
         System.out.println("randomNiceLevel:" + randomNiceLevel);
         System.out.println("use completely fair scheduler:" + cfs);
         System.out.println("affinity:" + affinity);
@@ -180,19 +202,6 @@ public class SchedulingBenchmark {
         }
         return reactors;
     }
-
-    public final Function<Eventloop, TaskQueue> taskGroupFactory = eventloop -> {
-        int nice = randomNiceLevel
-                ? random.nextInt(MAX_NICE - MIN_NICE + 1) + MIN_NICE
-                : 0;
-
-        TaskQueue.Builder taskQueueBuilder = eventloop.newTaskQueueBuilder();
-        taskQueueBuilder.nice = nice;
-        taskQueueBuilder.clockSampleInterval = clockSampleInterval;
-        taskQueueBuilder.concurrent = false;
-        taskQueueBuilder.queue = new CircularQueue<>(1024);
-        return taskQueueBuilder.build();
-    };
 
     private class SchedulingRunnable implements Runnable {
         private final TaskQueue taskQueue;
