@@ -697,8 +697,8 @@ public abstract class Reactor implements Executor {
             return (long) TASK_CS_SWITCH_COUNT.getOpaque(this);
         }
 
-        public void incTaskCsCount() {
-            TASK_CS_SWITCH_COUNT.setOpaque(this, (long) TASK_CS_SWITCH_COUNT.getOpaque(this) + 1);
+        public void incTaskCsCount(long delta) {
+            TASK_CS_SWITCH_COUNT.setOpaque(this, (long) TASK_CS_SWITCH_COUNT.getOpaque(this) + delta);
         }
     }
 

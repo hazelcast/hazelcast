@@ -48,16 +48,16 @@ public class SchedulingBenchmark {
     // number of reactors
     public int reactorCnt = 1;
     // the duration of the benchmark
-    public int runtimeSeconds = 10;
+    public int runtimeSeconds = 1000;
     // The number of task groups
     public int taskGroupCnt = 1;
     // number of tasks per task group
-    public int tasksPerTaskGroupCnt = 1;
+    public int tasksPerTaskGroupCnt = 100;
     public boolean useTask = true;
     // this will force every task context switch from one task to the next
     // task in the same task group, to measure time. So effectively it is
     // maximum pressure on the clock.
-    public int clockSampleInterval = 1;
+    public int clockSampleInterval = 100;
     public boolean randomNiceLevel = false;
     // true of the completely fair scheduler, false for the fifo scheduler
     public boolean cfs = true;
@@ -189,6 +189,7 @@ public class SchedulingBenchmark {
         TaskQueue.Builder taskQueueBuilder = eventloop.newTaskQueueBuilder();
         taskQueueBuilder.nice = nice;
         taskQueueBuilder.clockSampleInterval = clockSampleInterval;
+        taskQueueBuilder.concurrent = false;
         taskQueueBuilder.queue = new CircularQueue<>(1024);
         return taskQueueBuilder.build();
     };

@@ -31,8 +31,8 @@ public class Reactor_MetricsTest {
         assertEquals(1, metrics.parkCount());
 
         assertEquals(0, metrics.taskCsCount());
-        metrics.incTaskCsCount();
-        assertEquals(1, metrics.taskCsCount());
+        metrics.incTaskCsCount(10);
+        assertEquals(10, metrics.taskCsCount());
 
         assertEquals(0, metrics.taskQueueCsCount());
         metrics.incTaskQueueCsCount();

@@ -167,6 +167,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         int clockSampleRound = 1;
         // Process the tasks in a queue as long as the deadline is not exceeded.
 
+        long taskCsCount = 0;
         while (runCtx.nowNanos <= runCtx.taskDeadlineNanos) {
             // Find the next task to perform
             Object task = queue.poll();
@@ -187,8 +188,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 metrics.incTaskErrorCount();
                 runResult = taskRunner.handleError(taskRef, e);
             }
+            taskCsCount++;
             task = taskRef.value;
-            metrics.incTaskCsCount();
 
             // deal with the runResult.
             switch (runResult) {
@@ -203,7 +204,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 default:
                     throw new IllegalStateException();
             }
-            reactorMetrics.incTaskCsCount();
 
             // Updat the time if needed
             if (clockSampleRound == 1) {
@@ -234,6 +234,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         taskRef.value = null;
         scheduler.updateActive(cpuTimeNanos);
         metrics.incCpuTimeNanos(cpuTimeNanos);
+        metrics.incTaskCsCount(taskCsCount);
+        reactorMetrics.incTaskCsCount(taskCsCount);
         reactorMetrics.incTaskQueueCsCount();
 
         if (taskQueueEmpty || isEmpty()) {
@@ -417,10 +419,10 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         }
 
         /**
-         * Increases the number of task context switches by 1.
+         * Increases the number of task context switches by the given delta.
          */
-        public void incTaskCsCount() {
-            TASK_CS_COUNT.setOpaque(this, (long) TASK_CS_COUNT.getOpaque(this) + 1);
+        public void incTaskCsCount(long delta) {
+            TASK_CS_COUNT.setOpaque(this, (long) TASK_CS_COUNT.getOpaque(this) + delta);
         }
 
         /**

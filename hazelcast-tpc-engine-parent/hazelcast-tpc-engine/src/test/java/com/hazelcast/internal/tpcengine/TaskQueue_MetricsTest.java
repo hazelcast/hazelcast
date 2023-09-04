@@ -27,8 +27,8 @@ public class TaskQueue_MetricsTest {
         TaskQueue.Metrics metrics = new TaskQueue.Metrics();
 
         assertEquals(0, metrics.taskCsCount());
-        metrics.incTaskCsCount();
-        assertEquals(1, metrics.taskCsCount());
+        metrics.incTaskCsCount(10);
+        assertEquals(10, metrics.taskCsCount());
 
         assertEquals(0, metrics.cpuTimeNanos());
         metrics.incCpuTimeNanos(20);

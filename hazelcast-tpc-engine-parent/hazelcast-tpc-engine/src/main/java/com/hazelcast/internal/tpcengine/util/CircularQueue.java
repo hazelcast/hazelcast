@@ -85,7 +85,7 @@ public final class CircularQueue<E> extends AbstractQueue<E> {
      * @return the number of items
      */
     public int size() {
-        return (int) (tail - head + 1);
+            return (int) (tail - head + 1);
     }
 
     /**
