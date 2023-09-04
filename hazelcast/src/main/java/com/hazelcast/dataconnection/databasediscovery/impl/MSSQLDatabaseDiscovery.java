@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.dataconnection.databasediscovery;
+package com.hazelcast.dataconnection.databasediscovery.impl;
 
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
@@ -29,10 +29,12 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_TABLE;
 
-public class DefaultDatabaseDiscovery {
+public class MSSQLDatabaseDiscovery {
+
+    List<String> systemSchemaList = List.of("sys", "INFORMATION_SCHEMA");
+    List<String> systemTableList = List.of("spt_", "MSreplication_options");
 
     public List<DataConnectionResource> listResources(JdbcDataConnection jdbcDataConnection) throws SQLException {
-        // Get the tables and views for the current catalog
         try (Connection connection = jdbcDataConnection.getConnection();
              ResultSet tables = connection.getMetaData().getTables(
                      connection.getCatalog(),
@@ -50,9 +52,22 @@ public class DefaultDatabaseDiscovery {
                         .filter(Objects::nonNull)
                         .toArray(String[]::new);
 
+                if (isSystemSchema(name[1]) || isSystemTable(name[2])) {
+                    continue;
+                }
                 result.add(new DataConnectionResource(OBJECT_TYPE_TABLE, name));
             }
             return result;
         }
+    }
+
+    private boolean isSystemSchema(String schema) {
+        return systemSchemaList.stream()
+                .anyMatch(schema::startsWith);
+    }
+
+    private boolean isSystemTable(String tableName) {
+        return systemTableList.stream()
+                .anyMatch(tableName::startsWith);
     }
 }

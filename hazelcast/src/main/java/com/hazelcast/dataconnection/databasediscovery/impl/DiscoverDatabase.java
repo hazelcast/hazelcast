@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.dataconnection.databasediscovery;
+package com.hazelcast.dataconnection.databasediscovery.impl;
 
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.dataconnection.DataConnectionResource;
@@ -38,6 +38,9 @@ public class DiscoverDatabase {
         } else if (isMySql(jdbcUrl)) {
             MySQLDatabaseDiscovery databaseDiscovery = new MySQLDatabaseDiscovery();
             list = databaseDiscovery.listResources(jdbcDataConnection);
+        } else if (isSqlServer(jdbcUrl)) {
+            MSSQLDatabaseDiscovery databaseDiscovery = new MSSQLDatabaseDiscovery();
+            list = databaseDiscovery.listResources(jdbcDataConnection);
         } else {
             DefaultDatabaseDiscovery databaseDiscovery = new DefaultDatabaseDiscovery();
             list = databaseDiscovery.listResources(jdbcDataConnection);
@@ -51,5 +54,9 @@ public class DiscoverDatabase {
 
     private boolean isMySql(String jdbcUrl) {
         return jdbcUrl.startsWith("jdbc:mysql");
+    }
+
+    private boolean isSqlServer(String jdbcUrl) {
+        return jdbcUrl.startsWith("jdbc:sqlserver");
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.dataconnection.databasediscovery;
+package com.hazelcast.dataconnection.databasediscovery.impl;
 
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
@@ -29,13 +29,14 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_TABLE;
 
-public class PostgresDatabaseDiscovery {
+public class MySQLDatabaseDiscovery {
+
+    List<String> systemSchemaList = List.of("sys");
 
     public List<DataConnectionResource> listResources(JdbcDataConnection jdbcDataConnection) throws SQLException {
-        // Specify catalog to see only user defined schemas and tables under them
         try (Connection connection = jdbcDataConnection.getConnection();
              ResultSet tables = connection.getMetaData().getTables(
-                     connection.getCatalog(),
+                     null,
                      null,
                      null,
                      new String[]{"TABLE", "VIEW"})) {
@@ -50,6 +51,9 @@ public class PostgresDatabaseDiscovery {
                         .filter(Objects::nonNull)
                         .toArray(String[]::new);
 
+                if (name[0].startsWith("sys")) {
+                    continue;
+                }
                 result.add(new DataConnectionResource(OBJECT_TYPE_TABLE, name));
             }
             return result;

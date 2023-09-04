@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
@@ -69,6 +70,14 @@ public class ListResourcesTest {
                         new MySQLDatabaseProvider(),
                         new DataConnectionResource[]{
                                 new DataConnectionResource("TABLE", "testdb", "my_table"),
+                                new DataConnectionResource("TABLE", "my_schema", "my_table")
+                        }
+                },
+                {
+                        new MSSQLDatabaseProvider(),
+                        new DataConnectionResource[]{
+                                new DataConnectionResource("TABLE", "master", "dbo", "my_table"),
+                                new DataConnectionResource("TABLE", "master", "my_schema", "my_table")
                         }
                 },
         };
@@ -96,8 +105,6 @@ public class ListResourcesTest {
         );
 
         executeJdbc(jdbcUrl, "CREATE TABLE my_table (id INTEGER, name VARCHAR(255) )");
-        // In MySQL, the CREATE SCHEMA statement is synonymous with the CREATE DATABASE statement.
-        // We should not be able to list resources in another database
         executeJdbc(jdbcUrl, "CREATE SCHEMA my_schema");
         executeJdbc(jdbcUrl, "CREATE TABLE my_schema.my_table (id INTEGER, name VARCHAR(255) )");
 
