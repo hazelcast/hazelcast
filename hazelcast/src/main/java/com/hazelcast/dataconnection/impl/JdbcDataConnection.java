@@ -117,8 +117,7 @@ public class JdbcDataConnection extends DataConnectionBase {
     @Override
     public List<DataConnectionResource> listResources() {
         try {
-            DiscoverDatabase discoverDatabase = new DiscoverDatabase();
-            return discoverDatabase.listResources(this);
+            return DiscoverDatabase.listResources(this);
         } catch (Exception exception) {
             throw new HazelcastException("Could not read resources for DataConnection " + getName(), exception);
         }
