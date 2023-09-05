@@ -167,7 +167,6 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                         "DOCUMENT", !hasPK));
             }
         }
-        String objectType = Objects.requireNonNull(externalResource.objectType(), "objectType must be non-null");
         return new MongoTable(schemaName, mappingName, databaseName, collectionName,
                 externalResource.dataConnection(), externalResource.options(), this,
                 fields, stats, objectType);
