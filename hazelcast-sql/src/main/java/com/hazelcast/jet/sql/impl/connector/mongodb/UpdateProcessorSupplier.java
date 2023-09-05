@@ -66,7 +66,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     private String connectionString;
     private String databaseName;
     private String collectionName;
-    private List<String> updatedFieldNames;
+    private String[] updatedFieldNames;
     private List<? extends Serializable> updates;
     private String dataConnectionName;
     private String[] externalNames;
@@ -80,7 +80,8 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     public UpdateProcessorSupplier() {
     }
 
-    UpdateProcessorSupplier(MongoTable table, List<String> updatedFieldNames,
+    UpdateProcessorSupplier(MongoTable table,
+                            @Nonnull String[] updatedFieldNames,
                             List<? extends Serializable> updates,
                             Serializable predicate,
                             boolean hasInput) {
@@ -194,8 +195,8 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
         Object pkValue = values[0];
 
         List<Bson> updateToPerform = new ArrayList<>();
-        for (int i = 0; i < updatedFieldNames.size(); i++) {
-            String fieldName = updatedFieldNames.get(i);
+        for (int i = 0; i < updatedFieldNames.length; i++) {
+            String fieldName = updatedFieldNames[i];
             Object updateExpr = updates.get(i);
             if (updateExpr instanceof Bson) {
                 Document document = Document.parse(((Bson) updateExpr)
@@ -223,7 +224,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
         out.writeString(connectionString);
         out.writeString(databaseName);
         out.writeString(collectionName);
-        out.writeStringArray(updatedFieldNames == null ? new String[0] : updatedFieldNames.toArray(String[]::new));
+        out.writeStringArray(updatedFieldNames);
         out.writeObject(updates);
         out.writeString(dataConnectionName);
         out.writeStringArray(externalNames);
@@ -237,8 +238,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
         connectionString = in.readString();
         databaseName = in.readString();
         collectionName = in.readString();
-        String[] fields = in.readStringArray();
-        updatedFieldNames = asList(fields == null ? new String[0] : fields);
+        updatedFieldNames = in.readStringArray();
         updates = in.readObject();
         dataConnectionName = in.readString();
         externalNames = in.readStringArray();
