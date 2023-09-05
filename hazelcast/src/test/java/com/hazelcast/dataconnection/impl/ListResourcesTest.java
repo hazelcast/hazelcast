@@ -41,6 +41,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_TABLE;
 import static com.hazelcast.test.DockerTestUtil.assumeTestDatabaseProviderCanLaunch;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,29 +56,29 @@ public class ListResourcesTest {
                 {
                         new H2DatabaseProvider(),
                         new DataConnectionResource[]{
-                                new DataConnectionResource("TABLE", "testdb", "PUBLIC", "my_table"),
-                                new DataConnectionResource("TABLE", "testdb", "my_schema", "my_table")
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "testdb", "PUBLIC", "my_table"),
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "testdb", "my_schema", "my_table")
                         }
                 },
                 {
                         new PostgresDatabaseProvider(),
                         new DataConnectionResource[]{
-                                new DataConnectionResource("TABLE", "public", "my_table"),
-                                new DataConnectionResource("TABLE", "my_schema", "my_table")
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "public", "my_table"),
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "my_schema", "my_table")
                         }
                 },
                 {
                         new MySQLDatabaseProvider(),
                         new DataConnectionResource[]{
-                                new DataConnectionResource("TABLE", "testdb", "my_table"),
-                                new DataConnectionResource("TABLE", "my_schema", "my_table")
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "testdb", "my_table"),
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "my_schema", "my_table")
                         }
                 },
                 {
                         new MSSQLDatabaseProvider(),
                         new DataConnectionResource[]{
-                                new DataConnectionResource("TABLE", "master", "dbo", "my_table"),
-                                new DataConnectionResource("TABLE", "master", "my_schema", "my_table")
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "master", "dbo", "my_table"),
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "master", "my_schema", "my_table")
                         }
                 },
         };
