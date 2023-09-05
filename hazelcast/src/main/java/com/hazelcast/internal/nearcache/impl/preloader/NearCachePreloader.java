@@ -18,18 +18,18 @@ package com.hazelcast.internal.nearcache.impl.preloader;
 
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.internal.util.BufferingInputStream;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.collection.InflatableSet;
 import com.hazelcast.internal.util.collection.InflatableSet.Builder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -129,9 +129,7 @@ public class NearCachePreloader<K> {
         }
 
         long startedNanos = Timer.nanos();
-        BufferingInputStream bis = null;
-        try {
-            bis = new BufferingInputStream(new FileInputStream(storeFile), BUFFER_SIZE);
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(storeFile), BUFFER_SIZE)) {
             if (!checkHeader(bis)) {
                 return;
             }
@@ -142,12 +140,10 @@ public class NearCachePreloader<K> {
             logger.info(format("Loaded %d keys of Near Cache %s in %d ms", loadedKeys, nearCacheName, elapsedMillis));
         } catch (Exception e) {
             logger.warning(format("Could not pre-load Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()), e);
-        } finally {
-            closeResource(bis);
         }
     }
 
-    private boolean checkHeader(BufferingInputStream bis) throws IOException {
+    private boolean checkHeader(BufferedInputStream bis) throws IOException {
         int magicBytes = readInt(bis);
         if (magicBytes != MAGIC_BYTES) {
             logger.warning(format("Found invalid header for Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()));
@@ -212,7 +208,7 @@ public class NearCachePreloader<K> {
                 MemoryUnit.BYTES.toKiloBytes(lastWrittenBytes)));
     }
 
-    private int loadKeySet(BufferingInputStream bis, DataStructureAdapter<Object, ?> adapter) throws IOException {
+    private int loadKeySet(BufferedInputStream bis, DataStructureAdapter<Object, ?> adapter) throws IOException {
         int loadedKeys = 0;
 
         Builder<Object> builder = InflatableSet.newBuilder(LOAD_BATCH_SIZE);
@@ -261,7 +257,7 @@ public class NearCachePreloader<K> {
         }
     }
 
-    private int readInt(BufferingInputStream bis) throws IOException {
+    private int readInt(BufferedInputStream bis) throws IOException {
         readFullyOrNothing(bis, tmpBytes);
         return readIntB(tmpBytes, 0);
     }
