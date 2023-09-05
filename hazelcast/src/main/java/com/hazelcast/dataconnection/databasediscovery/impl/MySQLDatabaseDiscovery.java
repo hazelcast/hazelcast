@@ -31,8 +31,6 @@ import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_T
 
 public class MySQLDatabaseDiscovery {
 
-    List<String> systemSchemaList = List.of("sys");
-
     public List<DataConnectionResource> listResources(JdbcDataConnection jdbcDataConnection) throws SQLException {
         try (Connection connection = jdbcDataConnection.getConnection();
              ResultSet tables = connection.getMetaData().getTables(
