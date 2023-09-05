@@ -29,7 +29,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -110,28 +109,18 @@ public class FencedLockBasicTest extends AbstractFencedLockBasicTest {
         proxyInstance.getCPSubsystem().getLock(lock.getName());
     }
 
-    @Test(timeout = 60000)
-    public void testDestroy_RemovesLockProxy() {
-        String lockName = UUID.randomUUID().toString();
-        FencedLock myLock = instances[0].getCPSubsystem().getLock(lockName);
-        myLock.lock();
-        try {
-        } finally {
-            myLock.unlock();
-        }
-        myLock.destroy();
 
-        assertTrueEventually(() -> {
-            LockService service = getNodeEngineImpl(instances[0]).getService(LockService.SERVICE_NAME);
-            ConcurrentMap<String, FencedLockProxy> proxies = ReflectionUtils.getFieldValueReflectively(service, "proxies");
-            assertFalse(proxies.containsKey(lockName));
-        });
+    @Test
+    public void testDestroy_AllMembersRemoveLockProxyDefaultCpGroup() {
+        allMembersRemoveLockProxy(randomName());
     }
 
+    @Test
+    public void testDestroy_AllMembersRemoveLockProxyCustomCpGroup() {
+        allMembersRemoveLockProxy(randomName() + "@mygroup");
+    }
 
-    @Test(timeout = 60000)
-    public void testDestroy_AllMembersRemoveProxy() {
-        String lockName = UUID.randomUUID().toString();
+    private void allMembersRemoveLockProxy(String lockName) {
         FencedLock myLockMember0 = instances[0].getCPSubsystem().getLock(lockName);
         FencedLock myLockMember1 = instances[1].getCPSubsystem().getLock(lockName);
         FencedLock myLockMember2 = instances[2].getCPSubsystem().getLock(lockName);

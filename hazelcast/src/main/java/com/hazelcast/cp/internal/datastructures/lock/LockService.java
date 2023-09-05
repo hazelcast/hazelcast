@@ -247,9 +247,8 @@ public class LockService extends AbstractBlockingService<LockInvocationKey, Lock
     @Override
     public boolean destroyRaftObject(CPGroupId groupId, String name) {
         boolean result = super.destroyRaftObject(groupId, name);
-        name = withoutDefaultGroupName(name + "@" + groupId.getName());
-        FencedLockProxy proxy = proxies.get(name);
-        proxies.remove(name, proxy);
+        String proxyName = withoutDefaultGroupName(name + "@" + groupId.getName());
+        proxies.remove(proxyName);
         return result;
     }
 }
