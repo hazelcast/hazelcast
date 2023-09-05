@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionService;
+import com.hazelcast.dataconnection.databasediscovery.impl.DiscoverDatabase;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Edge;
@@ -291,14 +292,13 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private static SqlDialect resolveDialect(DatabaseMetaData databaseMetaData) throws SQLException {
-        switch (databaseMetaData.getDatabaseProductName().toUpperCase(Locale.ROOT).trim()) {
-            case "MYSQL":
-                return new HazelcastMySqlDialect(SqlDialects.createContext(databaseMetaData));
-            case "MICROSOFT SQL SERVER":
-                return new HazelcastMSSQLDialect(SqlDialects.createContext(databaseMetaData));
-
-            default:
-                return SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
+        String databaseProductName = DiscoverDatabase.getDatabaseProductName(databaseMetaData);
+        if (DiscoverDatabase.isMySql(databaseProductName)) {
+            return new HazelcastMySqlDialect(SqlDialects.createContext(databaseMetaData));
+        } else if (DiscoverDatabase.isSqlServer(databaseProductName)) {
+            return new HazelcastMSSQLDialect(SqlDialects.createContext(databaseMetaData));
+        } else {
+            return SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
         }
     }
 

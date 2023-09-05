@@ -16,15 +16,16 @@
 
 package com.hazelcast.dataconnection.databasediscovery.impl;
 
-import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
-import com.hazelcast.dataconnection.impl.jdbcproperties.DataConnectionProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Locale;
 
 public class DiscoverDatabase {
 
@@ -34,46 +35,48 @@ public class DiscoverDatabase {
     }
 
     public static List<DataConnectionResource> listResources(JdbcDataConnection jdbcDataConnection) throws SQLException {
-        DataConnectionConfig dataConnectionConfig = jdbcDataConnection.getConfig();
-        String jdbcUrl = dataConnectionConfig.getProperty(DataConnectionProperties.JDBC_URL);
+        try (Connection connection = jdbcDataConnection.getConnection()) {
+            DatabaseMetaData databaseMetaData = connection.getMetaData();
+            String databaseProductName = getDatabaseProductName(databaseMetaData);
 
-        List<DataConnectionResource> list;
+            List<DataConnectionResource> list;
 
-        LOGGER.info("jdbcUrl is : " + jdbcUrl);
+            if (isPostgres(databaseProductName)) {
+                LOGGER.info("Detected database type is Postgres");
+                PostgresDatabaseDiscovery databaseDiscovery = new PostgresDatabaseDiscovery();
+                list = databaseDiscovery.listResources(jdbcDataConnection);
+            } else if (isMySql(databaseProductName)) {
+                LOGGER.info("Detected database is MySql");
+                MySQLDatabaseDiscovery databaseDiscovery = new MySQLDatabaseDiscovery();
+                list = databaseDiscovery.listResources(jdbcDataConnection);
+            } else if (isSqlServer(databaseProductName)) {
+                LOGGER.info("Detected database is SQL Server");
+                MSSQLDatabaseDiscovery databaseDiscovery = new MSSQLDatabaseDiscovery();
+                list = databaseDiscovery.listResources(jdbcDataConnection);
+            } else {
+                LOGGER.info("Could not detect database type. Using the DefaultDatabaseDiscovery");
+                DefaultDatabaseDiscovery databaseDiscovery = new DefaultDatabaseDiscovery();
+                list = databaseDiscovery.listResources(jdbcDataConnection);
+            }
+            return list;
 
-        if (isPostgres(jdbcUrl)) {
-            LOGGER.info("Detected database type is Postgres");
-            PostgresDatabaseDiscovery databaseDiscovery = new PostgresDatabaseDiscovery();
-            list = databaseDiscovery.listResources(jdbcDataConnection);
-        } else if (isMySql(jdbcUrl)) {
-            LOGGER.info("Detected database is MySql");
-            MySQLDatabaseDiscovery databaseDiscovery = new MySQLDatabaseDiscovery();
-            list = databaseDiscovery.listResources(jdbcDataConnection);
-        } else if (isSqlServer(jdbcUrl)) {
-            LOGGER.info("Detected database is SQL Server");
-            MSSQLDatabaseDiscovery databaseDiscovery = new MSSQLDatabaseDiscovery();
-            list = databaseDiscovery.listResources(jdbcDataConnection);
-        } else {
-            LOGGER.info("Could not detect database type. Using the DefaultDatabaseDiscovery");
-            DefaultDatabaseDiscovery databaseDiscovery = new DefaultDatabaseDiscovery();
-            list = databaseDiscovery.listResources(jdbcDataConnection);
         }
-        return list;
     }
 
-    static boolean isPostgres(String jdbcUrl) {
-        return contains(jdbcUrl, ":postgresql:");
+    public static String getDatabaseProductName(DatabaseMetaData databaseMetaData) throws SQLException {
+        return databaseMetaData.getDatabaseProductName().toUpperCase(Locale.ROOT).trim();
     }
 
-    static boolean isMySql(String jdbcUrl) {
-        return contains(jdbcUrl, ":mysql:");
+    public static boolean isPostgres(String databaseProductName) {
+        return "POSTGRESQL".equals(databaseProductName);
     }
 
-    static boolean isSqlServer(String jdbcUrl) {
-        return contains(jdbcUrl, ":sqlserver:");
+
+    public static boolean isMySql(String databaseProductName) {
+        return "MYSQL".equals(databaseProductName);
     }
 
-    private static boolean contains(String jdbcUrl, String databaseType) {
-        return jdbcUrl.contains(databaseType);
+    public static boolean isSqlServer(String databaseProductName) {
+        return "MICROSOFT SQL SERVER".equals(databaseProductName);
     }
 }
