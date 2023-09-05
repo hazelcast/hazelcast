@@ -53,7 +53,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;

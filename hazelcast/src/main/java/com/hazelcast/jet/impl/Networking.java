@@ -39,7 +39,7 @@ import java.util.concurrent.ScheduledFuture;
 
 import static com.hazelcast.internal.nio.Packet.FLAG_JET_FLOW_CONTROL;
 import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataInput;
 import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataOutput;
 import static com.hazelcast.jet.impl.util.ImdgUtil.getMemberConnection;

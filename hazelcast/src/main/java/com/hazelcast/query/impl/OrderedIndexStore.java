@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -544,15 +545,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         public int compare(Data o1, Data o2) {
             byte[] thisBytes = o1.toByteArray();
             byte[] thatBytes = o2.toByteArray();
-            int minLen = Math.min(thisBytes.length, thatBytes.length);
-            for (int i = 0; i < minLen; i++) {
-                int diff = thisBytes[i] - thatBytes[i];
-                if (diff == 0) {
-                    continue;
-                }
-                return diff;
-            }
-            return thisBytes.length - thatBytes.length;
+            return Arrays.compare(thisBytes, thatBytes);
         }
     }
 }

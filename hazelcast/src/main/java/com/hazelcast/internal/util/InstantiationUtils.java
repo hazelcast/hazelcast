@@ -46,7 +46,7 @@ public final class InstantiationUtils {
      * @return a new instance of a given class
      * @throws AmbiguousInstantiationException when multiple constructors matching the parameters
      */
-    public static <T> T newInstanceOrNull(Class<? extends T> clazz, Object...params)  {
+    public static <T> T newInstanceOrNull(Class<? extends T> clazz, Object... params)  {
         Constructor<T> constructor = selectMatchingConstructor(clazz, params);
         if (constructor == null) {
             return null;

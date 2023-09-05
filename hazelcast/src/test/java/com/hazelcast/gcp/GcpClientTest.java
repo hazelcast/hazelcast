@@ -36,7 +36,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class GcpClientTest {
     private static final String CURRENT_PROJECT = "project-1";
     private static final String PROJECT_1 = "project-2";
