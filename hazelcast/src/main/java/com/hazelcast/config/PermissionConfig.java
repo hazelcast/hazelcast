@@ -22,6 +22,7 @@ import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.security.permission.AllPermissions;
 import com.hazelcast.security.permission.AtomicLongPermission;
 import com.hazelcast.security.permission.AtomicReferencePermission;
@@ -65,7 +66,7 @@ import static java.util.Collections.newSetFromMap;
 /**
  * Contains the configuration for a permission.
  */
-public class PermissionConfig implements IdentifiedDataSerializable {
+public class PermissionConfig implements IdentifiedDataSerializable, Versioned {
 
     private PermissionType type;
     private String name;
