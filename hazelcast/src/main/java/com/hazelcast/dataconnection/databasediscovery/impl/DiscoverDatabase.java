@@ -44,19 +44,19 @@ public class DiscoverDatabase {
             if (isPostgres(databaseProductName)) {
                 LOGGER.info("Detected database type is Postgres");
                 PostgresDatabaseDiscovery databaseDiscovery = new PostgresDatabaseDiscovery();
-                list = databaseDiscovery.listResources(jdbcDataConnection);
+                list = databaseDiscovery.listResources(connection);
             } else if (isMySql(databaseProductName)) {
                 LOGGER.info("Detected database is MySql");
                 MySQLDatabaseDiscovery databaseDiscovery = new MySQLDatabaseDiscovery();
-                list = databaseDiscovery.listResources(jdbcDataConnection);
+                list = databaseDiscovery.listResources(connection);
             } else if (isSqlServer(databaseProductName)) {
                 LOGGER.info("Detected database is SQL Server");
                 MSSQLDatabaseDiscovery databaseDiscovery = new MSSQLDatabaseDiscovery();
-                list = databaseDiscovery.listResources(jdbcDataConnection);
+                list = databaseDiscovery.listResources(connection);
             } else {
                 LOGGER.info("Could not detect database type. Using the DefaultDatabaseDiscovery");
                 DefaultDatabaseDiscovery databaseDiscovery = new DefaultDatabaseDiscovery();
-                list = databaseDiscovery.listResources(jdbcDataConnection);
+                list = databaseDiscovery.listResources(connection);
             }
             return list;
 

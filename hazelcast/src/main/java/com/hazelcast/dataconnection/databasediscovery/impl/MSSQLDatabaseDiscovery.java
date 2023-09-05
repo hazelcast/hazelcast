@@ -17,7 +17,6 @@
 package com.hazelcast.dataconnection.databasediscovery.impl;
 
 import com.hazelcast.dataconnection.DataConnectionResource;
-import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -34,9 +33,8 @@ public class MSSQLDatabaseDiscovery {
     List<String> systemSchemaList = List.of("sys", "INFORMATION_SCHEMA");
     List<String> systemTableList = List.of("spt_", "MSreplication_options");
 
-    public List<DataConnectionResource> listResources(JdbcDataConnection jdbcDataConnection) throws SQLException {
-        try (Connection connection = jdbcDataConnection.getConnection();
-             ResultSet tables = connection.getMetaData().getTables(
+    public List<DataConnectionResource> listResources(Connection connection) throws SQLException {
+        try (ResultSet tables = connection.getMetaData().getTables(
                      connection.getCatalog(),
                      null,
                      null,

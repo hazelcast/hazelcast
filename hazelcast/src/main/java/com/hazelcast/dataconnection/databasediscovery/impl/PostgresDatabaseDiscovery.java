@@ -17,7 +17,6 @@
 package com.hazelcast.dataconnection.databasediscovery.impl;
 
 import com.hazelcast.dataconnection.DataConnectionResource;
-import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -31,9 +30,8 @@ import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_T
 
 public class PostgresDatabaseDiscovery {
 
-    public List<DataConnectionResource> listResources(JdbcDataConnection jdbcDataConnection) throws SQLException {
-        try (Connection connection = jdbcDataConnection.getConnection();
-             ResultSet tables = connection.getMetaData().getTables(
+    public List<DataConnectionResource> listResources(Connection connection) throws SQLException {
+        try (ResultSet tables = connection.getMetaData().getTables(
                      connection.getCatalog(),
                      null,
                      null,
