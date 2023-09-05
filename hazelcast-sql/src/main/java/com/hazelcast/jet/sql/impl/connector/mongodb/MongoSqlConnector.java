@@ -75,10 +75,11 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
                                                           })
                                                           .collect(toList());
 
+        String[] fieldNamesArray = fieldNames.toArray(String[]::new);
         if (hasInput) {
             return context.getDag().newUniqueVertex(
                     "Update(" + table.getSqlName() + ")",
-                    wrap(context, new UpdateProcessorSupplier(table, fieldNames, updates, null, hasInput))
+                    wrap(context, new UpdateProcessorSupplier(table, fieldNamesArray, updates, null, hasInput))
             );
         } else {
             Object predicateRaw = predicate == null
@@ -91,7 +92,7 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
             return context.getDag().newUniqueVertex(
                     "Update(" + table.getSqlName() + ")",
                     wrap(context,
-                        new UpdateProcessorSupplier(table, fieldNames, updates, translated, hasInput)
+                        new UpdateProcessorSupplier(table, fieldNamesArray, updates, translated, hasInput)
                     ).forceTotalParallelismOne(true)
             );
         }

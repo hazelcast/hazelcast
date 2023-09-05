@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
@@ -121,7 +122,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                              @Nonnull String schemaName, @Nonnull String mappingName,
                              @Nonnull SqlExternalResource externalResource,
                              @Nonnull List<MappingField> resolvedFields) {
-        if (!ALLOWED_OBJECT_TYPES.contains(externalResource.objectType())) {
+        String objectType = checkNotNull(externalResource.objectType(),
+                "object type is required in Mongo connector");
+        if (!ALLOWED_OBJECT_TYPES.contains(objectType)) {
             throw QueryException.error("Mongo connector allows only object types: " + ALLOWED_OBJECT_TYPES);
         }
         String collectionName = externalResource.externalName().length == 2
@@ -134,11 +137,13 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
         boolean containsId = false;
-        boolean isStreaming = isStream(externalResource.objectType());
+        boolean isStreaming = isStream(objectType);
         boolean hasPK = false;
         for (MappingField resolvedField : resolvedFields) {
             String externalNameFromName = (isStreaming ? "fullDocument." : "") + resolvedField.name();
             String fieldExternalName = firstNonNull(resolvedField.externalName(), externalNameFromName);
+            String externalType = checkNotNull(resolvedField.externalType(),
+                    "external type cannot be null in Mongo connector");
 
             if (fieldResolver.isId(fieldExternalName, isStreaming)) {
                 containsId = true;
@@ -148,7 +153,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                     resolvedField.type(),
                     fieldExternalName,
                     false,
-                    resolvedField.externalType(),
+                    externalType,
                     resolvedField.isPrimaryKey()));
             hasPK |= resolvedField.isPrimaryKey();
         }
