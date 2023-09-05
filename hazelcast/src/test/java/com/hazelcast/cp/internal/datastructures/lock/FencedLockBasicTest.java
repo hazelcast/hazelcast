@@ -127,4 +127,28 @@ public class FencedLockBasicTest extends AbstractFencedLockBasicTest {
             assertFalse(proxies.containsKey(lockName));
         });
     }
+
+
+    @Test(timeout = 60000)
+    public void testDestroy_AllMembersRemoveProxy() {
+        String lockName = UUID.randomUUID().toString();
+        FencedLock myLockMember0 = instances[0].getCPSubsystem().getLock(lockName);
+        FencedLock myLockMember1 = instances[1].getCPSubsystem().getLock(lockName);
+        FencedLock myLockMember2 = instances[2].getCPSubsystem().getLock(lockName);
+
+        myLockMember0.lock();
+        try {
+        } finally {
+            myLockMember0.unlock();
+        }
+        myLockMember0.destroy();
+
+        for (HazelcastInstance instance : instances) {
+            assertTrueEventually(() -> {
+                LockService service = getNodeEngineImpl(instance).getService(LockService.SERVICE_NAME);
+                ConcurrentMap<String, FencedLockProxy> proxies = ReflectionUtils.getFieldValueReflectively(service, "proxies");
+                assertFalse(proxies.containsKey(lockName));
+            });
+        }
+    }
 }
