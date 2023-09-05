@@ -205,6 +205,7 @@ public final class MongoSourceBuilder {
         protected ResourceExistenceChecks existenceChecks = ResourceExistenceChecks.ONCE_PER_JOB;
 
         protected String name;
+        protected boolean forceReadParallelismOne;
 
         @Nonnull
         public Base<T> database(String database) {
@@ -264,6 +265,17 @@ public final class MongoSourceBuilder {
         @Nonnull
         public Batch<T> checkResourceExistence(ResourceExistenceChecks checkResourceExistence) {
             existenceChecks = checkResourceExistence;
+            return this;
+        }
+
+        /**
+         * If set to true, reading will be done in only one thread.
+         *
+         * @param forceReadParallelismOne if true, reading will be done in only one thread.
+         */
+        @Nonnull
+        public Batch<T> forceReadParallelismOne(boolean forceReadParallelismOne) {
+            super.forceReadParallelismOne = forceReadParallelismOne;
             return this;
         }
 
@@ -463,6 +475,17 @@ public final class MongoSourceBuilder {
         }
 
         /**
+         * If set to true, reading will be done in only one thread.
+         *
+         * @param forceReadParallelismOne if true, reading will be done in only one thread.
+         */
+        @Nonnull
+        public Stream<T> forceReadParallelismOne(boolean forceReadParallelismOne) {
+            super.forceReadParallelismOne = forceReadParallelismOne;
+            return this;
+        }
+
+        /**
          * If non {@link ResourceExistenceChecks#NEVER}, the lack of database or collection will cause an error.
          * Otherwise, database and collection will be automatically created.
          * Default value is {@link ResourceExistenceChecks#ONCE_PER_JOB}.
@@ -627,7 +650,7 @@ public final class MongoSourceBuilder {
                     eventTimePolicy -> new DbCheckingPMetaSupplierBuilder()
                             .setRequiredPermission(permission)
                             .setCheckResourceExistence(checkResourceExistence)
-                            .setForceTotalParallelismOne(false)
+                            .setForceTotalParallelismOne(forceReadParallelismOne)
                             .setDatabaseName(localParams.getDatabaseName())
                             .setCollectionName(localParams.getCollectionName())
                             .setClientSupplier(localParams.getClientSupplier())
