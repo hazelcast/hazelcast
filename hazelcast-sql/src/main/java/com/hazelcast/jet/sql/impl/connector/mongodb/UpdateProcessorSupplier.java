@@ -60,7 +60,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class UpdateProcessorSupplier extends MongoProcessorSupplier implements DataSerializable {
 
-    private List<String> updatedFieldNames;
+    private String[] updatedFieldNames;
     private List<? extends Serializable> updates;
     private boolean afterScan;
     private ExpressionEvalContext evalContext;

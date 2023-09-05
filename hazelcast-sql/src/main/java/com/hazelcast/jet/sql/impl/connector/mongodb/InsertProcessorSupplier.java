@@ -131,7 +131,7 @@ public class InsertProcessorSupplier extends MongoProcessorSupplier implements D
         out.writeString(connectionString);
         out.writeString(databaseName);
         out.writeString(collectionName);
-        out.writeStringArray(paths);
+        out.writeStringArray(externalNames);
         out.writeString(writeMode == null ? null : writeMode.name());
         out.writeObject(types);
         out.writeInt(externalTypes == null ? 0 : externalTypes.length);
@@ -147,7 +147,7 @@ public class InsertProcessorSupplier extends MongoProcessorSupplier implements D
         connectionString = in.readString();
         databaseName = in.readString();
         collectionName = in.readString();
-        paths = in.readStringArray();
+        externalNames = in.readStringArray();
         String writeModeName = in.readString();
         writeMode = writeModeName == null ? null : WriteMode.valueOf(writeModeName);
         types = in.readObject();
