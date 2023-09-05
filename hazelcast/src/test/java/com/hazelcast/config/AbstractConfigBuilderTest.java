@@ -665,6 +665,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(expected.getPrincipal(), configured.getPrincipal());
         assertEquals(expected.getName(), configured.getName());
         assertEquals(expected.getActions(), configured.getActions());
+        assertEquals(expected.isDeny(), configured.isDeny());
     }
 
     @Test

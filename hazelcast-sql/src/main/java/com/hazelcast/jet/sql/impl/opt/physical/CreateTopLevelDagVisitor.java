@@ -269,7 +269,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         wrap(rel.projection()),
                         rel.getIndexFilter(),
                         rel.getComparator(),
-                        rel.isDescending()
+                        rel.isDescending(),
+                        rel.requiresSort()
                 );
     }
 

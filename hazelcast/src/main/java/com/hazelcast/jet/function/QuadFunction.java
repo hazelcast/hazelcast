@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.function;
 
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.io.Serializable;
 
