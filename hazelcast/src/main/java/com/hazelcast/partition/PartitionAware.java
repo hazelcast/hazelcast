@@ -37,6 +37,15 @@ package com.hazelcast.partition;
  * {@link com.hazelcast.core.DistributedObject} also has a notion of the partition key which is of type String
  * to ensure that the same partition as distributed Objects Strings is used for the partition key.
  *
+ * Additionally, it is expected that partition key remains same for a given object throughout its lifetime in the
+ * hazelcast storage and the key itself is produced from the value of the Object (following similar semantics to
+ * equals and hashcode). For example if at the time of Object insertion getPartitionKey() returns "test"
+ * as the partition key, it is expected that this Object instance or equivalent Object instances will always
+ * return "test" as the partition key. Returning different partition keys at the time of insertion and at the time
+ * of querying (for a given otherwise equivalent Object), while technically possible, will likely result in inability
+ * to query the inserted object because a different partitionKey will produce different partition which might be
+ * located on entirely different cluster member than the one where the Object was put at the insertion time.
+ *
  * @see com.hazelcast.core.DistributedObject
  * @param <T> key type
  */
@@ -46,6 +55,10 @@ public interface PartitionAware<T> {
     /**
      * The key that will be used by Hazelcast to specify the partition.
      * You should give the same key for objects that you want to be in the same partition.
+     * It is expected that objects stored in the Hazelcast cluster will not change their partition key value
+     * over time. If the partitionKey were to return different partition keys for the same (equivalent) Object
+     * at the Object insertion and querying time respectively, it would result in inability to query the inserted
+     * Object.
      *
      * @return the key that specifies the partition
      */
