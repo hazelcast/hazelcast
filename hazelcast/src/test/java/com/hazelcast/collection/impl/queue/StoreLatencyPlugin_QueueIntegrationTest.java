@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,7 +50,6 @@ import java.util.Set;
 
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
-import static com.hazelcast.test.TestStringUtils.fileAsText;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -101,7 +101,7 @@ public class StoreLatencyPlugin_QueueIntegrationTest extends HazelcastTestSuppor
 
         assertTrueEventually(() -> {
             File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
-            String content = fileAsText(file);
+            String content = Files.readString(file.toPath());
             assertContains(content, QUEUE_NAME);
         });
     }

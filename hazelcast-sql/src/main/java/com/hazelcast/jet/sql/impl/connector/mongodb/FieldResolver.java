@@ -174,7 +174,8 @@ class FieldResolver {
                                                  .filter(eq("name", collectionName))
                                                  .into(new ArrayList<>());
             if (collections.isEmpty()) {
-                throw new IllegalArgumentException("collection " + collectionName + " was not found");
+                ArrayList<String> list = database.listCollectionNames().into(new ArrayList<>());
+                throw new IllegalArgumentException("collection " + collectionName + " was not found, maybe you mean: " + list);
             }
             Document collectionInfo = collections.get(0);
             Document properties = getIgnoringNulls(collectionInfo, "options", "validator", "$jsonSchema", "properties");

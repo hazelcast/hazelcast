@@ -72,7 +72,7 @@
         <maven.shade.plugin.version>3.5.0</maven.shade.plugin.version>
         <maven.dependency.plugin.version>3.6.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
-        <maven.git.commit.id.plugin.version>4.9.10</maven.git.commit.id.plugin.version>
+        <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
         <maven.deploy.plugin.version>3.1.1</maven.deploy.plugin.version>
 
         <maven.surefire.plugin.version>3.1.2</maven.surefire.plugin.version>
@@ -112,8 +112,9 @@
         <kotlin.version>1.9.10</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
+        <mssql.version>12.4.1.jre11</mssql.version>
         <mysql.connector.version>8.1.0</mysql.connector.version>
-        <netty.version>4.1.96.Final</netty.version>
+        <netty.version>4.1.97.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
@@ -152,9 +153,10 @@
         <http.client.version>4.5.14</http.client.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <junit.version>4.13.2</junit.version>
+        <junit-jupiter.version>5.10.0</junit-jupiter.version>
         <mockito.version>5.4.0</mockito.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.18.3</testcontainers.version>
+        <testcontainers.version>1.19.0</testcontainers.version>
         <jna.version>5.13.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.1.0</archunit.version>
@@ -175,7 +177,7 @@
         <hazelcast.module.name>ALL-UNNAMED</hazelcast.module.name>
 
         <!-- needed for CheckStyle -->
-        <checkstyle.version>10.12.1</checkstyle.version>
+        <checkstyle.version>10.12.2</checkstyle.version>
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
@@ -444,6 +446,25 @@
                 <version>${maven.enforcer.plugin.version}</version>
                 <executions>
                     <execution>
+                        <id>enforce-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                    <dependencyConvergence>
+                                        <excludedScopes>
+                                            <scope>compile</scope>
+                                            <scope>runtime</scope>
+                                        </excludedScopes>
+                                        <includes>
+                                            <include>junit</include>
+                                        </includes>
+                                    </dependencyConvergence>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>enforce-tools</id>
                         <goals>
                             <goal>enforce</goal>
@@ -545,6 +566,7 @@
                                 -->
                                 <includedLicense>Apache-2.0</includedLicense>
                                 <includedLicense>MIT</includedLicense>
+                                <includedLicense>MIT-0</includedLicense>
                                 <includedLicense>BSD-2-Clause</includedLicense>
                                 <includedLicense>BSD-3-Clause</includedLicense>
                                 <includedLicense>CC0-1.0</includedLicense>
@@ -1838,6 +1860,11 @@
                 <version>2.23.0</version>
             </dependency>
             <dependency>
+                <groupId>com.microsoft.sqlserver</groupId>
+                <artifactId>mssql-jdbc</artifactId>
+                <version>${mssql.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql.connector.version}</version>
@@ -2000,9 +2027,14 @@
                 <version>3.29.2-GA</version>
             </dependency>
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit-jupiter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit-jupiter.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -2069,10 +2101,14 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
-            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>

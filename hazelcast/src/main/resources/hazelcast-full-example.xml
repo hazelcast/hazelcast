@@ -2487,8 +2487,8 @@
                 <property name="property">value</property>
             </properties>
         </client-permission-policy>
-        <client-permissions on-join-operation="RECEIVE">
-            <all-permissions principal="admin">
+        <client-permissions on-join-operation="RECEIVE" priority-grant="false">
+            <all-permissions principal="admin" deny="true">
                 <endpoints>
                     <endpoint>127.0.0.1</endpoint>
                 </endpoints>

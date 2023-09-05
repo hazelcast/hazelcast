@@ -21,7 +21,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.3.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.4.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -818,7 +818,7 @@
                 </hz:realms>
                 <hz:member-authentication realm="r1"/>
                 <hz:client-authentication realm="r2"/>
-                <hz:client-permissions on-join-operation="SEND">
+                <hz:client-permissions on-join-operation="SEND" priority-grant="true">
                     <hz:pn-counter-permission name="pnCounterPermission">
                         <hz:actions>
                             <hz:action>create</hz:action>
@@ -842,7 +842,7 @@
                             <hz:action>read</hz:action>
                         </hz:actions>
                     </hz:map-permission>
-                    <hz:queue-permission name="*">
+                    <hz:queue-permission name="*" deny="true">
                         <hz:actions>
                             <hz:action>all</hz:action>
                         </hz:actions>

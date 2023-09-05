@@ -26,7 +26,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.toList;
 
 abstract class MetadataResolver<T> {
