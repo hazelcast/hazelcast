@@ -53,20 +53,26 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class MapDestroyTest extends HazelcastTestSupport {
-    @Parameterized.Parameters(name = "sortedIndex:{0}")
+    @Parameterized.Parameters(name = "sortedIndex:{0}, hashIndex:{1}")
     public static Collection<Object[]> data() {
         return asList(new Object[][]{
-                {null}, {true}, {false}
+                {false, false},
+                {false, true},
+                {true, false},
+                {true, true}
         });
     }
 
     @Parameterized.Parameter
-    public Boolean sortedIndex;
+    public boolean sortedIndex;
 
-    private HazelcastInstance instance1;
-    private HazelcastInstance instance2;
+    @Parameterized.Parameter(1)
+    public boolean hashIndex;
+
+    protected HazelcastInstance instance1;
+    protected HazelcastInstance instance2;
 
     @Before
     public void setUp() {
@@ -84,6 +90,7 @@ public class MapDestroyTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(QuickTest.class)
     public void destroyAllReplicasIncludingBackups() {
         createFillAndDestroyMap();
 
@@ -104,8 +111,11 @@ public class MapDestroyTest extends HazelcastTestSupport {
 
     protected void createFillAndDestroyMap() {
         IMap<Integer, Integer> map = instance1.getMap(randomMapName());
-        if (sortedIndex != null) {
-            map.addIndex(new IndexConfig(sortedIndex ? IndexType.SORTED : IndexType.HASH, "this").setName("idx"));
+        if (sortedIndex) {
+            map.addIndex(new IndexConfig(IndexType.SORTED, "this").setName("idxSorted"));
+        }
+        if (hashIndex) {
+            map.addIndex(new IndexConfig(IndexType.HASH, "this").setName("idxHash"));
         }
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
