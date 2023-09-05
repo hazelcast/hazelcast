@@ -35,7 +35,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.hazelcast.jet.mongodb.ResourceExistenceChecks.ONCE_PER_JOB;
 import static com.hazelcast.jet.mongodb.ResourceExistenceChecks.ON_EACH_CONNECT;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
-import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.FORCE_PARALLELISM_ONE;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.FORCE_READ_PARALLELISM_ONE;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.readExistenceChecksFlag;
 import static java.lang.Boolean.parseBoolean;
 import static java.util.stream.Collectors.toList;
@@ -54,7 +54,7 @@ class MongoTable extends JetTable {
     private final String[] externalNames;
     private final QueryDataType[] fieldTypes;
     private final BsonType[] fieldExternalTypes;
-    private final boolean forceMongoParallelismOne;
+    private final boolean forceReadParallelismOne;
     private final ResourceExistenceChecks existenceChecks;
 
     MongoTable(
@@ -87,7 +87,7 @@ class MongoTable extends JetTable {
                                              .map(field -> ((MongoTableField) field).externalType)
                                              .toArray(BsonType[]::new);
 
-       this.forceMongoParallelismOne = parseBoolean(options.getOrDefault(FORCE_PARALLELISM_ONE, "false"));
+       this.forceReadParallelismOne = parseBoolean(options.getOrDefault(FORCE_READ_PARALLELISM_ONE, "false"));
     }
 
     private static boolean isStreaming(String objectType) {
@@ -159,8 +159,8 @@ class MongoTable extends JetTable {
         return list.get(0);
     }
 
-    public boolean isForceMongoParallelismOne() {
-        return forceMongoParallelismOne;
+    public boolean isForceReadParallelismOne() {
+        return forceReadParallelismOne;
     }
 
     @Override
@@ -171,7 +171,7 @@ class MongoTable extends JetTable {
                 ", connectionString='" + connectionString + '\'' +
                 ", options=" + options +
                 ", streaming=" + streaming +
-                ", forceMongoParallelismOne=" + forceMongoParallelismOne +
+                ", forceMongoParallelismOne=" + forceReadParallelismOne +
                 '}';
     }
 

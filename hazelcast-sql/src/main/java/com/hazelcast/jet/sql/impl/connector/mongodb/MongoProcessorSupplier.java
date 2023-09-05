@@ -38,7 +38,7 @@ public abstract class MongoProcessorSupplier implements ProcessorSupplier {
         this.dataConnectionName = table.dataConnectionName;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
-        this.forceMongoParallelismOne = table.isForceMongoParallelismOne();
+        this.forceMongoParallelismOne = table.isForceReadParallelismOne();
 
         this.externalNames = table.externalNames();
         this.checkExistenceOnEachConnect = table.checkExistenceOnEachConnect();

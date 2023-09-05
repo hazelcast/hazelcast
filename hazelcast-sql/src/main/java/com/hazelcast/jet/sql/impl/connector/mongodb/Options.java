@@ -70,7 +70,7 @@ final class Options {
      * to query the Atlas Serverless - in one processor only, but better one than nothing. Maybe some day MongoDB will
      * change that restriction.
      */
-    static final String FORCE_PARALLELISM_ONE = "forceMongoReadParallelismOne";
+    static final String FORCE_READ_PARALLELISM_ONE = "forceReadParallelismOne";
 
     /**
      * If set to true, the reading will be preceded with checking the existence of database and collection.

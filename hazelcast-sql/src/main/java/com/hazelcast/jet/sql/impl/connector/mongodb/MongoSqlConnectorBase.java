@@ -198,7 +198,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         Vertex sourceVertex = dag.newUniqueVertex(
                 "Select (" + table.getSqlName() + ")", supplier
         );
-        if (table.isForceMongoParallelismOne()) {
+        if (table.isForceReadParallelismOne()) {
             sourceVertex.localParallelism(1);
         }
 
@@ -214,7 +214,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         return new DbCheckingPMetaSupplierBuilder()
                 .setRequiredPermission(null)
                 .setCheckResourceExistence(table.checkExistenceOnEachCall())
-                .setForceTotalParallelismOne(table.isForceMongoParallelismOne())
+                .setForceTotalParallelismOne(table.isForceReadParallelismOne())
                 .setDatabaseName(table.databaseName)
                 .setCollectionName(table.collectionName)
                 .setClientSupplier(clientSupplier)
