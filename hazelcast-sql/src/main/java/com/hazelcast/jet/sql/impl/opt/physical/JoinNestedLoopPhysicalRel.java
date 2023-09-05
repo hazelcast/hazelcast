@@ -118,10 +118,9 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
      * Cost calculation of Nested Loop Join relation.
      * NLJ algorithm is simple algorithm, where for each left row we are traversing right row set.
      * Speaking of cost estimation, we are accounting the next properties:
-     * - row count is estimating ans L * R, because for each left row we're probing full right row set;
-     * - same for CPU cost estimation multiplied by cost of row comparison.
-     * The perfect assumption also must include memory and IO cost estimation, and also
-     * a selectivity for a right row set.
+     * - both processed and produced row cou is estimated an L * R, because for each left row we probe full right row set;
+     * - for CPU cost estimation, we multiply row count by cost of row comparison.
+     * The perfect assumption also must include memory and IO cost estimation, and also selectivity for a right row set.
      */
     @Override
     @Nullable

@@ -64,8 +64,9 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
      * Hash Join algorithm is more advanced join algorithm, where it builds a hash table for left row set, and then
      * compare each row from the right side
      * Speaking of cost estimation, we are accounting the next properties:
-     * - row count is estimating ans L + R, because we traverse both sides once per JOIN.
-     * - same for CPU cost estimation multiplied by cost to build a hash table and left and right rows comparison.
+     * - produced row count is estimated as L * R, with assumption that the JOIN predicate has maximum selectivity.
+     * - processed row count is estimated as L + R, because we traverse both sides once per JOIN.
+     * - CPU cost estimation is a processed row multiplied by cost to build a hash table, and left and right rows comparison.
      * <p>
      * The perfect assumption also must include memory (what is important in case of hash table) and IO cost estimation,
      * as well as a selectivity for a right row set.
@@ -75,12 +76,12 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         double leftRowCount = mq.getRowCount(getLeft());
         double rightRowCount = mq.getRowCount(getRight());
-        double rowCount = leftRowCount + rightRowCount;
-
         // TODO: introduce selectivity estimator, but ATM we taking the worst case scenario : selectivity = 1.0.
-        double cpu = (Cost.HASH_JOIN_MULTIPLIER * leftRowCount + /* TODO: selectivity */ rightRowCount)
-                * Cost.JOIN_ROW_CMP_MULTIPLIER;
+        double producedRowCount = leftRowCount * /* TODO: selectivity */ rightRowCount;
+        double processedRowCount = leftRowCount + /* TODO: selectivity */ rightRowCount;
 
-        return planner.getCostFactory().makeCost(rowCount, cpu, 0.);
+        double cpu = Cost.HASH_JOIN_MULTIPLIER * processedRowCount * Cost.JOIN_ROW_CMP_MULTIPLIER;
+
+        return planner.getCostFactory().makeCost(producedRowCount, cpu, 0.);
     }
 }
