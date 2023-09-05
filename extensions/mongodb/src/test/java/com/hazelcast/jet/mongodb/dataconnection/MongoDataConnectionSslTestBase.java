@@ -37,14 +37,9 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import javax.annotation.Nonnull;
 import javax.net.ssl.SSLContext;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
+import java.net.URL;
 import java.util.ArrayList;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.mongodb.AbstractMongoTest.TEST_MONGO_VERSION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -63,22 +58,10 @@ public abstract class MongoDataConnectionSslTestBase extends SimpleTestInCluster
 
     @BeforeClass
     public static void setUp() {
-        try (
-                InputStream resourceTS = MongoDataConnectionSslTestBase.class.getResourceAsStream("/certs/ca.p12");
-                InputStream resourceKS = MongoDataConnectionSslTestBase.class.getResourceAsStream("/certs/localhost.p12")
-        ) {
-            File tempFileTS = File.createTempFile("MongoDataConnectionSslTest", "jks");
-            Files.copy(resourceTS, tempFileTS.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            File tempFileKS = File.createTempFile("MongoDataConnectionSslTest", "jks");
-            Files.copy(resourceKS, tempFileKS.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            trustStoreLocation = tempFileTS.toString();
-            keyStoreLocation = tempFileKS.toString();
-
-            tempFileKS.deleteOnExit();
-            tempFileTS.deleteOnExit();
-        } catch (IOException e) {
-            throw rethrow(e);
-        }
+        URL resourceTS = MongoDataConnectionSslTestBase.class.getResource("/certs/ca.p12");
+        URL resourceKS = MongoDataConnectionSslTestBase.class.getResource("/certs/localhost.p12");
+        trustStoreLocation = resourceTS.getFile();
+        keyStoreLocation = resourceKS.getFile();
         assumeDockerEnabled();
     }
 
