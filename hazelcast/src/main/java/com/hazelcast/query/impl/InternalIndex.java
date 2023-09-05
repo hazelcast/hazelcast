@@ -20,9 +20,6 @@ import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.map.impl.recordstore.StepAwareStorage;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
-import java.util.Collections;
-import java.util.List;
-
 /**
  * Provides the private index API.
  */
@@ -118,11 +115,11 @@ public interface InternalIndex extends Index {
     boolean validatePartitionStamp(long stamp);
 
     /**
-     * @return Step-aware storages that back the Index.
-     * By default returns empty list that indicates there is no
+     * @return Step-aware storage that backы the Index.
+     * By default returns {@code null} that indicates there is no
      * Step-aware backed storage.
      */
-    default List<StepAwareStorage> getStepAwareStorages() {
-        return Collections.emptyList();
+    default StepAwareStorage getStepAwareStorage() {
+        return null;
     }
 }

@@ -252,8 +252,10 @@ public class Indexes {
     public List<StepAwareStorage> getStepAwareStorages() {
         List<StepAwareStorage> stepAwareStorages = new ArrayList<>();
         for (InternalIndex index : indexes) {
-            List<StepAwareStorage> saStorages = index.getStepAwareStorages();
-            stepAwareStorages.addAll(saStorages);
+            StepAwareStorage saStorage = index.getStepAwareStorage();
+            if (saStorage != null) {
+                stepAwareStorages.add(saStorage);
+            }
         }
         return stepAwareStorages;
     }
