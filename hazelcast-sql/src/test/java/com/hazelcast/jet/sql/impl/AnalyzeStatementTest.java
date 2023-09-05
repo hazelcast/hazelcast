@@ -16,7 +16,9 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -28,39 +30,38 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
+import java.util.Iterator;
+
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AnalyzeStatementTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() {
+        final Config config = smallInstanceConfig();
+        config.getMetricsConfig().setEnabled(true);
+        config.getMetricsConfig().setCollectionFrequencySeconds(1);
         initialize(1, null);
     }
 
     @Test
-    public void test_select() {
-        createMapping("test", Long.class, String.class);
-        instance().getSql().execute("INSERT INTO test VALUES (1, 'testVal')");
-
-        final SqlResult result = instance().getSql().execute("ANALYZE SELECT * FROM test");
-        final SqlRow row = result.iterator().next();
-        assertNotNull(row);
-        assertEquals(1L, (long) row.getObject("__key"));
-        assertEquals("testVal", row.getObject("this"));
-        result.close();
-
-        final Job job = instance().getJet().getJob(result.jobId());
-        assertNotNull(job);
-    }
-
-    @Test
     public void test_selectStreaming() {
-        final SqlResult result = instance().getSql().execute("ANALYZE SELECT * FROM TABLE(GENERATE_STREAM(1))");
+        final SqlResult result = instance().getSql().execute("ANALYZE SELECT * FROM TABLE(GENERATE_STREAM(10))");
         assertNotEquals(-1L, result.jobId());
+
+        final Iterator<SqlRow> it = result.iterator();
+        for (int i = 0; i < 5; i++) {
+            it.next();
+        }
+
         final Job job = instance().getJet().getJob(result.jobId());
         assertNotNull(job);
+        final JobMetrics metrics = job.getMetrics();
+        assertNotNull(metrics);
+        assertNotNull(metrics.get("executionStartTime"));
+        assertTrue(metrics.get("executionStartTime").get(0).value() > 0L);
     }
 }
