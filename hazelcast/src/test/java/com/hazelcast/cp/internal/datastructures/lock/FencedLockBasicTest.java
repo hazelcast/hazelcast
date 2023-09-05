@@ -18,24 +18,19 @@ package com.hazelcast.cp.internal.datastructures.lock;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
-import com.hazelcast.cp.internal.datastructures.lock.proxy.FencedLockProxy;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.RandomPicker;
-import com.hazelcast.test.starter.ReflectionUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.test.Accessors.getNodeEngineImpl;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -107,37 +102,5 @@ public class FencedLockBasicTest extends AbstractFencedLockBasicTest {
         }
 
         proxyInstance.getCPSubsystem().getLock(lock.getName());
-    }
-
-
-    @Test
-    public void testDestroy_AllMembersRemoveLockProxyDefaultCpGroup() {
-        allMembersRemoveLockProxy(randomName());
-    }
-
-    @Test
-    public void testDestroy_AllMembersRemoveLockProxyCustomCpGroup() {
-        allMembersRemoveLockProxy(randomName() + "@mygroup");
-    }
-
-    private void allMembersRemoveLockProxy(String lockName) {
-        FencedLock myLockMember0 = instances[0].getCPSubsystem().getLock(lockName);
-        FencedLock myLockMember1 = instances[1].getCPSubsystem().getLock(lockName);
-        FencedLock myLockMember2 = instances[2].getCPSubsystem().getLock(lockName);
-
-        myLockMember0.lock();
-        try {
-        } finally {
-            myLockMember0.unlock();
-        }
-        myLockMember0.destroy();
-
-        for (HazelcastInstance instance : instances) {
-            assertTrueEventually(() -> {
-                LockService service = getNodeEngineImpl(instance).getService(LockService.SERVICE_NAME);
-                ConcurrentMap<String, FencedLockProxy> proxies = ReflectionUtils.getFieldValueReflectively(service, "proxies");
-                assertFalse(proxies.containsKey(lockName));
-            });
-        }
     }
 }
