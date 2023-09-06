@@ -19,8 +19,8 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 
 /**
- * Interface for a Storage that supports Steps infrastructure and
- * injects Steps on IMap operation.
+ * Interface for a storage-backend (e.g. B+tree or a record store)
+ * that supports Steps infrastructure and injects Steps on IMap operation.
  */
 public interface StepAwareStorage {
 
