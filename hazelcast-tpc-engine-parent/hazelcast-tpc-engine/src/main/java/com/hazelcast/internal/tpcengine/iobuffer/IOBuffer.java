@@ -27,6 +27,7 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_CHAR;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
+import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 
 
 /**
@@ -96,7 +97,7 @@ public class IOBuffer {
         //todo: allocate power of 2.
         this.buff = direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
         if (buff.isDirect()) {
-            address = BufferUtil.addressOf(buff);
+            address = addressOf(buff);
         } else {
             address = 0;
         }
@@ -107,7 +108,7 @@ public class IOBuffer {
         //todo: allocate power of 2.
         this.buff = direct ? BufferUtil.allocateDirect(size, alginment) : ByteBuffer.allocate(size);
         if (buff.isDirect()) {
-            address = BufferUtil.addressOf(buff);
+            address = addressOf(buff);
         } else {
             address = 0;
         }
@@ -116,7 +117,7 @@ public class IOBuffer {
     public IOBuffer(ByteBuffer buffer) {
         this.buff = buffer;
         if (buff.isDirect()) {
-            address = BufferUtil.addressOf(buff);
+            address = addressOf(buff);
         } else {
             address = 0;
         }
@@ -172,9 +173,13 @@ public class IOBuffer {
         if (buff.remaining() < remaining) {
             int newCapacity = nextPowerOfTwo(buff.capacity() + remaining);
 
-            ByteBuffer newBuffer = buff.hasArray()
-                    ? ByteBuffer.allocate(newCapacity)
-                    : ByteBuffer.allocateDirect(newCapacity);
+            ByteBuffer newBuffer;
+            if (buff.isDirect()) {
+                newBuffer = ByteBuffer.allocateDirect(newCapacity);
+                address = addressOf(newBuffer);
+            } else {
+                newBuffer = ByteBuffer.allocate(newCapacity);
+            }
             buff.flip();
             newBuffer.put(buff);
             buff = newBuffer;
