@@ -24,14 +24,19 @@ import java.util.List;
 /**
  * The composite step for IMap operations. Composes multiple Steps into one unit.
  * For instance, it is used to combine record store and local indexes compactors as one unit.
+ * <p>
+ * The primary step defines whether the composite step is offloadable, its executor name
+ * and next step.
  */
 public class CompositeStep implements IMapOpStep {
 
     private final List<Step> steps;
+    private final Step primaryStep;
 
-    public CompositeStep(List<Step> steps) {
+    public CompositeStep(List<Step> steps, Step primaryStep) {
         assert steps.size() > 1;
         this.steps = steps;
+        this.primaryStep = primaryStep;
     }
 
     @Override
@@ -43,18 +48,18 @@ public class CompositeStep implements IMapOpStep {
 
     @Override
     public boolean isOffloadStep(State state) {
-        return steps.get(0).isOffloadStep(state);
+        return primaryStep.isOffloadStep(state);
     }
 
     @Nullable
     @Override
     public Step nextStep(State state) {
-        return steps.get(0).nextStep(state);
+        return primaryStep.nextStep(state);
     }
 
     @Override
     public String getExecutorName(State state) {
         // All steps should be performed by the same executor
-        return steps.get(0).getExecutorName(state);
+        return primaryStep.getExecutorName(state);
     }
 }
