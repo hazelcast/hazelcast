@@ -260,4 +260,22 @@ public interface CPSubsystemManagementService {
      * @see #isDiscoveryCompleted()
      */
     boolean awaitUntilDiscoveryCompleted(long timeout, TimeUnit timeUnit) throws InterruptedException;
+
+    /**
+     * Wipes the set of destroyed object names per each of the following services for all CP groups.
+     * <ul>
+     *     <li>{@link com.hazelcast.cp.internal.datastructures.lock.LockService}</li>
+     *     <li>{@link com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService}</li>
+     *     <li>{@link com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService}</li>
+     *     <li>{@link com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService}</li>
+     *     <li>{@link com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService}</li>
+     * </ul>
+     * <p>
+     * Upon completion the user can create objects within the CP subsystem under names that were destroyed
+     * pre-invocation.
+     * <p>
+     * This operation blocks until all CP groups have had their respective destroyed objects wiped from
+     * each of the listed services.
+     */
+    void wipeDestroyedObjects();
 }

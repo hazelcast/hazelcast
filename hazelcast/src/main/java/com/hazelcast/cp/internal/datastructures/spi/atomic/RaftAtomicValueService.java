@@ -207,4 +207,8 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
     protected final void clearPartitionReplica(int partitionId) {
         atomicValues.keySet().removeIf(t -> raftService.getCPGroupPartitionId(t.element1) == partitionId);
     }
+
+    public void clearDestroyedValues() {
+        destroyedValues.clear();
+    }
 }

@@ -62,6 +62,7 @@ import com.hazelcast.cp.internal.raftop.metadata.ForceDestroyRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveRaftGroupByNameOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveRaftGroupIdsOp;
+import com.hazelcast.cp.internal.raftop.metadata.WipeDestroyedObjectsOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupIdsOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.RaftServicePreJoinOp;
@@ -1468,6 +1469,19 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     public int getCPMemberPriority() {
         return cpMemberPriority;
+    }
+
+    public void wipeDestroyedObjects() {
+        Collection<CPGroupId> cpGroupIds = getCPGroupIds().join();
+        for (CPGroupId cpGroupId : cpGroupIds) {
+            if (!cpGroupId.getName().equals(METADATA_CP_GROUP_NAME)) {
+                wipeDestroyedObjects(cpGroupId).join();
+            }
+        }
+    }
+
+    private InternalCompletableFuture<Collection<String>> wipeDestroyedObjects(CPGroupId groupId) {
+        return invocationManager.invoke(groupId, new WipeDestroyedObjectsOp());
     }
 
     private class InitializeRaftNodeTask implements Runnable {

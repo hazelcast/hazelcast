@@ -230,6 +230,11 @@ public class CPSubsystemImpl implements CPSubsystem {
         public boolean awaitUntilDiscoveryCompleted(long timeout, TimeUnit timeUnit) throws InterruptedException {
             return raftService.awaitUntilDiscoveryCompleted(timeout, timeUnit);
         }
+
+        @Override
+        public void wipeDestroyedObjects() {
+            raftService.wipeDestroyedObjects();
+        }
     }
 
 }

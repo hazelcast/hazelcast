@@ -340,4 +340,8 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         return "ResourceRegistry{" + "groupId=" + groupId + ", resources=" + resources + ", destroyedNames=" + destroyedNames
                 + ", waitTimeouts=" + waitTimeouts + '}';
     }
+
+    public void clearDestroyedNames() {
+        destroyedNames.clear();
+    }
 }

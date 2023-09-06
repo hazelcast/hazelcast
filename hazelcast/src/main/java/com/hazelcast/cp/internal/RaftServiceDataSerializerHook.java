@@ -45,6 +45,7 @@ import com.hazelcast.cp.internal.raftop.metadata.CompleteDestroyRaftGroupsOp;
 import com.hazelcast.cp.internal.raftop.metadata.CompleteRaftGroupMembershipChangesOp;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftNodeOp;
+import com.hazelcast.cp.internal.raftop.metadata.WipeDestroyedObjectsOp;
 import com.hazelcast.cp.internal.raftop.metadata.TerminateRaftNodesOp;
 import com.hazelcast.cp.internal.raftop.metadata.ForceDestroyRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
@@ -124,6 +125,7 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int TRIGGER_LEADER_ELECTION_OP = 50;
     public static final int UNSAFE_MODE_PARTITION_STATE = 51;
     public static final int UNSAFE_STATE_REPLICATE_OP = 52;
+    public static final int WIPE_DESTROYED_OBJECTS_OP = 53;
 
     @Override
     public int getFactoryId() {
@@ -238,6 +240,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                     return new UnsafeModePartitionState();
                 case UNSAFE_STATE_REPLICATE_OP:
                     return new UnsafeStateReplicationOp();
+                case WIPE_DESTROYED_OBJECTS_OP:
+                    return new WipeDestroyedObjectsOp();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }
