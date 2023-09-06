@@ -276,6 +276,8 @@ public interface CPSubsystemManagementService {
      * <p>
      * This operation blocks until all CP groups have had their respective destroyed objects wiped from
      * each of the listed services.
+     *
+     * @since 5.4
      */
     void wipeDestroyedObjects();
 }
