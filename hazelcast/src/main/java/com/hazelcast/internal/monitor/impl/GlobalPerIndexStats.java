@@ -184,7 +184,7 @@ public class GlobalPerIndexStats implements PerIndexStats {
     }
 
     @Override
-    public void resetMemoryCost() {
+    public void onDispose() {
         // no-op
     }
 

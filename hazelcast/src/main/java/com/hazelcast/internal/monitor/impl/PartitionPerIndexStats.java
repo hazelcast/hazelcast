@@ -90,7 +90,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
     }
 
     @Override
-    public void resetMemoryCost() {
+    public void onDispose() {
         MEMORY_COST.lazySet(PartitionPerIndexStats.this, 0);
     }
 
@@ -288,7 +288,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
         @Override
         public void dispose() {
             delegate.dispose();
-            resetMemoryCost();
+            onDispose();
         }
     }
 

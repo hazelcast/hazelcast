@@ -108,7 +108,7 @@ public interface PerIndexStats {
         }
 
         @Override
-        public void resetMemoryCost() {
+        public void onDispose() {
             // do nothing
         }
 
@@ -262,9 +262,9 @@ public interface PerIndexStats {
     void updateMemoryCost(long delta);
 
     /**
-     * Resets memory cost of the index.
+     * Invoked on index dispose.
      */
-    void resetMemoryCost();
+    void onDispose();
 
     /**
      * Invoked by the associated index after every insert operation.
