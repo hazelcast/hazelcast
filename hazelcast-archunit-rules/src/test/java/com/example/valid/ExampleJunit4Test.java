@@ -22,6 +22,6 @@ import org.junit.Test;
 public class ExampleJunit4Test {
 
     @Test
-    void test1() {
+    public void test1() {
     }
 }
