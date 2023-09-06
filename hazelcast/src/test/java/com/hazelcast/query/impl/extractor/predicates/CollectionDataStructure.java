@@ -34,7 +34,7 @@ public final class CollectionDataStructure {
 
     public static class Person implements Serializable {
 
-        List<Limb> limbs_list = new ArrayList<Limb>();
+        List<Limb> limbs_list = new ArrayList<>();
         Limb[] limbs_array;
 
         @Override
@@ -68,7 +68,7 @@ public final class CollectionDataStructure {
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(new Object[]{name, power});
+            return Objects.hash(name, power);
         }
     }
 
