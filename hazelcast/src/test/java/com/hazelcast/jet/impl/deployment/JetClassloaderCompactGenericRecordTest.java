@@ -24,9 +24,13 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
+import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 
 import java.io.File;
@@ -34,9 +38,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.ThreadLocalRandom;
 
+
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class JetClassloaderCompactGenericRecordTest extends SimpleTestInClusterSupport {
 
-    public static final String MAP_NAME = "aaa";
+    public static final String MAP_NAME = "various_compact";
     // test is very fast unless it hits a deadlock,
     // deadlock also causes instance shutdown to timeout.
     @Rule
@@ -49,10 +55,12 @@ public class JetClassloaderCompactGenericRecordTest extends SimpleTestInClusterS
         initializeWithClient(1, config, null);
     }
 
+    @Repeat(1000)
     @Test(timeout = 15_000)
     public void whenCompactGenericRecordInImap_thenShouldNotDeadlock() throws Throwable {
         // prepare IMap
         IMap<Object, Object> map = instance().getMap(MAP_NAME);
+        map.clear();
         for (int i = 0; i < 100; ++i) {
             // randomness increases likelihood of deadlock
             map.put("key" + ThreadLocalRandom.current().nextInt(),
@@ -78,12 +86,10 @@ public class JetClassloaderCompactGenericRecordTest extends SimpleTestInClusterS
         // prepare entry processor
         Thread asyncExecuteOnEntries = new Thread(() ->
                 map.executeOnEntries(e -> {
-                    System.out.println("Processing " + e.getKey());
-                    System.out.println("Got value " + e.getValue());
                     // Give some time for Jet job to start.
                     // We want this entry processor to be executed in parallel with Jet job execution.
                     sleepMillis(1);
-                    return null;
+                    return e.getValue().toString();
                 }));
 
         // execute in parallel
