@@ -95,6 +95,7 @@
                         <configuration>
                             <includedLicenses combine.children="append">
                                 <includedLicense>Eclipse Public License 1.0</includedLicense>
+                                <includedLicense>Eclipse Public License 2.0</includedLicense>
                             </includedLicenses>
                         </configuration>
                     </execution>
