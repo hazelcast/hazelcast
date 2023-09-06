@@ -255,8 +255,15 @@ public interface PerIndexStats {
      */
     long getMemoryCost();
 
+    /**
+     * Updates the memory cost of the index in bytes.
+     * @param delta the value to be added to the memory cost
+     */
     void updateMemoryCost(long delta);
 
+    /**
+     * Resets memory cost of the index.
+     */
     void resetMemoryCost();
 
     /**
