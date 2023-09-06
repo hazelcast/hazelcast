@@ -40,7 +40,6 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 import org.apache.calcite.rex.RexNode;
-import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -187,18 +186,21 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         List<ProjectionData> projections = translateProjections(projection, context, visitor);
 
         DbCheckingPMetaSupplier supplier;
+        final boolean forceReadParallelismOne = table.isForceReadParallelismOne();
         if (table.isStreaming()) {
-            BsonTimestamp startAt = Options.startAt(table.getOptions());
-            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projections, startAt, eventTimePolicyProvider));
+            var startAt = Options.startAtTimestamp(table.getOptions());
+            var ps = new SelectProcessorSupplier(table, filter, projections, startAt, eventTimePolicyProvider);
+            supplier = wrap(context, ps, forceReadParallelismOne);
         } else {
-            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projections));
+            var ps = new SelectProcessorSupplier(table, filter, projections);
+            supplier = wrap(context, ps, forceReadParallelismOne);
         }
 
         DAG dag = context.getDag();
         Vertex sourceVertex = dag.newUniqueVertex(
                 "Select (" + table.getSqlName() + ")", supplier
         );
-        if (table.isForceReadParallelismOne()) {
+        if (forceReadParallelismOne) {
             sourceVertex.localParallelism(1);
         }
 
@@ -206,6 +208,14 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     }
 
     protected static DbCheckingPMetaSupplier wrap(DagBuildContext ctx, ProcessorSupplier supplier) {
+        return wrap(ctx, supplier, false);
+    }
+
+    protected static DbCheckingPMetaSupplier wrapWithParallelismOne(DagBuildContext ctx, ProcessorSupplier supplier) {
+        return wrap(ctx, supplier, true);
+    }
+
+    protected static DbCheckingPMetaSupplier wrap(DagBuildContext ctx, ProcessorSupplier supplier, boolean forceParallelismOne) {
         MongoTable table = ctx.getTable();
         String connectionString = table.connectionString;
         SupplierEx<MongoClient> clientSupplier = connectionString == null
@@ -220,6 +230,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                 .setClientSupplier(clientSupplier)
                 .setDataConnectionRef(dataConnectionRef(table.dataConnectionName))
                 .setProcessorSupplier(supplier)
+                .setForceTotalParallelismOne(forceParallelismOne)
                 .create();
     }
 

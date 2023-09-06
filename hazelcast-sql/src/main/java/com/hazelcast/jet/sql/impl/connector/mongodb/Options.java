@@ -84,7 +84,7 @@ final class Options {
     private Options() {
     }
 
-    static BsonTimestamp startAt(Map<String, String> options) {
+    static BsonTimestamp startAtTimestamp(Map<String, String> options) {
         String startAtValue = options.get(START_AT_OPTION);
         if (isNullOrEmpty(startAtValue)) {
             throw QueryException.error("startAt property is required for MongoDB stream. " + POSSIBLE_VALUES);

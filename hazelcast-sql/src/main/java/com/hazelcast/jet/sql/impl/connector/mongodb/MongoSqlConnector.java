@@ -91,9 +91,9 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
 
             return context.getDag().newUniqueVertex(
                     "Update(" + table.getSqlName() + ")",
-                    wrap(context,
+                    wrapWithParallelismOne(context,
                         new UpdateProcessorSupplier(table, fieldNamesArray, updates, translated, hasInput)
-                    ).forceTotalParallelismOne(true)
+                    )
             );
         }
     }
@@ -137,8 +137,7 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
 
             return context.getDag().newUniqueVertex(
                     "Delete(" + table.getSqlName() + ")",
-                    wrap(context, new DeleteProcessorSupplier(table, predicateToSend, hasInput))
-                            .forceTotalParallelismOne(true)
+                    wrapWithParallelismOne(context, new DeleteProcessorSupplier(table, predicateToSend, hasInput))
             );
         }
     }
