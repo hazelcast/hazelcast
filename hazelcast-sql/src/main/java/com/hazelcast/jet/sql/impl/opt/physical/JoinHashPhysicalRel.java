@@ -61,15 +61,14 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
     /**
      * Cost calculation of Hash Join relation. It does not rely on children cost.
      * <p>
-     * Hash Join algorithm is more advanced join algorithm, where it builds a hash table for left row set, and then
-     * compare each row from the right side
-     * Speaking of cost estimation, we are accounting the next properties:
-     * - produced row count is estimated as L * R, with assumption that the JOIN predicate has maximum selectivity.
-     * - processed row count is estimated as L + R, because we traverse both sides once per JOIN.
-     * - CPU cost estimation is a processed row multiplied by cost to build a hash table, and left and right rows comparison.
+     * Hash Join algorithm is a more advanced join algorithm, which builds a hash table for the left
+     * row set, and then compare each row from the right side. Cost estimation is the following: <ol>
+     * <li> Produced row count is L * R assuming the join selectivity is 1.
+     * <li> Processed row count is L + R because we traverse both sides once per JOIN.
+     * <li> CPU is L * (hash table build cost) + R * (row comparison cost). </ol>
      * <p>
-     * The perfect assumption also must include memory (what is important in case of hash table) and IO cost estimation,
-     * as well as a selectivity for a right row set.
+     * A perfect estimation must also include memory (occupied by the hash table) and IO costs,
+     * as well as a selectivity for the right row set.
      */
     @Override
     @Nullable
@@ -78,9 +77,7 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
         double rightRowCount = mq.getRowCount(getRight());
         // TODO: introduce selectivity estimator, but ATM we taking the worst case scenario : selectivity = 1.0.
         double producedRowCount = leftRowCount * /* TODO: selectivity */ rightRowCount;
-        double processedRowCount = leftRowCount + /* TODO: selectivity */ rightRowCount;
-
-        double cpu = Cost.HASH_JOIN_MULTIPLIER * processedRowCount * Cost.JOIN_ROW_CMP_MULTIPLIER;
+        double cpu = leftRowCount * Cost.HASH_JOIN_MULTIPLIER + rightRowCount * Cost.JOIN_ROW_CMP_MULTIPLIER;
 
         return planner.getCostFactory().makeCost(producedRowCount, cpu, 0.);
     }
