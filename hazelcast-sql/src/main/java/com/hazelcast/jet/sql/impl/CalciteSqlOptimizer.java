@@ -673,8 +673,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     planExecutor,
-                    permissions
-            );
+                    permissions,
+                    false);
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
             assert !isCreateJob;
             DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
@@ -704,8 +704,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     planExecutor,
-                    permissions
-            );
+                    permissions,
+                    analyze);
         } else if (physicalRel instanceof DeletePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
             Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
@@ -722,8 +722,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     planExecutor,
-                    permissions
-            );
+                    permissions,
+                    false);
         } else {
             Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
                     new RootRel(physicalRel),

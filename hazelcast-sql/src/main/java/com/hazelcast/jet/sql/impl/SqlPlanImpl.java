@@ -1155,6 +1155,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final boolean infiniteRows;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final boolean analyze;
 
         DmlPlan(
                 Operation operation,
@@ -1165,7 +1166,8 @@ abstract class SqlPlanImpl extends SqlPlan {
                 String query,
                 boolean infiniteRows,
                 PlanExecutor planExecutor,
-                List<Permission> permissions
+                List<Permission> permissions,
+                final boolean analyze
         ) {
             super(planKey);
 
@@ -1177,6 +1179,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.infiniteRows = infiniteRows;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.analyze = analyze;
         }
 
         Operation getOperation() {
@@ -1197,6 +1200,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         public boolean isInfiniteRows() {
             return infiniteRows;
+        }
+
+        public boolean isAnalyzed() {
+            return analyze;
         }
 
         @Override

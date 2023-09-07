@@ -569,10 +569,18 @@ public class PlanExecutor {
                 .setTimeoutMillis(timeout);
 
         sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-        Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
-        job.join();
+        final long jobId;
+        if (plan.isAnalyzed()) {
+            Job job = hazelcastInstance.getJet().newJob(plan.getDag(), jobConfig);
+            jobId = job.getId();
+        } else {
+            Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
+            job.join();
+            // records are not kept for light jobs, therefore providing jobId is pointless in this scenario
+            jobId = -1;
+        }
 
-        return UpdateSqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0, -1, jobId);
     }
 
     SqlResult execute(IMapSelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {

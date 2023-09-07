@@ -28,11 +28,12 @@ public final class UpdateSqlResultImpl extends AbstractSqlResult {
 
     private final long updateCount;
     private final int partitionArgumentIndex;
-    // TODO: jobId
+    private final long jobId;
 
-    private UpdateSqlResultImpl(long updateCount, int partitionArgumentIndex) {
+    private UpdateSqlResultImpl(long updateCount, int partitionArgumentIndex, long jobId) {
         this.updateCount = checkNotNegative(updateCount, "the updateCount must be >= 0");
         this.partitionArgumentIndex = partitionArgumentIndex;
+        this.jobId = jobId;
     }
 
     public static UpdateSqlResultImpl createUpdateCountResult(long updateCount) {
@@ -40,7 +41,11 @@ public final class UpdateSqlResultImpl extends AbstractSqlResult {
     }
 
     public static UpdateSqlResultImpl createUpdateCountResult(long updateCount, int partitionArgumentIndex) {
-        return new UpdateSqlResultImpl(updateCount, partitionArgumentIndex);
+        return createUpdateCountResult(updateCount, partitionArgumentIndex, -1L);
+    }
+
+    public static UpdateSqlResultImpl createUpdateCountResult(long updateCount, int partitionArgumentIndex, long jobId) {
+        return new UpdateSqlResultImpl(updateCount, partitionArgumentIndex, jobId);
     }
 
     @Nullable
@@ -73,6 +78,11 @@ public final class UpdateSqlResultImpl extends AbstractSqlResult {
     @Override
     public long updateCount() {
         return updateCount;
+    }
+
+    @Override
+    public long jobId() {
+        return jobId;
     }
 
     @Override

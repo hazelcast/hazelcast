@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Iterator;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -59,6 +60,21 @@ public class AnalyzeStatementTest extends SqlTestSupport {
 
         final Job job = instance().getJet().getJob(result.jobId());
         assertNotNull(job);
+        final JobMetrics metrics = job.getMetrics();
+        assertNotNull(metrics);
+        assertNotNull(metrics.get("executionStartTime"));
+        assertTrue(metrics.get("executionStartTime").get(0).value() > 0L);
+    }
+
+    @Test
+    public void test_insertStreaming() {
+        createMapping("test", Long.class, String.class);
+        final SqlResult result = instance().getSql().execute("ANALYZE INSERT INTO test SELECT v, 'value#' || v "
+                + "FROM TABLE(GENERATE_STREAM(10))");
+        final Job job = instance().getJet().getJob(result.jobId());
+        assertNotNull(job);
+
+        assertTrueEventually(() -> assertFalse(instance().getMap("test").isEmpty()));
         final JobMetrics metrics = job.getMetrics();
         assertNotNull(metrics);
         assertNotNull(metrics.get("executionStartTime"));
