@@ -55,7 +55,6 @@ public class ArchUnitRulesTest extends ArchUnitTestSupport {
                 .importPackages("com.example.broken");
         assertThat(classes).isNotEmpty();
 
-
         assertThatThrownBy(() -> ArchUnitRules.NO_JUNIT_MIXING.check(classes))
                 .isInstanceOf(AssertionError.class)
                 .hasMessageContaining("was violated (1 times)");

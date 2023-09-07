@@ -20,24 +20,38 @@ import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.lang.annotation.Annotation;
+import java.util.Set;
 
 public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
     public MixTestAnnotationsCondition() {
         super("Do not mix Junit4 and Junit5 annotations");
     }
 
+    private final Set<Class<? extends Annotation>> junit4AnnotationClasses = Set.of(Test.class, Before.class,
+            After.class, BeforeClass.class, AfterClass.class);
+    private final Set<Class<? extends Annotation>> junit5AnnotationClasses = Set.of(org.junit.jupiter.api.Test.class,
+            org.junit.jupiter.api.BeforeEach.class,
+            org.junit.jupiter.api.AfterEach.class,
+            org.junit.jupiter.api.BeforeAll.class,
+            org.junit.jupiter.api.AfterAll.class
+    );
+
     @Override
     public void check(JavaClass item, ConditionEvents events) {
         boolean hasJUnit4Annotation = item.getMethods().stream()
-                .anyMatch(method -> method.isAnnotatedWith(org.junit.Test.class)
-                                    || method.isAnnotatedWith(org.junit.Before.class)
-                                    || method.isAnnotatedWith(org.junit.After.class));
+                .anyMatch(method -> junit4AnnotationClasses.stream()
+                        .anyMatch(method::isAnnotatedWith));
 
         boolean hasJUnit5Annotation = item.getMethods().stream()
-                .anyMatch(method ->
-                        method.isAnnotatedWith(org.junit.jupiter.api.Test.class)
-                        || method.isAnnotatedWith(org.junit.jupiter.api.BeforeEach.class)
-                        || method.isAnnotatedWith(org.junit.jupiter.api.AfterEach.class));
+                .anyMatch(method -> junit5AnnotationClasses.stream()
+                        .anyMatch(method::isAnnotatedWith));
 
         if (hasJUnit4Annotation && hasJUnit5Annotation) {
             String message = String.format("Class %s mixes JUnit 4 and JUnit 5 annotations.", item.getName());
