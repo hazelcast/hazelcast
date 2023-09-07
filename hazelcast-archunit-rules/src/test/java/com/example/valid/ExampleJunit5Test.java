@@ -18,7 +18,7 @@ package com.example.valid;
 
 import org.junit.jupiter.api.Test;
 
-public class ExampleJunit5Test {
+class ExampleJunit5Test {
 
     @Test
     void test1() {

@@ -18,7 +18,7 @@ package com.example.broken;
 
 import org.junit.Test;
 
-public class MixedTestAnnotationsTest {
+class MixedTestAnnotationsTest {
 
     @Test
     public void test1() {
