@@ -28,7 +28,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 public class AllCanonicalTypesValueDeserializer implements Deserializer<AllCanonicalTypesValue> {
 

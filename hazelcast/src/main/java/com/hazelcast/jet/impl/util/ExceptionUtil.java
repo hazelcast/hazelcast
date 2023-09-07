@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.ClientExceptionFactory.ExceptionFactor
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.RestartableException;
@@ -37,7 +36,6 @@ import com.hazelcast.jet.impl.execution.TaskletExecutionException;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.sql.impl.ResultLimitReachedException;
@@ -147,50 +145,8 @@ public final class ExceptionUtil {
 
     @Nonnull
     public static RuntimeException rethrow(@Nonnull final Throwable t) {
-        if (t instanceof Error) {
-            if (t instanceof OutOfMemoryError) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
-            }
-            throw (Error) t;
-        } else {
-            throw peeledAndUnchecked(t);
-        }
-    }
-
-    /**
-     * Utility to make sure exceptions inside
-     * {@link java.util.concurrent.CompletionStage#whenComplete(BiConsumer)} are not swallowed.
-     * Exceptions will be caught and logged using the supplied logger.
-     */
-    @Nonnull
-    public static <T> BiConsumer<T, ? super Throwable> withTryCatch(
-            @Nonnull ILogger logger, @Nonnull BiConsumer<T, ? super Throwable> consumer
-    ) {
-        return withTryCatch(logger, "Exception during callback", consumer);
-    }
-
-    /**
-     * Utility to make sure exceptions inside
-     * {@link java.util.concurrent.CompletionStage#whenComplete(BiConsumer)} are not swallowed.
-     * Exceptions will be caught and logged using the supplied logger and message.
-     */
-    @Nonnull
-    public static <T> BiConsumer<T, ? super Throwable> withTryCatch(
-            @Nonnull ILogger logger, @Nonnull String message, @Nonnull BiConsumer<T, ? super Throwable> consumer
-    ) {
-        return (r, t) -> {
-            try {
-                consumer.accept(r, t);
-            } catch (Throwable e) {
-                logger.severe(message, e);
-            }
-        };
-    }
-
-    @SuppressWarnings("unchecked")
-    @Nonnull
-    public static <T extends Throwable> RuntimeException sneakyThrow(@Nonnull Throwable t) throws T {
-        throw (T) t;
+        com.hazelcast.internal.util.ExceptionUtil.rethrowIfError(t);
+        throw peeledAndUnchecked(t);
     }
 
     /**

@@ -45,11 +45,10 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAXIMUM_KEY_LENGTH;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAX_RECORD_SIZE;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
-import static com.hazelcast.test.TestStringUtils.repeat;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
@@ -210,8 +209,8 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     @Test
     @Category(SerialTest.class)
     public void keyTooLong() {
-        Entry<String, byte[]> valid = entry(repeat("*", MAXIMUM_KEY_LENGTH), new byte[0]);
-        Entry<String, byte[]> invalid = entry(repeat("*", MAXIMUM_KEY_LENGTH + 1), new byte[0]);
+        Entry<String, byte[]> valid = entry("*".repeat(MAXIMUM_KEY_LENGTH), new byte[0]);
+        Entry<String, byte[]> invalid = entry("*".repeat(MAXIMUM_KEY_LENGTH + 1), new byte[0]);
         invalidInputToSink(valid, invalid, "Key too long");
     }
 

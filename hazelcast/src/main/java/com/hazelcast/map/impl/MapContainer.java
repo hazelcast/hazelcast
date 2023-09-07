@@ -35,7 +35,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MemoryInfoAccessor;
 import com.hazelcast.internal.util.RuntimeMemoryInfoAccessor;
@@ -46,10 +45,6 @@ import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
 import com.hazelcast.map.impl.query.QueryEntryFactory;
-import com.hazelcast.map.impl.record.DataRecordFactory;
-import com.hazelcast.map.impl.record.ObjectRecordFactory;
-import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.map.impl.record.RecordFactoryAttributes;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
@@ -106,7 +101,7 @@ public class MapContainer {
     protected final InternalSerializationService serializationService;
     protected final Function<Object, Data> toDataFunction = new ObjectToData();
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
-    protected final ConstructorFunction<RecordFactoryAttributes, RecordFactory> recordFactoryConstructor;
+
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
      */
@@ -138,7 +133,6 @@ public class MapContainer {
         this.partitioningStrategy = createPartitioningStrategy();
         this.splitBrainProtectionName = mapConfig.getSplitBrainProtectionName();
         this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
-        this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
         this.objectNamespace = MapService.getObjectNamespace(name);
         this.extractors = Extractors.newBuilder(serializationService)
                 .setAttributeConfigs(mapConfig.getAttributeConfigs())
@@ -254,21 +248,6 @@ public class MapContainer {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-    }
-
-    // overridden in different context
-    ConstructorFunction<RecordFactoryAttributes, RecordFactory> createRecordFactoryConstructor(
-            final SerializationService serializationService) {
-        return anyArg -> {
-            switch (mapConfig.getInMemoryFormat()) {
-                case BINARY:
-                    return new DataRecordFactory(this, serializationService);
-                case OBJECT:
-                    return new ObjectRecordFactory(this, serializationService);
-                default:
-                    throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
-            }
-        };
     }
 
     public void initWanReplication() {
@@ -417,10 +396,6 @@ public class MapContainer {
 
     public Function<Object, Data> toData() {
         return toDataFunction;
-    }
-
-    public ConstructorFunction<RecordFactoryAttributes, RecordFactory> getRecordFactoryConstructor() {
-        return recordFactoryConstructor;
     }
 
     public QueryableEntry newQueryEntry(Data key, Object value) {

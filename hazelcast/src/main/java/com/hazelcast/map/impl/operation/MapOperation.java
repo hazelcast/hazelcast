@@ -130,7 +130,7 @@ public abstract class MapOperation extends AbstractNamedOperation
 
         // check if tieredStoreOffloadEnabled for this operation
         tieredStoreOffloadEnabled = recordStore != null
-                && isTieredStoreAndPartitionCompactorEnabled()
+                && supportsSteppedRun()
                 && getStartingStep() != null;
 
         assertNativeMapOnPartitionThread();
@@ -160,9 +160,8 @@ public abstract class MapOperation extends AbstractNamedOperation
         return recordStore.getMapDataStore() != MapDataStores.EMPTY_MAP_DATA_STORE;
     }
 
-    public boolean isTieredStoreAndPartitionCompactorEnabled() {
-        return recordStore.getStorage().isPartitionCompactorEnabled()
-                && mapContainer.getMapConfig().getTieredStoreConfig().isEnabled();
+    public boolean supportsSteppedRun() {
+        return recordStore.getStorage().supportsSteppedRun();
     }
 
     @Nullable

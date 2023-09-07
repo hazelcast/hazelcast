@@ -34,7 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 final class FileUtil {
 

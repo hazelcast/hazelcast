@@ -77,7 +77,7 @@ public class RaftInvocationContext {
             CPMembersContainer currentContainer = membersContainer.get();
             if (newContainer.version.compareTo(currentContainer.version) > 0) {
                 if (membersContainer.compareAndSet(currentContainer, newContainer)) {
-                    logger.fine("Replaced " + currentContainer + " with " + newContainer);
+                    logger.info("Replaced " + currentContainer + " with " + newContainer);
                     return true;
                 }
             } else {
