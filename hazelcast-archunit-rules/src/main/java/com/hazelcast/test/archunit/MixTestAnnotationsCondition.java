@@ -30,9 +30,14 @@ import java.lang.annotation.Annotation;
 import java.util.Set;
 
 public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
-    private final Set<Class<? extends Annotation>> junit4AnnotationClasses = Set.of(Test.class, Before.class,
-            After.class, BeforeClass.class, AfterClass.class);
-    private final Set<Class<? extends Annotation>> junit5AnnotationClasses = Set.of(org.junit.jupiter.api.Test.class,
+    private static final Set<Class<? extends Annotation>> junit4AnnotationClasses = Set.of(
+            Test.class,
+            Before.class,
+            After.class,
+            BeforeClass.class,
+            AfterClass.class);
+    private static final Set<Class<? extends Annotation>> junit5AnnotationClasses = Set.of(
+            org.junit.jupiter.api.Test.class,
             org.junit.jupiter.api.BeforeEach.class,
             org.junit.jupiter.api.AfterEach.class,
             org.junit.jupiter.api.BeforeAll.class,
