@@ -22,8 +22,9 @@ which becomes noticeable in very small batch jobs and/or large clusters.
 ## Terminology
 
 - Member pruning - prevent cluster members which to not own requested data from being involved in job execution
-- Processor pruning - eliminate redundant stage processor creation
-- Scan partition pruning - extract partition condition and select only required partition to be read by scanning processors (`ReadMapOrCacheP`, `MapIndexScanP`)
+- Processor pruning - eliminate redundant stage processors creation.
+- Scan partition pruning - extract partition condition and select only required partition to be read
+  by scanning processor meta suppliers (`SpecificPartitionsImapReaderPms` which spawns `ReadMapOrCacheP`).
 
 ## Goals
 
@@ -93,23 +94,24 @@ and final destination point `Aggregate`. Moreover, it is a good example for furt
 
 #### Solution design details
 
-There are two different approaches were considered, which differ from each other
+There are three different approaches were considered, which differ from each other
 in the stage that we understand that some member may be pruned from job execution.
-The _generic_ approach tries to define the default behavior and applicable to DAGs from any source (SQL/Jet),
-whereas the _SQL-oriented_ approach focuses on hinting `ExecutionPlanBuilder` with
-additional meta-information from `JobConfig` and DAG constructed by SQL optimizer.
+The _generic_ approach tries to define the default behavior and applicable to DAGs
+from any source (SQL/Jet), whereas the _SQL-oriented_ approach focuses on hinting
+`ExecutionPlanBuilder` with additional meta-information from `JobConfig` and DAG
+constructed by SQL optimizer. The third, _mixed_ approach suggests to use the
+_SQL-oriented_ approach idea, but also analyze DAG to seek additional meta-information
+to unlock support of operations that requires partitioning edges, like joins or aggregations.
 
 ##### Generic approach
 
-The core idea here is that `ExecutionPlanBuilder` would perfrom a detailed analysis of the received DAG and possibly
-try to optimize it before creating execution plans. The requirements to prune a member are:
+The core idea here is that `ExecutionPlanBuilder` would perform a detailed analysis
+of the received DAG and possibly try to optimize it before creating execution plans.
+The only requirement to prune a member is that source(s) have defined partitioning attribute strategy.
 
-- each vertex in the DAG may work without an input;
-- DAG does not contain `distributed-broadcast` edges;
-
-This approach generifies member pruning for SQL, Pipeline API and any connector.
-However, it brings high complexity in problem analysis, long development time
-and big list of corner cases, which are discussed in the chapter below.
+This approach generifies member pruning for both SQL and Pipeline API, for any connector. However,
+it brings high complexity in problem analysis, long development time and big list of corner cases,
+which are discussed in the chapter below.
 
 ##### SQL-oriented approach
 
@@ -120,6 +122,35 @@ for partitioned data querying. For that, we will use SQL optimization phase also
 partitions and for all relations. Then, we extract required partitions set to run to `JobConfig`
 baked by `__sql.requiredPartitions` argument. This indicates that `ExecutionPlanBuilder` will
 try to choose only the required members.
+
+##### Mixed approach
+
+In addition to SQL-oriented approach, described above, we can attach the DAG analysis in
+`ExecutionPlanBuilder` during required members calculation to quickly determine required members to run the job.
+We are interested on it for two cases:
+
+- support `allToOne` edge : all edges are directed to one member and partitioned by single key.
+  These partitions and members (if multiple) are also a subjects to be included into the DAG result.
+  Main motivation here is that most of the queries highly likely will have `allToOne` to forward
+  scanned data to the coordinator, and we want to calculate it in proper place to include the coordinator
+  and include appropriate partition in the job.
+
+- general `partitioned` edge support to unlock support of operations like aggregations. DAG analysis result
+  will include boolean flag, which determines if we need preserve all partitions in the cluster.
+
+Based on described above, the result of DAG analysis may influence on partitions assignment: if DAG has
+`distributed-partitioned` edge, non-used partitions will be assigned to all required members to run the job.
+The reader may think that it would make performance worse, but mixed member pruning is coupled with
+scan processors partition pruning, which closes this potential performance gap for `partitioned` edge case.
+
+Overall, the algorithm looks like:
+
+1. If we don't receive required partitions, just assign partitions to all members in cluster.
+2. If we have received, perform DAG analysis.
+3. Find all members that are owners of partitions with data required for the job (`dataPartitions`).
+4. Add members that have explicit routing (`Edge.distributeTo`) if not yet added. Members found after
+   this step are all members that are needed to execute the job (`required members`).
+5. Assign additional partitions, which do not store data but are needed for (mainly routing) reasons to required members.
 
 ### Scan partition pruning
 
@@ -190,15 +221,7 @@ namely scan and flatmap nodes.
 
 #### Solution design details
 
-##### Intra-member processor pruning
-
-To control processor creation and parallelism within one member, we would like to use various processor suppliers
-(`ProcessorMetaSupplier` or `ProcessorSupplier`). The correctness of this method will totally rely on how DAG is constructed.
-Since Partition Pruning initiative was introduced to align PredicateAPI and SQL functionality and performance, we will
-rely on SQL optimizer input and DAG construction phase in `CreateDagVisitor`.
-This approach was tried, but it was **rejected** due to **small performance difference for increased code complexity**.
-
-##### Inter-member processor pruning
+##### Intra-member && Inter-member processor pruning
 
 We decided NOT to support this kind of processor pruning, because it
 
@@ -206,8 +229,12 @@ We decided NOT to support this kind of processor pruning, because it
 - is hard to implement for most use cases, and
 - doesn't fit the goal of general effort.
 
+Also, its worth mentioning, that `DagNodeUtil` effectively implements inter-member processor pruning,
+but it doesn't rely on partition pruning meta-information.
+
 ## Final scope
 
-We decided to implement **SQL-oriented** approach for member pruning and Scan processor partition pruning.
+Firstly, we decided to implement only SQL-oriented approach, but after a couple of iterations,
+we switched to the **Mixed** approach for member pruning and scan processor partition pruning.
 
-Processor pruning was considered as non-universal, complex and  **rejected**.
+Processor pruning was considered as non-universal, complex and was **rejected**.

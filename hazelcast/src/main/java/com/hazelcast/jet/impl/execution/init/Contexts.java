@@ -226,7 +226,12 @@ public final class Contexts {
         }
     }
 
-    public static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context {
+    public interface InternalProcSupplierCtx {
+        @Nonnull
+        InternalSerializationService serializationService();
+    }
+
+    public static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context, InternalProcSupplierCtx {
 
         private final int memberIndex;
         private final ConcurrentHashMap<String, File> tempDirectories;
@@ -355,6 +360,7 @@ public final class Contexts {
             return serializationService.getManagedContext();
         }
 
+        @Override
         @Nonnull
         public InternalSerializationService serializationService() {
             return serializationService;

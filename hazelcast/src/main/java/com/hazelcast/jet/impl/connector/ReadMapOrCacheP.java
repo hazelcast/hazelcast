@@ -45,7 +45,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
+import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.iterator.AbstractCursor;
@@ -342,9 +342,9 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Override
         public void init(@Nonnull Context context) {
             hzInstance = context.hazelcastInstance();
-            serializationService = ((ProcSupplierCtx) context).serializationService();
+            serializationService = ((Contexts.InternalProcSupplierCtx) context).serializationService();
             if (partitionsToScan == null) {
-                partitionsToScan = context.partitionAssignment().get(hzInstance.getCluster().getLocalMember().getAddress());
+                partitionsToScan = context.memberPartitions();
             }
         }
 
@@ -386,6 +386,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Override
         public int getClassId() {
             return JetDataSerializerHook.READ_MAP_OR_CACHE_P_LOCAL_PROCESSOR_SUPPLIER;
+        }
+
+        // visible for tests
+        public int[] getPartitionsToScan() {
+            return partitionsToScan;
         }
     }
 

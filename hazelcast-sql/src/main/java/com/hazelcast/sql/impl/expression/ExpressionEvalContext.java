@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.ProcessorMetaSupplier.Context;
+import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -43,7 +44,16 @@ public interface ExpressionEvalContext {
                     requireNonNull(arguments),
                     ((Contexts.ProcSupplierCtx) ctx).serializationService(),
                     ((Contexts.ProcSupplierCtx) ctx).nodeEngine());
+        } else if (ctx instanceof Contexts.MetaSupplierCtx) {
+            // Note that additional serializers configured for the job are not available in PMS.
+            // Currently this is not needed.
+            return new ExpressionEvalContextImpl(
+                    arguments != null ? arguments : List.of(),
+                    (InternalSerializationService) ((Contexts.MetaSupplierCtx) ctx).nodeEngine().getSerializationService(),
+                    ((Contexts.MetaSupplierCtx) ctx).nodeEngine());
         } else {
+            // Path intended for test code
+            assert ctx instanceof TestProcessorMetaSupplierContext;
             if (arguments == null) {
                 arguments = new ArrayList<>();
             }

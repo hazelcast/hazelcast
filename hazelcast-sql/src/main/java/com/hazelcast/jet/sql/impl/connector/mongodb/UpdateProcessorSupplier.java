@@ -22,6 +22,9 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.impl.UpdateMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -37,6 +40,7 @@ import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.io.Serializable;
 import java.security.Permission;
 import java.util.ArrayList;
@@ -57,22 +61,27 @@ import static java.util.Objects.requireNonNull;
  * ProcessorSupplier that creates {@linkplain WriteMongoP} processors on each instance,
  *  that will update given items.
  */
-public class UpdateProcessorSupplier implements ProcessorSupplier {
+public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
-    private final String connectionString;
-    private final String databaseName;
-    private final String collectionName;
-    private final List<String> updatedFieldNames;
-    private final List<? extends Serializable> updates;
-    private final String dataConnectionName;
-    private final String[] externalNames;
-    private final boolean afterScan;
+    private String connectionString;
+    private String databaseName;
+    private String collectionName;
+    private String[] updatedFieldNames;
+    private List<? extends Serializable> updates;
+    private String dataConnectionName;
+    private String[] externalNames;
+    private boolean afterScan;
     private ExpressionEvalContext evalContext;
     private transient SupplierEx<MongoClient> clientSupplier;
-    private final String pkExternalName;
-    private final Serializable predicate;
+    private String pkExternalName;
+    private Serializable predicate;
 
-    UpdateProcessorSupplier(MongoTable table, List<String> updatedFieldNames,
+    @SuppressWarnings("unused")
+    public UpdateProcessorSupplier() {
+    }
+
+    UpdateProcessorSupplier(MongoTable table,
+                            @Nonnull String[] updatedFieldNames,
                             List<? extends Serializable> updates,
                             Serializable predicate,
                             boolean hasInput) {
@@ -186,8 +195,8 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         Object pkValue = values[0];
 
         List<Bson> updateToPerform = new ArrayList<>();
-        for (int i = 0; i < updatedFieldNames.size(); i++) {
-            String fieldName = updatedFieldNames.get(i);
+        for (int i = 0; i < updatedFieldNames.length; i++) {
+            String fieldName = updatedFieldNames[i];
             Object updateExpr = updates.get(i);
             if (updateExpr instanceof Bson) {
                 Document document = Document.parse(((Bson) updateExpr)
@@ -208,5 +217,33 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         Bson filter = Filters.eq(pkExternalName, pkValue);
         return new Document("filter", filter)
                 .append("update", updateToPerform);
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(connectionString);
+        out.writeString(databaseName);
+        out.writeString(collectionName);
+        out.writeStringArray(updatedFieldNames);
+        out.writeObject(updates);
+        out.writeString(dataConnectionName);
+        out.writeStringArray(externalNames);
+        out.writeBoolean(afterScan);
+        out.writeString(pkExternalName);
+        out.writeObject(predicate);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        connectionString = in.readString();
+        databaseName = in.readString();
+        collectionName = in.readString();
+        updatedFieldNames = in.readStringArray();
+        updates = in.readObject();
+        dataConnectionName = in.readString();
+        externalNames = in.readStringArray();
+        afterScan = in.readBoolean();
+        pkExternalName = in.readString();
+        predicate = in.readObject();
     }
 }
