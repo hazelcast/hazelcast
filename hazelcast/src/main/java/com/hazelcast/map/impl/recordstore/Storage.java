@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.operation.steps.engine.Step;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -46,11 +47,16 @@ public interface Storage<K, R> {
     }
 
     /**
-     * Injects extra step for an operation which
-     * is modeled as a sequence of {@link Step}
-     * @return new step to be injected before an operation is finalized.
+     * Appends extra steps to the head of an operation's
+     * existing step chain in the provided order.
+     * <p>
+     * So after append, your 1st step from this new list
+     * will be the first step of the existing step chain,
+     * 2nd will be the 2nd and so on.
+     *
+     * @return list of steps to be appended to head of existing step chain
      */
-    default Step newInjectedStep() {
+    default List<Step> headSteps() {
         return null;
     }
 
@@ -60,9 +66,10 @@ public interface Storage<K, R> {
      * Updates record's value. Performs an update in-place if the record can accommodate the
      * new value (applicable for the inlined records only). Otherwise, creates a new record
      * with the new value.
-     * @param key the entry's key
+     *
+     * @param key    the entry's key
      * @param record the record
-     * @param value the new value
+     * @param value  the new value
      * @return the record that contains new value.
      */
     R updateRecordValue(K key, R record, Object value);

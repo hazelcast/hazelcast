@@ -92,7 +92,7 @@
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.2</avro.version>
         <aws.sdk.version>1.12.531</aws.sdk.version>
-        <calcite.version>1.32.0</calcite.version>
+        <calcite.version>1.35.0</calcite.version>
         <classgraph.version>4.8.162</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
@@ -404,7 +404,7 @@
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
                     <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
-                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                 </configuration>
             </plugin>
 
@@ -430,7 +430,7 @@
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
                     <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
-                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                 </configuration>
                 <executions>
                     <execution>
@@ -558,7 +558,9 @@
                             <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
                             <failOnBlacklist>true</failOnBlacklist>
                             <failOnMissing>true</failOnMissing>
-                            <fileTemplate>${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl</fileTemplate>
+                            <fileTemplate>
+                                ${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl
+                            </fileTemplate>
                             <includedLicenses>
                                 <!-- 
                                   Always use SPDX license identifiers listed in https://spdx.org/licenses (when available)
@@ -828,7 +830,8 @@
                             <exclusionPattern>per-property override</exclusionPattern>
                             <exclusionPattern>^copyright notice</exclusionPattern>
                             <exclusionPattern>FAILED_PRECONDITION</exclusionPattern>
-                            <exclusionPattern>The ASF licenses this file to you under the Apache License</exclusionPattern>
+                            <exclusionPattern>The ASF licenses this file to you under the Apache License
+                            </exclusionPattern>
                             <exclusionPattern>Substitute for l, l</exclusionPattern>
                             <exclusionPattern>inside edge crossings that are between</exclusionPattern>
                         </exclusionPatterns>
@@ -1843,6 +1846,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
                 <version>1.23.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-math3</artifactId>
+                <version>3.6.1</version>
             </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
