@@ -30,13 +30,13 @@ import java.lang.annotation.Annotation;
 import java.util.Set;
 
 public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
-    private static final Set<Class<? extends Annotation>> junit4AnnotationClasses = Set.of(
+    private static final Set<Class<? extends Annotation>> JUNIT_4_ANNOTATION_CLASSES = Set.of(
             Test.class,
             Before.class,
             After.class,
             BeforeClass.class,
             AfterClass.class);
-    private static final Set<Class<? extends Annotation>> junit5AnnotationClasses = Set.of(
+    private static final Set<Class<? extends Annotation>> JUNIT_5_ANNOTATION_CLASSES = Set.of(
             org.junit.jupiter.api.Test.class,
             org.junit.jupiter.api.BeforeEach.class,
             org.junit.jupiter.api.AfterEach.class,
@@ -52,11 +52,11 @@ public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
     @Override
     public void check(JavaClass item, ConditionEvents events) {
         boolean hasJUnit4Annotation = item.getMethods().stream()
-                .anyMatch(method -> junit4AnnotationClasses.stream()
+                .anyMatch(method -> JUNIT_4_ANNOTATION_CLASSES.stream()
                         .anyMatch(method::isAnnotatedWith));
 
         boolean hasJUnit5Annotation = item.getMethods().stream()
-                .anyMatch(method -> junit5AnnotationClasses.stream()
+                .anyMatch(method -> JUNIT_5_ANNOTATION_CLASSES.stream()
                         .anyMatch(method::isAnnotatedWith));
 
         if (hasJUnit4Annotation && hasJUnit5Annotation) {
