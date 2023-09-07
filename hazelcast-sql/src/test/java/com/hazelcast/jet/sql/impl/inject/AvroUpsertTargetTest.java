@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.OBJECT_SCHEMA;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,19 +43,19 @@ public class AvroUpsertTargetTest {
         Schema schema = SchemaBuilder.record("name")
                 .fields()
                 .name("null").type().nullType().nullDefault()
-                .name("string").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
-                .name("boolean").type().unionOf().nullType().and().booleanType().endUnion().nullDefault()
-                .name("byte").type().unionOf().nullType().and().intType().endUnion().nullDefault()
-                .name("short").type().unionOf().nullType().and().intType().endUnion().nullDefault()
-                .name("int").type().unionOf().nullType().and().intType().endUnion().nullDefault()
-                .name("long").type().unionOf().nullType().and().longType().endUnion().nullDefault()
-                .name("float").type().unionOf().nullType().and().floatType().endUnion().nullDefault()
-                .name("double").type().unionOf().nullType().and().doubleType().endUnion().nullDefault()
-                .name("decimal").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
-                .name("time").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
-                .name("date").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
-                .name("timestamp").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
-                .name("timestampTz").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
+                .optionalString("string")
+                .optionalBoolean("boolean")
+                .optionalInt("byte")
+                .optionalInt("short")
+                .optionalInt("int")
+                .optionalLong("long")
+                .optionalFloat("float")
+                .optionalDouble("double")
+                .optionalString("decimal")
+                .optionalString("time")
+                .optionalString("date")
+                .optionalString("timestamp")
+                .optionalString("timestampTz")
                 .endRecord();
 
         UpsertTarget target = new AvroUpsertTarget(schema);
@@ -133,20 +134,9 @@ public class AvroUpsertTargetTest {
     @Test
     @Parameters(method = "values")
     public void when_typeIsObject_then_allValuesAreAllowed(Object value, Object expected) {
-        Schema schema = SchemaBuilder.record("name")
-                                     .fields()
-                                     .name("object").type()
-                                     .unionOf()
-                                     .nullType()
-                                     .and().booleanType()
-                                     .and().intType()
-                                     .and().longType()
-                                     .and().floatType()
-                                     .and().doubleType()
-                                     .and().stringType()
-                                     .endUnion().nullDefault()
-                                     .endRecord();
-
+        Schema schema = SchemaBuilder.record("name").fields()
+                .name("object").type(OBJECT_SCHEMA).withDefault(null)
+                .endRecord();
         UpsertTarget target = new AvroUpsertTarget(schema);
         UpsertInjector injector = target.createInjector("object", QueryDataType.OBJECT);
 
