@@ -611,7 +611,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 futures.add(future.handleAsync((response, throwable) -> {
                             if (throwable == null) {
                                 if (!Boolean.TRUE.equals(response)) {
-                                    logger.fine(member + " has a stale partition state. Will send the most recent partition state now.");
+                                    logger.fine(member + " has a stale partition state. Will send the most recent "
+                                            + "partition state now.");
                                     return sendPartitionRuntimeState(member.getAddress());
                                 }
                                 return CompletableFuture.completedFuture(true);
