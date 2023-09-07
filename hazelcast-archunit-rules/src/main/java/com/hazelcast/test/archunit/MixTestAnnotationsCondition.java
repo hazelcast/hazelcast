@@ -30,10 +30,6 @@ import java.lang.annotation.Annotation;
 import java.util.Set;
 
 public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
-    public MixTestAnnotationsCondition() {
-        super("Do not mix Junit4 and Junit5 annotations");
-    }
-
     private final Set<Class<? extends Annotation>> junit4AnnotationClasses = Set.of(Test.class, Before.class,
             After.class, BeforeClass.class, AfterClass.class);
     private final Set<Class<? extends Annotation>> junit5AnnotationClasses = Set.of(org.junit.jupiter.api.Test.class,
@@ -42,6 +38,11 @@ public class MixTestAnnotationsCondition extends ArchCondition<JavaClass> {
             org.junit.jupiter.api.BeforeAll.class,
             org.junit.jupiter.api.AfterAll.class
     );
+
+    public MixTestAnnotationsCondition() {
+        super("Do not mix Junit4 and Junit5 annotations");
+    }
+
 
     @Override
     public void check(JavaClass item, ConditionEvents events) {
