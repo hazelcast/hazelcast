@@ -18,6 +18,8 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 
+import java.util.List;
+
 /**
  * Interface for a storage-backend (e.g. B+tree or a record store)
  * that supports Steps infrastructure and injects Steps on IMap operation.
@@ -25,10 +27,15 @@ import com.hazelcast.map.impl.operation.steps.engine.Step;
 public interface StepAwareStorage {
 
     /**
-     * Injects extra step for an operation which
-     * is modeled as a sequence of {@link Step}
-     * @return new step to be injected before an operation is finalized.
+     * Appends extra steps to the head of an operation's
+     * existing step chain in the provided order.
+     * <p>
+     * So after append, your 1st step from this new list
+     * will be the first step of the existing step chain,
+     * 2nd will be the 2nd and so on.
+     *
+     * @return list of steps to be appended to head of existing step chain
      */
-    Step newInjectedStep();
+    List<Step> headSteps();
 
 }
