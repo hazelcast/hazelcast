@@ -75,9 +75,16 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         double leftRowCount = mq.getRowCount(getLeft());
         double rightRowCount = mq.getRowCount(getRight());
+
+        Double selectivity = mq.getSelectivity(this, condition);
+        if (selectivity == null) {
+            selectivity = 1.;
+        }
+
         // TODO: introduce selectivity estimator, but ATM we taking the worst case scenario : selectivity = 1.0.
-        double producedRowCount = leftRowCount * /* TODO: selectivity */ rightRowCount;
-        double cpu = leftRowCount * Cost.HASH_JOIN_MULTIPLIER + rightRowCount * Cost.JOIN_ROW_CMP_MULTIPLIER;
+        double producedRowCount = mq.getRowCount(this);
+        double cpu = leftRowCount * Cost.HASH_JOIN_MULTIPLIER
+                + rightRowCount * selectivity * Cost.JOIN_ROW_CMP_MULTIPLIER;
 
         return planner.getCostFactory().makeCost(producedRowCount, cpu, 0.);
     }

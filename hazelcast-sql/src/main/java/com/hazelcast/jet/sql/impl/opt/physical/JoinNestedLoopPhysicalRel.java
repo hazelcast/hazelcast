@@ -119,7 +119,7 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
      * <p>
      * Nested Loop Join algorithm is a simple join algorithm, where for each left row we are
      * traversing the whole right row set. Cost estimation is the following: <ol>
-     * <li> Produced row count is L * R assuming the join selectivity is 1.
+     * <li> Produced row count is L + R assuming the join selectivity is 1.
      * <li> Processed row count is L * R because for each left row we are probing full right row set.
      * <li> CPU is L * R * (row comparison cost). </ol>
      * <p>
@@ -140,11 +140,17 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
             return planner.getCostFactory().makeInfiniteCost();
         }
 
-        // TODO: introduce selectivity estimator, but ATM we taking the worst case scenario : selectivity = 1.0.
-        double rowsEstimate = leftRowCount * /* TODO: selectivity */ rightRowCount;
-        double cpuEstimate = Math.max(1.0, rowsEstimate - 1) * Cost.JOIN_ROW_CMP_MULTIPLIER;
+        Double selectivity = mq.getSelectivity(this, condition);
+        if (selectivity == null) {
+            selectivity = 1.;
+        }
 
-        return planner.getCostFactory().makeCost(rowsEstimate, cpuEstimate, 0);
+        // TODO: introduce selectivity estimator, but ATM we taking the worst case scenario : selectivity = 1.0.
+        double producedRows = mq.getRowCount(this);
+        double processedRowsEstimate = leftRowCount * selectivity * rightRowCount;
+        double cpuEstimate = Math.max(1.0, processedRowsEstimate - 1) * Cost.JOIN_ROW_CMP_MULTIPLIER;
+
+        return planner.getCostFactory().makeCost(producedRows, cpuEstimate, 0);
     }
 
     @Override
