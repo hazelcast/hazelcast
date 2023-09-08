@@ -66,7 +66,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nio.IOUtil.toByteArray;
-import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -168,9 +167,9 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         //the definition loaded by the child classloader -> it only delegates to the parent -> it's a duplicated
         ServiceLoader.ServiceDefinition definition2 = new ServiceLoader.ServiceDefinition(hook.getName(), childClassloader);
 
-        Set<ServiceLoader.ServiceDefinition> definitions = setOf(definition1, definition2);
+        Set<ServiceLoader.ServiceDefinition> definitions = Set.of(definition1, definition2);
         ServiceLoader.ClassIterator<PortableHook> iterator
-                = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+                = new ServiceLoader.ClassIterator<>(definitions, PortableHook.class);
 
         assertTrue(iterator.hasNext());
         Class<PortableHook> hookFromIterator = iterator.next();
@@ -189,7 +188,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition(otherHook.getName(), otherClassloader);
         Set<ServiceLoader.ServiceDefinition> definitions = singleton(definition);
         ServiceLoader.ClassIterator<PortableHook> iterator
-                = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+                = new ServiceLoader.ClassIterator<>(definitions, PortableHook.class);
 
         assertFalse(iterator.hasNext());
     }
@@ -205,7 +204,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition(otherHook.getName(), otherClassloader);
         Set<ServiceLoader.ServiceDefinition> definitions = singleton(definition);
         ServiceLoader.ClassIterator<PortableHook> iterator
-                = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+                = new ServiceLoader.ClassIterator<>(definitions, PortableHook.class);
 
         assertFalse(iterator.hasNext());
     }
@@ -216,7 +215,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
                 = new ServiceLoader.ServiceDefinition("com.hazelcast.DoesNotExist", getClass().getClassLoader());
         Set<ServiceLoader.ServiceDefinition> definitions = singleton(definition);
         ServiceLoader.ClassIterator<PortableHook> iterator
-                = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+                = new ServiceLoader.ClassIterator<>(definitions, PortableHook.class);
 
         assertFalse(iterator.hasNext());
     }
@@ -227,7 +226,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
                 = new ServiceLoader.ServiceDefinition("non.a.hazelcast.DoesNotExist", getClass().getClassLoader());
         Set<ServiceLoader.ServiceDefinition> definitions = singleton(definition);
         ServiceLoader.ClassIterator<PortableHook> iterator
-                = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+                = new ServiceLoader.ClassIterator<>(definitions, PortableHook.class);
         assertFalse(iterator.hasNext());
     }
 
@@ -245,7 +244,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ServiceLoader.ServiceDefinition definition2
                 = new ServiceLoader.ServiceDefinition(SpiDataSerializerHook.class.getName(), SpiDataSerializerHook.class.getClassLoader());
 
-        Set<ServiceLoader.ServiceDefinition> definitions = setOf(definition1, definition2);
+        Set<ServiceLoader.ServiceDefinition> definitions = Set.of(definition1, definition2);
         ServiceLoader.ClassIterator<DataSerializerHook> iterator
                 = new ServiceLoader.ClassIterator<>(definitions, DataSerializerHook.class);
 
@@ -262,9 +261,9 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition(hookName, classLoader);
 
         ServiceLoader.ClassIterator<PortableHook> classIterator
-                = new ServiceLoader.ClassIterator<PortableHook>(singleton(definition), PortableHook.class);
+                = new ServiceLoader.ClassIterator<>(singleton(definition), PortableHook.class);
         ServiceLoader.NewInstanceIterator<PortableHook> instanceIterator
-                = new ServiceLoader.NewInstanceIterator<PortableHook>(classIterator);
+                = new ServiceLoader.NewInstanceIterator<>(classIterator);
 
         assertTrue(instanceIterator.hasNext());
         DummyPrivatePortableHook hook = (DummyPrivatePortableHook) instanceIterator.next();
@@ -278,9 +277,9 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition(hookName, classLoader);
 
         ServiceLoader.ClassIterator<SerializerHook> classIterator
-                = new ServiceLoader.ClassIterator<SerializerHook>(singleton(definition), SerializerHook.class);
+                = new ServiceLoader.ClassIterator<>(singleton(definition), SerializerHook.class);
         ServiceLoader.NewInstanceIterator<SerializerHook> instanceIterator
-                = new ServiceLoader.NewInstanceIterator<SerializerHook>(classIterator);
+                = new ServiceLoader.NewInstanceIterator<>(classIterator);
 
         assertTrue(instanceIterator.hasNext());
         DummyPrivateSerializerHook hook = (DummyPrivateSerializerHook) instanceIterator.next();
@@ -357,7 +356,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
 
-        Set<ServiceLoaderTestInterface> implementations = new HashSet<ServiceLoaderTestInterface>();
+        Set<ServiceLoaderTestInterface> implementations = new HashSet<>();
         Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, null);
         while (iterator.hasNext()) {
             implementations.add(iterator.next());
@@ -373,7 +372,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
 
         ClassLoader given = new URLClassLoader(new URL[0]);
 
-        Set<ServiceLoaderTestInterface> implementations = new HashSet<ServiceLoaderTestInterface>();
+        Set<ServiceLoaderTestInterface> implementations = new HashSet<>();
         Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
         while (iterator.hasNext()) {
             implementations.add(iterator.next());
@@ -391,7 +390,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ClassLoader tccl = current.getContextClassLoader();
         current.setContextClassLoader(new URLClassLoader(new URL[0]));
 
-        Set<ServiceLoaderTestInterface> implementations = new HashSet<ServiceLoaderTestInterface>();
+        Set<ServiceLoaderTestInterface> implementations = new HashSet<>();
         Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, null);
         while (iterator.hasNext()) {
             implementations.add(iterator.next());
@@ -412,7 +411,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ClassLoader tccl = current.getContextClassLoader();
         current.setContextClassLoader(new URLClassLoader(new URL[0]));
 
-        Set<ServiceLoaderTestInterface> implementations = new HashSet<ServiceLoaderTestInterface>();
+        Set<ServiceLoaderTestInterface> implementations = new HashSet<>();
         Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
         while (iterator.hasNext()) {
             implementations.add(iterator.next());
@@ -433,7 +432,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ClassLoader tccl = current.getContextClassLoader();
         current.setContextClassLoader(same);
 
-        Set<ServiceLoaderTestInterface> implementations = new HashSet<ServiceLoaderTestInterface>();
+        Set<ServiceLoaderTestInterface> implementations = new HashSet<>();
         Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, same);
         while (iterator.hasNext()) {
             implementations.add(iterator.next());
@@ -451,7 +450,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         URL url = ClassLoader.getSystemResource("test with special chars^/");
         ClassLoader given = new URLClassLoader(new URL[]{url});
 
-        Set<ServiceLoaderSpecialCharsTestInterface> implementations = new HashSet<ServiceLoaderSpecialCharsTestInterface>();
+        Set<ServiceLoaderSpecialCharsTestInterface> implementations = new HashSet<>();
         Iterator<ServiceLoaderSpecialCharsTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
         while (iterator.hasNext()) {
             implementations.add(iterator.next());
@@ -469,7 +468,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         // Handles META-INF/services/com.hazelcast.CustomServiceLoaderTestInterface
         ClassLoader given = new CustomUrlStreamHandlerClassloader(parent);
 
-        Set<ServiceLoaderTestInterface> implementations = new HashSet<ServiceLoaderTestInterface>();
+        Set<ServiceLoaderTestInterface> implementations = new HashSet<>();
         Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
         while (iterator.hasNext()) {
             implementations.add(iterator.next());
