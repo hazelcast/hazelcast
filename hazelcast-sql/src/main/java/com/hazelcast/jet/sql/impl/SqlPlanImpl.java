@@ -1058,6 +1058,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final boolean isStreaming;
         private final SqlRowMetadata rowMetadata;
         private final PlanExecutor planExecutor;
+        private final SqlSecurityContext ssc;
         private final List<Permission> permissions;
         // map of per-table partition pruning candidates, structured as
         // mapName -> { columnName -> RexLiteralOrDynamicParam }
@@ -1073,6 +1074,7 @@ abstract class SqlPlanImpl extends SqlPlan {
                 boolean isStreaming,
                 SqlRowMetadata rowMetadata,
                 PlanExecutor planExecutor,
+                SqlSecurityContext securityContext,
                 List<Permission> permissions,
                 Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates) {
             super(planKey);
@@ -1084,6 +1086,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.isStreaming = isStreaming;
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
+            this.ssc = securityContext;
             this.permissions = permissions;
             this.partitionStrategyCandidates = partitionStrategyCandidates;
         }
@@ -1135,7 +1138,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            return planExecutor.execute(this, queryId, arguments, timeout);
+            return planExecutor.execute(this, queryId, arguments, timeout, ssc);
         }
     }
 

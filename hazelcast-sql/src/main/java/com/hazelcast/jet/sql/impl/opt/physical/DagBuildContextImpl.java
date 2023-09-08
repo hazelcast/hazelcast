@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
 
@@ -40,19 +39,16 @@ public class DagBuildContextImpl implements DagBuildContext {
     private final NodeEngine nodeEngine;
     private final DAG dag;
     private final QueryParameterMetadata parameterMetadata;
-    private final SqlSecurityContext securityContext;
     private Table table;
     private PhysicalRel rel;
 
     public DagBuildContextImpl(
             NodeEngine nodeEngine,
             DAG dag,
-            QueryParameterMetadata parameterMetadata,
-            @Nonnull SqlSecurityContext securityContext) {
+            QueryParameterMetadata parameterMetadata) {
         this.nodeEngine = requireNonNull(nodeEngine);
         this.dag = requireNonNull(dag);
         this.parameterMetadata = parameterMetadata;
-        this.securityContext = securityContext;
     }
 
     @Nonnull
@@ -115,7 +111,7 @@ public class DagBuildContextImpl implements DagBuildContext {
         } else {
             schema = ((PhysicalRel) rel.getInput(0)).schema(parameterMetadata);
         }
-        return OptUtils.createRexToExpressionVisitor(schema, parameterMetadata, securityContext);
+        return OptUtils.createRexToExpressionVisitor(schema, parameterMetadata);
     }
 
     public QueryParameterMetadata getParameterMetadata() {

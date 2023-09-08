@@ -118,7 +118,6 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Contexts;
@@ -655,7 +654,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     physicalRel,
                     parameterMetadata,
                     context.getUsedViews(),
-                    context.getSecurityContext(),
                     null);
             return new DmlPlan(
                     Operation.UPDATE,
@@ -687,7 +685,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     physicalRel,
                     parameterMetadata,
                     context.getUsedViews(),
-                    context.getSecurityContext(),
                     null);
             return new DmlPlan(
                     operation,
@@ -706,7 +703,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     physicalRel,
                     parameterMetadata,
                     context.getUsedViews(),
-                    context.getSecurityContext(),
                     null);
             return new DmlPlan(
                     Operation.DELETE,
@@ -724,7 +720,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     new RootRel(physicalRel),
                     parameterMetadata,
                     context.getUsedViews(),
-                    context.getSecurityContext(),
                     partitionStrategyCandidates(physicalRel, parameterMetadata));
 
             SqlRowMetadata rowMetadata = createRowMetadata(
@@ -741,6 +736,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     OptUtils.isUnbounded(physicalRel),
                     rowMetadata,
                     planExecutor,
+                    context.getSecurityContext(),
                     permissions,
                     partitionStrategyCandidates(physicalRel, parameterMetadata)
             );
@@ -916,7 +912,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             PhysicalRel physicalRel,
             QueryParameterMetadata parameterMetadata,
             Set<PlanObjectKey> usedViews,
-            @Nonnull SqlSecurityContext ssc,
             @Nullable Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates) {
         String exceptionMessage = new ExecutionStopperFinder(physicalRel).find();
         if (exceptionMessage != null) {
@@ -932,7 +927,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 parameterMetadata,
                 wmKeysAssigner,
                 usedViews,
-                ssc,
                 partitionStrategyCandidates);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();

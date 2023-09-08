@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -35,15 +37,28 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     private final List<Object> arguments;
     private final transient InternalSerializationService serializationService;
     private final transient NodeEngine nodeEngine;
+    private final transient SqlSecurityContext securityContext;
 
     public ExpressionEvalContextImpl(
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
-            @Nonnull NodeEngine nodeEngine
+            @Nonnull NodeEngine nodeEngine) {
+        this.arguments = requireNonNull(arguments);
+        this.serializationService = requireNonNull(serializationService);
+        this.nodeEngine = requireNonNull(nodeEngine);
+        this.securityContext = NoOpSqlSecurityContext.INSTANCE;
+    }
+
+    public ExpressionEvalContextImpl(
+            @Nonnull List<Object> arguments,
+            @Nonnull InternalSerializationService serializationService,
+            @Nonnull NodeEngine nodeEngine,
+            @Nonnull SqlSecurityContext securityContext
     ) {
         this.arguments = requireNonNull(arguments);
         this.serializationService = requireNonNull(serializationService);
         this.nodeEngine = requireNonNull(nodeEngine);
+        this.securityContext = securityContext;
     }
 
     /**
@@ -73,5 +88,12 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
      */
     public NodeEngine getNodeEngine() {
         return nodeEngine;
+    }
+
+    /**
+     * @return sql security context
+     */
+    public SqlSecurityContext getSecurityContext() {
+        return securityContext;
     }
 }

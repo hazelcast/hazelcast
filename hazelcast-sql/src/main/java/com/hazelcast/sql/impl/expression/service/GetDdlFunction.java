@@ -19,8 +19,6 @@ package com.hazelcast.sql.impl.expression.service;
 import com.hazelcast.jet.impl.execution.CooperativeThread;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -33,8 +31,6 @@ import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.io.IOException;
-
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_VIEW_DATACONNECTION;
 import static com.hazelcast.sql.impl.expression.string.StringFunctionUtils.asVarchar;
@@ -43,14 +39,11 @@ public class GetDdlFunction extends TriExpression<String> {
     static final String RELATION_NAMESPACE = "relation";
     static final String DATACONNECTION_NAMESPACE = "dataconnection";
 
-    private SqlSecurityContext securityContext;
-
     public GetDdlFunction() {
     }
 
-    public GetDdlFunction(Expression<?> op1, Expression<?> op2, Expression<?> op3, SqlSecurityContext securityContext) {
+    public GetDdlFunction(Expression<?> op1, Expression<?> op2, Expression<?> op3) {
         super(op1, op2, op3);
-        this.securityContext = securityContext;
     }
 
     @SuppressWarnings("checkstyle:NPathComplexity")
@@ -88,6 +81,7 @@ public class GetDdlFunction extends TriExpression<String> {
             throw QueryException.error("Object '" + objectName + "' does not exist in namespace '" + namespace + "'");
         } else if (obj instanceof SqlCatalogObject) {
             SqlCatalogObject catalogObject = (SqlCatalogObject) obj;
+            SqlSecurityContext securityContext = context.getSecurityContext();
             // TODO: view mapping/view 'view'/view type?
             if (catalogObject instanceof DataConnectionCatalogEntry) {
                 securityContext.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_DATACONNECTION));
@@ -115,18 +109,6 @@ public class GetDdlFunction extends TriExpression<String> {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        super.readData(in);
-        securityContext = in.readObject();
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
-        out.writeObject(securityContext);
-    }
-
-    @Override
     public int getClassId() {
         return JetSqlSerializerHook.EXPRESSION_GET_DDL;
     }
@@ -134,8 +116,7 @@ public class GetDdlFunction extends TriExpression<String> {
     public static GetDdlFunction create(
             Expression<?> namespace,
             Expression<?> objectName,
-            Expression<?> schema,
-            SqlSecurityContext ssc) {
-        return new GetDdlFunction(namespace, objectName, schema, ssc);
+            Expression<?> schema) {
+        return new GetDdlFunction(namespace, objectName, schema);
     }
 }

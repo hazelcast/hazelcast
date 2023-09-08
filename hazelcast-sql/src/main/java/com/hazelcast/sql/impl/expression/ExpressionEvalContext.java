@@ -23,10 +23,13 @@ import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_SECURITY_CONTEXT;
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Objects.requireNonNull;
 
@@ -39,18 +42,22 @@ public interface ExpressionEvalContext {
 
     static ExpressionEvalContext from(Context ctx) {
         List<Object> arguments = ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME);
+        SqlSecurityContext ssc = ctx.jobConfig().getArgument(KEY_SQL_SECURITY_CONTEXT);
+
         if (ctx instanceof Contexts.ProcSupplierCtx) {
             return new ExpressionEvalContextImpl(
                     requireNonNull(arguments),
                     ((Contexts.ProcSupplierCtx) ctx).serializationService(),
-                    ((Contexts.ProcSupplierCtx) ctx).nodeEngine());
+                    ((Contexts.ProcSupplierCtx) ctx).nodeEngine(),
+                    ssc == null ? NoOpSqlSecurityContext.INSTANCE : ssc);
         } else if (ctx instanceof Contexts.MetaSupplierCtx) {
             // Note that additional serializers configured for the job are not available in PMS.
             // Currently this is not needed.
             return new ExpressionEvalContextImpl(
                     arguments != null ? arguments : List.of(),
                     (InternalSerializationService) ((Contexts.MetaSupplierCtx) ctx).nodeEngine().getSerializationService(),
-                    ((Contexts.MetaSupplierCtx) ctx).nodeEngine());
+                    ((Contexts.MetaSupplierCtx) ctx).nodeEngine(),
+                    ssc == null ? NoOpSqlSecurityContext.INSTANCE : ssc);
         } else {
             // Path intended for test code
             assert ctx instanceof TestProcessorMetaSupplierContext;
@@ -60,7 +67,8 @@ public interface ExpressionEvalContext {
             return new ExpressionEvalContextImpl(
                     arguments,
                     new DefaultSerializationServiceBuilder().build(),
-                    Util.getNodeEngine(ctx.hazelcastInstance()));
+                    Util.getNodeEngine(ctx.hazelcastInstance()),
+                    NoOpSqlSecurityContext.INSTANCE);
         }
     }
 
@@ -84,4 +92,9 @@ public interface ExpressionEvalContext {
      * @return node engine
      */
     NodeEngine getNodeEngine();
+
+    /**
+     * @return sql security context
+     */
+    SqlSecurityContext getSecurityContext();
 }

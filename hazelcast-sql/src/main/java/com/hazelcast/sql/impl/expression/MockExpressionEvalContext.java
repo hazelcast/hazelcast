@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.util.List;
 
@@ -47,5 +48,10 @@ public class MockExpressionEvalContext implements ExpressionEvalContext {
     @Override
     public NodeEngine getNodeEngine() {
         throw new UnsupportedOperationException("getNodeEngine operation is not supported for Mock EEC");
+    }
+
+    @Override
+    public SqlSecurityContext getSecurityContext() {
+        throw new UnsupportedOperationException("getSecurityContext operation is not supported for Mock EEC");
     }
 }

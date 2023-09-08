@@ -82,7 +82,6 @@ import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
 import com.hazelcast.sql.impl.expression.string.SubstringFunction;
 import com.hazelcast.sql.impl.expression.string.TrimFunction;
 import com.hazelcast.sql.impl.expression.string.UpperFunction;
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
@@ -199,7 +198,7 @@ public final class RexToExpression {
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:ReturnCount",
             "checkstyle:NPathComplexity", "checkstyle:MagicNumber"})
-    public static Expression<?> convertCall(RexCall call, Expression<?>[] operands, SqlSecurityContext ssc) {
+    public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
         QueryDataType resultType = HazelcastTypeUtils.toHazelcastType(call.getType());
 
@@ -466,7 +465,7 @@ public final class RexToExpression {
                     Expression<?> objectName = operands[1];
                     Expression<?> schema = operands.length > 2 ? operands[2] : null;
 
-                    return GetDdlFunction.create(namespace, objectName, schema, ssc);
+                    return GetDdlFunction.create(namespace, objectName, schema);
                 } else if (function == HazelcastSqlOperatorTable.CONCAT_WS) {
                     return ConcatWSFunction.create(operands);
                 } else if (function == HazelcastSqlOperatorTable.JSON_QUERY) {

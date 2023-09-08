@@ -84,8 +84,7 @@ final class ValuesLogicalRules {
                             rexProgram.expandList(rexProgram.getProjectList()),
                             values.getRowType(),
                             values.values(),
-                            cluster.getParameterMetadata(),
-                            cluster.getSecurityContext()
+                            cluster.getParameterMetadata()
                     );
                     RelNode rel = new ValuesLogicalRel(
                             calc.getCluster(),

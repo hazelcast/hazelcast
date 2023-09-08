@@ -64,13 +64,11 @@ import com.hazelcast.sql.impl.expression.MockExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rex.RexProgram;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -117,7 +115,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
             QueryParameterMetadata parameterMetadata,
             WatermarkKeysAssigner watermarkKeysAssigner,
             Set<PlanObjectKey> usedViews,
-            @Nonnull SqlSecurityContext securityContext,
             @Nullable Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates
     ) {
         super(new DAG());
@@ -127,7 +124,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         this.objectKeys.addAll(usedViews);
         this.partitionStrategyCandidates = partitionStrategyCandidates;
 
-        dagBuildContext = new DagBuildContextImpl(nodeEngine, getDag(), parameterMetadata, securityContext);
+        dagBuildContext = new DagBuildContextImpl(nodeEngine, getDag(), parameterMetadata);
     }
 
     @Override

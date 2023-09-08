@@ -99,6 +99,7 @@ import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
@@ -504,13 +505,14 @@ public class PlanExecutor {
         );
     }
 
-    SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
+    SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 serializationService,
-                Util.getNodeEngine(hazelcastInstance));
+                Util.getNodeEngine(hazelcastInstance),
+                ssc);
 
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
@@ -523,6 +525,10 @@ public class PlanExecutor {
             if (!partitions.isEmpty()) {
                 jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_PARTITIONS, partitions);
             }
+        }
+
+        if (ssc.isSecurityEnabled()) {
+            jobConfig.setArgument(JobConfigArguments.KEY_SQL_SECURITY_CONTEXT, ssc);
         }
 
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
