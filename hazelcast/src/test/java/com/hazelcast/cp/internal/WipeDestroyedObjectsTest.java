@@ -128,7 +128,7 @@ public class WipeDestroyedObjectsTest extends HazelcastRaftTestSupport {
 
     private void createDefaultAndCustomGroupObjects(Consumer<String> consumer) {
         for (String cpGroupName : CP_GROUP_NAMES) {
-            consumer.accept(randomName() + (!cpGroupName.equals("default") ? ("@" + cpGroupName) : ""));
+            consumer.accept(!cpGroupName.equals("default") ? ("@" + cpGroupName) : "");
         }
     }
 
@@ -137,10 +137,15 @@ public class WipeDestroyedObjectsTest extends HazelcastRaftTestSupport {
         createDefaultAndCustomGroupObjects(op);
         getCpSubsystem().getCPSubsystemManagementService().wipeDestroyedObjects().toCompletableFuture().get();
         assertAllDestroyedObjectsWiped();
+
+        // re-create CP objects with the same names as we just wiped
+        createDefaultAndCustomGroupObjects(op);
+        getCpSubsystem().getCPSubsystemManagementService().wipeDestroyedObjects().toCompletableFuture().get();
+        assertAllDestroyedObjectsWiped();
     }
 
-    private void cdlSetCountdownDestroy(String name) {
-        ICountDownLatch cdl = getCpSubsystem().getCountDownLatch(name);
+    private void cdlSetCountdownDestroy(String cpGroup) {
+        ICountDownLatch cdl = getCpSubsystem().getCountDownLatch("cdl" + cpGroup);
         assertTrue(cdl.trySetCount(1));
         try {
         } finally {
@@ -149,8 +154,8 @@ public class WipeDestroyedObjectsTest extends HazelcastRaftTestSupport {
         cdl.destroy();
     }
 
-    private void lockAcquireReleaseDestroy(String name) {
-        FencedLock lock = getCpSubsystem().getLock(name);
+    private void lockAcquireReleaseDestroy(String cpGroup) {
+        FencedLock lock = getCpSubsystem().getLock("fencedlock" + cpGroup);
         lock.lock();
         try {
         } finally {
@@ -159,8 +164,8 @@ public class WipeDestroyedObjectsTest extends HazelcastRaftTestSupport {
         lock.destroy();
     }
 
-    private void semaphoreAcquireReleaseDestroy(String name) {
-        ISemaphore semaphore = getCpSubsystem().getSemaphore(name);
+    private void semaphoreAcquireReleaseDestroy(String cpGroup) {
+        ISemaphore semaphore = getCpSubsystem().getSemaphore("semaphore" + cpGroup);
         assertTrue(semaphore.init(1));
         try {
             semaphore.acquire();
@@ -174,14 +179,14 @@ public class WipeDestroyedObjectsTest extends HazelcastRaftTestSupport {
         semaphore.destroy();
     }
 
-    private void atomicReferenceSetDestroy(String name) {
-        IAtomicReference<String> atomicReference = getCpSubsystem().getAtomicReference(name);
+    private void atomicReferenceSetDestroy(String cpGroup) {
+        IAtomicReference<String> atomicReference = getCpSubsystem().getAtomicReference("atomicref" + cpGroup);
         atomicReference.set(randomName());
         atomicReference.destroy();
     }
 
-    private void atomicLongSetDestroy(String name) {
-        IAtomicLong atomicLong = getCpSubsystem().getAtomicLong(name);
+    private void atomicLongSetDestroy(String cpGroup) {
+        IAtomicLong atomicLong = getCpSubsystem().getAtomicLong("atomiclong" + cpGroup);
         atomicLong.set(1);
         atomicLong.destroy();
     }
