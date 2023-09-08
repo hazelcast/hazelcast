@@ -29,10 +29,11 @@ import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchSer
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueService;
+import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueServiceAccessor;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
+import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistryAccessor;
 import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.test.starter.ReflectionUtils;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -106,8 +107,7 @@ public class WipeDestroyedObjectsTest extends HazelcastRaftTestSupport {
                     assertTrueEventually(() -> {
                         if (ATOMIC_SERVICES.contains(service)) {
                             RaftAtomicValueService<?, ?, ?> raftAtomicValueService = getNodeEngineImpl(instance).getService(service);
-                            Set<?> destroyedValues =
-                                    ReflectionUtils.getFieldValueReflectively(raftAtomicValueService, "destroyedValues");
+                            Set<?> destroyedValues = RaftAtomicValueServiceAccessor.getDestroyedValues(raftAtomicValueService);
                             assertTrue(destroyedValues.isEmpty());
                         } else {
                             AbstractBlockingService<?, ?, ?> abstractBlockingService = getNodeEngineImpl(instance).getService(service);
@@ -116,8 +116,7 @@ public class WipeDestroyedObjectsTest extends HazelcastRaftTestSupport {
                                 // this is thread-safe at the point of the method as the wipeDestroyedObjects blocks, so we should
                                 // be the only thread reading (no writers should be present on this) this thread unsafe data
                                 // structure
-                                Set<String> destroyedNames =
-                                        ReflectionUtils.getFieldValueReflectively(resourceRegistry, "destroyedNames");
+                                Set<String> destroyedNames = ResourceRegistryAccessor.getDestroyedNames(resourceRegistry);
                                 assertTrue(destroyedNames.isEmpty());
                             }
                         }

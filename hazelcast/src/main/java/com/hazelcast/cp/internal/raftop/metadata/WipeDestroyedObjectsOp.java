@@ -20,11 +20,6 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
-import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
-import com.hazelcast.cp.internal.datastructures.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueService;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
@@ -33,36 +28,29 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.Collection;
 
 public class WipeDestroyedObjectsOp extends RaftOp implements IdentifiedDataSerializable {
-    private static final Set<String> ATOMIC_VALUE_SERVICES =
-            Set.of(AtomicRefService.SERVICE_NAME, AtomicLongService.SERVICE_NAME);
-    private static final Set<String> BLOCKING_SERVICES =
-            Set.of(LockService.SERVICE_NAME, SemaphoreService.SERVICE_NAME, CountDownLatchService.SERVICE_NAME);
-
     @Override
     public Void run(CPGroupId groupId, long commitIndex) throws Exception {
-        clearAtomicValueServices(groupId);
-        clearBlockingServices(groupId);
+        clearRaftAtomicValueServices(groupId);
+        clearAbstractBlockingServices(groupId);
         return null;
     }
 
-    private void clearAtomicValueServices(CPGroupId groupId) {
-        for (String serviceName : ATOMIC_VALUE_SERVICES) {
-            RaftAtomicValueService<?, ?, ?> service = getNodeEngine().getService(serviceName);
-            service.clearDestroyedValues(groupId);
-        }
+    private void clearRaftAtomicValueServices(CPGroupId groupId) {
+        Collection<RaftAtomicValueService> services = getNodeEngine().getServices(RaftAtomicValueService.class);
+        services.forEach(service -> service.clearDestroyedValues(groupId));
     }
 
-    private void clearBlockingServices(CPGroupId cpGroupId) {
-        for (String serviceName : BLOCKING_SERVICES) {
-            AbstractBlockingService<?, ?, ?> abstractBlockingService = getNodeEngine().getService(serviceName);
-            ResourceRegistry<?, ?> resourceRegistry = abstractBlockingService.getRegistryOrNull(cpGroupId);
+    private void clearAbstractBlockingServices(CPGroupId cpGroupId) {
+        Collection<AbstractBlockingService> services = getNodeEngine().getServices(AbstractBlockingService.class);
+        services.forEach(service -> {
+            ResourceRegistry<?, ?> resourceRegistry = service.getRegistryOrNull(cpGroupId);
             if (resourceRegistry != null) {
                 resourceRegistry.clearDestroyedNames();
             }
-        }
+        });
     }
 
     @Override

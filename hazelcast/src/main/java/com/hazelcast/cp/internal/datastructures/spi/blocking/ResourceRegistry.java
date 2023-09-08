@@ -341,6 +341,10 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
                 + ", waitTimeouts=" + waitTimeouts + '}';
     }
 
+    Set<String> getDestroyedNames() {
+        return destroyedNames;
+    }
+
     public void clearDestroyedNames() {
         destroyedNames.clear();
     }
