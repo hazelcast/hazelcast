@@ -72,20 +72,20 @@ final class ValuesLogicalRules {
                 public void onMatch(RelOptRuleCall call) {
                     CalcLogicalRel calc = call.rel(0);
                     ValuesLogicalRel values = call.rel(1);
-
                     RexProgram rexProgram = calc.getProgram();
-
                     RexNode filter = null;
                     if (rexProgram.getCondition() != null) {
                         filter = rexProgram.expandLocalRef(rexProgram.getCondition());
                     }
 
+                    HazelcastRelOptCluster cluster = (HazelcastRelOptCluster) calc.getCluster();
                     ExpressionValues expressionValues = new TransformedExpressionValues(
                             filter,
                             rexProgram.expandList(rexProgram.getProjectList()),
                             values.getRowType(),
                             values.values(),
-                            ((HazelcastRelOptCluster) calc.getCluster()).getParameterMetadata()
+                            cluster.getParameterMetadata(),
+                            cluster.getSecurityContext()
                     );
                     RelNode rel = new ValuesLogicalRel(
                             calc.getCluster(),

@@ -228,7 +228,6 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 new SqlCatalog(tableResolvers),
                 searchPaths,
                 emptyList(),
-                1,
                 name -> null,
                 NoOpSqlSecurityContext.INSTANCE
         );

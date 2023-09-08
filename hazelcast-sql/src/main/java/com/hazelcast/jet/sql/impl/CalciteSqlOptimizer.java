@@ -316,7 +316,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSchema(),
                 task.getSearchPaths(),
                 task.getArguments(),
-                memberCount,
                 iMapResolver,
                 task.getSecurityContext());
 

@@ -95,7 +95,6 @@ public class UnparseTest extends SqlTestSupport {
                 new SqlCatalog(emptyList()),
                 emptyList(),
                 emptyList(),
-                1,
                 name -> null,
                 NoOpSqlSecurityContext.INSTANCE
         );

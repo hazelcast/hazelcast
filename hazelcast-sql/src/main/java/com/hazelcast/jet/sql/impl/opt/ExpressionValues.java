@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
@@ -107,11 +108,12 @@ public abstract class ExpressionValues implements Serializable {
                 List<RexNode> project,
                 RelDataType tuplesType,
                 List<ExpressionValues> values,
-                QueryParameterMetadata parameterMetadata
+                QueryParameterMetadata parameterMetadata,
+                SqlSecurityContext ssc
         ) {
             PlanNodeSchema schema = OptUtils.schema(tuplesType);
             RexVisitor<Expression<?>> converter =
-                    OptUtils.createRexToExpressionVisitor(schema, parameterMetadata);
+                    OptUtils.createRexToExpressionVisitor(schema, parameterMetadata, ssc);
 
             this.predicate = filter == null ? null : (Expression<Boolean>) filter.accept(converter);
             this.projection = project == null ? null : toList(project, node -> node.accept(converter));

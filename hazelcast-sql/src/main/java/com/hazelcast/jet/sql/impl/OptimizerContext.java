@@ -87,34 +87,29 @@ public final class OptimizerContext {
     private final QueryPlanner planner;
     private final Set<PlanObjectKey> usedViews = new HashSet<>();
     private final Deque<String> viewExpansionStack = new ArrayDeque<>();
-    private final SqlSecurityContext securityContext;
 
     private OptimizerContext(
             HazelcastRelOptCluster cluster,
             QueryParser parser,
             QueryConverter converter,
-            QueryPlanner planner,
-            SqlSecurityContext securityContext
+            QueryPlanner planner
     ) {
         this.cluster = cluster;
         this.parser = parser;
         this.converter = converter;
         this.planner = planner;
-        this.securityContext = securityContext;
     }
 
     /**
      * Create the optimization context.
      *
      * @param searchPaths Search paths to support "current schema" feature.
-     * @param memberCount Number of member that is important for distribution-related rules and converters.
      * @return Context.
      */
     public static OptimizerContext create(
             SqlCatalog schema,
             List<List<String>> searchPaths,
             List<Object> arguments,
-            int memberCount,
             IMapResolver iMapResolver,
             SqlSecurityContext securityContext
     ) {
@@ -135,13 +130,13 @@ public final class OptimizerContext {
         HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
         VolcanoPlanner volcanoPlanner = createPlanner();
 
-        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner);
+        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, securityContext);
 
         QueryParser parser = new QueryParser(validator);
         QueryConverter converter = new QueryConverter(validator, catalogReader, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
-        return new OptimizerContext(cluster, parser, converter, planner, securityContext);
+        return new OptimizerContext(cluster, parser, converter, planner);
     }
 
     public static void setThreadContext(OptimizerContext context) {
@@ -219,8 +214,11 @@ public final class OptimizerContext {
         return planner;
     }
 
-    private static HazelcastRelOptCluster createCluster(VolcanoPlanner planner) {
-        HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(planner, HazelcastRexBuilder.INSTANCE);
+    private static HazelcastRelOptCluster createCluster(VolcanoPlanner planner, SqlSecurityContext securityContext) {
+        HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(
+                planner,
+                HazelcastRexBuilder.INSTANCE,
+                securityContext);
 
         // Wire up custom metadata providers.
         cluster.setMetadataProvider(JaninoRelMetadataProvider.of(METADATA_PROVIDER));
@@ -237,7 +235,7 @@ public final class OptimizerContext {
     }
 
     public SqlSecurityContext getSecurityContext() {
-        return securityContext;
+        return cluster.getSecurityContext();
     }
 
     public void dump(ILogger logger) {
