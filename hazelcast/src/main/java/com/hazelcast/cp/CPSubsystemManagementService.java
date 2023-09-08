@@ -279,5 +279,5 @@ public interface CPSubsystemManagementService {
      *
      * @since 5.4
      */
-    void wipeDestroyedObjects();
+    CompletionStage<Void> wipeDestroyedObjects();
 }

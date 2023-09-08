@@ -135,7 +135,7 @@ public class WipeDestroyedObjectsTest extends HazelcastRaftTestSupport {
     private void createUseDestroyWipeAssert(Consumer<String> op)
             throws ExecutionException, InterruptedException {
         createDefaultAndCustomGroupObjects(op);
-        getCpSubsystem().getCPSubsystemManagementService().wipeDestroyedObjects();
+        getCpSubsystem().getCPSubsystemManagementService().wipeDestroyedObjects().toCompletableFuture().get();
         assertAllDestroyedObjectsWiped();
     }
 

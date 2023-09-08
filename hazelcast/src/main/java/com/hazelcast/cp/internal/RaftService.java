@@ -113,6 +113,8 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -1471,13 +1473,15 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return cpMemberPriority;
     }
 
-    public void wipeDestroyedObjects() {
+    public CompletionStage<Void> wipeDestroyedObjects() {
         Collection<CPGroupId> cpGroupIds = getCPGroupIds().join();
+        List<CompletableFuture<Void>> completableFutures = new ArrayList<>();
         for (CPGroupId cpGroupId : cpGroupIds) {
             if (!cpGroupId.getName().equals(METADATA_CP_GROUP_NAME)) {
-                wipeDestroyedObjects(cpGroupId).join();
+                completableFutures.add(wipeDestroyedObjects(cpGroupId));
             }
         }
+        return CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[0]));
     }
 
     private InternalCompletableFuture<Void> wipeDestroyedObjects(CPGroupId groupId) {

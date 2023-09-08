@@ -49,6 +49,7 @@ import com.hazelcast.version.Version;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -238,12 +239,12 @@ public class CPSubsystemImpl implements CPSubsystem {
         }
 
         @Override
-        public void wipeDestroyedObjects() {
+        public CompletionStage<Void> wipeDestroyedObjects() {
             if (clusterVersion.isUnknownOrLessThan(Versions.V5_4)) {
                 String message = "Wiping of previously destroyed CP objects is supported in cluster versions 5.4 and above";
                 throw new UnsupportedOperationException(message);
             }
-            raftService.wipeDestroyedObjects();
+            return raftService.wipeDestroyedObjects();
         }
     }
 
