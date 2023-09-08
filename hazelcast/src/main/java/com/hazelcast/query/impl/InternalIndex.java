@@ -115,7 +115,7 @@ public interface InternalIndex extends Index {
     boolean validatePartitionStamp(long stamp);
 
     /**
-     * @return Step-aware storage that backы the Index.
+     * @return Step-aware storage that backs the Index.
      * By default returns {@code null} that indicates there is no
      * Step-aware backed storage.
      */

@@ -46,7 +46,6 @@ import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
 import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.StepAwareStorage;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -60,9 +59,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.wan.impl.DelegatingWanScheme;
 import com.hazelcast.wan.impl.WanReplicationService;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -334,15 +331,6 @@ public class MapContainer {
             return globalIndexes;
         }
         return mapServiceContext.getPartitionContainer(partitionId).getIndexes(name);
-    }
-
-    public List<StepAwareStorage> getStepAwareStorages(int partitionId) {
-        if (globalIndexes != null) {
-            return Collections.emptyList();
-        }
-
-        return mapServiceContext.getPartitionContainer(partitionId).
-            getIndexes(name).getStepAwareStorages();
     }
 
     public boolean isGlobalIndexEnabled() {
