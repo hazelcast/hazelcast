@@ -645,12 +645,9 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_COMPACTION_VISITED_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
             + "visitedRecords.size";
     public static final String TSTORE_HLOG_COMPACTION_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "count";
-
-    public static final String TSTORE_INDEX_HLOG_COMPACTION_COUNT = TSTORE_INDEX_HLOG_COMPACTION_PREFIX + "index.count";
     public static final String TSTORE_HLOG_COMPACTION_QUEUE_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "queue.count";
     public static final String TSTORE_HLOG_COMPACTION_FAILED_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "failed.count";
     public static final String TSTORE_HLOG_COMPACTION_IN_PROGRESS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "inProgress.count";
-
     public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_TOTAL = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.total";
     public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_MIN = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.min";
     public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_MAX = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.max";
