@@ -100,7 +100,7 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
     public void setUp() throws Exception {
         tableFull = quote(schema, table);
         try {
-            executeJdbc("CREATE SCHEMA " + quote(schema));
+            executeJdbc(databaseProvider.createSchemaQuery(quote(schema)));
         } catch (Exception e) {
             logger.info("Could not create schema", e);
         }
