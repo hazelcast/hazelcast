@@ -33,6 +33,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -208,7 +209,9 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         atomicValues.keySet().removeIf(t -> raftService.getCPGroupPartitionId(t.element1) == partitionId);
     }
 
-    public void clearDestroyedValues() {
-        destroyedValues.clear();
+    public void clearDestroyedValues(CPGroupId cpGroupId) {
+        List<BiTuple<CPGroupId, String>> toWipe =
+                destroyedValues.stream().filter(tuple -> tuple.element1.equals(cpGroupId)).collect(Collectors.toList());
+        toWipe.forEach(destroyedValues::remove);
     }
 }

@@ -1480,7 +1480,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         }
     }
 
-    private InternalCompletableFuture<Collection<String>> wipeDestroyedObjects(CPGroupId groupId) {
+    private InternalCompletableFuture<Void> wipeDestroyedObjects(CPGroupId groupId) {
         return invocationManager.invoke(groupId, new WipeDestroyedObjectsOp());
     }
 

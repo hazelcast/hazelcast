@@ -39,9 +39,12 @@ import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.session.RaftSessionService;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -123,7 +126,8 @@ public class CPSubsystemImpl implements CPSubsystem {
         }
 
         RaftService raftService = getService(RaftService.SERVICE_NAME);
-        cpSubsystemManagementService = new CPSubsystemManagementServiceImpl(raftService);
+        cpSubsystemManagementService =
+                new CPSubsystemManagementServiceImpl(raftService, instance.getCluster().getClusterVersion());
         return cpSubsystemManagementService;
     }
 
@@ -176,9 +180,11 @@ public class CPSubsystemImpl implements CPSubsystem {
 
     private static class CPSubsystemManagementServiceImpl implements CPSubsystemManagementService {
         private final RaftService raftService;
+        private final Version clusterVersion;
 
-        CPSubsystemManagementServiceImpl(RaftService raftService) {
+        CPSubsystemManagementServiceImpl(RaftService raftService, Version clusterVersion) {
             this.raftService = raftService;
+            this.clusterVersion = clusterVersion;
         }
 
         @Override
@@ -233,6 +239,10 @@ public class CPSubsystemImpl implements CPSubsystem {
 
         @Override
         public void wipeDestroyedObjects() {
+            if (clusterVersion.isUnknownOrLessThan(Versions.V5_4)) {
+                String message = "Wiping of previously destroyed CP objects is supported in cluster versions 5.4 and above";
+                throw new UnsupportedOperationException(message);
+            }
             raftService.wipeDestroyedObjects();
         }
     }

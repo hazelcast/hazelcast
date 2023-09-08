@@ -17,7 +17,6 @@
 package com.hazelcast.cp.internal.raftop.metadata;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
@@ -36,23 +35,23 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Set;
 
-public class WipeDestroyedObjectsOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
+public class WipeDestroyedObjectsOp extends RaftOp implements IdentifiedDataSerializable {
     private static final Set<String> ATOMIC_VALUE_SERVICES =
             Set.of(AtomicRefService.SERVICE_NAME, AtomicLongService.SERVICE_NAME);
     private static final Set<String> BLOCKING_SERVICES =
             Set.of(LockService.SERVICE_NAME, SemaphoreService.SERVICE_NAME, CountDownLatchService.SERVICE_NAME);
 
     @Override
-    public Object run(CPGroupId groupId, long commitIndex) throws Exception {
-        clearAtomicValueServices();
+    public Void run(CPGroupId groupId, long commitIndex) throws Exception {
+        clearAtomicValueServices(groupId);
         clearBlockingServices(groupId);
         return null;
     }
 
-    private void clearAtomicValueServices() {
+    private void clearAtomicValueServices(CPGroupId groupId) {
         for (String serviceName : ATOMIC_VALUE_SERVICES) {
             RaftAtomicValueService<?, ?, ?> service = getNodeEngine().getService(serviceName);
-            service.clearDestroyedValues();
+            service.clearDestroyedValues(groupId);
         }
     }
 
@@ -81,11 +80,6 @@ public class WipeDestroyedObjectsOp extends RaftOp implements IndeterminateOpera
     public void readData(ObjectDataInput in)
             throws IOException {
 
-    }
-
-    @Override
-    public boolean isRetryableOnIndeterminateOperationState() {
-        return false;
     }
 
     @Override
