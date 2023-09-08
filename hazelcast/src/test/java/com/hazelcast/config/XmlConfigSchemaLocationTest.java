@@ -40,7 +40,6 @@ import org.w3c.dom.Element;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashSet;
@@ -48,7 +47,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFactory;
-import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -56,7 +54,7 @@ import static org.junit.Assert.assertEquals;
 public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
 
     // list of schema location URLs which we do not want to check
-    private static final Set<String> WHITELIST = setOf();
+    private static final Set<String> WHITELIST = Set.of();
 
     private static final String XML_SCHEMA_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance";
     private static final String XML_SCHEMA_LOCATION_ATTRIBUTE = "schemaLocation";
@@ -72,7 +70,7 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
     public void setUp() throws ParserConfigurationException {
         httpClient = HttpClients.createDefault();
         documentBuilderFactory = getNsAwareDocumentBuilderFactory();
-        validUrlsCache = new HashSet<String>();
+        validUrlsCache = new HashSet<>();
     }
 
     @After
