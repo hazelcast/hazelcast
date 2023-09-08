@@ -254,6 +254,7 @@ public final class MetricDescriptorConstants {
             = "map.store.offloaded.operations";
     public static final String MAP_METRIC_MAP_STORE_WAITING_TO_BE_PROCESSED_COUNT
             = "waitingToBeProcessedCount";
+    public static final String MAP_TAG_HYBRID_LOG_ID = "hybridlogid";
     // ===[/MAP]========================================================
 
     // ===[MEMORY]======================================================
