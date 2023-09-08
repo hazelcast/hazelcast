@@ -21,20 +21,25 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import static com.hazelcast.internal.json.Json.*;
-import static com.hazelcast.internal.json.TestUtil.serializeAndDeserialize;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
-import java.io.IOException;
+import static com.hazelcast.internal.json.Json.FALSE;
+import static com.hazelcast.internal.json.Json.NULL;
+import static com.hazelcast.internal.json.Json.TRUE;
+import static com.hazelcast.test.TestJavaSerializationUtils.serializeAndDeserialize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonWriter;
 import com.hazelcast.test.annotation.QuickTest;
+
+import java.io.IOException;
 
 @Category(QuickTest.class)
 public class JsonLiteral_Test {
