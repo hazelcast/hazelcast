@@ -16,9 +16,9 @@
 
 package com.hazelcast.test;
 
-import java.util.Arrays;
+import com.google.common.collect.Sets;
+
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -35,8 +35,7 @@ public final class TestCollectionUtils {
      * @return a new instance of Set with all items passed as an argument
      */
     public static <T> Set<T> setOf(T... items) {
-        List<T> list = Arrays.asList(items);
-        return new HashSet<T>(list);
+        return Sets.newHashSet(items);
     }
 
     public static Set<Integer> setOfValuesBetween(int from, int to) {
