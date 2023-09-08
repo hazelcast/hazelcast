@@ -268,7 +268,7 @@ public final class MongoSinkBuilder<T> {
                 .setDataConnectionRef(localParams.getDataConnectionRef())
                 .setProcessorSupplier(ProcessorSupplier.of(() -> new WriteMongoP<>(localParams)))
                 .setPreferredLocalParallelism(preferredLocalParallelism)
-                .create());
+                .build());
     }
 
 }

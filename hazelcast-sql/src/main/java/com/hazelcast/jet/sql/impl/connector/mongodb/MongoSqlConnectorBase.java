@@ -231,7 +231,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                 .setDataConnectionRef(dataConnectionRef(table.dataConnectionName))
                 .setProcessorSupplier(supplier)
                 .setForceTotalParallelismOne(forceParallelismOne)
-                .create();
+                .build();
     }
 
     private static Document translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {

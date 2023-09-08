@@ -15,7 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.jet.mongodb.ResourceExistenceChecks;
+import com.hazelcast.jet.mongodb.ResourceChecks;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.jet.mongodb.impl.MongoUtilities;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -136,7 +136,7 @@ final class Options {
         }
     }
 
-    static ResourceExistenceChecks readExistenceChecksFlag(Map<String, String> options) {
-        return ResourceExistenceChecks.fromString(options.getOrDefault(CHECK_EXISTENCE, "only-initial"));
+    static ResourceChecks readExistenceChecksFlag(Map<String, String> options) {
+        return ResourceChecks.fromString(options.getOrDefault(CHECK_EXISTENCE, "only-initial"));
     }
 }

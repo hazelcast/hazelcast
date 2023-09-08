@@ -21,7 +21,7 @@ import java.io.Serializable;
  * Defines when and if database and collection existence will be checked.
  * @since 5.4
  */
-public enum ResourceExistenceChecks implements Serializable {
+public enum ResourceChecks implements Serializable {
 
     /**
      * Check will be done on every connect action on every processor.
@@ -44,7 +44,7 @@ public enum ResourceExistenceChecks implements Serializable {
     /**
      * Resolves given string value to one of values of this enum.
      */
-    public static ResourceExistenceChecks fromString(String code) {
+    public static ResourceChecks fromString(String code) {
         if (ONCE_PER_JOB.name().equalsIgnoreCase(code) || "on-each-call".equalsIgnoreCase(code)) {
             return ONCE_PER_JOB;
         }

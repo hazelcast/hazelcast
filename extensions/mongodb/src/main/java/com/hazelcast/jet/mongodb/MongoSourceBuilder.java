@@ -202,7 +202,7 @@ public final class MongoSourceBuilder {
 
     private abstract static class Base<T> {
         protected ReadMongoParams<T> params;
-        protected ResourceExistenceChecks existenceChecks = ResourceExistenceChecks.ONCE_PER_JOB;
+        protected ResourceChecks existenceChecks = ResourceChecks.ONCE_PER_JOB;
 
         protected String name;
         protected boolean forceReadParallelismOne;
@@ -256,14 +256,14 @@ public final class MongoSourceBuilder {
         }
 
         /**
-         * If non {@link ResourceExistenceChecks#NEVER}, the lack of database or collection will cause an error.
+         * If non {@link ResourceChecks#NEVER}, the lack of database or collection will cause an error.
          * Otherwise, database and collection will be automatically created.
-         * Default value is {@link ResourceExistenceChecks#ONCE_PER_JOB}.
+         * Default value is {@link ResourceChecks#ONCE_PER_JOB}.
          *
          * @param checkResourceExistence if exception should be thrown when database or collection does not exist.
          */
         @Nonnull
-        public Batch<T> checkResourceExistence(ResourceExistenceChecks checkResourceExistence) {
+        public Batch<T> checkResourceExistence(ResourceChecks checkResourceExistence) {
             existenceChecks = checkResourceExistence;
             return this;
         }
@@ -425,10 +425,10 @@ public final class MongoSourceBuilder {
             checkNotNull(params.getMapItemFn(), "mapFn must be set");
 
             final ReadMongoParams<T> localParams = params;
-            localParams.setCheckExistenceOnEachConnect(existenceChecks == ResourceExistenceChecks.ON_EACH_CONNECT);
+            localParams.setCheckExistenceOnEachConnect(existenceChecks == ResourceChecks.ON_EACH_CONNECT);
 
             ConnectorPermission permission = params.buildPermissions();
-            boolean checkResourceExistence = existenceChecks == ResourceExistenceChecks.ONCE_PER_JOB;
+            boolean checkResourceExistence = existenceChecks == ResourceChecks.ONCE_PER_JOB;
             return Sources.batchFromProcessor(name, new DbCheckingPMetaSupplierBuilder()
                     .setRequiredPermission(permission)
                     .setCheckResourceExistence(checkResourceExistence)
@@ -438,7 +438,7 @@ public final class MongoSourceBuilder {
                     .setClientSupplier(localParams.getClientSupplier())
                     .setDataConnectionRef(localParams.getDataConnectionRef())
                     .setProcessorSupplier(ProcessorSupplier.of(() -> new ReadMongoP<>(localParams)))
-                    .create());
+                    .build());
         }
     }
 
@@ -486,14 +486,14 @@ public final class MongoSourceBuilder {
         }
 
         /**
-         * If non {@link ResourceExistenceChecks#NEVER}, the lack of database or collection will cause an error.
+         * If non {@link ResourceChecks#NEVER}, the lack of database or collection will cause an error.
          * Otherwise, database and collection will be automatically created.
-         * Default value is {@link ResourceExistenceChecks#ONCE_PER_JOB}.
+         * Default value is {@link ResourceChecks#ONCE_PER_JOB}.
          *
          * @param checkResourceExistence if exception should be thrown when database or collection does not exist.
          */
         @Nonnull
-        public Stream<T> checkResourceExistence(ResourceExistenceChecks checkResourceExistence) {
+        public Stream<T> checkResourceExistence(ResourceChecks checkResourceExistence) {
             existenceChecks = checkResourceExistence;
             return this;
         }
@@ -642,10 +642,10 @@ public final class MongoSourceBuilder {
             checkNotNull(params.getMapStreamFn(), "mapFn must be set");
 
             final ReadMongoParams<T> localParams = params;
-            localParams.setCheckExistenceOnEachConnect(existenceChecks == ResourceExistenceChecks.ON_EACH_CONNECT);
+            localParams.setCheckExistenceOnEachConnect(existenceChecks == ResourceChecks.ON_EACH_CONNECT);
 
             ConnectorPermission permission = params.buildPermissions();
-            boolean checkResourceExistence = existenceChecks == ResourceExistenceChecks.ONCE_PER_JOB;
+            boolean checkResourceExistence = existenceChecks == ResourceChecks.ONCE_PER_JOB;
             return Sources.streamFromProcessorWithWatermarks(name, true,
                     eventTimePolicy -> new DbCheckingPMetaSupplierBuilder()
                             .setRequiredPermission(permission)
@@ -657,7 +657,7 @@ public final class MongoSourceBuilder {
                             .setDataConnectionRef(localParams.getDataConnectionRef())
                             .setProcessorSupplier(ProcessorSupplier.of(
                                     () -> new ReadMongoP<>(localParams.setEventTimePolicy(eventTimePolicy))))
-                            .create()
+                            .build()
             );
         }
     }

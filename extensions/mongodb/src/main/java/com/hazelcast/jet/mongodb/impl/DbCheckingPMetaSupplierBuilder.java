@@ -83,7 +83,7 @@ public class DbCheckingPMetaSupplierBuilder {
         return this;
     }
 
-    public DbCheckingPMetaSupplier create() {
+    public DbCheckingPMetaSupplier build() {
         return new DbCheckingPMetaSupplier(requiredPermission, checkResourceExistence, forceTotalParallelismOne,
                 databaseName, collectionName, clientSupplier, dataConnectionRef, processorSupplier,
                 preferredLocalParallelism);

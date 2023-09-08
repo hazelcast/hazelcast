@@ -16,7 +16,7 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 
-import com.hazelcast.jet.mongodb.ResourceExistenceChecks;
+import com.hazelcast.jet.mongodb.ResourceChecks;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -32,8 +32,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.hazelcast.jet.mongodb.ResourceExistenceChecks.ONCE_PER_JOB;
-import static com.hazelcast.jet.mongodb.ResourceExistenceChecks.ON_EACH_CONNECT;
+import static com.hazelcast.jet.mongodb.ResourceChecks.ONCE_PER_JOB;
+import static com.hazelcast.jet.mongodb.ResourceChecks.ON_EACH_CONNECT;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.FORCE_READ_PARALLELISM_ONE;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.readExistenceChecksFlag;
@@ -55,7 +55,7 @@ class MongoTable extends JetTable {
     private final QueryDataType[] fieldTypes;
     private final BsonType[] fieldExternalTypes;
     private final boolean forceReadParallelismOne;
-    private final ResourceExistenceChecks existenceChecks;
+    private final ResourceChecks existenceChecks;
 
     MongoTable(
             @Nonnull String schemaName,
