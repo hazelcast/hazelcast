@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -93,8 +94,8 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
                 sql.getSchema(),
                 query,
                 sql.getParameters(),
-                SqlExpectedResultType.ROWS
-        );
+                SqlExpectedResultType.ROWS,
+                NoOpSqlSecurityContext.INSTANCE);
 
         assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
         return (SqlPlanImpl.SelectPlan) plan;

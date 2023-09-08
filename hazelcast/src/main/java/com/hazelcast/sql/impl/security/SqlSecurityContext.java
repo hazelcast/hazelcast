@@ -16,12 +16,13 @@
 
 package com.hazelcast.sql.impl.security;
 
+import java.io.Serializable;
 import java.security.Permission;
 
 /**
  * SQL security context that is used to check for user permissions before the query is executed.
  */
-public interface SqlSecurityContext {
+public interface SqlSecurityContext extends Serializable {
     /**
      * Check whether the security is enabled.
      *

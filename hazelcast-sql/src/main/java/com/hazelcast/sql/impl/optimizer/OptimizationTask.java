@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.optimizer;
 
 import com.hazelcast.sql.impl.schema.SqlCatalog;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.util.List;
 
@@ -36,11 +37,20 @@ public final class OptimizationTask {
     /** The resolved schema. */
     private final SqlCatalog schema;
 
-    public OptimizationTask(String sql, List<Object> arguments, List<List<String>> searchPaths, SqlCatalog schema) {
+    /** SQL-specific security context. */
+    private final SqlSecurityContext securityContext;
+
+    public OptimizationTask(
+            String sql,
+            List<Object> arguments,
+            List<List<String>> searchPaths,
+            SqlCatalog schema,
+            SqlSecurityContext securityContext) {
         this.sql = sql;
         this.arguments = arguments;
         this.searchPaths = searchPaths;
         this.schema = schema;
+        this.securityContext = securityContext;
     }
 
     public String getSql() {
@@ -57,5 +67,9 @@ public final class OptimizationTask {
 
     public SqlCatalog getSchema() {
         return schema;
+    }
+
+    public SqlSecurityContext getSecurityContext() {
+        return securityContext;
     }
 }

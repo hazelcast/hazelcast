@@ -36,6 +36,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
@@ -86,17 +87,20 @@ public final class OptimizerContext {
     private final QueryPlanner planner;
     private final Set<PlanObjectKey> usedViews = new HashSet<>();
     private final Deque<String> viewExpansionStack = new ArrayDeque<>();
+    private final SqlSecurityContext securityContext;
 
     private OptimizerContext(
             HazelcastRelOptCluster cluster,
             QueryParser parser,
             QueryConverter converter,
-            QueryPlanner planner
+            QueryPlanner planner,
+            SqlSecurityContext securityContext
     ) {
         this.cluster = cluster;
         this.parser = parser;
         this.converter = converter;
         this.planner = planner;
+        this.securityContext = securityContext;
     }
 
     /**
@@ -111,20 +115,21 @@ public final class OptimizerContext {
             List<List<String>> searchPaths,
             List<Object> arguments,
             int memberCount,
-            IMapResolver iMapResolver
+            IMapResolver iMapResolver,
+            SqlSecurityContext securityContext
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, arguments, memberCount, iMapResolver);
+        return create(rootSchema, searchPaths, arguments, iMapResolver, securityContext);
     }
 
     public static OptimizerContext create(
             HazelcastSchema rootSchema,
             List<List<String>> schemaPaths,
             List<Object> arguments,
-            int memberCount,
-            IMapResolver iMapResolver
+            IMapResolver iMapResolver,
+            SqlSecurityContext securityContext
     ) {
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
         HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
@@ -136,7 +141,7 @@ public final class OptimizerContext {
         QueryConverter converter = new QueryConverter(validator, catalogReader, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
-        return new OptimizerContext(cluster, parser, converter, planner);
+        return new OptimizerContext(cluster, parser, converter, planner, securityContext);
     }
 
     public static void setThreadContext(OptimizerContext context) {
@@ -229,6 +234,10 @@ public final class OptimizerContext {
 
     public Set<PlanObjectKey> getUsedViews() {
         return usedViews;
+    }
+
+    public SqlSecurityContext getSecurityContext() {
+        return securityContext;
     }
 
     public void dump(ILogger logger) {

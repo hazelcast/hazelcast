@@ -23,6 +23,8 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.FieldAccessExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -49,10 +51,23 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
 
     private final PlanNodeFieldTypeProvider fieldTypeProvider;
     private final QueryParameterMetadata parameterMetadata;
+    private final SqlSecurityContext securityContext;
 
-    public RexToExpressionVisitor(PlanNodeFieldTypeProvider fieldTypeProvider, QueryParameterMetadata parameterMetadata) {
+    public RexToExpressionVisitor(
+            PlanNodeFieldTypeProvider fieldTypeProvider,
+            QueryParameterMetadata parameterMetadata) {
         this.fieldTypeProvider = fieldTypeProvider;
         this.parameterMetadata = parameterMetadata;
+        this.securityContext = NoOpSqlSecurityContext.INSTANCE;
+    }
+
+    public RexToExpressionVisitor(
+            PlanNodeFieldTypeProvider fieldTypeProvider,
+            QueryParameterMetadata parameterMetadata,
+            SqlSecurityContext securityContext) {
+        this.fieldTypeProvider = fieldTypeProvider;
+        this.parameterMetadata = parameterMetadata;
+        this.securityContext = securityContext;
     }
 
     @Override
@@ -88,7 +103,7 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
         }
 
         // Convert the call.
-        return RexToExpression.convertCall(call, expressionOperands);
+        return RexToExpression.convertCall(call, expressionOperands, securityContext);
     }
 
     @Override

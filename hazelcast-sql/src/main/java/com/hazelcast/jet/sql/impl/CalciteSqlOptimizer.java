@@ -118,6 +118,7 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Contexts;
@@ -316,7 +317,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSearchPaths(),
                 task.getArguments(),
                 memberCount,
-                iMapResolver);
+                iMapResolver,
+                task.getSecurityContext());
 
         try {
             OptimizerContext.setThreadContext(context);
@@ -654,6 +656,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     physicalRel,
                     parameterMetadata,
                     context.getUsedViews(),
+                    context.getSecurityContext(),
                     null);
             return new DmlPlan(
                     Operation.UPDATE,
@@ -685,6 +688,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     physicalRel,
                     parameterMetadata,
                     context.getUsedViews(),
+                    context.getSecurityContext(),
                     null);
             return new DmlPlan(
                     operation,
@@ -703,6 +707,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     physicalRel,
                     parameterMetadata,
                     context.getUsedViews(),
+                    context.getSecurityContext(),
                     null);
             return new DmlPlan(
                     Operation.DELETE,
@@ -720,6 +725,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     new RootRel(physicalRel),
                     parameterMetadata,
                     context.getUsedViews(),
+                    context.getSecurityContext(),
                     partitionStrategyCandidates(physicalRel, parameterMetadata));
 
             SqlRowMetadata rowMetadata = createRowMetadata(
@@ -911,6 +917,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             PhysicalRel physicalRel,
             QueryParameterMetadata parameterMetadata,
             Set<PlanObjectKey> usedViews,
+            @Nonnull SqlSecurityContext ssc,
             @Nullable Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates) {
         String exceptionMessage = new ExecutionStopperFinder(physicalRel).find();
         if (exceptionMessage != null) {
@@ -926,6 +933,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 parameterMetadata,
                 wmKeysAssigner,
                 usedViews,
+                ssc,
                 partitionStrategyCandidates);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
@@ -956,6 +964,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);
         final Map<String, List<Map<String, RexNode>>> prunabilityMap = query.extractPrunability(root);
 
+        // Note: by the idea, it's safe to use non-secure context here (it is used by ourself).
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
 
         final Map<String, List<Map<String, Expression<?>>>> result = new HashMap<>();

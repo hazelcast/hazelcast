@@ -36,6 +36,8 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
@@ -324,9 +326,16 @@ public final class OptUtils {
 
     public static RexVisitor<Expression<?>> createRexToExpressionVisitor(
             PlanNodeFieldTypeProvider schema,
-            QueryParameterMetadata parameterMetadata
+            QueryParameterMetadata parameterMetadata) {
+        return new RexToExpressionVisitor(schema, parameterMetadata, NoOpSqlSecurityContext.INSTANCE);
+    }
+
+    public static RexVisitor<Expression<?>> createRexToExpressionVisitor(
+            PlanNodeFieldTypeProvider schema,
+            QueryParameterMetadata parameterMetadata,
+            SqlSecurityContext securityContext
     ) {
-        return new RexToExpressionVisitor(schema, parameterMetadata);
+        return new RexToExpressionVisitor(schema, parameterMetadata,  securityContext);
     }
 
     /**

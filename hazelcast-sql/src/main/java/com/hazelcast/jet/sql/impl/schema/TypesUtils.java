@@ -42,7 +42,7 @@ public final class TypesUtils {
     }
 
     public static QueryDataType convertTypeToQueryDataType(final Type rootType, final RelationsStorage relationsStorage) {
-        return convertTypeToQueryDataTypeInt(rootType.getName(), rootType, relationsStorage, new HashMap<>());
+        return convertTypeToQueryDataTypeInt(rootType.name(), rootType, relationsStorage, new HashMap<>());
     }
 
     public static Type convertPortableClassToType(
@@ -131,11 +131,11 @@ public final class TypesUtils {
         final QueryDataType queryDataType;
         switch (type.getKind()) {
             case JAVA:
-                queryDataType = new QueryDataType(type.getName(), QueryDataType.OBJECT_TYPE_KIND_JAVA);
+                queryDataType = new QueryDataType(type.name(), QueryDataType.OBJECT_TYPE_KIND_JAVA);
                 queryDataType.setObjectTypeMetadata(type.getJavaClassName());
                 return queryDataType;
             case PORTABLE:
-                queryDataType = new QueryDataType(type.getName(), QueryDataType.OBJECT_TYPE_KIND_PORTABLE);
+                queryDataType = new QueryDataType(type.name(), QueryDataType.OBJECT_TYPE_KIND_PORTABLE);
                 queryDataType.setObjectTypeMetadata(encodePortableId(
                         type.getPortableFactoryId(),
                         type.getPortableClassId(),
@@ -143,7 +143,7 @@ public final class TypesUtils {
                 ));
                 return queryDataType;
             case COMPACT:
-                queryDataType = new QueryDataType(type.getName(), QueryDataType.OBJECT_TYPE_KIND_COMPACT);
+                queryDataType = new QueryDataType(type.name(), QueryDataType.OBJECT_TYPE_KIND_COMPACT);
                 queryDataType.setObjectTypeMetadata(type.getCompactTypeName());
                 return queryDataType;
             default:
@@ -216,7 +216,7 @@ public final class TypesUtils {
         }
 
         if (!mappingTypeKind.equals(type.getKind())) {
-            throw QueryException.error("Can not use Type " + type.getName() + "["
+            throw QueryException.error("Can not use Type " + type.name() + "["
                     + type.getKind() + "] with " + mappingTypeKind + " mapping.");
         }
 
@@ -266,7 +266,7 @@ public final class TypesUtils {
         // At this point the `convertedType` lacks fields. We put it to the `seen` map for the purpose of resolving
         // cyclic references, we'll add the fields later below.
         convertedType = toQueryDataTypeRef(type);
-        seen.putIfAbsent(type.getName(), convertedType);
+        seen.putIfAbsent(type.name(), convertedType);
 
         for (Type.TypeField field : type.getFields()) {
             QueryDataType queryDataType;

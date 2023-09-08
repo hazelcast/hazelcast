@@ -81,6 +81,7 @@ public class Mapping implements SqlCatalogObject, Versioned {
         this.options = options;
     }
 
+    @Override
     public String name() {
         return name;
     }
