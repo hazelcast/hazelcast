@@ -53,6 +53,12 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit-jupiter.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>${assertj.version}</version>
@@ -89,6 +95,7 @@
                         <configuration>
                             <includedLicenses combine.children="append">
                                 <includedLicense>Eclipse Public License 1.0</includedLicense>
+                                <includedLicense>Eclipse Public License v2.0</includedLicense>
                             </includedLicenses>
                         </configuration>
                     </execution>

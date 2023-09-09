@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestCollectionUtils;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -57,7 +56,7 @@ public class LatencyTrackingQueueStoreTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
         delegate = mock(QueueStore.class);
-        queueStore = new LatencyTrackingQueueStore<String>(delegate, plugin, NAME);
+        queueStore = new LatencyTrackingQueueStore<>(delegate, plugin, NAME);
     }
 
     @Test
@@ -76,7 +75,7 @@ public class LatencyTrackingQueueStoreTest extends HazelcastTestSupport {
     @Test
     public void loadAll() {
         Collection<Long> keys = Arrays.asList(1L, 2L);
-        Map<Long, String> values = new HashMap<Long, String>();
+        Map<Long, String> values = new HashMap<>();
         values.put(1L, "value1");
         values.put(2L, "value2");
 
@@ -90,7 +89,7 @@ public class LatencyTrackingQueueStoreTest extends HazelcastTestSupport {
 
     @Test
     public void loadAllKeys() {
-        Set<Long> keys = TestCollectionUtils.setOf(1L, 2L);
+        Set<Long> keys = Set.of(1L, 2L);
 
         when(delegate.loadAllKeys()).thenReturn(keys);
 
@@ -133,7 +132,7 @@ public class LatencyTrackingQueueStoreTest extends HazelcastTestSupport {
 
     @Test
     public void storeAll() {
-        Map<Long, String> values = new HashMap<Long, String>();
+        Map<Long, String> values = new HashMap<>();
         values.put(1L, "value1");
         values.put(2L, "value2");
 

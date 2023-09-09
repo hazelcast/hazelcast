@@ -22,7 +22,7 @@
 package com.hazelcast.internal.json;
 
 import static com.hazelcast.internal.json.TestUtil.assertException;
-import static com.hazelcast.internal.json.TestUtil.serializeAndDeserialize;
+import static com.hazelcast.test.TestJavaSerializationUtils.serializeAndDeserialize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;

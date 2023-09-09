@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -23,6 +24,8 @@ import static java.lang.System.arraycopy;
 
 /**
  * {@link InputStream} implementation with a configurable buffer.
+ * Unlike {@link BufferedInputStream} this class has un-synchronized methods and performs better when used
+ * by a single thread.
  */
 public class BufferingInputStream extends InputStream {
 

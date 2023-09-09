@@ -43,5 +43,5 @@ public enum WriteMode {
      * Replace is different from UPSERT in handling of missing fields. Replace will set them to null,
      * while upsert won't affect such fields in the entity.
      */
-    REPLACE
+    REPLACE;
 }

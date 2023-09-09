@@ -22,17 +22,19 @@
 package com.hazelcast.internal.json;
 
 import static com.hazelcast.internal.json.TestUtil.assertException;
-import static com.hazelcast.internal.json.TestUtil.serializeAndDeserialize;
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-import java.io.StringWriter;
+import static com.hazelcast.test.TestJavaSerializationUtils.serializeAndDeserialize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import com.hazelcast.test.annotation.QuickTest;
+
+import java.io.IOException;
+import java.io.StringWriter;
 
 @Category(QuickTest.class)
 public class JsonString_Test {
