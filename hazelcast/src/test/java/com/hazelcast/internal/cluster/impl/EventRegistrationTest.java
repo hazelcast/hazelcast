@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.spi.properties.ClusterProperty.WAIT_SECONDS_BEFORE_JOIN_ASYNC;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
@@ -55,6 +56,8 @@ public class EventRegistrationTest extends HazelcastTestSupport {
 
     @Rule
     public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_TEST_USE_NETWORK, "true");
+    @Rule
+    public final OverridePropertyRule overridePropertyRule2 = set(WAIT_SECONDS_BEFORE_JOIN_ASYNC.getName(), "false");
     private final HazelcastInstance[] batchedMembers = new HazelcastInstance[6];
 
     @Before
