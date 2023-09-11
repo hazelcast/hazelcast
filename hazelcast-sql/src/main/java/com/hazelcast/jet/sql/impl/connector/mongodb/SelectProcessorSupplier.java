@@ -88,6 +88,7 @@ public class SelectProcessorSupplier extends MongoProcessorSupplier implements D
         this.startAt = startAt == null ? null : startAt.getValue();
         this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.stream = stream;
+        this.forceMongoParallelismOne = table.isForceReadParallelismOne();
     }
 
     SelectProcessorSupplier(MongoTable table, Document predicate,
