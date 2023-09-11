@@ -131,7 +131,7 @@ public class InvalidEndpointTest {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .build();
-        client.send(request, HttpResponse.BodyHandlers.ofString());
+        client.send(request, HttpResponse.BodyHandlers.discarding());
     }
 
     protected HttpClient createHttpClient() {
