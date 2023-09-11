@@ -22,7 +22,6 @@ import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueService;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService;
-import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -45,12 +44,7 @@ public class WipeDestroyedObjectsOp extends RaftOp implements IdentifiedDataSeri
 
     private void clearAbstractBlockingServices(CPGroupId cpGroupId) {
         Collection<AbstractBlockingService> services = getNodeEngine().getServices(AbstractBlockingService.class);
-        services.forEach(service -> {
-            ResourceRegistry<?, ?> resourceRegistry = service.getRegistryOrNull(cpGroupId);
-            if (resourceRegistry != null) {
-                resourceRegistry.clearDestroyedNames();
-            }
-        });
+        services.forEach(service -> service.clearDestroyedNames(cpGroupId));
     }
 
     @Override

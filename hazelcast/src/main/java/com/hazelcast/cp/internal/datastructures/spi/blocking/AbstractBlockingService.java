@@ -423,4 +423,11 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
     protected void clearPartitionReplica(int partitionId) {
         getGroupIdSet().removeIf(groupId -> raftService.getCPGroupPartitionId(groupId) == partitionId);
     }
+
+    public void clearDestroyedNames(CPGroupId cpGroupId) {
+        ResourceRegistry<?, ?> resourceRegistry = getRegistryOrNull(cpGroupId);
+        if (resourceRegistry != null) {
+            resourceRegistry.clearDestroyedNames();
+        }
+    }
 }
