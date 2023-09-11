@@ -296,7 +296,8 @@ public final class UringAsyncSocket extends AsyncSocket {
                 LAST_READ_TIME_NANOS.setOpaque(socket, eventloop.taskStartNanos());
                 metrics.incReads();
                 metrics.incBytesRead(bytesRead);
-                //System.out.println(socket + " bytes read:" + res);
+               // System.out.println(socket + " bytes read:" + res);
+                System.out.println(socket + " at "+System.currentTimeMillis()+" bytes read:" + res +" ");
                 // io_uring has written the new data into the byteBuffer, but the position we
                 // need to manually update.
                 rcvBuff.position(rcvBuff.position() + bytesRead);
@@ -373,7 +374,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                 long durationMs = System.currentTimeMillis()-startMs;
                 metrics.incBytesWritten(res);
                 metrics.incWrites();
-                System.out.println(socket + " written " + res+" duration:"+durationMs+" ms");
+                System.out.println(socket+ " at "+System.currentTimeMillis()+ " written " + res+" duration:"+durationMs+" ms");
 
                 boolean sndBufferClean = true;
                 if (sndBuff != null) {
@@ -399,7 +400,9 @@ public final class UringAsyncSocket extends AsyncSocket {
                 }
             } else if (res == -EAGAIN) {
                 // try again.
+                System.out.println("-EAGAIN");
                 prepareWrite();
+                System.exit(0);
             } else {
                 if (ioVector.cnt() == 1) {
                     throw newCQEFailedException(
