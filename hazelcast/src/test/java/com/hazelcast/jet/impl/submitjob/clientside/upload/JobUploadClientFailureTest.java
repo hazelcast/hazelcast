@@ -351,12 +351,6 @@ public class JobUploadClientFailureTest extends JetTestSupport {
                 .setJarPath(getJoiningJarPath())
                 .setJobName(jobName);
 
-        try {
-            jetService.submitJobFromJar(submitJobParameters);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
                 .isInstanceOf(JetException.class)
                 .hasStackTraceContaining("The job has started successfully. However the job should not call the join() method.\n" +
