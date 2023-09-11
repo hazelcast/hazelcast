@@ -127,7 +127,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             try {
                 ds = (DataSerializable) aClass.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
-                e = tryClarifyInstantiationException(aClass, e);
+                e = tryClarifyReflectiveOperationException(aClass, e);
                 throw new HazelcastSerializationException("Requested class " + aClass + " could not be instantiated.", e);
             }
         }
@@ -198,7 +198,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
      *         <li>Otherwise, {code exception}
      *         </ul>
      */
-    private Exception tryClarifyInstantiationException(Class<?> aClass, Exception exception) {
+    private Exception tryClarifyReflectiveOperationException(Class<?> aClass, Exception exception) {
         if (!(exception instanceof ReflectiveOperationException)) {
             return exception;
         }
