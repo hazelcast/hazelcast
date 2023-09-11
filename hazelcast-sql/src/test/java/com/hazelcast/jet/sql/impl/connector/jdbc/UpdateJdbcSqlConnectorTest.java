@@ -202,6 +202,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("UPDATE " + tableName + " SET name = 'updated-'||id WHERE JSON_QUERY(data, '$.value') = '2'");
 
         assertJdbcQueryRowsAnyOrder("SELECT " + quote("id") + ", " + quote("name") + " FROM " + tableName,
+                newArrayList(Integer.class, String.class),
                 new Row(0, "name-0"),
                 new Row(1, "name-1"),
                 new Row(2, "updated-2")
@@ -379,6 +380,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE JSON_QUERY(data, '$.value') = '2'");
 
         assertJdbcQueryRowsAnyOrder("SELECT " + quote("name") + " FROM " + tableName,
+                newArrayList(String.class),
                 new Row("name-0"),
                 new Row("name-1"),
                 new Row("updated")

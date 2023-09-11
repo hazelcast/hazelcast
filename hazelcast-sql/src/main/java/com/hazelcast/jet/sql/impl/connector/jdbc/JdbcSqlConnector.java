@@ -30,6 +30,7 @@ import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.jdbc.mssql.HazelcastMSSQLDialect;
 import com.hazelcast.jet.sql.impl.connector.jdbc.mysql.HazelcastMySqlDialect;
+import com.hazelcast.jet.sql.impl.connector.jdbc.oracle.HazelcastOracleDialect;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -296,7 +297,8 @@ public class JdbcSqlConnector implements SqlConnector {
                 return new HazelcastMySqlDialect(SqlDialects.createContext(databaseMetaData));
             case "MICROSOFT SQL SERVER":
                 return new HazelcastMSSQLDialect(SqlDialects.createContext(databaseMetaData));
-
+            case "ORACLE":
+                return new HazelcastOracleDialect(SqlDialects.createContext(databaseMetaData));
             default:
                 return SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
         }
