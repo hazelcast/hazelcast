@@ -80,6 +80,22 @@ public abstract class Eventloop {
         this.eventloopThread = builder.reactor.eventloopThread;
         this.metrics = reactor.metrics;
         this.idleStrategy = builder.reactorBuilder.idleStrategy;
+//        this.idleStrategy = new IdleStrategy() {
+//            @Override
+//            public void idle(int workCount) {
+//                Thread.yield();
+//            }
+//
+//            @Override
+//            public void idle() {
+//                Thread.yield();
+//            }
+//
+//            @Override
+//            public void reset() {
+//
+//            }
+//        };
         this.deadlineScheduler = builder.deadlineScheduler;
         this.networkScheduler = builder.networkScheduler;
         this.storageScheduler = builder.storageScheduler;

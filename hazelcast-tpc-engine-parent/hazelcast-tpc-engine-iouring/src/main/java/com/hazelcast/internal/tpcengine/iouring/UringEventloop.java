@@ -20,6 +20,8 @@ import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -66,6 +68,8 @@ public final class UringEventloop extends Eventloop {
 
     @Override
     protected void park(long timeoutNanos) {
+        long startMs = System.currentTimeMillis();
+
         metrics.incParkCount();
 
         networkScheduler.tick();
@@ -88,7 +92,6 @@ public final class UringEventloop extends Eventloop {
                 submissionQueue.submit();
             } else {
                 if (timeoutNanos != Long.MAX_VALUE) {
-                    System.out.println("Timeout!!");
                     timeoutHandler.prepareTimeout(timeoutNanos);
                 }
 
@@ -100,6 +103,9 @@ public final class UringEventloop extends Eventloop {
         if (completionQueue.hasCompletions()) {
             completionQueue.process();
         }
+
+        long durationMs = System.currentTimeMillis()-startMs;
+        System.out.println(reactor.name()+" park duration "+durationMs+ " ms");
     }
 
     @Override

@@ -297,7 +297,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                 metrics.incReads();
                 metrics.incBytesRead(bytesRead);
                // System.out.println(socket + " bytes read:" + res);
-                System.out.println(socket + " at "+System.currentTimeMillis()+" bytes read:" + res +" ");
+                //System.out.println(socket + " at "+System.currentTimeMillis()+" bytes read:" + res +" ");
                 // io_uring has written the new data into the byteBuffer, but the position we
                 // need to manually update.
                 rcvBuff.position(rcvBuff.position() + bytesRead);
@@ -374,8 +374,9 @@ public final class UringAsyncSocket extends AsyncSocket {
                 long durationMs = System.currentTimeMillis()-startMs;
                 metrics.incBytesWritten(res);
                 metrics.incWrites();
-                System.out.println(socket+ " at "+System.currentTimeMillis()+ " written " + res+" duration:"+durationMs+" ms");
-
+                if(durationMs>10) {
+                    System.out.println(socket + " at " + System.currentTimeMillis() + " written " + res + " duration:" + durationMs + " ms");
+                }
                 boolean sndBufferClean = true;
                 if (sndBuff != null) {
                     ioVector.clear();
@@ -391,10 +392,10 @@ public final class UringAsyncSocket extends AsyncSocket {
                         && ioVector.isEmpty()
                         && writeQueue.isEmpty();
                 if (isClean) {
-                    System.out.println(socket+" reset flushed");
+                    //System.out.println(socket+" reset flushed");
                     socket.resetFlushed();
                 } else {
-                    System.out.println(socket+" prepare write");
+                    //System.out.println(socket+" prepare write");
                     prepareWrite();
                     //networkScheduler.scheduleWrite(socket);
                 }
