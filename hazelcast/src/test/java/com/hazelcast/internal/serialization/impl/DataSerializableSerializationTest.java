@@ -30,6 +30,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.Version;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,11 +42,14 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-
 public class DataSerializableSerializationTest extends HazelcastTestSupport {
+    private static SerializationService ss;
 
-    private SerializationService ss = new DefaultSerializationServiceBuilder().setVersion(InternalSerializationService.VERSION_1)
-                                                                              .build();
+    @BeforeClass
+    public static void setUp() {
+        ss = new DefaultSerializationServiceBuilder().setVersion(InternalSerializationService.VERSION_1)
+                .build();
+    }
 
     @Test
     public void serializeAndDeserialize_DataSerializable() {
