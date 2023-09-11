@@ -194,7 +194,8 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
      * @return
      *         <ul>
      *         <li>If {@code exception} is an {@link NoSuchMethodError} and matches criteria of
-     *         {@link #tryGenerateClarifiedExceptionMessage(Class)}, a new {@link ReflectiveOperationException} with the new message
+     *         {@link #tryGenerateClarifiedExceptionMessage(Class)}, a new {@link ReflectiveOperationException} with the new
+     *         message
      *         <li>Otherwise, {code exception}
      *         </ul>
      */
