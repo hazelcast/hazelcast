@@ -157,7 +157,7 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
                 .uri(URI.create(url))
                 .build();
 
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+        return httpClient.send(request, HttpResponse.BodyHandlers.discarding())
                 .statusCode();
     }
 }
