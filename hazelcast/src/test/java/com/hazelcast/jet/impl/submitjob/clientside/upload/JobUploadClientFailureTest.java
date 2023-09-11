@@ -28,6 +28,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.SubmitJobParameters;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -340,6 +341,34 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     }
 
 
+    @Test
+    public void test_jarUpload_whenJobIsJoining() {
+        createCluster();
+        JetClientInstanceImpl jetService = getClientJetService();
+
+        String jobName = "joiningJob";
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
+                .setJarPath(getJoiningJarPath())
+                .setJobName(jobName);
+
+        try {
+            jetService.submitJobFromJar(submitJobParameters);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
+                .isInstanceOf(JetException.class)
+                .hasStackTraceContaining("The job has started successfully. However the job should not call the join() method.\n" +
+                                         "Please remove the join() call");
+
+        assertTrueEventually(() -> {
+            List<Job> jobs = jetService.getJobs();
+            assertEquals(1, jobs.size());
+            assertTrue(containsName(jobs, jobName));
+        });
+    }
+
     private void createCluster() {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
@@ -471,5 +500,17 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     private static void assertJobIsNotRunning(JetService jetService) {
         // Assert job size
         assertEqualsEventually(() -> jetService.getJobs().size(), 0);
+    }
+
+    public static void assertJobIsRunning(JetService jetService) throws IOException {
+        // Assert job size
+        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+
+        // Assert job status
+        Job job = jetService.getJobs().get(0);
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+
+        // Assert job jar does is deleted
+        jarDoesNotExistInTempDirectory();
     }
 }

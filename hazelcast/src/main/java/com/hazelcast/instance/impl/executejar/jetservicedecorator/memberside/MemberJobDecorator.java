@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance.impl.executejar.jetservicedecorator.memberside;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.JobStatusListener;
@@ -150,11 +151,10 @@ public class MemberJobDecorator implements Job {
         return delegateJob.getIdString();
     }
 
-    // Override the join method and convert it to No-op. So that a jar with a main method that calls join() on the
-    // jet job is not blocked
     @Override
     public void join() {
-        // No op
-        // Do not use a LOGGER here, because this method is called from the main method of a jar
+        String message = "The job has started successfully. However the job should not call the join() method.\n"
+                         + "Please remove the join() call";
+        throw new JetException(message);
     }
 }
