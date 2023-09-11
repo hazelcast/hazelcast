@@ -408,22 +408,21 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     @Override
     protected void close0() throws IOException {
     }
-//
-//    @Override
-//    public final String toString() {
-//        return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
-//    }
-
-    //     Do not remove this code. This exists for debugging purposes so it is easy to
-//     distinguish the client from the server side communication.
     @Override
     public final String toString() {
-        if (clientSide) {
-            return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
-        } else {
-            return "            " + getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
-        }
+        return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
     }
+
+//     Do not remove this code. This exists for debugging purposes so it is easy to
+//     distinguish the client from the server side communication.
+//    @Override
+//    public final String toString() {
+//        if (clientSide) {
+//            return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+//        } else {
+//            return "            " + getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+//        }
+//    }
 
     /**
      * Contains the metrics for an {@link AsyncSocket}.
@@ -567,6 +566,8 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
          * See {@link java.net.SocketOptions#TCP_NODELAY}
          */
         Option<Boolean> TCP_NODELAY = new Option<>("TCP_NODELAY", Boolean.class);
+
+        Option<Boolean> TCP_QUICKACK = new Option<>("TCP_QUICKACK", Boolean.class);
 
         /**
          * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE}

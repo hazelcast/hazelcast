@@ -42,6 +42,7 @@ import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_QUICKACK;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 
@@ -54,7 +55,7 @@ public abstract class LargePayloadTest {
 
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public int SOCKET_BUFFER_SIZE = 16 * 1024;
-    public int iterations = 20;
+    public int iterations = 20000;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     private final AtomicLong iteration = new AtomicLong();
@@ -378,9 +379,10 @@ public abstract class LargePayloadTest {
         test(16384 * 1024, 10, true);
     }
 
+    // problematic one
     @Test
     public void test_concurrency_10_payload_32MB_withWriter() throws Exception {
-        test(32768 * 1024, 10, true);
+        test(16384 * 1024, 50, true);
     }
 
     public void test(int payloadSize, int concurrency, boolean useWriter) throws Exception {
@@ -408,6 +410,10 @@ public abstract class LargePayloadTest {
         }
         clientSocket.flush();
 
+        Thread.sleep(10000);
+
+        System.out.println("Foo");
+
         assertCompletesEventually(futures, testTimeoutMs);
 
         System.out.println("iterations:" + iteration.get());
@@ -420,6 +426,7 @@ public abstract class LargePayloadTest {
     private AsyncSocket newClient(SocketAddress serverAddress, boolean useWriter) {
         AsyncSocket.Builder socketBuilder = clientReactor.newAsyncSocketBuilder();
         socketBuilder.options.set(TCP_NODELAY, true);
+        socketBuilder.options.set(TCP_QUICKACK, true);
         socketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
         socketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
         CompletableFuture future = new CompletableFuture();
@@ -442,6 +449,7 @@ public abstract class LargePayloadTest {
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
             socketBuilder.options.set(TCP_NODELAY, true);
+            socketBuilder.options.set(TCP_QUICKACK, true);
             socketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
             socketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
             socketBuilder.reader = new ServerReader();

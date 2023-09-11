@@ -328,8 +328,11 @@ public final class UringAsyncSocket extends AsyncSocket {
             // TODO: It could be that we run into an EAGAIN or EWOULDBLOCK.
         }
 
+        private long startMs;
+
         void prepareWrite() {
             try {
+                startMs=System.currentTimeMillis();
                 if (closing) {
                     return;
                 }
@@ -367,9 +370,10 @@ public final class UringAsyncSocket extends AsyncSocket {
 
         private void completeWrite(int res) {
             if (res >= 0) {
+                long durationMs = System.currentTimeMillis()-startMs;
                 metrics.incBytesWritten(res);
                 metrics.incWrites();
-                //System.out.println(socket + " written " + res);
+                System.out.println(socket + " written " + res+" duration:"+durationMs+" ms");
 
                 boolean sndBufferClean = true;
                 if (sndBuff != null) {
@@ -381,12 +385,17 @@ public final class UringAsyncSocket extends AsyncSocket {
                     ioVector.compact(res);
                 }
 
-                if (writerClean && sndBufferClean && ioVector.isEmpty() && writeQueue.isEmpty()) {
-                    // everything was written
+                boolean isClean = writerClean
+                        && sndBufferClean
+                        && ioVector.isEmpty()
+                        && writeQueue.isEmpty();
+                if (isClean) {
+                    System.out.println(socket+" reset flushed");
                     socket.resetFlushed();
                 } else {
-                    // not everying was written, we need to schedule again
-                    networkScheduler.scheduleWrite(socket);
+                    System.out.println(socket+" prepare write");
+                    prepareWrite();
+                    //networkScheduler.scheduleWrite(socket);
                 }
             } else if (res == -EAGAIN) {
                 // try again.
@@ -516,7 +525,9 @@ public final class UringAsyncSocket extends AsyncSocket {
 
         @Override
         public boolean isSupported(Option option) {
-            if (TCP_NODELAY.equals(option)) {
+            if(TCP_QUICKACK.equals(option)){
+                return true;
+            }else if (TCP_NODELAY.equals(option)) {
                 return true;
             } else if (SO_RCVBUF.equals(option)) {
                 return true;
@@ -544,6 +555,8 @@ public final class UringAsyncSocket extends AsyncSocket {
             try {
                 if (TCP_NODELAY.equals(option)) {
                     return (T) (Boolean) nativeSocket.isTcpNoDelay();
+                } else if (TCP_QUICKACK.equals(option)) {
+                    return (T) (Boolean) nativeSocket.isTcpQuickAck();
                 } else if (SO_RCVBUF.equals(option)) {
                     return (T) (Integer) nativeSocket.getReceiveBufferSize();
                 } else if (SO_SNDBUF.equals(option)) {
@@ -577,7 +590,10 @@ public final class UringAsyncSocket extends AsyncSocket {
                 if (TCP_NODELAY.equals(option)) {
                     nativeSocket.setTcpNoDelay((Boolean) value);
                     return true;
-                } else if (SO_RCVBUF.equals(option)) {
+                } else if (TCP_QUICKACK.equals(option)) {
+                    nativeSocket.setTcpQuickAck((Boolean) value);
+                    return true;
+                }  else if (SO_RCVBUF.equals(option)) {
                     nativeSocket.setReceiveBufferSize((Integer) value);
                     return true;
                 } else if (SO_SNDBUF.equals(option)) {

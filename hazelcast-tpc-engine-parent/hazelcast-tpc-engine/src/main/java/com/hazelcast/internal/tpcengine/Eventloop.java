@@ -281,6 +281,7 @@ public abstract class Eventloop {
         while (!stop) {
             deadlineScheduler.tick(runCtx.nowNanos);
 
+
             signals.process();
 
             final TaskQueue taskQueue = scheduler.pickNext();
@@ -290,6 +291,9 @@ public abstract class Eventloop {
 
                 // There is no work and therefor we need to park.
                 long earliestDeadlineNs = deadlineScheduler.earliestDeadlineNs();
+                if(earliestDeadlineNs!=-1){
+                    throw new RuntimeException("No timeouts expected");
+                }
                 long timeoutNs = earliestDeadlineNs == -1
                         ? Long.MAX_VALUE
                         : max(0, earliestDeadlineNs - runCtx.nowNanos);

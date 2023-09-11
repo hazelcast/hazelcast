@@ -37,6 +37,9 @@ public final class UringEventloop extends Eventloop {
     private UringEventloop(Builder builder) {
         super(builder);
 
+        UringFifoNetworkScheduler networkScheduler = (UringFifoNetworkScheduler) builder.networkScheduler;
+        networkScheduler.eventloopThread = builder.reactor.eventloopThread();
+
         UringReactor.Builder reactorBuilder = (UringReactor.Builder) builder.reactorBuilder;
         this.uring = builder.uring;
         this.submissionQueue = uring.submissionQueue();
@@ -70,7 +73,7 @@ public final class UringEventloop extends Eventloop {
 
         boolean skipPark = timeoutNanos == 0;
         if (completionQueue.hasCompletions()) {
-            skipPark |= true;
+            skipPark = true;
             completionQueue.process();
         }
 
@@ -78,10 +81,14 @@ public final class UringEventloop extends Eventloop {
             submissionQueue.submit();
         } else {
             wakeupNeeded.set(true);
+            if(networkScheduler.hasPending()){
+                throw new RuntimeException();
+            }
             if (signals.hasRaised()) {
                 submissionQueue.submit();
             } else {
                 if (timeoutNanos != Long.MAX_VALUE) {
+                    System.out.println("Timeout!!");
                     timeoutHandler.prepareTimeout(timeoutNanos);
                 }
 
@@ -99,10 +106,10 @@ public final class UringEventloop extends Eventloop {
     protected boolean ioTick() {
         metrics.incIoSchedulerTicks();
 
-        networkScheduler.tick();
-        storageScheduler.tick();
-
         boolean worked = false;
+
+        worked |= networkScheduler.tick();
+        worked |= storageScheduler.tick();
 
         if (submissionQueue.submit() > 0) {
             worked = true;

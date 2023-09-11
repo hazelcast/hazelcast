@@ -71,6 +71,10 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
  * <p>
  * The IOBuffer should be the care taker of reading/writing to the underlying
  * byte array or pointer.
+ * <p/>
+ * If you run out of memory allocating direct memory, add:
+ * <code>-XX:MaxDirectMemorySize=512m</code>
+ * And increase the value accordingly.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MethodCount", "java:S1149", "java:S1135"})
 public class IOBuffer {

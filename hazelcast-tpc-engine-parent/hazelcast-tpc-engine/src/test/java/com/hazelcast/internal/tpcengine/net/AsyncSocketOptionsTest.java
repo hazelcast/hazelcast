@@ -33,6 +33,7 @@ import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_KEEPC
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_KEEPIDLE;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_KEEPINTERVAL;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_QUICKACK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -153,6 +154,16 @@ public abstract class AsyncSocketOptionsTest {
         assertEquals(Boolean.TRUE, options.get(TCP_NODELAY));
         options.set(TCP_NODELAY, false);
         assertEquals(Boolean.FALSE, options.get(TCP_NODELAY));
+    }
+
+    @Test
+    public void test_TCP_QUICKACK() {
+        AsyncSocket socket = newSocket();
+        AsyncSocket.Options options = socket.options();
+        options.set(TCP_QUICKACK, true);
+        assertEquals(Boolean.TRUE, options.get(TCP_QUICKACK));
+        options.set(TCP_QUICKACK, false);
+        assertEquals(Boolean.FALSE, options.get(TCP_QUICKACK));
     }
 
     @Test

@@ -114,9 +114,13 @@ public final class LinuxSocket implements AutoCloseable {
 
     private static native InetSocketAddress getRemoteAddress(int socketfd);
 
-    private static native void setTcpNoDelay(int socketFd, boolean tcpNoDelay) throws IOException;
+    private static native void setTcpNoDelay(int socketFd, boolean enabled) throws IOException;
 
     private static native boolean isTcpNoDelay(int socketFd) throws IOException;
+
+    private static native void setTcpQuickAck(int socketFd, boolean enabled) throws IOException;
+
+    private static native boolean isTcpQuickAck(int socketFd) throws IOException;
 
     private static native void setTcpKeepAliveTime(int socketFd, int keepAliveTime) throws IOException;
 
@@ -215,12 +219,20 @@ public final class LinuxSocket implements AutoCloseable {
         return getLocalAddress(fd);
     }
 
-    public void setTcpNoDelay(boolean tcpNoDelay) throws IOException {
-        setTcpNoDelay(fd, tcpNoDelay);
+    public void setTcpNoDelay(boolean enabled) throws IOException {
+        setTcpNoDelay(fd, enabled);
     }
 
     public boolean isTcpNoDelay() throws IOException {
         return isTcpNoDelay(fd);
+    }
+
+    public void setTcpQuickAck(boolean enabled)throws IOException {
+        setTcpQuickAck(fd, enabled);
+    }
+
+    public boolean isTcpQuickAck()throws IOException {
+        return isTcpQuickAck(fd);
     }
 
     public int getSendBufferSize() throws IOException {
@@ -362,4 +374,5 @@ public final class LinuxSocket implements AutoCloseable {
     public String toString() {
         return "LinuxSocket(fd=" + fd + ")";
     }
+
 }
