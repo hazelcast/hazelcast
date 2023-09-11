@@ -17,10 +17,12 @@
 package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.IMap;
@@ -36,6 +38,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -162,6 +168,78 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
         }
 
         serverMap.clear();
+
+        assertNearCacheSizeEventually(clientMap, 0);
+    }
+
+    @Test
+    public void testPutAllWithMetadata_shouldClearNearCaches_onOwnerAndBackupNodes() {
+        Config config = getConfig();
+        configureBatching(config, 10, 1);
+
+        ClientConfig clientConfig = getClientConfig(mapName);
+
+        HazelcastInstance server = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        makeSureConnectedToServers(client, 2);
+
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        IMap<Integer, Integer> clientMap = client.getMap(mapName);
+
+        int size = 1000;
+
+        // fill serverMap
+        for (int i = 0; i < size; i++) {
+            serverMap.put(i, i);
+        }
+
+        List<EntryView<Integer, Integer>> entries = new ArrayList<>(size);
+
+        // fill Near Cache on client
+        for (int i = 0; i < size; i++) {
+            clientMap.get(i);
+            entries.add(clientMap.getEntryView(i));
+        }
+
+        ((ClientMapProxy<Integer, Integer>) clientMap).putAllWithMetadataAsync(entries);
+
+        assertNearCacheSizeEventually(clientMap, 0);
+    }
+
+    @Test
+    public void testPutAll_shouldClearNearCaches_onOwnerAndBackupNodes() {
+        Config config = getConfig();
+        configureBatching(config, 10, 1);
+
+        ClientConfig clientConfig = getClientConfig(mapName);
+
+        HazelcastInstance server = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        makeSureConnectedToServers(client, 2);
+
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        IMap<Integer, Integer> clientMap = client.getMap(mapName);
+
+        int size = 1000;
+
+        // fill serverMap
+        for (int i = 0; i < size; i++) {
+            serverMap.put(i, i);
+        }
+
+        Map<Integer, Integer> entries = new HashMap<>(size);
+
+        // fill Near Cache on client
+        for (int i = 0; i < size; i++) {
+            clientMap.get(i);
+            entries.put(i, i);
+        }
+
+        clientMap.putAll(entries);
 
         assertNearCacheSizeEventually(clientMap, 0);
     }
