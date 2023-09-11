@@ -100,19 +100,7 @@ public class HazelcastVersionLocator {
         }
 
         private static String getMvn() {
-            if (OsHelper.isWindows()) {
-                return "mvn.cmd";
-            } else {
-                final String mvn = "mvn";
-
-                if (!new File(mvn).exists() && OsHelper.isMac()) {
-                    // Eclipse doesn't properly read the $PATH, so hardcode another location -
-                    // https://stackoverflow.com/q/76866453
-                    return "/opt/homebrew/bin/mvn";
-                } else {
-                    return mvn;
-                }
-            }
+            return OsHelper.isWindows() ? "mvn.cmd" : "mvn";
         }
 
         private void downloadArtifact(final String version) {
