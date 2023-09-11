@@ -360,7 +360,8 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
     @Test
     @Ignore("https://github.com/hazelcast/hazelcast/issues/22527")
     public void givenColumnPropSubset_whenStore_thenTableContainsRow() throws SQLException {
-        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)", quote("other") + " VARCHAR(100) DEFAULT 'def'");
+        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY",
+                quote("name") + " VARCHAR(100)", quote("other") + " VARCHAR(100) DEFAULT 'def'");
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
              Statement stmt = conn.createStatement()
         ) {

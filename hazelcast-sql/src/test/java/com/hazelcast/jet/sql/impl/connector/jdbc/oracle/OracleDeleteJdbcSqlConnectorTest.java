@@ -19,11 +19,9 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.oracle;
 import com.hazelcast.jet.sql.impl.connector.jdbc.DeleteJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.OracleDatabaseProvider;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-import java.util.Locale;
 
 @Category(NightlyTest.class)
 public class OracleDeleteJdbcSqlConnectorTest extends DeleteJdbcSqlConnectorTest {

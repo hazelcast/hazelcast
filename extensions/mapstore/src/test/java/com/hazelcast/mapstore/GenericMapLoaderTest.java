@@ -164,7 +164,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenTableMultipleColumns_whenLoad_thenReturnGenericRecord() throws Exception {
-        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)", quote("age") + " INT", quote("address") + " VARCHAR(100)");
+        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)",
+                quote("age") + " INT", quote("address") + " VARCHAR(100)");
         executeJdbc("INSERT INTO " + quote(mapName) + " VALUES(0, 'name-0', 42, 'Palo Alto, CA 94306')");
 
         mapLoader = createMapLoader();
@@ -191,7 +192,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenTable_whenSetColumns_thenGenericRecordHasSetColumns() throws Exception {
-        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)", quote("age") + " INT", quote("address") + "VARCHAR(100)");
+        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY",
+                quote("name") + " VARCHAR(100)", quote("age") + " INT", quote("address") + "VARCHAR(100)");
         executeJdbc("INSERT INTO " + quote(mapName) + " VALUES(0, 'name-0', 42, 'Palo Alto, CA 94306')");
 
         Properties properties = new Properties();
@@ -209,7 +211,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenSetNonExistingColumnOnSecondMapStore_thenFailToInitialize() throws Exception {
-        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)", quote("age") + " INT");
+        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY",
+                quote("name") + " VARCHAR(100)", quote("age") + " INT");
         executeJdbc("INSERT INTO " + quote(mapName) + " VALUES(0, 'name-0', 42)");
         createMapping(mapName, MAPPING_PREFIX + mapName);
         assertMappingCreated();
@@ -244,7 +247,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenSetNonExistingColumnOnSecondMapLoader_thenFailToInitialize() throws Exception {
-        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)", quote("age") + " INT");
+        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY",
+                quote("name") + " VARCHAR(100)", quote("age") + " INT");
         executeJdbc("INSERT INTO " + quote(mapName) + " VALUES(0, 'name-0', 42)");
         createMapping(mapName, MAPPING_PREFIX + mapName);
         assertMappingCreated();

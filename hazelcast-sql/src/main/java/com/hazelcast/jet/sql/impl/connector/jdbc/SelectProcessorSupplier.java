@@ -51,6 +51,11 @@ public class SelectProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
+    private static final int REAL_PRECISION = 63;
+    private static final int DOUBLE_PRECISION = 126;
+    private static final int INT_PRECISION = 38;
+    private static final int REAL_DOUBLE_SCALE = -127;
+    private static final int INT_SCALE = 0;
     private String query;
     private int[] parameterPositions;
 
@@ -157,11 +162,11 @@ public class SelectProcessorSupplier
         if (type.equals("NUMBER")) {
             int precision = metaData.getPrecision(column + 1);
             int scale = metaData.getScale(column + 1);
-            if (precision == 63 && scale == -127) {
+            if (precision == REAL_PRECISION && scale == REAL_DOUBLE_SCALE) {
                 return "REAL";
-            } else if (precision == 38 && scale == 0) {
+            } else if (precision == INT_PRECISION && scale == INT_SCALE) {
                 return "INT";
-            } else if (precision == 126 && scale == -127) {
+            } else if (precision == DOUBLE_PRECISION && scale == REAL_DOUBLE_SCALE) {
                 return "DOUBLE PRECISION";
             }
         }

@@ -127,7 +127,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void deleteFromWithMultiplePKColumns() throws Exception {
-        createTable(quote(tableName),  quote("id") + " INT", quote("id2")+ " INT", quote("name") + " VARCHAR(10)", "PRIMARY KEY(" + quote("id") + ", " + quote("id2") + ")");
+        createTable(quote(tableName),  quote("id") + " INT", quote("id2") + " INT", quote("name") + " VARCHAR(10)", "PRIMARY KEY(" + quote("id") + ", " + quote("id2") + ")");
         executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 0, 'name-0')");
         executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 0, 'name-1')");
         executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 1, 'name-2')");

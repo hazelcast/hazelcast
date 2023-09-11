@@ -38,7 +38,6 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
-import java.util.Locale;
 
 import static org.assertj.core.util.Lists.newArrayList;
 import static java.util.Arrays.asList;

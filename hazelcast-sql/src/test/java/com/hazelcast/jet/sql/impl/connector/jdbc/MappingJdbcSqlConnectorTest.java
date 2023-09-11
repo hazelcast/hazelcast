@@ -237,7 +237,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
              Statement stmt = conn.createStatement()
         ) {
-            stmt.execute("CREATE TABLE " + quote(tableName) + " ("+ quote("id") + " INT PRIMARY KEY, " + quote("name") + " VARCHAR(10))");
+            stmt.execute("CREATE TABLE " + quote(tableName) + " (" + quote("id") + " INT PRIMARY KEY, " + quote("name") + " VARCHAR(10))");
         }
 
         assertThatThrownBy(() ->

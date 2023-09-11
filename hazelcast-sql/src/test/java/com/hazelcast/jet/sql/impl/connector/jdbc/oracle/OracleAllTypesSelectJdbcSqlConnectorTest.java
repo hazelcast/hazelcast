@@ -23,10 +23,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-import java.util.Locale;
-
 import static org.assertj.core.api.Assumptions.assumeThat;
-import static org.assertj.core.util.Lists.newArrayList;
+
 
 @Category(NightlyTest.class)
 public class OracleAllTypesSelectJdbcSqlConnectorTest extends AllTypesSelectJdbcSqlConnectorTest {
