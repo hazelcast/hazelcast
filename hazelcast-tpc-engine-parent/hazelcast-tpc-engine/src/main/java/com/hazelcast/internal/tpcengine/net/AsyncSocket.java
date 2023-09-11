@@ -18,9 +18,9 @@ package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.Signals;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpcengine.nio.IOVector;
 import com.hazelcast.internal.tpcengine.util.Option;
 import org.jctools.queues.MpscArrayQueue;
 
@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.Thread.currentThread;
 
@@ -72,9 +71,11 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     protected final Reader reader;
     protected final Writer writer;
     protected final Options options;
+    protected final Signals signals;
     protected volatile long lastReadTimeNanos = -1;
     protected volatile SocketAddress remoteAddress;
     protected volatile SocketAddress localAddress;
+    protected final Runnable signalAction;
     // only accessed from eventloop thread.
     protected boolean started;
 
@@ -83,6 +84,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         this.metrics = builder.metrics;
         this.clientSide = builder.clientSide;
         this.reactor = builder.reactor;
+        this.signals = builder.signals;
         this.eventloop = builder.reactor.eventloop();
         this.eventloopThread = reactor.eventloopThread();
         this.networkScheduler = builder.networkScheduler;
@@ -90,6 +92,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         this.options = builder.options;
         this.reader = builder.reader;
         this.writer = builder.writer;
+        this.signalAction = () -> networkScheduler.scheduleWrite(AsyncSocket.this);
     }
 
     /**
@@ -243,7 +246,6 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     // Guaranteed to be running on the eventloop thread.
     protected abstract void start00();
 
-
     /**
      * Ensures that any scheduled IOBuffers are flushed to the socket at some point
      * in the future.
@@ -270,20 +272,14 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
             return;
         }
 
-        // We successfully managed to flush this socket, now we need to
-        // schedule it at the network scheduler so it gets picked up for
-        // processing.
         if (currentThread == eventloopThread) {
-            networkScheduler.unsafeSchedule(this);
+            networkScheduler.scheduleWrite(this);
         } else {
-            networkScheduler.schedule(this);
-            reactor.wakeup();
+            signals.raise(signalAction);
         }
     }
 
     protected final void resetFlushed() {
-        // todo: we only need to call reset flushed if the writeQueue is drained
-
         flushThread.set(null);
 
         if (writeQueue.isEmpty()) {
@@ -369,7 +365,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         Thread currentThread = currentThread();
         if (currentThread != eventloopThread) {
             throw new IllegalStateException(
-                    "unsafeWriteAndFlush can only be made from eventloop thread, "
+                    "insideWriteAndFlush can only be made from eventloop thread, "
                             + "found " + currentThread);
         }
 
@@ -389,10 +385,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         boolean offered = insideWrite(msg);
 
         if (triggeredFlush && offered) {
-            // We only want to schedule the socket if the msg was successfully
-            // offered and we triggered the flush. Since we are on the eventloop
-            // thread, unsafeSchedule can be called.
-            networkScheduler.unsafeSchedule(this);
+            networkScheduler.scheduleWrite(this);
         }
 
         return offered;
@@ -416,21 +409,21 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     protected void close0() throws IOException {
     }
 //
-    @Override
-    public final String toString() {
-        return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
-    }
+//    @Override
+//    public final String toString() {
+//        return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+//    }
 
     //     Do not remove this code. This exists for debugging purposes so it is easy to
 //     distinguish the client from the server side communication.
-//    @Override
-//    public final String toString() {
-//        if (clientSide) {
-//            return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
-//        } else {
-//            return "            " + getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
-//        }
-//    }
+    @Override
+    public final String toString() {
+        if (clientSide) {
+            return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+        } else {
+            return "            " + getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+        }
+    }
 
     /**
      * Contains the metrics for an {@link AsyncSocket}.
@@ -725,6 +718,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
         public AcceptRequest acceptRequest;
         public Reactor reactor;
+        public Signals signals;
         public NetworkScheduler networkScheduler;
         public int writeQueueCapacity = DEFAULT_WRITE_QUEUE_CAPACITY;
 
@@ -756,8 +750,6 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
         public Options options;
 
-        public IOVector ioVector;
-
         public Metrics metrics;
 
         @Override
@@ -769,6 +761,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
             super.conclude();
 
             checkNotNull(reactor, "reactor");
+            checkNotNull(signals, "signals");
             checkNotNull(networkScheduler, "networkScheduler");
             checkPositive(writeQueueCapacity, "writeQueueCapacity");
             checkNotNull(reader, "reader");
@@ -780,14 +773,6 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
             if (writeQueue == null) {
                 writeQueue = new MpscArrayQueue(writeQueueCapacity);
-            }
-
-            if (writer == null) {
-                if (ioVector == null) {
-                    ioVector = new IOVector();
-                }
-            } else {
-                checkNull(ioVector, "ioVector");
             }
         }
     }

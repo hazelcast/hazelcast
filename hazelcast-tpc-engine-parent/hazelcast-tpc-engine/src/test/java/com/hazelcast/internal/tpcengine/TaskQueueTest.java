@@ -46,6 +46,7 @@ public class TaskQueueTest {
                 throw new RuntimeException();
             }
         });
+
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {

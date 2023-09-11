@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import java.util.Comparator;
 import java.util.PriorityQueue;
 
-import static com.hazelcast.internal.tpcengine.TaskQueue.STATE_RUNNING;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.Math.max;
 import static java.lang.Math.pow;
@@ -70,7 +70,12 @@ public class CompletelyFairScheduler extends Scheduler {
                                    long targetLatencyNanos,
                                    long minGranularityNanos) {
         this.runQueueLimit = checkPositive(runQueueLimit, "runQueueLimit");
-        this.runQueue = new PriorityQueue<>(runQueueLimit);
+        this.runQueue = new PriorityQueue<>(runQueueLimit, new Comparator<TaskQueue>() {
+            @Override
+            public int compare(TaskQueue o1, TaskQueue o2) {
+                return Long.compare(o1.virtualRuntimeNanos, o2.virtualRuntimeNanos);
+            }
+        });
         this.targetLatencyNanos = checkPositive(targetLatencyNanos, "targetLatencyNanos");
         this.minGranularityNanos = checkPositive(minGranularityNanos, "minGranularityNanos");
     }
@@ -172,7 +177,7 @@ public class CompletelyFairScheduler extends Scheduler {
 
         totalWeight += taskQueue.weight;
         runQueueSize++;
-        taskQueue.runState = STATE_RUNNING;
+
         taskQueue.virtualRuntimeNanos
                 = max(taskQueue.virtualRuntimeNanos, min_virtualRuntimeNanos);
         runQueue.add(taskQueue);

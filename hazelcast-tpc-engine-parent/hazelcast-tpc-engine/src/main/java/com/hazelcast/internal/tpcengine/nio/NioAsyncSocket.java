@@ -39,10 +39,12 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNull;
 import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_CONNECT;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
+
 
 /**
  * Nio implementation of the {@link AsyncSocket}.
@@ -263,7 +265,6 @@ public final class NioAsyncSocket extends AsyncSocket {
             this.rcvBuffer = builder.receiveBufferIsDirect
                     ? ByteBuffer.allocateDirect(rcvBufferSize)
                     : ByteBuffer.allocate(rcvBufferSize);
-
             if (ioVector == null) {
                 int sndBufferSize = builder.socketChannel.socket().getSendBufferSize();
                 this.sndBuffer = builder.receiveBufferIsDirect
@@ -366,9 +367,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
                 int ioVectorLength = ioVector.length();
                 ByteBuffer[] srcs = ioVector.array();
-                bytesWritten = ioVectorLength == 1
-                        ? socketChannel.write(srcs[0])
-                        : socketChannel.write(srcs, 0, ioVectorLength);
+                bytesWritten = ioVectorLength == 1 ? socketChannel.write(srcs[0]) : socketChannel.write(srcs, 0, ioVectorLength);
                 ioVector.compact(bytesWritten);
                 clean = ioVector.isEmpty();
             } else {
@@ -505,6 +504,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         public SocketChannel socketChannel;
         public Selector selector;
         public boolean receiveBufferIsDirect = true;
+        public IOVector ioVector;
 
         public Builder(NioAsyncServerSocket.AcceptRequest acceptRequest) {
             try {
@@ -533,6 +533,14 @@ public final class NioAsyncSocket extends AsyncSocket {
 
             checkNotNull(socketChannel, "socketChannel");
             checkNotNull(selector, "selector");
+
+            if (writer == null) {
+                if (ioVector == null) {
+                    ioVector = new IOVector();
+                }
+            } else {
+                checkNull(ioVector, "ioVector");
+            }
         }
 
         @SuppressWarnings("java:S1181")

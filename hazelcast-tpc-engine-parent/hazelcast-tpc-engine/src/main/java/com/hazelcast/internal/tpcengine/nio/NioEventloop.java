@@ -63,23 +63,17 @@ final class NioEventloop extends Eventloop {
     }
 
     @Override
-    protected boolean ioSchedulerTick() throws IOException {
-        metrics.incIoSchedulerTicks();
-
-        boolean worked = false;
-
-        worked |= storageScheduler.tick();
-        worked |= networkScheduler.tick();
+    protected boolean ioTick() throws IOException {
+        networkScheduler.tick();
+        storageScheduler.tick();
 
         // A selectNow, that has nothing do, will take between 75/200ns
-        int keyCount = selector.selectNow();
-
-        if (keyCount > 0) {
+        if (selector.selectNow() > 0) {
             handleSelectedKeys();
-            worked = true;
+            return true;
+        } else {
+            return false;
         }
-
-        return worked;
     }
 
     private void handleSelectedKeys() {
@@ -105,10 +99,9 @@ final class NioEventloop extends Eventloop {
         networkScheduler.tick();
         storageScheduler.tick();
 
-        boolean worked = false;
         int keyCount;
         long timeoutMs = timeoutNanos / NANOS_PER_MILLI;
-        if (spin || timeoutMs == 0 || worked) {
+        if (timeoutMs == 0) {
             keyCount = selector.selectNow();
         } else {
             wakeupNeeded.set(true);
@@ -118,9 +111,11 @@ final class NioEventloop extends Eventloop {
             // thread goes to sleep even though there is work that it should have
             // processed and this can lead to stalled behavior like stalled socket
             //todo: ugly hack with the storage scheduler
-            if (scheduler.hasConcurrentPending()
+
+            //todo: storage scheduler should go through signals?
+            if (signals.hasRaised()
                     || ((NioFifoStorageScheduler) storageScheduler).hasPending()
-                    || networkScheduler.hasPending()) {
+            ) {
                 keyCount = selector.selectNow();
             } else {
                 keyCount = timeoutNanos == Long.MAX_VALUE

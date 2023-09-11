@@ -183,7 +183,7 @@ public class NetworkBenchmark {
         ThreadAffinity affinity = cpuAffinityServer == null ? null : new ThreadAffinity(cpuAffinityServer);
         for (int k = 0; k < serverReactorCount; k++) {
             Reactor.Builder reactorBuilder = Reactor.Builder.newReactorBuilder(reactorType);
-            reactorBuilder.spin = spin;
+            //reactorBuilder.spin = spin;
             reactorBuilder.reactorName = "ServerReactor-" + k;
             reactorBuilder.threadName = "ServerReactor-" + k;
             reactorBuilder.threadAffinity = affinity;
@@ -205,7 +205,7 @@ public class NetworkBenchmark {
         ThreadAffinity affinity = cpuAffinityClient == null ? null : new ThreadAffinity(cpuAffinityClient);
         for (int k = 0; k < clientReactorCount; k++) {
             Reactor.Builder reactorBuilder = Reactor.Builder.newReactorBuilder(reactorType);
-            reactorBuilder.spin = spin;
+            //reactorBuilder.spin = spin;
             reactorBuilder.reactorName = "ClientReactor-" + k;
             reactorBuilder.threadName = "ClientReactor-" + k;
             reactorBuilder.threadAffinity = affinity;

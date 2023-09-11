@@ -24,6 +24,7 @@ import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
 import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
+import com.hazelcast.internal.tpcengine.util.IdleStrategy;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
 import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.PromiseAllocator;
@@ -54,7 +55,7 @@ public abstract class Eventloop {
     private static final int INITIAL_PROMISE_ALLOCATOR_CAPACITY = 1024;
 
     protected final Reactor reactor;
-    protected final boolean spin;
+    protected final IdleStrategy idleStrategy;
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final PromiseAllocator promiseAllocator;
@@ -69,14 +70,16 @@ public abstract class Eventloop {
     protected final DeadlineScheduler deadlineScheduler;
     protected final Scheduler scheduler;
     protected final StallHandler stallHandler;
+    protected final Signals signals;
     protected boolean stop;
 
     @SuppressWarnings({"checkstyle:ExecutableStatementCount"})
     protected Eventloop(Builder builder) {
         this.reactor = builder.reactor;
+        this.signals = builder.reactor.signals;
         this.eventloopThread = builder.reactor.eventloopThread;
         this.metrics = reactor.metrics;
-        this.spin = builder.reactorBuilder.spin;
+        this.idleStrategy = builder.reactorBuilder.idleStrategy;
         this.deadlineScheduler = builder.deadlineScheduler;
         this.networkScheduler = builder.networkScheduler;
         this.storageScheduler = builder.storageScheduler;
@@ -177,6 +180,11 @@ public abstract class Eventloop {
         return nowNanos > runContext.taskDeadlineNanos;
     }
 
+    /**
+     * Offers a task to be processed on the default TaskQueue.
+     * @param task
+     * @return
+     */
     public final boolean offer(Object task) {
         return defaultTaskQueue.offer(task);
     }
@@ -194,19 +202,6 @@ public abstract class Eventloop {
             throw new IllegalThreadStateException("Can only be called from the eventloop thread "
                     + "[" + eventloopThread + "], found [" + currentThread + "].");
         }
-    }
-
-    /**
-     * Creates an new {@link TaskQueue.Builder} for this Eventloop.
-     *
-     * @return the created builder.
-     * @throws IllegalStateException if current thread is not the Eventloop thread.
-     */
-    public final TaskQueue.Builder newTaskQueueBuilder() {
-        checkOnEventloopThread();
-        TaskQueue.Builder taskQueueBuilder = new TaskQueue.Builder();
-        taskQueueBuilder.eventloop = this;
-        return taskQueueBuilder;
     }
 
     /**
@@ -267,6 +262,14 @@ public abstract class Eventloop {
      *                   The reactor will terminate when this happens.
      */
     public final void run() throws Exception {
+        if (idleStrategy == null) {
+            runWithoutIdling();
+        } else {
+            runWithIdling();
+        }
+    }
+
+    private void runWithoutIdling() throws Exception {
         final TaskQueue.RunContext runCtx = this.runContext;
         final DeadlineScheduler deadlineScheduler = this.deadlineScheduler;
         final Scheduler scheduler = this.scheduler;
@@ -278,9 +281,9 @@ public abstract class Eventloop {
         while (!stop) {
             deadlineScheduler.tick(runCtx.nowNanos);
 
-            scheduler.scheduleBlockedConcurrent();
+            signals.process();
 
-            TaskQueue taskQueue = scheduler.pickNext();
+            final TaskQueue taskQueue = scheduler.pickNext();
             if (taskQueue == null) {
                 long epochNanosBeforePark = epochNanos();
                 runCtx.nowNanos = epochNanosBeforePark;
@@ -317,6 +320,32 @@ public abstract class Eventloop {
         }
     }
 
+    private void runWithIdling() throws Exception {
+        final TaskQueue.RunContext runCtx = this.runContext;
+        final IdleStrategy idleStrategy = this.idleStrategy;
+        final Scheduler scheduler = this.scheduler;
+        final DeadlineScheduler deadlineScheduler = this.deadlineScheduler;
+
+        while (!stop) {
+            deadlineScheduler.tick(runCtx.nowNanos);
+
+            signals.process();
+
+            final TaskQueue taskQueue = scheduler.pickNext();
+            if (taskQueue != null) {
+                idleStrategy.reset();
+                taskQueue.run(runCtx);
+            } else if (ioTick()) {
+                idleStrategy.reset();
+                runCtx.nowNanos = epochNanos();
+                runCtx.ioDeadlineNanos = runCtx.nowNanos + runCtx.ioIntervalNanos;
+            } else {
+                Thread.yield();
+                //idleStrategy.idle();
+            }
+        }
+    }
+
     /**
      * Destroys the resources of this Eventloop. Is called after the {@link #run()}.
      * <p>
@@ -331,10 +360,11 @@ public abstract class Eventloop {
     }
 
     /**
-     * @return true if work was triggered that requires attention of the eventloop.
+     * @return true if work was triggered that requires attention
+     * of the eventloop.
      * @throws IOException
      */
-    protected abstract boolean ioSchedulerTick() throws IOException;
+    protected abstract boolean ioTick() throws IOException;
 
     /**
      * Parks the eventloop thread until there is work. So either there are

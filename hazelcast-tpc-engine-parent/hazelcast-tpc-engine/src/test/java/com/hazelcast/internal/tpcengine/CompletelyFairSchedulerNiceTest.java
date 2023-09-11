@@ -63,9 +63,11 @@ public class CompletelyFairSchedulerNiceTest {
             public List<DummyTask> call() throws Exception {
                 Eventloop eventloop = reactor.eventloop();
 
+                int descriptor = 1;
                 List<DummyTask> tasks = new ArrayList<>();
                 for (int nice = TaskQueue.Builder.MIN_NICE; nice < TaskQueue.Builder.MAX_NICE; nice++) {
-                    TaskQueue.Builder taskQueueBuilder = eventloop.newTaskQueueBuilder();
+                    TaskQueue.Builder taskQueueBuilder = reactor.newTaskQueueBuilder();
+                    taskQueueBuilder.descriptor = descriptor;
                     taskQueueBuilder.nice = nice;
                     taskQueueBuilder.queue = new MpscArrayQueue<>(1024);
                     taskQueueBuilder.concurrent = true;
@@ -73,6 +75,7 @@ public class CompletelyFairSchedulerNiceTest {
                     DummyTask dummyTask = new DummyTask();
                     tasks.add(dummyTask);
                     taskQueue.offer(dummyTask);
+                    descriptor++;
                 }
                 return tasks;
             }

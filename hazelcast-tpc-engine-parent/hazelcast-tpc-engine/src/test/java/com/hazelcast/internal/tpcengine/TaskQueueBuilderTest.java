@@ -47,8 +47,9 @@ public class TaskQueueBuilderTest {
         CompletableFuture f = reactor.submit(new Runnable() {
             @Override
             public void run() {
-                TaskQueue.Builder builder = reactor.eventloop().newTaskQueueBuilder();
+                TaskQueue.Builder builder = reactor.newTaskQueueBuilder();
                 builder.queue = new MpscArrayQueue<>(1024);
+                builder.descriptor = 1;
                 builder.nice = TaskQueue.Builder.MIN_NICE - 1;
                 assertThrows(IllegalArgumentException.class, () -> builder.build());
             }
@@ -61,8 +62,9 @@ public class TaskQueueBuilderTest {
         CompletableFuture f = reactor.submit(new Runnable() {
             @Override
             public void run() {
-                TaskQueue.Builder builder = reactor.eventloop().newTaskQueueBuilder();
+                TaskQueue.Builder builder = reactor.newTaskQueueBuilder();
                 builder.queue = new MpscArrayQueue<>(1024);
+                builder.descriptor = 1;
                 builder.nice = TaskQueue.Builder.MAX_NICE + 1;
                 assertThrows(IllegalArgumentException.class, () -> builder.build());
             }
@@ -75,7 +77,8 @@ public class TaskQueueBuilderTest {
         CompletableFuture f = reactor.submit(new Runnable() {
             @Override
             public void run() {
-                TaskQueue.Builder builder = reactor.eventloop().newTaskQueueBuilder();
+                TaskQueue.Builder builder = reactor.newTaskQueueBuilder();
+                builder.descriptor = 1;
                 builder.build();
             }
         });

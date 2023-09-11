@@ -68,7 +68,7 @@ public final class UringEventloop extends Eventloop {
         networkScheduler.tick();
         storageScheduler.tick();
 
-        boolean skipPark = spin || timeoutNanos == 0;
+        boolean skipPark = timeoutNanos == 0;
         if (completionQueue.hasCompletions()) {
             skipPark |= true;
             completionQueue.process();
@@ -78,7 +78,7 @@ public final class UringEventloop extends Eventloop {
             submissionQueue.submit();
         } else {
             wakeupNeeded.set(true);
-            if (scheduler.hasConcurrentPending() || networkScheduler.hasPending()) {
+            if (signals.hasRaised()) {
                 submissionQueue.submit();
             } else {
                 if (timeoutNanos != Long.MAX_VALUE) {
@@ -96,7 +96,7 @@ public final class UringEventloop extends Eventloop {
     }
 
     @Override
-    protected boolean ioSchedulerTick() {
+    protected boolean ioTick() {
         metrics.incIoSchedulerTicks();
 
         networkScheduler.tick();

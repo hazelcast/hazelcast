@@ -26,6 +26,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.nio.NioReactor;
 import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
 import com.hazelcast.internal.tpcengine.util.EpochClock;
+import com.hazelcast.internal.tpcengine.util.IdleStrategy;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
 
@@ -45,6 +46,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Consumer;
 
@@ -89,10 +91,11 @@ public abstract class Reactor implements Executor {
             = newUpdater(Reactor.class, State.class, "state");
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
+    protected final Metrics metrics = new Metrics();
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final TaskQueue defaultTaskQueue;
     protected final Eventloop eventloop;
-    protected final boolean spin;
+    protected final IdleStrategy idleStrategy;
     protected final Thread eventloopThread;
     protected final String name;
     protected final AtomicBoolean wakeupNeeded;
@@ -105,8 +108,9 @@ public abstract class Reactor implements Executor {
     protected final ReactorResources<AsyncServerSocket> serverSockets;
     protected final ReactorResources<AsyncFile> files;
     protected final ReactorResources<TaskQueue> taskQueues;
+    protected final AtomicReferenceArray<TaskQueue> taskQueueArray;
+    protected final Signals signals;
     protected volatile State state = NEW;
-    protected final Metrics metrics = new Metrics();
 
     /**
      * Creates a new {@link Reactor}.
@@ -114,8 +118,10 @@ public abstract class Reactor implements Executor {
      * @param builder the {@link Builder}.
      */
     protected Reactor(Builder builder) {
+        this.signals = new Signals(this, builder.runQueueLimit + builder.socketsLimit);
+        this.taskQueueArray = new AtomicReferenceArray<TaskQueue>(builder.runQueueLimit);
         this.type = builder.type;
-        this.spin = builder.spin;
+        this.idleStrategy = builder.idleStrategy;
         this.engine = builder.engine;
         this.initFn = builder.initFn;
         this.sockets = new ReactorResources<>(builder.socketsLimit);
@@ -123,7 +129,8 @@ public abstract class Reactor implements Executor {
         this.files = new ReactorResources<>(builder.fileLimit);
         this.taskQueues = new ReactorResources<>(builder.runQueueLimit);
         CompletableFuture<Eventloop> eventloopFuture = new CompletableFuture<>();
-        this.eventloopThread = builder.threadFactory.newThread(new StartEventloopTask(eventloopFuture, builder));
+        this.eventloopThread = builder.threadFactory.newThread(
+                new StartEventloopTask(eventloopFuture, builder));
 
         if (builder.threadName != null) {
             eventloopThread.setName(builder.threadName);
@@ -152,6 +159,31 @@ public abstract class Reactor implements Executor {
      */
     public TaskQueue defaultTaskQueue() {
         return defaultTaskQueue;
+    }
+
+    /**
+     * Gets the TaskQueue with the given descriptor.
+     *
+     * @param descriptor the descriptor of the TaskQueue.
+     * @return the found TaskQueue.
+     * @throws NullPointerException if the TaskQueue with the given descriptor
+     * doesnn't exist.
+     */
+    public TaskQueue taskQueue(int descriptor) {
+        // todo: arg checking?>
+        return taskQueueArray.get(descriptor);
+    }
+
+    /**
+     * Creates an new {@link TaskQueue.Builder} for this Eventloop.
+     *
+     * @return the created builder.
+     * @throws IllegalStateException if current thread is not the Eventloop thread.
+     */
+    public final TaskQueue.Builder newTaskQueueBuilder() {
+        TaskQueue.Builder taskQueueBuilder = new TaskQueue.Builder();
+        taskQueueBuilder.eventloop = eventloop;
+        return taskQueueBuilder;
     }
 
     /**
@@ -202,7 +234,8 @@ public abstract class Reactor implements Executor {
      * Allows for objects to be bound to this Reactor. Useful for the lookup
      * of services and other dependencies.
      * <p/>
-     * This method is thread-safe and can be called independent of the state of the Reactor.
+     * This method is thread-safe and can be called independent of the state of
+     * the Reactor.
      */
     public final ConcurrentMap<?, ?> context() {
         return context;
@@ -626,7 +659,6 @@ public abstract class Reactor implements Executor {
 
         private final long startTimeNanos = EpochClock.INSTANCE.epochNanos();
 
-
         static {
             try {
                 MethodHandles.Lookup l = MethodHandles.lookup();
@@ -734,14 +766,13 @@ public abstract class Reactor implements Executor {
                 = "hazelcast.tpc.reactor.cfs";
         public static final String NAME_REACTOR_AFFINITY
                 = "hazelcast.tpc.reactor.affinity";
-        public static final String NAME_REACTOR_SPIN
-                = "hazelcast.tpc.reactor.spin";
 
         private static final AtomicInteger THREAD_ID_GENERATOR = new AtomicInteger();
         static final AtomicInteger REACTOR_ID_GENERATOR = new AtomicInteger();
         private static final Constructor<Builder> URING_REACTOR_BUILDER_CONSTRUCTOR;
         private static final String IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME
                 = "com.hazelcast.internal.tpcengine.iouring.UringReactor$Builder";
+
 
         public static final int DEFAULT_DEADLINE_RUN_QUEUE_LIMIT = 1024;
         public static final int DEFAULT_RUN_QUEUE_LIMIT = 4096;
@@ -755,7 +786,6 @@ public abstract class Reactor implements Executor {
         public static final int DEFAULT_STORAGE_PENDING_LIMIT = 16384;
         public static final int DEFAULT_STORAGE_SUBMIT_LIMIT = 1024;
         public static final boolean DEFAULT_CFS = true;
-        public static final boolean DEFAULT_SPIN = false;
 
         public static final ThreadAffinity DEFAULT_THREAD_AFFINITY
                 = ThreadAffinity.newSystemThreadAffinity(NAME_REACTOR_AFFINITY);
@@ -795,6 +825,8 @@ public abstract class Reactor implements Executor {
          * This number should be equal or larger than the storageSubmitLimit.
          */
         public int storagePendingLimit;
+
+        public IdleStrategy idleStrategy;
 
         /**
          * The limit on the number of submitted storage requests. This is the
@@ -841,16 +873,6 @@ public abstract class Reactor implements Executor {
          * provided by the ThreadFactory is used.
          */
         public String threadName;
-
-        /**
-         * Sets the spin policy. If spin is true, the reactor will spin on the
-         * run queue if there are no tasks to run. If spin is false, the reactor
-         * will park the thread if there are no tasks to run.
-         * <p/>
-         * In the future we want to have better policies than only spinning. For
-         * example, see BackoffIdleStrategy
-         */
-        public boolean spin;
 
         /**
          * Sets the limit on the number of items in the runqueue of the deadline
@@ -982,9 +1004,6 @@ public abstract class Reactor implements Executor {
             this.ioIntervalNanos = Long.getLong(
                     NAME_IO_INTERVAL_NANOS,
                     DEFAULT_IO_INTERVAL_NANOS);
-            this.spin = Boolean.parseBoolean(getProperty(
-                    NAME_REACTOR_SPIN,
-                    Boolean.toString(DEFAULT_SPIN)));
             this.cfs = Boolean.parseBoolean(
                     getProperty(NAME_CFS,
                             Boolean.toString(DEFAULT_CFS)));

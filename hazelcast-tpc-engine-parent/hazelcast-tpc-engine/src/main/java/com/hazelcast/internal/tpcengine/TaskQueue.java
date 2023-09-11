@@ -20,11 +20,15 @@ import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.Reference;
 import org.jctools.queues.MpscArrayQueue;
+import org.jctools.util.PaddedAtomicLong;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Queue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.internal.tpcengine.CompletelyFairScheduler.niceToWeight;
 import static com.hazelcast.internal.tpcengine.Task.RUN_BLOCKED;
@@ -42,6 +46,10 @@ import static java.lang.Math.max;
  * and the compaction process their own taskQueues. If no clients are busy,
  * the compaction process can get all resources. But when clients need to CPU,
  * they can get it.
+ * <p>
+ * A blocked TaskQueue will only consume memory and not CPU time. A TaskQueue
+ * on the runQueue will cause overhead due to the scheduling overhead. In the
+ * CompletelyFairScheduler that is O(log(n)).
  * <p>
  * The TaskQueue can be configured as concurrent. When it is concurrent it
  * is threadsafe (the Queue needs to be threadsafe) and tasks can be offered
@@ -73,17 +81,22 @@ import static java.lang.Math.max;
  * <p>
  * The TaskQueue is inspired by the <a href="https://github.com/DataDog/glommio">Glommio</>
  * TaskQueue.
+ * <p>
+ * A TaskQueue can be seen as an actor. Since it has its own mailbox and gets
+ * the guarantee that only 1 thread at a time (the eventloop thread) will be
+ * processing the TaskQueue.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
-public final class TaskQueue implements Comparable<TaskQueue> {
+public final class TaskQueue {
 
-    static final int STATE_RUNNING = 1;
-    static final int STATE_BLOCKED = 2;
+    static final long STATE_RUNNING = 1;
+    static final long STATE_BLOCKED = 2;
+
+    final PaddedAtomicLong runState = new PaddedAtomicLong();
 
     // the interval in which the time on the CPU is measured. 1 means every
     // interval.
     int clockSampleInterval;
-    int runState = STATE_BLOCKED;
     String name;
     // the queue for tasks
     Queue<Object> queue;
@@ -97,6 +110,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     Eventloop eventloop;
     // The scheduler that processed the TaskQueue.
     Scheduler scheduler;
+
+    Signals signals;
     // The accumulated amount of time this task has spend on the CPU. If there
     // are other threads running on the same processor, sumExecRuntimeNanos can
     // be distorted because these threads can contribute to the runtime of this
@@ -112,15 +127,26 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // the start time of this TaskQueue
     long startNanos;
 
-    // The TakGroup is an intrusive double-linked-list-node. This is used to
-    // keep track of blocked outside tasksGroups in the TaskQueueScheduler
-    TaskQueue prev;
-    TaskQueue next;
-
     final Metrics metrics = new Metrics();
     //the weight is only used by the CfsTaskQueueScheduler.
     int weight = 1;
     final Reference taskRef = new Reference();
+    int descriptor;
+    final Runnable signalAction = new Runnable() {
+        @Override
+        public void run() {
+            assert runState.get() == STATE_RUNNING;
+            scheduler.enqueue(TaskQueue.this);
+        }
+    };
+
+    public TaskQueue() {
+
+    }
+
+    public int id() {
+        return descriptor;
+    }
 
     /**
      * Returns the Metrics. This method is threadsafe.
@@ -226,7 +252,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
             // periodically we need to tick the io schedulers.
             if (runCtx.nowNanos >= runCtx.ioDeadlineNanos) {
-                eventloop.ioSchedulerTick();
+                eventloop.ioTick();
                 runCtx.nowNanos = epochNanos();
                 runCtx.ioDeadlineNanos = runCtx.nowNanos + runCtx.ioIntervalNanos;
             }
@@ -239,33 +265,26 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         reactorMetrics.incTaskQueueCsCount();
 
         if (taskQueueEmpty || isEmpty()) {
-            // the taskQueue has been fully drained.
-            scheduler.dequeueActive();
-            runState = STATE_BLOCKED;
             metrics.incBlockedCount();
-            if (queue != null) {
-                // add it to the shared taskQueues so the eventloop will see
-                // any items that are written to outside queues
-                scheduler.addConcurrentBlocked(this);
-            }
+            scheduler.dequeueActive();
+            unschedule();
         } else {
-            // Task queue wasn't fully drained, so the taskQueue is going to yield.
+            metrics.incYieldCount();
             scheduler.yieldActive();
         }
     }
 
-    @Override
-    public int compareTo(TaskQueue that) {
-        return Long.compare(this.virtualRuntimeNanos, that.virtualRuntimeNanos);
-    }
-
     /**
-     * Offers a task.
+     * Offers a task to be processed by this TaskQueue.
      * <p/>
-     * This method is thread-safe.
+     * This method is thread-safe assuming the TaskQueue is concurrent.
+     * <p/>
+     * It depends on the {@link TaskRunner} implementation which types of tasks
+     * can be processed on this TaskQueue.
      *
      * @param task the task to offer.
      * @return true if the task was successfully offered, false otherwise.
+     * @throws NullPointerException  if task is null.
      * @throws IllegalStateException if the method was called outside of the
      *                               eventloop thread and the TaskQueue isn't
      *                               concurrent.
@@ -278,17 +297,19 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 return false;
             }
 
-            if (runState == STATE_RUNNING) {
+            if (runState.get() == STATE_RUNNING) {
                 return true;
             }
 
             if (concurrent) {
-                // If is concurrent, we don't need to notified of any events
-                // because the queue will register itself if it blocks.
-                scheduler.removeConcurrentBlocked(this);
+                if (runState.compareAndSet(STATE_BLOCKED, STATE_RUNNING)) {
+                    scheduler.enqueue(this);
+                }
+            } else {
+                runState.lazySet(STATE_RUNNING);
+                scheduler.enqueue(this);
             }
 
-            scheduler.enqueue(this);
             return true;
         } else {
             if (!concurrent) {
@@ -302,9 +323,34 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 return false;
             }
 
-            // by waking up the reactor, the queue of is guaranteed to be scanned.
-            eventloop.reactor.wakeup();
+            if (runState.get() == STATE_RUNNING) {
+                return true;
+            }
+
+            if (runState.compareAndSet(STATE_BLOCKED, STATE_RUNNING)) {
+                signals.raise(signalAction);
+            }
+
             return true;
+        }
+    }
+
+    void unschedule() {
+        assert runState.get() == STATE_RUNNING;
+        assert Thread.currentThread() == eventloop.eventloopThread;
+
+        if (concurrent) {
+            runState.set(STATE_BLOCKED);
+
+            if (queue.isEmpty()) {
+                return;
+            }
+
+            if (runState.get() == STATE_BLOCKED && runState.compareAndSet(STATE_BLOCKED, STATE_RUNNING)) {
+                scheduler.enqueue(this);
+            }
+        } else {
+            runState.lazySet(STATE_BLOCKED);
         }
     }
 
@@ -320,6 +366,10 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 + '}';
     }
 
+    public String name() {
+        return name;
+    }
+
     static class RunContext {
         Eventloop eventloop;
         Reactor.Metrics reactorMetrics;
@@ -332,7 +382,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         // {@link EpochClock#epochNanos()} is pretty expensive (+/-25ns)
         // due to {@link System#nanoTime()}. For every task processed we do
         // not want to call the {@link EpochClock#epochNanos()} more than
-        // once because the clock already dominates the context switch time.
+        // once because the clock already dominates the conntext switch time.
         long nowNanos;
         // epoch time in nanos when the current task from the taskGroup started.
         long ioIntervalNanos;
@@ -357,11 +407,13 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         private static final VarHandle CPU_TIME_NANOS;
         private static final VarHandle TASK_ERROR_COUNT;
         private static final VarHandle BLOCKED_COUNT;
+        private static final VarHandle YIELD_COUNT;
 
         private volatile long taskCsCount;
         private volatile long taskErrorCount;
         private volatile long cpuTimeNanos;
         private volatile long blockedCount;
+        private volatile long yieldCount;
 
         static {
             try {
@@ -370,13 +422,14 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 TASK_ERROR_COUNT = l.findVarHandle(Metrics.class, "taskErrorCount", long.class);
                 CPU_TIME_NANOS = l.findVarHandle(Metrics.class, "cpuTimeNanos", long.class);
                 BLOCKED_COUNT = l.findVarHandle(Metrics.class, "blockedCount", long.class);
+                YIELD_COUNT = l.findVarHandle(Metrics.class, "yieldCount", long.class);
             } catch (ReflectiveOperationException e) {
                 throw new ExceptionInInitializerError(e);
             }
         }
 
         /**
-         * Returns the number of times this TaskQueue was blocked (so didn't
+         * Returns the number of times this TaskQueue blocked (so didn't
          * have any work to do).
          *
          * @return the number of times blocked.
@@ -386,10 +439,27 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         }
 
         /**
-         * Increases the number of times this TaskQueue was blocked by 1.
+         * Increases the number of times this TaskQueue blocked by 1.
          */
         public void incBlockedCount() {
             BLOCKED_COUNT.setOpaque(this, (long) BLOCKED_COUNT.getOpaque(this) + 1);
+        }
+
+        /**
+         * Returns the number of times this TaskQueue  yielded (so did have
+         * more work to do but does a cs).
+         *
+         * @return the number of times blocked.
+         */
+        public long yieldCount() {
+            return (long) YIELD_COUNT.getOpaque(this);
+        }
+
+        /**
+         * Increases the number of times this TaskQueue yielded by 1.
+         */
+        public void incYieldCount() {
+            YIELD_COUNT.setOpaque(this, (long) YIELD_COUNT.getOpaque(this) + 1);
         }
 
         /**
@@ -528,6 +598,12 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         public TaskRunner taskRunner;
 
         /**
+         * An descriptor (id) that uniquely identifies a TaskQueue within
+         * an Eventloop.
+         */
+        public int descriptor;
+
+        /**
          * Builder needs to be created through {@link Eventloop#newTaskQueueBuilder()}.
          */
         public Builder() {
@@ -538,8 +614,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             super.conclude();
 
             checkNotNull(eventloop, "eventloop");
-
-            eventloop.checkOnEventloopThread();
 
             if (nice < MIN_NICE) {
                 throw new IllegalArgumentException("nice can't be smaller than " + MIN_NICE);
@@ -555,10 +629,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 }
             }
 
-            if (eventloop.scheduler.taskQueues.size() == eventloop.scheduler.runQueueLimit()) {
-                throw new IllegalArgumentException("Too many taskgroups.");
-            }
-
             if (name == null) {
                 name = "taskqueue-" + ID.incrementAndGet();
             }
@@ -570,6 +640,26 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
         @Override
         protected TaskQueue construct() {
+            if (Thread.currentThread() == eventloop.eventloopThread) {
+                return construct0();
+            } else {
+                Future<TaskQueue> future = eventloop.reactor.submit(() -> construct0());
+                try {
+                    return future.get();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                } catch (ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        private TaskQueue construct0() {
+            // problem here due to running in any thread.
+            if (eventloop.scheduler.taskQueues.size() == eventloop.scheduler.runQueueLimit()) {
+                throw new IllegalArgumentException("Too many taskqueues.");
+            }
+
             TaskQueue taskQueue = new TaskQueue();
             taskQueue.startNanos = epochNanos();
             taskQueue.queue = queue;
@@ -579,16 +669,20 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             taskRunner.init(eventloop);
             taskQueue.name = name;
             taskQueue.eventloop = eventloop;
+            taskQueue.signals = eventloop.reactor.signals;
             taskQueue.scheduler = eventloop.scheduler;
-            taskQueue.runState = STATE_BLOCKED;
+            taskQueue.runState.set(STATE_BLOCKED);
             taskQueue.weight = niceToWeight(nice);
+            taskQueue.descriptor = descriptor;
 
-            if (taskQueue.queue != null) {
-                eventloop.scheduler.addConcurrentBlocked(taskQueue);
+            AtomicReferenceArray<TaskQueue> taskQueueArray = eventloop.reactor.taskQueueArray;
+            if (!taskQueueArray.compareAndSet(descriptor, null, taskQueue)) {
+                throw new IllegalStateException("There already exists a TaskQueue with descriptor:" + descriptor);
             }
 
             eventloop.scheduler.taskQueues.add(taskQueue);
             eventloop.reactor.taskQueues.add(taskQueue);
+
             return taskQueue;
         }
     }

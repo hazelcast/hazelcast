@@ -66,17 +66,19 @@ public abstract class SchedulingSoakTest {
             reactor.start();
         }
 
-        // create the task groups
+        // create the task queues
         for (int k = 0; k < reactorCount; k++) {
             Reactor reactor = reactorList.get(k);
             List<TaskQueue> taskQueues = new ArrayList<>();
             taskQueueMap.put(reactor, taskQueues);
             for (int l = 0; l < taskQueueCount; l++) {
+                int finalL = l;
                 CompletableFuture<TaskQueue> future = reactor.submit(new Callable<TaskQueue>() {
                     @Override
                     public TaskQueue call() throws Exception {
                         //todo: play with priorities.
-                        TaskQueue.Builder taskQueueBuilder = reactor.eventloop().newTaskQueueBuilder();
+                        TaskQueue.Builder taskQueueBuilder = reactor.newTaskQueueBuilder();
+                        taskQueueBuilder.descriptor = finalL + 1;
                         taskQueueBuilder.queue = new MpscArrayQueue<>(taskCount + 100);
                         taskQueueBuilder.concurrent = true;
                         return taskQueueBuilder.build();

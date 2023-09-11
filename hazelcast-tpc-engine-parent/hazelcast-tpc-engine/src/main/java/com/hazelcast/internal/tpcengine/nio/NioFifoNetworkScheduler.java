@@ -17,24 +17,28 @@
 package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
-import org.jctools.queues.MpscArrayQueue;
+import com.hazelcast.internal.tpcengine.util.CircularQueue;
 
 import java.util.Queue;
 
 /**
  * The {@link NetworkScheduler} specific to the {@link NioReactor}. It will
  * process sockets in FIFO order.
+ * <p>
+ * todo: The only thing this controls is the writing of data to the socket;
+ * it doesn't control for example reading from the socket. So it controls
+ * only a portion.
  */
-public class NioFifoNetworkScheduler implements NetworkScheduler<NioAsyncSocket> {
+public final class NioFifoNetworkScheduler implements NetworkScheduler<NioAsyncSocket> {
 
-    private final Queue<NioAsyncSocket> stagingQueue;
+    private final CircularQueue<NioAsyncSocket> stagingQueue;
 
     public NioFifoNetworkScheduler(int socketLimit) {
-        this.stagingQueue = new MpscArrayQueue<>(socketLimit);
+        this.stagingQueue = new CircularQueue<>(socketLimit);
     }
 
     @Override
-    public void schedule(NioAsyncSocket socket) {
+    public void scheduleWrite(NioAsyncSocket socket) {
         if (!stagingQueue.offer(socket)) {
             throw new IllegalStateException("Socket limit has been exceeded.");
         }
@@ -43,6 +47,7 @@ public class NioFifoNetworkScheduler implements NetworkScheduler<NioAsyncSocket>
     @Override
     public boolean tick() {
         boolean result = false;
+        Queue<NioAsyncSocket> stagingQueue = this.stagingQueue;
         for (; ; ) {
             NioAsyncSocket socket = stagingQueue.poll();
             if (socket == null) {
