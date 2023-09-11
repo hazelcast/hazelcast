@@ -89,7 +89,7 @@ public class InvalidEndpointTest {
 
     @Test
     public void attemptMemcacheOnHttpEndpoint()
-            throws IOException {
+            throws IOException, InterruptedException {
         Config config = createRestEndpointConfig();
         HazelcastInstance instance = factory.newHazelcastInstance(config);
 
@@ -124,6 +124,14 @@ public class InvalidEndpointTest {
               .setRestEndpointConfig(restEndpoint)
               .setEnabled(true);
         return config;
+    }
+
+    protected Object doHttpGet(String url) throws IOException {
+        return null;
+    }
+
+    protected Object newHttpClient() throws IOException {
+        return null;
     }
 
     protected void sendGet(String url) throws IOException, InterruptedException {
