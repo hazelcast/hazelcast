@@ -26,12 +26,12 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 /**
- * Custom dialect for MSSQL which allows correct unparsing of MSSQL specific operators, like CONCAT
+ * Hazelcast Oracle Dialect for setting cast spec of varchar
  */
 public class HazelcastOracleDialect extends OracleSqlDialect {
 
     /**
-     * Creates a HazelcastMSSQLDialect.
+     * Creates a HazelcastOracleDialect.
      */
     public HazelcastOracleDialect(Context context) {
         super(context);
