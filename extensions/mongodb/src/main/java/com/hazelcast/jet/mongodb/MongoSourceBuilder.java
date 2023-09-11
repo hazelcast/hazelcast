@@ -642,15 +642,18 @@ public final class MongoSourceBuilder {
             checkNotNull(params.getMapStreamFn(), "mapFn must be set");
 
             final ReadMongoParams<T> localParams = params;
-            localParams.setCheckExistenceOnEachConnect(existenceChecks == ResourceChecks.ON_EACH_CONNECT);
+            boolean checkExistenceOnEachConnect = existenceChecks == ResourceChecks.ON_EACH_CONNECT;
+            boolean checkExistenceOncePerJob = existenceChecks == ResourceChecks.ONCE_PER_JOB;
+            boolean forceReadParallelismOneLocal = forceReadParallelismOne;
+
+            localParams.setCheckExistenceOnEachConnect(checkExistenceOnEachConnect);
 
             ConnectorPermission permission = params.buildPermissions();
-            boolean checkResourceExistence = existenceChecks == ResourceChecks.ONCE_PER_JOB;
             return Sources.streamFromProcessorWithWatermarks(name, true,
                     eventTimePolicy -> new DbCheckingPMetaSupplierBuilder()
                             .setRequiredPermission(permission)
-                            .setCheckResourceExistence(checkResourceExistence)
-                            .setForceTotalParallelismOne(forceReadParallelismOne)
+                            .setCheckResourceExistence(checkExistenceOncePerJob)
+                            .setForceTotalParallelismOne(forceReadParallelismOneLocal)
                             .setDatabaseName(localParams.getDatabaseName())
                             .setCollectionName(localParams.getCollectionName())
                             .setClientSupplier(localParams.getClientSupplier())
