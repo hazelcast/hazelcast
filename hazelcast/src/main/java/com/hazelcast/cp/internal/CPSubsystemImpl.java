@@ -181,6 +181,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
     private static class CPSubsystemManagementServiceImpl implements CPSubsystemManagementService {
         private final RaftService raftService;
+        // TODO RU_COMPAT_5_3, clusterVersion, added for Version 5.3 compatibility. Should be removed at Version 5.5
         private final Version clusterVersion;
 
         CPSubsystemManagementServiceImpl(RaftService raftService, Version clusterVersion) {
