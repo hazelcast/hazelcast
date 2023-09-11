@@ -126,7 +126,7 @@ public class DataSerializableSerializationTest extends HazelcastTestSupport {
             try {
                 ss.toObject(ss.toData(throwingInstance), throwingInstance.getClass());
             } catch (HazelcastSerializationException e) {
-                assertInstanceOf(InstantiationException.class, e.getCause());
+                assertInstanceOf(ReflectiveOperationException.class, e.getCause());
                 assertContains(e.getCause().getMessage(), "can't conform to DataSerializable");
                 continue;
             }

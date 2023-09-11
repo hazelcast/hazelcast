@@ -194,7 +194,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
      * @return
      *         <ul>
      *         <li>If {@code exception} is an {@link NoSuchMethodError} and matches criteria of
-     *         {@link #tryGenerateClarifiedExceptionMessage(Class)}, a new {@link InstantiationException} with the new message
+     *         {@link #tryGenerateClarifiedExceptionMessage(Class)}, a new {@link ReflectiveOperationException} with the new message
      *         <li>Otherwise, {code exception}
      *         </ul>
      */
@@ -208,7 +208,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             return exception;
         }
 
-        InstantiationException clarifiedException = new InstantiationException(message);
+        Exception clarifiedException = new ReflectiveOperationException(message);
         clarifiedException.initCause(exception);
         return clarifiedException;
     }
