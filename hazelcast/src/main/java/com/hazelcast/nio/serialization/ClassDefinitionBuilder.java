@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.impl.portable.ClassDefinitionImpl;
 import com.hazelcast.internal.serialization.impl.portable.FieldDefinitionImpl;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -30,15 +31,14 @@ import java.util.Set;
  * ClassDefinitionBuilder is used to build and register ClassDefinitions manually.
  *
  * @see ClassDefinition
- * @see com.hazelcast.nio.serialization.Portable
- * @see com.hazelcast.config.SerializationConfig#addClassDefinition(ClassDefinition)
+ * @see Portable
+ * @see SerializationConfig#addClassDefinition(ClassDefinition)
  */
 public final class ClassDefinitionBuilder {
-
     private final int factoryId;
     private final int classId;
     private final int version;
-    private final List<FieldDefinitionImpl> fieldDefinitions = new ArrayList<FieldDefinitionImpl>();
+    private final List<FieldDefinitionImpl> fieldDefinitions = new ArrayList<>();
     private final Set<String> addedFieldNames = new HashSet<>();
     private int index;
     private boolean done;
@@ -70,6 +70,11 @@ public final class ClassDefinitionBuilder {
         this.version = version;
     }
 
+    /**
+     * IMPORTANT: Make sure that the version matches the portableVersion in the SerializationService
+     *
+     * @since 5.4
+     */
     public ClassDefinitionBuilder(PortableId portableId) {
         this(portableId.getFactoryId(), portableId.getClassId(), portableId.getVersion());
     }
@@ -519,5 +524,10 @@ public final class ClassDefinitionBuilder {
 
     public int getVersion() {
         return version;
+    }
+
+    /** @since 5.4 */
+    public PortableId getPortableId() {
+        return new PortableId(factoryId, classId, version);
     }
 }

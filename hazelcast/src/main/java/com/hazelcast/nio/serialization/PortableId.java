@@ -16,6 +16,15 @@
 
 package com.hazelcast.nio.serialization;
 
+/**
+ * Uniquely defines a {@link Portable} class.
+ *
+ * @see ClassDefinition#getPortableId()
+ * @see FieldDefinition#getPortableId()
+ * @see ClassDefinitionBuilder#ClassDefinitionBuilder(PortableId) new ClassDefinitionBuilder(PortableId)
+ *
+ * @since 5.4
+ */
 public class PortableId {
     private final int factoryId;
     private final int classId;

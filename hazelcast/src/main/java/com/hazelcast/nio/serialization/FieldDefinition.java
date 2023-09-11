@@ -53,6 +53,7 @@ public interface FieldDefinition {
 
     /**
      * @return portable ID of this field's class
+     * @since 5.4
      */
     default PortableId getPortableId() {
         return new PortableId(getFactoryId(), getClassId(), getVersion());
