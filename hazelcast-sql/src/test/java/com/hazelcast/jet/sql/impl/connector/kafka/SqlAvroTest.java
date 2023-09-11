@@ -237,7 +237,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
         Schema parentSchema = SchemaBuilder.record("Parent").fields()
                 .requiredString("name")
-                .optionalString("address")
+                .name("address").type().stringType().stringDefault("<unknown>")
                 .requiredString("phone")
                 .endRecord();
         Schema studentSchema = SchemaBuilder.record("Student").fields()
@@ -255,7 +255,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         insertAndAssertRecord(
                 row(1, "Alice", row("Bob", "(111) 111-1111")),
                 row(1, "Alice", row("Bob", "(111) 111-1111")),
-                row(1, "Alice", createRecord(parentSchema, "Bob", null, "(111) 111-1111")));
+                row(1, "Alice", createRecord(parentSchema, "Bob", "<unknown>", "(111) 111-1111")));
 
         kafkaTestSupport.produce(name, createRecord(ID_SCHEMA, 3),
                 createRecord(studentSchema, "Dave", 123456789L,
