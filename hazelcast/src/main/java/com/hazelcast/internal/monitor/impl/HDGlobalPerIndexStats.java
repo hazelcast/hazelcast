@@ -53,7 +53,7 @@ public final class HDGlobalPerIndexStats extends GlobalPerIndexStats {
         MEMORY_COST.addAndGet(HDGlobalPerIndexStats.this, delta);
     }
 
-    public void resetMemoryCost() {
+    public void onDispose() {
         memoryCost = 0;
     }
 
@@ -88,7 +88,7 @@ public final class HDGlobalPerIndexStats extends GlobalPerIndexStats {
         @Override
         public void dispose() {
             delegate.dispose();
-            resetMemoryCost();
+            HDGlobalPerIndexStats.this.onDispose();
         }
     }
 
