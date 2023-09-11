@@ -198,7 +198,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         }
         Set<String> mappingFields = fields.stream().map(field -> field.name).collect(toSet());
         for (Schema.Field schemaField : schema.getFields()) {
-            if (!schemaField.schema().isNullable() && !mappingFields.contains(schemaField.name())) {
+            if (!schemaField.hasDefaultValue() && !mappingFields.contains(schemaField.name())) {
                 throw new IllegalArgumentException("Mandatory field '" + schemaField.name()
                         + "' is not mapped to any column");
             }
