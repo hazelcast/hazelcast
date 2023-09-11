@@ -16,6 +16,16 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.annotation.PrivateApi;
+
+import java.io.IOException;
+import java.util.Objects;
+
+import static com.hazelcast.internal.serialization.SerializableByConvention.Reason.PUBLIC_API;
+
 /**
  * Uniquely defines a {@link Portable} class.
  *
@@ -25,10 +35,14 @@ package com.hazelcast.nio.serialization;
  *
  * @since 5.4
  */
-public class PortableId {
-    private final int factoryId;
-    private final int classId;
-    private final int version;
+@SerializableByConvention(PUBLIC_API)
+public class PortableId implements DataSerializable {
+    private int factoryId;
+    private int classId;
+    private int version;
+
+    @PrivateApi
+    public PortableId() { }
 
     public PortableId(int factoryId, int classId, int version) {
         this.factoryId = factoryId;
@@ -57,8 +71,45 @@ public class PortableId {
         return version;
     }
 
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
     @Override
     public String toString() {
         return factoryId + ":" + classId + ":" + version;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(factoryId);
+        out.writeInt(classId);
+        out.writeInt(version);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        factoryId = in.readInt();
+        classId = in.readInt();
+        version = in.readInt();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PortableId that = (PortableId) o;
+        return factoryId == that.factoryId
+                && classId == that.classId
+                && version == that.version;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(factoryId, classId, version);
     }
 }

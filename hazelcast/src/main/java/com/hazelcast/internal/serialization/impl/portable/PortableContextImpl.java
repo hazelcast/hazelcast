@@ -203,8 +203,7 @@ public final class PortableContextImpl implements PortableContext {
                     if (fd == null) {
                         throw new IllegalArgumentException("Unknown field: " + name);
                     }
-                    currentClassDef = lookupClassDefinition(fd.getFactoryId(), fd.getClassId(),
-                            fd.getVersion());
+                    currentClassDef = lookupClassDefinition(fd.getPortableId());
                     if (currentClassDef == null) {
                         throw new IllegalArgumentException("Not a registered Portable field: " + fd);
                     }
