@@ -57,7 +57,10 @@ public abstract class AsyncSocket_LargePayloadTest {
 
     public abstract ReactorBuilder newReactorBuilder();
 
-    protected void customizeSocketBuilder(AsyncSocketBuilder socketBuilder) {
+    protected void customizeClientSocketBuilder(AsyncSocketBuilder socketBuilder) {
+    }
+
+    protected void customizeServerSocketBuilder(AsyncSocketBuilder socketBuilder) {
     }
 
     @BeforeClass
@@ -240,7 +243,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                 .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setReader(new ClientAsyncSocketReader(completionLatch));
-        customizeSocketBuilder(asyncSocketBuilder);
+        customizeClientSocketBuilder(asyncSocketBuilder);
         AsyncSocket clientSocket = asyncSocketBuilder.build();
 
         clientSocket.start();
@@ -257,7 +260,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                             .setReader(new ServerAsyncSocketReader());
-                    customizeSocketBuilder(asyncSocketBuilder);
+                    customizeServerSocketBuilder(asyncSocketBuilder);
                     asyncSocketBuilder
                             .build()
                             .start();

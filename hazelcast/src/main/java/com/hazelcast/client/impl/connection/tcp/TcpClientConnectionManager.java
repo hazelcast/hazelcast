@@ -829,8 +829,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             // TODO: Outbound ports for TPC?
             bindSocketToPort(socket);
 
-            ChannelInitializer channelInitializer1 = clusterDiscoveryService.current().getChannelInitializer();
-            Channel channel = networking.register(channelInitializer1, socketChannel, true);
+            ChannelInitializer channelInitializer = clusterDiscoveryService.current().getChannelInitializer();
+            Channel channel = networking.register(channelInitializer, socketChannel, true);
 
             channel.addCloseListener(new TpcChannelCloseListener(client));
 

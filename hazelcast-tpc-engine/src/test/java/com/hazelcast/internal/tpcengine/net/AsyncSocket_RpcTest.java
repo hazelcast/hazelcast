@@ -58,7 +58,7 @@ public abstract class AsyncSocket_RpcTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
     public int iterations = 200;
-    public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+    public long testTimeoutSeconds = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     private final AtomicLong iteration = new AtomicLong();
     private final PrintAtomicLongThread printThread = new PrintAtomicLongThread("at:", iteration);
 
@@ -68,7 +68,10 @@ public abstract class AsyncSocket_RpcTest {
 
     public abstract ReactorBuilder newReactorBuilder();
 
-    protected void customizeSocketBuilder(AsyncSocketBuilder socketBuilder) {
+    protected void customizeClientSocketBuilder(AsyncSocketBuilder socketBuilder) {
+    }
+
+    protected void customizeServerSocketBuilder(AsyncSocketBuilder socketBuilder) {
     }
 
     @BeforeClass
@@ -279,7 +282,7 @@ public abstract class AsyncSocket_RpcTest {
             thread.start();
         }
 
-        assertJoinable(testTimeoutMs, threads);
+        assertJoinable(testTimeoutSeconds, threads);
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress) {
@@ -288,7 +291,7 @@ public abstract class AsyncSocket_RpcTest {
                 .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setReader(new ClientAsyncSocketReader());
-        customizeSocketBuilder(clientSocketBuilder);
+        customizeClientSocketBuilder(clientSocketBuilder);
         AsyncSocket clientSocket = clientSocketBuilder.build();
 
         clientSocket.start();
@@ -305,7 +308,7 @@ public abstract class AsyncSocket_RpcTest {
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                             .setReader(new ServerAsyncSocketReader());
-                    customizeSocketBuilder(socketBuilder);
+                    customizeServerSocketBuilder(socketBuilder);
                     socketBuilder.build()
                             .start();
                 })
