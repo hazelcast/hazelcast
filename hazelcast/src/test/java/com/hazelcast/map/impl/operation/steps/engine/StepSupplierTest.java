@@ -47,9 +47,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -221,5 +224,43 @@ public class StepSupplierTest extends HazelcastTestSupport {
         }
 
         FutureUtil.waitUntilAllResponded(futures);
+    }
+
+    @Test
+    public void head_steps_are_ran_in_provided_order() throws Exception {
+        HazelcastInstance node = createHazelcastInstance(getConfig());
+        Data data = Accessors.getSerializationService(node).toData("data");
+        MapOperation operation = new SetOperation("map", data, data);
+        operation.setNodeEngine(Accessors.getNodeEngineImpl(node));
+        operation.setPartitionId(1);
+        operation.beforeRun();
+
+        List<Integer> actualExecutionOrder = new ArrayList<>();
+        List<Step> expectedSteps = new ArrayList<>();
+
+        int headSteps = 10;
+        for (int i = 0; i < headSteps; i++) {
+            int finalI = i;
+            expectedSteps.add(state -> actualExecutionOrder.add(finalI));
+        }
+
+        StepSupplier stepSupplier = new StepSupplier(operation, expectedSteps, false);
+
+        List<Step> actualSteps = new ArrayList<>();
+        for (int i = 0; i < headSteps; i++) {
+            Step currentStep = stepSupplier.getCurrentStep();
+            actualSteps.add(((AppendAsHeadStep) currentStep).getAppendedStep());
+
+            // execute current step to move next one.
+            Runnable nextStepsRunnable = stepSupplier.get();
+            if (nextStepsRunnable != null) {
+                nextStepsRunnable.run();
+            }
+        }
+
+        assertTrue(expectedSteps.equals(actualSteps));
+        int[] expectedExecutions = IntStream.range(0, headSteps).toArray();
+        int[] actualExecutions = actualExecutionOrder.stream().mapToInt(i -> i).toArray();
+        assertArrayEquals(expectedExecutions, actualExecutions);
     }
 }

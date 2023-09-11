@@ -14,29 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test;
+package com.example.broken;
 
-import java.util.Arrays;
+import org.junit.Test;
 
-/**
- * Backport of some convenient methods from JDK 7.
- * <p>
- * It's intended to be used in tests only.
- */
-public final class ObjectTestUtils {
+class MixedTestAnnotationsTest {
 
-    private ObjectTestUtils() {
+    @Test
+    public void test1() {
     }
 
-    public static boolean equals(Object a, Object b) {
-        return (a == b) || (a != null && a.equals(b));
-    }
-
-    public static int hash(Object... values) {
-        return Arrays.hashCode(values);
-    }
-
-    public static int hashCode(Object o) {
-        return o != null ? o.hashCode() : 0;
+    @org.junit.jupiter.api.Test
+    void test2() {
     }
 }

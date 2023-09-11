@@ -357,7 +357,7 @@ public class ConfigTest extends HazelcastTestSupport {
         assertNull(config.getDeviceConfig(DEFAULT_DEVICE_NAME));
     }
 
-    private static String getSimpleXmlConfigStr(String ...tagAndVal) {
+    private static String getSimpleXmlConfigStr(String... tagAndVal) {
         if (tagAndVal.length % 2 != 0) {
             throw new IllegalArgumentException("The number of tags and values parameters is odd."
                     + " Please provide these tags and values as pairs.");
@@ -372,7 +372,7 @@ public class ConfigTest extends HazelcastTestSupport {
         return sb.toString();
     }
 
-    private static String getSimpleYamlConfigStr(String ...tagAndVal) {
+    private static String getSimpleYamlConfigStr(String... tagAndVal) {
         if (tagAndVal.length % 2 != 0) {
             throw new IllegalArgumentException("The number of tags and values parameters is odd."
                     + " Please provide these tags and values as pairs.");

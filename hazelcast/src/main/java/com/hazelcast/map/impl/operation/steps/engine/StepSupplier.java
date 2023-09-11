@@ -17,13 +17,14 @@
 package com.hazelcast.map.impl.operation.steps.engine;
 
 import com.hazelcast.core.Offloadable;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 
-import javax.annotation.Nullable;
+import java.util.List;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
@@ -56,13 +57,27 @@ public class StepSupplier implements Supplier<Runnable> {
     }
 
     public StepSupplier(MapOperation operation, boolean checkCurrentThread) {
+        this(operation, operation.getRecordStore()
+                .getStorage().headSteps(), checkCurrentThread);
+    }
+
+    // package private for testing purposes.
+    StepSupplier(MapOperation operation, List<Step> headSteps,
+                 boolean checkCurrentThread) {
         assert operation != null;
 
         this.state = operation.createState();
-        Step injectedStep = operation.getRecordStore().getStorage().newInjectedStep();
-        Step currentFirstStep = operation.getStartingStep();
-        this.currentStep = injectedStep == null
-                ? currentFirstStep : setAndGetInjectedStepAsFirstStep(currentFirstStep, injectedStep);
+        this.currentStep = operation.getStartingStep();
+
+        if (!CollectionUtil.isEmpty(headSteps)) {
+            // Append order: 1st from append list will be first,
+            // 2nd step will be second, 3rd will be 3rd...
+            // then other ordinary steps will be executed.
+            for (int i = headSteps.size() - 1; i >= 0; i--) {
+                this.currentStep = new AppendAsHeadStep(headSteps.get(i), currentStep);
+            }
+        }
+
         this.operationRunner = UtilSteps.getPartitionOperationRunner(state);
         this.checkCurrentThread = checkCurrentThread;
 
@@ -70,38 +85,9 @@ public class StepSupplier implements Supplier<Runnable> {
         assert this.currentStep != null;
     }
 
-    /**
-     * Sets injected step as starting step.
-     * <p>
-     * Current starting step becomes 2nd step in this case.
-     * @param currentStep  starting step of operation
-     * @param injectedStep new step to inject before currentStep
-     * @return injected step after setting its next step to currentStep
-     */
-    private static Step setAndGetInjectedStepAsFirstStep(Step currentStep, Step injectedStep) {
-        return new Step<State>() {
-
-            @Override
-            public boolean isOffloadStep(State state) {
-                return injectedStep.isOffloadStep(state);
-            }
-
-            @Override
-            public void runStep(State state) {
-                injectedStep.runStep(state);
-            }
-
-            @Override
-            public String getExecutorName(State state) {
-                return injectedStep.getExecutorName(state);
-            }
-
-            @Nullable
-            @Override
-            public Step nextStep(State state) {
-                return currentStep;
-            }
-        };
+    // used only for testing
+    Step getCurrentStep() {
+        return currentStep;
     }
 
     @Override

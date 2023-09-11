@@ -16,12 +16,11 @@
 
 package com.hazelcast.query.impl.extractor.predicates;
 
-import com.hazelcast.test.ObjectTestUtils;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Data structure used in the tests of extraction in multi-value attributes (in collections and arrays)
@@ -35,7 +34,7 @@ public final class CollectionDataStructure {
 
     public static class Person implements Serializable {
 
-        List<Limb> limbs_list = new ArrayList<Limb>();
+        List<Limb> limbs_list = new ArrayList<>();
         Limb[] limbs_array;
 
         @Override
@@ -44,12 +43,12 @@ public final class CollectionDataStructure {
                 return false;
             }
             final Person other = (Person) o;
-            return ObjectTestUtils.equals(this.limbs_list, other.limbs_list);
+            return Objects.equals(this.limbs_list, other.limbs_list);
         }
 
         @Override
         public int hashCode() {
-            return ObjectTestUtils.hashCode(limbs_list);
+            return Objects.hashCode(limbs_list);
         }
     }
 
@@ -64,12 +63,12 @@ public final class CollectionDataStructure {
                 return false;
             }
             final Limb other = (Limb) o;
-            return ObjectTestUtils.equals(this.name, other.name) && ObjectTestUtils.equals(this.power, other.power);
+            return Objects.equals(this.name, other.name) && Objects.equals(this.power, other.power);
         }
 
         @Override
         public int hashCode() {
-            return ObjectTestUtils.hash(name, power);
+            return Objects.hash(name, power);
         }
     }
 

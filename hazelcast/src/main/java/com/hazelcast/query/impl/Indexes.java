@@ -48,7 +48,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * Contains all indexes for a data-structure, e.g. an IMap.
  */
-@SuppressWarnings({"checkstyle:finalclass", "rawtypes"})
+@SuppressWarnings("rawtypes")
 public class Indexes {
 
     /**

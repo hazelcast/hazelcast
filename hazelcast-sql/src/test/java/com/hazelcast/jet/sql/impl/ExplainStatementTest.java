@@ -21,7 +21,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
-import com.hazelcast.jet.sql.impl.opt.prunability.PartitionPruningIntegrationTest.KeyObj;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlStatement;
@@ -33,6 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -116,7 +116,7 @@ public class ExplainStatementTest extends SqlTestSupport {
         createMapping("map", Integer.class, Integer.class);
         assertRowsOrdered(sql, singletonList(
                 new Row("IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
-                        "index=[map_sorted_this], indexExp=[null], remainderExp=[null])")
+                        "index=[map_sorted_this], indexExp=[null], remainderExp=[null], requiresSort=[true])")
         ));
     }
 
@@ -135,7 +135,7 @@ public class ExplainStatementTest extends SqlTestSupport {
         assertRowsOrdered(sql, asList(
                 new Row("LimitPhysicalRel(offset=[1:TINYINT(1)], fetch=[1:TINYINT(1)])"),
                 new Row("  IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
-                        "index=[map_sorted_this], indexExp=[null], remainderExp=[null])")
+                        "index=[map_sorted_this], indexExp=[null], remainderExp=[null], requiresSort=[true])")
         ));
     }
 
@@ -154,6 +154,27 @@ public class ExplainStatementTest extends SqlTestSupport {
                 new Row("  UnionPhysicalRel(all=[true])"),
                 new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], discriminator=[0])"),
                 new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], discriminator=[0])")
+        ));
+    }
+
+    @Test
+    public void test_explainStatementOrderedScanBelowUnionWithIndexScan() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+        map.addIndex(IndexType.SORTED, "this");
+
+        String sql = "EXPLAIN PLAN FOR SELECT * FROM map WHERE this > 2" +
+                " UNION ALL SELECT * FROM map WHERE this < 2 ORDER BY this DESC";
+
+        createMapping("map", Integer.class, Integer.class);
+        assertRowsOrdered(sql, asList(
+                new Row("SortPhysicalRel(sort0=[$1], dir0=[DESC])"),
+                new Row("  UnionPhysicalRel(all=[true])"),
+                // note that index scan does not require sorting
+                new Row("    IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], index=[map_sorted_this], indexExp=[>($1, 2)], remainderExp=[null])"),
+                new Row("    IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], index=[map_sorted_this], indexExp=[<($1, 2)], remainderExp=[null])")
         ));
     }
 
@@ -421,5 +442,21 @@ public class ExplainStatementTest extends SqlTestSupport {
                                 .startsWith("FullScanPhysicalRel(table=[[hazelcast, public, test[")
                                 .contains("partitioningKey=[$0, $1]")
                                 .contains("partitioningKeyValues=["));
+    }
+
+    public static class KeyObj implements Serializable {
+        public Long comp1;
+        public Long comp2;
+        public Long comp3;
+
+        public KeyObj() {
+
+        }
+
+        public KeyObj(final Long comp1, final Long comp2, final Long comp3) {
+            this.comp1 = comp1;
+            this.comp2 = comp2;
+            this.comp3 = comp3;
+        }
     }
 }

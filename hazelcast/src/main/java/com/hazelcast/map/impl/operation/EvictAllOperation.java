@@ -58,7 +58,9 @@ public class EvictAllOperation extends MapOperation
     @Override
     public void afterRunInternal() {
         hintMapEvent();
-        invalidateAllKeysInNearCaches();
+        if (mapContainer != null) {
+            invalidateAllKeysInNearCaches();
+        }
     }
 
     private void hintMapEvent() {
