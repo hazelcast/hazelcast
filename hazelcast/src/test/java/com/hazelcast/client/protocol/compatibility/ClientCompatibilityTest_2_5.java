@@ -6720,6 +6720,7 @@ public class ClientCompatibilityTest_2_5 {
         assertTrue(parameters.isIsInfiniteRowsExists);
         assertTrue(isEqual(aBoolean, parameters.isInfiniteRows));
         assertFalse(parameters.isPartitionArgumentIndexExists);
+        assertFalse(parameters.isJobIdExists);
     }
 
     @Test

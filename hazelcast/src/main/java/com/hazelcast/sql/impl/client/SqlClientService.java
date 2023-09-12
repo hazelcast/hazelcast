@@ -282,7 +282,7 @@ public class SqlClientService implements SqlService {
             return new SqlResubmissionResult(sqlError);
         } else {
             SqlRowMetadata rowMetadata = response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null;
-            return new SqlResubmissionResult(connection, rowMetadata, response.rowPage, response.updateCount);
+            return new SqlResubmissionResult(connection, rowMetadata, response.rowPage, response.updateCount, response.jobId);
         }
     }
 
@@ -320,8 +320,8 @@ public class SqlClientService implements SqlService {
                     response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
                     response.rowPage,
                     response.updateCount,
-                    response.isIsInfiniteRowsExists ? response.isInfiniteRows : null
-            );
+                    response.isIsInfiniteRowsExists ? response.isInfiniteRows : null,
+                    response.jobId);
         }
     }
 

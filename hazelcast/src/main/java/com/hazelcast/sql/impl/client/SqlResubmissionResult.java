@@ -25,6 +25,7 @@ class SqlResubmissionResult {
     private final SqlRowMetadata rowMetadata;
     private final SqlPage rowPage;
     private final long updateCount;
+    private final long jobId;
 
     SqlResubmissionResult(SqlError sqlError) {
         this.sqlError = sqlError;
@@ -32,14 +33,22 @@ class SqlResubmissionResult {
         this.rowMetadata = null;
         this.rowPage = null;
         this.updateCount = 0;
+        this.jobId = -1;
     }
 
-    SqlResubmissionResult(ClientConnection connection, SqlRowMetadata rowMetadata, SqlPage rowPage, long updateCount) {
+    SqlResubmissionResult(
+            ClientConnection connection,
+            SqlRowMetadata rowMetadata,
+            SqlPage rowPage,
+            long updateCount,
+            final long jobId
+    ) {
         this.connection = connection;
         this.rowMetadata = rowMetadata;
         this.rowPage = rowPage;
         this.updateCount = updateCount;
         this.sqlError = null;
+        this.jobId = jobId;
     }
 
     ClientConnection getConnection() {
@@ -60,5 +69,9 @@ class SqlResubmissionResult {
 
     long getUpdateCount() {
         return updateCount;
+    }
+
+    long getJobId() {
+        return jobId;
     }
 }

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query (as of 4.2).
  */
-@Generated("fe3a24977926f1fc710a003147019847")
+@Generated("e3e91263d77bfde8a3e57d5c956efb0b")
 public final class SqlExecuteCodec {
     //hex: 0x210400
     public static final int REQUEST_MESSAGE_TYPE = 2163712;
@@ -50,7 +50,8 @@ public final class SqlExecuteCodec {
     private static final int RESPONSE_UPDATE_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_IS_INFINITE_ROWS_FIELD_OFFSET = RESPONSE_UPDATE_COUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_PARTITION_ARGUMENT_INDEX_FIELD_OFFSET = RESPONSE_IS_INFINITE_ROWS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_PARTITION_ARGUMENT_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_JOB_ID_FIELD_OFFSET = RESPONSE_PARTITION_ARGUMENT_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private SqlExecuteCodec() {
     }
@@ -182,6 +183,12 @@ public final class SqlExecuteCodec {
         public int partitionArgumentIndex;
 
         /**
+         * ID of the created Job for the SQL query, -1 for light job-based queries and queries
+         * that do not create a Job.
+         */
+        public long jobId;
+
+        /**
          * True if the isInfiniteRows is received from the member, false otherwise.
          * If this is false, isInfiniteRows has the default value for its type.
          */
@@ -192,15 +199,22 @@ public final class SqlExecuteCodec {
          * If this is false, partitionArgumentIndex has the default value for its type.
          */
         public boolean isPartitionArgumentIndexExists;
+
+        /**
+         * True if the jobId is received from the member, false otherwise.
+         * If this is false, jobId has the default value for its type.
+         */
+        public boolean isJobIdExists;
     }
 
-    public static ClientMessage encodeResponse(@Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, long updateCount, @Nullable com.hazelcast.sql.impl.client.SqlError error, boolean isInfiniteRows, int partitionArgumentIndex) {
+    public static ClientMessage encodeResponse(@Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, long updateCount, @Nullable com.hazelcast.sql.impl.client.SqlError error, boolean isInfiniteRows, int partitionArgumentIndex, long jobId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         encodeLong(initialFrame.content, RESPONSE_UPDATE_COUNT_FIELD_OFFSET, updateCount);
         encodeBoolean(initialFrame.content, RESPONSE_IS_INFINITE_ROWS_FIELD_OFFSET, isInfiniteRows);
         encodeInt(initialFrame.content, RESPONSE_PARTITION_ARGUMENT_INDEX_FIELD_OFFSET, partitionArgumentIndex);
+        encodeLong(initialFrame.content, RESPONSE_JOB_ID_FIELD_OFFSET, jobId);
         clientMessage.add(initialFrame);
 
         ListMultiFrameCodec.encodeNullable(clientMessage, rowMetadata, SqlColumnMetadataCodec::encode);
@@ -225,6 +239,12 @@ public final class SqlExecuteCodec {
             response.isPartitionArgumentIndexExists = true;
         } else {
             response.isPartitionArgumentIndexExists = false;
+        }
+        if (initialFrame.content.length >= RESPONSE_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES) {
+            response.jobId = decodeLong(initialFrame.content, RESPONSE_JOB_ID_FIELD_OFFSET);
+            response.isJobIdExists = true;
+        } else {
+            response.isJobIdExists = false;
         }
         response.rowMetadata = ListMultiFrameCodec.decodeNullable(iterator, SqlColumnMetadataCodec::decode);
         response.rowPage = CodecUtil.decodeNullable(iterator, SqlPageCodec::decode);

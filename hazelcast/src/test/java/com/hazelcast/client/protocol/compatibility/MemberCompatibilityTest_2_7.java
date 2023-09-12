@@ -7641,7 +7641,7 @@ public class MemberCompatibilityTest_2_7 {
     @Test
     public void test_SqlExecuteCodec_encodeResponse() {
         int fileClientMessageIndex = 860;
-        ClientMessage encoded = SqlExecuteCodec.encodeResponse(aListOfSqlColumnMetadata, aSqlPage, aLong, anSqlError, aBoolean, anInt);
+        ClientMessage encoded = SqlExecuteCodec.encodeResponse(aListOfSqlColumnMetadata, aSqlPage, aLong, anSqlError, aBoolean, anInt, aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

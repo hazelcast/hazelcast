@@ -6761,6 +6761,8 @@ public class ClientCompatibilityNullTest_2_7 {
         assertTrue(isEqual(aBoolean, parameters.isInfiniteRows));
         assertTrue(parameters.isPartitionArgumentIndexExists);
         assertTrue(isEqual(anInt, parameters.partitionArgumentIndex));
+        assertTrue(parameters.isJobIdExists);
+        assertTrue(isEqual(aLong, parameters.jobId));
     }
 
     @Test

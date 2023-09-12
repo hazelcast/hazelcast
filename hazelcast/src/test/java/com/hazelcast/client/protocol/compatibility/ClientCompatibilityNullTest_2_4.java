@@ -6675,6 +6675,7 @@ public class ClientCompatibilityNullTest_2_4 {
         assertTrue(isEqual(null, parameters.error));
         assertFalse(parameters.isIsInfiniteRowsExists);
         assertFalse(parameters.isPartitionArgumentIndexExists);
+        assertFalse(parameters.isJobIdExists);
     }
 
     @Test

@@ -77,7 +77,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                     result.updateCount(),
                     null,
                     false,
-                    result.getPartitionArgumentIndex()
+                    result.getPartitionArgumentIndex(),
+                    result.jobId()
             );
         } else {
             InternalSqlService sqlService = nodeEngine.getSqlService();
@@ -95,7 +96,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                     -1,
                     null,
                     result.isInfiniteRows(),
-                    result.getPartitionArgumentIndex()
+                    result.getPartitionArgumentIndex(),
+                    result.jobId()
             );
         }
     }
@@ -125,6 +127,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                 -1,
                 error,
                 false,
+                -1,
                 -1
         );
     }

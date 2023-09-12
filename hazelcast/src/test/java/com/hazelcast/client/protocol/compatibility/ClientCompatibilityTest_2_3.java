@@ -6618,6 +6618,7 @@ public class ClientCompatibilityTest_2_3 {
         assertTrue(isEqual(anSqlError, parameters.error));
         assertFalse(parameters.isIsInfiniteRowsExists);
         assertFalse(parameters.isPartitionArgumentIndexExists);
+        assertFalse(parameters.isJobIdExists);
     }
 
     @Test

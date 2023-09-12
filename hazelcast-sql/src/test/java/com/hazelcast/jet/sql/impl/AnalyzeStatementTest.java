@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.metrics.JobMetrics;
+import com.hazelcast.jet.core.metrics.Measurement;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -31,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -45,7 +47,7 @@ public class AnalyzeStatementTest extends SqlTestSupport {
         final Config config = smallInstanceConfig();
         config.getMetricsConfig().setEnabled(true);
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
-        initialize(1, null);
+        initializeWithClient(1, config, null);
     }
 
     @Test
@@ -60,10 +62,7 @@ public class AnalyzeStatementTest extends SqlTestSupport {
 
         final Job job = instance().getJet().getJob(result.jobId());
         assertNotNull(job);
-        final JobMetrics metrics = job.getMetrics();
-        assertNotNull(metrics);
-        assertNotNull(metrics.get("executionStartTime"));
-        assertTrue(metrics.get("executionStartTime").get(0).value() > 0L);
+        assertJobStarted(job);
     }
 
     @Test
@@ -73,11 +72,33 @@ public class AnalyzeStatementTest extends SqlTestSupport {
                 + "FROM TABLE(GENERATE_STREAM(10))");
         final Job job = instance().getJet().getJob(result.jobId());
         assertNotNull(job);
-
         assertTrueEventually(() -> assertFalse(instance().getMap("test").isEmpty()));
-        final JobMetrics metrics = job.getMetrics();
-        assertNotNull(metrics);
-        assertNotNull(metrics.get("executionStartTime"));
-        assertTrue(metrics.get("executionStartTime").get(0).value() > 0L);
+        assertJobStarted(job);
+    }
+
+    @Test
+    public void test_clientSelectStreaming() {
+        final SqlResult result = client().getSql().execute("ANALYZE SELECT * FROM TABLE(GENERATE_STREAM(10))");
+        assertNotEquals(-1L, result.jobId());
+
+        final Iterator<SqlRow> it = result.iterator();
+        for (int i = 0; i < 5; i++) {
+            it.next();
+        }
+
+        final Job job = instance().getJet().getJob(result.jobId());
+        assertNotNull(job);
+        assertJobStarted(job);
+    }
+
+    private static void assertJobStarted(Job job) {
+        assertTrueEventually(() -> {
+            final JobMetrics metrics = job.getMetrics();
+            assertNotNull(metrics);
+            final List<Measurement> executionStartTime = metrics.get("executionStartTime");
+            assertNotNull(executionStartTime);
+            assertFalse(executionStartTime.isEmpty());
+            assertTrue(executionStartTime.get(0).value() > 0L);
+        });
     }
 }

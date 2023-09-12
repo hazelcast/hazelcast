@@ -98,7 +98,8 @@ public class SqlClientResult implements SqlResult {
         SqlRowMetadata rowMetadata,
         SqlPage rowPage,
         long updateCount,
-        Boolean isInfiniteRows
+        Boolean isInfiniteRows,
+        long jobId
     ) {
         synchronized (mux) {
             this.isInfiniteRows = isInfiniteRows;
@@ -111,9 +112,9 @@ public class SqlClientResult implements SqlResult {
                 ClientIterator iterator = new ClientIterator(rowMetadata);
                 iterator.onNextPage(rowPage);
 
-                state = new State(iterator, -1, null);
+                state = new State(iterator, -1, null, jobId);
             } else {
-                state = new State(null, updateCount, null);
+                state = new State(null, updateCount, null, jobId);
 
                 markClosed();
             }
@@ -141,9 +142,9 @@ public class SqlClientResult implements SqlResult {
             if (result.getRowMetadata() != null) {
                 ClientIterator iterator = state == null ? new ClientIterator(result.getRowMetadata()) : state.iterator;
                 iterator.onNextPage(result.getRowPage());
-                state = new State(iterator, -1, null);
+                state = new State(iterator, -1, null, result.getJobId());
             } else {
-                state = new State(null, result.getUpdateCount(), null);
+                state = new State(null, result.getUpdateCount(), null, result.getJobId());
                 markClosed();
             }
             mux.notifyAll();
@@ -159,7 +160,7 @@ public class SqlClientResult implements SqlResult {
                 return;
             }
 
-            state = new State(null, -1, error);
+            state = new State(null, -1, error, -1);
 
             mux.notifyAll();
         }
@@ -206,6 +207,13 @@ public class SqlClientResult implements SqlResult {
         State state = awaitState();
 
         return state.updateCount;
+    }
+
+    @Override
+    public long jobId() {
+        State state = awaitState();
+
+        return state.jobId;
     }
 
     @Override
@@ -341,7 +349,7 @@ public class SqlClientResult implements SqlResult {
                     QueryException error =
                             QueryException.error("Interrupted while waiting for the response from the server.", e);
 
-                    return new State(null, -1, error);
+                    return new State(null, -1, error, -1);
                 }
             }
 
@@ -358,11 +366,13 @@ public class SqlClientResult implements SqlResult {
         private final ClientIterator iterator;
         private final long updateCount;
         private final RuntimeException error;
+        private final long jobId;
 
-        private State(ClientIterator iterator, long updateCount, RuntimeException error) {
+        private State(ClientIterator iterator, long updateCount, RuntimeException error, final long jobId) {
             this.iterator = iterator;
             this.updateCount = updateCount;
             this.error = error;
+            this.jobId = jobId;
         }
     }
 
