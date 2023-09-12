@@ -108,6 +108,7 @@ import org.apache.calcite.sql.SqlNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -526,10 +527,6 @@ public class PlanExecutor {
             }
         }
 
-        if (ssc.isSecurityEnabled()) {
-            jobConfig.setArgument(JobConfigArguments.KEY_SQL_SECURITY_SUBJECT, ssc.subject());
-        }
-
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         long jobId = jet.newJobId();
@@ -537,7 +534,9 @@ public class PlanExecutor {
         assert oldValue == null : oldValue;
         try {
             sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-            Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
+            Subject subject = ssc == null || !ssc.isSecurityEnabled() ? null : ssc.subject();
+            Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig, subject);
+
             job.getFuture().whenComplete((r, t) -> {
                 // make sure the queryResultProducer is cleaned up after the job completes. This normally
                 // takes effect when the job fails before the QRP is removed by the RootResultConsumerSink
@@ -569,12 +568,9 @@ public class PlanExecutor {
                 .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows())
                 .setTimeoutMillis(timeout);
 
-        if (ssc != null && ssc.isSecurityEnabled()) {
-            jobConfig.setArgument(JobConfigArguments.KEY_SQL_SECURITY_SUBJECT, ssc.subject());
-        }
-
         sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-        Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
+        Subject subject = ssc == null || !ssc.isSecurityEnabled() ? null : ssc.subject();
+        Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig, subject);
         job.join();
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);

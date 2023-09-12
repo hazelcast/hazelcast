@@ -55,6 +55,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -84,9 +85,10 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
             long jobId,
             boolean isLightJob,
             @Nonnull Object jobDefinition,
-            @Nonnull JobConfig config
-    ) {
-        super(client, jobId, isLightJob, jobDefinition, config);
+            @Nonnull JobConfig config,
+            @Nullable Subject subject
+            ) {
+        super(client, jobId, isLightJob, jobDefinition, config, subject);
     }
 
     @Nonnull

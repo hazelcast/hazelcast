@@ -48,6 +48,7 @@ import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
+import javax.security.auth.Subject;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -64,14 +65,13 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         super(nodeEngine, jobId, coordinator);
     }
 
-    public JobProxy(
-            NodeEngineImpl engine,
-            long jobId,
-            boolean isLightJob,
-            @Nonnull Object jobDefinition,
-            @Nonnull JobConfig config
-    ) {
-        super(engine, jobId, isLightJob, jobDefinition, config);
+    public JobProxy(NodeEngineImpl nodeEngine,
+                    long jobId,
+                    boolean isLightJob,
+                    Object jobDefinition,
+                    JobConfig config,
+                    Subject subject) {
+        super(nodeEngine, jobId, isLightJob, jobDefinition, config, subject);
     }
 
     @Nonnull @Override
@@ -139,10 +139,10 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
             Data configData = serializationService().toData(config);
             Data jobDefinitionData = serializationService().toData(jobDefinition);
             return invokeOp(new SubmitJobOperation(
-                    getId(), null, null, jobDefinitionData, configData, isLightJob(), null));
+                    getId(), null, null, jobDefinitionData, configData, isLightJob(), subject));
         }
         return invokeOp(new SubmitJobOperation(
-                getId(), jobDefinition, config, null, null, isLightJob(), null));
+                getId(), jobDefinition, config, null, null, isLightJob(), subject));
     }
 
     @Override
@@ -236,7 +236,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
                 .invoke();
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     protected Address masterId() {
         Address masterAddress = container().getMasterAddress();
         if (masterAddress == null) {

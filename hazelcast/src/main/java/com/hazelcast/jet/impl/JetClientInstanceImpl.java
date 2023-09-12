@@ -44,6 +44,8 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -141,8 +143,12 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return new ClientJobProxy(client, jobId, lightJobCoordinator);
     }
 
-    public Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
-        return new ClientJobProxy(client, jobId, isLightJob, jobDefinition, config);
+    public Job newJobProxy(long jobId,
+                           boolean isLightJob,
+                           @Nonnull Object jobDefinition,
+                           @Nonnull JobConfig config,
+                           @Nullable Subject subject) {
+        return new ClientJobProxy(client, jobId, isLightJob, jobDefinition, config, subject);
     }
 
     /**

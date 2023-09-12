@@ -664,7 +664,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     planExecutor,
-                    context.getSecurityContext(),
                     permissions
             );
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
@@ -696,7 +695,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     planExecutor,
-                    context.getSecurityContext(),
                     permissions
             );
         } else if (physicalRel instanceof DeletePhysicalRel) {
@@ -715,7 +713,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     planExecutor,
-                    context.getSecurityContext(),
                     permissions
             );
         } else {
@@ -739,7 +736,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     OptUtils.isUnbounded(physicalRel),
                     rowMetadata,
                     planExecutor,
-                    context.getSecurityContext(),
                     permissions,
                     partitionStrategyCandidates(physicalRel, parameterMetadata)
             );

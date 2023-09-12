@@ -27,6 +27,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.util.Collection;
 import java.util.List;
 
@@ -207,6 +208,13 @@ public interface JetService {
      * See {@link #newLightJob(Pipeline, JobConfig)} for more information.
      */
     Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config);
+
+    /**
+     * Submits a job defined in the Core API with attached {@link Subject}.
+     * <p>
+     * See {@link #newLightJob(Pipeline, JobConfig)} for more information.
+     */
+    Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config, @Nullable Subject subject);
 
     /**
      * Returns all submitted jobs. The result includes completed normal jobs,

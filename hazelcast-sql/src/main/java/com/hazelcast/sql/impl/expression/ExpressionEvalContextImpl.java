@@ -22,8 +22,6 @@ import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.security.auth.Subject;
 import java.security.Permission;
 import java.util.List;
 
@@ -37,7 +35,6 @@ import static java.util.Objects.requireNonNull;
  */
 public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     private transient MetaSupplierCtx contextRef;
-    private transient Subject subject;
 
     private final List<Object> arguments;
     private final transient InternalSerializationService serializationService;
@@ -56,11 +53,9 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
             @Nonnull ProcSupplierCtx context,
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
-            @Nonnull NodeEngine nodeEngine,
-            @Nullable Subject subject) {
+            @Nonnull NodeEngine nodeEngine) {
         this(arguments, serializationService, nodeEngine);
         this.contextRef = context;
-        this.subject = subject;
     }
 
     /**
@@ -94,13 +89,11 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
 
     @Override
     public void checkPermission(Permission permission) {
-        if (subject != null) {
-            contextRef.checkPermission(subject, permission);
-        }
+        contextRef.checkPermission(permission);
     }
 
     @Override
     public boolean isSecurityEnabled() {
-        return subject != null;
+        return contextRef.subject() != null;
     }
 }

@@ -149,7 +149,6 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
                 null,
                 false,
                 planExecutor,
-                null,
                 Collections.emptyList()
         );
 

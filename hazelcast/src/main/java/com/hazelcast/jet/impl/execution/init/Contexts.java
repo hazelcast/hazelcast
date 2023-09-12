@@ -224,15 +224,6 @@ public final class Contexts {
             }
             securityContext.checkPermission(subject, permission);
         }
-
-        @Override
-        public void checkPermission(@Nonnull Subject subject, @Nonnull Permission permission) {
-            SecurityContext securityContext = nodeEngine.getNode().securityContext;
-            if (securityContext == null) {
-                return;
-            }
-            securityContext.checkPermission(subject, permission);
-        }
     }
 
     public interface InternalProcSupplierCtx {

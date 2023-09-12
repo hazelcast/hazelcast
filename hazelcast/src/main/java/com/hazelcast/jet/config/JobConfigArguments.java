@@ -40,11 +40,6 @@ public final class JobConfigArguments {
      */
     public static final String KEY_REQUIRED_PARTITIONS = "__sql.requiredPartitions";
 
-    /**
-     * The key under which the SQL engine stores security context to be used.
-     */
-    public static final String KEY_SQL_SECURITY_SUBJECT = "__sql.sqlSecuritySubject";
-
     private JobConfigArguments() {
     }
 }
