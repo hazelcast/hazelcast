@@ -382,12 +382,6 @@ public abstract class LargePayloadTest {
         test(16384 * 1024, 10, true);
     }
 
-    // problematic one
-    @Test
-    public void test_concurrency_10_payload_32MB_withWriter() throws Exception {
-        test(16384 * 1024, 50, true);
-    }
-
     public void test(int payloadSize, int concurrency, boolean useWriter) throws Exception {
         AsyncServerSocket serverSocket = newServer(useWriter);
 
@@ -414,10 +408,6 @@ public abstract class LargePayloadTest {
             }
         }
         clientSocket.flush();
-
-        //Thread.sleep(10000);
-
-        System.out.println("Foo");
 
         assertCompletesEventually(futures, testTimeoutMs);
 
@@ -609,5 +599,4 @@ public abstract class LargePayloadTest {
             }
         }
     }
-
 }

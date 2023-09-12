@@ -369,7 +369,7 @@ public final class UringAsyncSocket extends AsyncSocket {
             if (res >= 0) {
                 metrics.incBytesWritten(res);
                 metrics.incWrites();
-                System.out.println(socket + " written " + res);
+                //System.out.println(socket + " written " + res);
                 boolean sndBufferClean = true;
                 if (sndBuff != null) {
                     ioVector.clear();
@@ -389,10 +389,8 @@ public final class UringAsyncSocket extends AsyncSocket {
                     networkScheduler.scheduleWrite(socket);
                 }
             } else if (res == -EAGAIN) {
-                // try again.
-                System.out.println("-EAGAIN");
-                prepareWrite();
-                System.exit(0);
+                //try again
+                networkScheduler.scheduleWrite(socket);
             } else {
                 if (ioVector.cnt() == 1) {
                     throw newCQEFailedException(
