@@ -19,8 +19,7 @@ package com.hazelcast.internal.tpcengine.nio;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.Reactor_CreateDestroyTest;
 
-public class NioReactor_CreateDestroyTest
-        extends Reactor_CreateDestroyTest {
+public class NioReactor_CreateDestroyTest extends Reactor_CreateDestroyTest {
 
     @Override
     public Reactor.Builder newReactorBuilder() {

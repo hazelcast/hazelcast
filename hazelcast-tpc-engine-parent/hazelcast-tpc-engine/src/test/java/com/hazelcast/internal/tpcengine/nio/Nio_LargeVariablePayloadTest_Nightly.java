@@ -22,8 +22,7 @@ import org.junit.experimental.categories.Category;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
 
 @Category(NightlyTest.class)
-public class Nio_LargeVariablePayloadTest_Nightly
-        extends Nio_LargeVariablePayloadTest {
+public class Nio_LargeVariablePayloadTest_Nightly extends Nio_LargeVariablePayloadTest {
 
     public Nio_LargeVariablePayloadTest_Nightly() {
         iterations = 2000;

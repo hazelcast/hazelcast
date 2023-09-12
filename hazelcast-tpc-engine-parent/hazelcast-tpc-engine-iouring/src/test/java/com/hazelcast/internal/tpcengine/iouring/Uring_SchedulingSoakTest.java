@@ -20,6 +20,7 @@ import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.SchedulingSoakTest;
 
 public class Uring_SchedulingSoakTest extends SchedulingSoakTest {
+
     @Override
     public Reactor.Builder newReactorBuilder() {
         return new UringReactor.Builder();

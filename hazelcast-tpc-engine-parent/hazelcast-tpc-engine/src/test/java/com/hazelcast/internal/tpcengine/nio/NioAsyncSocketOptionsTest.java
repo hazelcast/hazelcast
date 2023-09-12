@@ -25,5 +25,4 @@ public class NioAsyncSocketOptionsTest extends AsyncSocketOptionsTest {
     public Reactor.Builder newReactorBuilder() {
         return new NioReactor.Builder();
     }
-
 }

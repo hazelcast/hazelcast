@@ -17,8 +17,9 @@
 package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.net.RpcTest;
 
-public class Nio_RpcTest extends com.hazelcast.internal.tpcengine.net.RpcTest {
+public class Nio_RpcTest extends RpcTest {
 
     @Override
     public Reactor.Builder newReactorBuilder() {

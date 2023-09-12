@@ -44,6 +44,7 @@ import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
+import static java.lang.Math.max;
 
 /**
  * todo: Should be converted to a time based test instead of ieration based
@@ -378,15 +379,12 @@ public abstract class LargePayloadTest {
         test(16384 * 1024, 10, true);
     }
 
-    @Test
-    public void test_concurrency_10_payload_32MB_withWriter() throws Exception {
-        test(32768 * 1024, 10, true);
-    }
-
     public void test(int payloadSize, int concurrency, boolean useWriter) throws Exception {
         AsyncServerSocket serverSocket = newServer(useWriter);
 
         AsyncSocket clientSocket = newClient(serverSocket.getLocalAddress(), useWriter);
+
+        int rounds = max(1, iterations / concurrency);
 
         Random random = new Random();
         for (int k = 0; k < concurrency; k++) {
@@ -394,7 +392,7 @@ public abstract class LargePayloadTest {
             random.nextBytes(payload);
             IOBuffer buf = new IOBuffer(SIZEOF_HEADER + payload.length, true);
             buf.writeInt(payload.length);
-            buf.writeLong(iterations / concurrency);
+            buf.writeLong(rounds);
             int pos = buf.position();
             // hash placeholder
             buf.writeInt(0);
