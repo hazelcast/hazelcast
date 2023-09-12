@@ -115,9 +115,12 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     @Parameter
     public InMemoryFormat inMemoryFormat;
 
-    @Parameters(name = "inMemoryFormat: {0}")
-    public static Collection<Object> data() {
-        return List.of(BINARY, OBJECT);
+    @Parameters(name = "{index}: {0}")
+    public static Collection<Object[]> data() {
+        return asList(new Object[][]{
+                {BINARY},
+                {OBJECT},
+        });
     }
 
     @Override
