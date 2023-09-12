@@ -37,19 +37,19 @@ public class DiscoverDatabase {
     public static List<DataConnectionResource> listResources(JdbcDataConnection jdbcDataConnection) throws SQLException {
         try (Connection connection = jdbcDataConnection.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
-            String databaseProductName = getDatabaseProductName(databaseMetaData);
+            DatabaseType databaseType = getDatabaseType(databaseMetaData);
 
             List<DataConnectionResource> list;
 
-            if (isPostgres(databaseProductName)) {
+            if (databaseType == DatabaseType.POSTGRESQL) {
                 LOGGER.info("Detected database type is Postgres");
                 PostgresDatabaseDiscovery databaseDiscovery = new PostgresDatabaseDiscovery();
                 list = databaseDiscovery.listResources(connection);
-            } else if (isMySql(databaseProductName)) {
+            } else if (databaseType == DatabaseType.MYSQL) {
                 LOGGER.info("Detected database is MySql");
                 MySQLDatabaseDiscovery databaseDiscovery = new MySQLDatabaseDiscovery();
                 list = databaseDiscovery.listResources(connection);
-            } else if (isSqlServer(databaseProductName)) {
+            } else if (databaseType == DatabaseType.SQLSERVER) {
                 LOGGER.info("Detected database is SQL Server");
                 MSSQLDatabaseDiscovery databaseDiscovery = new MSSQLDatabaseDiscovery();
                 list = databaseDiscovery.listResources(connection);
@@ -63,20 +63,31 @@ public class DiscoverDatabase {
         }
     }
 
-    public static String getDatabaseProductName(DatabaseMetaData databaseMetaData) throws SQLException {
-        return databaseMetaData.getDatabaseProductName().toUpperCase(Locale.ROOT).trim();
+    public static DatabaseType getDatabaseType(DatabaseMetaData databaseMetaData) throws SQLException {
+        String databaseProductName = databaseMetaData.getDatabaseProductName().toUpperCase(Locale.ROOT).trim();
+        DatabaseType result;
+        if (isPostgres(databaseProductName)) {
+            return DatabaseType.POSTGRESQL;
+        } else if (isMySql(databaseProductName)) {
+            return DatabaseType.MYSQL;
+        } else if (isSqlServer(databaseProductName)) {
+            return DatabaseType.SQLSERVER;
+        } else {
+            result = DatabaseType.OTHER;
+        }
+        return result;
     }
 
-    public static boolean isPostgres(String databaseProductName) {
+    private static boolean isPostgres(String databaseProductName) {
         return "POSTGRESQL".equals(databaseProductName);
     }
 
 
-    public static boolean isMySql(String databaseProductName) {
+    private static boolean isMySql(String databaseProductName) {
         return "MYSQL".equals(databaseProductName);
     }
 
-    public static boolean isSqlServer(String databaseProductName) {
+    private static boolean isSqlServer(String databaseProductName) {
         return "MICROSOFT SQL SERVER".equals(databaseProductName);
     }
 }
