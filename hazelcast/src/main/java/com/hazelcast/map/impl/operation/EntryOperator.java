@@ -91,7 +91,7 @@ public final class EntryOperator {
     private Object oldValue;
     /**
      * A clone of {@link #oldValue} that can be passed to an {@link EntryProcessor} to allow side-effect free mutations
-     * 
+     *
      * @see <a href="https://hazelcast.atlassian.net/browse/HZ-2837">HZ-2837 - Field level mutation being taken by listener as
      *      old value but not being considered by interceptor - Strange Behaviour</a>
      */
@@ -182,14 +182,14 @@ public final class EntryOperator {
         }
 
         oldValue = recordStore.get(dataKey, backup, callerAddress, false);
-        
+
         // Not required for OBJECT as #getOrNullOldValue() would return null in that case
         if (!readOnly && hasEventRegistration && inMemoryFormat != OBJECT) {
             // This is a clone operation, but it's likely more performant to query the recordStore for the serialized value than
             // regenerate it from oldValue
             oldValueClone =  recordStore.get(dataKey, backup, callerAddress, false);
         }
-        
+
         // predicated entry processors can only be applied to existing entries
         // so if we have a predicate and somehow(due to expiration or split-brain healing)
         // we found value null, we should skip that entry.
