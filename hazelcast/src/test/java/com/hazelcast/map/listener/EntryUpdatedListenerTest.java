@@ -28,8 +28,10 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
     public void testOldValues() throws InterruptedException, ExecutionException {
         final HazelcastInstance instance = createHazelcastInstanceFactory().newHazelcastInstance();
 
+        // Create a map
         final IMap<Object, AtomicInteger> map = instance.getMap(randomMapName());
 
+        // Setup the listeners
         final CompletableFuture<Integer> entryListenerOldValue = setMapListener(
                 listener -> map.addEntryListener(listener, true));
         final CompletableFuture<Integer> entryLocalListenerOldValue = setMapListener(map::addLocalEntryListener);
@@ -70,6 +72,7 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
             }
         });
 
+        // Insert a dummy initial value
         final Object key = Void.TYPE;
         final int initial = 1;
 
@@ -86,6 +89,7 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
             return null;
         });
 
+        // Check all the listeners received the correct response
         assertEqualsStringFormat(
                 "Initial value provided (%s) does not match old value observed by EntryUpdatedListener.entryUpdated (%s) differ",
                 initial, entryListenerOldValue.get());
@@ -99,12 +103,17 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
                 interceptorOldValue.get());
     }
 
+    /**
+     * Constructs a {@link EntryUpdatedListener}, registering it via {@code listenerSetter}
+     *
+     * @return a {@link CompleteableFuture} referencing the {@link EntryEvent.getOldValue()} from when the
+     *         {@link EntryUpdatedListener} was fired
+     */
     private static CompletableFuture<Integer> setMapListener(
             final Consumer<EntryUpdatedListener<Object, AtomicInteger>> listenerSetter) {
         final CompletableFuture<Integer> oldValue = new CompletableFuture<>();
-        listenerSetter.accept((EntryUpdatedListener<Object, AtomicInteger>) event -> {
-            oldValue.complete(event.getOldValue().get());
-        });
+        listenerSetter
+                .accept((EntryUpdatedListener<Object, AtomicInteger>) event -> oldValue.complete(event.getOldValue().get()));
         return oldValue;
     }
 }
