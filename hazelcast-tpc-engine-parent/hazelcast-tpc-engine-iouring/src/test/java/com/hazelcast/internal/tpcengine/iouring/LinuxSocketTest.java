@@ -141,13 +141,16 @@ public class LinuxSocketTest {
     @Test
     public void test_bind() throws IOException {
         socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
-        InetSocketAddress address = new InetSocketAddress("127.0.0.1", 5000);
+        InetSocketAddress address = new InetSocketAddress("127.0.0.1", 0);
         socket.bind(address);
         socket.listen(10);
 
         assertFalse(socket.isBlocking());
         assertFalse(socket.isClosed());
-        assertEquals(address, socket.getLocalAddress());
+        InetSocketAddress localAddress = socket.getLocalAddress();
+        assertNotNull(localAddress);
+        assertEquals(address.getAddress(), localAddress.getAddress());
+        assertTrue("Port should be larger than 0", localAddress.getPort() > 0);
         assertNull(socket.getRemoteAddress());
     }
 
@@ -164,7 +167,7 @@ public class LinuxSocketTest {
         socket.setBlocking(true);
         socket.close();
 
-        InetSocketAddress address = new InetSocketAddress("127.0.0.1", 5001);
+        InetSocketAddress address = new InetSocketAddress("127.0.0.1", 0);
 
         assertThrows(IOException.class, () -> socket.bind(address));
     }
@@ -175,7 +178,7 @@ public class LinuxSocketTest {
         socket.setBlocking(true);
         socket.close();
 
-        InetSocketAddress address = new InetSocketAddress(InetAddress.getByName("::1"), 5002);
+        InetSocketAddress address = new InetSocketAddress(InetAddress.getByName("::1"), 0);
 
         assertThrows(IOException.class, () -> socket.bind(address));
     }
