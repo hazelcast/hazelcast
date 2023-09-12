@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.Reactor.Builder.newReactorBuilder;
 import static com.hazelcast.internal.tpcengine.ReactorType.NIO;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertSuccessEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static java.lang.Math.abs;
 import static org.junit.Assert.assertEquals;
@@ -77,10 +78,10 @@ public class FifoSchedulerNiceTest {
             }
         });
 
-        TpcTestSupport.assertSuccessEventually(future);
+        assertSuccessEventually(future);
         List<DummyTask> tasks = future.join();
 
-        Thread.sleep(3000);
+        Thread.sleep(6000);
 
         // every task should be performed roughly the same number of times because
         // the fifoscheduler doesn't care for the nice level of the TaskQueue.
@@ -117,6 +118,7 @@ public class FifoSchedulerNiceTest {
         @Override
         public int run() throws Throwable {
             runs.incrementAndGet();
+            Thread.yield();
             return RUN_YIELD;
         }
     }

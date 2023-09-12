@@ -81,7 +81,7 @@ public class CompletelyFairSchedulerNiceTest {
         TpcTestSupport.assertSuccessEventually(future);
         List<DummyTask> tasks = future.join();
 
-        Thread.sleep(2000);
+        Thread.sleep(6000);
 
         boolean first = true;
         long previous = 0;
@@ -118,6 +118,7 @@ public class CompletelyFairSchedulerNiceTest {
         @Override
         public int run() throws Throwable {
             runs.incrementAndGet();
+            Thread.yield();
             return RUN_YIELD;
         }
     }
