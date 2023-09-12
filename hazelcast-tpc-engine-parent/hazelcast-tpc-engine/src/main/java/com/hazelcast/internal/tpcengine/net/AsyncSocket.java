@@ -568,6 +568,9 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
          */
         Option<Boolean> TCP_NODELAY = new Option<>("TCP_NODELAY", Boolean.class);
 
+        /**
+         * See {@link jdk.net.ExtendedSocketOptions#TCP_QUICKACK}.
+         */
         Option<Boolean> TCP_QUICKACK = new Option<>("TCP_QUICKACK", Boolean.class);
 
         /**
