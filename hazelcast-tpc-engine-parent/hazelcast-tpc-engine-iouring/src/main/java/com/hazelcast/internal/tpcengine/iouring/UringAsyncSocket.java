@@ -514,7 +514,9 @@ public final class UringAsyncSocket extends AsyncSocket {
 
         @Override
         public boolean isSupported(Option option) {
-            if (TCP_NODELAY.equals(option)) {
+            if (TCP_QUICKACK.equals(option)) {
+                return true;
+            } else if (TCP_NODELAY.equals(option)) {
                 return true;
             } else if (SO_RCVBUF.equals(option)) {
                 return true;
@@ -542,6 +544,8 @@ public final class UringAsyncSocket extends AsyncSocket {
             try {
                 if (TCP_NODELAY.equals(option)) {
                     return (T) (Boolean) nativeSocket.isTcpNoDelay();
+                } else if (TCP_QUICKACK.equals(option)) {
+                    return (T) (Boolean) nativeSocket.isTcpQuickAck();
                 } else if (SO_RCVBUF.equals(option)) {
                     return (T) (Integer) nativeSocket.getReceiveBufferSize();
                 } else if (SO_SNDBUF.equals(option)) {
@@ -574,6 +578,9 @@ public final class UringAsyncSocket extends AsyncSocket {
             try {
                 if (TCP_NODELAY.equals(option)) {
                     nativeSocket.setTcpNoDelay((Boolean) value);
+                    return true;
+                } else if (TCP_QUICKACK.equals(option)) {
+                    nativeSocket.setTcpQuickAck((Boolean) value);
                     return true;
                 } else if (SO_RCVBUF.equals(option)) {
                     nativeSocket.setReceiveBufferSize((Integer) value);

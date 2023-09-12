@@ -236,10 +236,10 @@ public class LinuxSocketTest {
 
 
     // ============= tcpNoDelay ==============
-
     @Test
     public void test_tcpNoDelay() throws IOException {
         socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
+        assertFalse(socket.isTcpNoDelay());
         socket.setTcpNoDelay(true);
         assertTrue(socket.isTcpNoDelay());
         socket.setTcpNoDelay(false);
@@ -260,6 +260,37 @@ public class LinuxSocketTest {
         socket.close();
 
         assertThrows(IOException.class, () -> socket.isTcpNoDelay());
+    }
+
+
+    // ============= ackDelay ==============
+
+    @Test
+    public void test_tcpQuickAck() throws IOException {
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
+        assertTrue(socket.isTcpQuickAck());
+
+        socket.setTcpQuickAck(false);
+        assertFalse(socket.isTcpQuickAck());
+
+        socket.setTcpQuickAck(true);
+        assertTrue(socket.isTcpQuickAck());
+    }
+
+    @Test
+    public void test_setTcpQuickAck_whenClosed() throws IOException {
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
+        socket.close();
+
+        assertThrows(IOException.class, () -> socket.setTcpQuickAck(true));
+    }
+
+    @Test
+    public void test_isTcpQuickAck_whenClosed() throws IOException {
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
+        socket.close();
+
+        assertThrows(IOException.class, () -> socket.isTcpQuickAck());
     }
 
     // ============= reusePort ==============

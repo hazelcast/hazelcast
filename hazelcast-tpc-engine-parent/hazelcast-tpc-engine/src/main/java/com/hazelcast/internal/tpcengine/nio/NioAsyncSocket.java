@@ -430,8 +430,11 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
 
         private static SocketOption toSocketOption(Option option) {
+            // Could be made more efficient by putting it in a static map.
             if (TCP_NODELAY.equals(option)) {
                 return StandardSocketOptions.TCP_NODELAY;
+            } else if (TCP_QUICKACK.equals(option)) {
+                return ExtendedSocketOptions.TCP_QUICKACK;
             } else if (SO_RCVBUF.equals(option)) {
                 return StandardSocketOptions.SO_RCVBUF;
             } else if (SO_SNDBUF.equals(option)) {
