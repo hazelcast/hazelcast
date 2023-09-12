@@ -10,7 +10,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.QuickTest;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -18,12 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 @RunWith(HazelcastParallelClassRunner.class)
-// TODO Why is this a slow test? Why does it take 10 seconds?
-@Category({SlowTest.class, ParallelJVMTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryUpdatedListenerTest extends HazelcastTestSupport {
     /**
-     * <a href="https://hazelcast.atlassian.net/browse/HZ-2837">HZ-2837 - Field level mutation being taken by listener as old
-     * value but not being considered by interceptor - Strange Behaviour</a>
+     * @see <a href="https://hazelcast.atlassian.net/browse/HZ-2837">HZ-2837 - Field level mutation being taken by listener as
+     *      old value but not being considered by interceptor - Strange Behaviour</a>
      */
     @Test
     public void testOldValues() throws InterruptedException, ExecutionException {
@@ -31,11 +30,11 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
 
         final IMap<Object, AtomicInteger> map = instance.getMap(randomMapName());
 
-        final CompletableFuture<Object> entryListenerOldValue = setMapListener(
+        final CompletableFuture<Integer> entryListenerOldValue = setMapListener(
                 listener -> map.addEntryListener(listener, true));
-        final CompletableFuture<Object> entryLocalListenerOldValue = setMapListener(map::addLocalEntryListener);
+        final CompletableFuture<Integer> entryLocalListenerOldValue = setMapListener(map::addLocalEntryListener);
 
-        final CompletableFuture<Object> interceptorOldValue = new CompletableFuture<>();
+        final CompletableFuture<Integer> interceptorOldValue = new CompletableFuture<>();
         map.addInterceptor(new MapInterceptor() {
             private static final long serialVersionUID = 1L;
 
@@ -51,7 +50,7 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
             @Override
             public Object interceptPut(final Object oldValue, final Object newValue) {
                 if (oldValue != null) {
-                    interceptorOldValue.complete(oldValue);
+                    interceptorOldValue.complete(((AtomicInteger) oldValue).get());
                 }
 
                 return null;
@@ -72,9 +71,9 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
         });
 
         final Object key = Void.TYPE;
-        final AtomicInteger initial = new AtomicInteger(1);
+        final int initial = 1;
 
-        map.set(key, initial);
+        map.set(key, new AtomicInteger(initial));
 
         map.executeOnKey(key, entry -> {
             // Mutate the value in the map directly - expectation is that this will not be visible to anyone -
@@ -100,10 +99,12 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
                 interceptorOldValue.get());
     }
 
-    private static <T> CompletableFuture<Object> setMapListener(
-            final Consumer<EntryUpdatedListener<Object, T>> listenerSetter) {
-        final CompletableFuture<Object> oldValue = new CompletableFuture<>();
-        listenerSetter.accept((EntryUpdatedListener<Object, T>) event -> oldValue.complete(event.getOldValue()));
+    private static CompletableFuture<Integer> setMapListener(
+            final Consumer<EntryUpdatedListener<Object, AtomicInteger>> listenerSetter) {
+        final CompletableFuture<Integer> oldValue = new CompletableFuture<>();
+        listenerSetter.accept((EntryUpdatedListener<Object, AtomicInteger>) event -> {
+            oldValue.complete(event.getOldValue().get());
+        });
         return oldValue;
     }
 }
