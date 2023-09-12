@@ -125,7 +125,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpNoDelay(JNIEnv *
     int option_value = enabled;
     int option_len = sizeof(option_value);
 
-    int res = setsockopt(sock_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&option_value, option_len);
+    int res = setsockopt(sock_fd, IPPROTO_TCP, TCP_NODELAY, &option_value, option_len);
     if (res == -1) {
         throw_io_exception(env, "setTcpNoDelay", errno);
         return;
@@ -135,13 +135,12 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpNoDelay(JNIEnv *
 JNIEXPORT jboolean JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isTcpNoDelay(JNIEnv* env, jclass this_class, jint sock_fd) {
     int option_value;
-    int option_len;
+    int option_len = sizeof(option_value);
 
     int res = getsockopt(sock_fd, IPPROTO_TCP, TCP_NODELAY, &option_value, &option_len);
     if (res == -1) {
         return throw_io_exception(env, "isTcpNoDelay", errno);
     }
-
     return option_value;
 }
 
@@ -161,7 +160,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpQuickAck(JNIEnv 
 JNIEXPORT jboolean JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isTcpQuickAck(JNIEnv* env, jclass this_class, jint sock_fd) {
     int option_value;
-    int option_len;
+    int option_len = sizeof(option_value);
 
     int res = getsockopt(sock_fd, IPPROTO_TCP, TCP_QUICKACK, &option_value, &option_len);
     if (res == -1) {

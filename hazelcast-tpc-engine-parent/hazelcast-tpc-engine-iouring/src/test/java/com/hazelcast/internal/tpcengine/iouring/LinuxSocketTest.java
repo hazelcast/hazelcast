@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.AssertTask;
 import com.hazelcast.internal.tpcengine.TpcTestSupport;
 import org.junit.After;
 import org.junit.Test;
@@ -28,7 +27,6 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.concurrent.Callable;
 
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -235,27 +233,14 @@ public class LinuxSocketTest {
 
 
     // ============= tcpNoDelay ==============
-
     @Test
     public void test_tcpNoDelay() throws IOException {
-        socket = LinuxSocket.createBlockingTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         assertFalse(socket.isTcpNoDelay());
         socket.setTcpNoDelay(true);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(socket.isTcpNoDelay());
-            }
-        });
         assertTrue(socket.isTcpNoDelay());
-
         socket.setTcpNoDelay(false);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertFalse(socket.isTcpNoDelay());
-            }
-        });
+        assertFalse(socket.isTcpNoDelay());
     }
 
     @Test
@@ -281,23 +266,10 @@ public class LinuxSocketTest {
     public void test_tcpQuickAck() throws IOException {
         socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         assertFalse(socket.isTcpQuickAck());
-
         socket.setTcpQuickAck(true);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(socket.isTcpQuickAck());
-            }
-        });
-
+        assertTrue(socket.isTcpQuickAck());
         socket.setTcpQuickAck(false);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertFalse(socket.isTcpQuickAck());
-            }
-        });
+        assertFalse(socket.isTcpQuickAck());
     }
 
     @Test
@@ -315,7 +287,6 @@ public class LinuxSocketTest {
 
         assertThrows(IOException.class, () -> socket.isTcpQuickAck());
     }
-
 
     // ============= reusePort ==============
 
