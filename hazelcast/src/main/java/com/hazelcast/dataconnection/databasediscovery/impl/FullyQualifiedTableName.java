@@ -16,37 +16,42 @@
 
 package com.hazelcast.dataconnection.databasediscovery.impl;
 
+import javax.annotation.Nonnull;
+import java.util.Objects;
+import java.util.stream.Stream;
+
 class FullyQualifiedTableName {
 
-    private String catalogName = "";
+    private final String catalogName;
 
-    private String schemaName = "";
+    private final String schemaName;
 
-    private String tableName = "";
+    private final String tableName;
 
-    FullyQualifiedTableName(String[] name) {
-
-        if (name.length == 3) {
-            catalogName = name[0];
-            schemaName = name[1];
-            tableName = name[2];
-        } else if (name.length == 2) {
-            schemaName = name[0];
-            tableName = name[1];
-        } else if (name.length == 1) {
-            tableName = name[0];
-        }
+    FullyQualifiedTableName(String catalogName, String schemaName, String tableName) {
+        this.catalogName = Objects.toString(catalogName, "");
+        this.schemaName = Objects.toString(schemaName, "");
+        this.tableName = Objects.toString(tableName, "");
     }
 
+    @Nonnull
     public String getCatalogName() {
         return catalogName;
     }
 
+    @Nonnull
     public String getSchemaName() {
         return schemaName;
     }
 
+    @Nonnull
     public String getTableName() {
         return tableName;
+    }
+
+    public String[] getName() {
+        return Stream.of(catalogName, schemaName, tableName)
+                .filter(s -> !s.isBlank())
+                .toArray(String[]::new);
     }
 }

@@ -23,8 +23,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
 
 import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_TABLE;
 
@@ -40,26 +38,21 @@ public class MySQLDatabaseDiscovery {
                 new String[]{"TABLE", "VIEW"})) {
             List<DataConnectionResource> result = new ArrayList<>();
             while (tables.next()) {
-                // Format DataConnectionResource name as catalog + schema+ + table_name
-                String[] name = Stream.of(
-                                tables.getString("TABLE_CAT"),
-                                tables.getString("TABLE_SCHEM"),
-                                tables.getString("TABLE_NAME")
-                        )
-                        .filter(Objects::nonNull)
-                        .toArray(String[]::new);
+                String catalogName = tables.getString("TABLE_CAT");
+                String schemaName = tables.getString("TABLE_SCHEM");
+                String tableName = tables.getString("TABLE_NAME");
 
-                FullyQualifiedTableName fullyQualifiedTableName = new FullyQualifiedTableName(name);
+                FullyQualifiedTableName fullyQualifiedTableName = new FullyQualifiedTableName(catalogName, schemaName, tableName);
                 if (isSystemSchema(fullyQualifiedTableName.getSchemaName())) {
                     continue;
                 }
-                result.add(new DataConnectionResource(OBJECT_TYPE_TABLE, name));
+                result.add(new DataConnectionResource(OBJECT_TYPE_TABLE, fullyQualifiedTableName.getName()));
             }
             return result;
         }
     }
 
-    private boolean isSystemSchema(String schema) {
+    static boolean isSystemSchema(String schema) {
         return SYSTEM_SCHEMA_LIST.stream()
                 .anyMatch(schema::equalsIgnoreCase);
     }
