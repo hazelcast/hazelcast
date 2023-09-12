@@ -30,15 +30,15 @@ import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_T
 
 public class MSSQLDatabaseDiscovery {
 
-    List<String> systemSchemaList = List.of("sys", "INFORMATION_SCHEMA");
-    List<String> systemTableList = List.of("spt_", "MSreplication_options");
+    private static final List<String> SYSTEM_SCHEMA_LIST = List.of("sys", "INFORMATION_SCHEMA");
+    private static final List<String> SYSTEM_TABLE_LIST = List.of("spt_", "MSreplication_options");
 
     public List<DataConnectionResource> listResources(Connection connection) throws SQLException {
         try (ResultSet tables = connection.getMetaData().getTables(
-                     connection.getCatalog(),
-                     null,
-                     null,
-                     new String[]{"TABLE", "VIEW"})) {
+                connection.getCatalog(),
+                null,
+                null,
+                new String[]{"TABLE", "VIEW"})) {
             List<DataConnectionResource> result = new ArrayList<>();
             while (tables.next()) {
                 // Format DataConnectionResource name as catalog + schema+ + table_name
@@ -50,7 +50,9 @@ public class MSSQLDatabaseDiscovery {
                         .filter(Objects::nonNull)
                         .toArray(String[]::new);
 
-                if (isSystemSchema(name[1]) || isSystemTable(name[2])) {
+                FullyQualifiedTableName fullyQualifiedTableName = new FullyQualifiedTableName(name);
+                if (isSystemSchema(fullyQualifiedTableName.getSchemaName())
+                    || isSystemTable(fullyQualifiedTableName.getTableName())) {
                     continue;
                 }
                 result.add(new DataConnectionResource(OBJECT_TYPE_TABLE, name));
@@ -60,12 +62,12 @@ public class MSSQLDatabaseDiscovery {
     }
 
     private boolean isSystemSchema(String schema) {
-        return systemSchemaList.stream()
-                .anyMatch(schema::startsWith);
+        return SYSTEM_SCHEMA_LIST.stream()
+                .anyMatch(schema::equals);
     }
 
     private boolean isSystemTable(String tableName) {
-        return systemTableList.stream()
-                .anyMatch(tableName::startsWith);
+        return SYSTEM_TABLE_LIST.stream()
+                .anyMatch(tableName::equals);
     }
 }

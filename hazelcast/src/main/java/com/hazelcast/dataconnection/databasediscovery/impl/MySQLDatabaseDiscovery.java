@@ -30,12 +30,14 @@ import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_T
 
 public class MySQLDatabaseDiscovery {
 
+    private static final List<String> SYSTEM_SCHEMA_LIST = List.of("sys");
+
     public List<DataConnectionResource> listResources(Connection connection) throws SQLException {
         try (ResultSet tables = connection.getMetaData().getTables(
-                     null,
-                     null,
-                     null,
-                     new String[]{"TABLE", "VIEW"})) {
+                null,
+                null,
+                null,
+                new String[]{"TABLE", "VIEW"})) {
             List<DataConnectionResource> result = new ArrayList<>();
             while (tables.next()) {
                 // Format DataConnectionResource name as catalog + schema+ + table_name
@@ -47,12 +49,18 @@ public class MySQLDatabaseDiscovery {
                         .filter(Objects::nonNull)
                         .toArray(String[]::new);
 
-                if (name[0].startsWith("sys")) {
+                FullyQualifiedTableName fullyQualifiedTableName = new FullyQualifiedTableName(name);
+                if (isSystemSchema(fullyQualifiedTableName.getSchemaName())) {
                     continue;
                 }
                 result.add(new DataConnectionResource(OBJECT_TYPE_TABLE, name));
             }
             return result;
         }
+    }
+
+    private boolean isSystemSchema(String schema) {
+        return SYSTEM_SCHEMA_LIST.stream()
+                .anyMatch(schema::equalsIgnoreCase);
     }
 }
