@@ -387,17 +387,13 @@ public final class UringAsyncSocket extends AsyncSocket {
                     ioVector.compact(res);
                 }
 
-                boolean isClean = writerClean
-                        && sndBufferClean
-                        && ioVector.isEmpty()
-                        && writeQueue.isEmpty();
-                if (isClean) {
-                    //System.out.println(socket+" reset flushed");
+                if (writerClean && sndBufferClean && ioVector.isEmpty() && writeQueue.isEmpty()) {
                     socket.resetFlushed();
                 } else {
-                    //System.out.println(socket+" prepare write");
-                    prepareWrite();
-                    //networkScheduler.scheduleWrite(socket);
+                    // todo: we could do a prepare write instead of
+                    // going through the scheduler because it adds latency
+                    // but want to close the differences with the tpc-engine-advanced branch for now
+                    networkScheduler.scheduleWrite(socket);
                 }
             } else if (res == -EAGAIN) {
                 // try again.

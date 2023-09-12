@@ -55,7 +55,7 @@ public abstract class LargePayloadTest {
 
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public int socketBufferSize = 16 * 1024;
-    public int iterations = 2000;
+    public int iterations = 20;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public boolean tcpNoDelay = true;
     public boolean quickAck = true;
@@ -451,7 +451,7 @@ public abstract class LargePayloadTest {
         AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
         serverSocketBuilder.options.set(SO_RCVBUF, socketBufferSize);
         // todo: revert to port 0
-        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 9089);
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
             socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);

@@ -105,7 +105,9 @@ public final class UringEventloop extends Eventloop {
         }
 
         long durationMs = System.currentTimeMillis()-startMs;
-        System.out.println(reactor.name()+" park duration "+durationMs+ " ms");
+        if(durationMs>10) {
+            System.out.println(reactor.name() + " park duration " + durationMs + " ms");
+        }
     }
 
     @Override
