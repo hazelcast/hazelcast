@@ -67,11 +67,11 @@ public class NetworkBenchmark_Netty {
         IO_URING
     }
 
-    public int runtimeSeconds = 5;
+    public int runtimeSeconds = 30;
     public int payloadSize = 0;
     // the number of inflight packets per connection
-    public int concurrency = 10;
-    public int connections = 10;
+    public int concurrency = 1;
+    public int connections = 1;
     public Type type = Type.NIO;
     public String cpuAffinityClient = "1,2";
     public String cpuAffinityServer = "5,6";
@@ -307,12 +307,6 @@ public class NetworkBenchmark_Netty {
                 ctx.write(response, ctx.voidPromise());
                 payloadSize = -1;
                 response = null;
-
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
             }
             receiveBuf.release();
         }
