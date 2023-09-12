@@ -20,7 +20,6 @@ import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpcengine.nio.IOVector;
 import com.hazelcast.internal.tpcengine.util.Option;
 import org.jctools.queues.MpscArrayQueue;
 
@@ -35,7 +34,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.Thread.currentThread;
 
@@ -415,7 +413,8 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     @Override
     protected void close0() throws IOException {
     }
-//
+
+    //
     @Override
     public final String toString() {
         return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
@@ -761,8 +760,6 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
         public Options options;
 
-        public IOVector ioVector;
-
         public Metrics metrics;
 
         @Override
@@ -785,14 +782,6 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
             if (writeQueue == null) {
                 writeQueue = new MpscArrayQueue(writeQueueCapacity);
-            }
-
-            if (writer == null) {
-                if (ioVector == null) {
-                    ioVector = new IOVector();
-                }
-            } else {
-                checkNull(ioVector, "ioVector");
             }
         }
     }

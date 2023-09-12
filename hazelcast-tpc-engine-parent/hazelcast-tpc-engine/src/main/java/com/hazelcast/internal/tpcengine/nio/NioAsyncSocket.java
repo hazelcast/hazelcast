@@ -39,6 +39,7 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNull;
 import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_CONNECT;
 import static java.nio.channels.SelectionKey.OP_READ;
@@ -508,6 +509,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         public SocketChannel socketChannel;
         public Selector selector;
         public boolean receiveBufferIsDirect = true;
+        public IOVector ioVector;
 
         public Builder(NioAsyncServerSocket.AcceptRequest acceptRequest) {
             try {
@@ -536,6 +538,14 @@ public final class NioAsyncSocket extends AsyncSocket {
 
             checkNotNull(socketChannel, "socketChannel");
             checkNotNull(selector, "selector");
+
+            if (writer == null) {
+                if (ioVector == null) {
+                    ioVector = new IOVector();
+                }
+            } else {
+                checkNull(ioVector, "ioVector");
+            }
         }
 
         @SuppressWarnings("java:S1181")
