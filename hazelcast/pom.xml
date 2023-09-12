@@ -638,14 +638,6 @@
             <scope>test</scope>
             <version>1.1.1</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>${http.client.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <!-- OSGi -->
         <dependency>
             <groupId>org.osgi</groupId>
