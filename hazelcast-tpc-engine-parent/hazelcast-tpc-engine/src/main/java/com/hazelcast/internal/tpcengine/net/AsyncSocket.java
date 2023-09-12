@@ -241,7 +241,6 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     // Guaranteed to be running on the eventloop thread.
     protected abstract void start00();
 
-
     /**
      * Ensures that any scheduled IOBuffers are flushed to the socket at some point
      * in the future.
@@ -367,7 +366,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         Thread currentThread = currentThread();
         if (currentThread != eventloopThread) {
             throw new IllegalStateException(
-                    "unsafeWriteAndFlush can only be made from eventloop thread, "
+                    "insideWriteAndFlush can only be made from eventloop thread, "
                             + "found " + currentThread);
         }
 
