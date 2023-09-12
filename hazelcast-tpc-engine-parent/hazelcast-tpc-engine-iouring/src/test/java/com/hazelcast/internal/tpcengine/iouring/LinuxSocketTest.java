@@ -268,11 +268,13 @@ public class LinuxSocketTest {
     @Test
     public void test_tcpQuickAck() throws IOException {
         socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
-        assertFalse(socket.isTcpQuickAck());
-        socket.setTcpQuickAck(true);
         assertTrue(socket.isTcpQuickAck());
+
         socket.setTcpQuickAck(false);
         assertFalse(socket.isTcpQuickAck());
+
+        socket.setTcpQuickAck(true);
+        assertTrue(socket.isTcpQuickAck());
     }
 
     @Test
