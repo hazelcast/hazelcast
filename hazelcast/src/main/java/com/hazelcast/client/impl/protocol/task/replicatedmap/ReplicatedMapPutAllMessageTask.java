@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.PutAllOperationFactory;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -79,7 +80,7 @@ public class ReplicatedMapPutAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "putAll";
+        return SecurityInterceptorConstants.PUT_ALL;
     }
 
     @Override

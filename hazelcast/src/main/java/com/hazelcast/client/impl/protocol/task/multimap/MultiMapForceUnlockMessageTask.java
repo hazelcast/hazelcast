@@ -24,6 +24,7 @@ import com.hazelcast.internal.locksupport.operations.UnlockOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
@@ -71,7 +72,7 @@ public class MultiMapForceUnlockMessageTask
 
     @Override
     public String getMethodName() {
-        return "forceUnlock";
+        return SecurityInterceptorConstants.FORCE_UNLOCK;
     }
 
     @Override
