@@ -149,6 +149,7 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
                 null,
                 false,
                 planExecutor,
+                null,
                 Collections.emptyList()
         );
 
@@ -156,7 +157,7 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
         given(jet.newLightJob(eq(dag), isA(JobConfig.class))).willReturn(job);
 
         // when
-        SqlResult result = planExecutor.execute(plan, queryId, emptyList(), 0L);
+        SqlResult result = planExecutor.execute(plan, queryId, emptyList(), 0L, null);
 
         // then
         assertThat(result.updateCount()).isEqualTo(0);

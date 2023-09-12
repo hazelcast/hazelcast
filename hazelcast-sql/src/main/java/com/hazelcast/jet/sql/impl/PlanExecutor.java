@@ -505,14 +505,13 @@ public class PlanExecutor {
         );
     }
 
-    SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
+    SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout, @Nullable SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 serializationService,
-                Util.getNodeEngine(hazelcastInstance),
-                ssc);
+                Util.getNodeEngine(hazelcastInstance));
 
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
@@ -528,7 +527,7 @@ public class PlanExecutor {
         }
 
         if (ssc.isSecurityEnabled()) {
-            jobConfig.setArgument(JobConfigArguments.KEY_SQL_SECURITY_CONTEXT, ssc);
+            jobConfig.setArgument(JobConfigArguments.KEY_SQL_SECURITY_SUBJECT, ssc.subject());
         }
 
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
@@ -562,13 +561,17 @@ public class PlanExecutor {
         );
     }
 
-    SqlResult execute(DmlPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
+    SqlResult execute(DmlPlan plan, QueryId queryId, List<Object> arguments, long timeout, @Nullable SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
                 .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows())
                 .setTimeoutMillis(timeout);
+
+        if (ssc != null && ssc.isSecurityEnabled()) {
+            jobConfig.setArgument(JobConfigArguments.KEY_SQL_SECURITY_SUBJECT, ssc.subject());
+        }
 
         sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
         Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);

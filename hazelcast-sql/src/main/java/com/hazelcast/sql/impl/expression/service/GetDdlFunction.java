@@ -28,7 +28,6 @@ import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
@@ -81,12 +80,11 @@ public class GetDdlFunction extends TriExpression<String> {
             throw QueryException.error("Object '" + objectName + "' does not exist in namespace '" + namespace + "'");
         } else if (obj instanceof SqlCatalogObject) {
             SqlCatalogObject catalogObject = (SqlCatalogObject) obj;
-            SqlSecurityContext securityContext = context.getSecurityContext();
             // TODO: view mapping/view 'view'/view type?
             if (catalogObject instanceof DataConnectionCatalogEntry) {
-                securityContext.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_DATACONNECTION));
+                context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_DATACONNECTION));
             } else {
-                if (securityContext.isSecurityEnabled()) {
+                if (context.isSecurityEnabled()) {
                     throw new UnsupportedOperationException("GET_DDL is not available "
                             + "for mapping/view/type in secure environment");
                 }

@@ -872,5 +872,17 @@ public interface ProcessorMetaSupplier extends Serializable {
          *                                {@link Subject}
          */
         void checkPermission(@Nonnull Permission permission) throws AccessControlException;
+
+        /**
+         * Check if the current Subject has the given permission granted (or implied).
+         *
+         * @param subject    Subject to be checked
+         * @param permission Permission to be checked
+         * @throws AccessControlException when the security is enabled and the checked permission
+         *                                is not implied for the given {@link Subject}
+         */
+        default void checkPermission(@Nonnull Subject subject, @Nonnull Permission permission)
+                throws AccessControlException {
+        }
     }
 }

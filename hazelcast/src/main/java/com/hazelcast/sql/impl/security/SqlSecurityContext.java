@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.security;
 
+import javax.security.auth.Subject;
 import java.security.Permission;
 
 /**
@@ -35,4 +36,9 @@ public interface SqlSecurityContext {
      * @param permission permission to be checked
      */
     void checkPermission(Permission permission);
+
+    /**
+     * @return subject associated with the current query
+     */
+    Subject subject();
 }

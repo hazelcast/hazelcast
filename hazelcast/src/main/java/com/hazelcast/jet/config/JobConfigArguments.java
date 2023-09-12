@@ -43,7 +43,7 @@ public final class JobConfigArguments {
     /**
      * The key under which the SQL engine stores security context to be used.
      */
-    public static final String KEY_SQL_SECURITY_CONTEXT = "__sql.sqlSecurityContext";
+    public static final String KEY_SQL_SECURITY_SUBJECT = "__sql.sqlSecuritySubject";
 
     private JobConfigArguments() {
     }

@@ -1150,6 +1150,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final String query;
         private final boolean infiniteRows;
         private final PlanExecutor planExecutor;
+        private final SqlSecurityContext ssc;
         private final List<Permission> permissions;
 
         DmlPlan(
@@ -1161,6 +1162,7 @@ abstract class SqlPlanImpl extends SqlPlan {
                 String query,
                 boolean infiniteRows,
                 PlanExecutor planExecutor,
+                SqlSecurityContext ssc,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -1172,6 +1174,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.query = query;
             this.infiniteRows = infiniteRows;
             this.planExecutor = planExecutor;
+            this.ssc = ssc;
             this.permissions = permissions;
         }
 
@@ -1218,7 +1221,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            return planExecutor.execute(this, queryId, arguments, timeout);
+            return planExecutor.execute(this, queryId, arguments, timeout, ssc);
         }
     }
 

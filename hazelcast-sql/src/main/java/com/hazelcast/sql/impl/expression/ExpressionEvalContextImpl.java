@@ -17,11 +17,14 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
+import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
+import java.security.Permission;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -33,11 +36,12 @@ import static java.util.Objects.requireNonNull;
  * @see Expression#eval
  */
 public class ExpressionEvalContextImpl implements ExpressionEvalContext {
+    private transient MetaSupplierCtx contextRef;
+    private transient Subject subject;
 
     private final List<Object> arguments;
     private final transient InternalSerializationService serializationService;
     private final transient NodeEngine nodeEngine;
-    private final transient SqlSecurityContext securityContext;
 
     public ExpressionEvalContextImpl(
             @Nonnull List<Object> arguments,
@@ -46,19 +50,17 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
         this.arguments = requireNonNull(arguments);
         this.serializationService = requireNonNull(serializationService);
         this.nodeEngine = requireNonNull(nodeEngine);
-        this.securityContext = NoOpSqlSecurityContext.INSTANCE;
     }
 
     public ExpressionEvalContextImpl(
+            @Nonnull ProcSupplierCtx context,
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull SqlSecurityContext securityContext
-    ) {
-        this.arguments = requireNonNull(arguments);
-        this.serializationService = requireNonNull(serializationService);
-        this.nodeEngine = requireNonNull(nodeEngine);
-        this.securityContext = securityContext;
+            @Nullable Subject subject) {
+        this(arguments, serializationService, nodeEngine);
+        this.contextRef = context;
+        this.subject = subject;
     }
 
     /**
@@ -90,10 +92,15 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
         return nodeEngine;
     }
 
-    /**
-     * @return sql security context
-     */
-    public SqlSecurityContext getSecurityContext() {
-        return securityContext;
+    @Override
+    public void checkPermission(Permission permission) {
+        if (subject != null) {
+            contextRef.checkPermission(subject, permission);
+        }
+    }
+
+    @Override
+    public boolean isSecurityEnabled() {
+        return subject != null;
     }
 }
