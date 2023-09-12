@@ -20,6 +20,7 @@ import com.hazelcast.internal.tpcengine.DeadlineSchedulerTest;
 import com.hazelcast.internal.tpcengine.Reactor;
 
 public class Uring_DeadlineSchedulerTest extends DeadlineSchedulerTest {
+
     @Override
     public Reactor.Builder newReactorBuilder() {
         return new UringReactor.Builder();

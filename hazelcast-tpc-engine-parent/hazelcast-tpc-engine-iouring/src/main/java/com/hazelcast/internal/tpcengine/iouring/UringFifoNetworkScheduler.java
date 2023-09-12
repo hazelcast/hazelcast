@@ -30,7 +30,6 @@ public final class UringFifoNetworkScheduler
         extends UringNetworkScheduler {
 
     private final CircularQueue<UringAsyncSocket> stagingQueue;
-    public Thread eventloopThread;
 
     public UringFifoNetworkScheduler(Uring uring,
                                      int socketLimit,
@@ -44,10 +43,6 @@ public final class UringFifoNetworkScheduler
 
     @Override
     public void scheduleWrite(UringAsyncSocket socket) {
-        if (Thread.currentThread() != eventloopThread) {
-            throw new RuntimeException();
-        }
-
         if (!stagingQueue.offer(socket)) {
             throw new IllegalStateException("Socket limit has been exceeded.");
         }

@@ -19,8 +19,7 @@ package com.hazelcast.internal.tpcengine.nio;
 import com.hazelcast.internal.tpcengine.DeadlineSchedulerSoakTest;
 import com.hazelcast.internal.tpcengine.Reactor;
 
-public class Nio_DeadlineSchedulerSoakTest
-        extends DeadlineSchedulerSoakTest {
+public class Nio_DeadlineSchedulerSoakTest extends DeadlineSchedulerSoakTest {
 
     @Override
     public Reactor.Builder newReactorBuilder() {

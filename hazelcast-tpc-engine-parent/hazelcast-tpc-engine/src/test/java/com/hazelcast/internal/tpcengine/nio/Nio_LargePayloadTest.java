@@ -17,8 +17,10 @@
 package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.net.LargePayloadTest;
 
-public class Nio_LargePayloadTest extends com.hazelcast.internal.tpcengine.net.LargePayloadTest {
+public class Nio_LargePayloadTest extends LargePayloadTest {
+
     @Override
     public Reactor.Builder newReactorBuilder() {
         return new NioReactor.Builder();

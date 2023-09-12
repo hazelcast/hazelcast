@@ -17,13 +17,9 @@
 package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptionsTest;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_QUICKACK;
-import static org.junit.Assert.assertEquals;
 
 public class NioAsyncSocketOptionsTest extends AsyncSocketOptionsTest {
 

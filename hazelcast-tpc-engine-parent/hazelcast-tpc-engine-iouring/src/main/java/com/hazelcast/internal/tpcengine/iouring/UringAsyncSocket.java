@@ -296,7 +296,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                 LAST_READ_TIME_NANOS.setOpaque(socket, eventloop.taskStartNanos());
                 metrics.incReads();
                 metrics.incBytesRead(bytesRead);
-               // System.out.println(socket + " bytes read:" + res);
+                // System.out.println(socket + " bytes read:" + res);
                 //System.out.println(socket + " at "+System.currentTimeMillis()+" bytes read:" + res +" ");
                 // io_uring has written the new data into the byteBuffer, but the position we
                 // need to manually update.
@@ -314,7 +314,6 @@ public final class UringAsyncSocket extends AsyncSocket {
                 // we want to read more data
                 prepareRead();
             } else if (res == 0) {
-                System.out.println("Socket closed by peer");
                 // 0 indicates end of stream.
                 // https://man7.org/linux/man-pages/man2/recv.2.html
                 socket.close("Socket closed by peer.", null);
@@ -329,11 +328,8 @@ public final class UringAsyncSocket extends AsyncSocket {
             // TODO: It could be that we run into an EAGAIN or EWOULDBLOCK.
         }
 
-        private long startMs;
-
         void prepareWrite() {
             try {
-                startMs=System.currentTimeMillis();
                 if (closing) {
                     return;
                 }
@@ -371,12 +367,9 @@ public final class UringAsyncSocket extends AsyncSocket {
 
         private void completeWrite(int res) {
             if (res >= 0) {
-                long durationMs = System.currentTimeMillis()-startMs;
                 metrics.incBytesWritten(res);
                 metrics.incWrites();
-                if(durationMs>10) {
-                    System.out.println(socket + " at " + System.currentTimeMillis() + " written " + res + " duration:" + durationMs + " ms");
-                }
+                System.out.println(socket + " written " + res);
                 boolean sndBufferClean = true;
                 if (sndBuff != null) {
                     ioVector.clear();
@@ -390,9 +383,9 @@ public final class UringAsyncSocket extends AsyncSocket {
                 if (writerClean && sndBufferClean && ioVector.isEmpty() && writeQueue.isEmpty()) {
                     socket.resetFlushed();
                 } else {
-                    // todo: we could do a prepare write instead of
-                    // going through the scheduler because it adds latency
-                    // but want to close the differences with the tpc-engine-advanced branch for now
+                    // It is better to call prepareWrite, but this causes a scheduling problem
+                    // that leads to very slow execution.
+                    //prepareWrite();
                     networkScheduler.scheduleWrite(socket);
                 }
             } else if (res == -EAGAIN) {
@@ -525,9 +518,9 @@ public final class UringAsyncSocket extends AsyncSocket {
 
         @Override
         public boolean isSupported(Option option) {
-            if(TCP_QUICKACK.equals(option)){
+            if (TCP_QUICKACK.equals(option)) {
                 return true;
-            }else if (TCP_NODELAY.equals(option)) {
+            } else if (TCP_NODELAY.equals(option)) {
                 return true;
             } else if (SO_RCVBUF.equals(option)) {
                 return true;
@@ -593,7 +586,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                 } else if (TCP_QUICKACK.equals(option)) {
                     nativeSocket.setTcpQuickAck((Boolean) value);
                     return true;
-                }  else if (SO_RCVBUF.equals(option)) {
+                } else if (SO_RCVBUF.equals(option)) {
                     nativeSocket.setReceiveBufferSize((Integer) value);
                     return true;
                 } else if (SO_SNDBUF.equals(option)) {

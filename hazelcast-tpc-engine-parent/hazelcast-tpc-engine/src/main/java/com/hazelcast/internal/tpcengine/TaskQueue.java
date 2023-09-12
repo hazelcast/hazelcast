@@ -39,6 +39,9 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.lang.Math.max;
 
 /**
+ * todo: Should this class be renamed to TaskExecutor? This is more in line
+ * with the Executors of Java.
+ *
  * A TaskQueue is the unit of scheduling within the {@link Scheduler}. Each
  * eventloop has a default TaskQueue. But it is also possible to create additional
  * TaskQueues. For example when you have tasks for clients, but also long

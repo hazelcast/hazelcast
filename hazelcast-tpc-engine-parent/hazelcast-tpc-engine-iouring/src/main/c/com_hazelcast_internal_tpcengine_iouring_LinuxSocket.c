@@ -122,47 +122,14 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_connect(JNIEnv *env, j
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpNoDelay(JNIEnv *env, jclass this_class, jint sock_fd,
                                                                         jboolean enabled) {
-    int fd = sock_fd;
     int option_value = enabled;
-    if(!option_value){
-        printf("setTcpNoDelay %d disabled\n", sock_fd);
-        fflush(stdout);
-    } else{
-        printf("setTcpNoDelay %d enabled\n", sock_fd);
-        fflush(stdout);
-    }
     int option_len = sizeof(option_value);
 
-    printf("setTcpNoDelay %d %d\n", sock_fd, option_value);
-    fflush(stdout);
-
-    int res = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *)&option_value, option_len);
+    int res = setsockopt(sock_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&option_value, option_len);
     if (res == -1) {
         throw_io_exception(env, "setTcpNoDelay", errno);
         return;
     }
-
-    int option_value2;
-    int option_len2 = sizeof(option_value2);
-
-    int res2 = getsockopt(sock_fd, IPPROTO_TCP, TCP_NODELAY, &option_value2, &option_len2);
-    if (res2 == -1) {
-        return throw_io_exception(env, "isTcpNoDelay", errno);
-    }
-
-    if(option_value != option_value2){
-        printf("setTcpNoDelay not set correctly %d %d\n", sock_fd, option_value);
-        fflush(stdout);
-    }else{
-        printf("setTcpNoDelay set correctly %d %d\n", sock_fd, option_value);
-            fflush(stdout);
-
-    }
-
-
-//    if(!Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isTcpNoDelay(env,this_class,socket_fd)){
-//        throw_io_exception(env, "mismatch!", errno);
-//    }
 }
 
 JNIEXPORT jboolean JNICALL
@@ -174,19 +141,17 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isTcpNoDelay(JNIEnv* e
     if (res == -1) {
         return throw_io_exception(env, "isTcpNoDelay", errno);
     }
+
     return option_value;
 }
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpQuickAck(JNIEnv *env, jclass this_class, jint sock_fd,
                                                                         jboolean enabled) {
-    int option_value = 1;
+    int option_value = enabled;
     int option_len = sizeof(option_value);
 
-    printf("setTcpQuickAck %d %d\n", sock_fd, option_value);
-    fflush(stdout);
-
-    int res = setsockopt(sock_fd, IPPROTO_TCP, TCP_QUICKACK, (void *)&option_value, sizeof(option_value));
+    int res = setsockopt(sock_fd, IPPROTO_TCP, TCP_QUICKACK, (void *)&option_value, option_len);
     if (res == -1) {
         throw_io_exception(env, "setTcpQuickAck", errno);
         return;

@@ -150,6 +150,7 @@ public abstract class AsyncSocketOptionsTest {
     public void test_TCP_NODELAY() {
         AsyncSocket socket = newSocket();
         AsyncSocket.Options options = socket.options();
+        System.out.println(options.get(TCP_NODELAY));
         options.set(TCP_NODELAY, true);
         assertEquals(Boolean.TRUE, options.get(TCP_NODELAY));
         options.set(TCP_NODELAY, false);

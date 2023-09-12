@@ -26,5 +26,4 @@ public class NioAsyncServerSocketTest extends AsyncServerSocketTest {
     public Reactor.Builder newReactorBuilder() {
         return new NioReactor.Builder();
     }
-
 }

@@ -20,8 +20,6 @@ import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
 
-import java.util.concurrent.TimeUnit;
-
 import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -38,9 +36,6 @@ public final class UringEventloop extends Eventloop {
 
     private UringEventloop(Builder builder) {
         super(builder);
-
-        UringFifoNetworkScheduler networkScheduler = (UringFifoNetworkScheduler) builder.networkScheduler;
-        networkScheduler.eventloopThread = builder.reactor.eventloopThread();
 
         UringReactor.Builder reactorBuilder = (UringReactor.Builder) builder.reactorBuilder;
         this.uring = builder.uring;
@@ -68,8 +63,6 @@ public final class UringEventloop extends Eventloop {
 
     @Override
     protected void park(long timeoutNanos) {
-        long startMs = System.currentTimeMillis();
-
         metrics.incParkCount();
 
         networkScheduler.tick();
@@ -85,9 +78,7 @@ public final class UringEventloop extends Eventloop {
             submissionQueue.submit();
         } else {
             wakeupNeeded.set(true);
-            if(networkScheduler.hasPending()){
-                throw new RuntimeException();
-            }
+
             if (signals.hasRaised()) {
                 submissionQueue.submit();
             } else {
@@ -102,11 +93,6 @@ public final class UringEventloop extends Eventloop {
 
         if (completionQueue.hasCompletions()) {
             completionQueue.process();
-        }
-
-        long durationMs = System.currentTimeMillis()-startMs;
-        if(durationMs>10) {
-            System.out.println(reactor.name() + " park duration " + durationMs + " ms");
         }
     }
 

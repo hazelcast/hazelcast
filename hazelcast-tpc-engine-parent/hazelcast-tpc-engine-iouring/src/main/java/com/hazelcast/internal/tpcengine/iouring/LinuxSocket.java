@@ -76,6 +76,15 @@ public final class LinuxSocket implements AutoCloseable {
         return new LinuxSocket(res, family);
     }
 
+    public static LinuxSocket createBlockingTcpIpv4Socket() {
+        int family = AF_INET;
+        int res = socket(family, SOCK_STREAM, 0);
+        if (res < 0) {
+            throw newSysCallFailedException("Failed to create a socket.", "socket(2)", -res);
+        }
+        return new LinuxSocket(res, family);
+    }
+
     private static native void initNative();
 
     /**
@@ -185,7 +194,7 @@ public final class LinuxSocket implements AutoCloseable {
     }
 
     /**
-     * Does a blocking connects the socket to the specified address.
+     * Does a blocking connect to the specified address.
      *
      * @param address
      * @return

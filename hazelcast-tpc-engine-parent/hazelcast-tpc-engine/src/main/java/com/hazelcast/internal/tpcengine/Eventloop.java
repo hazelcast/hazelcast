@@ -182,6 +182,7 @@ public abstract class Eventloop {
 
     /**
      * Offers a task to be processed on the default TaskQueue.
+     *
      * @param task
      * @return
      */
@@ -290,9 +291,6 @@ public abstract class Eventloop {
 
                 // There is no work and therefor we need to park.
                 long earliestDeadlineNs = deadlineScheduler.earliestDeadlineNs();
-                if(earliestDeadlineNs!=-1){
-                    throw new RuntimeException("No timeouts expected");
-                }
                 long timeoutNs = earliestDeadlineNs == -1
                         ? Long.MAX_VALUE
                         : max(0, earliestDeadlineNs - runCtx.nowNanos);

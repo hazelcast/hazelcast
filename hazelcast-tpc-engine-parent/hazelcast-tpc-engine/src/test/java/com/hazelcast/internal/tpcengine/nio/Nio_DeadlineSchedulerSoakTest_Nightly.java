@@ -20,8 +20,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class Nio_DeadlineSchedulerSoakTest_Nightly
-        extends Nio_DeadlineSchedulerSoakTest {
+public class Nio_DeadlineSchedulerSoakTest_Nightly extends Nio_DeadlineSchedulerSoakTest {
 
     public Nio_DeadlineSchedulerSoakTest_Nightly() {
         iterations = 60000;
