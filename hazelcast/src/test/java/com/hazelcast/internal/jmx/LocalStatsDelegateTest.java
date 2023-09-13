@@ -35,8 +35,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -74,12 +72,8 @@ public class LocalStatsDelegateTest extends HazelcastTestSupport {
         final StatsSupplier<LocalMapStats> statsSupplier = new LocalMapStatsSupplier(trial);
         final LocalStatsDelegate<LocalMapStats> localStatsDelegate = new LocalStatsDelegate<>(statsSupplier, intervalSec);
 
-        final ExecutorService executor = Executors.newFixedThreadPool(3);
-
-        final Future<Void> mapStatsThread1 = executor
-                .submit(new MapStatsThread(localStatsDelegate, stress, mapStatsThread1SleepMs));
-        final Future<Void> mapStatsThread2 = executor
-                .submit(new MapStatsThread(localStatsDelegate, stress, mapStatsThread2SleepMs));
+        final Future<Void> mapStatsThread1 = spawn(new MapStatsThread(localStatsDelegate, stress, mapStatsThread1SleepMs));
+        final Future<Void> mapStatsThread2 = spawn(new MapStatsThread(localStatsDelegate, stress, mapStatsThread2SleepMs));
 
         final Thread mapPutThread = new Thread(new MapPutThread(trial));
         mapPutThread.start();
