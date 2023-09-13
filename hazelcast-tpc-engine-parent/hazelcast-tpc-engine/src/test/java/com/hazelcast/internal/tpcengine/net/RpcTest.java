@@ -38,6 +38,7 @@ import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_QUICKACK;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 
@@ -60,6 +61,8 @@ public abstract class RpcTest {
     public long durationMillis = 500;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public boolean localWrite;
+    public boolean tcpNoDelay = true;
+    public boolean tcpQuickAck = true;
 
     private final AtomicLong counter = new AtomicLong();
     private final PrintAtomicLongThread printThread = new PrintAtomicLongThread("at:", counter);
@@ -298,16 +301,17 @@ public abstract class RpcTest {
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress) {
-        AsyncSocket.Builder clientSocketBuilder = clientReactor.newAsyncSocketBuilder();
-        clientSocketBuilder.options.set(TCP_NODELAY, true);
-        clientSocketBuilder.options.set(SO_SNDBUF, socketBufferSize);
-        clientSocketBuilder.options.set(SO_RCVBUF, socketBufferSize);
-        clientSocketBuilder.reader = new RpcReader(true);
-        AsyncSocket clientSocket = clientSocketBuilder.build();
+        AsyncSocket.Builder socketBuilder = clientReactor.newAsyncSocketBuilder();
+        socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
+        socketBuilder.options.set(TCP_QUICKACK, tcpQuickAck);
+        socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
+        socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
+        socketBuilder.reader = new RpcReader(true);
+        AsyncSocket socket = socketBuilder.build();
 
-        clientSocket.start();
-        clientSocket.connect(serverAddress).join();
-        return clientSocket;
+        socket.start();
+        socket.connect(serverAddress).join();
+        return socket;
     }
 
     private AsyncServerSocket newServer() {
@@ -316,7 +320,8 @@ public abstract class RpcTest {
         serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
-            socketBuilder.options.set(TCP_NODELAY, true);
+            socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
+            socketBuilder.options.set(TCP_QUICKACK, tcpQuickAck);
             socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
             socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
             socketBuilder.reader = new RpcReader(false);
