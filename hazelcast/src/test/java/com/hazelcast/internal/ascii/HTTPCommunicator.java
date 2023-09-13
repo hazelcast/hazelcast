@@ -21,14 +21,19 @@ import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 import com.hazelcast.logging.ILogger;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509ExtendedTrustManager;
+
 import java.io.IOException;
+import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -37,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +107,38 @@ public class HTTPCommunicator {
     public static final String URI_CONFIG_RELOAD = "config/reload";
     public static final String URI_CONFIG_UPDATE = "config/update";
     public static final String URI_TCP_IP_MEMBER_LIST = "config/tcp-ip/member-list";
+
+    /** Replacement for SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER */
+    private static final TrustManager[] DISTRUST_MANAGER = new TrustManager[] {new X509ExtendedTrustManager() {
+        @Override
+        public void checkClientTrusted(final X509Certificate[] chain, final String authType, final Socket socket) {
+        }
+
+        @Override
+        public void checkServerTrusted(final X509Certificate[] chain, final String authType, final Socket socket) {
+        }
+
+        @Override
+        public void checkClientTrusted(final X509Certificate[] chain, final String authType, final SSLEngine engine) {
+        }
+
+        @Override
+        public void checkServerTrusted(final X509Certificate[] chain, final String authType, final SSLEngine engine) {
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
+
+        @Override
+        public void checkClientTrusted(final X509Certificate[] c, final String a) {
+        }
+
+        @Override
+        public void checkServerTrusted(final X509Certificate[] c, final String a) {
+        }
+    }};
 
     private final String address;
     private final boolean sslEnabled;
@@ -496,7 +534,7 @@ public class HTTPCommunicator {
     public ConnectionResponse doPost(String url, String... params) throws IOException {
         logRequest("POST", url);
         // Create an HttpClient instance
-        HttpClient httpClient = HttpClient.newHttpClient();
+        HttpClient httpClient = newClient();
 
         // Prepare the request body
         String data = String.join("&", params);
@@ -560,7 +598,8 @@ public class HTTPCommunicator {
             }
 
             try {
-                sslContext.init(clientKeyManagers, clientTrustManagers, new SecureRandom());
+                sslContext.init(clientKeyManagers, ArrayUtils.append(DISTRUST_MANAGER, clientTrustManagers),
+                        new SecureRandom());
             } catch (KeyManagementException e) {
                 throw new IOException(e);
             }
