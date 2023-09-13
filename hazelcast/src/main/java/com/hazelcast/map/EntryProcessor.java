@@ -129,7 +129,7 @@ public interface EntryProcessor<K, V, R> extends Serializable {
     /**
      * Get the entry processor to be applied to backup entries.
      * <p>
-     * In case of a {@link ReadOnly} execution, {@code null} can be returned to indicate
+     * In case of a readonly execution, {@code null} can be returned to indicate
      * that no backups should be made.
      * <p>
      * Note that there is a possibility which an {@code EntryProcessor} can see
