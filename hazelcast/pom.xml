@@ -835,5 +835,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
-    </dependencies>
+
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-resolver-provider</artifactId>
+            <version>3.9.4</version>
+            <scope>test</scope>
+        </dependency>
+	</dependencies>
 </project>
