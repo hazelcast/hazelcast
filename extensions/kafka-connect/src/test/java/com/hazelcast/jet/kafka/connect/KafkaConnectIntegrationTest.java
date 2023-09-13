@@ -91,13 +91,12 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     public static final int ITEM_COUNT = 1_000;
 
-    private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download/tests/"
-            + "confluentinc-kafka-connect-datagen-0.6.0.zip";
+    private static final String CONNECTOR_FILE_PATH = "confluentinc-kafka-connect-datagen-0.6.0.zip";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIntegrationTest.class);
 
     @Test
-    public void test_reading_without_timestamps() throws Exception {
+    public void test_reading_without_timestamps() {
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
@@ -115,7 +114,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
                         list -> assertEquals(ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(getDataGenConnectorURL());
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -138,9 +137,9 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void windowing_withNativeTimestamps_should_fail_when_records_without_native_timestamps() throws Exception {
+    public void windowing_withNativeTimestamps_should_fail_when_records_without_native_timestamps() {
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(getDataGenConnectorURL());
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -169,9 +168,9 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void windowing_withIngestionTimestamps_should_work() throws Exception {
+    public void windowing_withIngestionTimestamps_should_work() {
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(getDataGenConnectorURL());
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -208,7 +207,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void test_reading_and_writing_to_map() throws Exception {
+    public void test_reading_and_writing_to_map() {
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
@@ -230,7 +229,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
                         list -> assertEquals(ITEM_COUNT, list.size())));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(getDataGenConnectorURL());
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -272,7 +271,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
 
     @Test
     @Ignore
-    public void test_scaling() throws Exception {
+    public void test_scaling() {
         int localParallelism = 3;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
@@ -296,7 +295,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
                         }));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(getDataGenConnectorURL());
 
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -350,7 +349,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void test_snapshotting() throws Exception {
+    public void test_snapshotting() {
         Config config = smallInstanceConfig();
         enableEventJournal(config);
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -371,7 +370,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         streamStage.writeTo(Sinks.list("testResults"));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        jobConfig.addJarsInZip(getDataGenConnectorURL());
         enableSnapshotting(jobConfig);
 
         Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
@@ -418,6 +417,10 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         }
     }
 
+    private URL getDataGenConnectorURL() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        return classLoader.getResource(CONNECTOR_FILE_PATH);
+    }
     private void waitForNextSnapshot(HazelcastInstance hazelcastInstance, Job job) {
         JobRepository jobRepository = new JobRepository(hazelcastInstance);
         waitForNextSnapshot(jobRepository, job.getId(), 30, false);
