@@ -81,7 +81,7 @@ public class CacheIterateMessageTask
 
     @Override
     public String getMethodName() {
-        return SecurityInterceptorConstants.FETCH;
+        return SecurityInterceptorConstants.ITERATOR;
     }
 
     @Override

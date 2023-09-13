@@ -47,7 +47,6 @@ public final class SecurityInterceptorConstants {
     public static final String GET_CONFIG = "getConfig";
     public static final String GET = "get";
     public static final String ITERATOR = "iterator";
-    public static final String FETCH = "fetch";
     public static final String REGISTER_CACHE_ENTRY_LISTENER = "registerCacheEntryListener";
     public static final String DEREGISTER_CACHE_ENTRY_LISTENER = "deregisterCacheEntryListener";
     public static final String LOAD_ALL = "loadAll";
