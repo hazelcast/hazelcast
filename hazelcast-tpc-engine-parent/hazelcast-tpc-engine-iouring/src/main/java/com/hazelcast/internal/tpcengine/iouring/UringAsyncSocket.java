@@ -381,7 +381,11 @@ public final class UringAsyncSocket extends AsyncSocket {
                     ioVector.compact(res);
                 }
 
-                if (writerClean && sndBufferClean && ioVector.isEmpty() && writeQueue.isEmpty()) {
+                boolean clean = writerClean
+                        && sndBufferClean
+                        && ioVector.isEmpty()
+                        && writeQueue.isEmpty();
+                if (clean) {
                     socket.resetFlushed();
                 } else {
                     networkScheduler.schedule(socket);
