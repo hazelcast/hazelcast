@@ -293,7 +293,8 @@ public class TableResolverImpl implements TableResolver {
             }
         }
 
-        ADDITIONAL_TABLE_PRODUCERS.forEach(producer -> tables.add(producer.apply(mappings, views, types, connectorCache, nodeEngine)));
+        ADDITIONAL_TABLE_PRODUCERS.forEach(producer ->
+                tables.add(producer.apply(mappings, views, types, connectorCache, nodeEngine)));
 
         this.lastViewsSize = views.size();
         this.lastMappingsSize = mappings.size();
