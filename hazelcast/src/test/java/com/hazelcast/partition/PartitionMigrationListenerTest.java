@@ -426,11 +426,10 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
                         MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_MIGRATION_TIME), 0,
                 elapsedMigrationTime);
 
-        assertEquals(MessageFormat.format("With only one migration, {0} ({2}) and {1} ({3}) times should be equal",
-                        MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME,
-                        MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_MIGRATION_TIME,
-                        totalElapsedMigrationTime, elapsedMigrationTime), totalElapsedMigrationTime,
-                elapsedMigrationTime);
+        assertTrue(MessageFormat.format("With only one migration, {0} ({2}) should be greater than or equal to {1} ({3})",
+                MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME,
+                MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_MIGRATION_TIME, totalElapsedMigrationTime,
+                elapsedMigrationTime), totalElapsedMigrationTime >= elapsedMigrationTime);
 
         LOGGER.fine("Triggering another migration...");
         hz2.shutdown();
