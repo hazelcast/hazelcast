@@ -42,6 +42,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.security.Permission;
 import java.util.ArrayList;
@@ -158,9 +159,10 @@ public class SqlSecurityCallbackTest extends OptimizerTestSupport {
             permissions.add(permission);
         }
 
+        @Nullable
         @Override
         public Subject subject() {
-            throw new UnsupportedOperationException("Subject is not presence in " + getClass().getSimpleName());
+            return null;
         }
 
         private List<Permission> getPermissions() {
