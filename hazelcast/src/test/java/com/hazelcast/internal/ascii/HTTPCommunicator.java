@@ -474,7 +474,7 @@ public class HTTPCommunicator {
             HttpResponse<String> httpResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             return new ConnectionResponse(httpResponse);
         } catch (InterruptedException exception) {
-            throw  new IOException(exception);
+            throw new IOException(exception);
         }
     }
 
@@ -496,7 +496,7 @@ public class HTTPCommunicator {
     public ConnectionResponse doPost(String url, String... params) throws IOException {
         logRequest("POST", url);
         // Create an HttpClient instance
-        HttpClient httpClient = HttpClient.newHttpClient();
+        HttpClient httpClient = newClient();
 
         // Prepare the request body
         String data = String.join("&", params);
@@ -571,8 +571,20 @@ public class HTTPCommunicator {
         // configure timeout on the entire client
         int timeout = 20;
         builder.connectTimeout(Duration.ofSeconds(timeout));
-        return builder
-                .build();
+
+        // Disable host name verification in the certificate
+        final String propertyName = "jdk.internal.httpclient.disableHostnameVerification";
+        final String value = System.setProperty(propertyName, Boolean.TRUE.toString());
+        try {
+            return builder
+                    .build();
+        } finally {
+            if (value == null) {
+                System.clearProperty(propertyName);
+            } else {
+                System.setProperty(propertyName, value);
+            }
+        }
     }
 
     public ConnectionResponse headRequestToMapURI() throws IOException {
