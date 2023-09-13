@@ -125,6 +125,8 @@ public class HazelcastVersionLocator {
             builder.add("-DgroupId=" + GROUP_ID);
             builder.add("-DartifactId=" + artifactId);
             builder.add("-Dversion=" + version);
+            builder.add("--quiet");
+            builder.add("--batch-mode");
 
             if (test) {
                 builder.add("-Dclassifier=tests");
