@@ -90,7 +90,8 @@ public final class EntryOperator {
     private Data dataKey;
     private Object oldValue;
     /**
-     * A clone of {@link #oldValue} that can be passed to an {@link EntryProcessor} to allow side-effect free mutations
+     * A clone of {@link #oldValue} that can be passed to the {@link #mapEventPublisher} to ensure isolation from any subsequent
+     * mutations (e.g. in an {@link EntryProcessor})
      *
      * @see <a href="https://hazelcast.atlassian.net/browse/HZ-2837">HZ-2837 - Field level mutation being taken by listener as
      *      old value but not being considered by interceptor - Strange Behaviour</a>
