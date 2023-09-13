@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 
 import com.hazelcast.internal.jmx.suppliers.LocalMapStatsSupplier;
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalMapStats;
@@ -34,9 +35,12 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 
+import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -72,8 +76,9 @@ public class LocalStatsDelegateTest extends HazelcastTestSupport {
         final StatsSupplier<LocalMapStats> statsSupplier = new LocalMapStatsSupplier(trial);
         final LocalStatsDelegate<LocalMapStats> localStatsDelegate = new LocalStatsDelegate<>(statsSupplier, intervalSec);
 
-        final Future<Void> mapStatsThread1 = spawn(new MapStatsThread(localStatsDelegate, stress, mapStatsThread1SleepMs));
-        final Future<Void> mapStatsThread2 = spawn(new MapStatsThread(localStatsDelegate, stress, mapStatsThread2SleepMs));
+        final Collection<Future<Void>> mapStatsThreads = IntStream.of(mapStatsThread1SleepMs, mapStatsThread2SleepMs)
+                .mapToObj(sleepMs -> new MapStatsThread(localStatsDelegate, stress, sleepMs)).map(HazelcastTestSupport::spawn)
+                .collect(Collectors.toList());
 
         final Thread mapPutThread = new Thread(new MapPutThread(trial));
         mapPutThread.start();
@@ -82,8 +87,7 @@ public class LocalStatsDelegateTest extends HazelcastTestSupport {
 
         done.set(true);
 
-        mapStatsThread1.get();
-        mapStatsThread2.get();
+        FutureUtil.waitForever(mapStatsThreads);
         mapPutThread.join();
     }
 
