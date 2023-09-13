@@ -163,6 +163,27 @@ public final class SecurityInterceptorConstants {
     public static final String GET_STATISTICS = "getStatistics";
     public static final String IS_CANCELLED = "isCancelled";
     public static final String IS_DONE = "isDone";
+    public static final String ADD_MESSAGE_LISTENER = "addMessageListener";
+    public static final String PUBLISH_ALL = "publishAll";
+    public static final String PUBLISH = "publish";
+    public static final String REMOVE_MESSAGE_LISTENER = "removeMessageListener";
+    public static final String COMMIT_TRANSACTION = "commitTransaction";
+    public static final String BEGIN_TRANSACTION = "beginTransaction";
+    public static final String ROLLBACK_TRANSACTION = "rollbackTransaction";
+    public static final String CLEAR_REMOTE_TRANSACTION = "clearRemoteTransaction";
+    public static final String RECOVER = "recover";
+    public static final String FINALIZE_REMOTE_TRANSACTION = "finalizeRemoteTransaction";
+    public static final String COMMIT = "commit";
+    public static final String START = "start";
+    public static final String PREPARE = "prepare";
+    public static final String ROLLBACK = "rollback";
+    public static final String GET_FOR_UPDATE = "getForUpdate";
+    public static final String CREATE_PROXIES = "createProxies";
+    public static final String CREATE = "create";
+    public static final String DEPLOY_CLASSES = "deployClasses";
+    public static final String GET_DISTRIBUTED_OBJECTS = "getDistributedObjects";
+    public static final String ADD_DISTRIBUTED_OBJECT_LISTENER = "addDistributedObjectListener";
+    public static final String REMOVE_DISTRIBUTED_OBJECT_LISTENER = "removeDistributedObjectListener";
 
     private SecurityInterceptorConstants() {
     }

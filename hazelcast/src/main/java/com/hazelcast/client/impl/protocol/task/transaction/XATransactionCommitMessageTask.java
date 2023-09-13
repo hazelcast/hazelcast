@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.client.impl.protocol.task.TransactionalMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -77,7 +78,7 @@ public class XATransactionCommitMessageTask
 
     @Override
     public String getMethodName() {
-        return "commit";
+        return SecurityInterceptorConstants.COMMIT;
     }
 
     @Override
