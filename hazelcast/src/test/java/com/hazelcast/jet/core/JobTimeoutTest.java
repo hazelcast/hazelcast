@@ -89,8 +89,8 @@ public class JobTimeoutTest extends JetTestSupport {
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
         final Job job = hz.getJet().newJob(streamingDag(), jobConfig);
 
-        // If the job times out during execution of these operations
-        // catch and ignore the error to continue testing. The job should finish with CancellationException
+        // If the job times out before or during execution of these operations
+        // catch and ignore the error to continue testing. The job should eventually finish with CancellationException
         // due to timeout
         try {
             assertJobStatusEventually(job, RUNNING, 10);
@@ -112,8 +112,8 @@ public class JobTimeoutTest extends JetTestSupport {
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
         final Job job = hz.getJet().newJob(streamingDag(), jobConfig);
 
-        // If the job times out during execution of these operations
-        // catch and ignore the error to continue testing. The job should finish with CancellationException
+        // If the job times out before or during execution of these operations
+        // catch and ignore the error to continue testing. The job should eventually finish with CancellationException
         // due to timeout
         try {
             assertJobStatusEventually(job, RUNNING);
