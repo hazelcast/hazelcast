@@ -268,11 +268,16 @@ public final class UringAsyncSocket extends AsyncSocket {
             }
         }
 
+        private long cnt;
+
         private void prepareRead() {
             try {
+
                 if (closing) {
                     return;
                 }
+
+                socket.linuxSocket.setTcpQuickAck(true);
 
                 int pos = rcvBuff.position();
                 long address = rcvBuffAddr + pos;
@@ -343,7 +348,6 @@ public final class UringAsyncSocket extends AsyncSocket {
                 } else {
                     writerClean = writer.onWrite(sndByteBuffer);
                     sndBuff.flip();
-                    // add it if isn't added already
                     ioVector.offer(sndBuff);
                 }
 
@@ -389,8 +393,8 @@ public final class UringAsyncSocket extends AsyncSocket {
                 } else {
                     // It is better to call prepareWrite, but this causes a scheduling problem
                     // that leads to very slow execution.
-                    //prepareWrite();
-                    networkScheduler.scheduleWrite(socket);
+                    prepareWrite();
+                    //networkScheduler.scheduleWrite(socket);
                 }
             } else if (res == -EAGAIN) {
                 //try again

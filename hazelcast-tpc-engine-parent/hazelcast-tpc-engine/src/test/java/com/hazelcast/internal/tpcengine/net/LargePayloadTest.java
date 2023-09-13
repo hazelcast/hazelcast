@@ -55,8 +55,8 @@ public abstract class LargePayloadTest {
     private static final int SIZEOF_HEADER = SIZEOF_INT + SIZEOF_LONG + SIZEOF_INT;
 
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
-    public int socketBufferSize = 16 * 1024;
-    public int iterations = 20;
+    public int socketBufferSize = 4 * 1024;
+    public int iterations = 2000;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public boolean tcpNoDelay = true;
     public boolean quickAck = true;
@@ -380,6 +380,12 @@ public abstract class LargePayloadTest {
     @Test
     public void test_concurrency_10_payload_16MB_withWriter() throws Exception {
         test(16384 * 1024, 10, true);
+    }
+
+    // problematic one
+    @Test
+    public void test_concurrency_10_payload_32MB_withWriter() throws Exception {
+        test(16384 * 1024, 50, true);
     }
 
     public void test(int payloadSize, int concurrency, boolean useWriter) throws Exception {

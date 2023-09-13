@@ -150,6 +150,9 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpQuickAck(JNIEnv 
     int option_value = enabled;
     int option_len = sizeof(option_value);
 
+    //printf("setTcpQuickAck fd=%d option_val=%d option_len%d\n", sock_fd, option_value, option_len);
+    //fflush(stdout);
+
     int res = setsockopt(sock_fd, IPPROTO_TCP, TCP_QUICKACK, (void *)&option_value, option_len);
     if (res == -1) {
         throw_io_exception(env, "setTcpQuickAck", errno);
