@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.ascii;
 
+import static com.hazelcast.instance.EndpointQualifier.REST;
+import static com.hazelcast.test.Accessors.getNode;
+
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.SSLConfig;
@@ -46,12 +49,10 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.logging.Level;
-
-import static com.hazelcast.instance.EndpointQualifier.REST;
-import static com.hazelcast.test.Accessors.getNode;
 
 @SuppressWarnings("SameParameterValue")
 public class HTTPCommunicator {
@@ -109,7 +110,7 @@ public class HTTPCommunicator {
     public static final String URI_TCP_IP_MEMBER_LIST = "config/tcp-ip/member-list";
 
     /** Replacement for SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER */
-    private static final TrustManager[] DISTRUST_MANAGER = new TrustManager[] {new X509ExtendedTrustManager() {
+    private static final TrustManager[] ALLOW_ALL_HOSTNAME_TRUST_MANAGER = new TrustManager[] {new X509ExtendedTrustManager() {
         @Override
         public void checkClientTrusted(final X509Certificate[] chain, final String authType, final Socket socket) {
         }
@@ -554,7 +555,7 @@ public class HTTPCommunicator {
                     .POST(HttpRequest.BodyPublishers.ofString(data))
                     .build();
         }
-        try {
+        try {            
             // Send the request and get the response
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -598,7 +599,7 @@ public class HTTPCommunicator {
             }
 
             try {
-                sslContext.init(clientKeyManagers, ArrayUtils.append(DISTRUST_MANAGER, clientTrustManagers),
+                sslContext.init(clientKeyManagers, ArrayUtils.append(ALLOW_ALL_HOSTNAME_TRUST_MANAGER, clientTrustManagers),
                         new SecureRandom());
             } catch (KeyManagementException e) {
                 throw new IOException(e);
