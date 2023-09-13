@@ -23,7 +23,7 @@ import com.hazelcast.map.IMap;
  * Allows notifying Hazelcast that the processing unit implementing this interface will not do any modifications. This marker
  * interface allows optimizing the processing to gain more performance.
  * <p>
- * If the processing processing unit implementing this interface does a modification, an {@link UnsupportedOperationException}
+ * If the processing unit implementing this interface does a modification, an {@link UnsupportedOperationException}
  * will be thrown.
  * <p>
  * Currently supported in:
