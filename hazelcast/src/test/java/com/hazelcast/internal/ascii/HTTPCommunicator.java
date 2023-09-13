@@ -49,7 +49,6 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -139,7 +138,8 @@ public class HTTPCommunicator {
         @Override
         public void checkServerTrusted(final X509Certificate[] c, final String a) {
         }
-    }};
+    }
+    };
 
     private final String address;
     private final boolean sslEnabled;
@@ -555,7 +555,7 @@ public class HTTPCommunicator {
                     .POST(HttpRequest.BodyPublishers.ofString(data))
                     .build();
         }
-        try {            
+        try {
             // Send the request and get the response
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
