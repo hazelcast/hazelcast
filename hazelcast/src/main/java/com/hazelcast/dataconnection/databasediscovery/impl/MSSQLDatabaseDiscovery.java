@@ -23,6 +23,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_TABLE;
 
@@ -43,23 +45,33 @@ public class MSSQLDatabaseDiscovery {
                 String schemaName = tables.getString("TABLE_SCHEM");
                 String tableName = tables.getString("TABLE_NAME");
 
-                FullyQualifiedTableName fullyQualifiedTableName = new FullyQualifiedTableName(catalogName, schemaName, tableName);
-                if (isSystemSchema(fullyQualifiedTableName.getSchemaName())
-                    || isSystemTable(fullyQualifiedTableName.getTableName())) {
+
+                if (isSystemSchema(schemaName)
+                    || isSystemTable(tableName)) {
                     continue;
                 }
-                result.add(new DataConnectionResource(OBJECT_TYPE_TABLE, fullyQualifiedTableName.getName()));
+                // Format DataConnectionResource name as catalog + schema+ + table_name
+                String[] name = Stream.of(catalogName, schemaName, tableName)
+                        .filter(Objects::nonNull)
+                        .toArray(String[]::new);
+                result.add(new DataConnectionResource(OBJECT_TYPE_TABLE, name));
             }
             return result;
         }
     }
 
-    static boolean isSystemSchema(String schema) {
+    static boolean isSystemSchema(String schemaName) {
+        if (schemaName == null) {
+            return false;
+        }
         return SYSTEM_SCHEMA_LIST.stream()
-                .anyMatch(schema::equals);
+                .anyMatch(schemaName::equals);
     }
 
     static boolean isSystemTable(String tableName) {
+        if (tableName == null) {
+            return false;
+        }
         return SYSTEM_TABLE_LIST.stream()
                 .anyMatch(tableName::equals);
     }
