@@ -376,7 +376,9 @@ public final class NioAsyncSocket extends AsyncSocket {
 
                 int ioVectorLength = ioVector.length();
                 ByteBuffer[] srcs = ioVector.array();
-                bytesWritten = ioVectorLength == 1 ? socketChannel.write(srcs[0]) : socketChannel.write(srcs, 0, ioVectorLength);
+                bytesWritten = ioVectorLength == 1
+                        ? socketChannel.write(srcs[0])
+                        : socketChannel.write(srcs, 0, ioVectorLength);
                 ioVector.compact(bytesWritten);
                 clean = ioVector.isEmpty();
             } else {
