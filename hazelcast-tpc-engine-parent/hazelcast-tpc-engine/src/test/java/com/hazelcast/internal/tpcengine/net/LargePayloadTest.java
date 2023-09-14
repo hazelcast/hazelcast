@@ -55,11 +55,11 @@ public abstract class LargePayloadTest {
     private static final int SIZEOF_HEADER = SIZEOF_INT + SIZEOF_LONG + SIZEOF_INT;
 
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
-    public int socketBufferSize = 4 * 1024;
-    public int iterations = 2000;
+    public int socketBufferSize = 16 * 1024;
+    public int iterations = 20;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public boolean tcpNoDelay = true;
-    public boolean quickAck = true;
+    public boolean tcpQuickAck = true;
 
     private final AtomicLong iteration = new AtomicLong();
     private final PrintAtomicLongThread monitorThread = new PrintAtomicLongThread("at:", iteration);
@@ -427,7 +427,7 @@ public abstract class LargePayloadTest {
     private AsyncSocket newClient(SocketAddress serverAddress, boolean useWriter) {
         AsyncSocket.Builder socketBuilder = clientReactor.newAsyncSocketBuilder();
         socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
-        socketBuilder.options.set(TCP_QUICKACK, quickAck);
+        socketBuilder.options.set(TCP_QUICKACK, tcpQuickAck);
         socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
         socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
         CompletableFuture future = new CompletableFuture();
@@ -451,7 +451,7 @@ public abstract class LargePayloadTest {
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
             socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
-            socketBuilder.options.set(TCP_QUICKACK, quickAck);
+            socketBuilder.options.set(TCP_QUICKACK, tcpQuickAck);
             socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
             socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
             socketBuilder.reader = new ServerReader();

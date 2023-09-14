@@ -183,6 +183,7 @@ public final class UringAsyncSocket extends AsyncSocket {
         private final ByteBuffer rcvBuff;
         private final long rcvBuffAddr;
         private final Reader reader;
+        private final UringOptions options;
         private boolean closing;
         private int pending;
         private CompletableFuture<Void> connectFuture;
@@ -192,6 +193,7 @@ public final class UringAsyncSocket extends AsyncSocket {
 
         Handler(UringAsyncSocket.Builder builder, UringAsyncSocket socket) {
             this.socket = socket;
+            this.options = (UringOptions) socket.options;
             this.eventloop = socket.reactor.eventloop();
             this.flushThread = socket.flushThread;
             this.submissionQueue = builder.uring.submissionQueue();
@@ -268,16 +270,16 @@ public final class UringAsyncSocket extends AsyncSocket {
             }
         }
 
-        private long cnt;
-
-        private void prepareRead() {
+         private void prepareRead() {
             try {
-
                 if (closing) {
                     return;
                 }
 
-                socket.linuxSocket.setTcpQuickAck(true);
+                Boolean tcpQuickAck = options.tcpQuickAck;
+                if (tcpQuickAck != null) {
+                    socket.linuxSocket.setTcpQuickAck(tcpQuickAck.booleanValue());
+                }
 
                 int pos = rcvBuff.position();
                 long address = rcvBuffAddr + pos;
@@ -301,8 +303,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                 LAST_READ_TIME_NANOS.setOpaque(socket, eventloop.taskStartNanos());
                 metrics.incReads();
                 metrics.incBytesRead(bytesRead);
-                // System.out.println(socket + " bytes read:" + res);
-                //System.out.println(socket + " at "+System.currentTimeMillis()+" bytes read:" + res +" ");
+                //System.out.println(socket + " bytes read:" + res);
                 // io_uring has written the new data into the byteBuffer, but the position we
                 // need to manually update.
                 rcvBuff.position(rcvBuff.position() + bytesRead);
@@ -319,6 +320,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                 // we want to read more data
                 prepareRead();
             } else if (res == 0) {
+                System.out.println("Socket closed by peer");
                 // 0 indicates end of stream.
                 // https://man7.org/linux/man-pages/man2/recv.2.html
                 socket.close("Socket closed by peer.", null);
@@ -517,6 +519,9 @@ public final class UringAsyncSocket extends AsyncSocket {
     public static class UringOptions implements Options {
 
         private final LinuxSocket nativeSocket;
+        // This is needed for 'permanent' TCP_QUICKACK
+        // null indicates that the value hasn't been touched and is the default
+        private volatile Boolean tcpQuickAck;
 
         UringOptions(LinuxSocket nativeSocket) {
             this.nativeSocket = nativeSocket;
@@ -590,6 +595,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                     nativeSocket.setTcpNoDelay((Boolean) value);
                     return true;
                 } else if (TCP_QUICKACK.equals(option)) {
+                    tcpQuickAck = (Boolean) value;
                     nativeSocket.setTcpQuickAck((Boolean) value);
                     return true;
                 } else if (SO_RCVBUF.equals(option)) {

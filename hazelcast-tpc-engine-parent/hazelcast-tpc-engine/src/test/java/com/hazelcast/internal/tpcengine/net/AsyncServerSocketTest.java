@@ -69,34 +69,21 @@ public abstract class AsyncServerSocketTest {
     @Test
     public void test_build() {
         Reactor reactor = newReactor();
-        InetSocketAddress bindAddress = new InetSocketAddress("127.0.0.1", 5004);
+        InetSocketAddress bindAddress = new InetSocketAddress("127.0.0.1", 0);
         AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
         serverSocketBuilder.bindAddress = bindAddress;
         serverSocketBuilder.acceptFn = acceptRequest -> {
         };
         AsyncServerSocket socket = serverSocketBuilder.build();
+
+        assertFalse(socket.isClosed());
         assertSame(reactor, socket.getReactor());
         assertNotNull(socket.metrics());
-        assertEquals(bindAddress, socket.getLocalAddress());
-        assertEquals(bindAddress, socket.getLocalAddress());
-    }
-
-    @Test
-    public void test_bind_randomPort() {
-        Reactor reactor = newReactor();
-        AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
-        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
-        serverSocketBuilder.acceptFn = acceptRequest -> {
-        };
-        AsyncServerSocket socket = serverSocketBuilder.build();
-
-        SocketAddress localAddress = socket.getLocalAddress();
+        InetSocketAddress localAddress = (InetSocketAddress) socket.getLocalAddress();
         assertNotNull(localAddress);
-        assertTrue("localPort:" + socket.getLocalPort(), socket.getLocalPort() > 0);
-
-        // we need to close the socket manually only when accept is called, the AsyncSocket is part
-        // of the reactor
-        socket.close();
+        assertTrue(localAddress.getPort() > 0);
+        assertEquals(localAddress.getPort(), socket.getLocalPort());
+        assertTrue(socket.getLocalPort() > 0);
     }
 
     @Test
