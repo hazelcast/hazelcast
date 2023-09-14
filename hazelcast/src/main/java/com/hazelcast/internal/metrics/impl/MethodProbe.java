@@ -88,7 +88,7 @@ abstract class MethodProbe implements ProbeFunction {
                     method.getDeclaringClass().getName(), method.getName()));
         }
 
-        if (method.getParameterTypes().length != 0) {
+        if (method.getParameterCount() != 0) {
             throw new IllegalArgumentException(format("@Probe method '%s.%s' can't have arguments",
                     method.getDeclaringClass().getName(), method.getName()));
         }

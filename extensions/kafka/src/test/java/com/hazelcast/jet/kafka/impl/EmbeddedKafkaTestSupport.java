@@ -20,7 +20,6 @@ import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
 import kafka.utils.TestUtils;
 import kafka.zk.EmbeddedZookeeper;
-import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.utils.SystemTime;
 
@@ -39,7 +38,7 @@ class EmbeddedKafkaTestSupport extends KafkaTestSupport {
     private int brokerPort = -1;
 
     @Override
-    public void createKafkaCluster() throws IOException {
+    protected String createKafkaCluster0() throws IOException {
         System.setProperty("zookeeper.preAllocSize", Integer.toString(128));
         zkServer = new EmbeddedZookeeper();
         zkConnect = ZK_HOST + ':' + zkServer.port();
@@ -62,34 +61,23 @@ class EmbeddedKafkaTestSupport extends KafkaTestSupport {
         kafkaServer = TestUtils.createServer(config, new SystemTime());
         brokerPort = TestUtils.boundPort(kafkaServer, SecurityProtocol.PLAINTEXT);
 
-        brokerConnectionString = BROKER_HOST + ':' + brokerPort;
-        Properties props = new Properties();
-        props.setProperty("bootstrap.servers", brokerConnectionString);
-        admin = Admin.create(props);
+        return BROKER_HOST + ':' + brokerPort;
     }
 
     @Override
-    public void shutdownKafkaCluster() {
+    protected void shutdownKafkaCluster0() {
         if (kafkaServer != null) {
             kafkaServer.shutdown();
-            if (admin != null) {
-                admin.close();
-            }
-            if (producer != null) {
-                producer.close();
-            }
+            kafkaServer = null;
             try {
                 zkServer.shutdown();
+                zkServer = null;
             } catch (Exception e) {
                 // ignore error on Windows, it fails there, see https://issues.apache.org/jira/browse/KAFKA-6291
                 if (!isWindows()) {
                     throw e;
                 }
             }
-            producer = null;
-            kafkaServer = null;
-            admin = null;
-            zkServer = null;
         }
     }
 }

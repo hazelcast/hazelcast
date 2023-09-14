@@ -21,49 +21,30 @@ import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
-import org.apache.http.Consts;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.InputStreamEntity;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.REST;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
-import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.test.Accessors.getNode;
 
 @SuppressWarnings("SameParameterValue")
@@ -464,19 +445,11 @@ public class HTTPCommunicator {
         public final int responseCode;
         public final Map<String, List<String>> responseHeaders;
 
-        ConnectionResponse(CloseableHttpResponse httpResponse) throws IOException {
-            int responseCode = httpResponse.getStatusLine().getStatusCode();
-            HttpEntity entity = httpResponse.getEntity();
-            String responseStr = entity != null ? EntityUtils.toString(entity, "UTF-8") : "";
-            Header[] headers = httpResponse.getAllHeaders();
-            Map<String, List<String>> responseHeaders = new HashMap<>();
-            for (Header header : headers) {
-                List<String> values = responseHeaders.computeIfAbsent(header.getName(), k -> new ArrayList<>());
-                values.add(header.getValue());
-            }
-            this.responseCode = responseCode;
-            this.response = responseStr;
-            this.responseHeaders = responseHeaders;
+        ConnectionResponse(HttpResponse<String> httpResponse) {
+            this.responseCode = httpResponse.statusCode();
+            this.response = httpResponse.body();
+            this.responseHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            this.responseHeaders.putAll(httpResponse.headers().map());
         }
 
         @Override
@@ -492,79 +465,80 @@ public class HTTPCommunicator {
 
     private ConnectionResponse doHead(String url) throws IOException {
         logRequest("HEAD", url);
-        CloseableHttpClient client = newClient();
-        CloseableHttpResponse response = null;
+        HttpClient httpClient = newClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                .build();
         try {
-            HttpHead request = new HttpHead(url);
-            response = client.execute(request);
-            return new ConnectionResponse(response);
-        } finally {
-            IOUtil.closeResource(response);
-            IOUtil.closeResource(client);
+            HttpResponse<String> httpResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            return new ConnectionResponse(httpResponse);
+        } catch (InterruptedException exception) {
+            throw  new IOException(exception);
         }
     }
 
     public ConnectionResponse doGet(String url) throws IOException {
         logRequest("GET", url);
-        CloseableHttpClient client = newClient();
-        CloseableHttpResponse response = null;
+        HttpClient httpClient = newClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(url))
+                .build();
         try {
-            HttpGet request = new HttpGet(url);
-            request.setHeader("Content-type", "text/xml; charset=" + "UTF-8");
-            response = client.execute(request);
-            return new ConnectionResponse(response);
-        } finally {
-            IOUtil.closeResource(response);
-            IOUtil.closeResource(client);
+            HttpResponse<String> httpResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            return new ConnectionResponse(httpResponse);
+        } catch (InterruptedException exception) {
+            throw new IOException(exception);
         }
     }
 
     public ConnectionResponse doPost(String url, String... params) throws IOException {
         logRequest("POST", url);
-        CloseableHttpClient client = newClient();
+        // Create an HttpClient instance
+        HttpClient httpClient = HttpClient.newHttpClient();
 
-        List<NameValuePair> nameValuePairs = new ArrayList<>(params.length);
-        for (String param : params) {
-            nameValuePairs.add(new BasicNameValuePair(param == null ? "" : param, null));
-        }
-        String data = URLEncodedUtils.format(nameValuePairs, Consts.UTF_8);
+        // Prepare the request body
+        String data = String.join("&", params);
 
-        HttpEntity entity;
-        ContentType contentType = ContentType.create(bytesToString(CONTENT_TYPE_PLAIN_TEXT), Consts.UTF_8);
+        // Create the HttpRequest
+        HttpRequest request;
         if (enableChunkedStreaming) {
-            ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes(Consts.UTF_8));
-            InputStreamEntity streamEntity = new InputStreamEntity(stream, contentType);
-            streamEntity.setChunked(true);
-            entity = streamEntity;
+            request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Content-Type", "text/plain") // Set content type
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(data.getBytes(StandardCharsets.UTF_8)))
+                    .build();
         } else {
-            entity = new StringEntity(data, contentType);
+            request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Content-Type", "text/plain") // Set content type
+                    .POST(HttpRequest.BodyPublishers.ofString(data))
+                    .build();
         }
-
-        CloseableHttpResponse response = null;
         try {
-            HttpPost request = new HttpPost(url);
-            request.setEntity(entity);
-            response = client.execute(request);
+            // Send the request and get the response
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
+            // Wrap the response
             return new ConnectionResponse(response);
-        } finally {
-            IOUtil.closeResource(response);
-            IOUtil.closeResource(client);
+        } catch (InterruptedException exception) {
+            throw new IOException(exception);
         }
     }
 
     public ConnectionResponse doDelete(String url) throws IOException {
         logRequest("DELETE", url);
-        CloseableHttpClient client = newClient();
-        CloseableHttpResponse response = null;
+        HttpClient httpClient = newClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .DELETE()
+                .uri(URI.create(url))
+                .build();
         try {
-            HttpDelete request = new HttpDelete(url);
-            request.setHeader("Content-type", "text/xml; charset=" + "UTF-8");
-            response = client.execute(request);
-            return new ConnectionResponse(response);
-        } finally {
-            IOUtil.closeResource(response);
-            IOUtil.closeResource(client);
+            HttpResponse<String> httpResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            return new ConnectionResponse(httpResponse);
+        } catch (InterruptedException exception) {
+            throw new IOException(exception);
         }
     }
 
@@ -574,9 +548,9 @@ public class HTTPCommunicator {
         }
     }
 
-    private CloseableHttpClient newClient() throws IOException {
-        HttpClientBuilder builder = HttpClients.custom();
-
+    private HttpClient newClient() throws IOException {
+        HttpClient.Builder builder = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1);
         if (sslEnabled) {
             SSLContext sslContext;
             try {
@@ -591,20 +565,14 @@ public class HTTPCommunicator {
                 throw new IOException(e);
             }
 
-            builder.setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext,
-                    SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER));
+            builder.sslContext(sslContext);
         }
 
         // configure timeout on the entire client
         int timeout = 20;
-        RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(timeout * 1_000)
-                .setConnectionRequestTimeout(timeout * 1_000)
-                .setSocketTimeout(timeout * 1_000).build();
-
-        builder.setDefaultRequestConfig(config);
-
-        return builder.build();
+        builder.connectTimeout(Duration.ofSeconds(timeout));
+        return builder
+                .build();
     }
 
     public ConnectionResponse headRequestToMapURI() throws IOException {

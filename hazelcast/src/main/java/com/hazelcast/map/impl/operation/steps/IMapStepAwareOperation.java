@@ -37,9 +37,9 @@ public interface IMapStepAwareOperation extends StepAwareOperation<State> {
         // tieredStoreAndPartitionCompactorEnabled field is set true
         // are created as a Step automatically, otherwise you have
         // to make your MapOperation as a Step operation yourself.
-        if (!(this instanceof BackupOperation
-                && ((MapOperation) this).isTieredStoreAndPartitionCompactorEnabled())) {
-            return StepAwareOperation.super.getStartingStep();
+        if (((MapOperation) this).supportsSteppedRun()
+                && this instanceof BackupOperation) {
+            return UtilSteps.DIRECT_RUN_STEP;
         }
 
         return UtilSteps.DIRECT_RUN_STEP;

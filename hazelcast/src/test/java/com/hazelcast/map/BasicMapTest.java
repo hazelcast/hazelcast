@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.listener.EntryAddedListener;
@@ -88,6 +89,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -95,7 +97,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -133,7 +134,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Before
     public void init() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
-        instances = factory.newInstances(getConfig());
+        instances = factory.newInstances(() -> getConfig(), INSTANCE_COUNT);
     }
 
     @Override
@@ -439,15 +440,54 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testMapClear_nonEmptyMap() {
+        int entryCount = 100_000;
+        Random random = new Random();
+
         IMap<String, String> map = getInstance().getMap("testMapClear");
-        map.put("key1", "value1");
-        map.put("key2", "value2");
-        map.put("key3", "value3");
+        for (int i = 0; i < entryCount; i++) {
+            map.put("key" + i, toRandomStringValue(random));
+        }
+
         map.clear();
         assertEquals(0, map.size());
-        assertEquals(null, map.get("key1"));
-        assertEquals(null, map.get("key2"));
-        assertEquals(null, map.get("key3"));
+
+        for (int i = 0; i < entryCount; i++) {
+            assertEquals(null, map.get("key" + i));
+        }
+    }
+
+    @Test
+    public void testMap_evictAll_nonEmptyMap() {
+        int entryCount = 100_000;
+        Random random = new Random();
+
+        IMap<String, String> map = getInstance().getMap("testMap_evictAll_nonEmptyMap");
+        for (int i = 0; i < entryCount; i++) {
+            map.put("key" + i, toRandomStringValue(random));
+        }
+
+        map.evictAll();
+        assertEquals(0, map.size());
+
+        for (int i = 0; i < entryCount; i++) {
+            assertEquals(null, map.get("key" + i));
+        }
+    }
+
+
+    String toRandomStringValue(Random random) {
+        int sz = RandomPicker.getInt(1, 1_000);
+        return generateString(random, sz);
+    }
+
+
+    public static String generateString(Random rng, int length) {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
+        char[] text = new char[length];
+        for (int i = 0; i < length; i++) {
+            text[i] = characters.charAt(rng.nextInt(characters.length()));
+        }
+        return new String(text);
     }
 
     @Test
@@ -995,6 +1035,22 @@ public class BasicMapTest extends HazelcastTestSupport {
             assertEquals(1, map.putAsync(1, 2).toCompletableFuture().get());
             assertEquals(2, map.getAsync(1).toCompletableFuture().get());
             assertEquals(2, map.removeAsync(1).toCompletableFuture().get());
+            assertEquals(0, map.size());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testGetPutDeleteAsync() {
+        IMap<Integer, Object> map = getInstance().getMap("testGetPutDeleteAsync");
+        try {
+            assertNull(map.putAsync(1, 1).toCompletableFuture().get());
+            assertEquals(1, map.putAsync(1, 2).toCompletableFuture().get());
+            assertEquals(2, map.getAsync(1).toCompletableFuture().get());
+            assertTrue(map.deleteAsync(1).toCompletableFuture().get());
             assertEquals(0, map.size());
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -1759,6 +1815,13 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "removeAsync(null)");
+
+        runnable = new Runnable() {
+            public void run() {
+                map.deleteAsync(null);
+            }
+        };
+        assertRunnableThrowsNullPointerException(runnable, "deleteAsync(null)");
 
         runnable = new Runnable() {
             public void run() {

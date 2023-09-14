@@ -59,7 +59,7 @@ class KinesisTestHelper {
 
     static final RetryStrategy RETRY_STRATEGY = RetryStrategies.custom()
             .maxAttempts(30)
-            .intervalFunction(IntervalFunction.exponentialBackoffWithCap(250L, 2.0, 1000L))
+            .intervalFunction(IntervalFunction.exponentialBackoffWithCap(250L, 2.0, 2000L))
             .build();
 
     private final AmazonKinesisAsync kinesis;

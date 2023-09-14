@@ -1692,6 +1692,7 @@ public class ConfigCompatibilityChecker {
         boolean check(SecurityConfig c1, SecurityConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.isEnabled(), c2.isEnabled())
+                    && nullSafeEqual(c1.isPermissionPriorityGrant(), c2.isPermissionPriorityGrant())
                     && (c1.getOnJoinPermissionOperation() == c2.getOnJoinPermissionOperation())
                     && nullSafeEqual(c1.getClientBlockUnmappedActions(), c2.getClientBlockUnmappedActions())
                     && nullSafeEqual(c1.getClientRealm(), c2.getClientRealm())

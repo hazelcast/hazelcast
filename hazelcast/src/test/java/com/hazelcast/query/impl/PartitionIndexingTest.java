@@ -62,7 +62,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
 
     private static final int ENTRIES = 10000;
     private static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT = 10;
-    private static final String MAP_NAME = "map";
+    protected static final String MAP_NAME = "map";
 
     @Parameterized.Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {

@@ -17,12 +17,12 @@
 package com.hazelcast.instance;
 
 /**
- * Base interface for local instance statistics.
+ * Base interface for a read-only view of local instance statistics.
  */
 public interface LocalInstanceStats {
 
     /**
-     * Returns the creation time of this distributed object instance on this member.
+     * @return the creation time of this distributed object instance on this member
      */
     long getCreationTime();
 }

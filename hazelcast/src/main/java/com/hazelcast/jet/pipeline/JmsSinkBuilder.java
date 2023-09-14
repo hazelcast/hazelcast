@@ -22,14 +22,14 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Message;
+import jakarta.jms.Session;
+import jakarta.jms.XAConnectionFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Message;
-import javax.jms.Session;
-import javax.jms.XAConnectionFactory;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -116,7 +116,7 @@ public final class JmsSinkBuilder<T> {
      * Sets the function which creates the message from the item.
      * <p>
      * If not provided, the builder creates a function which wraps {@code
-     * item.toString()} into a {@link javax.jms.TextMessage}, unless the item
+     * item.toString()} into a {@link jakarta.jms.TextMessage}, unless the item
      * is already an instance of {@code javax.jms.Message}.
      * <p>
      * The given function must be stateless.

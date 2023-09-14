@@ -36,7 +36,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.spi.annotation.Beta;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -59,6 +58,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static java.util.Collections.singletonList;
 
 /**
@@ -133,9 +133,10 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
-     * Returns {@code true} if the {@link #init(Context)} method of this
-     * instance is cooperative. If it's not, the call to the {@code init()}
-     * method is off-loaded to another thread.
+     * Returns {@code true} if both the {@link #init(Context)} and {@link
+     * #get(List)} methods of this instance are cooperative. If they are not,
+     * the call to the {@code init()} and {@code get()} method is off-loaded to
+     * another thread.
      *
      * @since 5.2
      */
@@ -156,6 +157,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      *
      * @see #isReusable()
      */
+
     @Nonnull
     Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses);
 
@@ -188,9 +190,9 @@ public interface ProcessorMetaSupplier extends Serializable {
      *
      * @param error the exception (if any) that caused the job to fail;
      *              {@code null} in the case of successful job completion.
-     *              Note that it might not be the actual error that caused the job
-     *              to fail - it can be several other exceptions. We only guarantee
-     *              that it's non-null if the job didn't complete successfully.
+     *                           Note that it might not be the actual error that caused the job
+     *                           to fail - it can be several other exceptions. We only guarantee
+     *                           that it's non-null if the job didn't complete successfully.
      * @see #isReusable()
      */
     default void close(@Nullable Throwable error) throws Exception {
@@ -218,14 +220,14 @@ public interface ProcessorMetaSupplier extends Serializable {
      * Reusable meta-suppliers differ because the meta supplier instance may be
      * shared and reused. That is why: <ol>
      * <li> {@link #init} can be invoked multiple times (also after
-     *      {@link #close}).
+     * {@link #close}).
      * <li> {@link #get} can be invoked multiple times, but each {@link #get}
-     *      invocation will be preceded by {@link #init} invocation for given
-     *      job execution.
+     * invocation will be preceded by {@link #init} invocation for given
+     * job execution.
      * <li> {@link #close} can be invoked multiple times with or without
-     *      preceding invocations of the other methods.
+     * preceding invocations of the other methods.
      * <li> Meta-supplier method invocation sequences for different concurrent
-     *      job executions may be interleaved.
+     * job executions may be interleaved.
      * </ol>
      * It is recommended that reusable meta-supplier does not have any mutable
      * state that is changed by any of the methods. It is, however, allowed to
@@ -244,8 +246,8 @@ public interface ProcessorMetaSupplier extends Serializable {
      * returns the same instance for each given {@code Address}.
      *
      * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
-     * @param permission the required permission to run the processor
-     * @param procSupplier the processor supplier
+     * @param permission                the required permission to run the processor
+     * @param procSupplier              the processor supplier
      */
     @Nonnull
     static ProcessorMetaSupplier of(
@@ -322,7 +324,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * ProcessorSupplier}.
      *
      * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
-     * @param addressToSupplier the mapping from address to ProcessorSupplier
+     * @param addressToSupplier         the mapping from address to ProcessorSupplier
      */
     @Nonnull
     static ProcessorMetaSupplier of(
@@ -336,7 +338,8 @@ public interface ProcessorMetaSupplier extends Serializable {
                 return preferredLocalParallelism;
             }
 
-            @Nonnull @Override
+            @Nonnull
+            @Override
             public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return addressToSupplier;
             }
@@ -465,12 +468,11 @@ public interface ProcessorMetaSupplier extends Serializable {
      * The vertex containing the {@code ProcessorMetaSupplier} must have a local
      * parallelism setting of 1, otherwise {code IllegalArgumentException} is thrown.
      *
-     * @param supplier the supplier that will be wrapped
+     * @param supplier     the supplier that will be wrapped
      * @param partitionKey the supplier will only be created on the node that owns the supplied
      *                     partition key
-     * @param permission the required permission to run the processor
+     * @param permission   the required permission to run the processor
      * @return the wrapped {@code ProcessorMetaSupplier}
-     *
      * @throws IllegalArgumentException if vertex has local parallelism setting of greater than 1
      */
     @Nonnull
@@ -489,7 +491,7 @@ public interface ProcessorMetaSupplier extends Serializable {
                             "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
                                     + "supports only total parallelism of 1. Local parallelism must be 1.");
                 }
-                String key = StringPartitioningStrategy.getPartitionKey(partitionKey);
+                String key = getPartitionKey(partitionKey);
                 int partitionId = context.hazelcastInstance().getPartitionService().getPartition(key).getPartitionId();
                 ownerAddress = context.partitionAssignment().entrySet().stream()
                         .filter(en -> arrayIndexOf(partitionId, en.getValue()) >= 0)
@@ -498,7 +500,8 @@ public interface ProcessorMetaSupplier extends Serializable {
                         .orElseThrow(() -> new RuntimeException("Owner partition not assigned to any participating member"));
             }
 
-            @Nonnull @Override
+            @Nonnull
+            @Override
             public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return addr -> addr.equals(ownerAddress) ? supplier : count -> singletonList(new ExpectNothingP());
             }
@@ -598,7 +601,7 @@ public interface ProcessorMetaSupplier extends Serializable {
             }
         }
 
-        @Nonnull @Override
+        @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             if (!addresses.contains(memberAddress)) {
                 throw new JetException("Cluster does not contain the required member: " + memberAddress);
@@ -744,6 +747,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         /**
          * Returns the current Hazelcast instance.
+         *
          * @since 5.0
          */
         @Nonnull
@@ -842,6 +846,7 @@ public interface ProcessorMetaSupplier extends Serializable {
          * Returns the partition assignment used by this job. This is the
          * assignment partitioned edges will use and the assignment processors
          * dealing with Hazelcast data structures should use.
+         * Each mapped partitions id array must be sorted.
          */
         Map<Address, int[]> partitionAssignment();
 
@@ -864,7 +869,7 @@ public interface ProcessorMetaSupplier extends Serializable {
          *
          * @param permission Permission to be checked
          * @throws AccessControlException when the security is enabled and the checked permission is not implied for the current
-         *         {@link Subject}
+         *                                {@link Subject}
          */
         void checkPermission(@Nonnull Permission permission) throws AccessControlException;
     }

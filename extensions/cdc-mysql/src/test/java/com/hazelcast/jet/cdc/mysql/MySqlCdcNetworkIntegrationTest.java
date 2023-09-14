@@ -72,6 +72,7 @@ import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     private static final long RECONNECT_INTERVAL_MS = SECONDS.toMillis(1);
+    private static final String TOXI_PROXY_IMAGE = "ghcr.io/shopify/toxiproxy:2.5.0";
 
     @Parameter(value = 0)
     public RetryStrategy reconnectBehavior;
@@ -346,7 +347,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
     }
 
     private ToxiproxyContainer initToxiproxy(Network network) {
-        ToxiproxyContainer toxiproxy = namedTestContainer(new ToxiproxyContainer().withNetwork(network));
+        ToxiproxyContainer toxiproxy = namedTestContainer(new ToxiproxyContainer(TOXI_PROXY_IMAGE).withNetwork(network));
         toxiproxy.start();
         return toxiproxy;
     }

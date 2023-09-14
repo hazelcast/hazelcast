@@ -18,6 +18,11 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -168,5 +173,12 @@ public final class QueryUtils {
         return CalciteSqlDialect.DEFAULT
                 .quoteIdentifier(new StringBuilder(), parts)
                 .toString();
+    }
+
+    public static <K, V> MapContainer getMapContainer(IMap<K, V> map) {
+        MapProxyImpl<K, V> mapProxy = (MapProxyImpl<K, V>) map;
+        MapService mapService = mapProxy.getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getMapContainer(map.getName());
     }
 }

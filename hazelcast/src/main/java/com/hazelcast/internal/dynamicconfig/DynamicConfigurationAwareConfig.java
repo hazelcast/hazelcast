@@ -878,7 +878,12 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        throw new UnsupportedOperationException("Unsupported operation");
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getWanReplicationConfigs(),
+                wanReplicationConfig.getName(), wanReplicationConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(wanReplicationConfig);
+        }
+        return this;
     }
 
     @Override

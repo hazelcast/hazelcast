@@ -56,7 +56,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 /**
  * See {@link KafkaProcessors#writeKafkaP}.
@@ -151,7 +151,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
         if (transaction == null) {
             return false;
         }
-        transaction.producer.flush();
+        transaction.flush();
         LoggingUtil.logFinest(context.logger(), "flush in complete() done, %s", transaction.transactionId);
         checkError();
         snapshotUtility.afterCompleted();

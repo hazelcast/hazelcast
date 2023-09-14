@@ -23,7 +23,6 @@ import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.RingbufferStore;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,11 +34,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.Random;
 
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
-import static com.hazelcast.test.TestStringUtils.fileAsText;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -72,13 +71,10 @@ public class StoreLatencyPluginRingbufferIntegrationTest extends HazelcastTestSu
             rb.readOne(k);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
-                String content = fileAsText(file);
-                assertContains(content, "ringworm");
-            }
+        assertTrueEventually(() -> {
+            File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
+            String content = Files.readString(file.toPath());
+            assertContains(content, "ringworm");
         });
     }
 

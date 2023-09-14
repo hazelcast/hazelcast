@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
-import com.hazelcast.dataconnection.impl.jdbcproperties.DriverManagerTranslator;
 import com.hazelcast.dataconnection.impl.jdbcproperties.HikariTranslator;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.spi.annotation.Beta;
@@ -30,7 +29,6 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,6 +43,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.hazelcast.dataconnection.impl.jdbcproperties.DataConnectionProperties.JDBC_URL;
+import static com.hazelcast.dataconnection.impl.jdbcproperties.DriverManagerTranslator.translate;
 
 /**
  * {@link DataConnection} implementation for JDBC.
@@ -92,8 +91,7 @@ public class JdbcDataConnection extends DataConnectionBase {
         validate(getConfig());
         Properties properties = getConfig().getProperties();
 
-        DriverManagerTranslator translator = new DriverManagerTranslator();
-        Properties translatedProperties = translator.translate(properties);
+        Properties translatedProperties = translate(properties);
 
         return () -> {
             try {
@@ -121,13 +119,14 @@ public class JdbcDataConnection extends DataConnectionBase {
     @Nonnull
     @Override
     public List<DataConnectionResource> listResources() {
-        try (Connection connection = getConnection()) {
-            DatabaseMetaData metaData = connection.getMetaData();
-            //Retrieving the columns in the database
-            ResultSet tables = metaData.getTables(null, null, "%", null);
+        try (Connection connection = getConnection();
+             ResultSet tables = connection.getMetaData()
+                     .getTables(null, null, "%", null)) {
             List<DataConnectionResource> result = new ArrayList<>();
             while (tables.next()) {
-                String[] name = Stream.of(tables.getString("TABLE_CAT"),
+                // Format DataConnectionResource name as catalog + schema+ + table_name
+                String[] name = Stream.of(
+                                tables.getString("TABLE_CAT"),
                                 tables.getString("TABLE_SCHEM"),
                                 tables.getString("TABLE_NAME"))
                         .filter(Objects::nonNull)

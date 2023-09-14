@@ -43,6 +43,7 @@ public interface IndexProvider {
      * @param mapName      the name of the map being indexed
      * @return the created index instance.
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     InternalIndex createIndex(
             Node node,
             IndexConfig config,
@@ -51,5 +52,6 @@ public interface IndexProvider {
             IndexCopyBehavior copyBehavior,
             PerIndexStats stats,
             int partitionCount,
+            int partitionId,
             String mapName);
 }

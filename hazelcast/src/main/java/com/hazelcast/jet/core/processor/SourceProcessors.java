@@ -54,19 +54,20 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
+import jakarta.jms.Connection;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.Session;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.jms.Connection;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.security.Permission;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
@@ -99,7 +100,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readMapP(@Nonnull String mapName) {
-        return HazelcastReaders.readLocalMapSupplier(mapName, null);
+        return HazelcastReaders.readLocalMapSupplier(mapName);
     }
 
     /**
@@ -463,9 +464,18 @@ public final class SourceProcessors {
             @Nonnull String query,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(connectionURL, query, mapOutputFn);
+        Properties properties = new Properties();
+        return ReadJdbcP.supplier(connectionURL, query, properties, mapOutputFn);
     }
 
+    public static <T> ProcessorMetaSupplier readJdbcP(
+            @Nonnull String connectionURL,
+            @Nonnull String query,
+            @Nonnull Properties properties,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        return ReadJdbcP.supplier(connectionURL, query, properties, mapOutputFn);
+    }
     /**
      * Returns a supplier of processors for a source that the user can create
      * using the {@link SourceBuilder}. This variant creates a source that

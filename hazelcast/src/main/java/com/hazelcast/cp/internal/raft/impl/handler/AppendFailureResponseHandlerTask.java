@@ -77,26 +77,28 @@ public class AppendFailureResponseHandlerTask extends AbstractResponseHandlerTas
     }
 
     private boolean updateNextIndex(RaftState state) {
+        RaftEndpoint follower = resp.follower();
         LeaderState leaderState = state.leaderState();
-        FollowerState followerState = leaderState.getFollowerState(resp.follower());
+        FollowerState followerState = leaderState.getFollowerState(follower);
 
         long nextIndex = followerState.nextIndex();
         long matchIndex = followerState.matchIndex();
 
-        if (resp.expectedNextIndex() == nextIndex) {
-            // Received a response for the last append request. Resetting the flag...
-            followerState.appendRequestAckReceived();
+        // Received a response for the append request.
+        // Check if the backoff state should be reset.
+        followerState.appendRequestAckReceived(resp.flowControlSequenceNumber());
 
+        if (resp.expectedNextIndex() == nextIndex) {
             // this is the response of the request I have sent for this nextIndex
             nextIndex--;
             if (nextIndex <= matchIndex) {
                 logger.severe("Cannot decrement next index: " + nextIndex + " below match index: " + matchIndex
-                        + " for follower: " + resp.follower());
+                        + " for follower: " + follower);
                 return false;
             }
 
             if (logger.isFineEnabled()) {
-                logger.fine("Updating next index: " + nextIndex + " for follower: " + resp.follower());
+                logger.fine("Updating next index: " + nextIndex + " for follower: " + follower);
             }
             followerState.nextIndex(nextIndex);
             return true;

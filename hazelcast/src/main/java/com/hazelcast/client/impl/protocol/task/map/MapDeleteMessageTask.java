@@ -71,7 +71,7 @@ public class MapDeleteMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapDeleteCodec.encodeResponse();
+        return MapDeleteCodec.encodeResponse((Boolean) response);
     }
 
     @Override

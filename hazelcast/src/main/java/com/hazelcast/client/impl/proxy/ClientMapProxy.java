@@ -61,6 +61,7 @@ import com.hazelcast.client.impl.protocol.codec.MapLockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapProjectCodec;
 import com.hazelcast.client.impl.protocol.codec.MapProjectWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutAllWithMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentWithMaxIdleCodec;
@@ -161,6 +162,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -186,6 +188,7 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Proxy implementation of {@link IMap}.
@@ -480,6 +483,25 @@ public class ClientMapProxy<K, V> extends ClientProxy
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             SerializationService ss = getSerializationService();
             return new ClientDelegatingFuture<>(future, ss, MapRemoveCodec::decodeResponse);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> deleteAsync(@Nonnull K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        return deleteAsyncInternal(key);
+    }
+
+    protected InternalCompletableFuture<Boolean> deleteAsyncInternal(Object key) {
+        try {
+            Data keyData = toData(key);
+            ClientMessage request = MapDeleteCodec.encodeRequest(name, keyData, getThreadId());
+            ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
+            SerializationService ss = getSerializationService();
+            return new ClientDelegatingFuture<>(future, ss,
+                clientMessage -> MapDeleteCodec.decodeResponse(clientMessage).response);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -1222,6 +1244,16 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return (Set<K>) new UnmodifiableLazySet(MapKeySetWithPredicateCodec.decodeResponse(response), getSerializationService());
     }
 
+    @Override
+    public Collection<V> localValues() {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
+    }
+
+    @Override
+    public Collection<V> localValues(@Nonnull Predicate<K, V> predicate) {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
+    }
+
     @SuppressWarnings("unchecked")
     private Set keySetWithPagingPredicate(Predicate predicate) {
         PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
@@ -1669,6 +1701,76 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     protected void finalizePutAll(Map<? extends K, ? extends V> map, Map<Integer, List<Entry<Data, Data>>> entryMap) {
+    }
+
+    public CompletableFuture<Void> putAllWithMetadataAsync(@Nonnull Collection<? extends EntryView<K, V>> entries) {
+        checkNotNull(entries, "Null argument entries is not allowed");
+        ClientPartitionService partitionService = getContext().getPartitionService();
+
+        Map<Integer, List<SimpleEntryView<Data, Data>>> entriesByPartition =
+                entries.stream()
+                       .map(e -> {
+                           checkNotNull(e.getKey(), NULL_KEY_IS_NOT_ALLOWED);
+                           checkNotNull(e.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
+
+                           Data keyData = toData(e.getKey());
+                           if (e instanceof SimpleEntryView
+                                   && e.getKey() instanceof Data
+                                   && e.getValue() instanceof Data
+                           ) {
+                               return (SimpleEntryView<Data, Data>) e;
+                           } else {
+                               return new SimpleEntryView<>(keyData, toData(e.getValue()))
+                                       .withCost(e.getCost())
+                                       .withCreationTime(e.getCreationTime())
+                                       .withExpirationTime(e.getExpirationTime())
+                                       .withHits(e.getHits())
+                                       .withLastAccessTime(e.getLastAccessTime())
+                                       .withLastStoredTime(e.getLastStoredTime())
+                                       .withLastUpdateTime(e.getLastUpdateTime())
+                                       .withVersion(e.getVersion())
+                                       .withTtl(e.getTtl())
+                                       .withMaxIdle(e.getMaxIdle());
+                           }
+                       })
+                       .collect(groupingBy(
+                               (SimpleEntryView<Data, Data> e) -> partitionService.getPartitionId(e.getKey())
+                       ));
+
+        AtomicInteger counter = new AtomicInteger(entriesByPartition.size());
+        InternalCompletableFuture<Void> resultFuture = new InternalCompletableFuture<>();
+        if (counter.get() == 0) {
+            resultFuture.complete(null);
+        }
+        for (Entry<Integer, ? extends List<SimpleEntryView<Data, Data>>> entry : entriesByPartition.entrySet()) {
+            Integer partitionId = entry.getKey();
+            ClientMessage request = MapPutAllWithMetadataCodec.encodeRequest(name, entry.getValue());
+            ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName(), partitionId)
+                    .invoke();
+
+            future.whenCompleteAsync((clientMessage, throwable) -> {
+                        if (throwable != null) {
+                            resultFuture.completeExceptionally(throwable);
+                            return;
+                        }
+                        if (counter.decrementAndGet() == 0) {
+                            finalizePutAll(
+                                    entries,
+                                    entriesByPartition
+                            );
+                            if (!resultFuture.isDone()) {
+                                resultFuture.complete(null);
+                            }
+                        }
+                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
+        }
+
+        return resultFuture;
+    }
+
+    protected void finalizePutAll(
+            Collection<? extends EntryView<K, V>> entries, Map<Integer,
+            List<SimpleEntryView<Data, Data>>> entryMap) {
     }
 
     @Override

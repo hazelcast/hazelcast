@@ -153,12 +153,17 @@ public class MapBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implem
             if (recordStore == null) {
                 return null;
             }
-            Data keyData = serializationService.toData(key);
-            Object o = recordStore.get(keyData, true, null);
-            if (o == null) {
-                return null;
+            recordStore.beforeOperation();
+            try {
+                Data keyData = serializationService.toData(key);
+                Object o = recordStore.get(keyData, true, null);
+                if (o == null) {
+                    return null;
+                }
+                return serializationService.toObject(o);
+            } finally {
+                recordStore.afterOperation();
             }
-            return serializationService.toObject(o);
         }
     }
 

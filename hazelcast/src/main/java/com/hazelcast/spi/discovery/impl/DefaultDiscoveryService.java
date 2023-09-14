@@ -116,7 +116,7 @@ public class DefaultDiscoveryService
                 }
 
                 String className = discoveryConfig.getNodeFilterClass();
-                return (NodeFilter) cl.loadClass(className).newInstance();
+                return (NodeFilter) cl.loadClass(className).getDeclaredConstructor().newInstance();
             } catch (Exception e) {
                 throw new RuntimeException("Failed to configure discovery node filter", e);
             }

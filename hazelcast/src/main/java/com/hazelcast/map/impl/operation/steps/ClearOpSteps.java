@@ -28,6 +28,8 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+
 public enum ClearOpSteps implements IMapOpStep {
 
     CLEAR_MEMORY() {
@@ -43,13 +45,13 @@ public enum ClearOpSteps implements IMapOpStep {
             ArrayList<Data> keys = new ArrayList<>();
             ArrayList<Record> records = new ArrayList<>();
             // we don't remove locked keys. These are clearable records.
-            recordStore.forEach(new BiConsumer<Data, Record>() {
+            recordStore.forEach(new BiConsumer<>() {
                 final Set<Data> lockedKeySet = recordStore.getLockStore().getLockedKeys();
 
                 @Override
                 public void accept(Data dataKey, Record record) {
                     if (lockedKeySet != null && !lockedKeySet.contains(dataKey)) {
-                        keys.add(dataKey);
+                        keys.add(recordStore.isTieredStorageEnabled() ? toHeapData(dataKey) : dataKey);
                         records.add(record);
                     }
 

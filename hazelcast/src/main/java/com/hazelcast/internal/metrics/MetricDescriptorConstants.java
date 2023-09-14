@@ -254,6 +254,7 @@ public final class MetricDescriptorConstants {
             = "map.store.offloaded.operations";
     public static final String MAP_METRIC_MAP_STORE_WAITING_TO_BE_PROCESSED_COUNT
             = "waitingToBeProcessedCount";
+    public static final String MAP_TAG_HYBRID_LOG_ID = "hybridlogid";
     // ===[/MAP]========================================================
 
     // ===[MEMORY]======================================================
@@ -450,6 +451,7 @@ public final class MetricDescriptorConstants {
     public static final String PERSISTENCE_METRIC_TOMB_GARBAGE = "tombGarbage";
     public static final String PERSISTENCE_METRIC_GC_LIVE_VALUES = "liveValues";
     public static final String PERSISTENCE_METRIC_GC_LIVE_TOMBSTONES = "liveTombstones";
+    public static final String PERSISTENCE_DISCRIMINATOR_STORE_NAME = "storeName";
     // ===[/PERSISTENCE]================================================
 
     // ===[PN COUNTER]==================================================
@@ -620,6 +622,8 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_MAX = "tstore.hlog.paging.frequency.max";
 
     public static final String TSTORE_HLOG_COMPACTION_PREFIX = "tstore.hlog.compaction.";
+
+    public static final String TSTORE_INDEX_HLOG_COMPACTION_PREFIX = "tstore.hlog.compaction.index.";
     public static final String TSTORE_HLOG_COMPACTION_DUMMY_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX
             + "dummyRecords.count";
     public static final String TSTORE_HLOG_COMPACTION_DUMMY_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
@@ -644,7 +648,6 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_COMPACTION_QUEUE_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "queue.count";
     public static final String TSTORE_HLOG_COMPACTION_FAILED_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "failed.count";
     public static final String TSTORE_HLOG_COMPACTION_IN_PROGRESS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "inProgress.count";
-
     public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_TOTAL = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.total";
     public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_MIN = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.min";
     public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_MAX = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.max";

@@ -34,10 +34,10 @@ import com.hazelcast.internal.metrics.impl.CompositeMetricsCollector;
 import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.metrics.impl.PublisherMetricsCollector;
 import com.hazelcast.internal.metrics.jmx.JmxPublisher;
-import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.security.Credentials;
 
 import java.util.ArrayList;
@@ -181,7 +181,7 @@ public class ClientStatisticsService {
 
                             nearCacheNameWithPrefix.append('.');
 
-                            NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
+                            NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
 
                             String prefix = nearCacheNameWithPrefix.toString();
 

@@ -26,6 +26,7 @@ import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -43,9 +44,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
@@ -113,7 +116,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                              @Nonnull String schemaName, @Nonnull String mappingName,
                              @Nonnull SqlExternalResource externalResource,
                              @Nonnull List<MappingField> resolvedFields) {
-        if (!ALLOWED_OBJECT_TYPES.contains(externalResource.objectType())) {
+        String objectType = checkNotNull(externalResource.objectType(),
+                "object type is required in Mongo connector");
+        if (!ALLOWED_OBJECT_TYPES.contains(objectType)) {
             throw QueryException.error("Mongo connector allows only object types: " + ALLOWED_OBJECT_TYPES);
         }
         String collectionName = externalResource.externalName().length == 2
@@ -126,11 +131,13 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
         boolean containsId = false;
-        boolean isStreaming = isStream(externalResource.objectType());
+        boolean isStreaming = isStream(objectType);
         boolean hasPK = false;
         for (MappingField resolvedField : resolvedFields) {
             String externalNameFromName = (isStreaming ? "fullDocument." : "") + resolvedField.name();
             String fieldExternalName = firstNonNull(resolvedField.externalName(), externalNameFromName);
+            String externalType = checkNotNull(resolvedField.externalType(),
+                    "external type cannot be null in Mongo connector");
 
             if (fieldResolver.isId(fieldExternalName, isStreaming)) {
                 containsId = true;
@@ -140,7 +147,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                     resolvedField.type(),
                     fieldExternalName,
                     false,
-                    resolvedField.externalType(),
+                    externalType,
                     resolvedField.isPrimaryKey()));
             hasPK |= resolvedField.isPrimaryKey();
         }
@@ -156,7 +163,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         }
         return new MongoTable(schemaName, mappingName, databaseName, collectionName,
                 externalResource.dataConnection(), externalResource.options(), this,
-                fields, stats, externalResource.objectType());
+                fields, stats, objectType);
     }
 
     @Override
@@ -165,6 +172,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nonnull DagBuildContext context,
             @Nullable HazelcastRexNode predicate,
             @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         MongoTable table = context.getTable();
 

@@ -57,7 +57,7 @@ directly.
 - Reusing existing Kafka Connect ecosystem will give Hazelcast Platform way more broad range of external sources.
   Currently, there are 130 Kafka Connect Source connectors available (e.g. Neo4j, Couchbase, Scylla, Sap, Redis),
   see https://www.confluent.io/hub.
-  Hazelcast officially has 30 dedicated connectors: https://docs.hazelcast.com/hazelcast/5.2/integrate/connectors
+  Hazelcast officially has 30 dedicated connectors: https://docs.hazelcast.com/hazelcast/latest/integrate/connectors
 - To take our connectors' maintenance burden off our shoulders.
 - To make Hazelcast platform a drop-in replacement (as fair as possible) for simple use of Kafka Connect/Kafka Streams.
 - To provide more seamless migration from Kafka to Hazelcast
@@ -234,7 +234,7 @@ connector of your choice for detailed information.
     - leave implementation to users (bad: requires code duplication, no official support is also not good)
     - keep connector in `hazelcast-jet-contrib` repository - but it's not as well tested as main repo and less visible
     - Use Kafka Infrastructure and Hazelcast Kafka Connector, although it requires more infrastructure effort.
-      See https://docs.hazelcast.com/hazelcast/5.2/integrate/kafka-connector
+      See https://docs.hazelcast.com/hazelcast/latest/integrate/kafka-connector
 
 - The most common mistakes by other Hazelcast users I can think of are:
   - property misconfiguration
@@ -329,7 +329,7 @@ Describe testing approach to developed functionality
 ### Resources
 
 - [TDD on GitHub: hazelcast/hazelcast/pull/23303](https://github.com/hazelcast/hazelcast/pull/23303)
-- [Hazelcast: Creating a Custom Streaming Source](https://docs.hazelcast.com/hazelcast/5.2/pipelines/custom-stream-source)
+- [Hazelcast: Creating a Custom Streaming Source](https://docs.hazelcast.com/hazelcast/latest/pipelines/custom-stream-source)
 - [Kafka Connect Concepts | Confluent Documentation](https://docs.confluent.io/platform/current/connect/concepts.html#kconnect-long-concepts)
 - [Kafka Connect | Confluent Documentation](https://docs.confluent.io/platform/current/connect/index.html)
 - [Kafka Connect Deep Dive – Converters and Serialization Explained | Confluent](https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/)

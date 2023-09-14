@@ -62,9 +62,9 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 @RunWith(HazelcastSerialClassRunner.class)
 public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
     private static final DockerImageName MYSQL_IMAGE =
-            DockerImageName.parse("debezium/example-mysql:1.9.3.Final").asCompatibleSubstituteFor("mysql");
+            DockerImageName.parse("debezium/example-mysql:2.3.0.Final").asCompatibleSubstituteFor("mysql");
     private static final DockerImageName POSTGRES_IMAGE =
-            DockerImageName.parse("debezium/example-postgres:1.7").asCompatibleSubstituteFor("postgres");
+            DockerImageName.parse("debezium/example-postgres:2.3.0.Final").asCompatibleSubstituteFor("postgres");
     private static final DockerImageName MONGODB_IMAGE =
             DockerImageName.parse("mongo:6.0.3").asCompatibleSubstituteFor("mongodb");
 

@@ -2733,11 +2733,13 @@ public class Config {
 
     /**
      * Adds the device configuration.
+     * Removes the default device config if present.
      *
      * @param deviceConfig device config
      * @return this config instance
      */
     public Config addDeviceConfig(DeviceConfig deviceConfig) {
+        deviceConfigs.remove(DEFAULT_DEVICE_NAME);
         deviceConfigs.put(deviceConfig.getName(), deviceConfig);
         return this;
     }

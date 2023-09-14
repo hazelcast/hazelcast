@@ -237,29 +237,50 @@ public class DefaultAddressPickerInterfacesTest {
      */
     @Test
     public void testIPv4Preferred() throws Exception {
-        NetworkInterfaceInfo eth0 = builder("eth0").withAddresses("fe80::9711:82f4:383a:e254", "192.168.1.1", "::cace").build();
+        NetworkInterfaceInfo eth0 = builder("eth0")
+                .withAddresses("fe80::9711:82f4:383a:e254", "192.168.1.1", "176.74.156.21", "127.0.0.3", "::cace").build();
         networkInterfacesEnumerator = new DummyNetworkInterfacesEnumerator(eth0);
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
-        assertEquals("192.168.1.1", inetAddress.getHostAddress());
+        assertEquals("176.74.156.21", inetAddress.getHostAddress());
     }
 
     /**
      * When: Network interface has both IPv4 and IPv6 addresses and IPv6 is preferred.<br>
-     * Then: The IPv6 address is picked.
+     * Then: The global IPv6 address is picked.
      */
     @Test
     public void testIPv6Preferred() throws Exception {
         setSystemProperty(PREFER_IPV4_STACK, "false");
         setSystemProperty(PREFER_IPV6_ADDRESSES, "true");
 
-        NetworkInterfaceInfo eth0 = builder("eth0").withAddresses("fe80::9711:82f4:383a:e254", "172.17.0.1").build();
+        //try interface with several IPv6 (link-local, global, site-local) and a IPv4
+        NetworkInterfaceInfo eth0 = builder("eth0")
+                .withAddresses("fe80::9711:82f4:383a:e254", "2600:1f11:f04:eb50:3e7d::2", "fec0::aabb", "172.17.0.1").build();
         networkInterfacesEnumerator = new DummyNetworkInterfacesEnumerator(eth0);
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
-        assertEquals("fe80:0:0:0:9711:82f4:383a:e254", inetAddress.getHostAddress());
+        assertEquals("2600:1f11:f04:eb50:3e7d:0:0:2", inetAddress.getHostAddress());
+    }
+
+    /**
+     * When: Network interface has only IPv4 addresses and IPv6 is preferred.<br>
+     * Then: Global IPv4 address is picked.
+     */
+    @Test
+    public void testIPv6PreferredButUnavailable() throws Exception {
+        setSystemProperty(PREFER_IPV4_STACK, "false");
+        setSystemProperty(PREFER_IPV6_ADDRESSES, "true");
+
+        NetworkInterfaceInfo eth0 = builder("eth0").withAddresses("127.0.0.5", "10.0.0.6", "176.74.156.21", "172.17.0.1")
+                .build();
+        networkInterfacesEnumerator = new DummyNetworkInterfacesEnumerator(eth0);
+
+        InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
+        assertNotNull("Not-null InetAddress is expected", inetAddress);
+        assertEquals("176.74.156.21", inetAddress.getHostAddress());
     }
 
     /**

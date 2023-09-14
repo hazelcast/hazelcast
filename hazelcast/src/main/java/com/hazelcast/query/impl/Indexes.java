@@ -29,13 +29,16 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterableUtil;
+import com.hazelcast.map.impl.recordstore.StepAwareStorage;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,7 +51,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * Contains all indexes for a data-structure, e.g. an IMap.
  */
-@SuppressWarnings({"checkstyle:finalclass", "rawtypes"})
+@SuppressWarnings("rawtypes")
 public class Indexes {
 
     /**
@@ -82,6 +85,8 @@ public class Indexes {
 
     private final int partitionCount;
 
+    private final int partitionId;
+
     private volatile InternalIndex[] indexes = EMPTY_INDEXES;
     private volatile InternalIndex[] compositeIndexes = EMPTY_INDEXES;
 
@@ -97,6 +102,7 @@ public class Indexes {
                     boolean global,
                     InMemoryFormat inMemoryFormat,
                     int partitionCount,
+                    int partitionId,
                     Supplier<java.util.function.Predicate<QueryableEntry>> resultFilterFactory) {
         this.node = node;
         this.mapName = mapName;
@@ -109,6 +115,7 @@ public class Indexes {
         this.indexProvider = indexProvider == null ? new DefaultIndexProvider() : indexProvider;
         this.queryContextProvider = createQueryContextProvider(this, global, statisticsEnabled);
         this.partitionCount = partitionCount;
+        this.partitionId = partitionId;
         this.resultFilterFactory = resultFilterFactory;
     }
 
@@ -172,6 +179,7 @@ public class Indexes {
                 indexCopyBehavior,
                 stats.createPerIndexStats(indexConfig.getType() == IndexType.SORTED, usesCachedQueryableEntries),
                 partitionCount,
+                partitionId,
                 mapName);
 
         indexesByName.put(name, index);
@@ -239,6 +247,21 @@ public class Indexes {
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public InternalIndex[] getIndexes() {
         return indexes;
+    }
+
+    public List<StepAwareStorage> getStepAwareStorages() {
+        List<StepAwareStorage> stepAwareStorages = new ArrayList<>();
+        for (InternalIndex index : indexes) {
+            StepAwareStorage saStorage = index.getStepAwareStorage();
+            if (saStorage != null) {
+                stepAwareStorages.add(saStorage);
+            }
+        }
+        return stepAwareStorages;
+    }
+
+    public String getMapName() {
+        return mapName;
     }
 
     /**
@@ -588,6 +611,9 @@ public class Indexes {
         private boolean statsEnabled;
         private boolean usesCachedQueryableEntries;
         private int partitionCount;
+
+        // By default the partitionId is not set
+        private int partitionId = -1;
         private Extractors extractors;
         private IndexProvider indexProvider;
         private InMemoryFormat inMemoryFormat;
@@ -673,13 +699,18 @@ public class Indexes {
             return this;
         }
 
+        public Builder partitionId(int partitionId) {
+            this.partitionId = partitionId;
+            return this;
+        }
+
         /**
          * @return a new instance of Indexes
          */
         public Indexes build() {
             return new Indexes(node, mapName, serializationService, indexCopyBehavior, extractors,
                     indexProvider, usesCachedQueryableEntries, statsEnabled, global,
-                    inMemoryFormat, partitionCount, resultFilterFactory);
+                    inMemoryFormat, partitionCount, partitionId, resultFilterFactory);
         }
     }
 }

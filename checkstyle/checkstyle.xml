@@ -83,7 +83,7 @@
     <!-- Checks for Size Violations.                    -->
     <!-- See http://checkstyle.sf.net/config_sizes.html -->
     <module name="FileLength">
-        <property name="max" value="1500"/>
+        <property name="max" value="1600"/>
     </module>
 
     <!-- Checks for whitespace                               -->
@@ -113,15 +113,7 @@
     <module name="TreeWalker">
         <!-- Needed for SuppressWarningsFilter to work -->
         <module name="SuppressWarningsHolder"/>
-
-        <!-- Checks for Javadoc comments.                     -->
-        <!-- See http://checkstyle.sf.net/config_javadoc.html -->
-        <!-- Only for methods on public APIs we agreed to have JavaDoc. -->
-        <!-- TODO: figure out how to do that -->
-        <!--<module name="JavadocMethod">-->
-        <!--<property name="scope" value="public"/>-->
-        <!--<property name="allowMissingParamTags" value="true"/>-->
-        <!--</module>-->
+      
         <module name="JavadocType">
             <property name="scope" value="public"/>
         </module>
@@ -196,7 +188,7 @@
             <property name="max" value="2"/>
         </module>
         <module name="MethodCount">
-            <property name="maxTotal" value="30"/>
+            <property name="maxTotal" value="40"/>
         </module>
 
         <!-- Checks for whitespace                               -->
@@ -280,7 +272,11 @@
 
         <!-- Checks for class design                         -->
         <!-- See http://checkstyle.sf.net/config_design.html -->
+        <!-- 
+        Disabled it forces the majority of private inner classes to be final, which just adds noise
+        https://github.com/hazelcast/hazelcast-enterprise/pull/6368/#issuecomment-1689625486
         <module name="FinalClass"/>
+        -->
         <module name="HideUtilityClassConstructor"/>
         <module name="InterfaceIsType"/>
         <module name="VisibilityModifier">

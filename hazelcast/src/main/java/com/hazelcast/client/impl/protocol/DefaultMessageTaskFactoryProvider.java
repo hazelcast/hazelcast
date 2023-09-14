@@ -128,6 +128,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfig
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddWanReplicationConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
@@ -240,6 +241,7 @@ import com.hazelcast.client.impl.protocol.codec.MapLockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapProjectCodec;
 import com.hazelcast.client.impl.protocol.codec.MapProjectWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutAllWithMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentWithMaxIdleCodec;
@@ -506,6 +508,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddRingbufferConfig
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddScheduledExecutorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddSetConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddTopicConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddWanReplicationConfigTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.ExecutorServiceCancelOnAddressMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.ExecutorServiceCancelOnPartitionMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.ExecutorServiceIsShutdownMessageTask;
@@ -624,6 +627,7 @@ import com.hazelcast.client.impl.protocol.task.map.MapProjectionMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapProjectionWithPredicateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPublisherCreateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPublisherCreateWithValueMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapPutAllWithMetadataMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPutAllMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPutIfAbsentMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapPutIfAbsentWithMaxIdleMessageTask;
@@ -1488,6 +1492,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new MapPutIfAbsentWithMaxIdleMessageTask(cm, node, con));
         factories.put(MapPutTransientWithMaxIdleCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapPutTransientWithMaxIdleMessageTask(cm, node, con));
+        factories.put(MapPutAllWithMetadataCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new MapPutAllWithMetadataMessageTask(cm, node, con));
     }
 
     private void initializeGeneralTaskFactories() {
@@ -1674,6 +1680,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new AddPNCounterConfigMessageTask(cm, node, con));
         factories.put(DynamicConfigAddDataConnectionConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddDataConnectionConfigMessageTask(cm, node, con));
+        factories.put(DynamicConfigAddWanReplicationConfigCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new AddWanReplicationConfigTask(cm, node, con));
     }
 
     private void initializeFlakeIdGeneratorTaskFactories() {

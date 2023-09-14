@@ -371,6 +371,17 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testDeleteAsync() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+            map.deleteAsync(i);
+        }
+        final LocalMapStats localMapStats = getMapStats();
+        assertTrueEventually(() -> assertEquals(100, localMapStats.getRemoveOperationCount()));
+    }
+
+    @Test
     public void testHitsGenerated_updatedConcurrently() {
         final IMap<Integer, Integer> map = getMap();
         final int actionCount = 100;

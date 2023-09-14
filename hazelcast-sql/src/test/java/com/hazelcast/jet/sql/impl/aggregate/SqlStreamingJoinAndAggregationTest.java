@@ -78,7 +78,8 @@ public class SqlStreamingJoinAndAggregationTest extends SqlTestSupport {
                 " ON st1.we1 = st2.we2";
 
         assertRowsEventuallyInAnyOrder(sql, asList(
-                new Row(timestampTz(10L), 3L, 2)
+                new Row(timestampTz(10L), 3L, 2),
+                new Row(timestampTz(20L), 3L, 2)
         ));
     }
 

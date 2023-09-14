@@ -103,6 +103,16 @@ public interface PerIndexStats {
         }
 
         @Override
+        public void updateMemoryCost(long delta) {
+            // do nothing
+        }
+
+        @Override
+        public void onDispose() {
+            // do nothing
+        }
+
+        @Override
         public void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
             // do nothing
         }
@@ -244,6 +254,17 @@ public interface PerIndexStats {
      * on-heap memory usage of the index.
      */
     long getMemoryCost();
+
+    /**
+     * Updates the memory cost of the index in bytes.
+     * @param delta the value to be added to the memory cost
+     */
+    void updateMemoryCost(long delta);
+
+    /**
+     * Invoked on index dispose.
+     */
+    void onDispose();
 
     /**
      * Invoked by the associated index after every insert operation.
