@@ -363,6 +363,8 @@ public final class NioAsyncSocket extends AsyncSocket {
         private void handleWrite() throws IOException {
             metrics.incWrites();
 
+            // todo: Netty has a write spin option we need to investigate.
+
             long bytesWritten;
             boolean clean;
             if (writer == null) {
