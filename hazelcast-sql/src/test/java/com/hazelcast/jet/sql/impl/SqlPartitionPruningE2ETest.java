@@ -340,7 +340,7 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
 
     protected void assertPrunability(int expectedPartitionsCount, Set<Integer> partitionsToUse) {
         // region planExecutor.tryUsePrunability(...) assertions.
-        Set<Integer> expectedPartitionsToUsePE = preJobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
+        Set<Integer> expectedPartitionsToUsePE = sqlJobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
         Set<Integer> expectedPartitionsToUseJCS = jobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
         Set<Integer> expectedPartitionsToParticipate = expectedPartitionsAndMembers.f1();
 

@@ -11,17 +11,9 @@
 
 ## What is Hazelcast
 
-Hazelcast is a distributed computation and storage platform for consistently
-low-latency querying, aggregation and stateful computation against event streams
-and traditional data sources. It allows you to quickly build resource-efficient,
-real-time applications. You can deploy it at any scale from small edge devices
-to a large cluster of cloud instances. 
+The world’s leading companies trust Hazelcast to modernize applications and take instant action on data in motion to create new revenue streams, mitigate risk, and operate more efficiently. Businesses use Hazelcast’s unified **real-time data platform** to process **streaming** data, enrich it with historical context and take instant action with standard or **ML/AI-driven automation** - before it is stored in a database or data lake. 
 
-A cluster of Hazelcast nodes share both the data storage and computational load
-which can dynamically scale up and down. When you add new nodes to the cluster,
-the data is automatically rebalanced across the cluster, and currently running
-computational tasks (known as jobs) snapshot their state and scale with
-processing guarantees.
+Hazelcast is named in the Gartner Market Guide to Event Stream Processing and a leader in the GigaOm Radar Report for Streaming Data Platforms. To join our community of CXOs, architects and developers at brands such as Lowe’s, HSBC, JPMorgan Chase, Volvo, New York Life, and others, visit [hazelcast.com](https://hazelcast.com).
 
 ## When to use Hazelcast
 

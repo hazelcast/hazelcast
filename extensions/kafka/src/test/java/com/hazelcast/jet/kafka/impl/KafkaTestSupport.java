@@ -17,6 +17,7 @@
 package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.jet.kafka.HazelcastKafkaAvroSerializer;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
@@ -44,7 +45,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,7 +61,6 @@ import static com.hazelcast.test.DockerTestUtil.dockerEnabled;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -71,7 +70,7 @@ import static org.junit.Assert.assertTrue;
 public abstract class KafkaTestSupport {
     static final long KAFKA_MAX_BLOCK_MS = MINUTES.toMillis(2);
     private final Map<String, KafkaProducer<Object, Object>> producers = new HashMap<>();
-    private final Map<String, Properties> producerProperties = new HashMap<>();
+    private final Map<String, Map<String, String>> producerProperties = new HashMap<>();
 
     private String brokerConnectionString;
     private Admin admin;
@@ -138,7 +137,7 @@ public abstract class KafkaTestSupport {
 
     public void deleteTopic(String topicId) {
         try {
-            admin.deleteTopics(singleton(topicId)).all().get();
+            admin.deleteTopics(List.of(topicId)).all().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -151,39 +150,34 @@ public abstract class KafkaTestSupport {
         producers.remove(topicId); // existing producer will not see new partitions
     }
 
-    public void setSubjectNameStrategy(String topicId, boolean isKey, String strategy) {
-        producerProperties.computeIfAbsent(topicId, t -> new Properties())
-                .setProperty((isKey ? "key" : "value") + ".subject.name.strategy",
-                        "io.confluent.kafka.serializers.subject." + strategy);
-        producers.remove(topicId); // existing producer will not use new strategy
+    public void setProducerProperties(String topicId, Map<String, String> properties) {
+        producerProperties.put(topicId, properties);
+        producers.remove(topicId); // existing producer will not use new properties
     }
 
     public Future<RecordMetadata> produce(String topic, Object key, Object value) {
-        return producers.computeIfAbsent(topic, t -> getProducer(topic, key, value))
+        return producers.computeIfAbsent(topic, t -> createProducer(topic, key, value))
                 .send(new ProducerRecord<>(topic, key, value));
     }
 
-    public RecordMetadata produceSync(String topic, Object key, Object value) {
+    public void produceSync(String topic, Object key, Object value) {
         try {
-            return produce(topic, key, value).get();
+            produce(topic, key, value).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
 
     public Future<RecordMetadata> produce(String topic, int partition, Long timestamp, Object key, Object value) {
-        return producers.computeIfAbsent(topic, t -> getProducer(topic, key, value))
+        return producers.computeIfAbsent(topic, t -> createProducer(topic, key, value))
                 .send(new ProducerRecord<>(topic, partition, timestamp, key, value));
     }
 
-    private KafkaProducer<Object, Object> getProducer(String topic, Object key, Object value) {
+    private KafkaProducer<Object, Object> createProducer(String topic, Object key, Object value) {
         Properties producerProps = new Properties();
         producerProps.setProperty("bootstrap.servers", brokerConnectionString);
-        producerProps.setProperty("key.serializer", resolveSerializer(key));
-        producerProps.setProperty("value.serializer", resolveSerializer(value));
-        if (key instanceof GenericRecord || value instanceof GenericRecord) {
-            producerProps.setProperty("schema.registry.url", getSchemaRegistryURI().toString());
-        }
+        producerProps.setProperty("key.serializer", resolveSerializer(topic, key));
+        producerProps.setProperty("value.serializer", resolveSerializer(topic, value));
         producerProps.setProperty("max.block.ms", String.valueOf(KAFKA_MAX_BLOCK_MS));
         Optional.ofNullable(producerProperties.get(topic)).ifPresent(producerProps::putAll);
         return new KafkaProducer<>(producerProps);
@@ -194,7 +188,7 @@ public abstract class KafkaTestSupport {
      * @see com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver#resolveSerializer(String)
      */
     @SuppressWarnings("ReturnCount")
-    private static String resolveSerializer(Object object) {
+    private String resolveSerializer(String topic, Object object) {
         if (object instanceof String) {
             return "org.apache.kafka.common.serialization.StringSerializer";
         } else if (object instanceof Short) {
@@ -216,7 +210,10 @@ public abstract class KafkaTestSupport {
         } else if (object instanceof UUID) {
             return "org.apache.kafka.common.serialization.UUIDSerializer";
         } else if (object instanceof GenericRecord) {
-            return "io.confluent.kafka.serializers.KafkaAvroSerializer";
+            Map<String, String> producerProps = producerProperties.get(topic);
+            return producerProps != null && producerProps.containsKey("schema.registry.url")
+                    ? "io.confluent.kafka.serializers.KafkaAvroSerializer"
+                    : HazelcastKafkaAvroSerializer.class.getCanonicalName();
         } else if (object instanceof HazelcastJsonValue) {
             return HazelcastJsonValueSerializer.class.getCanonicalName();
         } else {
@@ -247,7 +244,7 @@ public abstract class KafkaTestSupport {
         consumerProps.setProperty("auto.offset.reset", "earliest");
         consumerProps.putAll(properties);
         KafkaConsumer<K, V> consumer = new KafkaConsumer<>(consumerProps);
-        consumer.subscribe(Arrays.asList(topicIds));
+        consumer.subscribe(List.of(topicIds));
         return consumer;
     }
 
