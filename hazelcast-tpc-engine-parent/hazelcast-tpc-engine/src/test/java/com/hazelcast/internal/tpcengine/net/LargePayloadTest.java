@@ -42,6 +42,7 @@ import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_QUICKACK;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static java.lang.Math.max;
@@ -54,9 +55,11 @@ public abstract class LargePayloadTest {
     private static final int SIZEOF_HEADER = SIZEOF_INT + SIZEOF_LONG + SIZEOF_INT;
 
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
-    public int SOCKET_BUFFER_SIZE = 16 * 1024;
+    public int socketBufferSize = 16 * 1024;
     public int iterations = 20;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+    public boolean tcpNoDelay = true;
+    public boolean tcpQuickAck = true;
 
     private final AtomicLong iteration = new AtomicLong();
     private final PrintAtomicLongThread monitorThread = new PrintAtomicLongThread("at:", iteration);
@@ -417,9 +420,10 @@ public abstract class LargePayloadTest {
 
     private AsyncSocket newClient(SocketAddress serverAddress, boolean useWriter) {
         AsyncSocket.Builder socketBuilder = clientReactor.newAsyncSocketBuilder();
-        socketBuilder.options.set(TCP_NODELAY, true);
-        socketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
-        socketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+        socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
+        socketBuilder.options.set(TCP_QUICKACK, tcpQuickAck);
+        socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
+        socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
         CompletableFuture future = new CompletableFuture();
         futures.add(future);
         socketBuilder.reader = new ClientReader(future);
@@ -435,13 +439,15 @@ public abstract class LargePayloadTest {
 
     private AsyncServerSocket newServer(boolean useWriter) {
         AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
-        serverSocketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+        serverSocketBuilder.options.set(SO_RCVBUF, socketBufferSize);
+        // todo: revert to port 0
         serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
-            socketBuilder.options.set(TCP_NODELAY, true);
-            socketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
-            socketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+            socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
+            socketBuilder.options.set(TCP_QUICKACK, tcpQuickAck);
+            socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
+            socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
             socketBuilder.reader = new ServerReader();
             if (useWriter) {
                 socketBuilder.writer = new IOBufferWriter();

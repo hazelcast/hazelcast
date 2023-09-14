@@ -574,7 +574,14 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         Option<Boolean> TCP_NODELAY = new Option<>("TCP_NODELAY", Boolean.class);
 
         /**
-         * See {@link jdk.net.ExtendedSocketOptions#TCP_QUICKACK}.
+         * See {@link jdk.net.ExtendedSocketOptions#TCP_QUICKACK}. According to
+         * the specification, the TCP_QUICKACK isn't a permanent setting. So over
+         * time, the flag could become unset and therefor should be reaplied
+         * before every read.
+         *
+         * With the AsyncSocket this setting is permanent, the socket
+         * implementation will ensure that once the setting is set, it will be
+         * reapplied on every read.
          */
         Option<Boolean> TCP_QUICKACK = new Option<>("TCP_QUICKACK", Boolean.class);
 

@@ -44,6 +44,7 @@ import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_CONNECT;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
+import static jdk.net.ExtendedSocketOptions.TCP_QUICKACK;
 
 /**
  * Nio implementation of the {@link AsyncSocket}.
@@ -250,9 +251,11 @@ public final class NioAsyncSocket extends AsyncSocket {
         private final Writer writer;
         private final Queue writeQueue;
         private final NioAsyncSocket socket;
+        private final NioOptions options;
 
         private Handler(Builder builder, NioAsyncSocket socket) throws IOException {
             this.socket = socket;
+            this.options = (NioOptions) socket.options;
             this.metrics = socket.metrics();
             this.socketChannel = socket.socketChannel;
             this.eventloop = (NioEventloop) socket.eventloop;
@@ -326,10 +329,16 @@ public final class NioAsyncSocket extends AsyncSocket {
             metrics.incReads();
 
             int read = socketChannel.read(rcvBuffer);
-            // System.out.println(NioAsyncSocket.this + " bytes read: " + read);
+
+              // System.out.println(NioAsyncSocket.this + " bytes read: " + read);
 
             if (read == -1) {
                 throw new EOFException("Socket closed by peer");
+            }
+
+            Boolean tcpQuickAck = options.tcpQuickAck;
+            if (tcpQuickAck != null) {
+                socketChannel.setOption(TCP_QUICKACK, tcpQuickAck);
             }
 
             // todo: Need to revise.
@@ -425,6 +434,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     public static class NioOptions implements Options {
 
         private final SocketChannel socketChannel;
+        private volatile Boolean tcpQuickAck;
 
         NioOptions(SocketChannel socketChannel) {
             this.socketChannel = socketChannel;
@@ -490,6 +500,9 @@ public final class NioAsyncSocket extends AsyncSocket {
             try {
                 SocketOption socketOption = toSocketOption(option);
                 if (isSupported(socketOption)) {
+                    if (socketOption.equals(TCP_QUICKACK)) {
+                        tcpQuickAck = (Boolean) value;
+                    }
                     socketChannel.setOption(socketOption, value);
                     return true;
                 } else {
