@@ -119,7 +119,7 @@ jobs:
           path: aws-discovery-suite/terraform/tools/client/aws-discovery-client.jar
 
       - name: Authenticate to GAR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: us-east1-docker.pkg.dev
           username: _json_key
