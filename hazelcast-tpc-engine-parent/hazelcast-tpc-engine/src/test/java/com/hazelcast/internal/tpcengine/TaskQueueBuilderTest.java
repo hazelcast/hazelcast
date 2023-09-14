@@ -21,9 +21,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.CompletableFuture;
-
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertSuccessEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static org.junit.Assert.assertThrows;
 
@@ -44,44 +41,27 @@ public class TaskQueueBuilderTest {
 
     @Test
     public void test_whenTooLowNice() {
-        CompletableFuture f = reactor.submit(new Runnable() {
-            @Override
-            public void run() {
-                TaskQueue.Builder builder = reactor.newTaskQueueBuilder();
-                builder.queue = new MpscArrayQueue<>(1024);
-                builder.descriptor = 1;
-                builder.nice = TaskQueue.Builder.MIN_NICE - 1;
-                assertThrows(IllegalArgumentException.class, () -> builder.build());
-            }
-        });
-        assertSuccessEventually(f);
+        TaskQueue.Builder builder = reactor.newTaskQueueBuilder();
+        builder.queue = new MpscArrayQueue<>(1024);
+        builder.descriptor = 1;
+        builder.nice = TaskQueue.Builder.MIN_NICE - 1;
+        assertThrows(IllegalArgumentException.class, () -> builder.build());
+
     }
 
     @Test
     public void test_whenTooHighNice() {
-        CompletableFuture f = reactor.submit(new Runnable() {
-            @Override
-            public void run() {
-                TaskQueue.Builder builder = reactor.newTaskQueueBuilder();
-                builder.queue = new MpscArrayQueue<>(1024);
-                builder.descriptor = 1;
-                builder.nice = TaskQueue.Builder.MAX_NICE + 1;
-                assertThrows(IllegalArgumentException.class, () -> builder.build());
-            }
-        });
-        assertSuccessEventually(f);
+        TaskQueue.Builder builder = reactor.newTaskQueueBuilder();
+        builder.queue = new MpscArrayQueue<>(1024);
+        builder.descriptor = 1;
+        builder.nice = TaskQueue.Builder.MAX_NICE + 1;
+        assertThrows(IllegalArgumentException.class, () -> builder.build());
     }
 
     @Test
     public void test_whenNoQueuesSet() {
-        CompletableFuture f = reactor.submit(new Runnable() {
-            @Override
-            public void run() {
-                TaskQueue.Builder builder = reactor.newTaskQueueBuilder();
-                builder.descriptor = 1;
-                builder.build();
-            }
-        });
-        assertSuccessEventually(f);
+        TaskQueue.Builder builder = reactor.newTaskQueueBuilder();
+        builder.descriptor = 1;
+        builder.build();
     }
 }
