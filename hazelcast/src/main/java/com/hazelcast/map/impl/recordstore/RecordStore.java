@@ -679,4 +679,8 @@ public interface RecordStore<R extends Record> {
     long getMapStoreOffloadedOperationsCount();
 
     boolean isTieredStorageEnabled();
+
+    default void disposeOnSplitBrainHeal() {
+        // no-op
+    }
 }

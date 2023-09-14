@@ -943,6 +943,10 @@ public class ReferenceObjects {
             new PartitioningAttributeConfig(aString)
     );
 
+    public static List<SimpleEntryView<Data, Data>> aListOfSimpleEntryViews = Collections.singletonList(
+            aSimpleEntryView
+    );
+
     public static WanConsumerConfigHolder aWanConsumerConfigHolder =
             new WanConsumerConfigHolder(aBoolean, aString,aData, Map.of(aString, aData));
     public static List<WanCustomPublisherConfigHolder> aListOfWanCustomPublisherConfigsHolders =

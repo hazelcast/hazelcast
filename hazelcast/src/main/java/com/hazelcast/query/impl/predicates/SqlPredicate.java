@@ -345,10 +345,10 @@ public class SqlPredicate
             predicates = new Predicate[]{predicateLeft, predicateRight};
         }
         try {
-            T compoundPredicate = klass.newInstance();
+            T compoundPredicate = klass.getDeclaredConstructor().newInstance();
             compoundPredicate.setPredicates(predicates);
             return compoundPredicate;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (ReflectiveOperationException e) {
             throw new IllegalArgumentException(String.format("%s must have a public default constructor", klass.getName()));
         }
     }
