@@ -496,7 +496,7 @@ public class HTTPCommunicator {
     public ConnectionResponse doPost(String url, String... params) throws IOException {
         logRequest("POST", url);
         // Create an HttpClient instance
-        HttpClient httpClient = HttpClient.newHttpClient();
+        HttpClient httpClient = newClient();
 
         // Prepare the request body
         String data = String.join("&", params);
