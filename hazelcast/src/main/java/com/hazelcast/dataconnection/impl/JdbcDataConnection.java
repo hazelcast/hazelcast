@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
-import com.hazelcast.dataconnection.databasediscovery.impl.DiscoverDatabase;
 import com.hazelcast.dataconnection.impl.jdbcproperties.HikariTranslator;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.spi.annotation.Beta;
@@ -30,6 +29,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -39,8 +39,10 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import static com.hazelcast.dataconnection.impl.DatabaseDialect.resolveDialect;
 import static com.hazelcast.dataconnection.impl.jdbcproperties.DataConnectionProperties.JDBC_URL;
 import static com.hazelcast.dataconnection.impl.jdbcproperties.DriverManagerTranslator.translate;
+import static java.util.Locale.ROOT;
 
 /**
  * {@link DataConnection} implementation for JDBC.
@@ -55,6 +57,11 @@ import static com.hazelcast.dataconnection.impl.jdbcproperties.DriverManagerTran
 public class JdbcDataConnection extends DataConnectionBase {
 
     public static final String OBJECT_TYPE_TABLE = "Table";
+
+    private static final List<String> MYSQL_SYSTEM_SCHEMA_LIST = List.of("SYS");
+    private static final List<String> MSSQL_SYSTEM_SCHEMA_LIST = List.of("sys", "INFORMATION_SCHEMA");
+    private static final List<String> MSSQL_SYSTEM_TABLE_LIST = List.of("spt_", "MSreplication_options");
+
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
     private volatile ConcurrentMemoizingSupplier<HikariDataSource> pooledDataSourceSup;
     private volatile Supplier<Connection> singleUseConnectionSup;
@@ -117,7 +124,38 @@ public class JdbcDataConnection extends DataConnectionBase {
     @Override
     public List<DataConnectionResource> listResources() {
         try {
-            return DiscoverDatabase.listResources(this);
+            try (Connection connection = getConnection()) {
+                DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+                ResourceReader reader = new ResourceReader();
+                switch (resolveDialect(databaseMetaData)) {
+                    case POSTGRESQL:
+                        reader.withCatalog(connection.getCatalog());
+                        break;
+
+                    case MYSQL:
+                        reader.exclude(
+                                (catalog, schema, table) ->
+                                        schema != null && MYSQL_SYSTEM_SCHEMA_LIST.contains(schema.toUpperCase(ROOT))
+                        );
+                        break;
+
+                    case MICROSOFT_SQL_SERVER:
+                        reader
+                                .withCatalog(connection.getCatalog())
+                                .exclude(
+                                        (catalog, schema, table) ->
+                                                MSSQL_SYSTEM_SCHEMA_LIST.contains(schema)
+                                                        || MSSQL_SYSTEM_TABLE_LIST.contains(table)
+                                );
+                        break;
+
+                    default:
+                        // Nothing to do
+                }
+
+                return reader.listResources(connection);
+            }
         } catch (Exception exception) {
             throw new HazelcastException("Could not read resources for DataConnection " + getName(), exception);
         }

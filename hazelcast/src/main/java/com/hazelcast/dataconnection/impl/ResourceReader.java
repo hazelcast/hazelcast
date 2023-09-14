@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.dataconnection.databasediscovery.impl;
+package com.hazelcast.dataconnection.impl;
 
 import com.hazelcast.dataconnection.DataConnectionResource;
+import com.hazelcast.jet.function.TriPredicate;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -28,21 +29,43 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_TABLE;
 
-public class DefaultDatabaseDiscovery {
+class ResourceReader {
+
+    private String catalog;
+    private TriPredicate<String, String, String> excludePredicate = (catalog, schema, table) -> false;
+
+    public ResourceReader withCatalog(String schema) {
+        this.catalog = schema;
+        return this;
+    }
+
+    public ResourceReader exclude(TriPredicate<String, String, String> predicate) {
+        this.excludePredicate = predicate;
+        return this;
+    }
 
     public List<DataConnectionResource> listResources(Connection connection) throws SQLException {
         try (ResultSet tables = connection.getMetaData().getTables(
-                     null,
-                     null,
-                     null,
-                     new String[]{"TABLE", "VIEW"})) {
+                catalog,
+                null,
+                null,
+                new String[]{"TABLE", "VIEW"})) {
+
             List<DataConnectionResource> result = new ArrayList<>();
             while (tables.next()) {
-                // Format DataConnectionResource name as catalog + schema+ + table_name
+                String catalogName = tables.getString("TABLE_CAT");
+                String schemaName = tables.getString("TABLE_SCHEM");
+                String tableName = tables.getString("TABLE_NAME");
+
+                if (excludePredicate.test(catalogName, schemaName, tableName)) {
+                    continue;
+                }
+
+                // Format DataConnectionResource name as catalog + schema + table_name
                 String[] name = Stream.of(
-                                tables.getString("TABLE_CAT"),
-                                tables.getString("TABLE_SCHEM"),
-                                tables.getString("TABLE_NAME")
+                                catalogName,
+                                schemaName,
+                                tableName
                         )
                         .filter(Objects::nonNull)
                         .toArray(String[]::new);
