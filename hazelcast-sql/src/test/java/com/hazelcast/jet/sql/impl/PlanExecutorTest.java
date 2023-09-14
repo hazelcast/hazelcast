@@ -153,7 +153,8 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
         );
 
         given(hazelcastInstance.getJet()).willReturn(jet);
-        given(jet.newLightJob(eq(dag), isA(JobConfig.class))).willReturn(job);
+        given(jet.newLightJob(eq(dag), isA(JobConfig.class), eq(null)))
+                .willReturn(job);
 
         // when
         SqlResult result = planExecutor.execute(plan, queryId, emptyList(), 0L, null);
