@@ -53,6 +53,7 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
  */
 public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFuture, B, R>
         extends LocalProcessorMetaSupplier<F, B, R> {
+    // visible for tests
     transient int[] partitionsToScan;
     private final List<List<Expression<?>>> requiredPartitionsExprs;
     private final PartitioningStrategy<?> partitioningStrategy;

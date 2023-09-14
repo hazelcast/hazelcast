@@ -84,21 +84,21 @@
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
-        <owasp.dependency-check.version>8.3.1</owasp.dependency-check.version>
+        <owasp.dependency-check.version>8.4.0</owasp.dependency-check.version>
         <codehause.license.plugin.version>2.2.0</codehause.license.plugin.version>
 
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.2</avro.version>
-        <aws.sdk.version>1.12.531</aws.sdk.version>
-        <calcite.version>1.32.0</calcite.version>
+        <aws.sdk.version>1.12.545</aws.sdk.version>
+        <calcite.version>1.35.0</calcite.version>
         <classgraph.version>4.8.162</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
-        <grpc.version>1.48.0</grpc.version>
+        <grpc.version>1.58.0</grpc.version>
         <guava.version>32.1.2-jre</guava.version>
         <hadoop.version>3.3.6</hadoop.version>
-        <h2.version>2.2.220</h2.version>
+        <h2.version>2.2.222</h2.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
         <jackson.version>2.14.2</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
@@ -112,7 +112,7 @@
         <kotlin.version>1.9.10</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
-        <mssql.version>12.4.0.jre11</mssql.version>
+        <mssql.version>12.4.1.jre11</mssql.version>
         <mysql.connector.version>8.1.0</mysql.connector.version>
         <netty.version>4.1.97.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
@@ -133,8 +133,8 @@
         <scala.version>2.13</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
-        <snakeyaml.version>2.1</snakeyaml.version>
-        <snakeyaml.engine.version>2.6</snakeyaml.engine.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
+        <snakeyaml.engine.version>2.7</snakeyaml.engine.version>
         <mongodb.version>4.10.2</mongodb.version>
 
         <!-- test dependencies -->
@@ -142,7 +142,7 @@
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.24.2</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
-        <bytebuddy.version>1.14.6</bytebuddy.version>
+        <bytebuddy.version>1.14.7</bytebuddy.version>
         <commons-codec.version>1.16.0</commons-codec.version>
         <commons-io.version>2.13.0</commons-io.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
@@ -153,6 +153,7 @@
         <http.client.version>4.5.14</http.client.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <junit.version>4.13.2</junit.version>
+        <junit-jupiter.version>5.10.0</junit-jupiter.version>
         <mockito.version>5.4.0</mockito.version>
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.19.0</testcontainers.version>
@@ -403,7 +404,7 @@
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
                     <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
-                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                 </configuration>
             </plugin>
 
@@ -429,7 +430,7 @@
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
                     <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
-                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                 </configuration>
                 <executions>
                     <execution>
@@ -444,6 +445,25 @@
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <version>${maven.enforcer.plugin.version}</version>
                 <executions>
+                    <execution>
+                        <id>enforce-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                    <dependencyConvergence>
+                                        <excludedScopes>
+                                            <scope>compile</scope>
+                                            <scope>runtime</scope>
+                                        </excludedScopes>
+                                        <includes>
+                                            <include>junit</include>
+                                        </includes>
+                                    </dependencyConvergence>
+                            </rules>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>enforce-tools</id>
                         <goals>
@@ -538,7 +558,9 @@
                             <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
                             <failOnBlacklist>true</failOnBlacklist>
                             <failOnMissing>true</failOnMissing>
-                            <fileTemplate>${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl</fileTemplate>
+                            <fileTemplate>
+                                ${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl
+                            </fileTemplate>
                             <includedLicenses>
                                 <!-- 
                                   Always use SPDX license identifiers listed in https://spdx.org/licenses (when available)
@@ -808,7 +830,8 @@
                             <exclusionPattern>per-property override</exclusionPattern>
                             <exclusionPattern>^copyright notice</exclusionPattern>
                             <exclusionPattern>FAILED_PRECONDITION</exclusionPattern>
-                            <exclusionPattern>The ASF licenses this file to you under the Apache License</exclusionPattern>
+                            <exclusionPattern>The ASF licenses this file to you under the Apache License
+                            </exclusionPattern>
                             <exclusionPattern>Substitute for l, l</exclusionPattern>
                             <exclusionPattern>inside edge crossings that are between</exclusionPattern>
                         </exclusionPatterns>
@@ -1825,6 +1848,11 @@
                 <version>1.23.0</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-math3</artifactId>
+                <version>3.6.1</version>
+            </dependency>
+            <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
                 <version>2.12.5</version>
@@ -2007,9 +2035,14 @@
                 <version>3.29.2-GA</version>
             </dependency>
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit-jupiter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit-jupiter.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -2076,10 +2109,14 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
-            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>

@@ -21,6 +21,9 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -31,6 +34,7 @@ import org.bson.Document;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.List;
@@ -45,18 +49,22 @@ import static java.util.Collections.singletonList;
  * ProcessorSupplier that creates {@linkplain WriteMongoP} processors on each instance
  * that will insert given item.
  */
-public class InsertProcessorSupplier implements ProcessorSupplier {
+public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
-    private final String connectionString;
-    private final String databaseName;
-    private final String collectionName;
-    private final String[] paths;
-    private final WriteMode writeMode;
-    private final QueryDataType[] types;
-    private final BsonType[] externalTypes;
+    private String connectionString;
+    private String databaseName;
+    private String collectionName;
+    private String[] paths;
+    private WriteMode writeMode;
+    private QueryDataType[] types;
+    private BsonType[] externalTypes;
+    private String dataConnectionName;
+    private String idField;
     private transient SupplierEx<MongoClient> clientSupplier;
-    private final String dataConnectionName;
-    private final String idField;
+
+    @SuppressWarnings("unused")
+    public InsertProcessorSupplier() {
+    }
 
     InsertProcessorSupplier(MongoTable table, WriteMode writeMode) {
         this.connectionString = table.connectionString;
@@ -130,4 +138,38 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
         return doc;
     }
 
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(connectionString);
+        out.writeString(databaseName);
+        out.writeString(collectionName);
+        out.writeStringArray(paths);
+        out.writeString(writeMode == null ? null : writeMode.name());
+        out.writeObject(types);
+        out.writeInt(externalTypes == null ? 0 : externalTypes.length);
+        for (BsonType externalType : externalTypes) {
+            out.writeInt(externalType.getValue());
+        }
+        out.writeString(dataConnectionName);
+        out.writeString(idField);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        connectionString = in.readString();
+        databaseName = in.readString();
+        collectionName = in.readString();
+        paths = in.readStringArray();
+        String writeModeName = in.readString();
+        writeMode = writeModeName == null ? null : WriteMode.valueOf(writeModeName);
+        types = in.readObject();
+        int howManyExtTypes = in.readInt();
+        var extTypes = new BsonType[howManyExtTypes];
+        for (int i = 0; i < howManyExtTypes; i++) {
+            extTypes[i] = BsonType.findByValue(in.readInt());
+        }
+        externalTypes = extTypes;
+        dataConnectionName = in.readString();
+        idField = in.readString();
+    }
 }
