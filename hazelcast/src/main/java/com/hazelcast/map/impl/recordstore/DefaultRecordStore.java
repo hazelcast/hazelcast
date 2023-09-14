@@ -1546,7 +1546,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() == POOLED;
     }
 
-    private void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
+    public void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
         mutationObserver.onDestroy(isDuringShutdown, internal);
         expirySystem.destroy();
         destroyMetadataStore();
