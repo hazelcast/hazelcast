@@ -40,6 +40,7 @@ import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_QUICKACK;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 
@@ -48,9 +49,11 @@ public abstract class LargeVariablePayloadTest {
     private static final int SIZEOF_HEADER = SIZEOF_INT + SIZEOF_LONG + SIZEOF_INT;
 
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
-    public int SOCKET_BUFFER_SIZE = 16 * 1024;
+    public int socketBufferSize = 16 * 1024;
     // If a the payload Size is 1000 bytes, then with 0.5 payload variability you will get
     // packets between 500 and 1500 bytes (so 50% below and above).
+    public boolean tcpNoDelay = true;
+    public boolean tcpQuickAck = true;
     public float payloadVariability = 0.5f;
     public int iterations = 20;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
@@ -325,9 +328,10 @@ public abstract class LargeVariablePayloadTest {
 
     private AsyncSocket newClient(SocketAddress serverAddress, boolean useWriter) {
         AsyncSocket.Builder socketBuilder = clientReactor.newAsyncSocketBuilder();
-        socketBuilder.options.set(TCP_NODELAY, true);
-        socketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
-        socketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+        socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
+        socketBuilder.options.set(TCP_QUICKACK, tcpQuickAck);
+        socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
+        socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
         CompletableFuture future = new CompletableFuture();
         futures.add(future);
         socketBuilder.reader = new ClientReader(future);
@@ -343,14 +347,15 @@ public abstract class LargeVariablePayloadTest {
 
     private AsyncServerSocket newServer(boolean useWriter) {
         AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
-        serverSocketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+        serverSocketBuilder.options.set(SO_RCVBUF, socketBufferSize);
         // Bind on any available port.
         serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
-            socketBuilder.options.set(TCP_NODELAY, true);
-            socketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
-            socketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+            socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
+            socketBuilder.options.set(TCP_QUICKACK, tcpQuickAck);
+            socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
+            socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
             socketBuilder.reader = new ServerReader();
             if (useWriter) {
                 socketBuilder.writer = new IOBufferWriter();

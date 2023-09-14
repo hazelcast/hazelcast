@@ -33,17 +33,15 @@ public interface NetworkScheduler<S extends AsyncSocket> {
      * A dirty socket should only schedule itself once when it is dirty. If
      * a socket schedules itself more than once, there is a bug.
      *
+     * This call should be made from the eventloop thread and isn't threadsafe.
+     *
      * @param socket the AsyncSocket to schedule.
      * @throws IllegalStateException if the scheduler exceeds the limit of
      *                               sockets it can schedule. This should not
      *                               happen because the NetworkScheduler should
      *                               be sized based on the socketLimit.
      */
-    void schedule(S socket);
-
-    default void unsafeSchedule(S socket) {
-        schedule(socket);
-    }
+    void scheduleWrite(S socket);
 
     /**
      * Checks if there are any dirty sockets pending.

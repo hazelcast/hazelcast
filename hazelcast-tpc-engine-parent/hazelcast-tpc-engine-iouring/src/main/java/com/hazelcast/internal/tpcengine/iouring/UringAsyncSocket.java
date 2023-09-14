@@ -183,6 +183,7 @@ public final class UringAsyncSocket extends AsyncSocket {
         private final ByteBuffer rcvBuff;
         private final long rcvBuffAddr;
         private final Reader reader;
+        private final UringOptions options;
         private boolean closing;
         private int pending;
         private CompletableFuture<Void> connectFuture;
@@ -192,6 +193,7 @@ public final class UringAsyncSocket extends AsyncSocket {
 
         Handler(UringAsyncSocket.Builder builder, UringAsyncSocket socket) {
             this.socket = socket;
+            this.options = (UringOptions) socket.options;
             this.eventloop = socket.reactor.eventloop();
             this.flushThread = socket.flushThread;
             this.submissionQueue = builder.uring.submissionQueue();
@@ -268,10 +270,15 @@ public final class UringAsyncSocket extends AsyncSocket {
             }
         }
 
-        private void prepareRead() {
+         private void prepareRead() {
             try {
                 if (closing) {
                     return;
+                }
+
+                Boolean tcpQuickAck = options.tcpQuickAck;
+                if (tcpQuickAck != null) {
+                    socket.linuxSocket.setTcpQuickAck(tcpQuickAck.booleanValue());
                 }
 
                 int pos = rcvBuff.position();
@@ -343,7 +350,6 @@ public final class UringAsyncSocket extends AsyncSocket {
                 } else {
                     writerClean = writer.onWrite(sndByteBuffer);
                     sndBuff.flip();
-                    // add it if isn't added already
                     ioVector.offer(sndBuff);
                 }
 
@@ -370,7 +376,6 @@ public final class UringAsyncSocket extends AsyncSocket {
                 metrics.incBytesWritten(res);
                 metrics.incWrites();
                 //System.out.println(socket + " written " + res);
-
                 boolean sndBufferClean = true;
                 if (sndBuff != null) {
                     ioVector.clear();
@@ -388,11 +393,14 @@ public final class UringAsyncSocket extends AsyncSocket {
                 if (clean) {
                     socket.resetFlushed();
                 } else {
-                    networkScheduler.schedule(socket);
+                    // It is better to call prepareWrite, but this causes a scheduling problem
+                    // that leads to very slow execution.
+                    prepareWrite();
+                    //networkScheduler.scheduleWrite(socket);
                 }
             } else if (res == -EAGAIN) {
-                // try again.
-                prepareWrite();
+                //try again
+                networkScheduler.scheduleWrite(socket);
             } else {
                 if (ioVector.cnt() == 1) {
                     throw newCQEFailedException(
@@ -511,6 +519,9 @@ public final class UringAsyncSocket extends AsyncSocket {
     public static class UringOptions implements Options {
 
         private final LinuxSocket nativeSocket;
+        // This is needed for 'permanent' TCP_QUICKACK
+        // null indicates that the value hasn't been touched and is the default
+        private volatile Boolean tcpQuickAck;
 
         UringOptions(LinuxSocket nativeSocket) {
             this.nativeSocket = nativeSocket;
@@ -584,6 +595,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                     nativeSocket.setTcpNoDelay((Boolean) value);
                     return true;
                 } else if (TCP_QUICKACK.equals(option)) {
+                    tcpQuickAck = (Boolean) value;
                     nativeSocket.setTcpQuickAck((Boolean) value);
                     return true;
                 } else if (SO_RCVBUF.equals(option)) {

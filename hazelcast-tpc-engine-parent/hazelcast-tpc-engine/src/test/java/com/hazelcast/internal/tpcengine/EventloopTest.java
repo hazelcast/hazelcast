@@ -71,12 +71,13 @@ public abstract class EventloopTest {
         CompletableFuture future = reactor.submit(() -> {
             // there is already 1 existing runQueue namely the default one.
             for (int k = 0; k < runQueueCapacity - 1; k++) {
-                TaskQueue.Builder taskQueueBuilder = reactor.eventloop.newTaskQueueBuilder();
+                TaskQueue.Builder taskQueueBuilder = reactor.newTaskQueueBuilder();
+                taskQueueBuilder.descriptor = k + 1;
                 taskQueueBuilder.queue = new CircularQueue<>(10);
                 taskQueueBuilder.build();
             }
 
-            TaskQueue.Builder taskQueueBuilder = reactor.eventloop.newTaskQueueBuilder();
+            TaskQueue.Builder taskQueueBuilder = reactor.newTaskQueueBuilder();
             taskQueueBuilder.queue = new CircularQueue<>(10);
             assertThrows(IllegalArgumentException.class, () -> taskQueueBuilder.build());
         });

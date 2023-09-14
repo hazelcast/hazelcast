@@ -120,7 +120,7 @@ public class SchedulingBenchmark {
                     taskQueues.add(eventloop.defaultTaskQueue());
                 } else {
                     for (int k = 0; k < taskGroupCnt; k++) {
-                        TaskQueue.Builder taskQueueBuilder = eventloop.newTaskQueueBuilder();
+                        TaskQueue.Builder taskQueueBuilder = reactor.newTaskQueueBuilder();
                         taskQueueInitFn.accept(taskQueueBuilder);
                         taskQueues.add(taskQueueBuilder.build());
                     }

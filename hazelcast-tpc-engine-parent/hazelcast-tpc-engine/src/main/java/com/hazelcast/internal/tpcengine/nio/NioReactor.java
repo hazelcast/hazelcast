@@ -47,6 +47,7 @@ public final class NioReactor extends Reactor {
 
         NioAsyncSocket.Builder socketBuilder = new NioAsyncSocket.Builder(null);
         socketBuilder.reactor = this;
+        socketBuilder.signals = signals;
         socketBuilder.selector = selector;
         NioEventloop nioEventloop = (NioEventloop) eventloop;
         socketBuilder.networkScheduler = nioEventloop.networkScheduler();
@@ -61,6 +62,7 @@ public final class NioReactor extends Reactor {
         NioAsyncSocket.Builder socketBuilder
                 = new NioAsyncSocket.Builder((AcceptRequest) acceptRequest);
         socketBuilder.reactor = this;
+        socketBuilder.signals = signals;
         socketBuilder.selector = selector;
         NioEventloop nioEventloop = (NioEventloop) eventloop;
         socketBuilder.networkScheduler = nioEventloop.networkScheduler();
@@ -87,7 +89,7 @@ public final class NioReactor extends Reactor {
 
     @Override
     public void wakeup() {
-        if (spin || Thread.currentThread() == eventloopThread) {
+        if (idleStrategy != null || Thread.currentThread() == eventloopThread) {
             return;
         }
 

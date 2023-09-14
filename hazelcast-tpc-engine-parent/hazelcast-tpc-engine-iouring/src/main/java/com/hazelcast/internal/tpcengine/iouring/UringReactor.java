@@ -68,6 +68,7 @@ public final class UringReactor extends Reactor {
         UringAsyncSocket.Builder socketBuilder = new UringAsyncSocket.Builder(null);
         socketBuilder.networkScheduler = eventloop.networkScheduler();
         socketBuilder.reactor = this;
+        socketBuilder.signals = signals;
         socketBuilder.uring = eventloop.uring;
         return socketBuilder;
     }
@@ -80,6 +81,7 @@ public final class UringReactor extends Reactor {
                 = new UringAsyncSocket.Builder((UringAsyncServerSocket.AcceptRequest) acceptRequest);
         socketBuilder.uring = eventloop.uring;
         socketBuilder.reactor = this;
+        socketBuilder.signals = signals;
         socketBuilder.networkScheduler = eventloop.networkScheduler();
         return socketBuilder;
     }
@@ -97,7 +99,7 @@ public final class UringReactor extends Reactor {
 
     @Override
     public void wakeup() {
-        if (spin || Thread.currentThread() == eventloopThread) {
+        if (idleStrategy != null || Thread.currentThread() == eventloopThread) {
             return;
         }
 

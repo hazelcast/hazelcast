@@ -18,11 +18,18 @@ package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptionsTest;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class NioAsyncSocketOptionsTest extends AsyncSocketOptionsTest {
 
     @Override
     public Reactor.Builder newReactorBuilder() {
         return new NioReactor.Builder();
+    }
+
+    @Ignore
+    @Test
+    public void test_TCP_QUICKACK() {
     }
 }

@@ -64,15 +64,18 @@ public class FifoSchedulerNiceTest {
                 Eventloop eventloop = reactor.eventloop();
 
                 List<DummyTask> tasks = new ArrayList<>();
+                int descriptor = 1;
                 for (int nice = TaskQueue.Builder.MIN_NICE; nice < TaskQueue.Builder.MAX_NICE; nice++) {
-                    TaskQueue.Builder taskQueueBuilder = eventloop.newTaskQueueBuilder();
+                    TaskQueue.Builder taskQueueBuilder = reactor.newTaskQueueBuilder();
                     taskQueueBuilder.nice = nice;
+                    taskQueueBuilder.descriptor = descriptor;
                     taskQueueBuilder.queue = new MpscArrayQueue<>(1024);
                     taskQueueBuilder.concurrent = true;
                     TaskQueue taskQueue = taskQueueBuilder.build();
                     DummyTask dummyTask = new DummyTask();
                     tasks.add(dummyTask);
                     taskQueue.offer(dummyTask);
+                    descriptor++;
                 }
                 return tasks;
             }

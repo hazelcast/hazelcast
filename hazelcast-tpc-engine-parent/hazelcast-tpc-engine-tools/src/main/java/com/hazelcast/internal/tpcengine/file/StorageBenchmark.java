@@ -247,7 +247,7 @@ public class StorageBenchmark {
         for (int k = 0; k < numJobs; k++) {
             Reactor.Builder reactorBuilder = newReactorBuilder(reactorType);
             reactorBuilder.threadAffinity = threadAffinity;
-            reactorBuilder.spin = spin;
+            //reactorBuilder.spin = spin;
             if (reactorBuilder instanceof NioReactor.Builder) {
                 NioReactor.Builder nioReactorBuilder = (NioReactor.Builder) reactorBuilder;
                 nioReactorBuilder.storageExecutor = nioStorageExecutor;

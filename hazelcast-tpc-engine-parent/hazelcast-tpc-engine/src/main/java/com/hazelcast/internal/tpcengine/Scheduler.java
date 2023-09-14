@@ -19,8 +19,6 @@ package com.hazelcast.internal.tpcengine;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.internal.tpcengine.TaskQueue.STATE_BLOCKED;
-
 /**
  * The {@link Scheduler} is a cooperative scheduler (unlike the
  * schedulers in Linux). So it is up to the task to yield the CPU. If a task
@@ -43,87 +41,6 @@ public abstract class Scheduler {
     // todo: should be resources?
     // contains all the task-queues. The scheduler only contains the runnable ones.
     protected final Set<TaskQueue> taskQueues = new HashSet<>();
-
-    // A double linked list of TaskQueues that have an outside queue and are
-    // currently blocked (so waiting for some external event).
-    private TaskQueue blockedConcurrentFirst;
-    private TaskQueue blockedBlockedLast;
-
-    public final boolean scheduleBlockedConcurrent() {
-        boolean scheduled = false;
-        TaskQueue queue = blockedConcurrentFirst;
-
-        while (queue != null) {
-            assert queue.runState == STATE_BLOCKED : "taskQueue.state" + queue.runState;
-            TaskQueue next = queue.next;
-
-            if (!queue.queue.isEmpty()) {
-                removeConcurrentBlocked(queue);
-                scheduled = true;
-                enqueue(queue);
-            }
-
-            queue = next;
-        }
-
-        return scheduled;
-    }
-
-    /**
-     * Checks if there are any concurrent taskQueues with pending work.
-     *
-     * @return true if there are outside task queue, false otherwise.
-     */
-    public final boolean hasConcurrentPending() {
-        TaskQueue queue = blockedConcurrentFirst;
-
-        while (queue != null) {
-            if (!queue.queue.isEmpty()) {
-                return true;
-            }
-            queue = queue.next;
-        }
-
-        return false;
-    }
-
-    public final void removeConcurrentBlocked(TaskQueue taskQueue) {
-        assert taskQueue.queue != null;
-        assert taskQueue.runState == STATE_BLOCKED;
-
-        TaskQueue next = taskQueue.next;
-        TaskQueue prev = taskQueue.prev;
-
-        if (prev == null) {
-            blockedConcurrentFirst = next;
-        } else {
-            prev.next = next;
-            taskQueue.prev = null;
-        }
-
-        if (next == null) {
-            blockedBlockedLast = prev;
-        } else {
-            next.prev = prev;
-            taskQueue.next = null;
-        }
-    }
-
-    public final void addConcurrentBlocked(TaskQueue taskQueue) {
-        assert taskQueue.concurrent;
-        assert taskQueue.runState == STATE_BLOCKED;
-        assert taskQueue.prev == null;
-        assert taskQueue.next == null;
-
-        TaskQueue l = blockedBlockedLast;
-        taskQueue.prev = l;
-        blockedBlockedLast = taskQueue;
-        if (l == null) {
-            blockedConcurrentFirst = taskQueue;
-        } else {
-            l.next = taskQueue;
-        }
-    }
 
     /**
      * Returns the number of TaskQueues that are on the run-queue (including
