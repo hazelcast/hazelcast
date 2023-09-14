@@ -194,9 +194,22 @@ public interface IndexStore {
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending);
 
     /**
-     * Returns records matching comparison. There are no records {@code < NULL}.
-     * Trying to get records {@code <= NULL} is invalid. However, you can get records {@code > NULL}
-     * (all non-null records) or {@code >= NULL} (all records).
+     * Returns records matching comparison with special handling of NULL records.
+     * <p>
+     * This method uses similar convention of ordering of special values as {@link CompositeValue}
+     * as it can be used with composite and non-composite values. The following ordering is assumed:
+     * {@code -Inf < NULL < non-null values}. {@code +Inf} should not be passed to this method.
+     * <p>
+     * With that definition in mind:
+     * <ol>
+     *     <li>There are no records {@code < NULL}</li>
+     *     <li>Trying to get records {@code <= NULL} is invalid</li>
+     *     <li>It is possible to get records {@code > NULL} (all non-null records) or {@code >= NULL} (all records).
+     *     <li>{@code < non-null value} or {@code <= non-null value} invocation will not return NULLs.</li>
+     * </ol>
+     * <p>
+     * Note that the ordering of NULLs may not always fit SQL query requirements defined by {@code NULLS FIRST}
+     * or {@code NULLS LAST}. In such case 2 scans have to be used.
      *
      * @param comparison comparison type
      * @param value value
@@ -210,8 +223,20 @@ public interface IndexStore {
                                                         boolean descending);
 
     /**
-     * Returns records in given range. Both bounds must be given, however they may be NULL.
-     * This method assumes that NULL is less than any NOT NULL value.
+     * Returns records in given range. Both bounds must be given, however they may be {@link AbstractIndex#NULL}.
+     * <p>
+     * This method uses the same convention for special values comparing as
+     * {@link #getSqlRecordIteratorBatch(Comparison, Comparable, boolean)}.
+     * Ranges like the following are allowed, some combinations may lead to empty results:
+     * <ol>
+     *     <li>{@code non-null..non-null value}</li>
+     *     <li>{@code NULL..NULL} - makes sense only when both ends are inclusive but it is better to use
+     *         {@link #getSqlRecordIteratorBatch(Comparable, boolean)} in this case</li>
+     *     <li>{@code NULL..non-null value} - makes sense only for ascending scan.
+     *         Inclusive NULL end will return also NULL values.</li>
+     *     <li>{@code non-null value..NULL} - makes sense only for descending scan.
+     *         Inclusive NULL end will return also NULL values.</li>
+     * </ol>
      *
      * @param from lower bound
      * @param fromInclusive lower bound inclusive flag

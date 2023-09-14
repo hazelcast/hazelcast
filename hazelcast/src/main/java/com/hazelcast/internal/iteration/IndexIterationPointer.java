@@ -47,8 +47,8 @@ import java.io.IOException;
  *     <li>null can be inclusive or not - both variants are treated in the same way</li>
  *     <li>NULL end does not make sense for composite index because composite index
  *     stores {@link com.hazelcast.query.impl.CompositeValue} which are never null, even if
- *     they consist entirely of {@link com.hazelcast.query.impl.AbstractIndex#NULL} values.
- *     </li>beware of distinction between Java null and NULL - it is not always obvious.
+ *     they consist entirely of {@link com.hazelcast.query.impl.AbstractIndex#NULL} values.</li>
+ *     </li>beware of distinction between Java null and NULL - it is not always obvious.</li>
  * </ol>
  */
 public class IndexIterationPointer implements IdentifiedDataSerializable {
