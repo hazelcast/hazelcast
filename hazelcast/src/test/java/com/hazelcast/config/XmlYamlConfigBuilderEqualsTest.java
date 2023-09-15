@@ -127,10 +127,8 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
     }
 
     public static String readResourceToString(String resource) throws IOException {
-        try (InputStream xmlInputStream = XmlYamlConfigBuilderEqualsTest.class.getClassLoader().getResourceAsStream(resource)) {
-            assert xmlInputStream != null;
-            return new String(xmlInputStream.readAllBytes());
-        }
+        InputStream xmlInputStream = XmlYamlConfigBuilderEqualsTest.class.getClassLoader().getResourceAsStream(resource);
+        return new String(IOUtil.toByteArray(xmlInputStream));
     }
 
     static File createPasswordFile(String passwordFileName, String passwordFileContent) throws IOException {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.deployment;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.util.Util;
@@ -26,7 +27,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -40,6 +40,7 @@ import java.util.zip.InflaterInputStream;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JobRepository.classKeyName;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.toClassResourceId;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 public class JetClassLoader extends JetDelegatingClassLoader {
 
@@ -73,17 +74,14 @@ public class JetClassLoader extends JetDelegatingClassLoader {
         if (isEmpty(name)) {
             return null;
         }
-        try (InputStream classBytesStream = resourceStream(toClassResourceId(name))) {
-            if (classBytesStream == null) {
-                throw new ClassNotFoundException(name + ". Add it using " + JobConfig.class.getSimpleName()
-                                                 + " or start all members with it on classpath");
-            }
-            byte[] classBytes = classBytesStream.readAllBytes();
-            definePackage(name);
-            return defineClass(name, classBytes, 0, classBytes.length);
-        } catch (IOException exception) {
-            throw new ClassNotFoundException("Error reading class data: " + name, exception);
+        InputStream classBytesStream = resourceStream(toClassResourceId(name));
+        if (classBytesStream == null) {
+            throw new ClassNotFoundException(name + ". Add it using " + JobConfig.class.getSimpleName()
+                    + " or start all members with it on classpath");
         }
+        byte[] classBytes = uncheckCall(() -> IOUtil.toByteArray(classBytesStream));
+        definePackage(name);
+        return defineClass(name, classBytes, 0, classBytes.length);
     }
 
     /**
