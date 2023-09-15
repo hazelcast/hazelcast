@@ -38,6 +38,8 @@ import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.api.Assertions;
+import org.assertj.core.api.ObjectAssert;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -121,6 +123,11 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
             actualRows.add(new Row(r));
         }
         return actualRows;
+    }
+
+    @Nonnull
+    protected ObjectAssert<DAG> assertThatDag() {
+        return Assertions.<DAG>assertThat(sqlJobInvocationObserver.dag);
     }
 
     protected static class SqlJobInvocationObserverImpl implements SqlJobInvocationObserver {
