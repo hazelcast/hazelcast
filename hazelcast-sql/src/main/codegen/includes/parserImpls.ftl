@@ -820,11 +820,16 @@ SqlNode SqlExplainStatement() :
 SqlNode SqlAnalyzeStatement() :
 {
     SqlNode stmt;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
 }
 {
     <ANALYZE>
+    [
+        <WITH> <OPTIONS>
+        sqlOptions = SqlOptions()
+    ]
     stmt = ExtendedSqlQueryOrDml() {
-        return new SqlAnalyzeStatement(getPos(), stmt);
+        return new SqlAnalyzeStatement(getPos(), stmt, sqlOptions);
     }
 }
 

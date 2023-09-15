@@ -341,9 +341,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         // TODO [sasha] : refactor this.
         SqlNode node = parseResult.getNode();
         boolean analyze = false;
+        Map<String, String> analyzeOptions;
         if (node instanceof SqlAnalyzeStatement) {
-            node = ((SqlAnalyzeStatement) node).getQuery();
-            analyze = true;
+            final SqlAnalyzeStatement analyzeStatement = (SqlAnalyzeStatement) node;
+            analyzeOptions = analyzeStatement.options();
+            node = analyzeStatement.getQuery();
         }
 
         PlanKey planKey = new PlanKey(task.getSearchPaths(), task.getSql());

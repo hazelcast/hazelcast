@@ -37,6 +37,8 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class UnparseTest extends SqlTestSupport {
+    private static final String LE = System.lineSeparator();
+
     private OptimizerContext context;
 
     @BeforeClass
@@ -77,6 +79,16 @@ public class UnparseTest extends SqlTestSupport {
         checkQuery("SELECT JSON_ARRAY()");
         checkQuery("SELECT JSON_ARRAY(1, 'b', 3 ABSENT ON NULL)");
         checkQuery("SELECT JSON_ARRAY(1, 'b', 3 NULL ON NULL)");
+    }
+
+    @Test
+    public void test_ANALYZE() {
+        checkQuery("ANALYZE SELECT JSON_ARRAY()");
+        checkQuery("ANALYZE" + LE
+                + "WITH OPTIONS (" + LE
+                + "  'testOpt1'='testOpt1Val'," + LE
+                + "  'testOpt2'='testOpt2Val'" + LE
+                + ") SELECT JSON_ARRAY()");
     }
 
     private void checkQuery(String query) {
