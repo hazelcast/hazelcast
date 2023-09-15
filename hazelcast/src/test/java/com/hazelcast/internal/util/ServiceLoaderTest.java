@@ -17,7 +17,6 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.portable.PortableHook;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -65,7 +64,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -661,22 +659,15 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
 
         private byte[] loadBytecodeFromParent(String className) {
             String resource = className.replace('.', '/').concat(".class");
-            InputStream is = null;
-            try {
-                is = parent.getResourceAsStream(resource);
+            try (InputStream is = parent.getResourceAsStream(resource)) {
                 if (is != null) {
-                    try {
-                        return toByteArray(is);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    return is.readAllBytes();
                 }
-            } finally {
-                IOUtil.closeResource(is);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
             return null;
         }
-
     }
 
     /**
