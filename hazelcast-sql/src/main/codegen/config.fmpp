@@ -52,6 +52,7 @@ data: {
       "com.hazelcast.sql.impl.type.QueryDataType"
       "org.apache.calcite.sql.SqlCreate"
       "org.apache.calcite.sql.SqlDrop"
+      "com.hazelcast.jet.sql.impl.parse.SqlAnalyzeStatement"
     ]
 
     # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is
@@ -73,6 +74,7 @@ data: {
       "VIEWS"
       "TYPES"
       "RESOURCES"
+      "ANALYZE"
     ]
 
     # List of keywords from "keywords" section that are not reserved.
@@ -429,6 +431,7 @@ data: {
       "VIEWS"
       "TYPES"
       "RESOURCES"
+      "ANALYZE"
     ]
 
     # List of non-reserved keywords to add;
@@ -454,6 +457,7 @@ data: {
       "SqlExplainStatement()"
       "SqlExtendedInsert()"
       "SqlShowStatement()"
+      "SqlAnalyzeStatement()"
     ]
 
     # List of methods for parsing custom literals.

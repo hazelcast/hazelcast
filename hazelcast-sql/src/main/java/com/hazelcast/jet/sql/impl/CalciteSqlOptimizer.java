@@ -73,6 +73,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
+import com.hazelcast.jet.sql.impl.parse.SqlAnalyzeStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateDataConnection;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
@@ -339,6 +340,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     ) {
         // TODO [sasha] : refactor this.
         SqlNode node = parseResult.getNode();
+        boolean analyze = false;
+        if (node instanceof SqlAnalyzeStatement) {
+            node = ((SqlAnalyzeStatement) node).getQuery();
+            analyze = true;
+        }
 
         PlanKey planKey = new PlanKey(task.getSearchPaths(), task.getSql());
         if (node instanceof SqlCreateMapping) {
@@ -376,7 +382,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (node instanceof SqlCreateType) {
             return toCreateTypePlan(planKey, (SqlCreateType) node);
         } else {
-            QueryConvertResult convertResult = context.convert(parseResult.getNode());
+            QueryConvertResult convertResult = context.convert(node);
             return toPlan(
                     planKey,
                     parseResult.getParameterMetadata(),
