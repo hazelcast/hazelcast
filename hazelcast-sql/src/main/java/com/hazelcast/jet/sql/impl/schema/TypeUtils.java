@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
-import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -43,6 +42,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.AVRO_TO_SQL;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataJavaResolver.loadClass;
 import static com.hazelcast.jet.sql.impl.connector.map.MetadataPortableResolver.PORTABLE_TO_SQL;
 import static com.hazelcast.jet.sql.impl.connector.map.MetadataPortableResolver.portableId;
 import static java.util.stream.Collectors.toList;
@@ -50,35 +50,23 @@ import static java.util.stream.Collectors.toList;
 public final class TypeUtils {
     private TypeUtils() { }
 
-    public static void enrichMappingFieldType(
-            boolean isKey,
-            MappingField field,
+    public static FieldEnricher<?, ?> getFieldEnricher(
+            String format,
             InternalSerializationService serializationService,
-            RelationsStorage relationsStorage,
-            Map<String, String> options
+            RelationsStorage relationsStorage
     ) {
-        if (!field.type().isCustomType()) {
-            return;
-        }
-        String format = options.get(isKey ? SqlConnector.OPTION_KEY_FORMAT : SqlConnector.OPTION_VALUE_FORMAT);
-        FieldEnricher<?, ?> enricher;
         switch (format) {
             case SqlConnector.PORTABLE_FORMAT:
-                enricher = new PortableEnricher(relationsStorage, serializationService);
-                break;
+                return new PortableEnricher(relationsStorage, serializationService);
             case SqlConnector.COMPACT_FORMAT:
-                enricher = new CompactEnricher(relationsStorage);
-                break;
+                return new CompactEnricher(relationsStorage);
             case SqlConnector.JAVA_FORMAT:
-                enricher = new JavaEnricher(relationsStorage);
-                break;
+                return new JavaEnricher(relationsStorage);
             case SqlConnector.AVRO_FORMAT:
-                enricher = new AvroEnricher(relationsStorage);
-                break;
+                return new AvroEnricher(relationsStorage);
             default:
                 throw QueryException.error("Unsupported type format: " + format);
         }
-        enricher.enrich(field, options, isKey);
     }
 
     private static class PortableEnricher extends FieldEnricher<PortableId, ClassDefinition> {
@@ -190,21 +178,11 @@ public final class TypeUtils {
 
         @Override
         protected Class<?> getSchemaId(Map<String, String> options, Boolean isKey) {
-            String className = options.get(isKey == null ? SqlConnector.OPTION_TYPE_JAVA_CLASS :
-                    isKey ? SqlConnector.OPTION_KEY_CLASS : SqlConnector.OPTION_VALUE_CLASS);
-            return className != null ? loadClass(className) : null;
+            return loadClass(options, isKey);
         }
 
         private static boolean isUserClass(Class<?> clazz) {
             return !clazz.isPrimitive() && !clazz.getPackage().getName().startsWith("java.");
-        }
-
-        private static Class<?> loadClass(String className) {
-            try {
-                return ReflectionUtils.loadClass(className);
-            } catch (Exception e) {
-                throw QueryException.error("Unable to load class '" + className + "'", e);
-            }
         }
     }
 
@@ -259,7 +237,7 @@ public final class TypeUtils {
      * @param <ID> type of schema identifier
      * @param <S> type of schema
      */
-    private abstract static class FieldEnricher<ID, S> {
+    public abstract static class FieldEnricher<ID, S> {
         private final int typeKind;
         private final RelationsStorage relationsStorage;
 
@@ -268,7 +246,7 @@ public final class TypeUtils {
             this.relationsStorage = relationsStorage;
         }
 
-        void enrich(MappingField field, Map<String, String> mappingOptions, boolean isKey) {
+        public void enrich(MappingField field, Map<String, String> mappingOptions, boolean isKey) {
             String typeName = field.type().getObjectTypeName();
             field.setType(createFieldType(
                     field.name().equals(isKey ? QueryPath.KEY : QueryPath.VALUE)
@@ -323,6 +301,7 @@ public final class TypeUtils {
         protected abstract S getSchema(ID schemaId);
         protected abstract List<TypeField> resolveFields(S schema);
         protected abstract ID getFieldSchemaId(S schema, String fieldName, String fieldTypeName);
+        /** @param isKey Null for types, non-null for mappings. */
         protected abstract ID getSchemaId(Map<String, String> options, Boolean isKey);
     }
 }

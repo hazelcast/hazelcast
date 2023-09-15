@@ -29,7 +29,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.avro.generic.GenericRecord;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * An expression backing the DOT operator for extracting field from a struct type.
@@ -42,8 +41,7 @@ public class FieldAccessExpression<T> implements Expression<T> {
     private static final int MAX_GETTER_PER_CLASS_COUNT = 1;
 
     // single instance for all calls to eval, used only during execution on particular node
-    // atomic reference due to serialization constraints
-    private final AtomicReference<GetterCache> getterCache = new AtomicReference<>();
+    private transient GetterCache getterCache;
 
     private QueryDataType type;
     private String name;
@@ -87,18 +85,20 @@ public class FieldAccessExpression<T> implements Expression<T> {
             throw QueryException.error("Field Access expression can not be applied to primitive types");
         }
 
-        getterCache.compareAndSet(null, new EvictableGetterCache(
-                MAX_CLASS_COUNT,
-                MAX_GETTER_PER_CLASS_COUNT,
-                GetterCache.EVICTABLE_CACHE_EVICTION_PERCENTAGE,
-                false
-        ));
+        if (getterCache == null) {
+            getterCache = new EvictableGetterCache(
+                    MAX_CLASS_COUNT,
+                    MAX_GETTER_PER_CLASS_COUNT,
+                    GetterCache.EVICTABLE_CACHE_EVICTION_PERCENTAGE,
+                    false
+            );
+        }
 
         try {
             Object value = result instanceof GenericRecord
                     ? AvroQueryTarget.extractValue((GenericRecord) result, name)
                     : Extractors.newBuilder(context.getSerializationService())
-                            .setGetterCacheSupplier(getterCache::get)
+                            .setGetterCacheSupplier(() -> getterCache)
                             .build().extract(result, name, useLazyDeserialization);
             return (T) type.convert(value);
         } catch (Exception e) {

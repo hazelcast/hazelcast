@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.DefaultedMap;
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.PortableUpsertTargetDescriptor;
@@ -44,8 +43,15 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_VERSION;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FACTORY_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_VERSION;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
@@ -257,13 +263,19 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
     }
 
     public static PortableId portableId(Map<String, String> options, boolean isKey) {
-        int factoryId = Integer.parseInt(options.get(isKey
-                ? SqlConnector.OPTION_KEY_FACTORY_ID : SqlConnector.OPTION_VALUE_FACTORY_ID));
-        int classId = Integer.parseInt(options.get(isKey
-                ? SqlConnector.OPTION_KEY_CLASS_ID : SqlConnector.OPTION_VALUE_CLASS_ID));
-        int version = Integer.parseInt(options.getOrDefault(isKey
-                ? SqlConnector.OPTION_KEY_CLASS_VERSION : SqlConnector.OPTION_VALUE_CLASS_VERSION, "0"));
+        String factoryIdProperty = isKey ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID;
+        String classIdProperty = isKey ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID;
+        String versionProperty = isKey ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION;
 
+        Integer factoryId = Optional.ofNullable(options.get(factoryIdProperty)).map(Integer::parseInt).orElse(null);
+        Integer classId = Optional.ofNullable(options.get(classIdProperty)).map(Integer::parseInt).orElse(null);
+        int version = Optional.ofNullable(options.get(versionProperty)).map(Integer::parseInt).orElse(0);
+
+        if (factoryId == null || classId == null) {
+            throw QueryException.error(String.format("%s Portable ID (%s, %s and optional %s)"
+                            + " is required to create Portable-based mapping", isKey ? "Key" : "Value",
+                    factoryIdProperty, classIdProperty, versionProperty));
+        }
         return new PortableId(factoryId, classId, version);
     }
 }

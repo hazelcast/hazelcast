@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
+import com.hazelcast.jet.sql.impl.schema.TypeUtils.FieldEnricher;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlServiceImpl;
@@ -38,13 +39,13 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
-import static com.hazelcast.jet.sql.impl.schema.TypeUtils.enrichMappingFieldType;
+import static com.hazelcast.jet.sql.impl.schema.TypeUtils.getFieldEnricher;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE_PREFIX;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Stream.concat;
 
 /**
  * A utility to resolve fields for key-value connectors that support
@@ -88,7 +89,8 @@ public class KvMetadataResolvers {
             Map<String, String> options,
             NodeEngine nodeEngine
     ) {
-        final InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
+        final InternalSerializationService serializationService = (InternalSerializationService) nodeEngine
+                .getSerializationService();
         final RelationsStorage relationsStorage = ((SqlServiceImpl) nodeEngine.getSqlService()).getOptimizer()
                 .relationsStorage();
         // normalize and validate the names and external names
@@ -115,38 +117,45 @@ public class KvMetadataResolvers {
             }
         }
 
-        final String keyFormat = getFormat(options, true);
-        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(keyFormat)) {
-            extractFields(userFields, true).values().forEach(mappingField ->
-                    enrichMappingFieldType(true, mappingField, ss, relationsStorage, options));
-        }
+        Stream<MappingField> keyFields = resolveAndValidateFields(true, userFields, options,
+                serializationService, relationsStorage);
+        Stream<MappingField> valueFields = resolveAndValidateFields(false, userFields, options,
+                serializationService, relationsStorage);
 
-        final String valueFormat = getFormat(options, false);
-        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(valueFormat)) {
-            extractFields(userFields, false).values().forEach(mappingField ->
-                    enrichMappingFieldType(false, mappingField, ss, relationsStorage, options));
-        }
-
-        Stream<MappingField> keyFields = findMetadataResolver(options, true)
-                .resolveAndValidateFields(true, userFields, options, ss)
-                .filter(field -> !field.name().equals(KEY) || field.externalName().equals(KEY));
-        Stream<MappingField> valueFields = findMetadataResolver(options, false)
-                .resolveAndValidateFields(false, userFields, options, ss)
-                .filter(field -> !field.name().equals(VALUE) || field.externalName().equals(VALUE));
-
-        Map<String, MappingField> fields = concat(keyFields, valueFields)
+        Map<String, MappingField> fields = Stream.concat(keyFields, valueFields)
                 .collect(LinkedHashMap::new, (map, field) -> map.putIfAbsent(field.name(), field), Map::putAll);
 
         if (fields.isEmpty()) {
             throw QueryException.error("The resolved field list is empty");
         }
-
         return new ArrayList<>(fields.values());
     }
 
+    private Stream<MappingField> resolveAndValidateFields(
+            boolean isKey,
+            List<MappingField> userFields,
+            Map<String, String> options,
+            InternalSerializationService serializationService,
+            RelationsStorage relationsStorage
+    ) {
+        String format = getFormat(options, isKey);
+        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(format)) {
+            List<MappingField> fieldsWithCustomTypes = extractFields(userFields, isKey).values().stream()
+                    .filter(mappingField -> mappingField.type().isCustomType()).collect(toList());
+            if (!fieldsWithCustomTypes.isEmpty()) {
+                FieldEnricher<?, ?> enricher = getFieldEnricher(format, serializationService, relationsStorage);
+                fieldsWithCustomTypes.forEach(mappingField -> enricher.enrich(mappingField, options, isKey));
+            }
+        }
+
+        String name = isKey ? KEY : VALUE;
+        return findMetadataResolver(options, isKey)
+                .resolveAndValidateFields(isKey, userFields, options, serializationService)
+                .filter(field -> !field.name().equals(name) || field.externalName().equals(name));
+    }
+
     /**
-     * A utility to implement {@link SqlConnector#createTable} in the
-     * connector.
+     * A utility to implement {@link SqlConnector#createTable} in the connector.
      */
     public KvMetadata resolveMetadata(
             boolean isKey,
@@ -155,7 +164,6 @@ public class KvMetadataResolvers {
             InternalSerializationService serializationService
     ) {
         KvMetadataResolver resolver = findMetadataResolver(options, isKey);
-        // TODO: enhance types
         return requireNonNull(resolver.resolveMetadata(isKey, resolvedFields, options, serializationService));
     }
 
@@ -172,7 +180,7 @@ public class KvMetadataResolvers {
         return resolver;
     }
 
-    private String getFormat(Map<String, String> options, boolean isKey) {
+    private static String getFormat(Map<String, String> options, boolean isKey) {
         String option = isKey ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT;
         return options.get(option);
     }

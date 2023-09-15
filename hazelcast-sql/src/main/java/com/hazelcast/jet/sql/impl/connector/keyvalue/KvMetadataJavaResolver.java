@@ -42,6 +42,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_JAVA_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
@@ -72,7 +73,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             Map<String, String> options,
             InternalSerializationService serializationService
     ) {
-        Class<?> clazz = loadClass(isKey, options);
+        Class<?> clazz = loadClass(options, isKey);
         return resolveFields(isKey, userFields, clazz);
     }
 
@@ -190,7 +191,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             Map<String, String> options,
             InternalSerializationService serializationService
     ) {
-        Class<?> clazz = loadClass(isKey, options);
+        Class<?> clazz = loadClass(options, isKey);
         return resolveMetadata(isKey, resolvedFields, clazz);
     }
 
@@ -278,7 +279,12 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         );
     }
 
-    private Class<?> loadClass(boolean isKey, Map<String, String> options) {
+    public static Class<?> loadClass(Map<String, String> options, Boolean isKey) {
+        if (isKey == null) {
+            String className = options.get(OPTION_TYPE_JAVA_CLASS);
+            return className != null ? loadClass(className) : null;
+        }
+
         String formatProperty = options.get(isKey ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT);
         String classNameProperty = isKey ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS;
 
@@ -287,13 +293,16 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                 : JavaClassNameResolver.resolveClassName(formatProperty);
 
         if (className == null) {
-            throw QueryException.error("Unable to resolve table metadata. Missing '" + classNameProperty + "' option");
+            throw QueryException.error(classNameProperty + " is required to create Java-based mapping");
         }
+        return loadClass(className);
+    }
 
+    private static Class<?> loadClass(String className) {
         try {
             return ReflectionUtils.loadClass(className);
         } catch (Exception e) {
-            throw QueryException.error("Unable to load class: '" + className + "'", e);
+            throw QueryException.error("Unable to load class '" + className + "'", e);
         }
     }
 }
