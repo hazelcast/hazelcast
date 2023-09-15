@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal;
 
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroup;
@@ -128,7 +129,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
         RaftService raftService = getService(RaftService.SERVICE_NAME);
         cpSubsystemManagementService =
-                new CPSubsystemManagementServiceImpl(raftService, instance.getCluster().getClusterVersion());
+                new CPSubsystemManagementServiceImpl(raftService, instance.getCluster());
         return cpSubsystemManagementService;
     }
 
@@ -181,12 +182,12 @@ public class CPSubsystemImpl implements CPSubsystem {
 
     private static class CPSubsystemManagementServiceImpl implements CPSubsystemManagementService {
         private final RaftService raftService;
-        // TODO RU_COMPAT_5_3, clusterVersion, added for Version 5.3 compatibility. Should be removed at Version 5.5
-        private final Version clusterVersion;
+        // TODO RU_COMPAT_5_3, cluster, added for Version 5.3 compatibility. Should be removed at Version 5.5
+        private final Cluster cluster;
 
-        CPSubsystemManagementServiceImpl(RaftService raftService, Version clusterVersion) {
+        CPSubsystemManagementServiceImpl(RaftService raftService, Cluster cluster) {
             this.raftService = raftService;
-            this.clusterVersion = clusterVersion;
+            this.cluster = cluster;
         }
 
         @Override
@@ -241,7 +242,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
         @Override
         public CompletionStage<Void> wipeDestroyedObjects() {
-            if (clusterVersion.isUnknownOrLessThan(Versions.V5_4)) {
+            if (cluster.getClusterVersion().isUnknownOrLessThan(Versions.V5_4)) {
                 String message = "Wiping of previously destroyed CP objects is supported in cluster versions 5.4 and above";
                 throw new UnsupportedOperationException(message);
             }
