@@ -81,6 +81,7 @@ import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -233,12 +234,20 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateIndexPlan plan) {
+        MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
+        if (!mapContainer.isGlobalIndexEnabled()) {
+            // for local indexes checking existence is more complicated
+            // and SQL cannot yet use local indexes
+            throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot create index \"" + plan.indexName()
+                    + "\" on the IMap \"" + plan.mapName() + "\" because it would not be global "
+                    + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
+                    + "\" is set to \"true\")");
+        }
+
         if (!plan.ifNotExists()) {
             // If `IF NOT EXISTS` isn't specified, we do a simple check for the existence of the index. This is not
             // OK if two clients concurrently try to create the index (they could both succeed), but covers the
             // common case. There's no atomic operation to create an index in IMDG, so it's not easy to implement.
-            MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
-
             if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {
                 throw QueryException.error("Can't create index: index '" + plan.indexName() + "' already exists");
             }

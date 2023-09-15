@@ -31,7 +31,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 import com.hazelcast.query.impl.IndexKeyEntries;
-import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.OrderedIndexStore;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -126,15 +125,14 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     public static InternalIndex getInternalIndex(@Nonnull MapContainer mapContainer,
                                                  @Nonnull String mapName,
                                                  @Nonnull String indexName) {
-        Indexes indexes = mapContainer.getIndexes();
-        if (indexes == null) {
+        if (!mapContainer.isGlobalIndexEnabled()) {
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + indexName
                     + "\" of the IMap \"" + mapName + "\" because it is not global "
                     + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
                     + "\" is set to \"true\")");
         }
 
-        InternalIndex index = indexes.getIndex(indexName);
+        InternalIndex index = mapContainer.getIndexes().getIndex(indexName);
         if (index == null) {
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Index \"" + indexName + "\" does not exist");
         }
