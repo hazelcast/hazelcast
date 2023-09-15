@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.util;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -98,17 +97,6 @@ public final class IOUtil {
         byte[] buf = new byte[BUFFER_SIZE];
         for (int readCount; (readCount = in.read(buf)) > 0; ) {
             out.write(buf, 0, readCount);
-        }
-    }
-
-    @Nonnull
-    public static byte[] readFully(@Nonnull InputStream in) throws IOException {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] b = new byte[BUFFER_SIZE];
-            for (int len; (len = in.read(b)) != -1; ) {
-                out.write(b, 0, len);
-            }
-            return out.toByteArray();
         }
     }
 
