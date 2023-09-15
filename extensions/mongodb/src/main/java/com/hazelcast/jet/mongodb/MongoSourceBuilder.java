@@ -205,7 +205,7 @@ public final class MongoSourceBuilder {
         protected ResourceChecks existenceChecks = ResourceChecks.ONCE_PER_JOB;
 
         protected String name;
-        protected boolean forceReadParallelismOne;
+        protected boolean forceReadTotalParallelismOne;
 
         @Nonnull
         public Base<T> database(String database) {
@@ -256,11 +256,12 @@ public final class MongoSourceBuilder {
         }
 
         /**
-         * If non {@link ResourceChecks#NEVER}, the lack of database or collection will cause an error.
-         * Otherwise, database and collection will be automatically created.
+         * If {@link ResourceChecks#NEVER}, the database and collection will be automatically created on the first usage.
+         * Otherwise, querying for a database or collection that don't exist will cause an error.
          * Default value is {@link ResourceChecks#ONCE_PER_JOB}.
          *
-         * @param checkResourceExistence if exception should be thrown when database or collection does not exist.
+         * @param checkResourceExistence mode of resource existence checks; whether exception should be thrown when
+         *                               database or collection does not exist and when the check will be performed.
          */
         @Nonnull
         public Batch<T> checkResourceExistence(ResourceChecks checkResourceExistence) {
@@ -269,13 +270,13 @@ public final class MongoSourceBuilder {
         }
 
         /**
-         * If set to true, reading will be done in only one thread.
+         * If set to true, reading will be done in only one thread cluster-wide.
          *
-         * @param forceReadParallelismOne if true, reading will be done in only one thread.
+         * @param forceReadTotalParallelismOne if true, reading will be done in only one thread.
          */
         @Nonnull
-        public Batch<T> forceReadParallelismOne(boolean forceReadParallelismOne) {
-            super.forceReadParallelismOne = forceReadParallelismOne;
+        public Batch<T> forceReadTotalParallelismOne(boolean forceReadTotalParallelismOne) {
+            super.forceReadTotalParallelismOne = forceReadTotalParallelismOne;
             return this;
         }
 
@@ -430,14 +431,14 @@ public final class MongoSourceBuilder {
             ConnectorPermission permission = params.buildPermissions();
             boolean checkResourceExistence = existenceChecks == ResourceChecks.ONCE_PER_JOB;
             return Sources.batchFromProcessor(name, new DbCheckingPMetaSupplierBuilder()
-                    .setRequiredPermission(permission)
-                    .setCheckResourceExistence(checkResourceExistence)
-                    .setForceTotalParallelismOne(false)
-                    .setDatabaseName(localParams.getDatabaseName())
-                    .setCollectionName(localParams.getCollectionName())
-                    .setClientSupplier(localParams.getClientSupplier())
-                    .setDataConnectionRef(localParams.getDataConnectionRef())
-                    .setProcessorSupplier(ProcessorSupplier.of(() -> new ReadMongoP<>(localParams)))
+                    .withRequiredPermission(permission)
+                    .withCheckResourceExistence(checkResourceExistence)
+                    .withForceTotalParallelismOne(false)
+                    .withDatabaseName(localParams.getDatabaseName())
+                    .withCollectionName(localParams.getCollectionName())
+                    .withClientSupplier(localParams.getClientSupplier())
+                    .withDataConnectionRef(localParams.getDataConnectionRef())
+                    .withProcessorSupplier(ProcessorSupplier.of(() -> new ReadMongoP<>(localParams)))
                     .build());
         }
     }
@@ -477,24 +478,11 @@ public final class MongoSourceBuilder {
         /**
          * If set to true, reading will be done in only one thread.
          *
-         * @param forceReadParallelismOne if true, reading will be done in only one thread.
+         * @param forceReadTotalParallelismOne if true, reading will be done in only one thread.
          */
         @Nonnull
-        public Stream<T> forceReadParallelismOne(boolean forceReadParallelismOne) {
-            super.forceReadParallelismOne = forceReadParallelismOne;
-            return this;
-        }
-
-        /**
-         * If non {@link ResourceChecks#NEVER}, the lack of database or collection will cause an error.
-         * Otherwise, database and collection will be automatically created.
-         * Default value is {@link ResourceChecks#ONCE_PER_JOB}.
-         *
-         * @param checkResourceExistence if exception should be thrown when database or collection does not exist.
-         */
-        @Nonnull
-        public Stream<T> checkResourceExistence(ResourceChecks checkResourceExistence) {
-            existenceChecks = checkResourceExistence;
+        public Stream<T> forceReadTotalParallelismOne(boolean forceReadTotalParallelismOne) {
+            super.forceReadTotalParallelismOne = forceReadTotalParallelismOne;
             return this;
         }
 
@@ -633,6 +621,20 @@ public final class MongoSourceBuilder {
         }
 
         /**
+         * If {@link ResourceChecks#NEVER}, the database and collection will be automatically created on the first usage.
+         * Otherwise, querying for a database or collection that don't exist will cause an error.
+         * Default value is {@link ResourceChecks#ONCE_PER_JOB}.
+         *
+         * @param checkResourceExistence mode of resource existence checks; whether exception should be thrown when
+         *                               database or collection does not exist and when the check will be performed.
+         */
+        @Nonnull
+        public Stream<T> checkResourceExistence(ResourceChecks checkResourceExistence) {
+            existenceChecks = checkResourceExistence;
+            return this;
+        }
+
+        /**
          * Creates and returns the MongoDB {@link StreamSource} which watches
          * the given collection.
          */
@@ -644,21 +646,21 @@ public final class MongoSourceBuilder {
             final ReadMongoParams<T> localParams = params;
             boolean checkExistenceOnEachConnect = existenceChecks == ResourceChecks.ON_EACH_CONNECT;
             boolean checkExistenceOncePerJob = existenceChecks == ResourceChecks.ONCE_PER_JOB;
-            boolean forceReadParallelismOneLocal = forceReadParallelismOne;
+            boolean forceReadTotalParallelismOneLocal = forceReadTotalParallelismOne;
 
             localParams.setCheckExistenceOnEachConnect(checkExistenceOnEachConnect);
 
             ConnectorPermission permission = params.buildPermissions();
             return Sources.streamFromProcessorWithWatermarks(name, true,
                     eventTimePolicy -> new DbCheckingPMetaSupplierBuilder()
-                            .setRequiredPermission(permission)
-                            .setCheckResourceExistence(checkExistenceOncePerJob)
-                            .setForceTotalParallelismOne(forceReadParallelismOneLocal)
-                            .setDatabaseName(localParams.getDatabaseName())
-                            .setCollectionName(localParams.getCollectionName())
-                            .setClientSupplier(localParams.getClientSupplier())
-                            .setDataConnectionRef(localParams.getDataConnectionRef())
-                            .setProcessorSupplier(ProcessorSupplier.of(
+                            .withRequiredPermission(permission)
+                            .withCheckResourceExistence(checkExistenceOncePerJob)
+                            .withForceTotalParallelismOne(forceReadTotalParallelismOneLocal)
+                            .withDatabaseName(localParams.getDatabaseName())
+                            .withCollectionName(localParams.getCollectionName())
+                            .withClientSupplier(localParams.getClientSupplier())
+                            .withDataConnectionRef(localParams.getDataConnectionRef())
+                            .withProcessorSupplier(ProcessorSupplier.of(
                                     () -> new ReadMongoP<>(localParams.setEventTimePolicy(eventTimePolicy))))
                             .build()
             );

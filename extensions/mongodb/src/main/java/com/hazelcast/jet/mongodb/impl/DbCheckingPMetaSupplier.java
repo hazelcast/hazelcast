@@ -48,7 +48,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
 
     private final Permission requiredPermission;
     private final boolean shouldCheckOnEachCall;
-    private final ProcessorMetaSupplier standardForceOnePMS;
+    private ProcessorMetaSupplier standardForceOnePMS;
     private final boolean forceTotalParallelismOne;
     private final String databaseName;
     private final String collectionName;
@@ -79,7 +79,6 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
         this.clientSupplier = clientSupplier;
         this.dataConnectionRef = dataConnectionRef;
         this.preferredLocalParallelism = forceTotalParallelismOne ? 1 : preferredLocalParallelism;
-        this.standardForceOnePMS = ProcessorMetaSupplier.forceTotalParallelismOne(processorSupplier);
     }
 
     @Override
@@ -101,6 +100,8 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
     @Override
     public void init(@Nonnull Context context) throws Exception {
         if (forceTotalParallelismOne) {
+            Address address = context.hazelcastInstance().getCluster().getLocalMember().getAddress();
+            this.standardForceOnePMS = ProcessorMetaSupplier.forceTotalParallelismOne(processorSupplier, address);
             standardForceOnePMS.init(context);
         }
 

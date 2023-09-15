@@ -176,7 +176,7 @@ public class MongoSqlConnectorTest extends MongoSqlTest {
         execute("CREATE MAPPING " + collectionName + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
                 + "DATA CONNECTION testMongo "
                 + "OPTIONS ("
-                + "    'forceReadParallelismOne' = 'true' "
+                + "    'forceReadTotalParallelismOne' = 'true' "
                 + ")"
         );
 

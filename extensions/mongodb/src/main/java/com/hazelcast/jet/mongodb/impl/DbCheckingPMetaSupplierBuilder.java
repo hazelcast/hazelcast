@@ -34,42 +34,42 @@ public class DbCheckingPMetaSupplierBuilder {
     private ProcessorSupplier processorSupplier;
     private int preferredLocalParallelism = Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 
-    public DbCheckingPMetaSupplierBuilder setRequiredPermission(Permission requiredPermission) {
+    public DbCheckingPMetaSupplierBuilder withRequiredPermission(Permission requiredPermission) {
         this.requiredPermission = requiredPermission;
         return this;
     }
 
-    public DbCheckingPMetaSupplierBuilder setCheckResourceExistence(boolean checkResourceExistence) {
+    public DbCheckingPMetaSupplierBuilder withCheckResourceExistence(boolean checkResourceExistence) {
         this.checkResourceExistence = checkResourceExistence;
         return this;
     }
 
-    public DbCheckingPMetaSupplierBuilder setForceTotalParallelismOne(boolean forceTotalParallelismOne) {
+    public DbCheckingPMetaSupplierBuilder withForceTotalParallelismOne(boolean forceTotalParallelismOne) {
         this.forceTotalParallelismOne = forceTotalParallelismOne;
         return this;
     }
 
-    public DbCheckingPMetaSupplierBuilder setDatabaseName(String databaseName) {
+    public DbCheckingPMetaSupplierBuilder withDatabaseName(String databaseName) {
         this.databaseName = databaseName;
         return this;
     }
 
-    public DbCheckingPMetaSupplierBuilder setCollectionName(String collectionName) {
+    public DbCheckingPMetaSupplierBuilder withCollectionName(String collectionName) {
         this.collectionName = collectionName;
         return this;
     }
 
-    public DbCheckingPMetaSupplierBuilder setClientSupplier(SupplierEx<? extends MongoClient> clientSupplier) {
+    public DbCheckingPMetaSupplierBuilder withClientSupplier(SupplierEx<? extends MongoClient> clientSupplier) {
         this.clientSupplier = clientSupplier;
         return this;
     }
 
-    public DbCheckingPMetaSupplierBuilder setDataConnectionRef(DataConnectionRef dataConnectionRef) {
+    public DbCheckingPMetaSupplierBuilder withDataConnectionRef(DataConnectionRef dataConnectionRef) {
         this.dataConnectionRef = dataConnectionRef;
         return this;
     }
 
-    public DbCheckingPMetaSupplierBuilder setProcessorSupplier(ProcessorSupplier processorSupplier) {
+    public DbCheckingPMetaSupplierBuilder withProcessorSupplier(ProcessorSupplier processorSupplier) {
         this.processorSupplier = processorSupplier;
         return this;
     }
@@ -78,7 +78,7 @@ public class DbCheckingPMetaSupplierBuilder {
      * Sets preferred local parallelism. If {@link #forceTotalParallelismOne} is selected, this
      * method will have no effect.
      */
-    public DbCheckingPMetaSupplierBuilder setPreferredLocalParallelism(int preferredLocalParallelism) {
+    public DbCheckingPMetaSupplierBuilder withPreferredLocalParallelism(int preferredLocalParallelism) {
         this.preferredLocalParallelism = preferredLocalParallelism;
         return this;
     }

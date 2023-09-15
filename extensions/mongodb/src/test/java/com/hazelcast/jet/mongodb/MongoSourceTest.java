@@ -299,7 +299,7 @@ public class MongoSourceTest extends AbstractMongoTest {
 
         Stream<?> builder = MongoSourceBuilder.stream(() -> MongoClients.create(connectionString));
         builder = streamFilters(builder)
-                .checkResourceExistence(ResourceChecks.ONLY_INITIAL);
+                .checkResourceExistence(ResourceChecks.ON_EACH_CONNECT);
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(builder.build())

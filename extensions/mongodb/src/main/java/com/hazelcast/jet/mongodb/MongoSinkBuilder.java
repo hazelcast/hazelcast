@@ -259,15 +259,15 @@ public final class MongoSinkBuilder<T> {
 
         ConnectorPermission permission = params.buildPermission();
         return Sinks.fromProcessor(name, new DbCheckingPMetaSupplierBuilder()
-                .setRequiredPermission(permission)
-                .setCheckResourceExistence(localParams.isCheckExistenceOnEachConnect())
-                .setForceTotalParallelismOne(false)
-                .setDatabaseName(localParams.getDatabaseName())
-                .setCollectionName(localParams.getCollectionName())
-                .setClientSupplier(localParams.getClientSupplier())
-                .setDataConnectionRef(localParams.getDataConnectionRef())
-                .setProcessorSupplier(ProcessorSupplier.of(() -> new WriteMongoP<>(localParams)))
-                .setPreferredLocalParallelism(preferredLocalParallelism)
+                .withRequiredPermission(permission)
+                .withCheckResourceExistence(localParams.isCheckExistenceOnEachConnect())
+                .withForceTotalParallelismOne(false)
+                .withDatabaseName(localParams.getDatabaseName())
+                .withCollectionName(localParams.getCollectionName())
+                .withClientSupplier(localParams.getClientSupplier())
+                .withDataConnectionRef(localParams.getDataConnectionRef())
+                .withProcessorSupplier(ProcessorSupplier.of(() -> new WriteMongoP<>(localParams)))
+                .withPreferredLocalParallelism(preferredLocalParallelism)
                 .build());
     }
 

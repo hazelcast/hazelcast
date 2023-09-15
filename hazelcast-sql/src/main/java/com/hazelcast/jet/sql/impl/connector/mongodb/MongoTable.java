@@ -54,7 +54,7 @@ class MongoTable extends JetTable {
     private final String[] externalNames;
     private final QueryDataType[] fieldTypes;
     private final BsonType[] fieldExternalTypes;
-    private final boolean forceReadParallelismOne;
+    private final boolean forceReadTotalParallelismOne;
     private final ResourceChecks existenceChecks;
 
     MongoTable(
@@ -87,7 +87,7 @@ class MongoTable extends JetTable {
                                              .map(field -> ((MongoTableField) field).externalType)
                                              .toArray(BsonType[]::new);
 
-       this.forceReadParallelismOne = parseBoolean(options.getOrDefault(FORCE_READ_PARALLELISM_ONE, "false"));
+       this.forceReadTotalParallelismOne = parseBoolean(options.getOrDefault(FORCE_READ_PARALLELISM_ONE, "false"));
     }
 
     private static boolean isStreaming(String objectType) {
@@ -159,8 +159,8 @@ class MongoTable extends JetTable {
         return list.get(0);
     }
 
-    public boolean isForceReadParallelismOne() {
-        return forceReadParallelismOne;
+    public boolean isforceReadTotalParallelismOne() {
+        return forceReadTotalParallelismOne;
     }
 
     @Override
@@ -171,7 +171,7 @@ class MongoTable extends JetTable {
                 ", connectionString='" + connectionString + '\'' +
                 ", options=" + options +
                 ", streaming=" + streaming +
-                ", forceMongoParallelismOne=" + forceReadParallelismOne +
+                ", forceMongoParallelismOne=" + forceReadTotalParallelismOne +
                 '}';
     }
 

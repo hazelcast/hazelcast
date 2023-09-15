@@ -186,21 +186,21 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         List<ProjectionData> projections = translateProjections(projection, context, visitor);
 
         DbCheckingPMetaSupplier supplier;
-        final boolean forceReadParallelismOne = table.isForceReadParallelismOne();
+        final boolean forceReadTotalParallelismOne = table.isforceReadTotalParallelismOne();
         if (table.isStreaming()) {
             var startAt = Options.startAtTimestamp(table.getOptions());
             var ps = new SelectProcessorSupplier(table, filter, projections, startAt, eventTimePolicyProvider);
-            supplier = wrap(context, ps, forceReadParallelismOne);
+            supplier = wrap(context, ps, forceReadTotalParallelismOne);
         } else {
             var ps = new SelectProcessorSupplier(table, filter, projections);
-            supplier = wrap(context, ps, forceReadParallelismOne);
+            supplier = wrap(context, ps, forceReadTotalParallelismOne);
         }
 
         DAG dag = context.getDag();
         Vertex sourceVertex = dag.newUniqueVertex(
                 "Select (" + table.getSqlName() + ")", supplier
         );
-        if (forceReadParallelismOne) {
+        if (forceReadTotalParallelismOne) {
             sourceVertex.localParallelism(1);
         }
 
@@ -222,15 +222,15 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                 ? null
                 : () -> MongoClients.create(connectionString);
         return new DbCheckingPMetaSupplierBuilder()
-                .setRequiredPermission(null)
-                .setCheckResourceExistence(table.checkExistenceOnEachCall())
-                .setForceTotalParallelismOne(table.isForceReadParallelismOne())
-                .setDatabaseName(table.databaseName)
-                .setCollectionName(table.collectionName)
-                .setClientSupplier(clientSupplier)
-                .setDataConnectionRef(dataConnectionRef(table.dataConnectionName))
-                .setProcessorSupplier(supplier)
-                .setForceTotalParallelismOne(forceParallelismOne)
+                .withRequiredPermission(null)
+                .withCheckResourceExistence(table.checkExistenceOnEachCall())
+                .withForceTotalParallelismOne(table.isforceReadTotalParallelismOne())
+                .withDatabaseName(table.databaseName)
+                .withCollectionName(table.collectionName)
+                .withClientSupplier(clientSupplier)
+                .withDataConnectionRef(dataConnectionRef(table.dataConnectionName))
+                .withProcessorSupplier(supplier)
+                .withForceTotalParallelismOne(forceParallelismOne)
                 .build();
     }
 
