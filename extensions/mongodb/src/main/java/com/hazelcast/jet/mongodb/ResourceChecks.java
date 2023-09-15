@@ -56,8 +56,8 @@ public enum ResourceChecks implements Serializable {
             case "on-each-connect": return ON_EACH_CONNECT;
             case "only-initial": return ONLY_INITIAL;
             case "never": return NEVER;
+            default: throw new IllegalArgumentException("Unknown value for ResourceExistenceChecks:" + codeLowerCased);
         }
-        throw new IllegalArgumentException("Unknown value for ResourceExistenceChecks:" + codeLowerCased);
     }
 
     /**

@@ -254,6 +254,7 @@ public final class MongoSinkBuilder<T> {
      * Otherwise, querying for a database or collection that don't exist will cause an error.
      * Default value is {@link ResourceChecks#ONCE_PER_JOB}.
      *
+     * @since 5.4
      * @param checkResourceExistence mode of resource existence checks; whether exception should be thrown when
      *                               database or collection does not exist and when the check will be performed.
      */
