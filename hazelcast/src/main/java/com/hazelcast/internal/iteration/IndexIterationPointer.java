@@ -23,7 +23,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
+
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 public class IndexIterationPointer implements IdentifiedDataSerializable {
 
@@ -42,10 +45,13 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
 
     private IndexIterationPointer(
             byte flags,
-            Comparable<?> from,
-            Comparable<?> to,
-            Data lastEntryKeyData
+            @Nullable Comparable<?> from,
+            @Nullable Comparable<?> to,
+            @Nullable Data lastEntryKeyData
     ) {
+        assert from == null || to == null || ((Comparable) from).compareTo(to) <= 0 : "from must be <= than to";
+        assert (from == NULL && to == NULL) || (from != NULL && to != NULL)
+                : "IS NULL pointer must point lookup without range or unspecified end: " + from + " ... " + to;
         this.flags = flags;
         this.from = from;
         this.to = to;
@@ -53,12 +59,12 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
     }
 
     public static IndexIterationPointer create(
-            Comparable<?> from,
+            @Nullable Comparable<?> from,
             boolean fromInclusive,
-            Comparable<?> to,
+            @Nullable Comparable<?> to,
             boolean toInclusive,
             boolean descending,
-            Data lastEntryKey
+            @Nullable Data lastEntryKey
     ) {
         return new IndexIterationPointer(
                 (byte) ((descending ? FLAG_DESCENDING : 0)
@@ -71,6 +77,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         );
     }
 
+    @Nullable
     public Comparable<?> getFrom() {
         return from;
     }
@@ -79,6 +86,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         return (flags & FLAG_FROM_INCLUSIVE) != 0;
     }
 
+    @Nullable
     public Comparable<?> getTo() {
         return to;
     }
@@ -125,5 +133,14 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
     @Override
     public int getClassId() {
         return MapDataSerializerHook.INDEX_ITERATION_POINTER;
+    }
+
+    @Override
+    public String toString() {
+        return "IndexIterationPointer{"
+                + (isFromInclusive() ? "[" : "(") + from + ", " + to + (isToInclusive() ? "]" : ")")
+                + (isDescending() ? " DESC" : " ASC")
+                + ", lastEntryKeyData=" + lastEntryKeyData
+                + "}";
     }
 }
