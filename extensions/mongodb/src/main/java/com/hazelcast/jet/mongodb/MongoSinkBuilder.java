@@ -84,6 +84,7 @@ public final class MongoSinkBuilder<T> {
     private final WriteMongoParams<T> params = new WriteMongoParams<>();
 
     private int preferredLocalParallelism = 2;
+    private ResourceChecks existenceChecks;
 
     /**
      * See {@link MongoSinks#builder}
@@ -249,6 +250,20 @@ public final class MongoSinkBuilder<T> {
     }
 
     /**
+     * If {@link ResourceChecks#NEVER}, the database and collection will be automatically created on the first usage.
+     * Otherwise, querying for a database or collection that don't exist will cause an error.
+     * Default value is {@link ResourceChecks#ONCE_PER_JOB}.
+     *
+     * @param checkResourceExistence mode of resource existence checks; whether exception should be thrown when
+     *                               database or collection does not exist and when the check will be performed.
+     */
+    @Nonnull
+    public MongoSinkBuilder<T> checkResourceExistence(ResourceChecks checkResourceExistence) {
+        existenceChecks = checkResourceExistence;
+        return this;
+    }
+
+    /**
      * Creates and returns the MongoDB {@link Sink} with the components you
      * supplied to this builder.
      */
@@ -256,6 +271,7 @@ public final class MongoSinkBuilder<T> {
     public Sink<T> build() {
         params.checkValid();
         final WriteMongoParams<T> localParams = this.params;
+        localParams.setCheckExistenceOnEachConnect(existenceChecks == ResourceChecks.ON_EACH_CONNECT);
 
         ConnectorPermission permission = params.buildPermission();
         return Sinks.fromProcessor(name, new DbCheckingPMetaSupplierBuilder()
