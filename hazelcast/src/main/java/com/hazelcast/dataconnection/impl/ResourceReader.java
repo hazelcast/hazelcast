@@ -32,6 +32,7 @@ import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_T
 class ResourceReader {
 
     private String catalog;
+
     private TriPredicate<String, String, String> excludePredicate = (catalog, schema, table) -> false;
 
     public ResourceReader withCatalog(String schema) {

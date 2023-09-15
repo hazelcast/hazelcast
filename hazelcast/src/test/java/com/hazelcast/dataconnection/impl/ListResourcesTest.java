@@ -110,7 +110,7 @@ public class ListResourcesTest {
         executeJdbc(jdbcUrl, "CREATE TABLE my_schema.my_table (id INTEGER, name VARCHAR(255) )");
 
         List<DataConnectionResource> dataConnectionResources = dataConnection.listResources();
-        assertThat(dataConnectionResources).contains(expectedResources);
+        assertThat(dataConnectionResources).containsExactlyInAnyOrder(expectedResources);
     }
 
     public static void executeJdbc(String url, String sql) throws SQLException {
