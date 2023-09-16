@@ -16,19 +16,21 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static org.junit.Assert.assertEquals;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Properties;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 
-import static com.hazelcast.test.Accessors.getNodeEngineImpl;
-import static org.junit.Assert.assertEquals;
+import java.util.Properties;
+import java.util.stream.Stream;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -61,14 +63,12 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
     public void testRun() {
         plugin.run(logWriter);
 
-        Properties systemProperties = System.getProperties();
+        final Properties systemProperties = System.getProperties();
 
         // we check a few of the regular ones
-        assertContains("java.class.version=" + systemProperties.get("java.class.version"));
-        assertContains("java.class.path=" + systemProperties.get("java.class.path"));
-
         // we want to make sure the hazelcast system properties are added
-        assertContains(FAKE_PROPERTY + "=" + FAKE_PROPERTY_VALUE);
+        Stream.of("java.class.version", "java.class.path", FAKE_PROPERTY, "java.vm.args")
+                .forEach(key -> assertContains(key + "=" + systemProperties.get(key)));
 
         // we don't want to have awt
         assertNotContains("java.awt");
