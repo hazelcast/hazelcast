@@ -19,7 +19,6 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +26,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Properties;
-import java.util.stream.Stream;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
@@ -43,7 +41,7 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Before
     public void setup() {
-        final HazelcastInstance hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         plugin = new SystemPropertiesPlugin(getNodeEngineImpl(hz));
         plugin.onStart();
         System.setProperty(FAKE_PROPERTY, "foobar");
@@ -66,8 +64,8 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
         final Properties systemProperties = System.getProperties();
 
         // we check a few of the regular ones
-        Stream.of("java.class.version", "java.class.path")
-                .forEach(key -> assertContains(key + "=" + systemProperties.get(key)));
+        assertContains("java.class.version=" + systemProperties.get("java.class.version"));
+        assertContains("java.class.path=" + systemProperties.get("java.class.path"));
 
         // we want to make sure the hazelcast system properties are added
         assertContains(FAKE_PROPERTY + "=" + FAKE_PROPERTY_VALUE);
