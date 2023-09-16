@@ -1439,7 +1439,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(1, executionCounter.get());
     }
 
-    // TODO
     @Test
     public void testEntryProcessorCallsMapInterceptorGetOnlyOnce() {
         final HazelcastInstance instance = createHazelcastInstance();
