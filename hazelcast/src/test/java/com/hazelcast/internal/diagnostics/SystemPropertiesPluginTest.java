@@ -61,7 +61,7 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
     public void testRun() {
         plugin.run(logWriter);
 
-        final Properties systemProperties = System.getProperties();
+        Properties systemProperties = System.getProperties();
 
         // we check a few of the regular ones
         assertContains("java.class.version=" + systemProperties.get("java.class.version"));
