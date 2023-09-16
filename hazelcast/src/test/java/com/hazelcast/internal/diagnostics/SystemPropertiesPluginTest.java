@@ -16,9 +16,6 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import static com.hazelcast.test.Accessors.getNodeEngineImpl;
-import static org.junit.Assert.assertEquals;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +28,9 @@ import com.hazelcast.test.annotation.QuickTest;
 
 import java.util.Properties;
 import java.util.stream.Stream;
+
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
