@@ -43,7 +43,7 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Before
     public void setup() {
-        HazelcastInstance hz = createHazelcastInstance();
+        final HazelcastInstance hz = createHazelcastInstance();
         plugin = new SystemPropertiesPlugin(getNodeEngineImpl(hz));
         plugin.onStart();
         System.setProperty(FAKE_PROPERTY, "foobar");
@@ -66,9 +66,15 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
         final Properties systemProperties = System.getProperties();
 
         // we check a few of the regular ones
-        // we want to make sure the hazelcast system properties are added
-        Stream.of("java.class.version", "java.class.path", FAKE_PROPERTY, "java.vm.args")
+        Stream.of("java.class.version", "java.class.path")
                 .forEach(key -> assertContains(key + "=" + systemProperties.get(key)));
+
+        // we want to make sure the hazelcast system properties are added
+        assertContains(FAKE_PROPERTY + "=" + FAKE_PROPERTY_VALUE);
+
+        // java.vm.args doesn't work under windows
+        // https://github.com/hazelcast/hazelcast/issues/11610
+        assertContains(SystemPropertiesPlugin.JVM_ARGS + "=");
 
         // we don't want to have awt
         assertNotContains("java.awt");
