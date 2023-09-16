@@ -58,7 +58,7 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
 
             @Override
             public Object interceptGet(final Object value) {
-                return value;
+                return null;
             }
 
             @Override

@@ -186,9 +186,7 @@ public final class EntryOperator {
 
         // Not required for OBJECT as #getOrNullOldValue() would return null in any case where mutation would be problematic
         if (!readOnly && hasEventRegistration && inMemoryFormat != OBJECT) {
-            // This is a clone operation, but it's likely more performant to query the recordStore for the serialized value than
-            // regenerate it from oldValue
-            oldValueClone =  recordStore.get(dataKey, backup, callerAddress, false);
+            oldValueClone =  mapServiceContext.toData(oldValue);
         } else {
             oldValueClone = oldValue;
         }
