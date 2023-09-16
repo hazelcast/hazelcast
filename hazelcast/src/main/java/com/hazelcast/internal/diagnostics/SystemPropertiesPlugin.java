@@ -33,7 +33,7 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
 
     static final String JVM_ARGS = "java.vm.args";
 
-    private final List keys = new ArrayList<>();
+    private final List keys = new ArrayList();
     private String inputArgs;
 
     public SystemPropertiesPlugin(NodeEngineImpl nodeEngine) {
@@ -56,8 +56,15 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
     }
 
     private static String getInputArgs() {
-        final RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        return String.join(" ", runtimeMxBean.getInputArguments());
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        List<String> arguments = runtimeMxBean.getInputArguments();
+
+        StringBuilder sb = new StringBuilder();
+        for (String argument : arguments) {
+            sb.append(argument);
+            sb.append(' ');
+        }
+        return sb.toString();
     }
 
     @Override
@@ -72,10 +79,12 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
 
         for (Object key : keys) {
             String keyString = (String) key;
-            if (!isIgnored(keyString)) {
-                String value = getProperty(keyString);
-                writer.writeKeyValueEntry(keyString, value);
+            if (isIgnored(keyString)) {
+                continue;
             }
+
+            String value = getProperty(keyString);
+            writer.writeKeyValueEntry(keyString, value);
         }
         writer.endSection();
     }
