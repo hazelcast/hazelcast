@@ -126,6 +126,13 @@
             <version>4.4.12</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.confluent.kafka.connect</groupId>
+            <artifactId>kafka-connect-datagen</artifactId>
+            <version>0.6.0</version>
+            <type>zip</type>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>
