@@ -28,6 +28,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.impl.util.ReflectionUtils.loadClass;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
@@ -47,7 +48,12 @@ class PojoUpsertTarget extends UpsertTarget {
     @Override
     public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
         if (path == null) {
-            return FAILING_TOP_LEVEL_INJECTOR;
+            if (type.isCustomType()) {
+                UnaryOperator<Object> converter = customTypeConverter(type);
+                return value -> object = converter.apply(value);
+            } else {
+                return FAILING_TOP_LEVEL_INJECTOR;
+            }
         }
         Injector<Object> injector = createInjector(typeClass, path, type);
         return value -> injector.set(object, value);

@@ -95,14 +95,7 @@ public final class MetadataCompactResolver implements KvMetadataResolver {
         // Check if the compact type name is specified
         getSchemaId(fieldsByPath, identity(), () -> compactTypeName(options, isKey));
 
-        return fieldsByPath.entrySet().stream()
-                .map(entry -> {
-                    QueryPath path = entry.getKey();
-                    if (path.getPath() == null) {
-                        throw QueryException.error("Cannot use the '" + path + "' field with Compact serialization");
-                    }
-                    return entry.getValue();
-                });
+        return fieldsByPath.values().stream();
     }
 
     @Override

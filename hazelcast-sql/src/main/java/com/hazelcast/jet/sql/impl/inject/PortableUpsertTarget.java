@@ -52,7 +52,17 @@ class PortableUpsertTarget extends UpsertTarget {
     @Override
     public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
         if (path == null) {
-            return FAILING_TOP_LEVEL_INJECTOR;
+            if (type.isCustomType()) {
+                Injector<GenericRecordBuilder> injector = createRecordInjector(type,
+                        (fieldName, fieldType) -> createInjector(classDefinition, fieldName, fieldType));
+                return value -> {
+                    if (value != null) {
+                        injector.set(record, value);
+                    }
+                };
+            } else {
+                return FAILING_TOP_LEVEL_INJECTOR;
+            }
         }
         if (!classDefinition.hasField(path)) {
             return value -> {

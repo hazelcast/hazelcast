@@ -84,7 +84,17 @@ public class AvroUpsertTarget extends UpsertTarget {
     @Override
     public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
         if (path == null) {
-            return FAILING_TOP_LEVEL_INJECTOR;
+            if (type.isCustomType()) {
+                Injector<GenericRecordBuilder> injector = createRecordInjector(type,
+                        (fieldName, fieldType) -> createInjector(schema, fieldName, fieldType));
+                return value -> {
+                    if (value != null) {
+                        injector.set(record, value);
+                    }
+                };
+            } else {
+                return FAILING_TOP_LEVEL_INJECTOR;
+            }
         }
         Injector<GenericRecordBuilder> injector = createInjector(schema, path, type);
         return value -> injector.set(record, value);

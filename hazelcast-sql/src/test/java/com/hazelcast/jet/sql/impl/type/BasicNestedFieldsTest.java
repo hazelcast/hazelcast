@@ -19,13 +19,15 @@ package com.hazelcast.jet.sql.impl.type;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecord;
-import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import org.apache.avro.SchemaBuilder;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,14 +45,21 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_JAVA_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_CLASS_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.jet.sql.impl.type.CompactNestedFieldsTest.createCompactMapping;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
@@ -63,7 +72,7 @@ import static org.junit.runners.Parameterized.Parameter;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-public class BasicNestedFieldsTest extends SqlTestSupport {
+public class BasicNestedFieldsTest extends KafkaSqlTestSupport {
 
     @Parameters(name = "useClient:{0}")
     public static Object[] parameters() {
@@ -74,10 +83,9 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     public boolean useClient;
 
     @BeforeClass
-    public static void beforeClass() {
-        Config config = smallInstanceConfig()
-                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
-        initializeWithClient(3, config, null);
+    public static void setup() throws Exception {
+        Config config = smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+        setupWithClient(3, config, null);
     }
 
     private HazelcastInstance testInstance() {
@@ -522,6 +530,68 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         assertEquals("Users", record.getSchema().getTypeName());
         assertEquals("NonprofitOrganization",
                 ((DeserializedGenericRecord) record.getObject("organization")).getSchema().getTypeName());
+    }
+
+    @Test
+    public void test_typeOptionsOverrideMappingOptions_portable() {
+        test_typeOptionsOverrideMappingOptions(
+                PORTABLE_FORMAT, "Value Portable ID (valuePortableFactoryId, valuePortableClassId and "
+                        + "optional valuePortableClassVersion) is required to create Portable-based mapping",
+                OPTION_TYPE_PORTABLE_FACTORY_ID, 1,
+                OPTION_TYPE_PORTABLE_CLASS_ID, 1);
+    }
+
+    @Test
+    public void test_typeOptionsOverrideMappingOptions_compact() {
+        test_typeOptionsOverrideMappingOptions(
+                COMPACT_FORMAT, "valueCompactTypeName is required to create Compact-based mapping",
+                OPTION_TYPE_COMPACT_TYPE_NAME, "Users");
+    }
+
+    @Test
+    public void test_typeOptionsOverrideMappingOptions_java() {
+        test_typeOptionsOverrideMappingOptions(
+                JAVA_FORMAT, "valueJavaClass is required to create Java-based mapping",
+                OPTION_TYPE_JAVA_CLASS, User.class.getName());
+    }
+
+    @Test
+    public void test_typeOptionsOverrideMappingOptions_avro() {
+        test_typeOptionsOverrideMappingOptions(
+                AVRO_FORMAT, "Either schema.registry.url or valueAvroSchema is required to create Avro-based mapping",
+                OPTION_TYPE_AVRO_SCHEMA, SchemaBuilder.record("User").fields()
+                        .optionalLong("id")
+                        .optionalString("name")
+                        .endRecord());
+    }
+
+    private void test_typeOptionsOverrideMappingOptions(String valueFormat, String missingMessage,
+                                                        Object... options) {
+        SqlType userType = new SqlType("\"User\"").fields("id BIGINT", "name VARCHAR");
+        userType.create(testInstance());
+
+        SqlMapping users = new SqlMapping("Users", valueFormat.equals(AVRO_FORMAT)
+                        ? KafkaSqlConnector.class : IMapSqlConnector.class)
+                .fields("__key BIGINT",
+                        "this \"User\"")
+                .options(OPTION_KEY_FORMAT, "bigint",
+                         OPTION_VALUE_FORMAT, valueFormat)
+                .optionsIf(valueFormat.equals(AVRO_FORMAT),
+                           "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
+                           "auto.offset.reset", "earliest");
+
+        // Cannot create the mapping due to missing value options
+        assertThatThrownBy(() -> users.create(testInstance())).hasMessage(missingMessage);
+
+        // Recreate the type with provided options
+        userType.options(options).createOrReplace();
+
+        // Now, the mapping can be created with missing options because type options override mapping options
+        users.create(testInstance());
+
+        insertLiterals(testInstance(), "Users", 1, row(2, "Alice"));
+        assertRowsEventuallyInAnyOrder(testInstance(), "SELECT __key, (this).id, (this).name FROM Users",
+                List.of(new Row(1L, 2L, "Alice")));
     }
 
     public static class A implements Serializable {

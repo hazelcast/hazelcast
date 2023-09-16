@@ -649,25 +649,6 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     }
 
     @Test
-    public void when_explicitTopLevelField_then_fail_key() {
-        when_explicitTopLevelField_then_fail("__key", "this");
-    }
-
-    @Test
-    public void when_explicitTopLevelField_then_fail_this() {
-        when_explicitTopLevelField_then_fail("this", "__key");
-    }
-
-    private void when_explicitTopLevelField_then_fail(String field, String otherField) {
-        assertThatThrownBy(() ->
-                kafkaMapping("kafka", NAME_SCHEMA, NAME_SCHEMA)
-                        .fields(field + " VARCHAR",
-                                "f VARCHAR EXTERNAL NAME \"" + otherField + ".name\"")
-                        .create())
-                .hasMessage("Cannot use the '" + field + "' field with Avro serialization");
-    }
-
-    @Test
     public void test_writingToTopLevel() {
         String name = randomName();
         kafkaMapping(name, ID_SCHEMA, NAME_SCHEMA)

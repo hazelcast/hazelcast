@@ -48,7 +48,16 @@ class CompactUpsertTarget extends UpsertTarget {
     @Override
     public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
         if (path == null) {
-            return FAILING_TOP_LEVEL_INJECTOR;
+            if (type.isCustomType()) {
+                Injector<GenericRecordBuilder> injector = createRecordInjector(type, this::createInjector0);
+                return value -> {
+                    if (value != null) {
+                        injector.set(record, value);
+                    }
+                };
+            } else {
+                return FAILING_TOP_LEVEL_INJECTOR;
+            }
         }
         if (!schema.hasField(path)) {
             return value -> {
