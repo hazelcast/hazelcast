@@ -32,6 +32,14 @@
         <version>5.4.0-SNAPSHOT</version>
     </parent>
 
+    <!-- Repository to download kafka-connect-datagen. Because this resource does not exist on maven central    -->
+    <repositories>
+        <repository>
+            <id>devel-repository</id>
+            <url>https://hazelcast.jfrog.io/artifactory/devel</url>
+        </repository>
+    </repositories>
+
     <build>
         <plugins>
             <plugin>

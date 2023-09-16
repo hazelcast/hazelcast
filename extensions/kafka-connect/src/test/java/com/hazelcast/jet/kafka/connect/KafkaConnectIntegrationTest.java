@@ -56,7 +56,10 @@ import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -91,12 +94,10 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     public static final int ITEM_COUNT = 1_000;
 
-    private static final String CONNECTOR_FILE_PATH = "confluentinc-kafka-connect-datagen-0.6.0.zip";
-
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIntegrationTest.class);
 
     @Test
-    public void test_reading_without_timestamps() {
+    public void test_reading_without_timestamps() throws MalformedURLException {
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
@@ -137,7 +138,8 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void windowing_withNativeTimestamps_should_fail_when_records_without_native_timestamps() {
+    public void windowing_withNativeTimestamps_should_fail_when_records_without_native_timestamps()
+            throws MalformedURLException {
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(getDataGenConnectorURL());
 
@@ -168,7 +170,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void windowing_withIngestionTimestamps_should_work() {
+    public void windowing_withIngestionTimestamps_should_work() throws MalformedURLException {
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(getDataGenConnectorURL());
 
@@ -207,7 +209,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void test_reading_and_writing_to_map() {
+    public void test_reading_and_writing_to_map() throws MalformedURLException {
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
@@ -271,7 +273,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
 
     @Test
     @Ignore
-    public void test_scaling() {
+    public void test_scaling() throws MalformedURLException {
         int localParallelism = 3;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
@@ -349,7 +351,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void test_snapshotting() {
+    public void test_snapshotting() throws MalformedURLException {
         Config config = smallInstanceConfig();
         enableEventJournal(config);
         config.getJetConfig().setResourceUploadEnabled(true);
@@ -417,10 +419,22 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         }
     }
 
-    private URL getDataGenConnectorURL() {
-        ClassLoader classLoader = getClass().getClassLoader();
-        return classLoader.getResource(CONNECTOR_FILE_PATH);
+    private URL getDataGenConnectorURL() throws MalformedURLException {
+        Path localM2Repository = Paths.get(System.getProperty("user.home"), ".m2",
+                "io", "confluent", "kafka", "kafka-connect-datagen", "0.6.0", "kafka-connect-datagen-0.6.0.zip");
+
+
+        if (localM2Repository.toFile().exists()) {
+            LOGGER.info("kafka-connect-datagen path is " + localM2Repository);
+            return localM2Repository.toUri().toURL();
+        }
+
+        localM2Repository = Paths.get(System.getProperty("user.home"), ".m2", "repository",
+                "io", "confluent", "kafka", "kafka-connect-datagen", "0.6.0", "kafka-connect-datagen-0.6.0.zip");
+        LOGGER.info("kafka-connect-datagen path is " + localM2Repository);
+        return localM2Repository.toUri().toURL();
     }
+
     private void waitForNextSnapshot(HazelcastInstance hazelcastInstance, Job job) {
         JobRepository jobRepository = new JobRepository(hazelcastInstance);
         waitForNextSnapshot(jobRepository, job.getId(), 30, false);
