@@ -25,17 +25,14 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.SchemaBuilder.FieldAssembler;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
@@ -50,7 +47,7 @@ import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNulla
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getSchemaId;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getTableFields;
 import static com.hazelcast.jet.sql.impl.inject.AvroUpsertTarget.CONVERSION_PREFS;
 import static com.hazelcast.sql.impl.type.converter.Converters.getConverter;
 import static java.util.stream.Collectors.toList;
@@ -134,16 +131,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
             InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
-
-        List<TableField> fields = new ArrayList<>();
-        for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
-            QueryPath path = entry.getKey();
-            QueryDataType type = entry.getValue().type();
-            String name = entry.getValue().name();
-
-            fields.add(new MapTableField(name, type, false, path));
-        }
-        maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
+        List<TableField> fields = getTableFields(isKey, fieldsByPath, QueryDataType.OBJECT);
 
         Schema schema = getSchemaId(fieldsByPath, json -> new Schema.Parser().parse(json),
                 () -> inlineSchema(options, isKey));

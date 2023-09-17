@@ -33,15 +33,12 @@ import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -58,7 +55,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getSchemaId;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getTableFields;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 
@@ -153,16 +150,7 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
             InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
-
-        List<TableField> fields = new ArrayList<>();
-        for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
-            QueryPath path = entry.getKey();
-            QueryDataType type = entry.getValue().type();
-            String name = entry.getValue().name();
-
-            fields.add(new MapTableField(name, type, false, path));
-        }
-        maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
+        List<TableField> fields = getTableFields(isKey, fieldsByPath, QueryDataType.OBJECT);
 
         PortableId portableId = getSchemaId(fieldsByPath, PortableId::new, () -> portableId(options, isKey));
         ClassDefinition classDefinition = resolveClassDefinition(portableId, getFields(fieldsByPath),

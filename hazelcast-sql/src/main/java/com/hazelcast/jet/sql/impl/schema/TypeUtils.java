@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.Type.TypeField;
+import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
@@ -78,7 +79,7 @@ public final class TypeUtils {
         private final PortableContext context;
 
         PortableEnricher(RelationsStorage relationsStorage, InternalSerializationService serializationService) {
-            super(QueryDataType.OBJECT_TYPE_KIND_PORTABLE, relationsStorage);
+            super(TypeKind.PORTABLE, relationsStorage);
             context = serializationService.getPortableContext();
         }
 
@@ -124,7 +125,7 @@ public final class TypeUtils {
 
     private static class CompactEnricher extends FieldEnricher<String, Void> {
         CompactEnricher(RelationsStorage relationsStorage) {
-            super(QueryDataType.OBJECT_TYPE_KIND_COMPACT, relationsStorage);
+            super(TypeKind.COMPACT, relationsStorage);
         }
 
         @Override
@@ -155,7 +156,7 @@ public final class TypeUtils {
 
     private static class JavaEnricher extends FieldEnricher<Class<?>, SortedMap<String, Class<?>>> {
         JavaEnricher(RelationsStorage relationsStorage) {
-            super(QueryDataType.OBJECT_TYPE_KIND_JAVA, relationsStorage);
+            super(TypeKind.JAVA, relationsStorage);
         }
 
         @Override
@@ -196,7 +197,7 @@ public final class TypeUtils {
 
     private static class AvroEnricher extends FieldEnricher<Schema, Schema> {
         AvroEnricher(RelationsStorage relationsStorage) {
-            super(QueryDataType.OBJECT_TYPE_KIND_AVRO, relationsStorage);
+            super(TypeKind.AVRO, relationsStorage);
         }
 
         @Override
@@ -241,10 +242,10 @@ public final class TypeUtils {
      * @param <S> type of schema
      */
     public abstract static class FieldEnricher<ID, S> {
-        private final int typeKind;
+        private final TypeKind typeKind;
         private final RelationsStorage relationsStorage;
 
-        FieldEnricher(int typeKind, RelationsStorage relationsStorage) {
+        FieldEnricher(TypeKind typeKind, RelationsStorage relationsStorage) {
             this.typeKind = typeKind;
             this.relationsStorage = relationsStorage;
         }
@@ -282,8 +283,7 @@ public final class TypeUtils {
                 relationsStorage.put(typeName, type);
             }
 
-            convertedType = new QueryDataType(typeName, typeKind);
-            convertedType.setObjectTypeMetadata(getTypeMetadata(schemaId));
+            convertedType = new QueryDataType(typeName, typeKind, getTypeMetadata(schemaId));
             seen.put(typeName, convertedType);
 
             for (TypeField field : type.getFields()) {

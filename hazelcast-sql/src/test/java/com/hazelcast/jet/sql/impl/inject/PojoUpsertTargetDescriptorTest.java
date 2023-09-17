@@ -35,7 +35,7 @@ public class PojoUpsertTargetDescriptorTest {
 
     @Test
     public void test_create() {
-        PojoUpsertTargetDescriptor descriptor = new PojoUpsertTargetDescriptor(Object.class.getName());
+        PojoUpsertTargetDescriptor descriptor = new PojoUpsertTargetDescriptor(Object.class);
 
         // when
         UpsertTarget target = descriptor.create(SERIALIZATION_SERVICE);
@@ -46,7 +46,7 @@ public class PojoUpsertTargetDescriptorTest {
 
     @Test
     public void test_serialization() {
-        PojoUpsertTargetDescriptor original = new PojoUpsertTargetDescriptor("com.hazelcast.class");
+        PojoUpsertTargetDescriptor original = new PojoUpsertTargetDescriptor(Object.class);
 
         // when
         PojoUpsertTargetDescriptor serialized =

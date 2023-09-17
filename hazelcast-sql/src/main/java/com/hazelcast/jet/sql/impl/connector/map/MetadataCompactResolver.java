@@ -33,15 +33,12 @@ import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
@@ -51,7 +48,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_COM
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getSchemaId;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getTableFields;
 import static java.util.function.Function.identity;
 
 public final class MetadataCompactResolver implements KvMetadataResolver {
@@ -116,19 +113,9 @@ public final class MetadataCompactResolver implements KvMetadataResolver {
             InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
+        List<TableField> fields = getTableFields(isKey, fieldsByPath, QueryDataType.OBJECT);
 
         String typeName = getSchemaId(fieldsByPath, identity(), () -> compactTypeName(options, isKey));
-
-        List<TableField> fields = new ArrayList<>(fieldsByPath.size());
-        for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
-            QueryPath path = entry.getKey();
-            QueryDataType type = entry.getValue().type();
-            String name = entry.getValue().name();
-
-            fields.add(new MapTableField(name, type, false, path));
-        }
-        maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
-
         Schema schema = resolveSchema(typeName, getFields(fieldsByPath));
 
         return new KvMetadata(

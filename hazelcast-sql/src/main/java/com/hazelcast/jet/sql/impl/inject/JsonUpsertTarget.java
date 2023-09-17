@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -31,6 +32,7 @@ import java.util.Map;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 
 @NotThreadSafe
 class JsonUpsertTarget extends UpsertTarget {
@@ -46,47 +48,13 @@ class JsonUpsertTarget extends UpsertTarget {
             return FAILING_TOP_LEVEL_INJECTOR;
         }
 
+        ConsumerEx<Object> injector = createInjector0(path, type);
         return value -> {
             try {
                 if (value == null) {
                     generator.writeNullField(path);
                 } else {
-                    switch (type.getTypeFamily()) {
-                        case BOOLEAN:
-                            generator.writeBooleanField(path, (Boolean) value);
-                            break;
-                        case TINYINT:
-                            generator.writeNumberField(path, (Byte) value);
-                            break;
-                        case SMALLINT:
-                            generator.writeNumberField(path, (Short) value);
-                            break;
-                        case INTEGER:
-                            generator.writeNumberField(path, (Integer) value);
-                            break;
-                        case BIGINT:
-                            generator.writeNumberField(path, (Long) value);
-                            break;
-                        case REAL:
-                            generator.writeNumberField(path, (Float) value);
-                            break;
-                        case DOUBLE:
-                            generator.writeNumberField(path, (Double) value);
-                            break;
-                        case DECIMAL:
-                        case TIME:
-                        case DATE:
-                        case TIMESTAMP:
-                        case TIMESTAMP_WITH_TIME_ZONE:
-                        case VARCHAR:
-                            generator.writeStringField(path, (String) QueryDataType.VARCHAR.convert(value));
-                            break;
-                        case OBJECT:
-                            injectObject(path, value);
-                            break;
-                        default:
-                            throw QueryException.error("Unsupported type: " + type);
-                    }
+                    injector.accept(value);
                 }
             } catch (IOException e) {
                 throw sneakyThrow(e);
@@ -94,30 +62,57 @@ class JsonUpsertTarget extends UpsertTarget {
         };
     }
 
-    private void injectObject(String path, Object value) throws IOException {
-        generator.writeFieldName(path);
-        if (value == null) {
-            generator.writeNull();
-        } else if (value instanceof TreeNode) {
-            generator.writeTree((TreeNode) value);
-        } else if (value instanceof Map) {
-            generator.writeObject(value);
-        } else if (value instanceof Boolean) {
-            generator.writeBoolean((boolean) value);
-        } else if (value instanceof Byte) {
-            generator.writeNumber((byte) value);
-        } else if (value instanceof Short) {
-            generator.writeNumber((short) value);
-        } else if (value instanceof Integer) {
-            generator.writeNumber((int) value);
-        } else if (value instanceof Long) {
-            generator.writeNumber((long) value);
-        } else if (value instanceof Float) {
-            generator.writeNumber((float) value);
-        } else if (value instanceof Double) {
-            generator.writeNumber((double) value);
-        } else {
-            generator.writeString((String) QueryDataType.VARCHAR.convert(value));
+    @SuppressWarnings("ReturnCount")
+    private ConsumerEx<Object> createInjector0(String path, QueryDataType type) {
+        switch (type.getTypeFamily()) {
+            case BOOLEAN:
+                return value -> generator.writeBooleanField(path, (boolean) value);
+            case TINYINT:
+                return value -> generator.writeNumberField(path, (byte) value);
+            case SMALLINT:
+                return value -> generator.writeNumberField(path, (short) value);
+            case INTEGER:
+                return value -> generator.writeNumberField(path, (int) value);
+            case BIGINT:
+                return value -> generator.writeNumberField(path, (long) value);
+            case REAL:
+                return value -> generator.writeNumberField(path, (float) value);
+            case DOUBLE:
+                return value -> generator.writeNumberField(path, (double) value);
+            case DECIMAL:
+            case TIME:
+            case DATE:
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_TIME_ZONE:
+            case VARCHAR:
+                return value -> generator.writeStringField(path, (String) VARCHAR.convert(value));
+            case OBJECT:
+                return value -> {
+                    generator.writeFieldName(path);
+                    if (value instanceof TreeNode) {
+                        generator.writeTree((TreeNode) value);
+                    } else if (value instanceof Map) {
+                        generator.writeObject(value);
+                    } else if (value instanceof Boolean) {
+                        generator.writeBoolean((boolean) value);
+                    } else if (value instanceof Byte) {
+                        generator.writeNumber((byte) value);
+                    } else if (value instanceof Short) {
+                        generator.writeNumber((short) value);
+                    } else if (value instanceof Integer) {
+                        generator.writeNumber((int) value);
+                    } else if (value instanceof Long) {
+                        generator.writeNumber((long) value);
+                    } else if (value instanceof Float) {
+                        generator.writeNumber((float) value);
+                    } else if (value instanceof Double) {
+                        generator.writeNumber((double) value);
+                    } else {
+                        generator.writeString((String) VARCHAR.convert(value));
+                    }
+                };
+            default:
+                throw QueryException.error("Unsupported type: " + type);
         }
     }
 

@@ -36,7 +36,7 @@ public class PojoUpsertTargetTest {
 
     @Test
     public void test_set() {
-        UpsertTarget target = new PojoUpsertTarget(Pojo.class.getName(), null);
+        UpsertTarget target = new PojoUpsertTarget(Pojo.class, null);
         UpsertInjector intFieldInjector = target.createInjector("intField", QueryDataType.INT);
         UpsertInjector longFieldInjector = target.createInjector("longField", QueryDataType.BIGINT);
         UpsertInjector stringFieldInjector = target.createInjector("stringField", QueryDataType.VARCHAR);
@@ -52,7 +52,7 @@ public class PojoUpsertTargetTest {
 
     @Test
     public void when_injectNullValueWithPrimitiveField_then_throws() {
-        UpsertTarget target = new PojoUpsertTarget(Pojo.class.getName(), null);
+        UpsertTarget target = new PojoUpsertTarget(Pojo.class, null);
         UpsertInjector injector = target.createInjector("intField", QueryDataType.INT);
 
         target.init();
@@ -63,7 +63,7 @@ public class PojoUpsertTargetTest {
 
     @Test
     public void when_injectNullValueWithPrimitiveSetter_then_throws() {
-        UpsertTarget target = new PojoUpsertTarget(Pojo.class.getName(), null);
+        UpsertTarget target = new PojoUpsertTarget(Pojo.class, null);
         UpsertInjector injector = target.createInjector("longField", QueryDataType.BIGINT);
 
         target.init();
@@ -74,7 +74,7 @@ public class PojoUpsertTargetTest {
 
     @Test
     public void when_injectNonExistingPropertyValue_then_throws() {
-        UpsertTarget target = new PojoUpsertTarget(Object.class.getName(), null);
+        UpsertTarget target = new PojoUpsertTarget(Object.class, null);
         UpsertInjector injector = target.createInjector("field", QueryDataType.INT);
 
         target.init();
@@ -86,7 +86,7 @@ public class PojoUpsertTargetTest {
 
     @Test
     public void when_injectNonExistingPropertyNullValue_then_succeeds() {
-        UpsertTarget target = new PojoUpsertTarget(Object.class.getName(), null);
+        UpsertTarget target = new PojoUpsertTarget(Object.class, null);
         UpsertInjector injector = target.createInjector("field", QueryDataType.INT);
 
         target.init();

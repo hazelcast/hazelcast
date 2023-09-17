@@ -17,23 +17,31 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
+import com.hazelcast.jet.sql.impl.type.converter.ToConverters;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import static com.hazelcast.jet.impl.util.ReflectionUtils.loadClass;
+import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
 
 @NotThreadSafe
-class PojoUpsertTarget extends AbstractPojoUpsertTarget {
+class PojoUpsertTarget extends UpsertTarget {
     private final Class<?> typeClass;
 
     private Object object;
 
-    PojoUpsertTarget(String className, InternalSerializationService serializationService) {
+    PojoUpsertTarget(Class<?> typeClass, InternalSerializationService serializationService) {
         super(serializationService);
-        typeClass = loadClass(className);
+        this.typeClass = typeClass;
     }
 
     @Override
@@ -43,6 +51,70 @@ class PojoUpsertTarget extends AbstractPojoUpsertTarget {
         }
         Injector<Object> injector = createInjector(typeClass, path, type);
         return value -> injector.set(object, value);
+    }
+
+    protected Injector<Object> createInjector(Class<?> typeClass, String path, QueryDataType type) {
+        UnaryOperator<Object> converter = type.isCustomType()
+                ? customTypeConverter(type)
+                : ToConverters.getToConverter(type)::convert;
+
+        Method method = ReflectionUtils.findPropertySetter(typeClass, path);
+        if (method != null) {
+            return (object, value) -> {
+                if (value == null && method.getParameterTypes()[0].isPrimitive()) {
+                    throw QueryException.error("Cannot pass NULL to a method with a primitive argument: " + method);
+                }
+                try {
+                    method.invoke(object, converter.apply(value));
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    throw QueryException.error("Invocation of '" + method + "' failed: " + e, e);
+                }
+            };
+        }
+
+        Field field = ReflectionUtils.findPropertyField(typeClass, path);
+        if (field != null) {
+            return (object, value) -> {
+                if (value == null && field.getType().isPrimitive()) {
+                    throw QueryException.error("Cannot set NULL to a primitive field: " + field);
+                }
+                try {
+                    field.set(object, converter.apply(value));
+                } catch (IllegalAccessException e) {
+                    throw QueryException.error("Failed to set field " + field + ": " + e, e);
+                }
+            };
+        }
+
+        return (object, value) -> {
+            if (value != null) {
+                throw QueryException.error("Cannot set property \"" + path + "\" to class "
+                        + typeClass.getName() + ": no set-method or public field available");
+            }
+        };
+    }
+
+    protected UnaryOperator<Object> customTypeConverter(QueryDataType type) {
+        Class<?> typeClass = loadClass(type.getObjectTypeMetadata());
+        Injector<Object> injector = createRecordInjector(type,
+                (fieldName, fieldType) -> createInjector(typeClass, fieldName, fieldType));
+        return value -> {
+            if (value == null || typeClass.isInstance(value)) {
+                return value;
+            }
+            Object object = createObject(typeClass);
+            injector.set(object, value);
+            return object;
+        };
+    }
+
+    protected static Object createObject(Class<?> typeClass) {
+        try {
+            return newInstance(Thread.currentThread().getContextClassLoader(), typeClass.getName());
+        } catch (Exception e) {
+            throw QueryException.error("Unable to instantiate class \""
+                    + typeClass.getName() + "\" : " + e.getMessage(), e);
+        }
     }
 
     @Override

@@ -126,13 +126,13 @@ public class Type implements Serializable, SqlCatalogObject {
         @Override
         public void readData(final ObjectDataInput in) throws IOException {
             this.name = in.readString();
-            final int converterId = in.readInt();
-            final String typeName = in.readString();
-            final Converter converter = Converters.getConverter(converterId);
+            int converterId = in.readInt();
+            String typeName = in.readString();
+            Converter converter = Converters.getConverter(converterId);
 
             // TODO: is this the correct type kind? (NONE). Maybe worth writing it too.
-            this.queryDataType = converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)
-                    && ((typeName != null && !typeName.isEmpty()))
+            this.queryDataType = converter.getTypeFamily() == QueryDataTypeFamily.OBJECT
+                            && typeName != null && !typeName.isEmpty()
                     ? new QueryDataType(typeName)
                     : QueryDataTypeUtils.resolveTypeForClass(converter.getValueClass());
         }

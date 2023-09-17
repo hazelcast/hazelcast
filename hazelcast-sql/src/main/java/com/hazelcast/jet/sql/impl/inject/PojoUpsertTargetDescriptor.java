@@ -21,31 +21,32 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.Objects;
+
+import static com.hazelcast.jet.impl.util.ReflectionUtils.loadClass;
 
 public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
-    private String className;
+    private Class<?> typeClass;
 
     @SuppressWarnings("unused")
     private PojoUpsertTargetDescriptor() { }
 
-    public PojoUpsertTargetDescriptor(String className) {
-        this.className = className;
+    public PojoUpsertTargetDescriptor(Class<?> typeClass) {
+        this.typeClass = typeClass;
     }
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new PojoUpsertTarget(className, serializationService);
+        return new PojoUpsertTarget(typeClass, serializationService);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(className);
+        out.writeString(typeClass.getName());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        className = in.readString();
+        typeClass = loadClass(in.readString());
     }
 
     @Override
@@ -56,12 +57,11 @@ public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        PojoUpsertTargetDescriptor that = (PojoUpsertTargetDescriptor) o;
-        return Objects.equals(className, that.className);
+        return typeClass == ((PojoUpsertTargetDescriptor) o).typeClass;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(className);
+        return typeClass.hashCode();
     }
 }

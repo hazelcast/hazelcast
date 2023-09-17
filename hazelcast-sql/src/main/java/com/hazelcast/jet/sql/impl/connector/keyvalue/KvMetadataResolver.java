@@ -25,7 +25,7 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 
-import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,17 +73,30 @@ public interface KvMetadataResolver {
         return fieldsByPath;
     }
 
-    static void maybeAddDefaultField(
+    /**
+     * Converts {@link MappingField}s into {@link MapTableField}s, and adds the default
+     * {@code __key}/{@code this} field as hidden if it is not present in the fields.
+     */
+    static List<TableField> getTableFields(
             boolean isKey,
-            @Nonnull List<MappingField> resolvedFields,
-            @Nonnull List<TableField> tableFields,
-            @Nonnull QueryDataType type
+            Map<QueryPath, MappingField> fields,
+            QueryDataType defaultFieldType
     ) {
-        // Add the default `__key` or `this` field as hidden, if not present in the field names
-        String fieldName = isKey ? KEY : VALUE;
-        if (resolvedFields.stream().noneMatch(field -> field.name().equals(fieldName))) {
-            tableFields.add(new MapTableField(fieldName, type, true, QueryPath.create(fieldName)));
+        List<TableField> tableFields = new ArrayList<>();
+        for (Entry<QueryPath, MappingField> entry : fields.entrySet()) {
+            QueryPath path = entry.getKey();
+            QueryDataType type = entry.getValue().type();
+            String name = entry.getValue().name();
+
+            tableFields.add(new MapTableField(name, type, false, path));
         }
+
+        // Add the default `__key` or `this` field as hidden, if not present in the field names
+        String name = isKey ? KEY : VALUE;
+        if (fields.values().stream().noneMatch(field -> field.name().equals(name))) {
+            tableFields.add(new MapTableField(name, defaultFieldType, true, QueryPath.create(name)));
+        }
+        return tableFields;
     }
 
     /**

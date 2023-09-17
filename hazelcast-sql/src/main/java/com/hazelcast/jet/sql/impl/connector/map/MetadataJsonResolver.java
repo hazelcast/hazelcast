@@ -25,25 +25,21 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getTableFields;
 
 final class MetadataJsonResolver implements KvMetadataResolver {
 
     static final MetadataJsonResolver INSTANCE = new MetadataJsonResolver();
 
-    private MetadataJsonResolver() {
-    }
+    private MetadataJsonResolver() { }
 
     @Override
     public Stream<String> supportedFormats() {
@@ -78,17 +74,8 @@ final class MetadataJsonResolver implements KvMetadataResolver {
             Map<String, String> options,
             InternalSerializationService serializationService
     ) {
-        Map<QueryPath, MappingField> externalFieldsByPath = extractFields(resolvedFields, isKey);
-
-        List<TableField> fields = new ArrayList<>();
-        for (Entry<QueryPath, MappingField> entry : externalFieldsByPath.entrySet()) {
-            QueryPath path = entry.getKey();
-            QueryDataType type = entry.getValue().type();
-            String name = entry.getValue().name();
-
-            fields.add(new MapTableField(name, type, false, path));
-        }
-        maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
+        Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
+        List<TableField> fields = getTableFields(isKey, fieldsByPath, QueryDataType.OBJECT);
 
         return new KvMetadata(
                 fields,

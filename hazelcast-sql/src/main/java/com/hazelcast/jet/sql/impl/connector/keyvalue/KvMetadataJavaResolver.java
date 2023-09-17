@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
-import com.hazelcast.jet.sql.impl.inject.HazelcastObjectUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PojoUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.FieldsUtil;
@@ -27,12 +26,10 @@ import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -47,7 +44,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.flatMap;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getSchemaId;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getTableFields;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static java.util.Map.entry;
@@ -80,7 +77,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                 () -> loadClass(options, isKey));
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(typeClass);
 
-        if (!type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) || type.isCustomType()) {
+        if (type.getTypeFamily() != QueryDataTypeFamily.OBJECT || type.isCustomType()) {
             return userFields.isEmpty()
                     ? resolvePrimitiveField(isKey, type)
                     : resolveAndValidatePrimitiveField(isKey, fieldsByPath, type);
@@ -112,7 +109,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         if (userField != null && !userField.name().equals(name)) {
             throw QueryException.error("Cannot rename field: '" + name + '\'');
         }
-        if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
+        if (userField != null && type.getTypeFamily() != userField.type().getTypeFamily()) {
             throw QueryException.error("Mismatch between declared and resolved type for field '" + userField.name() + "'");
         }
         for (MappingField field : fieldsByPath.values()) {
@@ -152,7 +149,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
 
             MappingField userField = fieldsByPath.get(path);
-            if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
+            if (userField != null && type.getTypeFamily() != userField.type().getTypeFamily()) {
                 throw QueryException.error("Mismatch between declared and resolved type for field '"
                         + userField.name() + "'. Declared: " + userField.type().getTypeFamily()
                         + ", resolved: " + type.getTypeFamily());
@@ -180,56 +177,14 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         QueryDataType type = entry.getKey();
         Class<?> typeClass = entry.getValue();
 
-        if (!type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) || type.isCustomType()) {
-            return resolvePrimitiveMetadata(isKey, resolvedFields, fieldsByPath, type);
-        } else {
-            return resolveObjectMetadata(isKey, resolvedFields, fieldsByPath, typeClass);
-        }
-    }
-
-    private KvMetadata resolvePrimitiveMetadata(
-            boolean isKey,
-            List<MappingField> resolvedFields,
-            Map<QueryPath, MappingField> fieldsByPath,
-            QueryDataType type
-    ) {
-        List<TableField> fields = new ArrayList<>();
-        QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
-        MappingField field = fieldsByPath.get(path);
-        if (field != null) {
-            fields.add(new MapTableField(field.name(), field.type(), false, path));
-        }
-        maybeAddDefaultField(isKey, resolvedFields, fields, type);
+        List<TableField> fields = getTableFields(isKey, fieldsByPath, type);
 
         return new KvMetadata(
                 fields,
                 GenericQueryTargetDescriptor.DEFAULT,
-                type.isCustomType()
-                        ? HazelcastObjectUpsertTargetDescriptor.INSTANCE
+                type.getTypeFamily() == QueryDataTypeFamily.OBJECT
+                        ? new PojoUpsertTargetDescriptor(typeClass)
                         : PrimitiveUpsertTargetDescriptor.INSTANCE
-        );
-    }
-
-    private KvMetadata resolveObjectMetadata(
-            boolean isKey,
-            List<MappingField> resolvedFields,
-            Map<QueryPath, MappingField> fieldsByPath,
-            Class<?> typeClass
-    ) {
-        List<TableField> fields = new ArrayList<>();
-        for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
-            QueryPath path = entry.getKey();
-            QueryDataType type = entry.getValue().type();
-            String name = entry.getValue().name();
-
-            fields.add(new MapTableField(name, type, false, path));
-        }
-        maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
-
-        return new KvMetadata(
-                fields,
-                GenericQueryTargetDescriptor.DEFAULT,
-                new PojoUpsertTargetDescriptor(typeClass.getName())
         );
     }
 

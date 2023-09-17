@@ -26,7 +26,7 @@ import java.util.Objects;
 
 public final class AvroUpsertTargetDescriptor implements UpsertTargetDescriptor {
     private Schema schema;
-    private transient String serializedSchema;
+    private transient String schemaJson;
 
     @SuppressWarnings("unused")
     private AvroUpsertTargetDescriptor() { }
@@ -42,16 +42,16 @@ public final class AvroUpsertTargetDescriptor implements UpsertTargetDescriptor 
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        if (serializedSchema == null) {
-            serializedSchema = schema.toString();
+        if (schemaJson == null) {
+            schemaJson = schema.toString();
         }
-        out.writeObject(serializedSchema);
+        out.writeObject(schemaJson);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        serializedSchema = in.readObject();
-        schema = new Schema.Parser().parse(serializedSchema);
+        schemaJson = in.readObject();
+        schema = new Schema.Parser().parse(schemaJson);
     }
 
     @Override
