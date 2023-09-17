@@ -97,7 +97,7 @@ public final class ReflectionsHelper {
 
         @Override
         public <T> Set<Class<? extends T>> getSubTypesOf(Class<T> type) {
-            return Sets.newHashSet(ReflectionUtils.<T> forNames(
+            return Sets.newHashSet(ReflectionUtils.<T>forNames(
                     store.getAll(HierarchyTraversingSubtypesScanner.class, singletonList(type.getName())),
                     configuration.getClassLoaders()));
         }
