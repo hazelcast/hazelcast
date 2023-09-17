@@ -20,6 +20,7 @@ import com.google.common.collect.Sets;
 import org.reflections.Configuration;
 import org.reflections.ReflectionUtils;
 import org.reflections.Reflections;
+import org.reflections.Store;
 import org.reflections.adapters.JavaReflectionAdapter;
 import org.reflections.scanners.AbstractScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
@@ -96,10 +97,8 @@ public final class ReflectionsHelper {
 
         @Override
         public <T> Set<Class<? extends T>> getSubTypesOf(Class<T> type) {
-            return Sets.newHashSet(ReflectionUtils.<T>forNames(
-                    store.getAll(
-                            HierarchyTraversingSubtypesScanner.class.getSimpleName(),
-                            singletonList(type.getName())),
+            return Sets.newHashSet(ReflectionUtils.<T> forNames(
+                    store.getAll(HierarchyTraversingSubtypesScanner.class, singletonList(type.getName())),
                     configuration.getClassLoaders()));
         }
     }
@@ -131,13 +130,14 @@ public final class ReflectionsHelper {
         /**
          * @param cls depending on the Reflections configuration, this is either a regular Class or a javassist ClassFile
          */
+        @Override
         @SuppressWarnings("unchecked")
-        public void scan(final Object cls) {
+        public void scan(final Object cls, Store store) {
             String className = getMetadataAdapter().getClassName(cls);
 
             for (String anInterface : (List<String>) getMetadataAdapter().getInterfacesNames(cls)) {
                 if (acceptResult(anInterface)) {
-                    getStore().put(anInterface, className);
+                    put(store, anInterface, className);
                 }
             }
 
@@ -145,18 +145,18 @@ public final class ReflectionsHelper {
             // hierarchy up until Object class
             Class superKlass = ((Class) cls).getSuperclass();
             while (superKlass != null) {
-                scanClassAndInterfaces(superKlass, className);
+                scanClassAndInterfaces(superKlass, className, store);
                 superKlass = superKlass.getSuperclass();
             }
         }
 
         @SuppressWarnings({"unchecked"})
-        private void scanClassAndInterfaces(Class klass, String className) {
+        private void scanClassAndInterfaces(Class klass, String className, Store store) {
             if (acceptResult(klass.getName())) {
-                getStore().put(klass.getName(), className);
+                put(store, klass.getName(), className);
                 for (String anInterface : (List<String>) getMetadataAdapter().getInterfacesNames(klass)) {
                     if (acceptResult(anInterface)) {
-                        getStore().put(anInterface, className);
+                        put(store, anInterface, className);
                     }
                 }
             }
