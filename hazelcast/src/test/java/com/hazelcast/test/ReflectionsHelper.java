@@ -72,7 +72,7 @@ public final class ReflectionsHelper {
     /**
      * Removes abstract and anonymous classes and interfaces from the given set.
      */
-    public static void filterNonConcreteClasses(Set<? extends Class> classes) {
+    public static void filterNonConcreteClasses(Set<? extends Class<?>> classes) {
         classes.removeIf(klass -> klass.isAnonymousClass()
                 || klass.isInterface() || Modifier.isAbstract(klass.getModifiers())
         );
@@ -81,7 +81,7 @@ public final class ReflectionsHelper {
     /**
      * Removes the classes that does not belong to `com.hazelcast` package.
      */
-    public static void filterNonHazelcastClasses(Set<? extends Class> classes) {
+    public static void filterNonHazelcastClasses(Set<? extends Class<?>> classes) {
         classes.removeIf(klass -> !klass.getName().startsWith("com.hazelcast"));
     }
 
@@ -143,7 +143,7 @@ public final class ReflectionsHelper {
 
             // apart from this class' direct supertype and directly declared interfaces, also scan the class
             // hierarchy up until Object class
-            Class superKlass = ((Class) cls).getSuperclass();
+            Class<?> superKlass = ((Class<?>) cls).getSuperclass();
             while (superKlass != null) {
                 scanClassAndInterfaces(superKlass, className, store);
                 superKlass = superKlass.getSuperclass();
@@ -151,7 +151,7 @@ public final class ReflectionsHelper {
         }
 
         @SuppressWarnings({"unchecked"})
-        private void scanClassAndInterfaces(Class klass, String className, Store store) {
+        private void scanClassAndInterfaces(Class<?> klass, String className, Store store) {
             if (acceptResult(klass.getName())) {
                 put(store, klass.getName(), className);
                 for (String anInterface : (List<String>) getMetadataAdapter().getInterfacesNames(klass)) {
