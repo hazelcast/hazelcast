@@ -1448,35 +1448,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.addEntryListener(new NoopMapListener<Object, Object>(), false);
 
         final LongAdder interceptGetCallCounter = new LongAdder();
-        map.addInterceptor(new MapInterceptor() {
-            private static final long serialVersionUID = 1L;
-
+        map.addInterceptor(new MapInterceptorAdaptor() {
             @Override
             public Object interceptGet(final Object value) {
                 interceptGetCallCounter.add(1);
-                return value;
-            }
-
-            @Override
-            public void afterGet(final Object value) {
-            }
-
-            @Override
-            public Object interceptPut(final Object oldValue, final Object newValue) {
-                return null;
-            }
-
-            @Override
-            public void afterPut(final Object value) {
-            }
-
-            @Override
-            public Object interceptRemove(final Object removedValue) {
-                return null;
-            }
-
-            @Override
-            public void afterRemove(final Object oldValue) {
+                return super.interceptGet(value);
             }
         });
 
