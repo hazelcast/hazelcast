@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -84,9 +85,9 @@ public class GetDdlFunction extends TriExpression<String> {
             if (catalogObject instanceof DataConnectionCatalogEntry) {
                 context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_DATACONNECTION));
             } else {
-                if (context.isSecurityEnabled()) {
-                    throw new UnsupportedOperationException("GET_DDL is not available "
-                            + "for mapping/view/type in secure environment");
+                if (context.isSecurityEnabled() && catalogObject instanceof Mapping) {
+                    throw new UnsupportedOperationException("GET_DDL is not available for mappings " +
+                            "in secure environment");
                 }
             }
             ddl = ((SqlCatalogObject) obj).unparse();
