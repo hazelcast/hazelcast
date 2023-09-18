@@ -18,6 +18,7 @@ package com.hazelcast.spi.discovery.integration;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.NodeFilter;
@@ -98,6 +99,7 @@ public interface DiscoveryService {
      * @param address the address to mark as unhealthy
      * @since 5.4
      */
+    @PrivateApi
     default void markEndpointAsUnhealthy(Address address) { }
 
     /**
@@ -110,6 +112,7 @@ public interface DiscoveryService {
      *  underlying implementation, otherwise an empty set.
      * @since 5.4
      */
+    @PrivateApi
     default Set<Address> getUnhealthyEndpoints() {
         return Collections.emptySet();
     }

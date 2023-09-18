@@ -107,17 +107,17 @@ public class DefaultDiscoveryService implements DiscoveryService {
 
     @Override
     public Set<Address> getUnhealthyEndpoints() {
-        Set<Address> addresses = null;
+        Set<Address> combinedAddresses = null;
         for (DiscoveryStrategy strategy : discoveryStrategies) {
-            Set<Address> local = strategy.getUnhealthyEndpoints();
-            if (!local.isEmpty()) {
-                if (addresses == null) {
-                    addresses = new HashSet<>(local.size());
+            Set<Address> strategyAddresses = strategy.getUnhealthyEndpoints();
+            if (!strategyAddresses.isEmpty()) {
+                if (combinedAddresses == null) {
+                    combinedAddresses = new HashSet<>(strategyAddresses.size());
                 }
-                addresses.addAll(local);
+                combinedAddresses.addAll(strategyAddresses);
             }
         }
-        return addresses == null ? Collections.emptySet() : addresses;
+        return combinedAddresses == null ? Collections.emptySet() : combinedAddresses;
     }
 
     public Iterable<DiscoveryStrategy> getDiscoveryStrategies() {

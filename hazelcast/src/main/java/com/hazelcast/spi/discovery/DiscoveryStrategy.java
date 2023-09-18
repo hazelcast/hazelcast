@@ -18,6 +18,7 @@ package com.hazelcast.spi.discovery;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 
 import java.util.Collection;
@@ -125,6 +126,7 @@ public interface DiscoveryStrategy {
      * @param address the address to mark as unhealthy
      * @since 5.4
      */
+    @PrivateApi
     default void markEndpointAsUnhealthy(Address address) { }
 
     /**
@@ -135,6 +137,7 @@ public interface DiscoveryStrategy {
      *  underlying implementation, otherwise an empty set.
      * @since 5.4
      */
+    @PrivateApi
     default Set<Address> getUnhealthyEndpoints() {
         return Collections.emptySet();
     }
