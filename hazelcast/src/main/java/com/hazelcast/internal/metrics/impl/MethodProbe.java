@@ -40,6 +40,7 @@ import java.util.concurrent.Semaphore;
  * A MethodProbe is a {@link ProbeFunction} that invokes a method that is annotated with {@link Probe}.
  */
 abstract class MethodProbe implements ProbeFunction {
+    private static final Object[] EMPTY_ARGS = new Object[0];
     private static final Lookup LOOKUP = MethodHandles.lookup();
 
     MethodHandle method;
@@ -185,7 +186,7 @@ abstract class MethodProbe implements ProbeFunction {
 
     protected long invokeLongPrimitive(final Object source) throws Exception {
         try {
-            return isMethodStatic ? (long) method.invokeExact() : (long) method.invokeExact(source);
+            return isMethodStatic ? (long) method.invokeExact(EMPTY_ARGS) : (long) method.invokeExact(source);
         } catch (final Exception e) {
             throw e;
         } catch (final Throwable t) {
