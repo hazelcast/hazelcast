@@ -171,7 +171,7 @@ class MongoTable extends JetTable {
                 ", connectionString='" + connectionString + '\'' +
                 ", options=" + options +
                 ", streaming=" + streaming +
-                ", forceMongoParallelismOne=" + forceReadTotalParallelismOne +
+                ", forceReadTotalParallelismOne=" + forceReadTotalParallelismOne +
                 '}';
     }
 

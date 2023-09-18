@@ -84,7 +84,7 @@ public final class MongoSinkBuilder<T> {
     private final WriteMongoParams<T> params = new WriteMongoParams<>();
 
     private int preferredLocalParallelism = 2;
-    private ResourceChecks existenceChecks;
+    private ResourceChecks existenceChecks = ResourceChecks.ONCE_PER_JOB;
 
     /**
      * See {@link MongoSinks#builder}
