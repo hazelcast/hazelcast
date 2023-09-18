@@ -117,14 +117,15 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
     /**
      * Cost calculation of Nested Loop Join relation.
      * <p>
-     * Nested Loop Join algorithm is a simple join algorithm, where for each left row we are
-     * traversing the whole right row set. Cost estimation is the following: <ol>
-     * <li> Produced row count is L + R assuming the join selectivity is 1.
-     * <li> Processed row count is L * R because for each left row we are probing full right row set.
-     * <li> CPU is L * R * (row comparison cost). </ol>
+     * Nested Loop Join algorithm is a simple join algorithm, where for each left row,
+     * we are traversing the whole right row set. Cost estimation is the following: <ol>
+     * <li> Produced row count is L * R * (join selectivity).
+     * <li> Processed row count is L * k * R, where k is 1 for non-equi-join,
+     *      (join selectivity) ≤ k ≤ 1 for equi-join and 1/R for key lookup.
+     * <li> CPU is L * (join selectivity) * R * (row comparison cost) assuming k
+     *      converges to the join selectivity on average. </ol>
      * <p>
-     * A perfect estimation must also include memory and IO costs, as well as a selectivity
-     * for the right row set.
+     * A perfect estimation must also include memory and IO costs.
      */
     @Override
     @Nullable
