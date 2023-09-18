@@ -589,7 +589,8 @@ public class PlanExecutor {
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 serializationService,
-                Util.getNodeEngine(hazelcastInstance));
+                Util.getNodeEngine(hazelcastInstance),
+                ssc);
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<JetSqlRow> future = hazelcastInstance.getMap(plan.mapName())
                 .getAsync(key)
