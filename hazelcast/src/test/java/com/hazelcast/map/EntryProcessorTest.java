@@ -34,6 +34,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -117,17 +118,24 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     @Parameter
     public InMemoryFormat inMemoryFormat;
 
-    @Parameters(name = "{index}: {0}")
+    @Parameter(1)
+    public boolean offload;
+
+    @Parameters(name = "{index}: {0}, offload: {1}")
     public static Collection<Object[]> data() {
         return asList(new Object[][]{
-                {BINARY},
-                {OBJECT},
+                {BINARY, true},
+                {BINARY, false},
+                {OBJECT, true},
+                {OBJECT, false},
         });
     }
 
     @Override
     public Config getConfig() {
-        return smallInstanceConfig().addMapConfig(new MapConfig(MAP_NAME).setInMemoryFormat(inMemoryFormat));
+        return smallInstanceConfigWithoutJetAndMetrics()
+                .setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(), String.valueOf(offload))
+                .addMapConfig(new MapConfig(MAP_NAME).setInMemoryFormat(inMemoryFormat));
     }
 
     boolean globalIndex() {
@@ -677,6 +685,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         AtomicInteger updateKey1Sum = new AtomicInteger(0);
         AtomicInteger removeKey1Sum = new AtomicInteger(0);
         CountDownLatch latch = new CountDownLatch(6);
+
         map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> {
             addCount.incrementAndGet();
             if (event.getKey() == 1) {
@@ -684,6 +693,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             }
             latch.countDown();
         }, true);
+
         map.addEntryListener((EntryRemovedListener<Integer, Integer>) event -> {
             removeCount.incrementAndGet();
             if (event.getKey() == 1) {
@@ -691,6 +701,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             }
             latch.countDown();
         }, true);
+
         map.addEntryListener((EntryUpdatedListener<Integer, Integer>) event -> {
             updateCount.incrementAndGet();
             if (event.getKey() == 1) {
