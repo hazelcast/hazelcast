@@ -84,7 +84,7 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
         // TODO: introduce selectivity estimator, but ATM we taking the worst case scenario : selectivity = 1.0.
         double producedRowCount = mq.getRowCount(this);
         double cpu = leftRowCount * Cost.HASH_JOIN_MULTIPLIER
-                + rightRowCount * selectivity * Cost.JOIN_ROW_CMP_MULTIPLIER;
+                + rightRowCount * Cost.JOIN_ROW_CMP_MULTIPLIER;
 
         return planner.getCostFactory().makeCost(producedRowCount, cpu, 0.);
     }
