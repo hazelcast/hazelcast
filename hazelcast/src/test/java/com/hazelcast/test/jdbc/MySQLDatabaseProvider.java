@@ -18,9 +18,9 @@ package com.hazelcast.test.jdbc;
 
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 import java.util.Arrays;
-import java.util.Map;
 
 import static java.util.stream.Collectors.joining;
 
@@ -42,7 +42,7 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
                 .withUsername("root")
                 .withUrlParam("user", "root")
                 .withUrlParam("password", "test")
-                .withTmpFs(Map.of(
+                .withTmpFs(ImmutableMap.of(
                         "/var/lib/mysql/", "rw",
                         "/tmp/", "rw"
                 ));
