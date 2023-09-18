@@ -7,6 +7,6 @@ trademarks of JetBrains s.r.o.</sup><sub>
 
 ## Code Formatting
 
-Import [`Project.xml`](Project.xml) under `Preferences | Editor | Code Style`
+Import [`Project.xml`](Project.xml) under `Settings | Editor | Code Style` as shown below.
 
 ![IntelliJ Settings Screenshot](./screenshot.png)

@@ -48,6 +48,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -97,11 +98,11 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
     @AfterClass
     public static void afterClass() throws Exception {
         if (jarFile != null) {
-            jarFile.delete();
+            Files.delete(jarFile.toPath());
             jarFile = null;
         }
         if (resourcesJarFile != null) {
-            resourcesJarFile.delete();
+            Files.delete(resourcesJarFile.toPath());
             resourcesJarFile = null;
         }
     }
@@ -132,10 +133,10 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
         // Create a member in a separate classloader without the test classes loaded
         URL classesUrl = new File("target/classes/").toURI().toURL();
         URL tpcClassesUrl = new File("../hazelcast-tpc-engine/target/classes/").toURI().toURL();
+        ClassLoader classLoader = getClass().getClassLoader();
         HazelcastAPIDelegatingClassloader classloader = new HazelcastAPIDelegatingClassloader(
                 new URL[]{classesUrl, tpcClassesUrl},
-                // Need to delegate to system classloader, which has maven dependencies like Jackson
-                ClassLoader.getSystemClassLoader()
+                classLoader
         );
         return HazelcastStarter.newHazelcastInstance(config, classloader);
     }

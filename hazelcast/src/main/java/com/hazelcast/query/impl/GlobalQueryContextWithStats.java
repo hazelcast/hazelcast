@@ -147,40 +147,6 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
-            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(descending);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
-            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(value);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending) {
-            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(comparison, value, descending);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(
-            Comparable from,
-            boolean fromInclusive,
-            Comparable to,
-            boolean toInclusive,
-            boolean descending
-        ) {
-            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(from, fromInclusive, to, toInclusive, descending);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
         public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
             Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(value);
             hasQueries = true;
