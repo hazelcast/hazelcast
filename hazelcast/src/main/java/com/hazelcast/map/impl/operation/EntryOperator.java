@@ -61,11 +61,11 @@ import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 
 @SuppressWarnings("checkstyle:methodcount")
 public final class EntryOperator {
-
     private final boolean shouldClone;
     private final boolean backup;
     private final boolean readOnly;
     private final boolean wanReplicationEnabled;
+    /** Are any listeners (e.g. {@link EntryUpdatedListener} registered to events */
     private final boolean hasEventRegistration;
     private final int partitionId;
     private final long startTimeNanos = Timer.nanos();
@@ -89,6 +89,14 @@ public final class EntryOperator {
     private boolean didMatchPredicate;
     private Data dataKey;
     private Object oldValue;
+    /**
+     * A clone of {@link #oldValue} that can be passed to the {@link #mapEventPublisher} to ensure isolation from any subsequent
+     * mutations (e.g. in an {@link EntryProcessor})
+     *
+     * @see <a href="https://hazelcast.atlassian.net/browse/HZ-2837">HZ-2837 - Field level mutation being taken by listener as
+     *      old value but not being considered by interceptor - Strange Behaviour</a>
+     */
+    private Object oldValueClone;
     private EntryEventType eventType;
     private Data result;
     private LockAwareLazyMapEntry entry;
@@ -175,6 +183,14 @@ public final class EntryOperator {
         }
 
         oldValue = recordStore.get(dataKey, backup, callerAddress, false);
+
+        // Not required for OBJECT as #getOrNullOldValue() would return null in any case where mutation would be problematic
+        if (!readOnly && hasEventRegistration && inMemoryFormat != OBJECT) {
+            oldValueClone =  mapServiceContext.toData(oldValue);
+        } else {
+            oldValueClone = oldValue;
+        }
+
         // predicated entry processors can only be applied to existing entries
         // so if we have a predicate and somehow(due to expiration or split-brain healing)
         // we found value null, we should skip that entry.
@@ -405,15 +421,15 @@ public final class EntryOperator {
     }
 
     /**
-     * Nullify old value if in memory format is object and operation is not removal
-     * since old and new value in fired event {@link com.hazelcast.core.EntryEvent}
-     * may be same due to the object in memory format.
+     * @return {@code null} {@code oldValue} if in memory format is {@link InMemoryFormat#OBJECT} and operation is not
+     *         {@link EntryEventType#REMOVED}, since old and new value in fired {@link EntryEvent} may reference the same object
+     *         due to {@link InMemoryFormat#OBJECT}.
      */
     private Object getOrNullOldValue() {
         if (inMemoryFormat == OBJECT && eventType != REMOVED) {
             return null;
         } else {
-            return oldValue;
+            return oldValueClone;
         }
     }
 }

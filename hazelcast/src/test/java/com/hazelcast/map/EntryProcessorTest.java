@@ -42,6 +42,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
+import com.hazelcast.map.listener.NoopMapListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -90,6 +91,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -1203,7 +1205,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         AtomicBoolean indexCalled = new AtomicBoolean(false);
-        map.executeOnEntries(entry -> null, new IndexedTestPredicate<>(indexCalled));
+        map.executeOnEntries(new NoOpEntryProcessor<>(), new IndexedTestPredicate<>(indexCalled));
 
         assertTrue("isIndexed method of IndexAwarePredicate should be called", indexCalled.get());
     }
@@ -1217,7 +1219,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         AtomicBoolean indexCalled = new AtomicBoolean(false);
-        map.executeOnEntries(entry -> null, new IndexedTestPredicate<>(indexCalled));
+        map.executeOnEntries(new NoOpEntryProcessor<>(), new IndexedTestPredicate<>(indexCalled));
 
         assertFalse("isIndexed method of IndexAwarePredicate should not be called", indexCalled.get());
     }
@@ -1437,6 +1439,56 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(1, executionCounter.get());
     }
 
+    @Test
+    public void testEntryProcessorCallsMapInterceptorGetOnlyOnce() {
+        final HazelcastInstance instance = createHazelcastInstance();
+
+        final IMap<Object, Object> map = instance.getMap(MAP_NAME);
+
+        map.addEntryListener(new NoopMapListener<Object, Object>(), false);
+
+        final LongAdder interceptGetCallCounter = new LongAdder();
+        map.addInterceptor(new MapInterceptor() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public Object interceptGet(final Object value) {
+                interceptGetCallCounter.add(1);
+                return value;
+            }
+
+            @Override
+            public void afterGet(final Object value) {
+            }
+
+            @Override
+            public Object interceptPut(final Object oldValue, final Object newValue) {
+                return null;
+            }
+
+            @Override
+            public void afterPut(final Object value) {
+            }
+
+            @Override
+            public Object interceptRemove(final Object removedValue) {
+                return null;
+            }
+
+            @Override
+            public void afterRemove(final Object oldValue) {
+            }
+        });
+
+        map.set(Void.TYPE, Void.TYPE);
+
+        map.executeOnEntries(new NoOpEntryProcessor<>());
+
+        assertEqualsStringFormat(
+                "For a map with a single entry, expected MapInterceptor.interceptGet to be called only %d time(s), but was called %d time(s)",
+                1L, interceptGetCallCounter.sum());
+    }
+
     private void testEntryProcessorWithPredicate_updatesLastAccessTime(boolean accessExpected) {
         Config config = withoutNetworkJoin(getConfig());
         config.getMetricsConfig().setEnabled(false);
@@ -1449,7 +1501,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.put("testKey", "testValue");
         EntryView<String, String> evStart = map.getEntryView("testKey");
         sleepAtLeastSeconds(2);
-        map.executeOnEntries(entry -> null, entry -> accessExpected);
+        map.executeOnEntries(new NoOpEntryProcessor<>(), entry -> accessExpected);
         EntryView<String, String> evEnd = map.getEntryView("testKey");
 
         if (accessExpected) {
