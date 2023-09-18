@@ -793,13 +793,6 @@ public final class IOUtil {
         }
     }
 
-    public static byte[] toByteArray(InputStream is) throws IOException {
-        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
-            is.transferTo(os);
-            return os.toByteArray();
-        }
-    }
-
     public static void drainTo(InputStream input, OutputStream output) throws IOException {
         byte[] buffer = new byte[1024];
         int n;
