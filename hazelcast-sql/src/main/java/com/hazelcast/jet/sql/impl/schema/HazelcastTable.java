@@ -93,12 +93,14 @@ public class HazelcastTable extends AbstractTable {
     private RelDataType rowType;
     private final Set<String> hiddenFieldNames = new HashSet<>();
 
-    public HazelcastTable(Table target, Statistic statistic) {
-        this(target, () -> statistic, null, null, null);
+    public HazelcastTable(Table target, HazelcastInstance instance) {
+        this(target, createTableStatistic(target, instance));
     }
 
-    public HazelcastTable(Table target, HazelcastInstance instance) {
-        this(target, () -> createTableStatistic(target, instance), null, null, null);
+    public HazelcastTable(Table target, Statistic statistic) {
+        this.target = target;
+        this.statisticSupplier = () -> statistic;
+        this.filter = null;
     }
 
     private HazelcastTable(
