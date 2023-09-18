@@ -24,6 +24,8 @@ import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
 
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
@@ -94,5 +96,6 @@ public interface ExpressionEvalContext {
      */
     void checkPermission(Permission permission);
 
-    boolean isSecurityEnabled();
+    @Nullable
+    Subject subject();
 }

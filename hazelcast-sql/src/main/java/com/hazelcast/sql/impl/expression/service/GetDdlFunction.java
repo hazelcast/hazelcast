@@ -81,11 +81,12 @@ public class GetDdlFunction extends TriExpression<String> {
             throw QueryException.error("Object '" + objectName + "' does not exist in namespace '" + namespace + "'");
         } else if (obj instanceof SqlCatalogObject) {
             SqlCatalogObject catalogObject = (SqlCatalogObject) obj;
-            // TODO: view mapping/view 'view'/view type?
             if (catalogObject instanceof DataConnectionCatalogEntry) {
                 context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_DATACONNECTION));
             } else {
-                if (context.isSecurityEnabled() && catalogObject instanceof Mapping) {
+                // TODO: implement mapping 'view' permission.
+                // if context.subject() != null -> HZ is able to check permissions for mapping
+                if (context.subject() != null && catalogObject instanceof Mapping) {
                     throw new UnsupportedOperationException("GET_DDL is not available for mappings "
                             + "in secure environment");
                 }

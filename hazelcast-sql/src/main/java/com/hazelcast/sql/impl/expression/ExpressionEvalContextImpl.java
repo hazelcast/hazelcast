@@ -22,6 +22,7 @@ import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
+import javax.security.auth.Subject;
 import java.security.Permission;
 import java.util.List;
 
@@ -93,7 +94,8 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     }
 
     @Override
-    public boolean isSecurityEnabled() {
-        return contextRef.subject() != null;
+    @Nonnull
+    public Subject subject() {
+        return contextRef.subject();
     }
 }

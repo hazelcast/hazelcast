@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.security;
 
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.security.Permission;
 
@@ -40,5 +41,6 @@ public interface SqlSecurityContext {
     /**
      * @return subject associated with the current query
      */
+    @Nullable
     Subject subject();
 }

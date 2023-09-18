@@ -534,7 +534,7 @@ public class PlanExecutor {
         assert oldValue == null : oldValue;
         try {
             sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-            Subject subject = ssc == null || !ssc.isSecurityEnabled() ? null : ssc.subject();
+            Subject subject = ssc == null ? null : ssc.subject();
             Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig, subject);
 
             job.getFuture().whenComplete((r, t) -> {
@@ -570,7 +570,7 @@ public class PlanExecutor {
 
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-        Subject subject = ssc == null || !ssc.isSecurityEnabled() ? null : ssc.subject();
+        Subject subject = ssc == null ? null : ssc.subject();
         Job job = jet.newLightJob(plan.getDag(), jobConfig, subject);
         job.join();
 

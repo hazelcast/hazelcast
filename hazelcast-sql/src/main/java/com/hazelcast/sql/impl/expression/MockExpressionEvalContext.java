@@ -20,6 +20,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.impl.NodeEngine;
 
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.security.Permission;
 import java.util.List;
 
@@ -54,8 +56,9 @@ public class MockExpressionEvalContext implements ExpressionEvalContext {
     public void checkPermission(Permission permission) {
     }
 
+    @Nullable
     @Override
-    public boolean isSecurityEnabled() {
-        return false;
+    public Subject subject() {
+        return null;
     }
 }
