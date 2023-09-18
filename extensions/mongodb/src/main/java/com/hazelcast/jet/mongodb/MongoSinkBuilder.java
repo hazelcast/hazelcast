@@ -237,19 +237,6 @@ public final class MongoSinkBuilder<T> {
     }
 
     /**
-     * If {@code true}, the lack of database or collection will cause an error.
-     * If {@code false}, database and collection will be automatically created.
-     * Default value is {@code true}.
-     *
-     * @param throwOnNonExisting if exception should be thrown when database or collection does not exist.
-     */
-    @Nonnull
-    public MongoSinkBuilder<T> throwOnNonExisting(boolean throwOnNonExisting) {
-        params.setCheckExistenceOnEachConnect(throwOnNonExisting);
-        return this;
-    }
-
-    /**
      * If {@link ResourceChecks#NEVER}, the database and collection will be automatically created on the first usage.
      * Otherwise, querying for a database or collection that don't exist will cause an error.
      * Default value is {@link ResourceChecks#ONCE_PER_JOB}.
