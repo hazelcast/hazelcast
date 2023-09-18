@@ -86,8 +86,8 @@ public class GetDdlFunction extends TriExpression<String> {
                 context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_DATACONNECTION));
             } else {
                 if (context.isSecurityEnabled() && catalogObject instanceof Mapping) {
-                    throw new UnsupportedOperationException("GET_DDL is not available for mappings " +
-                            "in secure environment");
+                    throw new UnsupportedOperationException("GET_DDL is not available for mappings "
+                            + "in secure environment");
                 }
             }
             ddl = ((SqlCatalogObject) obj).unparse();
