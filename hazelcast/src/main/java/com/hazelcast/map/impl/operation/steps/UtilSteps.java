@@ -58,6 +58,10 @@ public enum UtilSteps implements IMapOpStep {
             MapOperation operation = state.getOperation();
             operation.afterRunInternal();
             operation.disposeDeferredBlocks();
+
+            if (operation instanceof BackupOperation) {
+                state.getBackupOpAfterRun().accept(operation);
+            }
         }
 
         @Override
@@ -121,7 +125,6 @@ public enum UtilSteps implements IMapOpStep {
      * parallel with other offloaded operations.
      */
     DIRECT_RUN_STEP {
-
         @Override
         public void runStep(State state) {
             MapOperation op = state.getOperation();
