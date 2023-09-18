@@ -568,9 +568,10 @@ public class PlanExecutor {
                 .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows())
                 .setTimeoutMillis(timeout);
 
+        AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
         Subject subject = ssc == null || !ssc.isSecurityEnabled() ? null : ssc.subject();
-        Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig, subject);
+        Job job = jet.newLightJob(plan.getDag(), jobConfig, subject);
         job.join();
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);

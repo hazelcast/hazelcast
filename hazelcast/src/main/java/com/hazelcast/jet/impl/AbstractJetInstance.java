@@ -207,7 +207,10 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
         return newJobInt(newJobId(), dag, config, true);
     }
 
-    @Nonnull @Override
+    /**
+     * Submits a job defined in the Core API with attached {@link Subject}.
+     */
+    @Nonnull
     public Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config, @Nullable Subject subject) {
         return newJobInt(newJobId(), dag, config, subject, true);
     }

@@ -18,11 +18,11 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
@@ -73,7 +73,7 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
     private NodeEngine nodeEngine;
 
     @Mock
-    private JetService jet;
+    private AbstractJetInstance<?> jetInstance;
 
     @Mock
     private DAG dag;
@@ -152,8 +152,8 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
                 Collections.emptyList()
         );
 
-        given(hazelcastInstance.getJet()).willReturn(jet);
-        given(jet.newLightJob(eq(dag), isA(JobConfig.class), eq(null)))
+        given(hazelcastInstance.getJet()).willReturn(jetInstance);
+        given(jetInstance.newLightJob(eq(dag), isA(JobConfig.class), eq(null)))
                 .willReturn(job);
 
         // when
