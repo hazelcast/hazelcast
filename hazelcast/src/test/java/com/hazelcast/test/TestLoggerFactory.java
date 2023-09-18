@@ -138,7 +138,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         @Override
         public boolean isFinestEnabled() {
-            return true;
+            return delegate.isFinestEnabled();
         }
 
         @Override
@@ -164,7 +164,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         @Override
         public boolean isFineEnabled() {
-            return true;
+            return delegate.isFineEnabled();
         }
 
         @Override
@@ -190,7 +190,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         @Override
         public boolean isInfoEnabled() {
-            return true;
+            return delegate.isInfoEnabled();
         }
 
         @Override
@@ -216,7 +216,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         @Override
         public boolean isWarningEnabled() {
-            return true;
+            return delegate.isWarningEnabled();
         }
 
         @Override
@@ -242,7 +242,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         @Override
         public boolean isSevereEnabled() {
-            return true;
+            return delegate.isSevereEnabled();
         }
 
         @Override
@@ -273,7 +273,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         @Override
         public boolean isLoggable(Level level) {
-            return true;
+            return delegate.isLoggable(level);
         }
 
         private void logOnSlowLogging(long startTimeNanos) {
