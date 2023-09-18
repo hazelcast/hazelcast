@@ -35,7 +35,6 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -57,6 +56,8 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getSchemaId;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
@@ -98,13 +99,15 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
             Map<String, String> options,
             InternalSerializationService serializationService
     ) {
-        Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
+        Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
+
+        PortableId portableId = getSchemaId(fieldsByPath, PortableId::new, () -> portableId(options, isKey));
         ClassDefinition classDefinition = serializationService.getPortableContext()
-                .lookupClassDefinition(portableId(options, isKey));
+                .lookupClassDefinition(portableId);
 
         return userFields.isEmpty()
                 ? resolveFields(isKey, classDefinition)
-                : resolveAndValidateFields(isKey, userFieldsByPath, classDefinition);
+                : resolveAndValidateFields(isKey, fieldsByPath, classDefinition);
     }
 
     private static Stream<MappingField> resolveFields(boolean isKey, ClassDefinition classDefinition) {
@@ -125,30 +128,21 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
 
     private static Stream<MappingField> resolveAndValidateFields(
             boolean isKey,
-            Map<QueryPath, MappingField> userFieldsByPath,
+            Map<QueryPath, MappingField> fieldsByPath,
             @Nullable ClassDefinition classDefinition
     ) {
-        if (classDefinition == null) {
-            // ClassDefinition does not exist, make sure there are no OBJECT fields
-            return userFieldsByPath.values().stream()
-                    .peek(mappingField -> {
-                        QueryDataType type = mappingField.type();
-                        if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-                            throw QueryException.error("Cannot derive Portable type for '" + type.getTypeFamily() + "'");
-                        }
-                    });
-        }
+        if (classDefinition != null) {
+            for (String name : classDefinition.getFieldNames()) {
+                final QueryPath path = new QueryPath(name, isKey);
+                final QueryDataType type = PORTABLE_TO_SQL.getOrDefault(classDefinition.getFieldType(name));
 
-        for (String name : classDefinition.getFieldNames()) {
-            final QueryPath path = new QueryPath(name, isKey);
-            final QueryDataType type = PORTABLE_TO_SQL.getOrDefault(classDefinition.getFieldType(name));
-
-            MappingField userField = userFieldsByPath.get(path);
-            if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
-                throw QueryException.error("Mismatch between declared and resolved type: " + userField.name());
+                MappingField userField = fieldsByPath.get(path);
+                if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
+                    throw QueryException.error("Mismatch between declared and resolved type: " + userField.name());
+                }
             }
         }
-        return userFieldsByPath.values().stream();
+        return fieldsByPath.values().stream();
     }
 
     @Override
@@ -170,8 +164,8 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
-        PortableId portableId = portableId(options, isKey);
-        ClassDefinition classDefinition = resolveClassDefinition(portableId, fields.stream().map(Field::new),
+        PortableId portableId = getSchemaId(fieldsByPath, PortableId::new, () -> portableId(options, isKey));
+        ClassDefinition classDefinition = resolveClassDefinition(portableId, getFields(fieldsByPath),
                 serializationService.getPortableContext());
 
         return new KvMetadata(
@@ -190,9 +184,6 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
         }
 
         classDefinition = fields.reduce(new ClassDefinitionBuilder(portableId), (schema, field) -> {
-            if (field.name() == null) {
-                return schema;
-            }
             switch (field.type().getTypeFamily()) {
                 case BOOLEAN:
                     return schema.addBooleanField(field.name());

@@ -176,6 +176,8 @@ public interface SqlConnector {
 
     String OPTION_TYPE_PORTABLE_CLASS_VERSION = "portableClassVersion";
 
+    String OPTION_TYPE_AVRO_SCHEMA = "avroSchema";
+
     /**
      * Value for {@value #OPTION_KEY_FORMAT} and {@value #OPTION_VALUE_FORMAT}
      * for Java serialization.
@@ -540,6 +542,7 @@ public interface SqlConnector {
         options.add(OPTION_TYPE_PORTABLE_FACTORY_ID);
         options.add(OPTION_TYPE_PORTABLE_CLASS_ID);
         options.add(OPTION_TYPE_PORTABLE_CLASS_VERSION);
+        options.add(OPTION_TYPE_AVRO_SCHEMA);
         return options;
     }
 

@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -40,9 +39,15 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.AVRO_TO_SQL;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.inlineSchema;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataJavaResolver.loadClass;
+import static com.hazelcast.jet.sql.impl.connector.map.MetadataCompactResolver.compactTypeName;
 import static com.hazelcast.jet.sql.impl.connector.map.MetadataPortableResolver.PORTABLE_TO_SQL;
 import static com.hazelcast.jet.sql.impl.connector.map.MetadataPortableResolver.portableId;
 import static java.util.stream.Collectors.toList;
@@ -56,13 +61,13 @@ public final class TypeUtils {
             RelationsStorage relationsStorage
     ) {
         switch (format) {
-            case SqlConnector.PORTABLE_FORMAT:
+            case PORTABLE_FORMAT:
                 return new PortableEnricher(relationsStorage, serializationService);
-            case SqlConnector.COMPACT_FORMAT:
+            case COMPACT_FORMAT:
                 return new CompactEnricher(relationsStorage);
-            case SqlConnector.JAVA_FORMAT:
+            case JAVA_FORMAT:
                 return new JavaEnricher(relationsStorage);
-            case SqlConnector.AVRO_FORMAT:
+            case AVRO_FORMAT:
                 return new AvroEnricher(relationsStorage);
             default:
                 throw QueryException.error("Unsupported type format: " + format);
@@ -144,8 +149,7 @@ public final class TypeUtils {
 
         @Override
         protected String getSchemaId(Map<String, String> options, Boolean isKey) {
-            return options.get(isKey == null ? SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME : isKey
-                    ? SqlConnector.OPTION_KEY_COMPACT_TYPE_NAME : SqlConnector.OPTION_VALUE_COMPACT_TYPE_NAME);
+            return compactTypeName(options, isKey);
         }
     }
 
@@ -228,12 +232,7 @@ public final class TypeUtils {
 
         @Override
         protected Schema getSchemaId(Map<String, String> options, Boolean isKey) {
-            if (isKey == null) {
-                return null;
-            }
-            String inlineSchema = options.get(isKey
-                    ? SqlConnector.OPTION_KEY_AVRO_SCHEMA : SqlConnector.OPTION_VALUE_AVRO_SCHEMA);
-            return inlineSchema != null ? new Schema.Parser().parse(inlineSchema) : null;
+            return inlineSchema(options, isKey);
         }
     }
 

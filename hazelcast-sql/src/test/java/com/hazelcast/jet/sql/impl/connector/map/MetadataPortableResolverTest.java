@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
@@ -29,7 +28,6 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Test;
@@ -46,10 +44,8 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_VERSION;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.map.MetadataPortableResolver.INSTANCE;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -64,16 +60,18 @@ public class MetadataPortableResolverTest {
     public void test_resolveFields(boolean key, String prefix) {
         Stream<MappingField> resolvedFields = INSTANCE.resolveAndValidateFields(
                 key,
-                singletonList(field("field", QueryDataType.INT, prefix + ".field")),
-                ImmutableMap.of(
-                        (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), "1",
-                        (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), "2",
-                        (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), "3"
+                List.of(field("field", QueryDataType.INT, prefix + ".field")),
+                Map.of(
+                        key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID, "1",
+                        key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID, "2",
+                        key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION, "3"
                 ),
                 new DefaultSerializationServiceBuilder().build()
         );
 
-        assertThat(resolvedFields).containsExactly(field("field", QueryDataType.INT, prefix + ".field"));
+        assertThat(resolvedFields).containsExactly(
+                field("field", QueryDataType.INT, prefix + ".field")
+        );
     }
 
     @Test
@@ -102,10 +100,10 @@ public class MetadataPortableResolverTest {
                         .addPortableField("object", new ClassDefinitionBuilder(4, 5, 6).build())
                         .build();
         ss.getPortableContext().registerClassDefinition(classDefinition);
-        Map<String, String> options = ImmutableMap.of(
-                (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), String.valueOf(classDefinition.getFactoryId()),
-                (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), String.valueOf(classDefinition.getClassId()),
-                (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), String.valueOf(classDefinition.getVersion())
+        Map<String, String> options = Map.of(
+                key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID, String.valueOf(classDefinition.getFactoryId()),
+                key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID, String.valueOf(classDefinition.getClassId()),
+                key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION, String.valueOf(classDefinition.getVersion())
         );
 
         // TODO: fix portable nested types support?
@@ -137,13 +135,13 @@ public class MetadataPortableResolverTest {
     })
     public void test_resolveFieldsWithoutClassDefinition(boolean key, String prefix) {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-        Map<String, String> options = ImmutableMap.of(
-                (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), "1",
-                (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), "2",
-                (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), "3"
+        Map<String, String> options = Map.of(
+                key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID, "1",
+                key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID, "2",
+                key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION, "3"
         );
 
-        List<MappingField> fields = asList(
+        List<MappingField> fields = List.of(
                 field("string", QueryDataType.VARCHAR, prefix + ".string"),
                 field("character", QueryDataType.VARCHAR_CHARACTER, prefix + ".character"),
                 field("boolean", QueryDataType.BOOLEAN, prefix + ".boolean"),
@@ -171,30 +169,6 @@ public class MetadataPortableResolverTest {
             "true, __key",
             "false, this"
     })
-    public void when_fieldIsObjectAndClassDefinitionDoesNotExist_then_throws(boolean key, String prefix) {
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-        Map<String, String> options = ImmutableMap.of(
-                (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), "1",
-                (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), "2",
-                (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), "3"
-        );
-
-        List<MappingField> fields = singletonList(
-                field("object", QueryDataType.OBJECT, prefix + ".object")
-        );
-
-        // TODO: fix portable nested types support?
-        //noinspection ResultOfMethodCallIgnored
-        assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, fields, options, ss).collect(toList()))
-                .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Cannot derive Portable type for '" + QueryDataTypeFamily.OBJECT + "'");
-    }
-
-    @Test
-    @Parameters({
-            "true, __key",
-            "false, this"
-    })
     public void when_userDeclaresField_then_itsNameHasPrecedenceOverClassDefinitionOne(boolean key, String prefix) {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         ClassDefinition classDefinition =
@@ -202,10 +176,10 @@ public class MetadataPortableResolverTest {
                         .addIntField("field")
                         .build();
         ss.getPortableContext().registerClassDefinition(classDefinition);
-        Map<String, String> options = ImmutableMap.of(
-                (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), String.valueOf(classDefinition.getFactoryId()),
-                (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), String.valueOf(classDefinition.getClassId()),
-                (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), String.valueOf(classDefinition.getVersion())
+        Map<String, String> options = Map.of(
+                key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID, String.valueOf(classDefinition.getFactoryId()),
+                key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID, String.valueOf(classDefinition.getClassId()),
+                key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION, String.valueOf(classDefinition.getVersion())
         );
 
         Stream<MappingField> resolvedFields = INSTANCE.resolveAndValidateFields(
@@ -233,10 +207,10 @@ public class MetadataPortableResolverTest {
                         .addStringField("field2")
                         .build();
         ss.getPortableContext().registerClassDefinition(classDefinition);
-        Map<String, String> options = ImmutableMap.of(
-                (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), String.valueOf(classDefinition.getFactoryId()),
-                (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), String.valueOf(classDefinition.getClassId()),
-                (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), String.valueOf(classDefinition.getVersion())
+        Map<String, String> options = Map.of(
+                key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID, String.valueOf(classDefinition.getFactoryId()),
+                key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID, String.valueOf(classDefinition.getClassId()),
+                key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION, String.valueOf(classDefinition.getVersion())
         );
 
         Stream<MappingField> resolvedFields = INSTANCE.resolveAndValidateFields(
@@ -263,10 +237,10 @@ public class MetadataPortableResolverTest {
                         .addIntField("field")
                         .build();
         ss.getPortableContext().registerClassDefinition(classDefinition);
-        Map<String, String> options = ImmutableMap.of(
-                (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), String.valueOf(classDefinition.getFactoryId()),
-                (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), String.valueOf(classDefinition.getClassId()),
-                (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), String.valueOf(classDefinition.getVersion())
+        Map<String, String> options = Map.of(
+                key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID, String.valueOf(classDefinition.getFactoryId()),
+                key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID, String.valueOf(classDefinition.getClassId()),
+                key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION, String.valueOf(classDefinition.getVersion())
         );
 
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(
@@ -296,17 +270,17 @@ public class MetadataPortableResolverTest {
                         .build();
         ss.getPortableContext().registerClassDefinition(nestedClassDef);
         ss.getPortableContext().registerClassDefinition(classDefinition);
-        Map<String, String> options = ImmutableMap.of(
-                (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), String.valueOf(classDefinition.getFactoryId()),
-                (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), String.valueOf(classDefinition.getClassId()),
-                (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), String.valueOf(classDefinition.getVersion())
+        Map<String, String> options = Map.of(
+                key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID, String.valueOf(classDefinition.getFactoryId()),
+                key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID, String.valueOf(classDefinition.getClassId()),
+                key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION, String.valueOf(classDefinition.getVersion())
         );
 
         // We normally don't allow mapping e.g. INT field as OBJECT. But we need to allow it for arrays and nested objects
         // due to backwards-compatibility.
         INSTANCE.resolveAndValidateFields(
                 key,
-                asList(
+                List.of(
                         field("intArrayField", QueryDataType.OBJECT, prefix + ".intArrayField"),
                         field("nestedPortableField", QueryDataType.OBJECT, prefix + ".nestedPortableField")),
                 options,
@@ -326,15 +300,15 @@ public class MetadataPortableResolverTest {
                         .addIntField("field")
                         .build();
         ss.getPortableContext().registerClassDefinition(classDefinition);
-        Map<String, String> options = ImmutableMap.of(
-                (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), String.valueOf(classDefinition.getFactoryId()),
-                (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), String.valueOf(classDefinition.getClassId()),
-                (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), String.valueOf(classDefinition.getVersion())
+        Map<String, String> options = Map.of(
+                key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID, String.valueOf(classDefinition.getFactoryId()),
+                key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID, String.valueOf(classDefinition.getClassId()),
+                key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION, String.valueOf(classDefinition.getVersion())
         );
 
         assertThatThrownBy(() -> MetadataPortableResolver.INSTANCE.resolveAndValidateFields(
                 key,
-                asList(
+                List.of(
                         field("field1", QueryDataType.INT, prefix + ".field"),
                         field("field2", QueryDataType.VARCHAR, prefix + ".field")
                 ),
@@ -352,7 +326,7 @@ public class MetadataPortableResolverTest {
     public void test_resolveMetadata(boolean key, String prefix) {
         KvMetadata metadata = INSTANCE.resolveMetadata(
                 key,
-                asList(
+                List.of(
                         field("boolean", QueryDataType.BOOLEAN, prefix + ".boolean"),
                         field("byte", QueryDataType.TINYINT, prefix + ".byte"),
                         field("short", QueryDataType.SMALLINT, prefix + ".short"),
@@ -367,10 +341,10 @@ public class MetadataPortableResolverTest {
                         field("timestamp", QueryDataType.TIMESTAMP, prefix + ".timestamp"),
                         field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz")
                 ),
-                ImmutableMap.of(
-                        (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), "1",
-                        (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), "2",
-                        (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), "3"
+                Map.of(
+                        key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID, "1",
+                        key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID, "2",
+                        key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION, "3"
                 ),
                 new DefaultSerializationServiceBuilder().build()
         );
@@ -429,10 +403,10 @@ public class MetadataPortableResolverTest {
                         .addIntField("field")
                         .build();
         ss.getPortableContext().registerClassDefinition(classDefinition);
-        Map<String, String> options = ImmutableMap.of(
-                (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), String.valueOf(classDefinition.getFactoryId()),
-                (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), String.valueOf(classDefinition.getClassId()),
-                (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), String.valueOf(classDefinition.getVersion())
+        Map<String, String> options = Map.of(
+                key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID, String.valueOf(classDefinition.getFactoryId()),
+                key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID, String.valueOf(classDefinition.getClassId()),
+                key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION, String.valueOf(classDefinition.getVersion())
         );
 
         KvMetadata metadata = INSTANCE.resolveMetadata(

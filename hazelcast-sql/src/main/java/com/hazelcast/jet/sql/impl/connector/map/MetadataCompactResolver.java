@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaWriter;
 import com.hazelcast.internal.util.collection.DefaultedMap;
 import com.hazelcast.internal.util.collection.DefaultedMap.DefaultedMapBuilder;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.CompactUpsertTargetDescriptor;
@@ -45,11 +46,15 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_COMPACT_TYPE_NAME;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_COMPACT_TYPE_NAME;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getSchemaId;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
+import static java.util.function.Function.identity;
 
-final class MetadataCompactResolver implements KvMetadataResolver {
+public final class MetadataCompactResolver implements KvMetadataResolver {
     static final MetadataCompactResolver INSTANCE = new MetadataCompactResolver();
 
     private static final DefaultedMap<QueryDataTypeFamily, FieldKind> SQL_TO_COMPACT = new DefaultedMapBuilder<>(
@@ -88,24 +93,16 @@ final class MetadataCompactResolver implements KvMetadataResolver {
         if (userFields.isEmpty()) {
             throw QueryException.error("Column list is required for Compact format");
         }
+        Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
 
-        String typeNameProperty = isKey ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME;
-        String typeName = options.get(typeNameProperty);
+        // Check if the compact type name is specified
+        getSchemaId(fieldsByPath, identity(), () -> compactTypeName(options, isKey));
 
-        if (typeName == null) {
-            throw QueryException.error("Unable to resolve table metadata. Missing '" + typeNameProperty + "' option");
-        }
-
-        Map<QueryPath, MappingField> fields = extractFields(userFields, isKey);
-        return fields.entrySet().stream()
+        return fieldsByPath.entrySet().stream()
                 .map(entry -> {
                     QueryPath path = entry.getKey();
                     if (path.getPath() == null) {
                         throw QueryException.error("Cannot use the '" + path + "' field with Compact serialization");
-                    }
-                    QueryDataType type = entry.getValue().type();
-                    if (type == QueryDataType.OBJECT) {
-                        throw QueryException.error("Cannot derive Compact type for '" + type.getTypeFamily() + "'");
                     }
                     return entry.getValue();
                 });
@@ -120,8 +117,7 @@ final class MetadataCompactResolver implements KvMetadataResolver {
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
 
-        String typeNameProperty = isKey ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME;
-        String typeName = options.get(typeNameProperty);
+        String typeName = getSchemaId(fieldsByPath, identity(), () -> compactTypeName(options, isKey));
 
         List<TableField> fields = new ArrayList<>(fieldsByPath.size());
         for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
@@ -133,7 +129,7 @@ final class MetadataCompactResolver implements KvMetadataResolver {
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
-        Schema schema = resolveSchema(typeName, fieldsByPath);
+        Schema schema = resolveSchema(typeName, getFields(fieldsByPath));
 
         return new KvMetadata(
                 fields,
@@ -142,13 +138,20 @@ final class MetadataCompactResolver implements KvMetadataResolver {
         );
     }
 
-    private Schema resolveSchema(String typeName, Map<QueryPath, MappingField> fields) {
-        SchemaWriter schemaWriter = new SchemaWriter(typeName);
-        for (Entry<QueryPath, MappingField> entry : fields.entrySet()) {
-            String name = entry.getKey().getPath();
-            QueryDataTypeFamily type = entry.getValue().type().getTypeFamily();
-            schemaWriter.addField(new FieldDescriptor(name, SQL_TO_COMPACT.getOrDefault(type)));
+    private Schema resolveSchema(String typeName, Stream<Field> fields) {
+        return fields.collect(() -> new SchemaWriter(typeName),
+                (schema, field) -> schema.addField(new FieldDescriptor(field.name(),
+                        SQL_TO_COMPACT.getOrDefault(field.type().getTypeFamily()))),
+                ExceptionUtil::notParallelizable).build();
+    }
+
+    public static String compactTypeName(Map<String, String> options, Boolean isKey) {
+        String typeNameProperty = isKey == null ? OPTION_TYPE_COMPACT_TYPE_NAME :
+                isKey ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME;
+        String typeName = options.get(typeNameProperty);
+        if (typeName == null && isKey != null) {
+            throw QueryException.error(typeNameProperty + " is required to create Compact-based mapping");
         }
-        return schemaWriter.build();
+        return typeName;
     }
 }

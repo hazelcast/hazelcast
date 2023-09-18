@@ -43,10 +43,13 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_RECORD_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_SCHEMA;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_RECORD_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getSchemaId;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 import static com.hazelcast.jet.sql.impl.inject.AvroUpsertTarget.CONVERSION_PREFS;
 import static com.hazelcast.sql.impl.type.converter.Converters.getConverter;
@@ -101,19 +104,24 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         if (userFields.isEmpty()) {
             throw QueryException.error("Column list is required for Avro format");
         }
-        String inlineSchema = options.get(isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA);
-        if (inlineSchema != null && options.containsKey("schema.registry.url")) {
-            throw new IllegalArgumentException("Inline schema cannot be used with schema registry");
-        }
         Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
         for (QueryPath path : fieldsByPath.keySet()) {
             if (path.getPath() == null) {
                 throw QueryException.error("Cannot use the '" + path + "' field with Avro serialization");
             }
         }
-        if (inlineSchema != null) {
-            Schema schema = new Schema.Parser().parse(inlineSchema);
-            validate(schema, fieldsByPath.entrySet().stream().map(Field::new).collect(toList()));
+
+        Schema schema = getSchemaId(fieldsByPath, schemaJson -> {
+            // HazelcastKafkaAvro[De]Serializer obtains the schema from mapping options
+            options.put(isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA, schemaJson);
+            return new Schema.Parser().parse(schemaJson);
+        }, () -> inlineSchema(options, isKey));
+
+        if (schema != null) {
+            if (options.containsKey("schema.registry.url")) {
+                throw new IllegalArgumentException("Inline schema cannot be used with schema registry");
+            }
+            validate(schema, getFields(fieldsByPath).collect(toList()));
         }
         return fieldsByPath.values().stream();
     }
@@ -137,14 +145,12 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
-        Schema schema;
-        String inlineSchema = options.get(isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA);
-        if (inlineSchema != null) {
-            schema = new Schema.Parser().parse(inlineSchema);
-        } else {
+        Schema schema = getSchemaId(fieldsByPath, json -> new Schema.Parser().parse(json),
+                () -> inlineSchema(options, isKey));
+        if (schema == null) {
             String recordName = options.getOrDefault(
                     isKey ? OPTION_KEY_AVRO_RECORD_NAME : OPTION_VALUE_AVRO_RECORD_NAME, "jet.sql");
-            schema = resolveSchema(recordName, fields.stream().map(Field::new));
+            schema = resolveSchema(recordName, getFields(fieldsByPath));
         }
         return new KvMetadata(
                 fields,
@@ -156,9 +162,6 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
     // CREATE MAPPING <name> (<fields>) Type Kafka; INSERT INTO <name> ...
     private static Schema resolveSchema(String recordName, Stream<Field> fields) {
         return fields.reduce(SchemaBuilder.record(recordName).fields(), (schema, field) -> {
-            if (field.name() == null) {
-                return schema;
-            }
             switch (field.type().getTypeFamily()) {
                 case BOOLEAN:
                     return schema.optionalBoolean(field.name());
@@ -236,5 +239,19 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         return schema.isNullable()
                 ? builder -> builder.name(name).type(schema).withDefault(null)
                 : builder -> builder.name(name).type().optional().type(schema);
+    }
+
+    public static Schema inlineSchema(Map<String, String> options, Boolean isKey) {
+        String schemaProperty = isKey == null ? OPTION_TYPE_AVRO_SCHEMA :
+                isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA;
+        String schemaJson = options.get(schemaProperty);
+        if (schemaJson == null) {
+            if (isKey != null && !options.containsKey("schema.registry.url")) {
+                throw QueryException.error("Either schema.registry.url or " + schemaProperty
+                        + " is required to create Avro-based mapping");
+            }
+            return null;
+        }
+        return new Schema.Parser().parse(schemaJson);
     }
 }

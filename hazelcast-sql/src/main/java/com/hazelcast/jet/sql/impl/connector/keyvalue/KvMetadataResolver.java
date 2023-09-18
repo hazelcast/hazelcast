@@ -30,6 +30,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
@@ -82,6 +84,45 @@ public interface KvMetadataResolver {
         if (resolvedFields.stream().noneMatch(field -> field.name().equals(fieldName))) {
             tableFields.add(new MapTableField(fieldName, type, true, QueryPath.create(fieldName)));
         }
+    }
+
+    /**
+     * If {@code __key}/{@code this} is the only key/value field and has a custom type,
+     * resolve the schema ID from the type. Otherwise, return {@code orElse()}.
+     */
+    static <T> T getSchemaId(
+            Map<QueryPath, MappingField> fields,
+            Function<String, T> resolveFromType,
+            Supplier<T> orElse
+    ) {
+        return flatMap(fields, type -> resolveFromType.apply(type.getObjectTypeMetadata()), orElse);
+    }
+
+    /**
+     * If {@code __key}/{@code this} is the only field and has a custom type,
+     * return type fields. Otherwise, return mapping fields without {@code __key} or {@code this}.
+     */
+    static Stream<Field> getFields(Map<QueryPath, MappingField> fields) {
+        return flatMap(fields, type -> type.getObjectFields().stream().map(Field::new),
+                () -> fields.entrySet().stream().filter(e -> e.getKey().getPath() != null).map(Field::new));
+    }
+
+    /**
+     * If {@code __key}/{@code this} is the only field and has a custom type,
+     * return {@code typeMapper(fieldType)}. Otherwise, return {@code orElse()}.
+     */
+    static <T> T flatMap(
+            Map<QueryPath, MappingField> fields,
+            Function<QueryDataType, T> typeMapper,
+            Supplier<T> orElse
+    ) {
+        if (fields.size() == 1) {
+            Entry<QueryPath, MappingField> entry = fields.entrySet().iterator().next();
+            if (entry.getKey().getPath() == null && entry.getValue().type().isCustomType()) {
+                return typeMapper.apply(entry.getValue().type());
+            }
+        }
+        return orElse.get();
     }
 
     class Field {

@@ -29,13 +29,13 @@ import org.apache.avro.SchemaBuilder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.INSTANCE;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.OBJECT_SCHEMA;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -50,8 +50,8 @@ public class KvMetadataAvroResolverTest {
     public void test_resolveFields(boolean key, String prefix) {
         Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(
                 key,
-                singletonList(field("field", QueryDataType.INT, prefix + ".field")),
-                emptyMap(),
+                List.of(field("field", QueryDataType.INT, prefix + ".field")),
+                Map.of("schema.registry.url", "http://localhost:8081"),
                 null
         );
 
@@ -66,19 +66,18 @@ public class KvMetadataAvroResolverTest {
     public void when_noKeyOrThisPrefixInExternalName_then_usesValue(boolean key) {
         KvMetadata metadata = INSTANCE.resolveMetadata(
                 key,
-                singletonList(field("field", QueryDataType.INT, "extField")),
-                emptyMap(),
+                List.of(field("field", QueryDataType.INT, "extField")),
+                Map.of("schema.registry.url", "http://localhost:8081"),
                 null
         );
-        assertThat(metadata.getFields()).containsExactly(
-                key
-                        ? new MapTableField[]{
-                                new MapTableField("__key", QueryDataType.OBJECT, true, QueryPath.KEY_PATH)
-                        }
-                        : new MapTableField[]{
-                                new MapTableField("field", QueryDataType.INT, false, new QueryPath("extField", false)),
-                                new MapTableField("this", QueryDataType.OBJECT, true, QueryPath.VALUE_PATH)
-                        });
+        assertThat(metadata.getFields()).containsExactly(key
+                ? new MapTableField[]{
+                        new MapTableField("__key", QueryDataType.OBJECT, true, QueryPath.KEY_PATH)
+                }
+                : new MapTableField[]{
+                        new MapTableField("field", QueryDataType.INT, false, new QueryPath("extField", false)),
+                        new MapTableField("this", QueryDataType.OBJECT, true, QueryPath.VALUE_PATH)
+                });
     }
 
     @Test
@@ -89,7 +88,7 @@ public class KvMetadataAvroResolverTest {
     public void when_duplicateExternalName_then_throws(boolean key, String prefix) {
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(
                 key,
-                asList(
+                List.of(
                         field("field1", QueryDataType.INT, prefix + ".field"),
                         field("field2", QueryDataType.VARCHAR, prefix + ".field")
                 ),
@@ -108,7 +107,7 @@ public class KvMetadataAvroResolverTest {
     public void test_resolveMetadata(boolean key, String prefix) {
         KvMetadata metadata = INSTANCE.resolveMetadata(
                 key,
-                asList(
+                List.of(
                         field("string", QueryDataType.VARCHAR, prefix + ".string"),
                         field("boolean", QueryDataType.BOOLEAN, prefix + ".boolean"),
                         field("byte", QueryDataType.TINYINT, prefix + ".byte"),
@@ -124,7 +123,7 @@ public class KvMetadataAvroResolverTest {
                         field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz"),
                         field("object", QueryDataType.OBJECT, prefix + ".object")
                 ),
-                emptyMap(),
+                Map.of("schema.registry.url", "http://localhost:8081"),
                 null
         );
 
