@@ -22,6 +22,7 @@ import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.security.Permission;
 import java.util.List;
@@ -94,8 +95,8 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     }
 
     @Override
-    @Nonnull
+    @Nullable
     public Subject subject() {
-        return contextRef.subject();
+        return contextRef != null ? contextRef.subject() : null;
     }
 }
