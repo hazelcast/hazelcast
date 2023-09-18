@@ -200,7 +200,8 @@ public final class MongoSourceBuilder {
         return stream("MongoStreamSource(" + dataConnectionRef.getName() + ")", dataConnectionRef);
     }
 
-    private abstract static class Base<T> {
+    @SuppressWarnings("unchecked")
+    private abstract static class Base<T, SELF extends Base<T, SELF>> {
         protected ReadMongoParams<T> params;
         protected ResourceChecks existenceChecks = ResourceChecks.ONCE_PER_JOB;
 
@@ -208,17 +209,94 @@ public final class MongoSourceBuilder {
         protected boolean forceReadTotalParallelismOne;
 
         @Nonnull
-        public Base<T> database(String database) {
+        public SELF database(String database) {
             params.setDatabaseName(database);
-            return this;
+            return (SELF) this;
         }
 
+        /**
+         * If set to true, reading will be done in only one thread.
+         *
+         * @param forceReadTotalParallelismOne if true, reading will be done in only one thread.
+         */
         @Nonnull
-        public abstract <T_NEW> Base<T_NEW> collection(String collectionName, Class<T_NEW> mongoType);
+        public SELF forceReadTotalParallelismOne(boolean forceReadTotalParallelismOne) {
+            this.forceReadTotalParallelismOne = forceReadTotalParallelismOne;
+            return (SELF) this;
+        }
 
+        /**
+         * If {@link ResourceChecks#NEVER}, the database and collection will be automatically created on the first usage.
+         * Otherwise, querying for a database or collection that don't exist will cause an error.
+         * Default value is {@link ResourceChecks#ONCE_PER_JOB}.
+         *
+         * @since 5.4
+         * @param checkResourceExistence mode of resource existence checks; whether exception should be thrown when
+         *                               database or collection does not exist and when the check will be performed.
+         */
         @Nonnull
-        public Base<Document> collection(String collectionName) {
-            return this.collection(collectionName, Document.class);
+        public SELF checkResourceExistence(ResourceChecks checkResourceExistence) {
+            existenceChecks = checkResourceExistence;
+            return (SELF) this;
+        }
+
+        /**
+         * Adds a projection aggregate. Example use:
+         * <pre>{@code
+         * import static com.mongodb.client.model.Projections.include;
+         *
+         *  MongoSourceBuilder.stream(name, supplier)
+         *      .projection(include("fieldName"));
+         * }</pre>
+         * @param projection Bson form of projection;
+         *                   use {@link com.mongodb.client.model.Projections} to create projection.
+         * @return this builder with projection added
+         */
+        @Nonnull
+        public SELF project(@Nonnull Bson projection) {
+            params.addAggregate(Aggregates.project(projection).toBsonDocument());
+            return (SELF) this;
+        }
+
+        /**
+         * Adds sort aggregate to this builder.
+         * <p>
+         * Example usage:
+         * <pre>{@code
+         *  import static com.mongodb.client.model.Sorts.ascending;
+         *
+         *  MongoSourceBuilder.stream(name, supplier)
+         *      .sort(ascending("fieldName"));
+         * }</pre>
+         * @param sort Bson form of sort. Use {@link com.mongodb.client.model.Sorts} to create sort.
+         * @return this builder with aggregate added
+         */
+        @Nonnull
+        public SELF sort(@Nonnull Bson sort) {
+            params.addAggregate(Aggregates.sort(sort).toBsonDocument());
+            return (SELF) this;
+        }
+
+        /**
+         * Adds filter aggregate to this builder, which allows to filter documents in MongoDB, without
+         * the need to download all documents.
+         * <p>
+         * Example usage:
+         * <pre>{@code
+         *  import static com.mongodb.client.model.Filters.eq;
+         *
+         *  MongoSourceBuilder.stream(name, supplier)
+         *      .filter(eq("fieldName", 10));
+         * }</pre>
+         *
+         * @param filter Bson form of filter. Use {@link com.mongodb.client.model.Filters} to create sort.
+         * @return this builder with aggregate added
+         */
+        @Nonnull
+        public SELF filter(@Nonnull Bson filter) {
+            checkNotNull(filter, "filter argument cannot be null");
+            params.addAggregate(Aggregates.match(filter).toBsonDocument());
+            return (SELF) this;
         }
     }
 
@@ -228,7 +306,7 @@ public final class MongoSourceBuilder {
      * @param <T> type of the emitted objects
      */
     @SuppressWarnings("UnusedReturnValue")
-    public static final class Batch<T> extends Base<T> {
+    public static final class Batch<T> extends Base<T, Batch<T>> {
 
         @SuppressWarnings("unchecked")
         private Batch(
@@ -256,91 +334,6 @@ public final class MongoSourceBuilder {
         }
 
         /**
-         * If {@link ResourceChecks#NEVER}, the database and collection will be automatically created on the first usage.
-         * Otherwise, querying for a database or collection that don't exist will cause an error.
-         * Default value is {@link ResourceChecks#ONCE_PER_JOB}.
-         *
-         * @since 5.4
-         * @param checkResourceExistence mode of resource existence checks; whether exception should be thrown when
-         *                               database or collection does not exist and when the check will be performed.
-         */
-        @Nonnull
-        public Batch<T> checkResourceExistence(ResourceChecks checkResourceExistence) {
-            existenceChecks = checkResourceExistence;
-            return this;
-        }
-
-        /**
-         * If set to true, reading will be done in only one thread cluster-wide.
-         *
-         * @param forceReadTotalParallelismOne if true, reading will be done in only one thread.
-         */
-        @Nonnull
-        public Batch<T> forceReadTotalParallelismOne(boolean forceReadTotalParallelismOne) {
-            super.forceReadTotalParallelismOne = forceReadTotalParallelismOne;
-            return this;
-        }
-
-        /**
-         * Adds a projection aggregate. Example use:
-         * <pre>{@code
-         * import static com.mongodb.client.model.Projections.include;
-         *
-         *  MongoSourceBuilder.stream(name, supplier)
-         *      .projection(include("fieldName"));
-         * }</pre>
-         * @param projection Bson form of projection;
-         *                   use {@link com.mongodb.client.model.Projections} to create projection.
-         * @return this builder with projection added
-         */
-        @Nonnull
-        public Batch<T> project(@Nonnull Bson projection) {
-            params.addAggregate(Aggregates.project(projection).toBsonDocument());
-            return this;
-        }
-
-        /**
-         * Adds sort aggregate to this builder.
-         * <p>
-         * Example usage:
-         * <pre>{@code
-         *  import static com.mongodb.client.model.Sorts.ascending;
-         *
-         *  MongoSourceBuilder.stream(name, supplier)
-         *      .sort(ascending("fieldName"));
-         * }</pre>
-         * @param sort Bson form of sort. Use {@link com.mongodb.client.model.Sorts} to create sort.
-         * @return this builder with aggregate added
-         */
-        @Nonnull
-        public Batch<T> sort(@Nonnull Bson sort) {
-            params.addAggregate(Aggregates.sort(sort).toBsonDocument());
-            return this;
-        }
-
-        /**
-         * Adds filter aggregate to this builder, which allows to filter documents in MongoDB, without
-         * the need to download all documents.
-         * <p>
-         * Example usage:
-         * <pre>{@code
-         *  import static com.mongodb.client.model.Filters.eq;
-         *
-         *  MongoSourceBuilder.stream(name, supplier)
-         *      .filter(eq("fieldName", 10));
-         * }</pre>
-         *
-         * @param filter Bson form of filter. Use {@link com.mongodb.client.model.Filters} to create sort.
-         * @return this builder with aggregate added
-         */
-        @Nonnull
-        public Batch<T> filter(@Nonnull Bson filter) {
-            checkNotNull(filter, "filter argument cannot be null");
-            params.addAggregate(Aggregates.match(filter).toBsonDocument());
-            return this;
-        }
-
-        /**
          * @param mapFn   transforms the queried document to the desired output
          *                object
          * @param <T_NEW> type of the emitted object
@@ -351,16 +344,6 @@ public final class MongoSourceBuilder {
             Batch<T_NEW> newThis = (Batch<T_NEW>) this;
             newThis.params.setMapItemFn(mapFn);
             return newThis;
-        }
-
-        /**
-         * Specifies which database will be queried. If not specified, connector will look at all databases.
-         * @param database database name to query.
-         * @return this builder
-         */
-        @Override @Nonnull
-        public Batch<T> database(@Nullable String database) {
-            return (Batch<T>) super.database(database);
         }
 
         /**
@@ -379,7 +362,7 @@ public final class MongoSourceBuilder {
          * @param collectionName Name of the collection that will be queried.
          * @return this builder
          */
-        @Override @Nonnull
+        @Nonnull
         public Batch<Document> collection(@Nullable String collectionName) {
             return collection(collectionName, Document.class);
         }
@@ -409,7 +392,7 @@ public final class MongoSourceBuilder {
          * @param mongoType user defined type to which the document will be parsed.
          * @return this builder
          */
-        @Override @Nonnull
+        @Nonnull
         @SuppressWarnings("unchecked")
         public <T_NEW> Batch<T_NEW> collection(String collectionName, @Nonnull Class<T_NEW> mongoType) {
             Batch<T_NEW> newThis = (Batch<T_NEW>) this;
@@ -449,7 +432,7 @@ public final class MongoSourceBuilder {
      *
      * @param <T> type of the queried documents
      */
-    public static final class Stream<T> extends Base<T> {
+    public static final class Stream<T> extends Base<T, Stream<T>> {
 
         @SuppressWarnings("unchecked")
         private Stream(
@@ -477,66 +460,6 @@ public final class MongoSourceBuilder {
         }
 
         /**
-         * If set to true, reading will be done in only one thread.
-         *
-         * @param forceReadTotalParallelismOne if true, reading will be done in only one thread.
-         */
-        @Nonnull
-        public Stream<T> forceReadTotalParallelismOne(boolean forceReadTotalParallelismOne) {
-            super.forceReadTotalParallelismOne = forceReadTotalParallelismOne;
-            return this;
-        }
-
-        /**
-         * Adds a projection aggregate. Example use:
-         * <pre>{@code
-         * import static com.mongodb.client.model.Projections.include;
-         *
-         *  MongoSourceBuilder.stream(name, supplier)
-         *      .projection(include("fieldName"));
-         * }</pre>
-         * @param projection Bson form of projection;
-         *                   use {@link com.mongodb.client.model.Projections} to create projection.
-         * @return this builder with projection added
-         */
-        @Nonnull
-        public Stream<T> project(@Nonnull Bson projection) {
-            params.addAggregate(Aggregates.project(projection).toBsonDocument());
-            return this;
-        }
-
-        /**
-         * Adds filter aggregate to this builder, which allows to filter documents in MongoDB, without
-         * the need to download all documents.
-         * <p>
-         * Example usage:
-         * <pre>{@code
-         *  import static com.mongodb.client.model.Filters.eq;
-         *
-         *  MongoSourceBuilder.stream(name, supplier)
-         *      .filter(eq("fieldName", 10));
-         * }</pre>
-         * @param filter Bson form of filter. Use {@link com.mongodb.client.model.Filters} to create sort.
-         * @return this builder with aggregate added
-         */
-        @Nonnull
-        public Stream<T> filter(@Nonnull Bson filter) {
-            params.addAggregate(Aggregates.match(filter).toBsonDocument());
-            return this;
-        }
-
-        /**
-         * Specifies which database will be queried. If not specified, connector will look at all databases.
-         * @param database database name to query.
-         * @return this builder
-         */
-        @Nonnull @Override
-        public Stream<T> database(@Nonnull String database) {
-            params.setDatabaseName(database);
-            return this;
-        }
-
-        /**
          * Specifies from which collection connector will read documents. If not invoked,
          * then connector will look at all collections in given database.
          * <p>
@@ -552,7 +475,7 @@ public final class MongoSourceBuilder {
          * @param collectionName Name of the collection that will be queried.
          * @return this builder
          */
-        @Nonnull @Override
+        @Nonnull
         public Stream<Document> collection(@Nonnull String collectionName) {
             return collection(collectionName, Document.class);
         }
@@ -584,7 +507,6 @@ public final class MongoSourceBuilder {
          */
         @Nonnull
         @SuppressWarnings("unchecked")
-        @Override
         public <T_NEW> Stream<T_NEW> collection(@Nonnull String collectionName, @Nonnull Class<T_NEW> mongoType) {
             Stream<T_NEW> newThis = (Stream<T_NEW>) this;
             newThis.params.setCollectionName(collectionName);
@@ -618,21 +540,6 @@ public final class MongoSourceBuilder {
         @Nonnull
         public Stream<T> startAtOperationTime(@Nonnull BsonTimestamp startAtOperationTime) {
             this.params.setStartAtTimestamp(startAtOperationTime);
-            return this;
-        }
-
-        /**
-         * If {@link ResourceChecks#NEVER}, the database and collection will be automatically created on the first usage.
-         * Otherwise, querying for a database or collection that don't exist will cause an error.
-         * Default value is {@link ResourceChecks#ONCE_PER_JOB}.
-         *
-         * @since 5.4
-         * @param checkResourceExistence mode of resource existence checks; whether exception should be thrown when
-         *                               database or collection does not exist and when the check will be performed.
-         */
-        @Nonnull
-        public Stream<T> checkResourceExistence(ResourceChecks checkResourceExistence) {
-            existenceChecks = checkResourceExistence;
             return this;
         }
 

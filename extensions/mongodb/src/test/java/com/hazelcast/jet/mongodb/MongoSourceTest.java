@@ -130,6 +130,7 @@ public class MongoSourceTest extends AbstractMongoTest {
         Batch<?> sourceBuilder = batch(() -> mongoClient(connectionString))
                                                .database(defaultDatabase())
                                                .collection(testName.getMethodName())
+                                               .forceReadTotalParallelismOne(true)
                                                .sort(ascending("key"))
                                                .checkResourceExistence(ResourceChecks.ONCE_PER_JOB);
         sourceBuilder = batchFilters(sourceBuilder);
