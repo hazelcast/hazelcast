@@ -42,7 +42,7 @@ import java.util.concurrent.Semaphore;
 abstract class MethodProbe implements ProbeFunction {
     private static final Lookup LOOKUP = MethodHandles.lookup();
 
-    MethodHandle method;
+    final MethodHandle method;
     final boolean isMethodStatic;
     final CachedProbe probe;
     final ProbeUtils type;
@@ -52,20 +52,22 @@ abstract class MethodProbe implements ProbeFunction {
     MethodProbe(final Method method, final Probe probe, final ProbeUtils type, final SourceMetadata sourceMetadata) {
         try {
             method.setAccessible(true);
-            this.method = LOOKUP.unreflect(method);
+            MethodHandle unreflected = LOOKUP.unreflect(method);
 
             isMethodStatic = Modifier.isStatic(method.getModifiers());
 
             // Support invokeExact
             if (type.isPrimitive()) {
-                MethodType methodType = this.method.type().changeReturnType(type.getMapsTo());
+                MethodType methodType = unreflected.type().changeReturnType(type.getMapsTo());
 
                 if (!isMethodStatic) {
                     methodType = methodType.changeParameterType(0, Object.class);
                 }
 
-                this.method = this.method.asType(methodType);
+                unreflected = unreflected.asType(methodType);
             }
+
+            this.method = unreflected;
 
             this.probe = new CachedProbe(probe);
             this.type = type;
