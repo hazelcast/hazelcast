@@ -106,7 +106,7 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_ClientAuthenticationCustomCodec_encodeResponse() {
         int fileClientMessageIndex = 3;
-        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeResponse(aByte, anAddress, aUUID, aByte, aString, anInt, aUUID, aBoolean);
+        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeResponse(aByte, anAddress, aUUID, aByte, aString, anInt, aUUID, aBoolean, aListOfIntegers, aByteArray);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

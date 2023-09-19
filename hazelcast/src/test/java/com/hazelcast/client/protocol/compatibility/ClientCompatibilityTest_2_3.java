@@ -109,6 +109,8 @@ public class ClientCompatibilityTest_2_3 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertFalse(parameters.isTpcPortsExists);
+        assertFalse(parameters.isTpcTokenExists);
     }
 
     @Test
