@@ -129,10 +129,15 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
                     store.getName(), store.getPartitionId(), store.size()));
         }
 
-        if (store.getMapContainer().getMapConfig().getTieredStoreConfig().isEnabled()) {
-            ((DefaultRecordStore) store).destroyStorageImmediate(false, true);
-        } else {
-            ((DefaultRecordStore) store).destroyStorageAfterClear(false, true);
+        store.beforeOperation();
+        try {
+            if (store.getMapContainer().getMapConfig().getTieredStoreConfig().isEnabled()) {
+                ((DefaultRecordStore) store).destroyStorageImmediate(false, true);
+            } else {
+                ((DefaultRecordStore) store).destroyStorageAfterClear(false, true);
+            }
+        } finally {
+            store.afterOperation();
         }
     }
 
