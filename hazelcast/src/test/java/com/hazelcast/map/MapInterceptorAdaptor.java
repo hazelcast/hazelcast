@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+/** Allows implementations to implement {@link MapInterceptor} with less boilerplate code */
 public class MapInterceptorAdaptor implements MapInterceptor {
     private static final long serialVersionUID = 1L;
 
