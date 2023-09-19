@@ -32,14 +32,6 @@
         <version>5.4.0-SNAPSHOT</version>
     </parent>
 
-    <!-- Repository to download kafka-connect-datagen. Because this resource does not exist on maven central    -->
-    <repositories>
-        <repository>
-            <id>devel-repository</id>
-            <url>https://hazelcast.jfrog.io/artifactory/devel</url>
-        </repository>
-    </repositories>
-
     <build>
         <plugins>
             <plugin>
@@ -68,14 +60,14 @@
                     </filters>
                 </configuration>
             </plugin>
+            <!--version 1.7.1 is buggy and does not use the cache properly-->
             <plugin>
                 <groupId>com.googlecode.maven-download-plugin</groupId>
                 <artifactId>download-maven-plugin</artifactId>
-                <version>1.7.1</version>
+                <version>1.6.8</version>
                 <executions>
                     <execution>
                         <id>download-zip-file</id>
-                        <phase>process-resources</phase>
                         <goals>
                             <goal>wget</goal>
                         </goals>
@@ -85,7 +77,6 @@
                     <url>https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-datagen-0.6.0.zip</url>
                     <unpack>false</unpack>
                     <outputDirectory>${project.build.directory}/classes</outputDirectory>
-
                 </configuration>
             </plugin>
         </plugins>
@@ -146,13 +137,5 @@
             <version>4.4.12</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.confluent.kafka.connect</groupId>
-            <artifactId>kafka-connect-datagen</artifactId>
-            <version>0.6.0</version>
-            <type>zip</type>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
-
 </project>
