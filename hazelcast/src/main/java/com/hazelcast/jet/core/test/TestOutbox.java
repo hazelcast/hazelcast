@@ -77,10 +77,6 @@ public final class TestOutbox implements OutboxInternal {
         allOrdinals = IntStream.range(0, edgeCapacities.length).toArray();
 
         OutboundCollector[] outstreams = new OutboundCollector[edgeCapacities.length + (snapshotCapacity > 0 ? 1 : 0)];
-        Arrays.setAll(outstreams, i ->
-                i < edgeCapacities.length
-                    ? e -> addToQueue(buckets[i], edgeCapacities[i], e)
-                    : e -> addToQueue(snapshotQueue, snapshotCapacity, deserializeSnapshotEntry((Entry<Data, Data>) e)));
 
         serializationService = new DefaultSerializationServiceBuilder().build();
         outbox = new OutboxImpl(outstreams, snapshotCapacity > 0, new ProgressTracker(), serializationService,
