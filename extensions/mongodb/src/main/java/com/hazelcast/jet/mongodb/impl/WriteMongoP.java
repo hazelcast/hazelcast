@@ -608,7 +608,10 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
         private final @Nonnull String databaseName;
         private final boolean checkExistenceOnReconnect;
 
-        MongoCollectionKey(boolean checkExistenceOnReconnect, @Nonnull String databaseName, @Nonnull String collectionName) {
+        MongoCollectionKey(
+                boolean checkExistenceOnReconnect,
+                @Nonnull String databaseName,
+                @Nonnull String collectionName) {
             this.checkExistenceOnReconnect = checkExistenceOnReconnect;
             this.collectionName = collectionName;
             this.databaseName = databaseName;
