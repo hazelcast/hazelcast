@@ -22,7 +22,7 @@ import org.junit.runner.RunWith;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -53,17 +53,8 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
         final CompletableFuture<Integer> entryLocalListenerOldValue = setMapListener(map::addLocalEntryListener);
 
         final CompletableFuture<Integer> interceptorOldValue = new CompletableFuture<>();
-        map.addInterceptor(new MapInterceptor() {
+        map.addInterceptor(new MapInterceptorAdaptor() {
             private static final long serialVersionUID = 1L;
-
-            @Override
-            public Object interceptGet(final Object value) {
-                return null;
-            }
-
-            @Override
-            public void afterGet(final Object value) {
-            }
 
             @Override
             public Object interceptPut(final Object oldValue, final Object newValue) {
@@ -71,20 +62,7 @@ public class EntryUpdatedListenerTest extends HazelcastTestSupport {
                     interceptorOldValue.complete(((AtomicInteger) oldValue).get());
                 }
 
-                return null;
-            }
-
-            @Override
-            public void afterPut(final Object value) {
-            }
-
-            @Override
-            public Object interceptRemove(final Object removedValue) {
-                return null;
-            }
-
-            @Override
-            public void afterRemove(final Object oldValue) {
+                return super.interceptPut(oldValue, newValue);
             }
         });
 
