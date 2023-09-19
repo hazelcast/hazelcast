@@ -341,7 +341,6 @@ public class InterceptorTest extends HazelcastTestSupport {
     }
 
     static class EntryPutProcessor implements EntryProcessor<Integer, String, String> {
-        private static final long serialVersionUID = 1L;
 
         String value;
 
@@ -409,7 +408,6 @@ public class InterceptorTest extends HazelcastTestSupport {
     }
 
     static class NegativeGetInterceptor extends MapInterceptorAdaptor {
-        private static final long serialVersionUID = 1L;
 
         @Override
         public Object interceptGet(Object value) {
@@ -418,7 +416,6 @@ public class InterceptorTest extends HazelcastTestSupport {
     }
 
     static class NegativePutInterceptor extends MapInterceptorAdaptor {
-        private static final long serialVersionUID = 1L;
 
         @Override
         public Object interceptPut(Object oldValue, Object newValue) {
