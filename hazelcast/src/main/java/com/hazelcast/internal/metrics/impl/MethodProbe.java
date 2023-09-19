@@ -40,9 +40,11 @@ import java.util.concurrent.Semaphore;
  * A MethodProbe is a {@link ProbeFunction} that invokes a method that is annotated with {@link Probe}.
  */
 abstract class MethodProbe implements ProbeFunction {
+    private static final Object[] EMPTY_ARGS = new Object[0];
     private static final Lookup LOOKUP = MethodHandles.lookup();
 
-    final MethodHandle method;
+    final Method method;
+    final MethodHandle methodHandle;
     final boolean isMethodStatic;
     final CachedProbe probe;
     final ProbeUtils type;
@@ -51,6 +53,7 @@ abstract class MethodProbe implements ProbeFunction {
 
     MethodProbe(final Method method, final Probe probe, final ProbeUtils type, final SourceMetadata sourceMetadata) {
         try {
+            this.method = method;
             method.setAccessible(true);
             final MethodHandle unreflected = LOOKUP.unreflect(method);
 
@@ -63,7 +66,7 @@ abstract class MethodProbe implements ProbeFunction {
                 methodType = methodType.changeParameterType(0, Object.class);
             }
 
-            this.method = unreflected.asType(methodType);
+            this.methodHandle = unreflected.asType(methodType);
 
             this.probe = new CachedProbe(probe);
             this.type = type;
@@ -161,15 +164,19 @@ abstract class MethodProbe implements ProbeFunction {
         }
     }
 
-    protected <T> T invoke(final Object source) throws Throwable {
-        return isMethodStatic ? (T) method.invokeExact() : (T) method.invokeExact(source);
+    @SuppressWarnings("unchecked")
+    protected <T> T invoke(final Object source) throws ReflectiveOperationException {
+        // In benchmarking, MethodHandles proved slower with objects
+        // Compiling to a CallSite with a LambdaMetafactory is likely to be *much* faster, but struggles to copy with private
+        // methods
+        return (T) method.invoke(source, EMPTY_ARGS);
     }
 
     protected double invokeDoublePrimitive(final Object source) throws Throwable {
-        return isMethodStatic ? (double) method.invokeExact() : (double) method.invokeExact(source);
+        return isMethodStatic ? (double) methodHandle.invokeExact() : (double) methodHandle.invokeExact(source);
     }
 
     protected long invokeLongPrimitive(final Object source) throws Throwable {
-        return isMethodStatic ? (long) method.invokeExact() : (long) method.invokeExact(source);
+        return isMethodStatic ? (long) methodHandle.invokeExact() : (long) methodHandle.invokeExact(source);
     }
 }
