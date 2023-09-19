@@ -87,12 +87,6 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-3-connector-root</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-it</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
@@ -100,12 +94,6 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-3-connector-interface</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
@@ -130,12 +118,6 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>modulepath-tests</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-3-connector-impl</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
@@ -208,12 +190,6 @@
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-protobuf</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-3-connector-common</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>

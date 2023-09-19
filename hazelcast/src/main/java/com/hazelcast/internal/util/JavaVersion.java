@@ -74,17 +74,13 @@ public enum JavaVersion implements JavaMajorVersion {
      * Returns false if the given version is UNKNOWN.
      */
     public static boolean isAtMost(JavaVersion version) {
-        return isAtMost(CURRENT_VERSION, version);
+        return CURRENT_VERSION != UNKNOWN_VERSION && version != UNKNOWN_VERSION
+               && CURRENT_VERSION.getMajorVersion() <= version.getMajorVersion();
     }
 
     static boolean isAtLeast(JavaMajorVersion currentVersion, JavaMajorVersion minVersion) {
         return currentVersion != UNKNOWN_VERSION && minVersion != UNKNOWN_VERSION
                 && currentVersion.getMajorVersion() >= minVersion.getMajorVersion();
-    }
-
-    static boolean isAtMost(JavaMajorVersion currentVersion, JavaMajorVersion maxVersion) {
-        return currentVersion != UNKNOWN_VERSION && maxVersion != UNKNOWN_VERSION
-                && currentVersion.getMajorVersion() <= maxVersion.getMajorVersion();
     }
 
     /**

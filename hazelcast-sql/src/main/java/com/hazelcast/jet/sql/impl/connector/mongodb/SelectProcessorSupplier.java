@@ -22,6 +22,9 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams.Aggregates;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -34,6 +37,7 @@ import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.security.Permission;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -58,14 +62,21 @@ import static java.util.stream.Collectors.toList;
 /**
  * ProcessorSupplier that creates {@linkplain com.hazelcast.jet.mongodb.impl.ReadMongoP} processors on each instance.
  */
-public class SelectProcessorSupplier extends MongoProcessorSupplier {
-    private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
-    private final Document predicate;
-    private final List<ProjectionData> projection;
+public class SelectProcessorSupplier extends MongoProcessorSupplier implements DataSerializable {
 
-    private final Long startAt;
-    private final boolean stream;
+    private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
+    private Document predicate;
+    private List<ProjectionData> projection;
+
+    private Long startAt;
+    private boolean stream;
+    private boolean forceMongoParallelismOne;
+
     private transient ExpressionEvalContext evalContext;
+
+    @SuppressWarnings("unused")
+    public SelectProcessorSupplier() {
+    }
 
     SelectProcessorSupplier(MongoTable table, Document predicate,
                             List<ProjectionData> projection,
@@ -79,6 +90,7 @@ public class SelectProcessorSupplier extends MongoProcessorSupplier {
         this.startAt = startAt == null ? null : startAt.getValue();
         this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.stream = stream;
+        this.forceMongoParallelismOne = table.isforceReadTotalParallelismOne();
     }
 
     SelectProcessorSupplier(MongoTable table, Document predicate,
@@ -203,5 +215,36 @@ public class SelectProcessorSupplier extends MongoProcessorSupplier {
         return projection.stream().filter(p -> p.externalName.equals(columnName))
                          .map(p -> p.index)
                          .findAny().orElse(-1);
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(databaseName);
+        out.writeString(collectionName);
+        out.writeBoolean(stream);
+        out.writeObject(eventTimePolicyProvider);
+        out.writeObject(predicate);
+        out.writeObject(projection);
+        out.writeStringArray(externalNames);
+        out.writeLong(startAt == null ? -1 : startAt);
+        out.writeString(connectionString);
+        out.writeString(dataConnectionName);
+        out.writeBoolean(forceMongoParallelismOne);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        databaseName = in.readString();
+        collectionName = in.readString();
+        stream = in.readBoolean();
+        eventTimePolicyProvider = in.readObject();
+        predicate = in.readObject();
+        projection = in.readObject();
+        externalNames = in.readStringArray();
+        long startAtDirect = in.readLong();
+        startAt = startAtDirect == -1 ? null : startAtDirect;
+        connectionString = in.readString();
+        dataConnectionName = in.readString();
+        forceMongoParallelismOne = in.readBoolean();
     }
 }

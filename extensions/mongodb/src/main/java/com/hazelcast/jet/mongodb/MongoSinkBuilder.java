@@ -84,6 +84,7 @@ public final class MongoSinkBuilder<T> {
     private final WriteMongoParams<T> params = new WriteMongoParams<>();
 
     private int preferredLocalParallelism = 2;
+    private ResourceChecks existenceChecks = ResourceChecks.ONCE_PER_JOB;
 
     /**
      * See {@link MongoSinks#builder}
@@ -236,15 +237,17 @@ public final class MongoSinkBuilder<T> {
     }
 
     /**
-     * If {@code true}, the lack of database or collection will cause an error.
-     * If {@code false}, database and collection will be automatically created.
-     * Default value is {@code true}.
+     * If {@link ResourceChecks#NEVER}, the database and collection will be automatically created on the first usage.
+     * Otherwise, querying for a database or collection that don't exist will cause an error.
+     * Default value is {@link ResourceChecks#ONCE_PER_JOB}.
      *
-     * @param throwOnNonExisting if exception should be thrown when database or collection does not exist.
+     * @since 5.4
+     * @param checkResourceExistence mode of resource existence checks; whether exception should be thrown when
+     *                               database or collection does not exist and when the check will be performed.
      */
     @Nonnull
-    public MongoSinkBuilder<T> throwOnNonExisting(boolean throwOnNonExisting) {
-        params.setCheckExistenceOnEachConnect(throwOnNonExisting);
+    public MongoSinkBuilder<T> checkResourceExistence(ResourceChecks checkResourceExistence) {
+        existenceChecks = checkResourceExistence;
         return this;
     }
 
@@ -256,19 +259,20 @@ public final class MongoSinkBuilder<T> {
     public Sink<T> build() {
         params.checkValid();
         final WriteMongoParams<T> localParams = this.params;
+        localParams.setCheckExistenceOnEachConnect(existenceChecks == ResourceChecks.ON_EACH_CONNECT);
 
         ConnectorPermission permission = params.buildPermission();
         return Sinks.fromProcessor(name, new DbCheckingPMetaSupplierBuilder()
-                .setRequiredPermission(permission)
-                .setCheckResourceExistence(localParams.isCheckExistenceOnEachConnect())
-                .setForceTotalParallelismOne(false)
-                .setDatabaseName(localParams.getDatabaseName())
-                .setCollectionName(localParams.getCollectionName())
-                .setClientSupplier(localParams.getClientSupplier())
-                .setDataConnectionRef(localParams.getDataConnectionRef())
-                .setProcessorSupplier(ProcessorSupplier.of(() -> new WriteMongoP<>(localParams)))
-                .setPreferredLocalParallelism(preferredLocalParallelism)
-                .create());
+                .withRequiredPermission(permission)
+                .withCheckResourceExistence(localParams.isCheckExistenceOnEachConnect())
+                .withForceTotalParallelismOne(false)
+                .withDatabaseName(localParams.getDatabaseName())
+                .withCollectionName(localParams.getCollectionName())
+                .withClientSupplier(localParams.getClientSupplier())
+                .withDataConnectionRef(localParams.getDataConnectionRef())
+                .withProcessorSupplier(ProcessorSupplier.of(() -> new WriteMongoP<>(localParams)))
+                .withPreferredLocalParallelism(preferredLocalParallelism)
+                .build());
     }
 
 }

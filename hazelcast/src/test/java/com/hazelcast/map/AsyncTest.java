@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -183,5 +184,44 @@ public class AsyncTest extends HazelcastTestSupport {
         IMap<String, String> map = instance.getMap(randomString());
         Future<String> f1 = map.removeAsync(key).toCompletableFuture();
         assertNull(f1.get());
+    }
+
+    @Test
+    public void testDeleteAsync() throws Exception {
+        IMap<String, String> map = instance.getMap(randomString());
+        // populate map
+        map.put(key, value1);
+        Future<Boolean> f1 = map.deleteAsync(key).toCompletableFuture();
+        assertTrue(f1.get());
+    }
+
+    @Test
+    public void testDeleteAsyncWithImmediateTimeout() throws Exception {
+        final IMap<String, String> map = instance.getMap(randomString());
+        // populate map
+        map.put(key, value1);
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                map.lock(key);
+                latch.countDown();
+            }
+        }).start();
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        Future<Boolean> f1 = map.deleteAsync(key).toCompletableFuture();
+        try {
+            assertTrue(f1.get(0L, TimeUnit.SECONDS));
+        } catch (TimeoutException e) {
+            // expected
+            return;
+        }
+        fail("Failed to throw TimeoutException with zero timeout");
+    }
+
+    @Test
+    public void testDeleteAsyncWithNonExistentKey() throws Exception {
+        IMap<String, String> map = instance.getMap(randomString());
+        Future<Boolean> f1 = map.deleteAsync(key).toCompletableFuture();
+        assertFalse(f1.get());
     }
 }

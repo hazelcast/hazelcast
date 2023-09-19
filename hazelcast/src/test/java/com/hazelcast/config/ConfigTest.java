@@ -38,6 +38,7 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Properties;
 
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
 import static com.hazelcast.instance.ProtocolType.WAN;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
@@ -341,7 +342,22 @@ public class ConfigTest extends HazelcastTestSupport {
         assertThrows(ClassCastException.class, () -> config.getDeviceConfig(LocalDeviceConfig.class, deviceName));
     }
 
-    private static String getSimpleXmlConfigStr(String ...tagAndVal) {
+    @Test
+    public void testDefaultDeviceRemovedWhenDeviceConfigured() {
+        String deviceName = randomName();
+        DeviceConfig deviceConfig = new LocalDeviceConfig().setName(deviceName);
+        assertNotNull(DEFAULT_DEVICE_NAME);
+
+        config.addDeviceConfig(deviceConfig);
+
+        assertNull(config.getDeviceConfig(randomName()));
+        assertEquals(deviceConfig, config.getDeviceConfig(deviceName));
+        assertEquals(deviceConfig, config.getDeviceConfig(LocalDeviceConfig.class, deviceName));
+
+        assertNull(config.getDeviceConfig(DEFAULT_DEVICE_NAME));
+    }
+
+    private static String getSimpleXmlConfigStr(String... tagAndVal) {
         if (tagAndVal.length % 2 != 0) {
             throw new IllegalArgumentException("The number of tags and values parameters is odd."
                     + " Please provide these tags and values as pairs.");
@@ -356,7 +372,7 @@ public class ConfigTest extends HazelcastTestSupport {
         return sb.toString();
     }
 
-    private static String getSimpleYamlConfigStr(String ...tagAndVal) {
+    private static String getSimpleYamlConfigStr(String... tagAndVal) {
         if (tagAndVal.length % 2 != 0) {
             throw new IllegalArgumentException("The number of tags and values parameters is odd."
                     + " Please provide these tags and values as pairs.");

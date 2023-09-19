@@ -42,7 +42,6 @@
         <module>elasticsearch/elasticsearch-7</module>
         <module>hadoop</module>
         <module>hadoop-dist</module>
-        <module>hazelcast-3-connector</module>
         <module>kafka</module>
         <module>kafka-connect</module>
         <module>kinesis</module>

@@ -42,6 +42,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
@@ -199,8 +200,9 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 null,
                 null,
                 null,
-                false
-        );
+                false,
+                Collections.emptyList(),
+                false);
         PartitionedMapTable table2 = new PartitionedMapTable(
                 SCHEMA_2,
                 TABLE_2,
@@ -212,8 +214,9 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 null,
                 null,
                 null,
-                false
-        );
+                false,
+                Collections.emptyList(),
+                false);
 
         TableResolver resolver1 = TestTableResolver.create(SCHEMA_1, table1);
         TableResolver resolver2 = TestTableResolver.create(SCHEMA_2, table2);

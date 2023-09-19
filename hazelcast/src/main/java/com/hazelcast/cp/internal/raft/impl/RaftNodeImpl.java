@@ -683,7 +683,7 @@ public final class RaftNodeImpl implements RaftNode {
         if (nextIndex <= raftLog.snapshotIndex()
                 && (!raftLog.containsLogEntry(nextIndex) || (nextIndex > 1 && !raftLog.containsLogEntry(nextIndex - 1)))) {
             InstallSnapshot installSnapshot = new InstallSnapshot(state.localEndpoint(), state.term(), raftLog.snapshot(),
-                    leaderState.queryRound());
+                    leaderState.queryRound(), followerState.setAppendRequestBackoff());
             if (logger.isFineEnabled()) {
                 logger.fine("Sending " + installSnapshot + " to " + follower + " since next index: " + nextIndex
                         + " <= snapshot index: " + raftLog.snapshotIndex());
@@ -691,6 +691,7 @@ public final class RaftNodeImpl implements RaftNode {
 
             // no need to submit the flush task here because we send committed state...
             raftIntegration.send(installSnapshot, follower);
+            // due to the potentially large size of the snapshot, set the backoff to the maximum value
             followerState.setMaxAppendRequestBackoff();
             scheduleAppendAckResetTask();
             return;
@@ -735,8 +736,12 @@ public final class RaftNodeImpl implements RaftNode {
             shouldBackoff = false;
         }
 
+        if (shouldBackoff) {
+            followerState.setAppendRequestBackoff();
+        }
+
         AppendRequest request = new AppendRequest(getLocalMember(), state.term(), prevEntryTerm, prevEntryIndex,
-                state.commitIndex(), entries, leaderState.queryRound());
+                state.commitIndex(), entries, leaderState.queryRound(), followerState.flowControlSequenceNumber());
 
         if (logger.isFineEnabled()) {
             logger.fine("Sending " + request + " to " + follower + " with next index: " + nextIndex);
@@ -753,7 +758,6 @@ public final class RaftNodeImpl implements RaftNode {
         }
 
         if (shouldBackoff) {
-            followerState.setAppendRequestBackoff();
             scheduleAppendAckResetTask();
         }
     }
@@ -1437,22 +1441,24 @@ public final class RaftNodeImpl implements RaftNode {
         @Override
         protected void innerRun() {
             appendRequestBackoffResetTaskScheduled = false;
-            LeaderState leaderState = state.leaderState();
 
-            if (leaderState != null) {
-                Map<RaftEndpoint, FollowerState> followerStates = leaderState.getFollowerStates();
-                for (Entry<RaftEndpoint, FollowerState> entry : followerStates.entrySet()) {
-                    FollowerState followerState = entry.getValue();
-                    if (!followerState.isAppendRequestBackoffSet()) {
-                        continue;
-                    }
+            LeaderState leaderState = state.leaderState();
+            if (leaderState == null) {
+                return;
+            }
+
+            Map<RaftEndpoint, FollowerState> followerStates = leaderState.getFollowerStates();
+            for (Entry<RaftEndpoint, FollowerState> entry : followerStates.entrySet()) {
+                FollowerState followerState = entry.getValue();
+                if (followerState.isAppendRequestBackoffSet()) {
                     if (followerState.completeAppendRequestBackoffRound()) {
                         // This follower has not sent a response to the last append request.
                         // Send another append request
                         sendAppendRequest(entry.getKey());
+                    } else {
+                        // Schedule the task again, we still have backoff flag set followers
+                        scheduleAppendAckResetTask();
                     }
-                    // Schedule the task again, we still have backoff flag set followers
-                    scheduleAppendAckResetTask();
                 }
             }
         }

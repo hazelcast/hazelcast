@@ -43,6 +43,7 @@ import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
@@ -105,20 +106,23 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     private final Address localMemberAddress;
     private final WatermarkKeysAssigner watermarkKeysAssigner;
     private long watermarkThrottlingFrameSize = -1;
+    private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
 
     private final DagBuildContextImpl dagBuildContext;
 
     public CreateTopLevelDagVisitor(
             NodeEngine nodeEngine,
             QueryParameterMetadata parameterMetadata,
-            @Nullable WatermarkKeysAssigner watermarkKeysAssigner,
-            Set<PlanObjectKey> usedViews
+            WatermarkKeysAssigner watermarkKeysAssigner,
+            Set<PlanObjectKey> usedViews,
+            @Nullable Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates
     ) {
         super(new DAG());
         this.nodeEngine = nodeEngine;
         this.localMemberAddress = nodeEngine.getThisAddress();
         this.watermarkKeysAssigner = watermarkKeysAssigner;
         this.objectKeys.addAll(usedViews);
+        this.partitionStrategyCandidates = partitionStrategyCandidates;
 
         dagBuildContext = new DagBuildContextImpl(nodeEngine, getDag(), parameterMetadata);
     }
@@ -194,7 +198,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onDelete(DeletePhysicalRel rel) {
-        // currently it's not possible to have a unbounded DELETE, but if we do, we'd need this calculation
+        // currently it's not possible to have an unbounded DELETE, but if we do, we'd need this calculation
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(rel, MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
@@ -232,14 +236,21 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
-        return getJetSqlConnector(table).fullScanReader(
+
+        List<Map<String, Expression<?>>> partitionStrategyCandidate = null;
+        if (partitionStrategyCandidates != null) {
+            partitionStrategyCandidate = partitionStrategyCandidates.get(table.getSqlName());
+        }
+
+        SqlConnector sqlConnector = getJetSqlConnector(table);
+        return sqlConnector.fullScanReader(
                 dagBuildContext,
                 wrap(rel.filter()),
                 wrap(rel.projection()),
+                partitionStrategyCandidate,
                 policyProvider != null
                         ? context -> policyProvider.apply(context, wmKey)
-                        : null
-        );
+                        : null);
     }
 
     @Override
@@ -258,7 +269,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         wrap(rel.projection()),
                         rel.getIndexFilter(),
                         rel.getComparator(),
-                        rel.isDescending()
+                        rel.isDescending(),
+                        rel.requiresSort()
                 );
     }
 
@@ -328,7 +340,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         localMemberAddress
                 )
         );
-        connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+        connectInput(rel.getInput(), vertex, edge ->
+                edge.distributeTo(localMemberAddress).allToOne(""));
         return vertex;
     }
 
@@ -355,7 +368,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         localMemberAddress
                 )
         );
-        connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+        connectInput(rel.getInput(), vertex, edge ->
+                edge.distributeTo(localMemberAddress).allToOne(""));
         return vertex;
     }
 
@@ -451,7 +465,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             aggregateOperation,
                             resultMapping,
                             watermarkKey));
-            connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+            connectInput(rel.getInput(), vertex, edge ->
+                    edge.distributeTo(localMemberAddress).allToOne(""));
             return vertex;
         } else {
             assert rel.numStages() == 2;
@@ -610,7 +625,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 (PhysicalRel) rootRel.getInput(), MOCK_EEC);
 
         RelNode input = rootRel.getInput();
-
         Expression<?> fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
         Expression<?> offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
 
@@ -635,7 +649,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         // We use distribute-to-one edge to send all the items to the initiator member.
         // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
         // allToOne with any key, it goes to a single processor on a single member anyway.
-        connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+        connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress)
+                .allToOne(""));
         return vertex;
     }
 

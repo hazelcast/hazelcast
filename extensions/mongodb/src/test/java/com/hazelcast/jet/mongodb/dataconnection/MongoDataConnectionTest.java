@@ -22,6 +22,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.internal.MongoClientImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -142,6 +143,21 @@ public class MongoDataConnectionTest extends AbstractMongoTest {
 
         assertClosed(client1);
         assertClosed(client2);
+    }
+
+    @Test
+    public void should_configure_pool_size() {
+        dataConnection = new MongoDataConnection(mongoDataConnectionConf("mongo", connectionString)
+                .setShared(false)
+                .setProperty(MongoDataConnection.CONNECTION_POOL_MIN, "1337")
+                .setProperty(MongoDataConnection.CONNECTION_POOL_MAX, "2023"));
+
+        try (MongoClient client = dataConnection.getClient()) {
+            var asCloseable = (CloseableMongoClient) client;
+            var impl = (MongoClientImpl) asCloseable.delegate;
+            assertThat(impl.getSettings().getConnectionPoolSettings().getMinSize()).isEqualTo(1337);
+            assertThat(impl.getSettings().getConnectionPoolSettings().getMaxSize()).isEqualTo(2023);
+        }
     }
 
     private void assertNotClosed(MongoClient client) {

@@ -16,7 +16,7 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hazelcast.jet.mongodb.ResourceExistenceChecks;
+import com.hazelcast.jet.mongodb.ResourceChecks;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -172,7 +172,7 @@ class FieldResolver {
         try (MongoClient client = connect(dataConnectionName, options)) {
             requireNonNull(client);
 
-            ResourceExistenceChecks resourceChecks = readExistenceChecksFlag(options);
+            ResourceChecks resourceChecks = readExistenceChecksFlag(options);
             if (resourceChecks.isEverPerformed()) {
                 checkDatabaseAndCollectionExists(client, databaseName, collectionName);
             }
@@ -182,7 +182,8 @@ class FieldResolver {
                                                  .filter(eq("name", collectionName))
                                                  .into(new ArrayList<>());
             if (collections.isEmpty()) {
-                throw new IllegalArgumentException("collection " + collectionName + " was not found");
+                ArrayList<String> list = database.listCollectionNames().into(new ArrayList<>());
+                throw new IllegalArgumentException("collection " + collectionName + " was not found, maybe you mean: " + list);
             }
             Document collectionInfo = collections.get(0);
             Document properties = getIgnoringNulls(collectionInfo, "options", "validator", "$jsonSchema", "properties");

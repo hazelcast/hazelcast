@@ -403,6 +403,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
             case TIME:
             case ANY:
             case NULL:
+            case UNKNOWN:
                 return null;
 
             case SYMBOL:

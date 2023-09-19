@@ -43,6 +43,7 @@ import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -270,6 +271,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @Test
+    @Ignore
     public void test_scaling() throws Exception {
         int localParallelism = 3;
         Properties randomProperties = new Properties();

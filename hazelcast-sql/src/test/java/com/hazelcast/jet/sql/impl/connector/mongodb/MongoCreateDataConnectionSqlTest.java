@@ -21,6 +21,8 @@ import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.test.starter.ReflectionUtils;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.junit.Test;
@@ -51,6 +53,32 @@ public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
                 }
             }
             assertThat(hasCollectionWeWanted).isTrue();
+        }
+    }
+
+    @Test
+    public void createsConnectionWithPoolSize() throws IllegalAccessException {
+        String dlName = randomName();
+        String dbName = randomName();
+        String colName = randomName();
+        try (MongoClient client = MongoClients.create(connectionString)) {
+            client.getDatabase(dbName).createCollection(colName);
+        }
+        String options = String.format("OPTIONS ('connectionString' = '%s', 'idColumn' = 'id', " +
+                        "'connectionPoolMinSize' = '1337', 'connectionPoolMaxSize' = '2023') ",
+                connectionString);
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName + " TYPE Mongo SHARED " + options);
+
+        MongoDataConnection dataConnection = getNodeEngineImpl(
+                instance()).getDataConnectionService().getAndRetainDataConnection(dlName, MongoDataConnection.class);
+
+        assertThat(dataConnection).isNotNull();
+
+        try (MongoClient client = dataConnection.getClient()) {
+            var impl = ReflectionUtils.getFieldValueReflectively(client, "delegate");
+            var settings = (MongoClientSettings) ReflectionUtils.getFieldValueReflectively(impl, "settings");
+            assertThat(settings.getConnectionPoolSettings().getMinSize()).isEqualTo(1337);
+            assertThat(settings.getConnectionPoolSettings().getMaxSize()).isEqualTo(2023);
         }
     }
 

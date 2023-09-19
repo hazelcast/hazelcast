@@ -3314,7 +3314,22 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         int readIOThreadCount = 16;
         int writeIOThreadCount = 1;
 
-        String yaml = ""
+        String yaml =  ""
+                + "hazelcast:\n";
+        Config config = new InMemoryYamlConfig(yaml);
+
+        // default device
+        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
+        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), localDeviceConfig.getBaseDir());
+        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
+        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
+        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
+
+
+
+        yaml = ""
                 + "hazelcast:\n"
                 + "  local-device:\n"
                 + "    my-device:\n"
@@ -3326,8 +3341,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      read-io-thread-count: " + readIOThreadCount + "\n"
                 + "      write-io-thread-count: " + writeIOThreadCount + "\n";
 
-        Config config = new InMemoryYamlConfig(yaml);
-        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig("my-device");
+        config = new InMemoryYamlConfig(yaml);
+        localDeviceConfig = config.getDeviceConfig("my-device");
 
         assertEquals("my-device", localDeviceConfig.getName());
         assertEquals(new File(baseDir).getAbsolutePath(), localDeviceConfig.getBaseDir().getAbsolutePath());
@@ -3354,7 +3369,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      write-io-thread-count: " + (writeIOThreadCount * device1Multiplier) + "\n";
 
         config = new InMemoryYamlConfig(yaml);
-        assertEquals(3, config.getDeviceConfigs().size());
+        // default device is removed.
+        assertEquals(2, config.getDeviceConfigs().size());
+        assertNull(config.getDeviceConfig(DEFAULT_DEVICE_NAME));
 
         localDeviceConfig = config.getDeviceConfig("device0");
         assertEquals(blockSize * device0Multiplier, localDeviceConfig.getBlockSize());
@@ -3366,15 +3383,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(blockSize * device1Multiplier, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device1Multiplier, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device1Multiplier, localDeviceConfig.getWriteIOThreadCount());
-
-        // default device
-        localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
-        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
-        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), localDeviceConfig.getBaseDir());
-        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
-        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
-        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
 
         // override the default device config
         String newBaseDir = "/some/random/base/dir/for/tiered/store";
@@ -3716,15 +3724,18 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  security:\n"
                 + "    enabled: true\n"
                 + "    client-permissions:\n"
+                + "      priority-grant: true\n"
                 + "      config:\n"
+                + "        deny: true\n"
                 + "        principal: dev\n"
                 + "        endpoints:\n"
                 + "          - 127.0.0.1";
 
         Config config = buildConfig(yaml);
-        PermissionConfig expected = new PermissionConfig(CONFIG, null, "dev");
+        PermissionConfig expected = new PermissionConfig(CONFIG, null, "dev").setDeny(true);
         expected.getEndpoints().add("127.0.0.1");
         assertPermissionConfig(expected, config);
+        assertTrue(config.getSecurityConfig().isPermissionPriorityGrant());
     }
 
     @Override

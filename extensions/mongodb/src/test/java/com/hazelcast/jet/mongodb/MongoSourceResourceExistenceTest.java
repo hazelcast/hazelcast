@@ -29,9 +29,9 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import static com.hazelcast.jet.mongodb.MongoSources.batch;
-import static com.hazelcast.jet.mongodb.ResourceExistenceChecks.NEVER;
-import static com.hazelcast.jet.mongodb.ResourceExistenceChecks.ONCE_PER_JOB;
-import static com.hazelcast.jet.mongodb.ResourceExistenceChecks.ON_EACH_CONNECT;
+import static com.hazelcast.jet.mongodb.ResourceChecks.NEVER;
+import static com.hazelcast.jet.mongodb.ResourceChecks.ONCE_PER_JOB;
+import static com.hazelcast.jet.mongodb.ResourceChecks.ON_EACH_CONNECT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -43,7 +43,7 @@ public class MongoSourceResourceExistenceTest extends AbstractMongoTest {
     @Parameter(1)
     public boolean collectionExists;
     @Parameter(2)
-    public ResourceExistenceChecks checkRequested;
+    public ResourceChecks checkRequested;
     @Parameter(3)
     public boolean shouldFail;
 

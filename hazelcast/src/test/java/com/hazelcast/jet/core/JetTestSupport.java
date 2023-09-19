@@ -355,7 +355,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         List<MemberInfo> members = membersView.getMembers().stream()
                 .filter(m -> m.getVersion().asVersion().equals(coordinatorVersion) && !m.isLiteMember())
                 .collect(Collectors.toList());
-        return ExecutionPlanBuilder.getPartitionAssignment(nodeEngine, members, null)
+        return ExecutionPlanBuilder.getPartitionAssignment(nodeEngine, members, false, null, null, null)
                 .entrySet()
                 .stream()
                 .collect(toMap(en -> en.getKey().getAddress(), Map.Entry::getValue));

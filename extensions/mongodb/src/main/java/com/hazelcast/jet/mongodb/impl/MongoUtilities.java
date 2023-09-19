@@ -149,6 +149,15 @@ public final class MongoUtilities {
                             .toLocalDateTime();
     }
 
+
+    public static void checkDatabaseAndCollectionExists(MongoClient client, String databaseName, String collectionName) {
+        checkDatabaseExists(client, databaseName);
+        MongoDatabase database = client.getDatabase(databaseName);
+        if (collectionName != null) {
+            checkCollectionExists(database, collectionName);
+        }
+    }
+
     static void checkCollectionExists(MongoDatabase database, String collectionName) {
         for (String name : database.listCollectionNames()) {
             if (name.equals(collectionName)) {
@@ -166,15 +175,6 @@ public final class MongoUtilities {
         }
         ClusterDescription clusterDescription = client.getClusterDescription();
         throw new JetException("Database " + databaseName + " does not exist in cluster " + clusterDescription);
-    }
-
-
-    public static void checkDatabaseAndCollectionExists(MongoClient client, String databaseName, String collectionName) {
-        checkDatabaseExists(client, databaseName);
-        MongoDatabase database = client.getDatabase(databaseName);
-        if (collectionName != null) {
-            checkCollectionExists(database, collectionName);
-        }
     }
 
 }

@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.util.PartitioningStrategyUtil;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.PartitioningStrategy;
@@ -31,7 +32,7 @@ import java.io.IOException;
 import java.io.Serializable;
 
 @SerializableByConvention
-public class AttributePartitioningStrategy implements PartitioningStrategy<Object> {
+public final class AttributePartitioningStrategy implements PartitioningStrategy<Object> {
 
     private final String[] attributes;
 
@@ -54,7 +55,7 @@ public class AttributePartitioningStrategy implements PartitioningStrategy<Objec
             throw new HazelcastException("Cannot extract attributes from the key");
         }
 
-        return attributes.length == 1 ? result[0] : result;
+        return PartitioningStrategyUtil.constructAttributeBasedKey(result);
     }
 
     @Nonnull

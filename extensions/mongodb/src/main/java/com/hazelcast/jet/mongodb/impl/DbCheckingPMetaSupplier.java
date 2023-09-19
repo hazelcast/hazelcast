@@ -48,14 +48,14 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
 
     private final Permission requiredPermission;
     private final boolean shouldCheckOnEachCall;
-    private final ProcessorMetaSupplier standardForceOnePMS;
-    private boolean forceTotalParallelismOne;
+    private ProcessorMetaSupplier standardForceOnePMS;
+    private final boolean forceTotalParallelismOne;
     private final String databaseName;
     private final String collectionName;
     private final ProcessorSupplier processorSupplier;
     private final SupplierEx<? extends MongoClient> clientSupplier;
     private final DataConnectionRef dataConnectionRef;
-    private int preferredLocalParallelism;
+    private final int preferredLocalParallelism;
 
     /**
      * Creates a new instance of this meta supplier.
@@ -79,27 +79,17 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
         this.clientSupplier = clientSupplier;
         this.dataConnectionRef = dataConnectionRef;
         this.preferredLocalParallelism = forceTotalParallelismOne ? 1 : preferredLocalParallelism;
-        this.standardForceOnePMS = ProcessorMetaSupplier.forceTotalParallelismOne(processorSupplier);
     }
 
     @Override
     public int preferredLocalParallelism() {
-        return forceTotalParallelismOne ? 1 : preferredLocalParallelism;
+        return preferredLocalParallelism;
     }
 
     @Nullable
     @Override
     public Permission getRequiredPermission() {
         return requiredPermission;
-    }
-
-    /**
-     * If true, only one instance of given supplier will be created.
-     */
-    public DbCheckingPMetaSupplier forceTotalParallelismOne(boolean forceTotalParallelismOne) {
-        this.forceTotalParallelismOne = forceTotalParallelismOne;
-        this.preferredLocalParallelism = 1;
-        return this;
     }
 
     @Override
@@ -110,6 +100,8 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
     @Override
     public void init(@Nonnull Context context) throws Exception {
         if (forceTotalParallelismOne) {
+            Address address = context.hazelcastInstance().getCluster().getLocalMember().getAddress();
+            this.standardForceOnePMS = ProcessorMetaSupplier.forceTotalParallelismOne(processorSupplier, address);
             standardForceOnePMS.init(context);
         }
 

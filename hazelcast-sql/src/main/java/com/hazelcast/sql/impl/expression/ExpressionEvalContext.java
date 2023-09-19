@@ -39,7 +39,21 @@ public interface ExpressionEvalContext {
 
     static ExpressionEvalContext from(Context ctx) {
         List<Object> arguments = ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME);
-        if (ctx instanceof TestProcessorMetaSupplierContext) {
+        if (ctx instanceof Contexts.ProcSupplierCtx) {
+            return new ExpressionEvalContextImpl(
+                    requireNonNull(arguments),
+                    ((Contexts.ProcSupplierCtx) ctx).serializationService(),
+                    ((Contexts.ProcSupplierCtx) ctx).nodeEngine());
+        } else if (ctx instanceof Contexts.MetaSupplierCtx) {
+            // Note that additional serializers configured for the job are not available in PMS.
+            // Currently this is not needed.
+            return new ExpressionEvalContextImpl(
+                    arguments != null ? arguments : List.of(),
+                    (InternalSerializationService) ((Contexts.MetaSupplierCtx) ctx).nodeEngine().getSerializationService(),
+                    ((Contexts.MetaSupplierCtx) ctx).nodeEngine());
+        } else {
+            // Path intended for test code
+            assert ctx instanceof TestProcessorMetaSupplierContext;
             if (arguments == null) {
                 arguments = new ArrayList<>();
             }
@@ -47,11 +61,6 @@ public interface ExpressionEvalContext {
                     arguments,
                     new DefaultSerializationServiceBuilder().build(),
                     Util.getNodeEngine(ctx.hazelcastInstance()));
-        } else {
-            return new ExpressionEvalContextImpl(
-                    requireNonNull(arguments),
-                    ((Contexts.ProcSupplierCtx) ctx).serializationService(),
-                    ((Contexts.ProcSupplierCtx) ctx).nodeEngine());
         }
     }
 

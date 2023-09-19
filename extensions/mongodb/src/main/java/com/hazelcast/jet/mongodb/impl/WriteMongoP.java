@@ -67,7 +67,7 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkCollectionExists;
@@ -606,10 +606,13 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
     private static final class MongoCollectionKey {
         private final @Nonnull String collectionName;
         private final @Nonnull String databaseName;
-        private final boolean throwOnNonExisting;
+        private final boolean checkExistenceOnReconnect;
 
-        MongoCollectionKey(boolean throwOnNonExisting, @Nonnull String databaseName, @Nonnull String collectionName) {
-            this.throwOnNonExisting = throwOnNonExisting;
+        MongoCollectionKey(
+                boolean checkExistenceOnReconnect,
+                @Nonnull String databaseName,
+                @Nonnull String collectionName) {
+            this.checkExistenceOnReconnect = checkExistenceOnReconnect;
             this.collectionName = collectionName;
             this.databaseName = databaseName;
         }
@@ -641,11 +644,11 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
 
         @Nonnull
         public <I> MongoCollection<I> get(MongoClient mongoClient, Class<I> documentType) {
-            if (throwOnNonExisting) {
+            if (checkExistenceOnReconnect) {
                 checkDatabaseExists(mongoClient, databaseName);
             }
             MongoDatabase database = mongoClient.getDatabase(databaseName);
-            if (throwOnNonExisting) {
+            if (checkExistenceOnReconnect) {
                 checkCollectionExists(database, collectionName);
             }
             return database.getCollection(collectionName, documentType)

@@ -203,7 +203,7 @@ public class TenantControlServiceImpl
     /**
      * Returns {@code true} if tenant control is enabled.
      */
-    private boolean isTenantControlEnabled() {
+    public boolean isTenantControlEnabled() {
         return tenantControlFactory != NOOP_TENANT_CONTROL_FACTORY;
     }
 

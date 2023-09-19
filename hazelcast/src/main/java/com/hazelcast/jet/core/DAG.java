@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.nio.ObjectDataInput;
@@ -303,6 +304,16 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     @Nonnull @Override
     public Iterator<Vertex> iterator() {
         return validate().iterator();
+    }
+
+    /**
+     * Returns an iterator over the DAG's edges in unspecified order.
+     *
+     * @since 5.4
+     */
+    @Nonnull
+    public Iterator<Edge> edgeIterator() {
+        return IterableUtil.asReadOnlyIterator(edges.iterator());
     }
 
     /**

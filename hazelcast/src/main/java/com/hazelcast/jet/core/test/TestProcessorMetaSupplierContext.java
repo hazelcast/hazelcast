@@ -71,12 +71,14 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     }});
     private ClassLoader classLoader;
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public HazelcastInstance hazelcastInstance() {
         return instance;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     @Deprecated
     public JetInstance jetInstance() {
         return (JetInstance) instance.getJet();
@@ -91,7 +93,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         if (this.instance instanceof HazelcastInstanceProxy || this.instance instanceof HazelcastInstanceImpl) {
             NodeEngineImpl nodeEngine = Util.getNodeEngine(this.instance);
             this.partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine,
-                    Util.getMembersView(nodeEngine).getMembers(), null)
+                            Util.getMembersView(nodeEngine).getMembers(), false, null, null, null)
                     .entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
         }
         return this;
@@ -123,7 +125,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return this;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JobConfig jobConfig() {
         return jobConfig;
     }
@@ -164,7 +167,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return this;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public ILogger logger() {
         if (logger == null) {
             logger = Logger.getLogger(loggerName());
@@ -185,7 +189,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return totalParallelism() / localParallelism();
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public String vertexName() {
         return vertexName;
     }

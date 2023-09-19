@@ -70,6 +70,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindFlushTest.assertWriteBehindQueuesEmpty;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -251,7 +252,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
-        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        mapStoreConfig.setInitialLoadMode(EAGER);
         config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
@@ -274,7 +275,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
-        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        mapStoreConfig.setInitialLoadMode(EAGER);
         config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -302,7 +303,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
-        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        mapStoreConfig.setInitialLoadMode(EAGER);
         config.getMapConfig("testInitialLoadModeEagerWhileStoppigOneNode").setMapStoreConfig(mapStoreConfig);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
@@ -711,9 +712,8 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     @Test
     public void testMapStoreIsInitializedAndDestroyed() {
-
         TestMapStore testMapStore = new TestMapStore(2, 2, 2);
-        Config config = newConfig(testMapStore, 0);
+        Config config = newConfig(testMapStore, 0, EAGER);
         HazelcastInstance instance = createHazelcastInstance(config);
 
         // Put element and then destroy the map

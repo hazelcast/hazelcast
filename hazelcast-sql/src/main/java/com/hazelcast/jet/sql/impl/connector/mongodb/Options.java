@@ -15,7 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.jet.mongodb.ResourceExistenceChecks;
+import com.hazelcast.jet.mongodb.ResourceChecks;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.jet.mongodb.impl.MongoUtilities;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -70,7 +70,7 @@ final class Options {
      * to query the Atlas Serverless - in one processor only, but better one than nothing. Maybe some day MongoDB will
      * change that restriction.
      */
-    static final String FORCE_PARALLELISM_ONE = "forceMongoReadParallelismOne";
+    static final String FORCE_READ_PARALLELISM_ONE = "forceReadTotalParallelismOne";
 
     /**
      * If set to true, the reading will be preceded with checking the existence of database and collection.
@@ -84,7 +84,7 @@ final class Options {
     private Options() {
     }
 
-    static BsonTimestamp startAt(Map<String, String> options) {
+    static BsonTimestamp startAtTimestamp(Map<String, String> options) {
         String startAtValue = options.get(START_AT_OPTION);
         if (isNullOrEmpty(startAtValue)) {
             throw QueryException.error("startAt property is required for MongoDB stream. " + POSSIBLE_VALUES);
@@ -136,7 +136,7 @@ final class Options {
         }
     }
 
-    static ResourceExistenceChecks readExistenceChecksFlag(Map<String, String> options) {
-        return ResourceExistenceChecks.fromString(options.getOrDefault(CHECK_EXISTENCE, "only-initial"));
+    static ResourceChecks readExistenceChecksFlag(Map<String, String> options) {
+        return ResourceChecks.fromString(options.getOrDefault(CHECK_EXISTENCE, "only-initial"));
     }
 }

@@ -28,6 +28,7 @@ import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -39,7 +40,6 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 import org.apache.calcite.rex.RexNode;
-import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -47,10 +47,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
@@ -119,7 +120,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                              @Nonnull String schemaName, @Nonnull String mappingName,
                              @Nonnull SqlExternalResource externalResource,
                              @Nonnull List<MappingField> resolvedFields) {
-        if (!ALLOWED_OBJECT_TYPES.contains(externalResource.objectType())) {
+        String objectType = checkNotNull(externalResource.objectType(),
+                "object type is required in Mongo connector");
+        if (!ALLOWED_OBJECT_TYPES.contains(objectType)) {
             throw QueryException.error("Mongo connector allows only object types: " + ALLOWED_OBJECT_TYPES);
         }
         String collectionName = externalResource.externalName().length == 2
@@ -132,11 +135,13 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
         boolean containsId = false;
-        boolean isStreaming = isStream(externalResource.objectType());
+        boolean isStreaming = isStream(objectType);
         boolean hasPK = false;
         for (MappingField resolvedField : resolvedFields) {
             String externalNameFromName = (isStreaming ? "fullDocument." : "") + resolvedField.name();
             String fieldExternalName = firstNonNull(resolvedField.externalName(), externalNameFromName);
+            String externalType = checkNotNull(resolvedField.externalType(),
+                    "external type cannot be null in Mongo connector");
 
             if (fieldResolver.isId(fieldExternalName, isStreaming)) {
                 containsId = true;
@@ -146,7 +151,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                     resolvedField.type(),
                     fieldExternalName,
                     false,
-                    resolvedField.externalType(),
+                    externalType,
                     resolvedField.isPrimaryKey()));
             hasPK |= resolvedField.isPrimaryKey();
         }
@@ -160,7 +165,6 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                         "DOCUMENT", !hasPK));
             }
         }
-        String objectType = Objects.requireNonNull(externalResource.objectType(), "objectType must be non-null");
         return new MongoTable(schemaName, mappingName, databaseName, collectionName,
                 externalResource.dataConnection(), externalResource.options(), this,
                 fields, stats, objectType);
@@ -172,6 +176,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nonnull DagBuildContext context,
             @Nullable HazelcastRexNode predicate,
             @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         MongoTable table = context.getTable();
 
@@ -181,18 +186,21 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         List<ProjectionData> projections = translateProjections(projection, context, visitor);
 
         DbCheckingPMetaSupplier supplier;
+        final boolean forceReadTotalParallelismOne = table.isforceReadTotalParallelismOne();
         if (table.isStreaming()) {
-            BsonTimestamp startAt = Options.startAt(table.getOptions());
-            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projections, startAt, eventTimePolicyProvider));
+            var startAt = Options.startAtTimestamp(table.getOptions());
+            var ps = new SelectProcessorSupplier(table, filter, projections, startAt, eventTimePolicyProvider);
+            supplier = wrap(context, ps, forceReadTotalParallelismOne);
         } else {
-            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projections));
+            var ps = new SelectProcessorSupplier(table, filter, projections);
+            supplier = wrap(context, ps, forceReadTotalParallelismOne);
         }
 
         DAG dag = context.getDag();
         Vertex sourceVertex = dag.newUniqueVertex(
                 "Select (" + table.getSqlName() + ")", supplier
         );
-        if (table.isForceMongoParallelismOne()) {
+        if (forceReadTotalParallelismOne) {
             sourceVertex.localParallelism(1);
         }
 
@@ -200,21 +208,30 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     }
 
     protected static DbCheckingPMetaSupplier wrap(DagBuildContext ctx, ProcessorSupplier supplier) {
+        return wrap(ctx, supplier, false);
+    }
+
+    protected static DbCheckingPMetaSupplier wrapWithParallelismOne(DagBuildContext ctx, ProcessorSupplier supplier) {
+        return wrap(ctx, supplier, true);
+    }
+
+    protected static DbCheckingPMetaSupplier wrap(DagBuildContext ctx, ProcessorSupplier supplier, boolean forceParallelismOne) {
         MongoTable table = ctx.getTable();
         String connectionString = table.connectionString;
         SupplierEx<MongoClient> clientSupplier = connectionString == null
                 ? null
                 : () -> MongoClients.create(connectionString);
         return new DbCheckingPMetaSupplierBuilder()
-                .setRequiredPermission(null)
-                .setCheckResourceExistence(table.checkExistenceOnEachCall())
-                .setForceTotalParallelismOne(table.isForceMongoParallelismOne())
-                .setDatabaseName(table.databaseName)
-                .setCollectionName(table.collectionName)
-                .setClientSupplier(clientSupplier)
-                .setDataConnectionRef(dataConnectionRef(table.dataConnectionName))
-                .setProcessorSupplier(supplier)
-                .create();
+                .withRequiredPermission(null)
+                .withCheckResourceExistence(table.checkExistenceOnEachCall())
+                .withForceTotalParallelismOne(table.isforceReadTotalParallelismOne())
+                .withDatabaseName(table.databaseName)
+                .withCollectionName(table.collectionName)
+                .withClientSupplier(clientSupplier)
+                .withDataConnectionRef(dataConnectionRef(table.dataConnectionName))
+                .withProcessorSupplier(supplier)
+                .withForceTotalParallelismOne(forceParallelismOne)
+                .build();
     }
 
     private static Document translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {

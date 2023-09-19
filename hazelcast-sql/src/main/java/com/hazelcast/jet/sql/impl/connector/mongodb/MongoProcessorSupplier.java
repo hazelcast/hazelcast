@@ -21,21 +21,24 @@ import com.mongodb.client.MongoClient;
 
 public abstract class MongoProcessorSupplier implements ProcessorSupplier {
     protected transient SupplierEx<? extends MongoClient> clientSupplier;
-    protected final String databaseName;
-    protected final String collectionName;
-    protected final String[] externalNames;
-    protected final String connectionString;
-    protected final String dataConnectionName;
+    protected String databaseName;
+    protected String collectionName;
+    protected String[] externalNames;
+    protected String connectionString;
+    protected String dataConnectionName;
 
-    protected final boolean forceMongoParallelismOne;
-    protected final boolean checkExistenceOnEachConnect;
+    protected boolean forceMongoParallelismOne;
+    protected boolean checkExistenceOnEachConnect;
+
+    protected MongoProcessorSupplier() {
+    }
 
     protected MongoProcessorSupplier(MongoTable table) {
         this.connectionString = table.connectionString;
         this.dataConnectionName = table.dataConnectionName;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
-        this.forceMongoParallelismOne = table.isForceMongoParallelismOne();
+        this.forceMongoParallelismOne = table.isforceReadTotalParallelismOne();
 
         this.externalNames = table.externalNames();
         this.checkExistenceOnEachConnect = table.checkExistenceOnEachConnect();

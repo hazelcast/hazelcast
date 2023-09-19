@@ -18,6 +18,8 @@ package com.hazelcast.test.jdbc;
 
 import org.testcontainers.containers.MSSQLServerContainer;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeNoArm64Architecture;
+
 public class MSSQLDatabaseProvider implements TestDatabaseProvider {
 
     public static final String TEST_MSSQLSERVER_VERSION = System.getProperty("test.mssqlserver.version", "2017-CU12");
@@ -28,8 +30,13 @@ public class MSSQLDatabaseProvider implements TestDatabaseProvider {
 
     @Override
     public String createDatabase(String dbName) {
+        assumeNoArm64Architecture();
         container = new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:" + TEST_MSSQLSERVER_VERSION);
         container.acceptLicense()
+                 // See https://learn.microsoft.com/en-us/sql/connect/jdbc/using-basic-data-types?view=sql-server-ver16
+                 // "To use java.sql.Time with the time SQL Server type, you must set the sendTimeAsDatetime
+                 // connection property to false."
+                .withUrlParam("sendTimeAsDateTime", "false")
                 .withUrlParam("user", container.getUsername())
                 .withUrlParam("password", container.getPassword());
         container.start();
@@ -44,5 +51,33 @@ public class MSSQLDatabaseProvider implements TestDatabaseProvider {
             container.stop();
             container = null;
         }
+    }
+
+    @Override
+    public String noAuthJdbcUrl() {
+        return container.getJdbcUrl()
+                        .replaceAll(";user=" + user(), "")
+                        .replaceAll(";password=" + password(), "");
+    }
+
+    @Override
+    public String user() {
+        return container.getUsername();
+    }
+
+    @Override
+    public String password() {
+        return container.getPassword();
+    }
+
+    @Override
+    public String createSchemaQuery(String schemaName) {
+        return "IF NOT EXISTS ("
+                + " SELECT 0 FROM information_schema.schemata WHERE schema_name = '"
+                + schemaName + "'"
+                + ")"
+                + " BEGIN"
+                + " EXEC sp_executesql N'CREATE SCHEMA " + schemaName + "';"
+                + " END";
     }
 }
