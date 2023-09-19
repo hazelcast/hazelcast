@@ -52,22 +52,18 @@ abstract class MethodProbe implements ProbeFunction {
     MethodProbe(final Method method, final Probe probe, final ProbeUtils type, final SourceMetadata sourceMetadata) {
         try {
             method.setAccessible(true);
-            MethodHandle unreflected = LOOKUP.unreflect(method);
+            final MethodHandle unreflected = LOOKUP.unreflect(method);
 
             isMethodStatic = Modifier.isStatic(method.getModifiers());
 
-            // Support invokeExact
-            if (type.isPrimitive()) {
-                MethodType methodType = unreflected.type().changeReturnType(type.getMapsTo());
+            // Modify return types to support invokeExact
+            MethodType methodType = unreflected.type().changeReturnType(type.isPrimitive() ? type.getMapsTo() : Object.class);
 
-                if (!isMethodStatic) {
-                    methodType = methodType.changeParameterType(0, Object.class);
-                }
-
-                unreflected = unreflected.asType(methodType);
+            if (!isMethodStatic) {
+                methodType = methodType.changeParameterType(0, Object.class);
             }
 
-            this.method = unreflected;
+            this.method = unreflected.asType(methodType);
 
             this.probe = new CachedProbe(probe);
             this.type = type;
@@ -166,7 +162,7 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     protected <T> T invoke(final Object source) throws Throwable {
-        return isMethodStatic ? (T) method.invoke() : (T) method.invoke(source);
+        return isMethodStatic ? (T) method.invokeExact() : (T) method.invokeExact(source);
     }
 
     protected double invokeDoublePrimitive(final Object source) throws Throwable {
