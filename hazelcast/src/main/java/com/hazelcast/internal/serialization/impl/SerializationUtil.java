@@ -87,7 +87,7 @@ public final class SerializationUtil {
         }
     }
 
-    static boolean isNullData(Data data) {
+    public static boolean isNullData(Data data) {
         return data.dataSize() == 0 && data.getType() == SerializationConstants.CONSTANT_TYPE_NULL;
     }
 

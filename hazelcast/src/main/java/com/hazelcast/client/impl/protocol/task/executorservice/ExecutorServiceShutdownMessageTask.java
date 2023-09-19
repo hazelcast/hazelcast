@@ -22,6 +22,8 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.ExecutorServicePermission;
 
 import java.security.Permission;
 
@@ -56,12 +58,12 @@ public class ExecutorServiceShutdownMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new ExecutorServicePermission(parameters, ActionConstants.ACTION_MODIFY);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return null;
+        return parameters;
     }
 
     @Override

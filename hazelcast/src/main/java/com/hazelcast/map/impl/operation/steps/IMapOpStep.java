@@ -69,7 +69,7 @@ public interface IMapOpStep extends Step<State> {
 
     /**
      * @return {@code true} when this step is loading
-     * data via MapLoader, otherwise {@code false}
+     * data via MapLoader, so it can be offloaded otherwise {@code false}
      */
     default boolean isLoadStep() {
         return false;

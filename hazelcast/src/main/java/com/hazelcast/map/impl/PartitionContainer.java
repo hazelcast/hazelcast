@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSizePerNode;
-import static com.hazelcast.map.impl.MapMigrationAwareService.lesserBackupMapsThen;
+import static com.hazelcast.map.impl.MapMigrationAwareService.lesserBackupMapsThenWithContainer;
 
 public class PartitionContainer {
 
@@ -250,11 +250,11 @@ public class PartitionContainer {
      *                     cleanup is necessary or not
      */
     final void cleanUpOnMigration(int replicaIndex) {
-        mapService.getMapServiceContext().getMapContainers().keySet()
+        mapService.getMapServiceContext().getMapContainers().entrySet()
                 .stream()
-                .filter(mapName -> replicaIndex == -1
-                        || lesserBackupMapsThen(replicaIndex).test(getRecordStore(mapName)))
-                .forEach(this::cleanUpMap);
+                .filter(entry -> replicaIndex == -1
+                        || lesserBackupMapsThenWithContainer(replicaIndex).test(entry.getValue()))
+                .forEach(entry -> cleanUpMap(entry.getKey()));
     }
 
     protected void cleanUpMap(String mapName) {

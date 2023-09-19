@@ -42,16 +42,16 @@ interface KubernetesApiProvider {
     List<Endpoint> parseEndpoints(JsonValue jsonValue);
 
     Map<EndpointAddress, String> extractServices(JsonObject jsonObject,
-                                                 List<EndpointAddress> addresses);
+                                                 List<String> addresses);
 
     Map<EndpointAddress, String> extractNodes(JsonObject jsonObject,
-                                              List<EndpointAddress> addresses);
+                                              List<String> addresses);
 
     default Integer extractPort(JsonValue subsetJson) {
         JsonArray ports = toJsonArray(subsetJson.asObject().get("ports"));
         for (JsonValue port : ports) {
             JsonValue hazelcastServicePort = port.asObject().get("name");
-            if (hazelcastServicePort != null && hazelcastServicePort.asString().equals("hazelcast-service-port")) {
+            if (hazelcastServicePort != null && hazelcastServicePort.asString().equals("hazelcast")) {
                 JsonValue servicePort = port.asObject().get("port");
                 if (servicePort != null && servicePort.isNumber()) {
                     return servicePort.asInt();
@@ -78,13 +78,13 @@ interface KubernetesApiProvider {
         return result;
     }
 
-    default KubernetesClientException noCorrespondingServicesException(Set<EndpointAddress> endpoints) {
+    default KubernetesClientException noCorrespondingServicesException(Set<String> endpoints) {
         return new KubernetesClientException(String.format("Cannot expose externally, the following Hazelcast"
                                    + " member pods do not have corresponding Kubernetes services: %s", endpoints));
     }
 
 
-    default KubernetesClientException noNodeNameAssignedException(Set<EndpointAddress> endpoints) {
+    default KubernetesClientException noNodeNameAssignedException(Set<String> endpoints) {
         return new KubernetesClientException(String.format("Cannot expose externally, the following Hazelcast"
                                    + " member pods do not have corresponding Endpoint.nodeName value assigned: %s", endpoints));
     }

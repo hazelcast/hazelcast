@@ -77,7 +77,7 @@ public class State {
     private volatile boolean triggerMapLoader;
     private volatile boolean shouldLoad;
     private volatile boolean changeExpiryOnUpdate = true;
-    private volatile boolean entryProcessorOffload;
+    private volatile boolean entryProcessorOffloadable;
     private volatile Object oldValue;
     private volatile Object newValue;
     private volatile Object result;
@@ -202,12 +202,12 @@ public class State {
         return this;
     }
 
-    public boolean isEntryProcessorOffload() {
-        return entryProcessorOffload;
+    public boolean isEntryProcessorOffloadable() {
+        return entryProcessorOffloadable;
     }
 
-    public State setEntryProcessorOffload(boolean entryProcessorOffload) {
-        this.entryProcessorOffload = entryProcessorOffload;
+    public State setEntryProcessorOffloadable(boolean entryProcessorOffloadable) {
+        this.entryProcessorOffloadable = entryProcessorOffloadable;
         return this;
     }
 

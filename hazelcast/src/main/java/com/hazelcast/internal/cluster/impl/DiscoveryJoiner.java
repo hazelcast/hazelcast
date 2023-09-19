@@ -39,6 +39,20 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class DiscoveryJoiner
         extends TcpIpJoiner {
 
+    /**
+     * System property name to determine behaviour of {@code DiscoveryJoiner} when enriching
+     * local member's address map with client public address. Default ({@code false}) is to use the public address returned by
+     * {@link DiscoveryNode#getPublicAddress()}. When this system property is set to {@code true}, behaviour reverts to
+     * previous implementation that uses host returned by {@link DiscoveryNode#getPublicAddress()} and client port as
+     * configured in existing local member address map with {@code CLIENT} endpoint qualifier.
+     */
+    static final String DISCOVERY_PUBLIC_ADDRESS_FALLBACK_PROPERTY = "hazelcast.discovery.public.address.fallback";
+
+    /**
+     * When {@code true}, reverts to old pre-5.2.3 behaviour of client public address enrichment in local member's address map.
+     */
+    private final boolean discoveryPublicAddressFallback;
+
     private final DiscoveryService discoveryService;
     private final boolean usePublicAddress;
     private final IdleStrategy idleStrategy =
@@ -52,6 +66,7 @@ public class DiscoveryJoiner
         this.maximumWaitingTimeBeforeJoinSeconds = node.getProperties().getInteger(WAIT_SECONDS_BEFORE_JOIN);
         this.discoveryService = discoveryService;
         this.usePublicAddress = usePublicAddress;
+        this.discoveryPublicAddressFallback = Boolean.getBoolean(DISCOVERY_PUBLIC_ADDRESS_FALLBACK_PROPERTY);
     }
 
     @Override
@@ -92,7 +107,8 @@ public class DiscoveryJoiner
     }
 
     private Address publicAddress(MemberImpl localMember, DiscoveryNode discoveryNode) {
-        if (localMember.getAddressMap().containsKey(EndpointQualifier.CLIENT)) {
+        // fallback to old behaviour if system property "hazelcast.discovery.public.address.fallback" is set to "true"
+        if (discoveryPublicAddressFallback && localMember.getAddressMap().containsKey(EndpointQualifier.CLIENT)) {
             try {
                 String publicHost = discoveryNode.getPublicAddress().getHost();
                 int clientPort = localMember.getAddressMap().get(EndpointQualifier.CLIENT).getPort();

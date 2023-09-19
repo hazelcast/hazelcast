@@ -63,7 +63,7 @@ public class TxnLockAndGetOperation
         if (!recordStore.txnLock(getKey(), ownerUuid, getThreadId(), getCallId(), ttl, blockReads)) {
             throw new TransactionException("Transaction couldn't obtain lock.");
         }
-        Record record = recordStore.getRecordOrNull(dataKey);
+        Record record = recordStore.getRecordOrNull(dataKey, false);
         if (record == null && shouldLoad) {
             record = recordStore.loadRecordOrNull(dataKey, false, getCallerAddress());
         }

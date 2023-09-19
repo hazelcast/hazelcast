@@ -53,7 +53,7 @@ final class ResumeTransactionUtil {
         Object transactionManager = getTransactionManager(producer);
         synchronized (transactionManager) {
             Object topicPartitionBookkeeper =
-                    getField(transactionManager, "topicPartitionBookkeeper");
+                    getField(transactionManager, "txnPartitionMap");
 
             transitionTransactionManagerStateTo(transactionManager, "INITIALIZING");
             invoke(topicPartitionBookkeeper, "reset");
@@ -124,10 +124,10 @@ final class ResumeTransactionUtil {
             constructor.setAccessible(true);
             return constructor.newInstance(producerId, epoch);
         } catch (InvocationTargetException
-                | InstantiationException
-                | IllegalAccessException
-                | NoSuchFieldException
-                | NoSuchMethodException e) {
+                 | InstantiationException
+                 | IllegalAccessException
+                 | NoSuchFieldException
+                 | NoSuchMethodException e) {
             throw new RuntimeException("Incompatible KafkaProducer version", e);
         }
     }

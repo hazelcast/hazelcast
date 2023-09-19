@@ -17,8 +17,10 @@
 package com.hazelcast.internal.services;
 
 import com.hazelcast.config.WanAcknowledgeType;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.wan.impl.InternalWanEvent;
+
+import java.util.Collection;
+import java.util.concurrent.CompletionStage;
 
 /**
  * An interface that can be implemented by internal services to give them the
@@ -37,12 +39,13 @@ public interface WanSupportingService {
     void onReplicationEvent(InternalWanEvent event, WanAcknowledgeType acknowledgeType);
 
     /**
-     * Processes a WAN sync event.
+     * Processes a WAN sync batch asynchronously.
      *
-     * @param event the event
-     * @param futures the array to save invocations
-     * @param offset place in the array where new invocation should be saved
-     * @return
+     * @param batch           collection of events, which represents a batch
+     * @param acknowledgeType determines should this method wait for the event to be processed fully
+     *                        or should it return after the event has been dispatched to the
+     *                        appropriate member
+     * @return the CompletionStage to indicate processing of all entries in the batch
      */
-    int onSyncEvent(InternalWanEvent event, InternalCompletableFuture<Boolean>[] futures, int offset);
+    CompletionStage<Void> onSyncBatch(Collection<InternalWanEvent> batch, WanAcknowledgeType acknowledgeType);
 }

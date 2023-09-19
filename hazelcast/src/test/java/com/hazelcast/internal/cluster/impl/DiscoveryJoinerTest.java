@@ -16,17 +16,18 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -34,6 +35,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.mockito.Mock;
 
 import java.net.UnknownHostException;
@@ -42,6 +44,9 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.instance.impl.TestUtil.getNode;
+import static com.hazelcast.internal.cluster.impl.DiscoveryJoiner.DISCOVERY_PUBLIC_ADDRESS_FALLBACK_PROPERTY;
+import static com.hazelcast.test.HazelcastTestSupport.assertContains;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
@@ -49,9 +54,21 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class DiscoveryJoinerTest {
+
+    private static final EndpointQualifier CLIENT_PUBLIC_ENDPOINT_QUALIFIER =
+            EndpointQualifier.resolve(ProtocolType.CLIENT, "public");
+
+    @Parameterized.Parameters(name = "fallback={0}")
+    public static Collection<Object> data() {
+        return asList(false, true);
+    }
+
+    @Parameterized.Parameter
+    public boolean discoveryBehaviourFallbackEnabled;
 
     @Mock
     private DiscoveryService service = mock(DiscoveryService.class);
@@ -62,12 +79,13 @@ public class DiscoveryJoinerTest {
 
     @Before
     public void init() throws Exception {
-        discoveryNodes = new ArrayList<DiscoveryNode>(2);
+        System.setProperty(DISCOVERY_PUBLIC_ADDRESS_FALLBACK_PROPERTY, "" + discoveryBehaviourFallbackEnabled);
+        discoveryNodes = new ArrayList<>(2);
         Address privateAddress = new Address("127.0.0.1", 5701);
-        Address publicAddress = new Address("127.0.0.2", 5701);
+        Address publicAddress = new Address("127.0.0.2", 6701);
         discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
         privateAddress = new Address("127.0.0.1", 5702);
-        publicAddress = new Address("127.0.0.2", 5702);
+        publicAddress = new Address("127.0.0.2", 6702);
         discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
         factory = new TestHazelcastInstanceFactory(1);
         hz = factory.newHazelcastInstance();
@@ -76,6 +94,7 @@ public class DiscoveryJoinerTest {
     @After
     public void cleanup() {
         factory.terminateAll();
+        System.clearProperty(DISCOVERY_PUBLIC_ADDRESS_FALLBACK_PROPERTY);
     }
 
     @Test
@@ -83,7 +102,7 @@ public class DiscoveryJoinerTest {
         DiscoveryJoiner joiner = new DiscoveryJoiner(getNode(hz), service, true);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
-        assertEquals("[[127.0.0.2]:5701, [127.0.0.2]:5702]", addresses.toString());
+        assertEquals("[[127.0.0.2]:6701, [127.0.0.2]:6702]", addresses.toString());
     }
 
     @Test
@@ -91,7 +110,10 @@ public class DiscoveryJoinerTest {
         DiscoveryJoiner joiner = new DiscoveryJoiner(getNode(hz), service, false);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
-        assertEquals("[[127.0.0.1]:5702]", addresses.toString());
+        assertContains(addresses, Address.createUnresolvedAddress("127.0.0.1", 5702));
+        Address clientPublicAddress =
+                getNode(hz).getLocalMember().getAddressMap().get(CLIENT_PUBLIC_ENDPOINT_QUALIFIER);
+        assertEquals(Address.createUnresolvedAddress("127.0.0.2", 6701), clientPublicAddress);
     }
 
     @Test
@@ -99,8 +121,9 @@ public class DiscoveryJoinerTest {
         DiscoveryJoiner joiner = new DiscoveryJoiner(getNode(hz), service, false);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
-        assertEquals("[127.0.0.2]:5701", getNode(hz).getLocalMember().getAddressMap()
-                .get(EndpointQualifier.resolve(ProtocolType.CLIENT, "public")).toString());
+        Address clientPublicAddress =
+                getNode(hz).getLocalMember().getAddressMap().get(CLIENT_PUBLIC_ENDPOINT_QUALIFIER);
+        assertEquals(Address.createUnresolvedAddress("127.0.0.2", 6701), clientPublicAddress);
     }
 
     @Test
@@ -108,10 +131,18 @@ public class DiscoveryJoinerTest {
             throws UnknownHostException {
         DiscoveryJoiner joiner = new DiscoveryJoiner(getNode(hz), service, false);
         doReturn(discoveryNodes).when(service).discoverNodes();
+        // the CLIENT protocol server socket listens on port 5703
+        // but is mapped to public address 127.0.0.2:6701
         getNode(hz).getLocalMember().getAddressMap().put(EndpointQualifier.CLIENT, new Address("127.0.0.1", 5703));
         Collection<Address> addresses = joiner.getPossibleAddresses();
-        assertEquals("[127.0.0.2]:5703", getNode(hz).getLocalMember().getAddressMap()
-                .get(EndpointQualifier.resolve(ProtocolType.CLIENT, "public")).toString());
+        String expected;
+        if (discoveryBehaviourFallbackEnabled) {
+            expected = "[127.0.0.2]:5703";
+        } else {
+            expected = "[127.0.0.2]:6701";
+        }
+        assertEquals(expected, getNode(hz).getLocalMember().getAddressMap()
+                .get(CLIENT_PUBLIC_ENDPOINT_QUALIFIER).toString());
     }
 
     @Test

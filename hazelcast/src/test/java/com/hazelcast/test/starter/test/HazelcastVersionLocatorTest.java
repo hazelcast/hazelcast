@@ -39,6 +39,7 @@ import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_JAR
 import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_TEST_JAR;
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("UnstableApiUsage")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class HazelcastVersionLocatorTest {
@@ -46,11 +47,12 @@ public class HazelcastVersionLocatorTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
-    private HashFunction md5Hash = Hashing.md5();
+    @SuppressWarnings("deprecation")
+    private final HashFunction md5Hash = Hashing.md5();
 
     @Test
     public void testDownloadVersion() throws Exception {
-        Map<HazelcastVersionLocator.Artifact, File> files = HazelcastVersionLocator.locateVersion("4.0", folder.getRoot(), true);
+        Map<HazelcastVersionLocator.Artifact, File> files = HazelcastVersionLocator.locateVersion("4.0", true);
 
         assertHash(files.get(OS_JAR), "bc409b12b96ece6d05c3bd1e99b202bb", "OS");
 

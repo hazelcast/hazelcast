@@ -18,6 +18,7 @@ package com.hazelcast.spring.transaction;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionOptions;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.NoTransactionException;
 import org.springframework.transaction.TransactionDefinition;
@@ -28,6 +29,8 @@ import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.ResourceTransactionManager;
 import org.springframework.transaction.support.SmartTransactionObject;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * {@link org.springframework.transaction.PlatformTransactionManager} implementation
@@ -103,10 +106,7 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
 
         try {
             if (txObject.getTransactionContextHolder() == null) {
-                TransactionContext transactionContext = hazelcastInstance.newTransactionContext();
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Opened new TransactionContext [" + transactionContext + "]");
-                }
+                TransactionContext transactionContext = getTransactionContext(definition);
                 txObject.setTransactionContextHolder(new TransactionContextHolder(transactionContext), true);
             }
 
@@ -119,6 +119,20 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
             closeTransactionContextAfterFailedBegin(txObject);
             throw new CannotCreateTransactionException("Could not begin Hazelcast transaction", ex);
         }
+    }
+
+    private TransactionContext getTransactionContext(TransactionDefinition definition) {
+        TransactionOptions options = TransactionOptions.getDefault();
+        if (definition.getTimeout() != TransactionDefinition.TIMEOUT_DEFAULT) {
+            options.setTimeout(definition.getTimeout(), TimeUnit.SECONDS);
+        } else if (getDefaultTimeout() != TransactionDefinition.TIMEOUT_DEFAULT) {
+            options.setTimeout(getDefaultTimeout(), TimeUnit.SECONDS);
+        }
+        TransactionContext transactionContext = hazelcastInstance.newTransactionContext(options);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Opened new TransactionContext [" + transactionContext + "]");
+        }
+        return transactionContext;
     }
 
     private void closeTransactionContextAfterFailedBegin(HazelcastTransactionObject txObject) {

@@ -40,7 +40,7 @@ public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implemen
 
     @Override
     protected void runInternal() {
-        Record record = recordStore.getRecordOrNull(dataKey);
+        Record record = recordStore.getRecordOrNull(dataKey, false);
         if (record != null) {
             Data value = mapServiceContext.toData(record.getValue());
             ExpiryMetadata expiryMetadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);

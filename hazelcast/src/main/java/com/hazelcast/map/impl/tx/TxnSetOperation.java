@@ -82,7 +82,7 @@ public class TxnSetOperation extends BasePutOperation
     @Override
     protected void runInternal() {
         recordStore.unlock(dataKey, ownerUuid, threadId, getCallId());
-        Record record = recordStore.getRecordOrNull(dataKey);
+        Record record = recordStore.getRecordOrNull(dataKey, false);
         if (record == null || version == record.getVersion()) {
             EventService eventService = getNodeEngine().getEventService();
             if (eventService.hasEventRegistration(MapService.SERVICE_NAME, getName())) {

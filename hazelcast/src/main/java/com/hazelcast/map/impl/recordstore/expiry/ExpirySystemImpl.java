@@ -330,17 +330,18 @@ public class ExpirySystemImpl implements ExpirySystem {
         tryToSendBackupExpiryOp();
 
         if (logger.isFinestEnabled()) {
-            logProgress(maxScannableCount, scannedCount, expiredCount, scanLoopStartNanos);
+            logProgress(maxScannableCount, scannedCount,
+                    expiredCount, scanLoopStartNanos, backup);
         }
     }
 
 
     private void logProgress(int maxScannableCount, int scannedCount,
-                             int expiredCount, long scanLoopStartNanos) {
-        logger.finest(String.format("mapName: %s, partitionId: %d, partitionSize: %d, "
-                        + "maxScannableCount: %d, scannedCount: %d, expiredCount: %d, "
-                        + "remainedCount: %d, scanTookNanos: %d"
-                , recordStore.getName(), recordStore.getPartitionId(), recordStore.size()
+                             int expiredCount, long scanLoopStartNanos, boolean backup) {
+        logger.finest(String.format("mapName=%s, partitionId=%d, backup=%s, partitionSize=%d, "
+                        + "maxScannableCount=%d, scannedCount=%d, expiredCount=%d, "
+                        + "remainedCount=%d, scanTookNanos=%d"
+                , recordStore.getName(), recordStore.getPartitionId(), backup, recordStore.size()
                 , maxScannableCount, scannedCount, expiredCount, expireTimeByKey.size(),
                 (System.nanoTime() - scanLoopStartNanos)));
     }
@@ -374,7 +375,7 @@ public class ExpirySystemImpl implements ExpirySystem {
 
         int scannedCount = 0;
         Iterator<Map.Entry<Data, ExpiryMetadata>> cachedIterator = getOrInitCachedIterator();
-        while (scannedCount++ < MAX_SAMPLE_AT_A_TIME && cachedIterator.hasNext()) {
+        while (scannedCount < MAX_SAMPLE_AT_A_TIME && cachedIterator.hasNext()) {
             Map.Entry<Data, ExpiryMetadata> entry = cachedIterator.next();
             Data key = entry.getKey();
             ExpiryMetadata expiryMetadata = entry.getValue();
@@ -385,6 +386,8 @@ public class ExpirySystemImpl implements ExpirySystem {
                 batchOfExpired.add(key);
                 batchOfExpired.add(expiryReason);
             }
+
+            scannedCount++;
         }
         return scannedCount;
     }

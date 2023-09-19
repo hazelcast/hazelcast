@@ -40,8 +40,10 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createInMemorySchemaService;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
@@ -105,7 +107,7 @@ public class GenericRecordTest {
 
     @Test
     public void testCloneCompactInternalGenericRecord() throws IOException {
-        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        InternalSerializationService serializationService = createSerializationService();
 
         GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
@@ -233,7 +235,7 @@ public class GenericRecordTest {
             record.getInt32("doesNotExist");
         }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field name");
 
-        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        InternalSerializationService serializationService = createSerializationService();
         Data data = serializationService.toData(record);
 
         InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
@@ -250,7 +252,7 @@ public class GenericRecordTest {
             record.getInt64("foo");
         }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field kind");
 
-        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        InternalSerializationService serializationService = createSerializationService();
         Data data = serializationService.toData(record);
 
         InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
@@ -258,5 +260,43 @@ public class GenericRecordTest {
         assertThatThrownBy(() -> {
             internalGenericRecord.getInt64("foo");
         }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field kind");
+    }
+
+    @Test
+    public void testReadingGenericRecord_classLoaderShouldBeInvokedOncePerTypeName() {
+        SchemaService schemaService = createInMemorySchemaService();
+        InternalSerializationService ss1 = createSerializationService(schemaService);
+        GenericRecord record = compact("test").setInt32("foo", 123).build();
+        Data recordData = ss1.toData(record);
+
+        CountingClassLoader classLoader = new CountingClassLoader("test");
+        InternalSerializationService ss2 = createSerializationService(classLoader, schemaService);
+        assertEquals(0, classLoader.getCount());
+        assertEquals(record, ss2.toObject(recordData));
+        assertEquals(record, ss2.toObject(recordData));
+        assertEquals(record, ss2.toObject(recordData));
+        assertEquals(1, classLoader.getCount());
+    }
+
+    private static final class CountingClassLoader extends ClassLoader {
+        private final String classNameToCount;
+        private final AtomicInteger count;
+
+        CountingClassLoader(String classNameToCount) {
+            this.classNameToCount = classNameToCount;
+            this.count = new AtomicInteger();
+        }
+
+        @Override
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
+            if (classNameToCount.equals(name)) {
+                count.incrementAndGet();
+            }
+            return super.loadClass(name);
+        }
+
+        public int getCount() {
+            return count.get();
+        }
     }
 }

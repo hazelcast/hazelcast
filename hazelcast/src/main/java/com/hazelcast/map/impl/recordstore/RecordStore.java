@@ -467,11 +467,12 @@ public interface RecordStore<R extends Record> {
     /**
      * Returns live record or null if record is already expired. Does not load missing keys from a map store.
      *
-     * @param key key to be accessed
+     * @param key      key to be accessed
+     * @param backup true if partition is a backup-partition otherwise set false
      * @return live record or null
      * @see #get
      */
-    R getRecordOrNull(Data key);
+    R getRecordOrNull(Data key, boolean backup);
 
     /**
      * Check if record is reachable according to TTL or idle times.

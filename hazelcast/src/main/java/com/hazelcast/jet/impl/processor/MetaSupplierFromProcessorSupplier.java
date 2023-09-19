@@ -58,16 +58,6 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
     }
 
     @Override
-    public boolean initIsCooperative() {
-        return true;
-    }
-
-    @Override
-    public boolean closeIsCooperative() {
-        return true;
-    }
-
-    @Override
     public int preferredLocalParallelism() {
         return preferredLocalParallelism;
     }
@@ -75,6 +65,26 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
     @Nonnull @Override
     public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
         return address -> processorSupplier;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return permission;
+    }
+
+    @Override
+    public boolean isReusable() {
+        return true;
+    }
+
+    @Override
+    public boolean initIsCooperative() {
+        return true;
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 
     @Override
@@ -89,10 +99,5 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
         preferredLocalParallelism = in.readInt();
         processorSupplier = in.readObject();
         permission = in.readObject();
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return permission;
     }
 }

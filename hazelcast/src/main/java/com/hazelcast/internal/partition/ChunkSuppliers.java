@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
@@ -111,7 +112,7 @@ public final class ChunkSuppliers {
         }
 
         @Override
-        public void signalEndOfChunkWith(BooleanSupplier isEndOfChunk) {
+        public void signalEndOfChunkWith(Predicate<BufferObjectDataOutput> isEndOfChunk) {
             for (int i = 0; i < chain.size(); i++) {
                 chain.get(i).signalEndOfChunkWith(isEndOfChunk);
             }

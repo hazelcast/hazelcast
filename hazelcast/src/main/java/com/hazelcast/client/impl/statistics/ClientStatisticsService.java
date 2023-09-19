@@ -107,6 +107,10 @@ public class ClientStatisticsService {
     }
 
     public void collectAndSendStatsNow() {
+        if (!enabled) {
+            return;
+        }
+
         client.getTaskScheduler().schedule(this::collectAndSendStats, 0, SECONDS);
     }
 

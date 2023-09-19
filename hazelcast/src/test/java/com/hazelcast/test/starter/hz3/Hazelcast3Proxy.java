@@ -58,7 +58,7 @@ public class Hazelcast3Proxy {
 
     public HazelcastInstance newHazelcastInstance(String xmlConfig) {
         try {
-            File hazelcastJar = locateVersion("3.12.13", new File("target"), false).get(OS_JAR);
+            File hazelcastJar = locateVersion("3.12.13", false).get(OS_JAR);
             URLClassLoader classLoader = new ChildFirstClassLoader(
                     new URL[]{hazelcastJar.toURI().toURL()},
                     Hazelcast3Proxy.class.getClassLoader()

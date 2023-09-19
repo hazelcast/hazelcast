@@ -39,7 +39,7 @@ import java.util.List;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
-public enum PartitionWideOpSteps implements IMapOpStep {
+public enum PartitionWideEntryOpSteps implements IMapOpStep {
 
     PROCESS() {
         @Override
@@ -225,6 +225,6 @@ public enum PartitionWideOpSteps implements IMapOpStep {
         }
     };
 
-    PartitionWideOpSteps() {
+    PartitionWideEntryOpSteps() {
     }
 }

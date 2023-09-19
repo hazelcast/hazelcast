@@ -205,6 +205,9 @@ public class ConfigXmlGenerator {
     }
 
     private String getOrMaskValue(String value) {
+        if (value == null) {
+            return null;
+        }
         return maskSensitiveFields ? MASK_FOR_SENSITIVE_DATA : value;
     }
 
@@ -319,7 +322,7 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void ldapAuthenticationGenerator(XmlGenerator gen, LdapAuthenticationConfig c) {
+    private void ldapAuthenticationGenerator(XmlGenerator gen, LdapAuthenticationConfig c) {
         if (c == null) {
             return;
         }
@@ -336,7 +339,7 @@ public class ConfigXmlGenerator {
                 .nodeIfContents("role-search-scope", c.getRoleSearchScope())
                 .nodeIfContents("user-name-attribute", c.getUserNameAttribute())
                 .nodeIfContents("system-user-dn", c.getSystemUserDn())
-                .nodeIfContents("system-user-password", c.getSystemUserPassword())
+                .nodeIfContents("system-user-password", getOrMaskValue(c.getSystemUserPassword()))
                 .nodeIfContents("system-authentication", c.getSystemAuthentication())
                 .nodeIfContents("security-realm", c.getSecurityRealm())
                 .nodeIfContents("password-attribute", c.getPasswordAttribute())
@@ -347,7 +350,7 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void kerberosAuthenticationGenerator(XmlGenerator gen, KerberosAuthenticationConfig c) {
+    private void kerberosAuthenticationGenerator(XmlGenerator gen, KerberosAuthenticationConfig c) {
         if (c == null) {
             return;
         }
@@ -362,14 +365,14 @@ public class ConfigXmlGenerator {
         kerberosGen.close();
     }
 
-    private static void simpleAuthenticationGenerator(XmlGenerator gen, SimpleAuthenticationConfig c) {
+    private void simpleAuthenticationGenerator(XmlGenerator gen, SimpleAuthenticationConfig c) {
         if (c == null) {
             return;
         }
         XmlGenerator simpleGen = gen.open("simple");
         addClusterLoginElements(simpleGen, c).nodeIfContents("role-separator", c.getRoleSeparator());
         for (String username : c.getUsernames()) {
-            simpleGen.open("user", "username", username, "password", c.getPassword(username));
+            simpleGen.open("user", "username", username, "password", getOrMaskValue(c.getPassword(username)));
             for (String role : c.getRoles(username)) {
                 simpleGen.node("role", role);
             }

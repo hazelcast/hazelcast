@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.iteration.IterationPointer;
@@ -156,7 +157,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public long getMapStoreOffloadedOperationsCount() {
-
         return mapStoreOffloadedOperationsCount.get();
     }
 
@@ -198,6 +198,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public JsonMetadataStore getOrCreateMetadataStore() {
+        if (mapContainer.getMapConfig().getMetadataPolicy() == MetadataPolicy.OFF) {
+            return JsonMetadataStore.NULL;
+        }
         if (metadataStore == null) {
             metadataStore = createMetadataStore();
         }
@@ -1238,9 +1241,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Record getRecordOrNull(Data key) {
+    public Record getRecordOrNull(Data key, boolean backup) {
         long now = getNow();
-        return getRecordOrNull(key, now, false);
+        return getRecordOrNull(key, now, backup);
     }
 
     public Record getRecordOrNull(Data key, long now, boolean backup) {

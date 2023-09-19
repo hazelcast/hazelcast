@@ -44,7 +44,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 public final class RestClient {
 
@@ -58,7 +64,7 @@ public final class RestClient {
      */
     public static final int HTTP_NOT_FOUND = 404;
 
-    private static final String WATCH_FORMAT = "?watch=1&resourceVersion=%s";
+    private static final String WATCH_FORMAT = "watch=1&resourceVersion=%s";
 
     private final String url;
     private final List<Parameter> headers = new ArrayList<>();
@@ -130,6 +136,10 @@ public final class RestClient {
         return callWithRetries("POST");
     }
 
+    public Response put() {
+        return callWithRetries("PUT");
+    }
+
     private Response callWithRetries(String method) {
         return RetryUtils.retry(() -> call(method), retries);
     }
@@ -178,10 +188,12 @@ public final class RestClient {
      * in this class, it is the responsibility of the consumer to disconnect the connection
      * (by invoking {@link WatchResponse#disconnect()}) once the watch is no longer required.
      */
-    public WatchResponse watch(String resourceVersion) {
+    public WatchResponse watch(String resourceVersion, ExecutorService readExecutor) {
         HttpURLConnection connection = null;
         try {
-            String completeUrl = url + String.format(WATCH_FORMAT, resourceVersion);
+            String appendWatchParameter = (url.contains("?") ? "&" : "?")
+                    + String.format(WATCH_FORMAT, resourceVersion);
+            String completeUrl = url + appendWatchParameter;
             URL urlToConnect = new URL(completeUrl);
             connection = (HttpURLConnection) urlToConnect.openConnection();
             if (connection instanceof HttpsURLConnection && caCertificate != null) {
@@ -207,7 +219,7 @@ public final class RestClient {
             }
 
             checkResponseCode("GET", connection);
-            return new WatchResponse(connection);
+            return new WatchResponse(connection, readExecutor);
         } catch (IOException e) {
             throw new RestClientException("Failure in executing REST call", e);
         }
@@ -253,7 +265,7 @@ public final class RestClient {
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(keyStore);
 
-            SSLContext context = SSLContext.getInstance("TLSv1.2");
+            SSLContext context = SSLContext.getInstance("TLS");
             context.init(null, tmf.getTrustManagers(), null);
             return context.getSocketFactory();
 
@@ -312,16 +324,19 @@ public final class RestClient {
     }
 
     public static class WatchResponse {
-
         private final int code;
         private final HttpURLConnection connection;
         private final BufferedReader reader;
 
-        public WatchResponse(HttpURLConnection connection) throws IOException {
+        private final ExecutorService readExecutor;
+        private Future<String> future;
+
+        public WatchResponse(HttpURLConnection connection, ExecutorService readExecutor) throws IOException {
             this.code = connection.getResponseCode();
             this.connection = connection;
             this.reader = new BufferedReader(new InputStreamReader(connection.getInputStream(),
                     StandardCharsets.UTF_8));
+            this.readExecutor = readExecutor;
         }
 
         public int getCode() {
@@ -329,7 +344,18 @@ public final class RestClient {
         }
 
         public String nextLine() throws IOException {
-            return reader.readLine();
+            future = readExecutor.submit(reader::readLine);
+
+            try {
+                return future.get();
+            } catch (ExecutionException | CancellationException e) {
+                throw sneakyThrow(e);
+            } catch (InterruptedException e) {
+                // Pass on interruptions to thread
+                Thread.currentThread().interrupt();
+            }
+
+            return null;
         }
 
         public void disconnect() {

@@ -355,6 +355,7 @@ public class MembershipManager {
         }
 
         for (MemberImpl member : removedMembers) {
+            clusterService.getClusterJoinManager().addLeftMember(member);
             closeConnections(member.getAddress(), "Member left event received from master");
             handleMemberRemove(memberMapRef.get(), member);
         }

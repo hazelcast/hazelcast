@@ -64,7 +64,7 @@ public class DnsEndpointResolverTest {
         DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, UNSET_PORT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS, lookupProvider);
 
         // when
-        List<DiscoveryNode> result = dnsEndpointResolver.resolve();
+        List<DiscoveryNode> result = dnsEndpointResolver.resolveNodes();
 
         // then
 
@@ -81,7 +81,7 @@ public class DnsEndpointResolverTest {
         DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, CUSTOM_PORT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS, lookupProvider);
 
         // when
-        List<DiscoveryNode> result = dnsEndpointResolver.resolve();
+        List<DiscoveryNode> result = dnsEndpointResolver.resolveNodes();
 
         // then
 
@@ -92,14 +92,13 @@ public class DnsEndpointResolverTest {
     }
 
     @Test
-    public void resolveException() throws Exception {
+    public void resolveException() {
         // given
         ILogger logger = mock(ILogger.class);
-        RawLookupProvider lookupProvider = nonResolvingLookupProvider();
         DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(logger, SERVICE_DNS, UNSET_PORT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS, nonResolvingLookupProvider());
 
         // when
-        List<DiscoveryNode> result = dnsEndpointResolver.resolve();
+        List<DiscoveryNode> result = dnsEndpointResolver.resolveNodes();
 
         // then
         assertEquals(0, result.size());
@@ -108,13 +107,13 @@ public class DnsEndpointResolverTest {
     }
 
     @Test
-    public void resolveNotFound() throws Exception {
+    public void resolveNotFound() {
         // given
         RawLookupProvider lookupProvider = staticLookupProvider(SERVICE_DNS);
         DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, UNSET_PORT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS, lookupProvider);
 
         // when
-        List<DiscoveryNode> result = dnsEndpointResolver.resolve();
+        List<DiscoveryNode> result = dnsEndpointResolver.resolveNodes();
 
         // then
         assertEquals(0, result.size());
@@ -127,7 +126,7 @@ public class DnsEndpointResolverTest {
         DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(logger, SERVICE_DNS, UNSET_PORT, TEST_DNS_TIMEOUT_SECONDS, timingOutLookupProvider());
 
         // when
-        List<DiscoveryNode> result = dnsEndpointResolver.resolve();
+        List<DiscoveryNode> result = dnsEndpointResolver.resolveNodes();
 
         // then
         assertEquals(0, result.size());

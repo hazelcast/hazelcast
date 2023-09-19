@@ -165,10 +165,7 @@ public class KinesisSinkP<T> implements Processor {
 
     @Override
     public boolean saveToSnapshot() {
-        if (sendResult != null) {
-            checkIfSendingFinished();
-        }
-        return sendResult == null;
+        return complete();
     }
 
     private void updateThroughputLimitations() {

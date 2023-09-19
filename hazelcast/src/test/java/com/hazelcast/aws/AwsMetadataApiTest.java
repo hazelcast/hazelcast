@@ -26,6 +26,7 @@ import java.util.Optional;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.moreThan;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -41,6 +42,7 @@ public class AwsMetadataApiTest {
 
     private final String GROUP_NAME_URL = "/placement/group-name/";
     private final String PARTITION_NO_URL = "/placement/partition-number/";
+    private final String METADATA_TOKEN_URL = "/latest/api/token";
     private final int RETRY_COUNT = 3;
 
     private AwsMetadataApi awsMetadataApi;
@@ -52,7 +54,10 @@ public class AwsMetadataApiTest {
     public void setUp() {
         AwsConfig awsConfig = AwsConfig.builder().setConnectionRetries(RETRY_COUNT).build();
         String endpoint = String.format("http://localhost:%s", wireMockRule.port());
-        awsMetadataApi = new AwsMetadataApi(endpoint, endpoint, endpoint, awsConfig);
+        stubFor(put(urlEqualTo(METADATA_TOKEN_URL))
+            .willReturn(aResponse().withStatus(200).withBody("defaulttoken")));
+        String tokenEndpoint = endpoint.concat(METADATA_TOKEN_URL);
+        awsMetadataApi = new AwsMetadataApi(endpoint, endpoint, endpoint, tokenEndpoint, awsConfig);
     }
 
     @Test
@@ -245,5 +250,19 @@ public class AwsMetadataApiTest {
         assertTrue(exception.getMessage().contains(Integer.toString(errorCode)));
         assertTrue(exception.getMessage().contains(errorMessage));
         verify(moreThan(RETRY_COUNT), getRequestedFor(urlMatching("/.*")));
+    }
+
+    @Test
+    public void retrieveToken() {
+        // given
+        String token = "retrievetoken";
+        stubFor(put(urlEqualTo(METADATA_TOKEN_URL))
+            .willReturn(aResponse().withStatus(200).withBody(token)));
+
+        // when
+        String result = awsMetadataApi.retrieveToken();
+
+        // then
+        assertEquals(token, result);
     }
 }

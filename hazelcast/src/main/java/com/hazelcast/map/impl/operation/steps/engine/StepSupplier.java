@@ -143,7 +143,10 @@ public class StepSupplier implements Supplier<Runnable> {
                 if (runningOnPartitionThread && state.getThrowable() == null) {
                     metWithPreconditions = metWithPreconditions();
                 }
-                step.runStep(state);
+
+                if (metWithPreconditions) {
+                    step.runStep(state);
+                }
             } catch (NativeOutOfMemoryError e) {
                 assertRunningOnPartitionThread();
 
@@ -200,7 +203,12 @@ public class StepSupplier implements Supplier<Runnable> {
 
     public void handleOperationError(Throwable throwable) {
         state.setThrowable(throwable);
-        UtilSteps.HANDLE_ERROR.runStep(state);
+        currentRunnable = null;
+        currentStep = UtilSteps.HANDLE_ERROR;
+    }
+
+    public MapOperation getOperation() {
+        return state.getOperation();
     }
 
     private interface ExecutorNameAwareRunnable extends Runnable, Offloadable {

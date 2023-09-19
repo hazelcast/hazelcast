@@ -23,13 +23,14 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.wan.WanMapAddOrUpdateEvent;
 import com.hazelcast.map.impl.wan.WanMapRemoveEvent;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.wan.WanEventCounters;
 import com.hazelcast.wan.impl.InternalWanEvent;
 
+import java.util.Collection;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -58,7 +59,7 @@ class WanMapSupportingService implements WanSupportingService {
     }
 
     @Override
-    public int onSyncEvent(InternalWanEvent event, InternalCompletableFuture<Boolean>[] futures, int offset) {
+    public CompletionStage<Void> onSyncBatch(Collection<InternalWanEvent> batch, WanAcknowledgeType acknowledgeType) {
         // code should never reach here
         throw new UnsupportedOperationException("WAN Synchronization requires Hazelcast Enterprise Edition");
     }

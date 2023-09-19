@@ -25,6 +25,8 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.ExecutorServicePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.security.auth.Subject;
@@ -75,7 +77,7 @@ public class ExecutorServiceSubmitToPartitionMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new ExecutorServicePermission(parameters.name, ActionConstants.ACTION_MODIFY);
     }
 
     @Override

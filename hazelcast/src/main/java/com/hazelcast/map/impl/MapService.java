@@ -26,6 +26,7 @@ import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
@@ -53,7 +54,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
@@ -70,6 +70,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_DISCRIMINATOR_NAME;
@@ -211,8 +212,8 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
     }
 
     @Override
-    public int onSyncEvent(InternalWanEvent event, InternalCompletableFuture<Boolean>[] futures, int offset) {
-        return wanSupportingService.onSyncEvent(event, futures, offset);
+    public CompletionStage<Void> onSyncBatch(Collection<InternalWanEvent> batch, WanAcknowledgeType acknowledgeType) {
+        return wanSupportingService.onSyncBatch(batch, acknowledgeType);
     }
 
     @Override
@@ -289,12 +290,15 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
 
     @Override
     public void onBeforeLock(String distributedObjectName, Data key) {
-        int partitionId = mapServiceContext.getNodeEngine().getPartitionService().getPartitionId(key);
+        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        int partitionId = partitionService.getPartitionId(key);
         RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, distributedObjectName);
-        // we have no use for the return value, invoked just for the side effects
+        boolean owner = partitionService.isPartitionOwner(partitionId);
         recordStore.beforeOperation();
         try {
-            recordStore.getRecordOrNull(key);
+            // we have no use for the return value,
+            // invoked just for the side effects
+            recordStore.getRecordOrNull(key, !owner);
         } finally {
             recordStore.afterOperation();
         }

@@ -28,11 +28,16 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import io.debezium.connector.mongodb.MongoDbConnector;
 import io.debezium.connector.mysql.MySqlConnector;
+import org.bson.Document;
 import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -59,6 +64,9 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             DockerImageName.parse("debezium/example-mysql:1.9.3.Final").asCompatibleSubstituteFor("mysql");
     private static final DockerImageName POSTGRES_IMAGE =
             DockerImageName.parse("debezium/example-postgres:1.7").asCompatibleSubstituteFor("postgres");
+    private static final DockerImageName MONGODB_IMAGE =
+            DockerImageName.parse("mongo:6.0.3").asCompatibleSubstituteFor("mongodb");
+
     @Test
     public void mysql() throws Exception {
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
@@ -456,6 +464,52 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                 assertThat(changeRecordList).as("nullIsNotValidOperationId").isNotEmpty();
                 logger.info(changeRecordList.get(0).toString()); // <-- 'null' is not a valid operation id
             });
+        }
+    }
+
+    /**
+     * {@code before} field in MongoDB CDC is not present at all
+     */
+    @Test
+    public void noFailWhenBeforeIsNotPresent() {
+        try (MongoDBContainer container =  new MongoDBContainer(MONGODB_IMAGE).withExposedPorts(27017)
+                                                                              .withNetworkAliases("mongo")) {
+            container.start();
+            String connectionString = container.getConnectionString();
+
+            try (MongoClient mc = MongoClients.create(connectionString)) {
+
+                HazelcastInstance hz = createHazelcastInstance();
+                IList<ChangeRecord> changeRecordList = hz.getList("noFailWhenBeforeIsNotPresent");
+                mc.getDatabase("test").getCollection("test").insertOne(new Document("test", "test"));
+
+                StreamSource<ChangeRecord> source = DebeziumCdcSources
+                        .debezium("mongo", MongoDbConnector.class)
+                        .setProperty("mongodb.hosts", container.getHost() + ":" + container.getMappedPort(27017))
+                        .setProperty("mongodb.members.auto.discover", "false")
+                        .setProperty("mongodb.name", "test")
+                        .setProperty("topic.prefix", "customer")
+                        .setProperty("snapshot.mode", "initial")
+                        .setProperty("connect.keep.alive", "true")
+                        .setProperty("connect.keep.alive.interval.ms", "1000")
+                        .setProperty("capture.mode", "change_streams_update_full")
+                        .build();
+
+                Pipeline p = Pipeline.create();
+                p
+                        .readFrom(source)
+                        .withIngestionTimestamps()
+                        .setLocalParallelism(1)
+                        .writeTo(Sinks.list(changeRecordList));
+
+                Job job = hz.getJet().newJob(p);
+
+                assertJobStatusEventually(job, JobStatus.RUNNING);
+                mc.getDatabase("test").getCollection("test").insertOne(new Document("test", "test"));
+
+                assertTrueEventually(() ->
+                        assertThat(changeRecordList).as("Should receive record without exception").isNotEmpty());
+            }
         }
     }
 

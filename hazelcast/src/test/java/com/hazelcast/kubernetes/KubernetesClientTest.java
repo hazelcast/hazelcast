@@ -226,7 +226,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(format(result),
+        assertThat(formatPrivate(result),
                 containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702), notReady("172.17.0.6", null)));
     }
 
@@ -253,7 +253,7 @@ public class KubernetesClientTest {
                + "              \"port\": 5701\n"
                + "            },\n"
                + "            {\n"
-               + "              \"name\": \"hazelcast-service-port\",\n"
+               + "              \"name\": \"hazelcast\",\n"
                + "              \"protocol\": \"TCP\",\n"
                + "              \"port\": 5702\n"
                + "            }\n"
@@ -302,7 +302,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpointsByServiceLabel(serviceLabel, serviceLabelValue);
 
         // then
-        assertThat(format(result),
+        assertThat(formatPrivate(result),
                 containsInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5701), notReady("172.17.0.6", 5701)));
     }
 
@@ -329,7 +329,7 @@ public class KubernetesClientTest {
                 + "              \"port\": 5701\n"
                 + "            },\n"
                 + "            {\n"
-                + "              \"name\": \"hazelcast-service-port\",\n"
+                + "              \"name\": \"hazelcast\",\n"
                 + "              \"protocol\": \"TCP\",\n"
                 + "              \"port\": 5702\n"
                 + "            }\n"
@@ -377,7 +377,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpointsByServiceLabel(serviceLabels, serviceLabelValues);
 
         // then
-        assertThat(format(result),
+        assertThat(formatPrivate(result),
                 containsInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5701), notReady("172.17.0.6", 5701)));
     }
     @Test
@@ -404,7 +404,7 @@ public class KubernetesClientTest {
               + "      ],\n"
               + "      \"ports\": [\n"
               + "        {\n"
-              + "          \"name\": \"hazelcast-service-port\",\n"
+              + "          \"name\": \"hazelcast\",\n"
               + "          \"protocol\": \"TCP\",\n"
               + "          \"port\": 5702\n"
               + "        }\n"
@@ -421,7 +421,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpointsByName(serviceName);
 
         // then
-        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5702)));
     }
 
     @Test
@@ -493,7 +493,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpointsByPodLabel(podLabel, podLabelValue);
 
         // then
-        assertThat(format(result),
+        assertThat(formatPrivate(result),
                 containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
     }
 
@@ -568,7 +568,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpointsByPodLabel(podLabel, podLabelValue);
 
         // then
-        assertThat(format(result),
+        assertThat(formatPrivate(result),
                 containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
     }
 
@@ -755,7 +755,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
         assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 32123), ready("35.232.226.201", 32124)));
     }
 
@@ -820,7 +820,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
         assertThat(formatPublic(result), containsInAnyOrder(ready("abc.hostname", 32123), ready("abc2.hostname", 32124)));
     }
 
@@ -841,7 +841,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
         assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917)));
     }
 
@@ -864,7 +864,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
         assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917)));
     }
 
@@ -891,7 +891,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
         assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917)));
     }
 
@@ -918,7 +918,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
         assertThat(formatPublic(result), containsInAnyOrder(ready("node-name-1", 31916), ready("node-name-2", 31917)));
     }
 
@@ -938,7 +938,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
     }
 
     @Test(expected = KubernetesClientException.class)
@@ -1063,9 +1063,141 @@ public class KubernetesClientTest {
 
         List<Endpoint> result = kubernetesClient.endpoints();
 
-        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
         assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 32124), ready("35.232.226.201", 32124)));
     }
+
+    @Test
+    public void advancedNetworkExternalIpServicePerPod() {
+        // given
+        String servicePerPodLabel = "hazelcast.com/service-per-pod";
+        String servicePerPodLabelValue = "true";
+        kubernetesClient = newKubernetesClient(false, servicePerPodLabel, servicePerPodLabelValue);
+        //language=JSON
+        String endpointResponse = "{\n"
+                + "  \"kind\": \"Endpoints\",\n"
+                + "  \"subsets\": [\n"
+                + "    {\n"
+                + "      \"addresses\": [\n"
+                + "        {\n"
+                + "          \"ip\": \"172.17.0.5\",\n"
+                + "          \"targetRef\": {\n"
+                + "            \"name\": \"hazelcast-0\""
+                + "          }\n"
+                + "        },\n"
+                + "        {\n"
+                + "          \"ip\": \"192.168.0.25\",\n"
+                + "          \"targetRef\": {\n"
+                + "            \"name\": \"hazelcast-1\""
+                + "          }\n"
+                + "        }\n"
+                + "      ],\n"
+                + "      \"ports\": [\n"
+                + "        {\n"
+                + "          \"name\": \"member-port\",\n"
+                + "          \"protocol\": \"TCP\",\n"
+                + "          \"port\": 5702\n"
+                + "        },\n"
+                + "        {\n"
+                + "          \"name\": \"hazelcast-port\",\n"
+                + "          \"protocol\": \"TCP\",\n"
+                + "          \"port\": 5701\n"
+                + "        }\n"
+                + "      ]\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
+        String serviceName = "service-name";
+        stub(String.format("/api/v1/namespaces/%s/endpoints/%s", NAMESPACE, serviceName), endpointResponse);
+
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListMultiplePortsResponse());
+        Map<String, String> queryParams = singletonMap("labelSelector", String.format("%s=%s", servicePerPodLabel, servicePerPodLabelValue));
+        stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), queryParams, endpointsListResponse());
+
+        stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE), nodePortService1Response());
+        stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE), nodePortService2Response());
+        stub("/api/v1/nodes/node-name-1", node1Response());
+        stub("/api/v1/nodes/node-name-2", node2Response());
+        stub(String.format("/api/v1/namespaces/%s/pods/hazelcast-0", NAMESPACE), podResponse("hazelcast-0", "node-name-1"));
+        stub(String.format("/api/v1/namespaces/%s/pods/hazelcast-1", NAMESPACE), podResponse("hazelcast-1", "node-name-2"));
+
+
+        // when
+        List<Endpoint> result = kubernetesClient.endpoints();
+
+        // then
+        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5701)));
+        assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917)));
+    }
+
+    private static String podsListMultiplePortsResponse() {
+        //language=JSON
+        return "{\n"
+                + "  \"kind\": \"PodList\",\n"
+                + "  \"items\": [\n"
+                + "    {\n"
+                + "      \"metadata\" : {\n"
+                + "        \"name\" : \"hazelcast-0\"\n"
+                + "      "
+                + "},\n"
+                + "      \"spec\": {\n"
+                + "        \"containers\": [\n"
+                + "          {\n"
+                + "            \"ports\": [\n"
+                + "              {\n"
+                + "                \"name\": \"hazelcast\","
+                + "                \"containerPort\": 5701\n"
+                + "              },\n"
+                + "              {\n"
+                + "                \"name\": \"member-port\","
+                + "                \"containerPort\": 5702\n"
+                + "              }\n"
+                + "            ]\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      },\n"
+                + "      \"status\": {\n"
+                + "        \"podIP\": \"172.17.0.5\",\n"
+                + "        \"containerStatuses\": [\n"
+                + "          {\n"
+                + "            \"ready\": true\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      }\n"
+                + "    },\n"
+                + "  {\n"
+                + "    \"metadata\" : {\n"
+                + "      \"name\" : \"hazelcast-1\"\n"
+                + "    },\n"
+                + "      \"spec\": {\n"
+                + "        \"containers\": [\n"
+                + "          {\n"
+                + "            \"ports\": [\n"
+                + "              {\n"
+                + "                \"name\": \"hazelcast\","
+                + "                \"containerPort\": 5701\n"
+                + "              },\n"
+                + "              {\n"
+                + "                \"name\": \"member-port\","
+                + "                \"containerPort\": 5702\n"
+                + "              }\n"
+                + "            ]\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      },\n"
+                + "      \"status\": {\n"
+                + "        \"podIP\": \"192.168.0.25\",\n"
+                + "        \"containerStatuses\": [\n"
+                + "          {\n"
+                + "            \"ready\": true\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      }\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
+    }
+
 
     private static String serviceResponse(String ip) {
         //language=JSON
@@ -1523,7 +1655,7 @@ public class KubernetesClientTest {
         return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, new StaticTokenProvider(TOKEN), CA_CERTIFICATE, RETRIES, exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue, urlProvider);
     }
 
-    private static List<String> format(List<Endpoint> addresses) {
+    private static List<String> formatPrivate(List<Endpoint> addresses) {
         List<String> result = new ArrayList<String>();
         for (Endpoint address : addresses) {
             String ip = address.getPrivateAddress().getIp();

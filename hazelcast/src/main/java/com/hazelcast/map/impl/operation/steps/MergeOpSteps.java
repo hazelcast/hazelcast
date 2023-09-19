@@ -180,7 +180,9 @@ public enum MergeOpSteps implements IMapOpStep {
                     // if same values, merge expiry and continue with next entry
                     if (recordStore.getValueComparator().isEqual(newValue, oldValue, serializationService)) {
                         Record record = recordStore.getRecord((Data) key);
-                        recordStore.mergeRecordExpiration((Data) key, record, mergingEntry, state.getNow());
+                        if (record != null) {
+                            recordStore.mergeRecordExpiration((Data) key, record, mergingEntry, state.getNow());
+                        }
                         continue;
                     }
 

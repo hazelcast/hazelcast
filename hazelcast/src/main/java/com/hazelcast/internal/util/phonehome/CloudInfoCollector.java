@@ -77,6 +77,8 @@ class CloudInfoCollector implements MetricsCollector {
             info.put(PhoneHomeMetrics.CLOUD, "Z");
         } else if (MetricsCollector.fetchWebService(gcpEndpoint)) {
             info.put(PhoneHomeMetrics.CLOUD, "G");
+        } else if (MetricsCollector.fetchWebService(awsEndpoint, MetricsCollector.RESPONSE_UNAUTHORIZED)) {
+            info.put(PhoneHomeMetrics.CLOUD, "A");
         } else {
             info.put(PhoneHomeMetrics.CLOUD, "N");
         }

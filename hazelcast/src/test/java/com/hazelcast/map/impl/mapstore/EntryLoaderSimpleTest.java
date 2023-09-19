@@ -374,7 +374,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(owner);
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         RecordStore recordStore = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(mapName);
-        Record record = recordStore.getRecordOrNull(keyData);
+        Record record = recordStore.getRecordOrNull(keyData, false);
         Object actualValue = record == null ? null : serializationService.toObject(record.getValue());
         assertEquals(expectedValue, actualValue);
     }

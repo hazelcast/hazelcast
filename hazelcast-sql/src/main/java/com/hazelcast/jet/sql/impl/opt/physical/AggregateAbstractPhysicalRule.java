@@ -86,11 +86,12 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
                     if (distinct) {
                         int countIndex = aggregateCallArguments.get(0);
                         aggregationProviders.add(new AggregateCountSupplier(true, true));
-                        // getMaybeSerialized is safe for COUNT because the aggregation only looks whether it is null or not
-                        valueProviders.add(new RowGetMaybeSerializedFn(countIndex));
+                        // must deserialize value to check uniqueness, items received from other members may be HeapData
+                        valueProviders.add(new RowGetFn(countIndex));
                     } else if (aggregateCallArguments.size() == 1) {
                         int countIndex = aggregateCallArguments.get(0);
                         aggregationProviders.add(new AggregateCountSupplier(true, false));
+                        // getMaybeSerialized is safe for COUNT because the aggregation only looks whether it is null or not
                         valueProviders.add(new RowGetMaybeSerializedFn(countIndex));
                     } else {
                         aggregationProviders.add(new AggregateCountSupplier(false, false));

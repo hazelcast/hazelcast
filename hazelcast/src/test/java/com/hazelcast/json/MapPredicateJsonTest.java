@@ -496,6 +496,26 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMatches_whenAnyAndAttributeName_withInnerArray() {
+        JsonArray innerArray = Json.array("one", "two");
+        JsonArray outerArray = Json.array()
+                .add(Json.object().add("one", 1))
+                .add(Json.object().add("innerArray", innerArray))
+                .add(Json.object().add("two", 2))
+                .add(Json.object().add("three", 3));
+
+        JsonValue object = Json.object().add("outerArray", outerArray)
+                .add("id", 171);
+
+        IMap<String, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        HazelcastJsonValue p1 = putJsonString(map, "one", object);
+
+        Collection<HazelcastJsonValue> vals = map.values(Predicates.equal("outerArray[any].one", 1));
+        assertEquals(1, vals.size());
+        assertTrue(vals.contains(p1));
+    }
+
+    @Test
     public void testJsonValueIsJustANumber() {
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
         for (int i = 0; i < 10; i++) {

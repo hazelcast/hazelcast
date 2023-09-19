@@ -48,6 +48,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 /**
  * Verify that maps created on a member joining the cluster, do
@@ -159,6 +161,26 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         // also verify via user API
         IMap<String, Person> mapOnNode2 = hz2.getMap("map");
         assertEquals(RETURNED_FROM_INTERCEPTOR, mapOnNode2.get("whatever"));
+    }
+
+    @Test
+    public void testPostJoinMapOperation_whenMapHasNoInterceptorAndLiteMemberJoins() {
+        Config config = getConfig();
+        TestHazelcastInstanceFactory hzFactory = createHazelcastInstanceFactory(2);
+
+        // given: a single node HazelcastInstance with a map configured without interceptor
+        HazelcastInstance hz1 = hzFactory.newHazelcastInstance(config);
+        IMap<String, Person> map = hz1.getMap("map");
+        assertNull(map.get("whatever")); // to trigger MapContainer initialization
+
+        // when: another node joins the cluster as a lite member
+        config.setLiteMember(true);
+        HazelcastInstance hz2 = hzFactory.newHazelcastInstance(config);
+        waitAllForSafeState(hz1, hz2);
+
+        // then: MapContainer does not exist on the lite member that joined the cluster
+        MapService mapService = getNodeEngineImpl(hz2).getService(MapService.SERVICE_NAME);
+        assertFalse(mapService.getMapServiceContext().getMapContainers().containsKey("map"));
     }
 
     private static class Person implements Serializable {

@@ -40,7 +40,7 @@ public enum TxnSetOpSteps implements IMapOpStep {
 
             recordStore.unlock(dataKey, ownerUuid, threadId, callId);
 
-            Record record = recordStore.getRecordOrNull(dataKey);
+            Record record = recordStore.getRecordOrNull(dataKey, false);
             if (record == null || version == record.getVersion()) {
                 PutOpSteps.READ.runStep(state);
 

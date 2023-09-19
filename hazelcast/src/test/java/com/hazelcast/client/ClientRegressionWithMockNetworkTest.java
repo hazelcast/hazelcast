@@ -96,7 +96,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
     @After
     public void cleanup() {
-        hazelcastFactory.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Test
@@ -699,7 +699,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         CountDownLatch clientStartedDoingRequests = new CountDownLatch(1);
-        new Thread(() -> {
+        Thread restartThread = new Thread(() -> {
             try {
                 clientStartedDoingRequests.await();
             } catch (InterruptedException ignored) {
@@ -709,7 +709,8 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
             hazelcastFactory.newHazelcastInstance();
 
-        }).start();
+        });
+        restartThread.start();
 
         ClientConfig clientConfig = new ClientConfig();
         //Retry all requests
@@ -733,6 +734,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
                 fail("Requests should not throw exception with this configuration. Last put key: " + i);
             }
         }
+        assertJoinable(restartThread);
     }
 
     @Test

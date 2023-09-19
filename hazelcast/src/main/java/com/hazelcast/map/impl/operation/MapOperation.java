@@ -203,6 +203,10 @@ public abstract class MapOperation extends AbstractNamedOperation
         // Concrete classes can override this method.
     }
 
+    public void runInternalDirect() {
+        runInternal();
+    }
+
     private void rerunWithForcedEviction() {
         try {
             runWithForcedEvictionStrategies(this);

@@ -267,6 +267,16 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
         }
 
         @Override
+        public boolean initIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
+
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(joinInfo);
             out.writeObject(mapName);
