@@ -264,12 +264,16 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
                 return;
             }
 
+            String mapName = query.getMapName();
+            queryRunner.beforeOperation(partitionId, mapName);
             try {
                 Result result
                         = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, partitionId);
                 future.addResult(partitionId, result);
             } catch (Throwable ex) {
                 future.completeExceptionally(ex);
+            } finally {
+                queryRunner.afterOperation(partitionId, mapName);
             }
         }
     }

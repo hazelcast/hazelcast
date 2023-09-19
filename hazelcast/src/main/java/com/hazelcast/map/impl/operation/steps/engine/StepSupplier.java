@@ -20,6 +20,7 @@ import com.hazelcast.core.Offloadable;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
+import com.hazelcast.map.impl.recordstore.StepAwareStorage;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
@@ -57,8 +58,11 @@ public class StepSupplier implements Supplier<Runnable> {
     }
 
     public StepSupplier(MapOperation operation, boolean checkCurrentThread) {
-        this(operation, operation.getRecordStore()
-                .getStorage().headSteps(), checkCurrentThread);
+        this(operation,
+            operation.getRecordStore().getStorage() instanceof StepAwareStorage
+                ? ((StepAwareStorage) (operation.getRecordStore().getStorage())).headSteps()
+                : List.of(),
+            checkCurrentThread);
     }
 
     // package private for testing purposes.
@@ -219,7 +223,7 @@ public class StepSupplier implements Supplier<Runnable> {
      */
     private Step nextStep(Step step) {
         if (state.getThrowable() != null
-                && currentStep != UtilSteps.HANDLE_ERROR) {
+            && currentStep != UtilSteps.HANDLE_ERROR) {
             return UtilSteps.HANDLE_ERROR;
         }
         return step.nextStep(state);

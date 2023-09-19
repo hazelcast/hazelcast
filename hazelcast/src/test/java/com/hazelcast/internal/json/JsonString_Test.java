@@ -25,6 +25,7 @@ import static com.hazelcast.internal.json.TestUtil.assertException;
 import static com.hazelcast.test.TestJavaSerializationUtils.serializeAndDeserialize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
@@ -51,7 +52,8 @@ public class JsonString_Test {
   @Test
   public void constructor_failsWithNull() {
     assertException(NullPointerException.class, "string is null", new Runnable() {
-      public void run() {
+      @Override
+    public void run() {
         new JsonString(null);
       }
     });
@@ -85,33 +87,34 @@ public class JsonString_Test {
   public void equals_trueForSameInstance() {
     JsonString string = new JsonString("foo");
 
-    assertTrue(string.equals(string));
+    assertEquals(string, string);
   }
 
   @Test
   public void equals_trueForEqualStrings() {
-    assertTrue(new JsonString("foo").equals(new JsonString("foo")));
+      assertEquals(new JsonString("foo"), new JsonString("foo"));
   }
 
   @Test
   public void equals_falseForDifferentStrings() {
-    assertFalse(new JsonString("").equals(new JsonString("foo")));
-    assertFalse(new JsonString("foo").equals(new JsonString("bar")));
+      assertNotEquals(new JsonString(""), new JsonString("foo"));
+      assertNotEquals(new JsonString("foo"), new JsonString("bar"));
   }
 
   @Test
   public void equals_falseForNull() {
-    assertFalse(new JsonString("foo").equals(null));
+      assertNotEquals(new JsonString("foo"), null);
   }
 
   @Test
   public void equals_falseForSubclass() {
-    assertFalse(new JsonString("foo").equals(new JsonString("foo") {}));
+      assertNotEquals(new JsonString("foo"), new JsonString("foo") {
+      });
   }
 
   @Test
   public void hashCode_equalsForEqualStrings() {
-    assertTrue(new JsonString("foo").hashCode() == new JsonString("foo").hashCode());
+      assertEquals(new JsonString("foo").hashCode(), new JsonString("foo").hashCode());
   }
 
   @Test

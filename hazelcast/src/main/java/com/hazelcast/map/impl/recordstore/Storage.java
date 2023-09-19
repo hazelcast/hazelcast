@@ -26,7 +26,6 @@ import com.hazelcast.map.impl.operation.steps.engine.Step;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,20 +43,6 @@ public interface Storage<K, R> {
      */
     default boolean supportsSteppedRun() {
         return false;
-    }
-
-    /**
-     * Appends extra steps to the head of an operation's
-     * existing step chain in the provided order.
-     * <p>
-     * So after append, your 1st step from this new list
-     * will be the first step of the existing step chain,
-     * 2nd will be the 2nd and so on.
-     *
-     * @return list of steps to be appended to head of existing step chain
-     */
-    default List<Step> headSteps() {
-        return null;
     }
 
     void put(K key, R record);
