@@ -111,7 +111,8 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
                     Util.getNodeEngine(instance()));
         }
         QueryId queryId = QueryId.create(UUID.randomUUID());
-        SqlResult result = planExecutor.execute(selectPlan, queryId, arguments, 0L, null);
+        SqlResult result = planExecutor.execute(selectPlan,
+                queryId, arguments, 0L, NoOpSqlSecurityContext.INSTANCE);
         assertCollection(expectedResults, collectResult(result));
     }
 

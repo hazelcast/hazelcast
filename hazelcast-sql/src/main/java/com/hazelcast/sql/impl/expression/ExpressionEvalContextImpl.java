@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
@@ -52,7 +51,7 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     }
 
     public ExpressionEvalContextImpl(
-            @Nonnull ProcSupplierCtx context,
+            @Nonnull MetaSupplierCtx context,
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
             @Nonnull NodeEngine nodeEngine) {

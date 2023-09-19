@@ -148,6 +148,9 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                            @Nonnull Object jobDefinition,
                            @Nonnull JobConfig config,
                            @Nullable Subject subject) {
+        if (subject == null) {
+            throw new UnsupportedOperationException("Submitting a job with subject is not allowed for client");
+        }
         return new ClientJobProxy(client, jobId, isLightJob, jobDefinition, config, subject);
     }
 

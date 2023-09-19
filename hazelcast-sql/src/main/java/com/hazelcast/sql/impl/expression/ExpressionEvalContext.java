@@ -45,7 +45,7 @@ public interface ExpressionEvalContext {
 
         if (ctx instanceof Contexts.ProcSupplierCtx) {
             return new ExpressionEvalContextImpl(
-                    (Contexts.ProcSupplierCtx) ctx,
+                    (Contexts.MetaSupplierCtx) ctx,
                     requireNonNull(arguments),
                     ((Contexts.ProcSupplierCtx) ctx).serializationService(),
                     ((Contexts.ProcSupplierCtx) ctx).nodeEngine()
@@ -54,6 +54,7 @@ public interface ExpressionEvalContext {
             // Note that additional serializers configured for the job are not available in PMS.
             // Currently this is not needed.
             return new ExpressionEvalContextImpl(
+                    (Contexts.MetaSupplierCtx) ctx,
                     arguments != null ? arguments : List.of(),
                     (InternalSerializationService) ((Contexts.MetaSupplierCtx) ctx).nodeEngine().getSerializationService(),
                     ((Contexts.MetaSupplierCtx) ctx).nodeEngine());

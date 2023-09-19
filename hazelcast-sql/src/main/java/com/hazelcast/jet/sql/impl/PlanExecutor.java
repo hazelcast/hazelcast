@@ -108,7 +108,6 @@ import org.apache.calcite.sql.SqlNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -506,7 +505,7 @@ public class PlanExecutor {
         );
     }
 
-    SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout, @Nullable SqlSecurityContext ssc) {
+    SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
@@ -534,8 +533,7 @@ public class PlanExecutor {
         assert oldValue == null : oldValue;
         try {
             sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-            Subject subject = ssc == null ? null : ssc.subject();
-            Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig, subject);
+            Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig, ssc.subject());
 
             job.getFuture().whenComplete((r, t) -> {
                 // make sure the queryResultProducer is cleaned up after the job completes. This normally
@@ -560,7 +558,7 @@ public class PlanExecutor {
         );
     }
 
-    SqlResult execute(DmlPlan plan, QueryId queryId, List<Object> arguments, long timeout, @Nullable SqlSecurityContext ssc) {
+    SqlResult execute(DmlPlan plan, QueryId queryId, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
@@ -570,8 +568,7 @@ public class PlanExecutor {
 
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-        Subject subject = ssc == null ? null : ssc.subject();
-        Job job = jet.newLightJob(plan.getDag(), jobConfig, subject);
+        Job job = jet.newLightJob(plan.getDag(), jobConfig, ssc.subject());
         job.join();
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);
