@@ -21,6 +21,7 @@ import static java.util.Collections.unmodifiableMap;
 
 import com.hazelcast.internal.util.counters.Counter;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -35,25 +36,28 @@ import java.util.concurrent.atomic.LongAdder;
  * Utility functions for probes.
  */
 enum ProbeUtils {
-    TYPE_LONG_PRIMITIVE(long.class, true, byte.class, short.class, int.class, long.class),
-    TYPE_LONG_NUMBER(long.class, false, Byte.class, Integer.class, Short.class, Long.class, AtomicInteger.class,
+    TYPE_LONG_PRIMITIVE(long.class, byte.class, short.class, int.class, long.class),
+    TYPE_LONG_NUMBER(long.class,  Byte.class, Integer.class, Short.class, Long.class, AtomicInteger.class,
             AtomicLong.class, LongAdder.class, LongAccumulator.class),
-    TYPE_DOUBLE_PRIMITIVE(double.class, true, double.class, float.class),
-    TYPE_DOUBLE_NUMBER(double.class, false, Double.class, Float.class),
-    TYPE_COLLECTION(long.class, false, Collection.class),
-    TYPE_MAP(long.class, false, Map.class),
-    TYPE_COUNTER(long.class, false, Counter.class),
-    TYPE_SEMAPHORE(long.class, false, Semaphore.class);
+    TYPE_DOUBLE_PRIMITIVE(double.class, double.class, float.class),
+    TYPE_DOUBLE_NUMBER(double.class,  Double.class, Float.class),
+    TYPE_COLLECTION(long.class,  Collection.class),
+    TYPE_MAP(long.class,  Map.class),
+    TYPE_COUNTER(long.class,  Counter.class),
+    TYPE_SEMAPHORE(long.class,  Semaphore.class);
 
     private static final Map<Class<?>, ProbeUtils> TYPES;
 
+    /** The type the {@link Probe} would return */
     private final Class<?> mapsTo;
+    /** If {@link #types} are all {@link Class#isPrimitive()} */
     private final boolean primitive;
+    /** The type(s) the {@link Probe} could be attached to */
     private final Class<?>[] types;
 
-    ProbeUtils(final Class<?> mapsTo, final boolean primitive, final Class<?>... types) {
+    ProbeUtils(final Class<?> mapsTo, final Class<?>... types) {
         this.mapsTo = mapsTo;
-        this.primitive = primitive;
+        this.primitive = Arrays.stream(types).allMatch(Class::isPrimitive);
         this.types = types;
     }
 
