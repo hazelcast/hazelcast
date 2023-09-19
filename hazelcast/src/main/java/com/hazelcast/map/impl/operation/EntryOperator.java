@@ -158,6 +158,7 @@ public final class EntryOperator {
                               EntryEventType eventType, Boolean locked, boolean changeExpiryOnUpdate, long ttl) {
         this.dataKey = dataKey;
         this.oldValue = oldValue;
+        this.oldValueClone = oldValue;
         this.eventType = eventType;
         this.result = result;
         this.didMatchPredicate = true;
@@ -183,13 +184,6 @@ public final class EntryOperator {
         }
 
         oldValue = recordStore.get(dataKey, backup, callerAddress, false);
-
-        // Not required for OBJECT as #getOrNullOldValue() would return null in any case where mutation would be problematic
-        if (!readOnly && hasEventRegistration && inMemoryFormat != OBJECT) {
-            oldValueClone =  mapServiceContext.toData(oldValue);
-        } else {
-            oldValueClone = oldValue;
-        }
 
         // predicated entry processors can only be applied to existing entries
         // so if we have a predicate and somehow(due to expiration or split-brain healing)
@@ -228,6 +222,14 @@ public final class EntryOperator {
         if (outOfPredicateScope(entry)) {
             this.didMatchPredicate = false;
             return this;
+        }
+
+        // Not required for OBJECT as #getOrNullOldValue() would
+        // return null in any case where mutation would be problematic
+        if (!readOnly && hasEventRegistration && inMemoryFormat != OBJECT) {
+            oldValueClone = mapServiceContext.toData(oldValue);
+        } else {
+            oldValueClone = oldValue;
         }
 
         process(entry);
