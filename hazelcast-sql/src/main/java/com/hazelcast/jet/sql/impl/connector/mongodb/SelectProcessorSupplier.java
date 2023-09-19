@@ -19,7 +19,6 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.nio.ObjectDataInput;
@@ -61,20 +60,16 @@ import static java.util.stream.Collectors.toList;
 /**
  * ProcessorSupplier that creates {@linkplain com.hazelcast.jet.mongodb.impl.ReadMongoP} processors on each instance.
  */
-public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializable {
-    private transient SupplierEx<? extends MongoClient> clientSupplier;
-    private String databaseName;
-    private String collectionName;
-    private boolean stream;
+public class SelectProcessorSupplier extends MongoProcessorSupplier implements DataSerializable {
+
     private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
     private Document predicate;
     private List<ProjectionData> projection;
-    private String[] externalNames;
 
     private Long startAt;
-    private String connectionString;
-    private String dataConnectionName;
+    private boolean stream;
     private boolean forceMongoParallelismOne;
+
     private transient ExpressionEvalContext evalContext;
 
     @SuppressWarnings("unused")
@@ -83,22 +78,17 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
 
     SelectProcessorSupplier(MongoTable table, Document predicate,
                             List<ProjectionData> projection,
-                            BsonTimestamp startAt, boolean stream,
+                            BsonTimestamp startAt,
+                            boolean stream,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
+        super(table);
         checkArgument(projection != null && !projection.isEmpty(), "projection cannot be empty");
-
         this.predicate = predicate;
         this.projection = projection;
-        this.connectionString = table.connectionString;
-        this.dataConnectionName = table.dataConnectionName;
-        this.databaseName = table.databaseName;
-        this.collectionName = table.collectionName;
         this.startAt = startAt == null ? null : startAt.getValue();
-        this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
-        this.forceMongoParallelismOne = table.isForceMongoParallelismOne();
-
-        externalNames = table.externalNames();
+        this.stream = stream;
+        this.forceMongoParallelismOne = table.isforceReadTotalParallelismOne();
     }
 
     SelectProcessorSupplier(MongoTable table, Document predicate,
@@ -164,6 +154,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
                             .setStartAtTimestamp(startAt == null ? null : new BsonTimestamp(startAt))
                             .setEventTimePolicy(eventTimePolicy)
                             .setNonDistributed(forceMongoParallelismOne)
+                            .setCheckExistenceOnEachConnect(checkExistenceOnEachConnect)
             );
 
             processors.add(processor);

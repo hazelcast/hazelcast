@@ -84,7 +84,7 @@ import static com.mongodb.client.model.changestream.FullDocument.UPDATE_LOOKUP;
 public class ReadMongoP<I> extends AbstractProcessor {
 
     private static final int BATCH_SIZE = 1000;
-    private final boolean throwOnNonExisting;
+    private final boolean checkExistenceOnEachConnect;
     private ILogger logger;
 
     private int totalParallelism;
@@ -126,7 +126,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 params.clientSupplier, params.dataConnectionRef, client -> reader.connect(client, snapshotsEnabled)
         );
         this.nonDistributed = params.isNonDistributed();
-        this.throwOnNonExisting = params.isThrowOnNonExisting();
+        this.checkExistenceOnEachConnect = params.isCheckExistenceOnEachConnect();
     }
 
     @Override
@@ -258,18 +258,18 @@ public class ReadMongoP<I> extends AbstractProcessor {
             try {
                 logger.fine("(Re)connecting to MongoDB");
                 if (databaseName != null) {
-                    if (throwOnNonExisting) {
+                    this.database = newClient.getDatabase(databaseName);
+
+                    if (checkExistenceOnEachConnect) {
                         checkDatabaseExists(newClient, databaseName);
                     }
-                    this.database = newClient.getDatabase(databaseName);
                 }
                 if (collectionName != null) {
                     checkState(databaseName != null, "you have to provide database name if collection name" +
                             " is specified");
-                    //noinspection ConstantValue false warn by intellij
                     checkState(database != null, "database " + databaseName + " does not exists");
 
-                    if (throwOnNonExisting) {
+                    if (checkExistenceOnEachConnect) {
                         checkCollectionExists(database, collectionName);
                     }
                     this.collection = database.getCollection(collectionName);
@@ -349,7 +349,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         private Traverser<Document> delegateForCollection(MongoCollection<Document> collection,
                                                           List<Bson> aggregateList) {
-            return traverseIterable(collection.aggregate(aggregateList));
+            return traverseIterable(collection.aggregate(aggregateList).batchSize(BATCH_SIZE));
         }
 
         private Traverser<Document> delegateForDb(MongoDatabase database, List<Bson> aggregateList) {

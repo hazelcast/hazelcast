@@ -109,7 +109,7 @@ class MongoConnection implements Closeable {
                         + willRetryMessage(), e);
                 return false;
             } catch (Exception e) {
-                throw new JetException("Cannot connect to MongoDB, seems to be non-transient error", e);
+                throw new JetException("Cannot connect to MongoDB, seems to be non-transient error: " + e.getMessage(), e);
             }
         } else {
             throw new JetException("cannot connect to MongoDB", lastException);

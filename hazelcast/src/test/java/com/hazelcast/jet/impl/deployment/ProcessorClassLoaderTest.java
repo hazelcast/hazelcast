@@ -142,7 +142,7 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
     }
 
     @Test
-    public void testClassLoaderForBatchSource() throws Exception {
+    public void testClassLoaderForBatchSource() {
         Pipeline p = Pipeline.create();
         BatchSource<String> source = SourceWithClassLoader.batchSource(SOURCE_NAME);
 
@@ -164,7 +164,7 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
     }
 
     @Test
-    public void testClassLoaderForStreamSource() throws Exception {
+    public void testClassLoaderForStreamSource() {
         Pipeline p = Pipeline.create();
         StreamSource<String> source = SourceWithClassLoader.streamSource(SOURCE_NAME);
 

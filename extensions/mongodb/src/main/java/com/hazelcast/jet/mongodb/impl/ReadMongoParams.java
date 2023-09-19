@@ -53,8 +53,8 @@ public class ReadMongoParams<I> implements Serializable {
     EventTimePolicy<? super I> eventTimePolicy;
     BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn;
     boolean nonDistributed;
-    boolean throwOnNonExisting = true;
     private List<Document> aggregates = new ArrayList<>();
+    private boolean checkExistenceOnEachConnect;
 
     public ReadMongoParams(boolean stream) {
         this.stream = stream;
@@ -176,15 +176,6 @@ public class ReadMongoParams<I> implements Serializable {
         return this;
     }
 
-    public boolean isThrowOnNonExisting() {
-        return throwOnNonExisting;
-    }
-
-    public ReadMongoParams<I> setThrowOnNonExisting(boolean throwOnNonExisting) {
-        this.throwOnNonExisting = throwOnNonExisting;
-        return this;
-    }
-
     public ReadMongoParams<I> setNonDistributed(boolean nonDistributed) {
         this.nonDistributed = nonDistributed;
         return this;
@@ -192,6 +183,18 @@ public class ReadMongoParams<I> implements Serializable {
 
     public boolean isNonDistributed() {
         return nonDistributed;
+    }
+
+    public boolean isCheckExistenceOnEachConnect() {
+        return checkExistenceOnEachConnect;
+    }
+
+    /**
+     * If true, the database and collection existence checks will be performed on every reconnection.
+     */
+    public ReadMongoParams<I> setCheckExistenceOnEachConnect(boolean checkExistenceOnEachConnect) {
+        this.checkExistenceOnEachConnect = checkExistenceOnEachConnect;
+        return this;
     }
 
     public ConnectorPermission buildPermissions() {
