@@ -245,8 +245,7 @@ class PythonServiceContext {
 
     static String processPid(Process process) {
         try {
-            // Process.pid() is @since 9
-            return Process.class.getMethod("pid").invoke(process).toString();
+            return String.valueOf(process.pid());
         } catch (Exception e) {
             return process.toString().replaceFirst("^.*pid=(\\d+).*$", "$1");
         }
