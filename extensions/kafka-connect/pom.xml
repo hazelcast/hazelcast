@@ -71,13 +71,14 @@
                         <goals>
                             <goal>wget</goal>
                         </goals>
+                        <configuration>
+                            <url>https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-datagen-0.6.0.zip</url>
+                            <unpack>false</unpack>
+                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <url>https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-datagen-0.6.0.zip</url>
-                    <unpack>false</unpack>
-                    <outputDirectory>${project.build.directory}/classes</outputDirectory>
-                </configuration>
+
             </plugin>
         </plugins>
     </build>
