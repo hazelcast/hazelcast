@@ -42,9 +42,9 @@ public class CompositeMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void collectException(MetricDescriptor descriptor, Exception e) {
+    public void collectThrowable(MetricDescriptor descriptor, Throwable t) {
         for (MetricsCollector collector : collectors) {
-            collector.collectException(descriptor, e);
+            collector.collectThrowable(descriptor, t);
         }
     }
 

@@ -32,5 +32,5 @@ public interface LongProbeFunction<S> extends ProbeFunction {
      * @return the current value of the source object.
      * @throws Exception if something fails while getting the value.
      */
-    long get(S source) throws Exception;
+    long get(S source) throws Throwable;
 }

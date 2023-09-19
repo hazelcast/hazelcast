@@ -84,8 +84,8 @@ class DoubleGaugeImpl extends AbstractGauge implements DoubleGauge {
                 DoubleProbeFunction doubleFunction = (DoubleProbeFunction) function;
                 return doubleFunction.get(source);
             }
-        } catch (Exception e) {
-            metricsRegistry.logger.warning("Failed to access the probe: " + gaugeName, e);
+        } catch (Throwable t) {
+            metricsRegistry.logger.warning("Failed to access the probe: " + gaugeName, t);
             return DEFAULT_VALUE;
         }
     }

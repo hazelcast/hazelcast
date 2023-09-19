@@ -33,7 +33,7 @@ public class TestMetricsReader {
         this.name = name;
     }
 
-    public Number read() throws Exception {
+    public Number read() throws Throwable {
         ProbeInstance probeInstance = metricsRegistry.getProbeInstance(name);
         ProbeFunction function = probeInstance.function;
         Object source = probeInstance.source;

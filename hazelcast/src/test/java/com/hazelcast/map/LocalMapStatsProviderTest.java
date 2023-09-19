@@ -135,7 +135,7 @@ public class LocalMapStatsProviderTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void collectException(MetricDescriptor descriptor, Exception e) {
+        public void collectThrowable(MetricDescriptor descriptor, Throwable t) {
         }
 
         @Override

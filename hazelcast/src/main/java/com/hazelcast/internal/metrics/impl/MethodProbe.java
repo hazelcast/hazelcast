@@ -121,7 +121,7 @@ abstract class MethodProbe implements ProbeFunction {
         }
 
         @Override
-        public long get(final S source) throws Exception {
+        public long get(final S source) throws Throwable {
             switch (type) {
                 case TYPE_LONG_PRIMITIVE:
                     return invokeLongPrimitive(source);
@@ -152,7 +152,7 @@ abstract class MethodProbe implements ProbeFunction {
         }
 
         @Override
-        public double get(final S source) throws Exception {
+        public double get(final S source) throws Throwable {
             switch (type) {
                 case TYPE_DOUBLE_PRIMITIVE:
                     return invokeDoublePrimitive(source);
@@ -165,33 +165,15 @@ abstract class MethodProbe implements ProbeFunction {
         }
     }
 
-    protected <T> T invoke(final Object source) throws Exception {
-        try {
-            return isMethodStatic ? (T) method.invoke() : (T) method.invoke(source);
-        } catch (final Exception e) {
-            throw e;
-        } catch (final Throwable t) {
-            throw new RuntimeException(t);
-        }
+    protected <T> T invoke(final Object source) throws Throwable {
+        return isMethodStatic ? (T) method.invoke() : (T) method.invoke(source);
     }
 
-    protected double invokeDoublePrimitive(final Object source) throws Exception {
-        try {
-            return isMethodStatic ? (double) method.invokeExact() : (double) method.invokeExact(source);
-        } catch (final Exception e) {
-            throw e;
-        } catch (final Throwable t) {
-            throw new RuntimeException(t);
-        }
+    protected double invokeDoublePrimitive(final Object source) throws Throwable {
+        return isMethodStatic ? (double) method.invokeExact() : (double) method.invokeExact(source);
     }
 
-    protected long invokeLongPrimitive(final Object source) throws Exception {
-        try {
-            return isMethodStatic ? (long) method.invokeExact() : (long) method.invokeExact(source);
-        } catch (final Exception e) {
-            throw e;
-        } catch (final Throwable t) {
-            throw new RuntimeException(t);
-        }
+    protected long invokeLongPrimitive(final Object source) throws Throwable {
+        return isMethodStatic ? (long) method.invokeExact() : (long) method.invokeExact(source);
     }
 }

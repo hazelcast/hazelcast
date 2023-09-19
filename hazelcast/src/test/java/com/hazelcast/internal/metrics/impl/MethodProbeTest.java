@@ -49,7 +49,7 @@ import static org.mockito.Mockito.mock;
 public class MethodProbeTest extends HazelcastTestSupport {
 
     @Test
-    public void getLong() throws Exception {
+    public void getLong() throws Throwable {
         getLong("byteMethod", 10);
         getLong("shortMethod", 10);
         getLong("intMethod", 10);
@@ -94,7 +94,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         assertEquals("[metric=prefix.someIntegerMethod]", probeName);
     }
 
-    public void getLong(String methodName, int expectedValue) throws Exception {
+    public void getLong(String methodName, int expectedValue) throws Throwable {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod(methodName);
         Probe probe = method.getAnnotation(Probe.class);
@@ -109,7 +109,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
 
 
     @Test
-    public void getDouble() throws Exception {
+    public void getDouble() throws Throwable {
         getDouble("floatMethod", 10);
         getDouble("doubleMethod", 10);
         getDouble("DoubleMethod", 10);
@@ -118,7 +118,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         getDouble("nullFloatMethod", 0);
     }
 
-    public void getDouble(String fieldName, double expected) throws Exception {
+    public void getDouble(String fieldName, double expected) throws Throwable {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod(fieldName);
         Probe probe = method.getAnnotation(Probe.class);

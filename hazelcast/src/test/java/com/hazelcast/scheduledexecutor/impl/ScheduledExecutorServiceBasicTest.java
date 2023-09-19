@@ -1729,7 +1729,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
                 }
 
                 @Override
-                public void collectException(MetricDescriptor descriptor, Exception e) {
+                public void collectThrowable(MetricDescriptor descriptor, Throwable t) {
                 }
 
                 @Override

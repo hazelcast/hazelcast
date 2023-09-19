@@ -100,8 +100,8 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
         try {
             Number value = reader.read();
             assertNotNull(value);
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to get a metric " + parameter, e);
+        } catch (Throwable t) {
+            throw new RuntimeException("Unable to get a metric " + parameter, t);
         }
     }
 

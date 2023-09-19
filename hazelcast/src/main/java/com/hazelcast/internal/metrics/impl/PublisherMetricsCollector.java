@@ -89,8 +89,8 @@ public class PublisherMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void collectException(MetricDescriptor descriptor, Exception e) {
-        logger.warning("Error when collecting '" + descriptor.toString() + '\'', e);
+    public void collectThrowable(MetricDescriptor descriptor, Throwable t) {
+        logger.warning("Error when collecting '" + descriptor.toString() + '\'', t);
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.hazelcast.internal.diagnostics;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -374,7 +375,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     }
 
     static class StringMetricsCollector implements MetricsCollector {
-        final HashMap<String, Object> probes = new HashMap<>();
+        final Map<String, Object> probes = new HashMap<>();
         private final Pattern pattern;
 
         StringMetricsCollector(String dsName, String metricPrefix) {
@@ -404,10 +405,10 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void collectException(MetricDescriptor descriptor, Exception e) {
+        public void collectThrowable(MetricDescriptor descriptor, Throwable t) {
             String name = descriptor.toString();
             if (pattern.matcher(name).matches()) {
-                probes.put(name, e);
+                probes.put(name, t);
             }
         }
 

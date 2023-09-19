@@ -45,7 +45,7 @@ public class CapturingCollector implements MetricsCollector {
     }
 
     @Override
-    public void collectException(MetricDescriptor descriptor, Exception e) {
+    public void collectThrowable(MetricDescriptor descriptor, Throwable t) {
         // nop
     }
 

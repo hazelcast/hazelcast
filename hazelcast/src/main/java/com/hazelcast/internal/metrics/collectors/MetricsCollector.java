@@ -29,7 +29,7 @@ public interface MetricsCollector {
 
     void collectDouble(MetricDescriptor descriptor, double value);
 
-    void collectException(MetricDescriptor descriptor, Exception e);
+    void collectThrowable(MetricDescriptor descriptor, Throwable t);
 
     void collectNoValue(MetricDescriptor descriptor);
 
