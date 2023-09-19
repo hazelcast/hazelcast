@@ -214,7 +214,7 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
                 fillProperties(n, properties);
             }
         }
-        ConfigReplacer replacer = (ConfigReplacer) Class.forName(replacerClass).newInstance();
+        ConfigReplacer replacer = (ConfigReplacer) Class.forName(replacerClass).getDeclaredConstructor().newInstance();
         replacer.init(properties);
         return replacer;
     }

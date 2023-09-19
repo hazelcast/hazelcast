@@ -122,16 +122,16 @@ public abstract class MapOperation extends AbstractNamedOperation
         MapConfig mapConfig = mapContainer.getMapConfig();
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
 
+        boolean metWithCommonOffloadConditions = recordStore != null && getStartingStep() != null;
         // check if mapStoreOffloadEnabled is true for this operation
-        mapStoreOffloadEnabled = recordStore != null
+        mapStoreOffloadEnabled = metWithCommonOffloadConditions
                 && (mapServiceContext.isForceOffloadEnabled()
-                || (mapStoreConfig.isOffload() && hasMapStoreImplementation()))
-                && getStartingStep() != null;
+                || (mapStoreConfig.isOffload() && hasMapStoreImplementation()));
 
         // check if tieredStoreOffloadEnabled for this operation
-        tieredStoreOffloadEnabled = recordStore != null
-                && supportsSteppedRun()
-                && getStartingStep() != null;
+        tieredStoreOffloadEnabled = metWithCommonOffloadConditions
+                && (mapServiceContext.isForceOffloadEnabled() || supportsSteppedRun());
+
 
         assertNativeMapOnPartitionThread();
 

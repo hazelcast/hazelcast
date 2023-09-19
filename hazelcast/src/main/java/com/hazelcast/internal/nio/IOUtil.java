@@ -643,33 +643,6 @@ public final class IOUtil {
         return name.replaceAll("[:\\\\/*\"?|<>',]", "_");
     }
 
-    /**
-     * Concatenates path parts to a single path using the {@link File#separator} where it applies.
-     * There is no validation done on the newly formed path.
-     *
-     * @param parts The path parts that together should form a path
-     * @return The path formed using the parts
-     * @throws IllegalArgumentException if the parts param is null or empty
-     */
-    public static String getPath(String... parts) {
-        if (parts == null || parts.length == 0) {
-            throw new IllegalArgumentException("Parts is null or empty.");
-        }
-
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < parts.length; i++) {
-            String part = parts[i];
-            builder.append(part);
-
-            boolean hasMore = i < parts.length - 1;
-            if (!part.endsWith(File.separator) && hasMore) {
-                builder.append(File.separator);
-            }
-        }
-
-        return builder.toString();
-    }
-
     public static File getFileFromResources(String resourceFileName) {
         try {
             URL resource = IOUtil.class.getClassLoader().getResource(resourceFileName);
@@ -821,13 +794,9 @@ public final class IOUtil {
     }
 
     public static byte[] toByteArray(InputStream is) throws IOException {
-        ByteArrayOutputStream os = null;
-        try {
-            os = new ByteArrayOutputStream();
-            drainTo(is, os);
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            is.transferTo(os);
             return os.toByteArray();
-        } finally {
-            closeResource(os);
         }
     }
 
