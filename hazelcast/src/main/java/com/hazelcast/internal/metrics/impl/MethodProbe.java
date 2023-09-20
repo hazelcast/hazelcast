@@ -71,9 +71,7 @@ abstract class MethodProbe implements ProbeFunction {
      * <p>
      * Faster than basic reflection and {@link MethodHandle#invokeExact()}, but only applicable for reference types.
      *
-     * @see <a href=
-     *      "https://www.optaplanner.org/blog/2018/01/09/JavaReflectionButMuchFaster.html#_lambdametafactory_update_on_2018_01_11">
-     *      Further reading</a>
+     * @see <a href= "https://www.optaplanner.org/blog/2018/01/09/JavaReflectionButMuchFaster.html"> Further reading</a>
      */
     final Supplier<?> staticAccessor;
     /**
