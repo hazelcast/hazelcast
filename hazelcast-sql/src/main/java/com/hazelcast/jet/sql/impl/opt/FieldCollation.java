@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,12 @@ public class FieldCollation implements Serializable, IdentifiedDataSerializable 
         index = coll.getFieldIndex();
         direction = coll.getDirection();
         nullDirection = coll.nullDirection;
+    }
+
+    public FieldCollation(int index, Direction direction, NullDirection nullDirection) {
+        this.index = index;
+        this.direction = direction;
+        this.nullDirection = nullDirection;
     }
 
     public static List<FieldCollation> convertCollation(List<RelFieldCollation> colls) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -34,10 +33,13 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeN
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * Configuration of an index. Hazelcast support two types of indexes: sorted index and hash index.
+ * Configuration of an index. Hazelcast support three types of indexes: sorted index, hash index
+ * and bitmap index.
  * Sorted indexes could be used with equality and range predicates and have logarithmic search time.
  * Hash indexes could be used with equality predicates and have constant search time assuming the hash
  * function of the indexed field disperses the elements properly.
+ * Bitmap indexes are similar to hash index. They are able to achieve a much higher memory efficiency
+ * for low cardinality attributes at the cost of reduced query performance.
  * <p>
  * Index could be created on one or more attributes.
  *
@@ -257,11 +259,7 @@ public class IndexConfig implements IdentifiedDataSerializable, Versioned {
         out.writeInt(type.getId());
         writeNullableList(attributes, out);
         out.writeObject(bitmapIndexOptions);
-
-        // RU_COMPAT 5.1
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_2)) {
-            out.writeObject(bTreeIndexConfig);
-        }
+        out.writeObject(bTreeIndexConfig);
     }
 
     @Override
@@ -270,11 +268,7 @@ public class IndexConfig implements IdentifiedDataSerializable, Versioned {
         type = IndexType.getById(in.readInt());
         attributes = readNullableList(in);
         bitmapIndexOptions = in.readObject();
-
-        // RU_COMPAT 5.1
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_2)) {
-            bTreeIndexConfig = in.readObject();
-        }
+        bTreeIndexConfig = in.readObject();
     }
 
     @Override

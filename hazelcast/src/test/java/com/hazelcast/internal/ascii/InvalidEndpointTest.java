@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
@@ -28,10 +27,6 @@ import net.spy.memcached.ConnectionFactory;
 import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.FailureMode;
 import net.spy.memcached.MemcachedClient;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,7 +34,10 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
@@ -61,9 +59,7 @@ public class InvalidEndpointTest {
     }
 
     @Test
-    public void attemptHttpOnMemcacheEndpoint()
-            throws IOException {
-
+    public void attemptHttpOnMemcacheEndpoint() {
         Config config = createMemcacheEndpointConfig();
         HazelcastInstance instance = factory.newHazelcastInstance(config);
 
@@ -71,9 +67,9 @@ public class InvalidEndpointTest {
         String address = instance.getCluster().getLocalMember().getSocketAddress(MEMCACHE).toString();
         String url = "http:/" + address + "/management/cluster/version";
         try {
-            doHttpGet(url);
-            fail("Should not be able to connect");
-        } catch (SocketException e) {
+            sendGet(url);
+            fail("Should fail with message defined in com.hazelcast.internal.nio.Protocols.UNEXPECTED_PROTOCOL");
+        } catch (IOException | InterruptedException e) {
             ignore(e);
         }
     }
@@ -109,9 +105,7 @@ public class InvalidEndpointTest {
         try {
             client.set("one", 0, "two").get();
             fail("Should not be able to connect");
-        } catch (InterruptedException e) {
-            ignore(e);
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             ignore(e);
         }
 
@@ -132,22 +126,25 @@ public class InvalidEndpointTest {
         return config;
     }
 
-    protected HTTPCommunicator.ConnectionResponse doHttpGet(String url) throws IOException {
-        CloseableHttpClient client = newHttpClient();
-        CloseableHttpResponse response = null;
-        try {
-            HttpGet request = new HttpGet(url);
-            request.setHeader("Content-type", "text/xml; charset=" + "UTF-8");
-            response = client.execute(request);
-            return new HTTPCommunicator.ConnectionResponse(response);
-        } finally {
-            IOUtil.closeResource(response);
-            IOUtil.closeResource(client);
-        }
+    protected Object doHttpGet(String url) throws IOException {
+        return null;
     }
 
-    protected CloseableHttpClient newHttpClient()
-            throws IOException {
-        return HttpClients.custom().build();
+    protected Object newHttpClient() throws IOException {
+        return null;
+    }
+
+    protected void sendGet(String url) throws IOException, InterruptedException {
+        HttpClient client = createHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .build();
+        client.send(request, HttpResponse.BodyHandlers.discarding());
+    }
+
+    protected HttpClient createHttpClient() {
+        return HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
     }
 }

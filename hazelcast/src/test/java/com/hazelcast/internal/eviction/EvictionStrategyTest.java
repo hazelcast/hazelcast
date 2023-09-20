@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 
 import static com.hazelcast.internal.eviction.EvictionChecker.EVICT_ALWAYS;
 import static com.hazelcast.internal.eviction.EvictionListener.NO_LISTENER;
@@ -136,7 +136,7 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
                 = new SimpleEvictionCandidate((K) expectedData, (V) expectedEvictedRecord);
         // we are testing "EvictionStrategy" in this test, so we mock "EvictionPolicyEvaluator" (it's tested in another test)
         EvictionPolicyEvaluator evictionPolicyEvaluator = mock(EvictionPolicyEvaluator.class);
-        when(evictionPolicyEvaluator.evaluate(Matchers.any(Iterable.class))).
+        when(evictionPolicyEvaluator.evaluate(ArgumentMatchers.any(Iterable.class))).
                 thenReturn(evictionCandidate);
         when(evictionPolicyEvaluator.getEvictionPolicyComparator()).thenReturn(null);
 

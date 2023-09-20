@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.mapstore.MapDataStores;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
@@ -57,10 +56,6 @@ public enum PutOpSteps implements IMapOpStep {
 
         @Override
         public void runStep(State state) {
-            if (state.getRecordStore().getMapDataStore() == MapDataStores.EMPTY_MAP_DATA_STORE) {
-                return;
-            }
-
             StaticParams staticParams = state.getStaticParams();
             if (staticParams.isPutVanilla()) {
                 state.setOldValue(((DefaultRecordStore) state.getRecordStore())
@@ -140,7 +135,7 @@ public enum PutOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             if (state.isStopExecution()) {
-                return UtilSteps.SEND_RESPONSE;
+                return UtilSteps.FINAL_STEP;
             }
             return state.getStaticParams().isTransient() ? ON_STORE : STORE;
         }
@@ -186,9 +181,10 @@ public enum PutOpSteps implements IMapOpStep {
                 state.setOldValue(recordStore.getInMemoryFormat() == InMemoryFormat.OBJECT
                         ? record.getValue() : mapServiceContext.toData(record.getValue()));
                 recordStore.updateRecord0(record, state.getNow(), state.getStaticParams().isCountAsAccess());
-                recordStore.updateMemory(record, state.getKey(), state.getOldValue(), state.getNewValue(),
+                Object oldValue = recordStore.updateMemory(record, state.getKey(), state.getOldValue(), state.getNewValue(),
                         state.isChangeExpiryOnUpdate(), state.getTtl(), state.getMaxIdle(), UNSET,
                         state.getNow(), state.getStaticParams().isBackup());
+                state.setOldValue(oldValue);
             }
 
             state.setRecord(record);
@@ -200,7 +196,7 @@ public enum PutOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

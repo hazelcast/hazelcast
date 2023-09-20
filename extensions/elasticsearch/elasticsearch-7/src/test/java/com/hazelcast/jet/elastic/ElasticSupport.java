@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.jet.elastic;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.impl.util.Util;
 import org.elasticsearch.client.RestClientBuilder;
+import org.testcontainers.containers.Network;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -32,14 +33,17 @@ public final class ElasticSupport {
     public static final String TEST_ELASTIC_VERSION = System.getProperty("test.elastic.version", "7.17.7");
 
     public static final DockerImageName ELASTICSEARCH_IMAGE = DockerImageName
-            .parse("elasticsearch:" + TEST_ELASTIC_VERSION)
-            .asCompatibleSubstituteFor("docker.elastic.co/elasticsearch/elasticsearch");
+            .parse("docker.elastic.co/elasticsearch/elasticsearch:" + TEST_ELASTIC_VERSION);
 
     public static final int PORT = 9200;
+
+    public static Network network = Network.newNetwork();
 
     // Elastic container takes long time to start up, reusing the container for speedup
     public static final Supplier<ElasticsearchContainer> elastic = Util.memoize(() -> {
         ElasticsearchContainer elastic = new ElasticsearchContainer(ELASTICSEARCH_IMAGE)
+                .withNetwork(network)
+                .withNetworkAliases("elastic")
                 .withStartupTimeout(Duration.ofMinutes(2L));
         elastic.start();
         Runtime.getRuntime().addShutdownHook(new Thread(elastic::stop));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,14 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.function.ComparatorEx;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
@@ -38,7 +36,8 @@ import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
-import org.apache.calcite.rel.RelCollationTraitDef;
+import org.apache.calcite.rel.RelCollations;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.TableScan;
@@ -92,10 +91,18 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
 
     public ComparatorEx<JetSqlRow> getComparator() {
         if (index.getType() == IndexType.SORTED) {
-            RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
-            List<FieldCollation> collations = relCollation.getFieldCollations().stream()
-                    .map(FieldCollation::new)
-                    .collect(toList());
+            RelCollation relCollation = getTraitSet().getCollation();
+            assert relCollation != null;
+            List<FieldCollation> collations;
+            if (relCollation != RelCollations.EMPTY) {
+                collations = FieldCollation.convertCollation(relCollation.getFieldCollations());
+            } else {
+                // order is not forced, use default comparator for the index columns
+                collations = index.getFieldOrdinals().stream()
+                        .map(i -> new FieldCollation(i, RelFieldCollation.Direction.ASCENDING,
+                                RelFieldCollation.NullDirection.UNSPECIFIED))
+                        .collect(toList());
+            }
             return ExpressionUtil.comparisonFn(collations);
         } else {
             return null;
@@ -104,7 +111,7 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
 
     public boolean isDescending() {
         boolean descending = false;
-        RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+        RelCollation relCollation = getTraitSet().getCollation();
 
         // Take first direction as main direction.
         // In case of different directions Scan + Sort relations combination should be used.
@@ -115,18 +122,19 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
         return descending;
     }
 
+    public boolean requiresSort() {
+        return index.getType() == IndexType.SORTED && getTraitSet().getCollation() != RelCollations.EMPTY;
+    }
+
+
     @Override
-    public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema schema = OptUtils.schema(getTable());
-        return filter(schema, remainderExp, parameterMetadata);
+    public RexNode filter() {
+        return remainderExp;
     }
 
     @Override
-    public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema schema = OptUtils.schema(getTable());
-
-        HazelcastTable table = getTable().unwrap(HazelcastTable.class);
-        return project(schema, table.getProjects(), parameterMetadata);
+    public List<RexNode> projection() {
+        return getTable().unwrap(HazelcastTable.class).getProjects();
     }
 
     public HazelcastTable getTableUnwrapped() {
@@ -135,12 +143,12 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        List<QueryDataType> fieldTypes = toList(projection(parameterMetadata), Expression::getType);
+        List<QueryDataType> fieldTypes = toList(projection(), rexNode -> HazelcastTypeUtils.toHazelcastType(rexNode.getType()));
         return new PlanNodeSchema(fieldTypes);
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onMapIndexScan(this);
     }
 
@@ -182,6 +190,7 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
                 CostUtils.indexScanCpuMultiplier(index.getType()),
                 hasFilter,
                 filterRowCount,
+                requiresSort(),
                 getTableUnwrapped().getProjects().size()
         );
     }
@@ -192,6 +201,7 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
             double scanCostMultiplier,
             boolean hasFilter,
             double filterRowCount,
+            boolean requiresSort,
             int projectCount
     ) {
         // 1. Get cost of the scan itself.
@@ -203,10 +213,14 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
         // 3. Get cost of the project taking into account the filter and number of expressions. Project never produces IO.
         double projectCpu = CostUtils.adjustCpuForConstrainedScan(CostUtils.getProjectCpu(filterRowCount, projectCount));
 
-        // 4. Finally, return sum of both scan and project.
+        // 4. Cost of merging the rows into a sorted stream, it depends on the number of resulting rows and their size.
+        // Note that no full sorting is performed, sorted row streams are only merged.
+        double sortCpu = requiresSort ? CostUtils.INDEX_SCAN_CPU_MULTIPLIER_SORTED_ORDER_REQUIRED * projectCpu : 0;
+
+        // 5. Finally, return sum of both scan and project.
         return planner.getCostFactory().makeCost(
                 filterRowCount,
-                scanCpu + filterCpu + projectCpu,
+                scanCpu + filterCpu + projectCpu + sortCpu,
                 0
         );
     }
@@ -216,11 +230,30 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
         return super.explainTerms(pw)
                 .item("index", index.getName())
                 .item("indexExp", indexExp)
-                .item("remainderExp", remainderExp);
+                .item("remainderExp", remainderExp)
+                .itemIf("requiresSort", requiresSort(), requiresSort());
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new IndexScanMapPhysicalRel(getCluster(), traitSet, getTable(), index, indexFilter, indexExp, remainderExp);
+    }
+
+
+    /**
+     * Return copy of this RelNode without collation - without guaranteed order.
+     * <p>
+     * Sorted index scan can work in two modes because it is distributed scatter-gather operation:
+     * <ol>
+     *     <li>with guaranteed order which is defined by index columns. This mode requires gathering
+     *     all results before further processing to guarantee the order</li>
+     *     <li>without guaranteed order, if the order is not needed. This mode does not require
+     *     gathering results so should be much more performant.</li>
+     * </ol>
+     * Some operations do not care about the order of input data (e.g. aggregations) so they can
+     * benefit from this mode of operation.
+     */
+    public RelNode withoutCollation() {
+        return copy(traitSet.replace(RelCollations.EMPTY), getInputs());
     }
 }

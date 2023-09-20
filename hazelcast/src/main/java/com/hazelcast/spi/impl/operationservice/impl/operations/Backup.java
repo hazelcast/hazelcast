@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,17 +24,19 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.operation.steps.engine.StepAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -42,15 +44,17 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.IOUtil.readDataAsObject;
+import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
-import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
 
 public final class Backup extends Operation implements BackupOperation, AllowedDuringPassiveState,
-        IdentifiedDataSerializable {
+        IdentifiedDataSerializable, Consumer<Operation> {
 
     private Address originalCaller;
     private ServiceNamespace namespace;
@@ -62,6 +66,8 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
 
     private transient Throwable validationFailure;
     private transient boolean backupOperationInitialized;
+    private transient boolean offloaded;
+
     private long clientCorrelationId;
 
     public Backup() {
@@ -171,7 +177,10 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         }
 
         ensureBackupOperationInitialized();
-        runDirect(backupOp);
+        NodeEngineImpl nodeEngineImpl = (NodeEngineImpl) getNodeEngine();
+        Set<Operation> asyncOperations = nodeEngineImpl.getOperationService().getAsyncOperations();
+        CallStatus callStatus = runDirect(backupOp, nodeEngineImpl, asyncOperations, this);
+        offloaded = callStatus.ordinal() == CallStatus.OFFLOAD_ORDINAL;
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         PartitionReplicaVersionManager versionManager = nodeEngine.getPartitionService().getPartitionReplicaVersionManager();
@@ -179,7 +188,24 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
     }
 
     @Override
+    public void accept(Operation operation) {
+        assert operation instanceof StepAwareOperation
+                : "Only expected to run when offloading is enabled";
+
+        this.afterRunInternal();
+
+    }
+
+    @Override
     public void afterRun() throws Exception {
+        if (offloaded) {
+            return;
+        }
+
+        this.afterRunInternal();
+    }
+
+    private void afterRunInternal() {
         if (validationFailure != null || !sync || getCallId() == 0 || originalCaller == null) {
             return;
         }

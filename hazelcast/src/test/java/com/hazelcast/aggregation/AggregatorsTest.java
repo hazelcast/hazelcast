@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,7 @@ import java.util.Map;
 
 import static com.hazelcast.spi.properties.ClusterProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -64,10 +62,10 @@ public class AggregatorsTest extends HazelcastTestSupport {
         List<Long> accumulatedCollection = map.aggregate(new TestAggregator("wheelsC[any].tiresC[any]"));
 
         // THEN
-        assertThat(accumulatedCollection, containsInAnyOrder(accumulatedArray.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(accumulatedCollection.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(1L, null));
-        assertThat(accumulatedArray, hasSize(2));
+        assertThat(accumulatedCollection).containsExactlyInAnyOrderElementsOf(accumulatedArray);
+        assertThat(accumulatedArray).containsExactlyInAnyOrderElementsOf(accumulatedCollection);
+        assertThat(accumulatedArray).containsExactlyInAnyOrder(1L, null);
+        assertThat(accumulatedArray).hasSize(2);
     }
 
     @Test
@@ -82,10 +80,10 @@ public class AggregatorsTest extends HazelcastTestSupport {
         List<Long> accumulatedCollection = map.aggregate(new TestAggregator("wheelsC[any].tiresC[any]"));
 
         // THEN
-        assertThat(accumulatedCollection, containsInAnyOrder(accumulatedArray.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(accumulatedCollection.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(1L, 2L));
-        assertThat(accumulatedArray, hasSize(2));
+        assertThat(accumulatedCollection).containsExactlyInAnyOrderElementsOf(accumulatedArray);
+        assertThat(accumulatedArray).containsExactlyInAnyOrderElementsOf(accumulatedCollection);
+        assertThat(accumulatedArray).containsExactlyInAnyOrder(1L, 2L);
+        assertThat(accumulatedArray).hasSize(2);
     }
 
     @Test
@@ -100,10 +98,10 @@ public class AggregatorsTest extends HazelcastTestSupport {
         List<Long> accumulatedCollection = map.aggregate(new TestAggregator("wheelsC[any].tiresC[any]"));
 
         // THEN
-        assertThat(accumulatedCollection, containsInAnyOrder(accumulatedArray.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(accumulatedCollection.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(1L, 2L, null, null));
-        assertThat(accumulatedArray, hasSize(4));
+        assertThat(accumulatedCollection).containsExactlyInAnyOrderElementsOf(accumulatedArray);
+        assertThat(accumulatedArray).containsExactlyInAnyOrderElementsOf(accumulatedCollection);
+        assertThat(accumulatedArray).containsExactlyInAnyOrder(1L, 2L, null, null);
+        assertThat(accumulatedArray).hasSize(4);
     }
 
     @Test
@@ -118,9 +116,9 @@ public class AggregatorsTest extends HazelcastTestSupport {
         List<Long> accumulatedCollection = map.aggregate(new TestAggregator("wheelsC[any].tiresC[any]"));
 
         // THEN
-        assertThat(accumulatedCollection, containsInAnyOrder(accumulatedArray.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(accumulatedCollection.toArray()));
-        assertThat(accumulatedCollection, hasSize(0));
+        assertThat(accumulatedCollection).containsExactlyInAnyOrderElementsOf(accumulatedArray);
+        assertThat(accumulatedArray).containsExactlyInAnyOrderElementsOf(accumulatedCollection);
+        assertThat(accumulatedCollection).hasSize(0);
     }
 
     private Car getCornerCaseCar(Long... values) {

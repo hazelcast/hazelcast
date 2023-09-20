@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,12 +47,15 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.lang.String.format;
@@ -230,6 +233,54 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
+    public void testMapExecuteOnKey_withReadOnlyProcessor_noInvalidations() {
+        verifyNoInvalidationsWith((map, size) -> {
+            for (int i = 0; i < size; i++) {
+                map.executeOnKey(i, new TestReadOnlyProcessor());
+            }
+        });
+    }
+
+    @Test
+    public void testMapExecuteOnKeys_withReadOnlyProcessor_noInvalidations() {
+        verifyNoInvalidationsWith((map, size) -> {
+            Set<Integer> keys = IntStream.range(0, size).boxed().collect(Collectors.toSet());
+            map.executeOnKeys(keys, new TestReadOnlyProcessor());
+        });
+    }
+
+    @Test
+    public void testMapSubmitToKey_withReadOnlyProcessor_noInvalidations() {
+        verifyNoInvalidationsWith((map, size) -> {
+            for (int i = 0; i < size; i++) {
+                map.submitToKey(i, new TestReadOnlyProcessor());
+            }
+        });
+    }
+
+    @Test
+    public void testMapSubmitToKeys_withReadOnlyProcessor_noInvalidations() {
+        verifyNoInvalidationsWith((map, size) -> {
+            Set<Integer> keys = IntStream.range(0, size).boxed().collect(Collectors.toSet());
+            map.submitToKeys(keys, new TestReadOnlyProcessor());
+        });
+    }
+
+    @Test
+    public void testMapExecuteOnEntriesWithPredicate_withReadOnlyProcessor_noInvalidations() {
+        verifyNoInvalidationsWith((map, size) -> {
+            map.executeOnEntries(new TestReadOnlyProcessor(), Predicates.alwaysTrue());
+        });
+    }
+
+    @Test
+    public void testMapExecuteOnEntriesWithoutPredicate_withReadOnlyProcessor_noInvalidations() {
+        verifyNoInvalidationsWith((map, size) -> {
+            map.executeOnEntries(new TestReadOnlyProcessor());
+        });
+    }
+
+    @Test
     public void testNearCacheStats() {
         int mapSize = 1000;
         String mapName = randomMapName();
@@ -345,7 +396,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         map.setAll(invalidationMap);
 
         assertTrueEventually(
-            () -> assertEquals("Invalidation is not working on setAll()", 0, getNearCacheSize(map))
+                () -> assertEquals("Invalidation is not working on setAll()", 0, getNearCacheSize(map))
         );
     }
 
@@ -579,13 +630,13 @@ public class NearCacheTest extends NearCacheTestSupport {
         final CountDownLatch latch = new CountDownLatch(10);
         int randomKey = random.nextInt(mapSize);
         map.submitToKey(randomKey,
-                entry -> {
-                    int currentValue = entry.getValue();
-                    int newValue = currentValue + 1;
-                    entry.setValue(newValue);
-                    return newValue;
-                })
-            .thenRunAsync(latch::countDown);
+                        entry -> {
+                            int currentValue = entry.getValue();
+                            int newValue = currentValue + 1;
+                            entry.setValue(newValue);
+                            return newValue;
+                        })
+                .thenRunAsync(latch::countDown);
 
         latch.await(3, TimeUnit.SECONDS);
 
@@ -909,5 +960,33 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         // 5. assert number of entries in client Near Cache
         assertEquals(mapSize, ((NearCachedMapProxyImpl) nearCachedMap).getNearCache().size());
+    }
+
+    private void verifyNoInvalidationsWith(BiConsumer<IMap<Integer, Integer>, Integer> operation) {
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config);
+
+        IMap<Integer, Integer> map = instances[0].getMap(mapName);
+
+        int entryCount = 100;
+
+        populateMap(map, entryCount);
+        populateNearCache(map, entryCount);
+
+        NearCacheStats stats = getNearCacheStats(map);
+
+        long invalidationsBefore = stats.getInvalidations();
+
+        operation.accept(map, entryCount);
+
+        assertTrueAllTheTime(() -> {
+            long invalidationsAfter = stats.getInvalidations();
+            assertEquals(invalidationsBefore, invalidationsAfter);
+        }, 3);
     }
 }

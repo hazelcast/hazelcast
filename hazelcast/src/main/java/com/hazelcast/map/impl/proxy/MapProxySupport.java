@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.internal.util.IterationType;
@@ -87,10 +88,10 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -134,6 +135,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
 import static com.hazelcast.query.Predicates.alwaysFalse;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+import static com.hazelcast.spi.properties.ClusterProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Math.min;
@@ -156,6 +158,7 @@ abstract class MapProxySupport<K, V>
     protected static final String NULL_BIFUNCTION_IS_NOT_ALLOWED = "Null BiFunction is not allowed!";
     protected static final String NULL_FUNCTION_IS_NOT_ALLOWED = "Null Function is not allowed!";
     protected static final String NULL_CONSUMER_IS_NOT_ALLOWED = "Null Consumer is not allowed!";
+    protected static final String NULL_ENTRYPROCESSOR_IS_NOT_ALLOWED = "Null EntryProcessor is not allowed!";
 
     private static final int INITIAL_WAIT_LOAD_SLEEP_MILLIS = 10;
     private static final int MAXIMAL_WAIT_LOAD_SLEEP_MILLIS = 1000;
@@ -166,6 +169,7 @@ abstract class MapProxySupport<K, V>
 
     /**
      * Defines the batch size for operations of {@link IMap#putAll(Map)} and {@link IMap#setAll(Map)} calls.
+     * This setting is ignored for async variants of those methods.
      * <p>
      * A value of {@code 0} disables the batching and will send a single operation per member with all map entries.
      * <p>
@@ -217,6 +221,9 @@ abstract class MapProxySupport<K, V>
     // not final for testing purposes
     protected MapOperationProvider operationProvider;
 
+    // can be changed dynamically using internal API
+    private boolean failOnIndeterminateOperationState;
+
     private final int putAllBatchSize;
     private final float putAllInitialSizeFactor;
 
@@ -229,7 +236,7 @@ abstract class MapProxySupport<K, V>
         this.mapServiceContext = service.getMapServiceContext();
         this.mapConfig = mapConfig;
         this.partitionStrategy = mapServiceContext.getPartitioningStrategy(mapConfig.getName(),
-                mapConfig.getPartitioningStrategyConfig());
+                mapConfig.getPartitioningStrategyConfig(), mapConfig.getPartitioningAttributeConfigs());
         this.localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
         this.lockSupport = new LockProxySupport(MapService.getObjectNamespace(name),
@@ -242,6 +249,8 @@ abstract class MapProxySupport<K, V>
 
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
         this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
+        // default value the same as in OperationService
+        this.failOnIndeterminateOperationState = properties.getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
     }
 
     @Override
@@ -358,6 +367,36 @@ abstract class MapProxySupport<K, V>
         return mapConfig.getBackupCount() + mapConfig.getAsyncBackupCount();
     }
 
+    /**
+     * Overrides {@link
+     * com.hazelcast.spi.properties.ClusterProperty#FAIL_ON_INDETERMINATE_OPERATION_STATE}
+     * for this {@link IMap} proxy instance.
+     * <p>
+     * This setting applies only to sync and async operations on single key
+     * (e.g. {@link IMap#put(Object, Object)}. It does not affect multi-entry
+     * operations (eg. {@link IMap#clear()}, {@link IMap#putAll}).
+     * <p>
+     * Caveats:
+     * <ol>
+     *     <li>This method can be invoked from different threads but results may not be visible
+     *         in other threads than the calling one.</li>
+     *     <li>The same proxy instance can be returned by multiple invocations of
+     *         {@link com.hazelcast.core.HazelcastInstance#getMap(String)}.</li>
+     * </ol>
+     * Because of that, the only safe way to use this method is:
+     * <ol>
+     *     <li>Each time when IMap proxy for given IMap is obtained, failOnIndeterminateOperationState
+     *         has to be set to the same value.</li>
+     *     <li>If the proxy object is passed between threads, visibility must be guaranteed externally.</li>
+     * </ol>
+     *
+     * @param failOnIndeterminateOperationState should fail with exception on backup timeout
+     * @see MapConfig#setBackupCount(int)
+     */
+    public void setFailOnIndeterminateOperationState(boolean failOnIndeterminateOperationState) {
+        this.failOnIndeterminateOperationState = failOnIndeterminateOperationState;
+    }
+
     protected QueryEngine getMapQueryEngine() {
         return mapServiceContext.getQueryEngine(name);
     }
@@ -377,7 +416,6 @@ abstract class MapProxySupport<K, V>
             }
         }
         MapOperation operation = operationProvider.createGetOperation(name, keyData);
-        operation.setThreadId(getThreadId());
         return invokeOperation(keyData, operation);
     }
 
@@ -397,31 +435,12 @@ abstract class MapProxySupport<K, V>
 
     protected InternalCompletableFuture<Data> getAsyncInternal(Object key) {
         Data keyData = toDataWithStrategy(key);
-        int partitionId = partitionService.getPartitionId(keyData);
-
-        MapOperation operation = operationProvider.createGetOperation(name, keyData);
-        try {
-            long startTimeNanos = Timer.nanos();
-            InvocationFuture<Data> future = operationService
-                    .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .setResultDeserialized(false)
-                    .setAsync()
-                    .invoke();
-
-            if (statisticsEnabled) {
-                future.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
-            }
-
-            return future;
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return invokeOperationAsync(key, operationProvider.createGetOperation(name, keyData), false);
     }
 
     protected Data putInternal(Object key, Data valueData,
                                long ttl, TimeUnit ttlUnit,
                                long maxIdle, TimeUnit maxIdleUnit) {
-
         Data keyData = toDataWithStrategy(key);
         MapOperation operation = newPutOperation(keyData, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
         return (Data) invokeOperation(keyData, operation);
@@ -478,6 +497,7 @@ abstract class MapProxySupport<K, V>
     private Object invokeOperation(Data key, MapOperation operation) {
         int partitionId = partitionService.getPartitionId(key);
         operation.setThreadId(getThreadId());
+
         try {
             Object result;
             if (statisticsEnabled) {
@@ -485,6 +505,7 @@ abstract class MapProxySupport<K, V>
                 Future future = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .setResultDeserialized(false)
+                        .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState)
                         .invoke();
                 result = future.get();
                 incrementOperationStats(operation, localMapStats, startTimeNanos);
@@ -492,6 +513,7 @@ abstract class MapProxySupport<K, V>
                 Future future = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .setResultDeserialized(false)
+                        .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState)
                         .invoke();
                 result = future.get();
             }
@@ -501,68 +523,58 @@ abstract class MapProxySupport<K, V>
         }
     }
 
+    protected InternalCompletableFuture<Data> invokeOperationAsync(Object key,
+                                                                   MapOperation operation,
+                                                                   boolean resultDeserialized) {
+        int partitionId = partitionService.getPartitionId(key);
+        operation.setThreadId(getThreadId());
+        try {
+            InternalCompletableFuture<Data> result;
+            if (statisticsEnabled) {
+                long startTimeNanos = Timer.nanos();
+                result = operationService
+                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                        .setResultDeserialized(resultDeserialized)
+                        .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState)
+                        .setAsync()
+                        .invoke();
+                result.whenCompleteAsync(new IncrementStatsExecutionCallback(operation, startTimeNanos), CALLER_RUNS);
+            } else {
+                result = operationService
+                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                        .setResultDeserialized(resultDeserialized)
+                        .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState)
+                        .setAsync()
+                        .invoke();
+            }
+            return result;
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    protected InternalCompletableFuture<Data> invokeOperationAsync(Object key, MapOperation operation) {
+        return invokeOperationAsync(key, operation, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT);
+    }
+
     protected InternalCompletableFuture<Data> putAsyncInternal(Object key, Data valueData,
                                                                long ttl, TimeUnit ttlUnit,
                                                                long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
-        int partitionId = partitionService.getPartitionId(keyData);
-        MapOperation operation = newPutOperation(keyData, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
-        operation.setThreadId(getThreadId());
-        try {
-            long startTimeNanos = Timer.nanos();
-            InvocationFuture<Data> future = operationService.invokeOnPartitionAsync(SERVICE_NAME, operation, partitionId);
-
-            if (statisticsEnabled) {
-                future.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
-            }
-            return future;
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return invokeOperationAsync(key, newPutOperation(keyData, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit));
     }
 
     protected InternalCompletableFuture<Data> putIfAbsentAsyncInternal(Object key, Data value,
                                                                        long ttl, TimeUnit ttlUnit,
                                                                        long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
-        int partitionId = partitionService.getPartitionId(key);
-        MapOperation operation = newPutIfAbsentOperation(keyData, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
-        operation.setThreadId(getThreadId());
-        try {
-            long startTimeNanos = Timer.nanos();
-            InvocationFuture<Data> future = operationService.invokeOnPartitionAsync(SERVICE_NAME, operation, partitionId);
-            if (statisticsEnabled) {
-                future.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
-            }
-            return future;
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return invokeOperationAsync(key, newPutIfAbsentOperation(keyData, value, ttl, ttlUnit, maxIdle, maxIdleUnit));
     }
 
     protected InternalCompletableFuture<Data> setAsyncInternal(Object key, Data valueData, long ttl, TimeUnit timeunit,
                                                                long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);
-        int partitionId = partitionService.getPartitionId(keyData);
-
-        MapOperation operation = newSetOperation(keyData, valueData, ttl, timeunit, maxIdle, maxIdleUnit);
-        operation.setThreadId(getThreadId());
-
-        try {
-            final InvocationFuture<Data> result;
-            if (statisticsEnabled) {
-                long startTimeNanos = Timer.nanos();
-                result = operationService
-                        .invokeOnPartitionAsync(SERVICE_NAME, operation, partitionId);
-                result.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
-            } else {
-                result = operationService
-                        .invokeOnPartitionAsync(SERVICE_NAME, operation, partitionId);
-            }
-            return result;
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return invokeOperationAsync(key, newSetOperation(keyData, valueData, ttl, timeunit, maxIdle, maxIdleUnit));
     }
 
     protected boolean replaceInternal(Object key, Data expect, Data update) {
@@ -727,34 +739,22 @@ abstract class MapProxySupport<K, V>
 
     protected InternalCompletableFuture<Data> removeAsyncInternal(Object key) {
         Data keyData = toDataWithStrategy(key);
-        int partitionId = partitionService.getPartitionId(keyData);
-        MapOperation operation = operationProvider.createRemoveOperation(name, keyData);
-        operation.setThreadId(getThreadId());
-        try {
-            long startTimeNanos = Timer.nanos();
-            InvocationFuture<Data> future = operationService.invokeOnPartitionAsync(SERVICE_NAME, operation, partitionId);
+        return invokeOperationAsync(key, operationProvider.createRemoveOperation(name, keyData));
+    }
 
-            if (statisticsEnabled) {
-                future.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
-            }
-
-            return future;
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+    protected InternalCompletableFuture<Data> deleteAsyncInternal(Object key) {
+        Data keyData = toDataWithStrategy(key);
+        return invokeOperationAsync(key, operationProvider.createDeleteOperation(name, keyData, false));
     }
 
     protected boolean containsKeyInternal(Object key) {
         Data keyData = toDataWithStrategy(key);
-        int partitionId = partitionService.getPartitionId(keyData);
         MapOperation containsKeyOperation = operationProvider.createContainsKeyOperation(name, keyData);
-        containsKeyOperation.setThreadId(getThreadId());
-        containsKeyOperation.setServiceName(SERVICE_NAME);
+
         try {
-            Future future = operationService.invokeOnPartition(SERVICE_NAME, containsKeyOperation, partitionId);
-            Object object = future.get();
+            Object object = invokeOperation(keyData, containsKeyOperation);
             incrementOtherOperationsStat();
-            return (Boolean) toObject(object);
+            return toObject(object);
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -1023,7 +1023,7 @@ abstract class MapProxySupport<K, V>
                     long currentSize = ++counterPerMember[partitionId].value;
                     if (currentSize % putAllBatchSize == 0) {
                         List<Integer> partitions = memberPartitionsMap.get(addresses[partitionId]);
-                        invokePutAllOperation(addresses[partitionId], partitions, entriesPerPartition, triggerMapLoader)
+                        invokePutAllOperation(addresses[partitionId], partitions, entriesPerPartition, true, triggerMapLoader)
                                 .get();
                     }
                 }
@@ -1051,8 +1051,8 @@ abstract class MapProxySupport<K, V>
                 }
             };
             for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
-                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition, triggerMapLoader)
-                        .whenCompleteAsync(callback);
+                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition, useBatching, triggerMapLoader)
+                        .whenCompleteAsync(callback, ConcurrencyUtil.getDefaultAsyncExecutor());
             }
             // if executing in sync mode, block for the responses
             if (future == null) {
@@ -1068,6 +1068,7 @@ abstract class MapProxySupport<K, V>
             Address address,
             List<Integer> memberPartitions,
             MapEntries[] entriesPerPartition,
+            boolean useBatching,
             boolean triggerMapLoader
     ) {
         int size = memberPartitions.size();
@@ -1092,7 +1093,7 @@ abstract class MapProxySupport<K, V>
         long totalSize = 0;
         for (int partitionId : partitions) {
             int batchSize = entriesPerPartition[partitionId].size();
-            assert (putAllBatchSize == 0 || batchSize <= putAllBatchSize);
+            assert !useBatching || putAllBatchSize == 0 || batchSize <= putAllBatchSize;
             entries[index++] = entriesPerPartition[partitionId];
             totalSize += batchSize;
             entriesPerPartition[partitionId] = null;
@@ -1249,6 +1250,7 @@ abstract class MapProxySupport<K, V>
         return operationService
                 .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                 .setResultDeserialized(false)
+                .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState)
                 .invoke();
     }
 
@@ -1289,7 +1291,7 @@ abstract class MapProxySupport<K, V>
                     } else {
                         resultFuture.completeExceptionally(throwable);
                     }
-                });
+                }, ConcurrencyUtil.getDefaultAsyncExecutor());
         return resultFuture;
     }
 

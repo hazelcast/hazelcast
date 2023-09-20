@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation.steps;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.impl.mapstore.MapDataStores;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
@@ -32,9 +31,10 @@ public enum GetOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
-            Record record = recordStore.getRecordOrNull(state.getKey());
+            Record record = recordStore.getRecordOrNull(state.getKey(), false);
             if (record != null) {
-                state.setOldValue(record.getValue());
+                Object oldValue = record.getValue();
+                state.setOldValue(oldValue);
                 state.setRecordExistsInMemory(true);
             }
         }
@@ -54,9 +54,6 @@ public enum GetOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             MapDataStore mapDataStore = state.getRecordStore().getMapDataStore();
-            if (mapDataStore == MapDataStores.EMPTY_MAP_DATA_STORE) {
-                return;
-            }
             Object load = mapDataStore.load(state.getKey());
             state.setOldValue(load);
         }
@@ -103,7 +100,7 @@ public enum GetOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

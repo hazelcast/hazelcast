@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nonnull
     @Override
     public GenericRecordBuilder newBuilderWithClone() {
-        return new DeserializedGenericRecordCloner(schema, objects);
+        return new DeserializedGenericRecordCloner(schema, new TreeMap<>(objects));
     }
 
     @Nonnull
@@ -219,6 +219,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_BOOLEAN, ARRAY_OF_NULLABLE_BOOLEAN);
         if (fieldKind == ARRAY_OF_NULLABLE_BOOLEAN) {
             Boolean[] array = (Boolean[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             boolean[] result = new boolean[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
@@ -237,6 +240,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT8, ARRAY_OF_NULLABLE_INT8);
         if (fieldKind == ARRAY_OF_NULLABLE_INT8) {
             Byte[] array = (Byte[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             byte[] result = new byte[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
@@ -261,6 +267,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_FLOAT64, ARRAY_OF_NULLABLE_FLOAT64);
         if (fieldKind == ARRAY_OF_NULLABLE_FLOAT64) {
             Double[] array = (Double[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             double[] result = new double[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
@@ -279,6 +288,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_FLOAT32, ARRAY_OF_NULLABLE_FLOAT32);
         if (fieldKind == ARRAY_OF_NULLABLE_FLOAT32) {
             Float[] array = (Float[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             float[] result = new float[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
@@ -297,6 +309,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT32, ARRAY_OF_NULLABLE_INT32);
         if (fieldKind == ARRAY_OF_NULLABLE_INT32) {
             Integer[] array = (Integer[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             int[] result = new int[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
@@ -315,6 +330,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT64, ARRAY_OF_NULLABLE_INT64);
         if (fieldKind == ARRAY_OF_NULLABLE_INT64) {
             Long[] array = (Long[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             long[] result = new long[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
@@ -333,6 +351,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT16, ARRAY_OF_NULLABLE_INT16);
         if (fieldKind == ARRAY_OF_NULLABLE_INT16) {
             Short[] array = (Short[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             short[] result = new short[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
@@ -435,6 +456,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_BOOLEAN, ARRAY_OF_NULLABLE_BOOLEAN);
         if (fieldKind == ARRAY_OF_BOOLEAN) {
             boolean[] array = (boolean[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             Boolean[] result = new Boolean[array.length];
             Arrays.setAll(result, i -> array[i]);
             return result;
@@ -448,6 +472,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT8, ARRAY_OF_NULLABLE_INT8);
         if (fieldKind == ARRAY_OF_INT8) {
             byte[] array = (byte[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             Byte[] result = new Byte[array.length];
             Arrays.setAll(result, i -> array[i]);
             return result;
@@ -461,6 +488,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_FLOAT64, ARRAY_OF_NULLABLE_FLOAT64);
         if (fieldKind == ARRAY_OF_FLOAT64) {
             double[] array = (double[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             Double[] result = new Double[array.length];
             Arrays.setAll(result, i -> array[i]);
             return result;
@@ -474,6 +504,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_FLOAT32, ARRAY_OF_NULLABLE_FLOAT32);
         if (fieldKind == ARRAY_OF_FLOAT32) {
             float[] array = (float[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             Float[] result = new Float[array.length];
             Arrays.setAll(result, i -> array[i]);
             return result;
@@ -487,6 +520,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT32, ARRAY_OF_NULLABLE_INT32);
         if (fieldKind == ARRAY_OF_INT32) {
             int[] array = (int[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             Integer[] result = new Integer[array.length];
             Arrays.setAll(result, i -> array[i]);
             return result;
@@ -500,6 +536,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT64, ARRAY_OF_NULLABLE_INT64);
         if (fieldKind == ARRAY_OF_INT64) {
             long[] array = (long[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             Long[] result = new Long[array.length];
             Arrays.setAll(result, i -> array[i]);
             return result;
@@ -513,6 +552,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT16, ARRAY_OF_NULLABLE_INT16);
         if (fieldKind == ARRAY_OF_INT16) {
             short[] array = (short[]) objects.get(fieldName);
+            if (array == null) {
+                return null;
+            }
             Short[] result = new Short[array.length];
             Arrays.setAll(result, i -> array[i]);
             return result;

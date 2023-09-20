@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,9 @@ final class DnsEndpointResolver
     private final int serviceDnsTimeout;
     private final RawLookupProvider rawLookupProvider;
 
-    DnsEndpointResolver(ILogger logger, String serviceDns, int port, int serviceDnsTimeout) {
-        this(logger, serviceDns, port, serviceDnsTimeout, InetAddress::getAllByName);
+    DnsEndpointResolver(ILogger logger, KubernetesConfig config) {
+        this(logger, config.getServiceDns(), config.getServicePort(),
+                config.getServiceDnsTimeout(), InetAddress::getAllByName);
     }
 
     /**
@@ -61,7 +62,8 @@ final class DnsEndpointResolver
         this.rawLookupProvider = rawLookupProvider;
     }
 
-    List<DiscoveryNode> resolve() {
+    @Override
+    List<DiscoveryNode> resolveNodes() {
         try {
             return lookup();
         } catch (TimeoutException e) {

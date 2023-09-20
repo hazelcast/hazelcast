@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package com.hazelcast.internal.nearcache.impl.preloader;
 
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.BufferingInputStream;
 import com.hazelcast.internal.util.Timer;
@@ -26,9 +29,6 @@ import com.hazelcast.internal.util.collection.InflatableSet.Builder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,6 +36,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Paths;
 import java.util.Iterator;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
@@ -43,7 +44,6 @@ import static com.hazelcast.internal.nio.Bits.readIntB;
 import static com.hazelcast.internal.nio.Bits.writeIntB;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
-import static com.hazelcast.internal.nio.IOUtil.getPath;
 import static com.hazelcast.internal.nio.IOUtil.readFullyOrNothing;
 import static com.hazelcast.internal.nio.IOUtil.rename;
 import static com.hazelcast.internal.nio.IOUtil.toFileName;
@@ -296,6 +296,6 @@ public class NearCachePreloader<K> {
         if (isNullOrEmpty(directory)) {
             return filename;
         }
-        return getPath(directory, filename);
+        return Paths.get(directory, filename).toString();
     }
 }

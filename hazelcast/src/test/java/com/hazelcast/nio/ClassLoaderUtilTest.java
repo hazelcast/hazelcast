@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -27,6 +26,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -74,8 +74,9 @@ public class ClassLoaderUtilTest extends HazelcastTestSupport {
             @Override
             protected Class<?> findClass(String name) throws ClassNotFoundException {
                 if (name.equals("mock.Class")) {
-                    try {
-                        byte[] classData = IOUtil.toByteArray(getClass().getResourceAsStream("mock-class-data.dat"));
+                    try (InputStream inputStream = getClass().getResourceAsStream("mock-class-data.dat")) {
+                        assert inputStream != null;
+                        byte[] classData = inputStream.readAllBytes();
                         return defineClass(name, classData, 0, classData.length);
                     } catch (IOException e) {
                         throw new RuntimeException(e);

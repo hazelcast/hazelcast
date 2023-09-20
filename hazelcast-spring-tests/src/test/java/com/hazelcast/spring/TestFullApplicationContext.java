@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
@@ -84,6 +84,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PersistenceConfig;
@@ -118,6 +119,8 @@ import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -357,7 +360,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                 .filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX))
                 .filter(name -> !name.equals(SQL_CATALOG_MAP_NAME))
                 .count();
-        assertEquals(27, mapConfigSize);
+        assertEquals(28, mapConfigSize);
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -474,7 +477,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapConfig3 = config.getMapConfig("testMap3");
         assertEquals("com.hazelcast.spring.DummyStoreFactory", testMapConfig3.getMapStoreConfig().getFactoryClassName());
         assertFalse(testMapConfig3.getMapStoreConfig().getProperties().isEmpty());
-        assertEquals(testMapConfig3.getMapStoreConfig().getProperty("dummy.property"), "value");
+        assertEquals("value", testMapConfig3.getMapStoreConfig().getProperty("dummy.property"));
 
         MapConfig testMapConfig4 = config.getMapConfig("testMap4");
         assertEquals(dummyMapStoreFactory, testMapConfig4.getMapStoreConfig().getFactoryImplementation());
@@ -508,6 +511,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
         assertTrue(diskTierConfig.isEnabled());
         assertEquals("the-local0751", diskTierConfig.getDeviceName());
+
+        final List<PartitioningAttributeConfig> attributeConfigs = Arrays.asList(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
+        MapConfig testMapWithPartitionAttributes = config.getMapConfig("mapWithPartitionAttributes");
+        assertEquals(attributeConfigs, testMapWithPartitionAttributes.getPartitioningAttributeConfigs());
     }
 
     @Test
@@ -639,6 +649,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testSecurity() {
         SecurityConfig securityConfig = config.getSecurityConfig();
         assertEquals(OnJoinPermissionOperationName.SEND, securityConfig.getOnJoinPermissionOperation());
+        assertTrue(securityConfig.isPermissionPriorityGrant());
         final Set<PermissionConfig> clientPermissionConfigs = securityConfig.getClientPermissionConfigs();
         assertFalse(securityConfig.getClientBlockUnmappedActions());
         assertTrue(isNotEmpty(clientPermissionConfigs));
@@ -647,12 +658,18 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                 .addAction("create")
                 .setEndpoints(Collections.emptySet());
         assertContains(clientPermissionConfigs, pnCounterPermission);
+
+        PermissionConfig queuePermission = new PermissionConfig(PermissionType.QUEUE, "*", "*")
+                .addAction("all");
+        assertNotContains(clientPermissionConfigs, queuePermission);
+        queuePermission.setDeny(true);
+        assertContains(clientPermissionConfigs, queuePermission);
+
         Set<PermissionType> permTypes = new HashSet<>(Arrays.asList(PermissionType.values()));
         for (PermissionConfig pc : clientPermissionConfigs) {
             permTypes.remove(pc.getType());
         }
         assertTrue("All permission types should be listed in fullConfig. Not found ones: " + permTypes, permTypes.isEmpty());
-
         RealmConfig kerberosRealm = securityConfig.getRealmConfig("kerberosRealm");
         assertNotNull(kerberosRealm);
         KerberosAuthenticationConfig kerbAuthentication = kerberosRealm.getKerberosAuthenticationConfig();
@@ -830,8 +847,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("36000,36100", portIter.next());
         assertFalse(networkConfig.getJoin().getAutoDetectionConfig().isEnabled());
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
-        assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
-        assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);
+        assertEquals(8, networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds());
+        assertEquals(16, networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive());
         assertEquals(Boolean.FALSE, networkConfig.getJoin().getMulticastConfig().getLoopbackModeEnabled());
         Set<String> tis = networkConfig.getJoin().getMulticastConfig().getTrustedInterfaces();
         assertEquals(1, tis.size());
@@ -871,6 +888,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1002, icmpFailureDetectorConfig.getIntervalMilliseconds());
         assertEquals(2, icmpFailureDetectorConfig.getMaxAttempts());
         assertEquals(1, icmpFailureDetectorConfig.getTtl());
+
+        TpcSocketConfig tpcSocketConfig = networkConfig.getTpcSocketConfig();
+        assertEquals("14000-16000", tpcSocketConfig.getPortRange());
+        assertEquals(256, tpcSocketConfig.getReceiveBufferSizeKB());
+        assertEquals(256, tpcSocketConfig.getSendBufferSizeKB());
     }
 
     private void assertAwsConfig(AwsConfig aws) {
@@ -1609,6 +1631,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testSqlConfig() {
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+        assertFalse(sqlConfig.isCatalogPersistenceEnabled());
     }
 
     @Test
@@ -1637,12 +1660,20 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExternalDataStoreConfig() {
-        ExternalDataStoreConfig externalDataStoreConfig = config.getExternalDataStoreConfig("my-data-store");
-        assertNotNull(externalDataStoreConfig);
-        assertEquals("my-data-store", externalDataStoreConfig.getName());
-        assertEquals("com.hazelcast.datastore.JdbcDataStoreFactory", externalDataStoreConfig.getClassName());
-        assertFalse(externalDataStoreConfig.isShared());
-        assertEquals("jdbc:mysql://dummy:3306", externalDataStoreConfig.getProperty("jdbcUrl"));
+    public void testDataConnectionConfig() {
+        DataConnectionConfig dataConnectionConfig = config.getDataConnectionConfig("my-data-connection");
+        assertNotNull(dataConnectionConfig);
+        assertEquals("my-data-connection", dataConnectionConfig.getName());
+        assertEquals("dummy", dataConnectionConfig.getType());
+        assertFalse(dataConnectionConfig.isShared());
+        assertEquals("jdbc:mysql://dummy:3306", dataConnectionConfig.getProperty("jdbcUrl"));
+    }
+
+    @Test
+    public void testTpcConfig() {
+        TpcConfig tpcConfig = config.getTpcConfig();
+
+        assertTrue(tpcConfig.isEnabled());
+        assertEquals(12, tpcConfig.getEventloopCount());
     }
 }

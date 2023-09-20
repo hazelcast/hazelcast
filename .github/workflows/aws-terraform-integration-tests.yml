@@ -1,66 +1,92 @@
 name: aws-tests
+
 on:
   workflow_dispatch:
-  push:
+  pull_request_target:
+    types:
+      - labeled
     branches:
-      - master
+      - "master"
+      - "*.z"
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/aws/**'
       - '.github/terraform/aws/**'
 
 jobs:
   build:
+    name: Build Jar's And Docker Images
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'workflow_dispatch' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'run-discovery-tests' 
+        )
+      )
+    uses: ./.github/workflows/build-artifact.yml
+    secrets: inherit
+
+  test:
+    name: Run Tests
+    needs: build
+    runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash
+        working-directory: aws-discovery-suite/terraform/test
     env:
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
-    runs-on: ubuntu-latest
-    if: github.repository_owner == 'hazelcast'
+      AWS_REGION: us-east-1
     strategy:
       matrix:
-        java: [ '8' ]
-        architecture: [ 'x64' ]
-        distribution: [ 'adopt' ]
+        suite: ['ec2_cl_to_ec2_m', 'ec2_cl_to_fargate_ecs_m', 'fargate_ecs_cl_to_ec2_m', 'fargate_ecs_cl_to_fargate_ecs_m']
     steps:
-      # SET UP JDK
-      - name: Setup JDK
-        uses: actions/setup-java@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3.0.0
         with:
-          java-version: ${{ matrix.java }}
-          architecture: ${{ matrix.architecture }}
-          distribution: ${{ matrix.distribution }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - run: java -version
-
-      # BUILD HAZELCAST AWS SNAPSHOT
-      - uses: actions/checkout@v3.0.2
+      - name: Get Secrets
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
-          path: hazelcast
+          secret-ids: |
+            DEVOPS_GITHUB_TOKEN,CN/DEVOPS_GITHUB_TOKEN
 
-      - name: Build hazelcast jar
-        run: |
-          cd hazelcast
-          mvn clean install -DskipTests -Dcheckstyle.skip
-          echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
-          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar
+      - name: Checkout Auto Discovery Test Suite
+        uses: actions/checkout@v3
+        with:
+          repository: hazelcast/auto-discovery-test-suite
+          token: ${{ env.DEVOPS_GITHUB_TOKEN }}
+          path: aws-discovery-suite
 
-      # INSTALL TERRAFORM
+      - name: Download hazelcast.jar
+        uses: actions/download-artifact@v3
+        with:
+          name: hazelcast.jar
+          path: aws-discovery-suite/terraform/tools
+
+      - name: Download aws-discovery-client.jar
+        uses: actions/download-artifact@v3
+        with:
+          name: aws-discovery-client.jar
+          path: aws-discovery-suite/terraform/tools/client
+
       - name : Set-up Terraform
-        uses: hashicorp/setup-terraform@v1.3.2
+        uses: hashicorp/setup-terraform@v2.0.3
         with:
-          terraform_version: 1.1.8
+          terraform_version: 1.5.4
+          terraform_wrapper: false
 
-      - name: Terraform Init
-        working-directory: hazelcast/.github/terraform/aws
-        run: terraform init
+      - name: Cache Golang dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-      - name: Terraform Apply
-        working-directory: hazelcast/.github/terraform/aws
-        run: terraform apply -var="hazelcast_mancenter_version=latest-snapshot" -var="hazelcast_path=~/hazelcast.jar" -auto-approve
-
-      - name: Terraform Destroy
-        if: ${{ always() }}
-        working-directory: hazelcast/.github/terraform/aws
-        run: terraform destroy -auto-approve
+      - name: Run Tests
+        run: |
+          go test -v -timeout 20m -run TestSuite -suite ${{ matrix.suite }} -member-image ${{ needs.build.outputs.HZ_IMG }} -client-image ${{ needs.build.outputs.CL_IMG }}

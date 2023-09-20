@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
-import static com.hazelcast.internal.networking.nio.SelectorOptimizer.newSelector;
+import static com.hazelcast.internal.tpcengine.nio.SelectorOptimizer.newSelector;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
@@ -128,7 +128,7 @@ public class NioThread extends HazelcastManagedThread implements OperationHostil
                      ChannelErrorHandler errorHandler,
                      SelectorMode selectMode,
                      IdleStrategy idleStrategy) {
-        this(threadName, logger, errorHandler, selectMode, newSelector(logger), idleStrategy);
+        this(threadName, logger, errorHandler, selectMode, newSelector(), idleStrategy);
     }
 
     public NioThread(String threadName,
@@ -408,7 +408,7 @@ public class NioThread extends HazelcastManagedThread implements OperationHostil
     // after we have blocked for selector.select in #runSelectLoopWithSelectorFix
     private void rebuildSelector() {
         selectorRebuildCount.inc();
-        Selector newSelector = newSelector(logger);
+        Selector newSelector = newSelector();
         Selector oldSelector = this.selector;
 
         // reset each pipeline's selectionKey, cancel the old keys

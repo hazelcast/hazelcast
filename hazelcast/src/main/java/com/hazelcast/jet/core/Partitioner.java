@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,6 +88,16 @@ public interface Partitioner<T> extends Serializable {
      * @param partitionCount the total number of partitions in use by the underlying Hazelcast instance
      */
     int getPartition(@Nonnull T item, int partitionCount);
+
+    /**
+     * @since 5.4
+     * @return constant partition key that is always used by {@link
+     *          #getPartition(Object, int)} or null if different partitions may be
+     *          returned
+     */
+    default T getConstantPartitioningKey() {
+        return null;
+    }
 
     /**
      * Returns a partitioner which applies the default Hazelcast partitioning.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -207,11 +207,11 @@ public class SqlJsonTypeTest extends SqlJsonTestSupport {
 
     }
 
-    public void execute(final String sql, final Object ...arguments) {
+    public void execute(final String sql, final Object... arguments) {
         instance().getSql().execute(sql, arguments);
     }
 
-    public void executeClient(final String sql, final Object ...arguments) {
+    public void executeClient(final String sql, final Object... arguments) {
         client().getSql().execute(sql, arguments);
     }
 }

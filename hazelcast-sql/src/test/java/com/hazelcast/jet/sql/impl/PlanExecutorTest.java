@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,30 +20,31 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
+import com.hazelcast.mock.MockUtil;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.apache.calcite.rel.core.TableModify.Operation;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.Collections.emptyList;
@@ -53,12 +54,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(JUnitParamsRunner.class)
-public class PlanExecutorTest {
+public class PlanExecutorTest extends SimpleTestInClusterSupport {
 
-    @InjectMocks
     private PlanExecutor planExecutor;
 
     @Mock
@@ -68,10 +70,10 @@ public class PlanExecutorTest {
     private HazelcastInstance hazelcastInstance;
 
     @Mock
-    private JetService jet;
+    private NodeEngine nodeEngine;
 
     @Mock
-    private Map<String, QueryResultProducer> resultConsumerRegistry;
+    private JetService jet;
 
     @Mock
     private DAG dag;
@@ -79,10 +81,23 @@ public class PlanExecutorTest {
     @Mock
     private Job job;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
+        openMocks = openMocks(this);
         given(job.getFuture()).willReturn(new CompletableFuture<>());
+        given(nodeEngine.getHazelcastInstance()).willReturn(hazelcastInstance);
+        planExecutor = new PlanExecutor(
+                nodeEngine,
+                catalog,
+                null,
+                mock(QueryResultRegistry.class));
+    }
+
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
     }
 
     @Test
@@ -153,6 +168,6 @@ public class PlanExecutorTest {
     }
 
     private static Mapping mapping() {
-        return new Mapping("name", "name", "type", emptyList(), emptyMap());
+        return new Mapping("name", "name", null, "type", null, emptyList(), emptyMap());
     }
 }

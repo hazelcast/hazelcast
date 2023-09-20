@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,34 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import java.util.List;
+import org.apache.calcite.sql.SqlDialect;
 
-import static java.util.stream.Collectors.joining;
+import java.util.Arrays;
+import java.util.Iterator;
 
 class InsertQueryBuilder {
 
     private final String query;
 
-    InsertQueryBuilder(String tableName, List<String> fieldNames) {
+    InsertQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect) {
         StringBuilder sb = new StringBuilder()
-                .append("INSERT INTO ")
-                .append(tableName)
-                .append(" ( ")
-                .append(fieldNames.stream().map(name -> "\"" + name + "\"").collect(joining(",")))
-                .append(" ) ")
-                .append(" VALUES (");
-        for (int i = 0; i < fieldNames.size(); i++) {
+                .append("INSERT INTO ");
+        dialect.quoteIdentifier(sb, Arrays.asList(jdbcTable.getExternalName()));
+        sb.append(" ( ");
+        Iterator<String> it = jdbcTable.dbFieldNames().iterator();
+        while (it.hasNext()) {
+            String dbFieldName = it.next();
+            dialect.quoteIdentifier(sb, dbFieldName);
+            if (it.hasNext()) {
+                sb.append(',');
+            }
+        }
+        sb.append(" ) ")
+          .append(" VALUES (");
+
+        for (int i = 0; i < jdbcTable.dbFieldNames().size(); i++) {
             sb.append('?');
-            if (i < (fieldNames.size() - 1)) {
+            if (i < (jdbcTable.dbFieldNames().size() - 1)) {
                 sb.append(", ");
             }
         }

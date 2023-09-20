@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,26 +27,21 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.isNullData;
+
 /**
  * Thread-safe holder of value and/or its serialized form.
  *
  * @param <V> the type of value
  */
-public final class DeferredValue<V> {
+public class DeferredValue<V> {
 
-    private static final DeferredValue NULL_VALUE;
+    public static final DeferredValue NULL_VALUE = NullDeferredValue.NULL;
 
     private volatile Data serializedValue;
     private volatile V value;
     private volatile boolean valueExists;
     private volatile boolean serializedValueExists;
-
-    static {
-        DeferredValue nullValue = new DeferredValue();
-        nullValue.valueExists = true;
-        nullValue.serializedValueExists = true;
-        NULL_VALUE = nullValue;
-    }
 
     private DeferredValue() {
     }
@@ -84,20 +79,15 @@ public final class DeferredValue<V> {
      * @return
      */
     public DeferredValue<V> shallowCopy(boolean resolved, SerializationService serializationService) {
-        if (this == NULL_VALUE) {
-            return NULL_VALUE;
-        }
         DeferredValue<V> copy = new DeferredValue<V>();
         if (serializedValueExists) {
             copy.serializedValueExists = true;
             copy.serializedValue = serializedValue;
+        } else if (!resolved && serializationService != null) {
+            copy.serializedValueExists = true;
+            copy.serializedValue = getSerializedValue(serializationService);
         }
-        if (!resolved && serializationService != null) {
-            if (!serializedValueExists) {
-                copy.serializedValueExists = true;
-                copy.serializedValue = getSerializedValue(serializationService);
-            }
-        } else if (valueExists) {
+        if (valueExists) {
             copy.valueExists = true;
             copy.value = value;
         }
@@ -135,7 +125,7 @@ public final class DeferredValue<V> {
     }
 
     public static <V> DeferredValue<V> withSerializedValue(Data serializedValue) {
-        if (serializedValue == null) {
+        if (serializedValue == null || isNullData(serializedValue)) {
             return NULL_VALUE;
         }
         DeferredValue<V> deferredValue = new DeferredValue<V>();
@@ -245,6 +235,46 @@ public final class DeferredValue<V> {
         @Override
         public void remove() {
             iterator.remove();
+        }
+    }
+
+    static class NullDeferredValue extends DeferredValue {
+
+        static final DeferredValue NULL = new NullDeferredValue();
+
+        @Override
+        public Object get(SerializationService serializationService) {
+            return null;
+        }
+
+        @Override
+        public Data getSerializedValue(SerializationService serializationService) {
+            return null;
+        }
+
+        @Override
+        public DeferredValue shallowCopy() {
+            return NULL;
+        }
+
+        @Override
+        public DeferredValue shallowCopy(boolean resolved, SerializationService serializationService) {
+            return NULL;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return NULL == o;
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
+
+        @Override
+        public String toString() {
+            return "NullDeferredValue";
         }
     }
 }

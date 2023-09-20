@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     public void submitBasicTask() throws Exception {
         Callable<String> task = new BasicTestCallable();
         Future<String> future = executor.submit(task);
-        assertEquals(future.get(), BasicTestCallable.RESULT);
+        assertEquals(BasicTestCallable.RESULT, future.get());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     public void isDoneAfterGet() throws Exception {
         Callable<String> task = new BasicTestCallable();
         Future<String> future = executor.submit(task);
-        assertEquals(future.get(), BasicTestCallable.RESULT);
+        assertEquals(BasicTestCallable.RESULT, future.get());
         assertTrue(future.isDone());
     }
 
@@ -111,9 +111,9 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
             Callable<String> task2 = new BasicTestCallable();
             Future<String> future1 = executor.submit(task1);
             Future<String> future2 = executor.submit(task2);
-            assertEquals(future2.get(), BasicTestCallable.RESULT);
+            assertEquals(BasicTestCallable.RESULT, future2.get());
             assertTrue(future2.isDone());
-            assertEquals(future1.get(), BasicTestCallable.RESULT);
+            assertEquals(BasicTestCallable.RESULT, future1.get());
             assertTrue(future1.isDone());
         }
     }
@@ -136,7 +136,7 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
         Callable<String> task = new BasicTestCallable();
         Future<String> future = executor.submit(task);
         for (int i = 0; i < 4; i++) {
-            assertEquals(future.get(), BasicTestCallable.RESULT);
+            assertEquals(BasicTestCallable.RESULT, future.get());
             assertTrue(future.isDone());
         }
     }

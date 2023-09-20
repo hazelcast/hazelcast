@@ -122,7 +122,10 @@
             "connect-timeout-seconds": 64,
             "send-buffer-size-kb": 25,
             "receive-buffer-size-kb": 33,
-            "linger-seconds": 99
+            "linger-seconds": 99,
+            "keep-count": 4,
+            "keep-idle-seconds": 120,
+            "keep-interval-seconds": 15
           },
           "port": {
             "port-count": 100,
@@ -130,7 +133,12 @@
             "port": 5701
           },
           "public-address": "dummy",
-          "reuse-address": true
+          "reuse-address": true,
+          "tpc-socket": {
+            "port-range": "14000-16000",
+            "receive-buffer-size-kb": 256,
+            "send-buffer-size-kb": 256
+          }
         },
         "client-server-socket-endpoint-config": {
           "outbound-ports": [
@@ -162,7 +170,12 @@
             "port": 9999
           },
           "public-address": "10.10.0.10",
-          "reuse-address": true
+          "reuse-address": true,
+          "tpc-socket": {
+            "port-range": "14000-16000",
+            "receive-buffer-size-kb": 256,
+            "send-buffer-size-kb": 256
+          }
         },
         "rest-server-socket-endpoint-config": {
           "name": "internal-server-socket",
@@ -191,6 +204,11 @@
             "HEALTH_CHECK": {
               "enabled": true
             }
+          },
+          "tpc-socket": {
+            "port-range": "14000-16000",
+            "receive-buffer-size-kb": 256,
+            "send-buffer-size-kb": 256
           }
         },
         "wan-endpoint-config": {
@@ -201,6 +219,11 @@
               "properties": {
                 "foo": "bar"
               }
+            },
+            "tpc-socket": {
+              "port-range": "14000-16000",
+              "receive-buffer-size-kb": 256,
+              "send-buffer-size-kb": 256
             }
           },
           "endpoint-london": {
@@ -210,18 +233,26 @@
               "salt": "thesalt",
               "password": "thepassword",
               "iteration-count": 1000
+            },
+            "tpc-socket": {
+              "port-range": "14000-16000",
+              "receive-buffer-size-kb": 256,
+              "send-buffer-size-kb": 256
             }
           }
         },
         "wan-server-socket-endpoint-config": {
-          "wan-server-socket-config": {
-            "interfaces": {
-              "enabled": false,
-              "interfaces": [
-                "192.168.8.101",
-                "10.20.10.100"
-              ]
-            }
+          "interfaces": {
+            "enabled": false,
+            "interfaces": [
+              "192.168.8.101",
+              "10.20.10.100"
+            ]
+          },
+          "tpc-socket": {
+            "port-range": "14000-16000",
+            "receive-buffer-size-kb": 256,
+            "send-buffer-size-kb": 256
           }
         },
         "memcache-server-socket-endpoint-config": {
@@ -230,6 +261,11 @@
             "auto-increment": false,
             "port-count": 10,
             "port": 6000
+          },
+          "tpc-socket": {
+            "port-range": "14000-16000",
+            "receive-buffer-size-kb": 256,
+            "send-buffer-size-kb": 256
           }
         }
       }

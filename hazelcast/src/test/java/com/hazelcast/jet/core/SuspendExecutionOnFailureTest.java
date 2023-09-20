@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -49,7 +50,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
 
-    private static final Throwable MOCK_ERROR = new AssertionError("mock error");
+    private static final SupplierEx<Throwable> MOCK_ERROR = () -> new AssertionError("mock error");
 
     private JobConfig jobConfig;
 
@@ -116,7 +117,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         Job job = hz().getJet().newJob(dag, jobConfig);
         assertJobStatusEventually(job, RUNNING);
         job.suspend();
-        assertJobStatusEventually(job, SUSPENDED);
+        assertJobSuspendedEventually(job);
         assertThat(job.getSuspensionCause()).matches(JobSuspensionCause::requestedByUser);
         assertThat(job.getSuspensionCause().description()).isEqualTo("Requested by user");
         assertThatThrownBy(job.getSuspensionCause()::errorCause)
@@ -137,7 +138,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         Job job = hz().getJet().newJob(dag, jobConfig);
 
         // Then
-        assertJobStatusEventually(job, JobStatus.SUSPENDED);
+        assertJobSuspendedEventually(job);
 
         assertThat(job.getSuspensionCause()).matches(JobSuspensionCause::dueToError);
         assertThat(job.getSuspensionCause().errorCause())

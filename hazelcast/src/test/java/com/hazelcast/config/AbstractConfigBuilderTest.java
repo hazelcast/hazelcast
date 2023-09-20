@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -490,6 +490,15 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testDefaultAdvancedNetworkConfig();
 
     @Test
+    public abstract void testAdvancedNetworkConfig_whenInvalidSocketKeepIdleSeconds();
+
+    @Test
+    public abstract void testAdvancedNetworkConfig_whenInvalidSocketKeepIntervalSeconds();
+
+    @Test
+    public abstract void testAdvancedNetworkConfig_whenInvalidSocketKeepCount();
+
+    @Test
     public abstract void testAmbiguousNetworkConfig_throwsException();
 
     @Test
@@ -567,6 +576,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(34, memberEndpointConfig.getSocketSendBufferSizeKb());
         assertEquals(67, memberEndpointConfig.getSocketRcvBufferSizeKb());
         assertEquals(11, memberEndpointConfig.getSocketLingerSeconds());
+        assertEquals(12, memberEndpointConfig.getSocketKeepCount());
+        assertEquals(13, memberEndpointConfig.getSocketKeepIntervalSeconds());
+        assertEquals(14, memberEndpointConfig.getSocketKeepIdleSeconds());
 
         RestServerEndpointConfig restServerEndpointConfig = advancedNetworkConfig.getRestEndpointConfig();
         assertEquals(8080, restServerEndpointConfig.getPort());
@@ -653,6 +665,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(expected.getPrincipal(), configured.getPrincipal());
         assertEquals(expected.getName(), configured.getName());
         assertEquals(expected.getActions(), configured.getActions());
+        assertEquals(expected.isDeny(), configured.isDeny());
     }
 
     @Test
@@ -702,7 +715,19 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testIntegrityCheckerConfig();
 
     @Test
-    public abstract void testExternalDataStoreConfigs();
+    public abstract void testDataConnectionConfigs();
+
+    @Test
+    public abstract void testTpcConfig();
+
+    @Test
+    public abstract void testTpcSocketConfig();
+
+    @Test
+    public abstract void testTpcSocketConfigAdvanced();
+
+    @Test
+    public abstract void testPartitioningAttributeConfigs();
 
     protected abstract Config buildAuditlogConfig();
 

@@ -111,4 +111,39 @@
         <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
         <cpe>cpe:/a:google:gson</cpe>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - json version 20230227 have already fix for listed CVE.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.json/json@20230227.*$</packageUrl>
+        <cve>CVE-2022-45688</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - this CVE is not a security issue according to jackson community
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
+        <cve>CVE-2023-35116</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CVE-2023-37475 affects Avro Go lib but is falsely linked to Maven lib
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro@.*$</packageUrl>
+        <cpe>cpe:/a:avro_project:avro</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CVE-2023-37475 affects Avro Go lib but is falsely linked to Maven lib
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.parquet/parquet\-avro@.*$</packageUrl>
+        <cve>CVE-2023-37475</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CVE-2023-37475 affects Avro Go lib but is falsely linked to Maven lib
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro\-mapred@.*$</packageUrl>
+        <cve>CVE-2023-37475</cve>
+    </suppress>
 </suppressions>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,7 +156,6 @@ public class TimedMemberStateFactory {
         }
         memberState.setClients(serializableClientEndPoints);
         memberState.setName(instance.getName());
-
         memberState.setUuid(node.getThisUuid());
         if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {
             memberState.setCpMemberUuid(null);

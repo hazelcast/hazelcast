@@ -14,7 +14,12 @@
         "member-address-provider": null,
         "failure-detector": [],
         "rest-api": null,
-        "memcache-protocol": false
+        "memcache-protocol": false,
+        "tpc-socket": {
+          "port-range": 14000,
+          "receive-buffer-size-kb": "256",
+          "send-buffer-size-kb": "256"
+        }
       }
     }
   },
@@ -22,6 +27,34 @@
     "schemaLocation": "#/definitions/Network",
     "pointerToViolation": "#/hazelcast/network",
     "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/TpcSocketConfig",
+        "pointerToViolation": "#/hazelcast/network/tpc-socket",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/TpcSocketConfig/properties/port-range",
+            "pointerToViolation": "#/hazelcast/network/tpc-socket/port-range",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Integer"
+          },
+          {
+            "schemaLocation": "#/definitions/TpcSocketConfig/properties/receive-buffer-size-kb",
+            "pointerToViolation": "#/hazelcast/network/tpc-socket/receive-buffer-size-kb",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/TpcSocketConfig/properties/send-buffer-size-kb",
+            "pointerToViolation": "#/hazelcast/network/tpc-socket/send-buffer-size-kb",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          }
+        ],
+        "message": "3 schema violations found"
+      },
       {
         "schemaLocation": "#/definitions/FailureDetector",
         "pointerToViolation": "#/hazelcast/network/failure-detector",
@@ -129,6 +162,6 @@
         "message": "expected type: JSONObject, found: Null"
       }
     ],
-    "message": "14 schema violations found"
+    "message": "17 schema violations found"
   }
 }

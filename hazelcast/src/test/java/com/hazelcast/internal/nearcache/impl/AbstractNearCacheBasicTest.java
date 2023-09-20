@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hazelcast.internal.adapter.ICacheCompletionListener;
 import com.hazelcast.internal.adapter.ICacheReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.IMapReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
-import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.Predicates;
@@ -1422,7 +1421,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateNearCache(context);
 
         assertTrueEventually(() -> {
-            NearCacheStatsImpl stats = context.stats;
+            NearCacheStats stats = context.stats;
 
             // make assertions over near cache's backing map size.
             long nearCacheSize = context.nearCache.size();
@@ -1500,6 +1499,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         // the Near Cache is empty, we shouldn't see memory costs anymore
         assertNearCacheSizeEventually(context, 0);
         assertThatMemoryCostsAreZero(context);
+        executorService.shutdownNow();
     }
 
     /**

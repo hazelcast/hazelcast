@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,9 +41,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.test.Accessors.getNode;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -264,8 +263,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     private static void assertTestExceptionThrown(AtomicReference<?>... refs) {
         for (AtomicReference<?> ref : refs) {
-            assertThat("TEST_EXCEPTION expected", ref.get(),
-                    Matchers.sameInstance(THROW_TEST_EXCEPTION));
+            assertThat(ref.get()).as("TEST_EXCEPTION expected").isSameAs(THROW_TEST_EXCEPTION);
         }
     }
 

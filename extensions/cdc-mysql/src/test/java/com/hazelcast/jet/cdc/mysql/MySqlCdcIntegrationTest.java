@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 
 public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
@@ -88,6 +89,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
         Job job = hz.getJet().newJob(pipeline);
 
         //then
+        assertJobStatusEventually(job, RUNNING);
         assertEqualsEventually(() -> hz.getMap("results").size(), 4);
 
         //when
@@ -145,6 +147,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
         Job job = hz.getJet().newJob(pipeline);
 
         //then
+        assertJobStatusEventually(job, RUNNING);
         try {
             assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("results")), expectedRecords);
         } finally {
@@ -186,7 +189,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
         HazelcastInstance hz = createHazelcastInstances(2)[0];
         JobConfig jobConfig = new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
         Job job = hz.getJet().newJob(pipeline, jobConfig);
-        JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
+        JetTestSupport.assertJobStatusEventually(job, RUNNING);
         assertEqualsEventually(() -> hz.getMap("results").size(), 4);
 
         //then
@@ -199,7 +202,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
         job.restart();
 
         //when
-        JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
+        JetTestSupport.assertJobStatusEventually(job, RUNNING);
 
         //then update a record
         try (Connection connection = getConnection(mysql, "inventory")) {
@@ -235,7 +238,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
         HazelcastInstance hz = createHazelcastInstances(2)[0];
         JobConfig jobConfig = new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
         Job job = hz.getJet().newJob(pipeline, jobConfig);
-        JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
+        JetTestSupport.assertJobStatusEventually(job, RUNNING);
         //then
         assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("cache")),
                 Arrays.asList(
@@ -248,7 +251,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
         //when
         job.restart();
-        JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
+        JetTestSupport.assertJobStatusEventually(job, RUNNING);
         try (Connection connection = getConnection(mysql, "inventory")) {
             Statement statement = connection.createStatement();
             statement.addBatch("UPDATE customers SET first_name='Anne Marie' WHERE id=1004");

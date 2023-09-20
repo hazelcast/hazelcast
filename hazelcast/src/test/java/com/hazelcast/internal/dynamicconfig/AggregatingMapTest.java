@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,11 +29,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -162,7 +160,7 @@ public class AggregatingMapTest extends HazelcastTestSupport {
         Set<String> keySet = aggregatingMap.keySet();
 
         assertEquals(2, keySet.size());
-        assertThat(keySet, containsInAnyOrder("key1", "key2"));
+        assertThat(keySet).containsExactlyInAnyOrder("key1", "key2");
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -189,7 +187,7 @@ public class AggregatingMapTest extends HazelcastTestSupport {
         Collection<String> values = aggregatingMap.values();
 
         assertEquals(2, values.size());
-        assertThat(values, contains("value", "value"));
+        assertThat(values).contains("value", "value");
     }
 
     @Test(expected = UnsupportedOperationException.class)

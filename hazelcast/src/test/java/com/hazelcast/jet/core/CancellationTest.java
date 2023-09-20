@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
 import com.hazelcast.jet.core.TestProcessors.MockP;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -31,10 +32,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -44,15 +43,14 @@ import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -64,9 +62,6 @@ import static org.junit.Assume.assumeFalse;
 public class CancellationTest extends JetTestSupport {
 
     private static final int ASSERTION_TIMEOUT_SECONDS = 15;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Parameter
     public boolean useLightJob;
@@ -106,12 +101,15 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertExecutionTerminated();
-        expectedException.expect(CancellationException.class);
-        job.join();
+        joinAndExpectUserCancellation(job);
     }
 
     private Job newJob(HazelcastInstance instance, DAG dag) {
         return useLightJob ? instance.getJet().newLightJob(dag) : instance.getJet().newJob(dag);
+    }
+
+    public static void joinAndExpectUserCancellation(Job job) {
+        assertThatThrownBy(job::join).isInstanceOf(CancellationByUserException.class);
     }
 
     @Test
@@ -131,8 +129,7 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertExecutionTerminated();
-        expectedException.expect(CancellationException.class);
-        job.join();
+        joinAndExpectUserCancellation(job);
     }
 
     @Test
@@ -150,7 +147,8 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        assertThatThrownBy(() -> job.join());
+        joinAndExpectUserCancellation(job);
+        assertThat(job.isUserCancelled()).isTrue();
     }
 
     @Test
@@ -171,8 +169,7 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertExecutionTerminated();
-        expectedException.expect(CancellationException.class);
-        job.join();
+        joinAndExpectUserCancellation(job);
     }
 
     @Test
@@ -192,7 +189,8 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        assertThatThrownBy(() -> job.join());
+        joinAndExpectUserCancellation(job);
+        assertThat(job.isUserCancelled()).isTrue();
     }
 
     @Test
@@ -215,13 +213,14 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertExecutionTerminated();
-        expectedException.expect(CancellationException.class);
+        joinAndExpectUserCancellation(job);
         Job tracked = instance2.getJet().getJobs().iterator().next();
-        tracked.join();
+        joinAndExpectUserCancellation(tracked);
+        assertThat(tracked.isUserCancelled()).isTrue();
     }
 
     @Test
-    public void when_jobFailsOnOnInitiatorNode_then_cancelledOnOtherNodes() throws Throwable {
+    public void when_jobFailsOnInitiatorNode_then_cancelledOnOtherNodes() {
         // Given
         HazelcastInstance instance = createHazelcastInstance();
         createHazelcastInstance();
@@ -235,21 +234,19 @@ public class CancellationTest extends JetTestSupport {
         Job job = newJob(instance, dag);
         assertExecutionStarted();
 
-        // Then
+        // When
         FaultyProcessor.failNow = true;
-        assertExecutionTerminated();
 
-        expectedException.expect(fault.getClass());
-        expectedException.expectMessage(fault.getMessage());
-        try {
-            job.join();
-        } catch (Exception e) {
-            throw peel(e);
-        }
+        // Then
+        assertExecutionTerminated();
+        assertThatThrownBy(job::join)
+                .isInstanceOf(fault.getClass())
+                .hasMessageContaining(fault.getMessage());
+        assertThat(job.isUserCancelled()).isFalse();
     }
 
     @Test
-    public void when_jobFailsOnOnNonInitiatorNode_then_cancelledOnInitiatorNode() throws Throwable {
+    public void when_jobFailsOnNonInitiatorNode_then_cancelledOnInitiatorNode() {
         // Given
         HazelcastInstance instance = createHazelcastInstance();
         HazelcastInstance other = createHazelcastInstance();
@@ -262,17 +259,16 @@ public class CancellationTest extends JetTestSupport {
         Job job = newJob(instance, dag);
         assertExecutionStarted();
 
-        // Then
+        // When
         FaultyProcessor.failNow = true;
+
+        // Then
         assertExecutionTerminated();
 
-        expectedException.expect(fault.getClass());
-        expectedException.expectMessage(fault.getMessage());
-        try {
-            job.join();
-        } catch (Exception e) {
-            throw peel(e);
-        }
+        assertThatThrownBy(job::join)
+                .isInstanceOf(fault.getClass())
+                .hasMessageContaining(fault.getMessage());
+        assertThat(job.isUserCancelled()).isFalse();
     }
 
     @Test
@@ -323,6 +319,8 @@ public class CancellationTest extends JetTestSupport {
 
         // When-Then: should not fail
         job.cancel();
+        assertThat(job.isUserCancelled()).as("Should not mark completed job as cancelled")
+                .isFalse();
     }
 
     @Test
@@ -358,6 +356,7 @@ public class CancellationTest extends JetTestSupport {
         Job job = hz.getJet().newJob(dag, new JobConfig().setSnapshotIntervalMillis(100).setProcessingGuarantee(EXACTLY_ONCE));
         sleepSeconds(2); // wait for the job to start and attempt the 1st snapshot
         cancelAndJoin(job);
+        assertThat(job.isUserCancelled()).isTrue();
     }
 
     @Test
@@ -373,6 +372,7 @@ public class CancellationTest extends JetTestSupport {
         Job job = hz.getJet().newJob(dag, new JobConfig().setSnapshotIntervalMillis(100).setProcessingGuarantee(EXACTLY_ONCE));
         sleepSeconds(2); // wait for the job to start and attempt the 1st snapshot
         cancelAndJoin(job);
+        assertThat(job.isUserCancelled()).isTrue();
     }
 
     private static void assertExecutionStarted() {

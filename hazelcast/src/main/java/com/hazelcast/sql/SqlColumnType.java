@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ public enum SqlColumnType {
     /**
      * This type and the value representing it is likely to change or be removed in the future release
      * <p>
-     * ROW type, represented by {@link RowValue}
+     * ROW type, represented by the private API {@link RowValue}
      * */
     @Beta
     ROW(16, RowValue.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,16 +166,8 @@ public class MapLiteMemberTest
         }
     }
 
-    private static class DummyMapInterceptor implements MapInterceptor {
-
-        @Override
-        public Object interceptGet(Object value) {
-            return null;
-        }
-
-        @Override
-        public void afterGet(Object value) {
-        }
+    private static class DummyMapInterceptor extends MapInterceptorAdaptor {
+        private static final long serialVersionUID = 1L;
 
         @Override
         public Object interceptPut(Object oldValue, Object newValue) {
@@ -184,19 +176,6 @@ public class MapLiteMemberTest
             } else {
                 throw new RuntimeException("no put");
             }
-        }
-
-        @Override
-        public void afterPut(Object value) {
-        }
-
-        @Override
-        public Object interceptRemove(Object removedValue) {
-            return null;
-        }
-
-        @Override
-        public void afterRemove(Object value) {
         }
     }
 

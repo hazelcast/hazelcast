@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,19 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Utility accessors for IMap internals.
@@ -54,6 +59,35 @@ public final class IMapAccessors {
         RemoteService service = mapProxy.getService();
         MapService mapService = (MapService) service;
         return mapService.getMapServiceContext();
+    }
+
+    @Nonnull
+    public static List<RecordStore> getAllRecordStoresOf(IMap map) {
+        assertMapImpl(map);
+
+        List<RecordStore> recordStores = new ArrayList<>();
+
+        MapServiceContext mapServiceContext = getMapServiceContext(map);
+        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        int partitionCount = partitionService.getPartitionCount();
+        for (int i = 0; i < partitionCount; i++) {
+            PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(i);
+            RecordStore existingRecordStore = partitionContainer.getExistingRecordStore(map.getName());
+            if (existingRecordStore != null) {
+                recordStores.add(existingRecordStore);
+            }
+        }
+        return recordStores;
+    }
+
+
+    public static int getPendingOffloadedOpCount(IMap map) {
+        int count = 0;
+        List<RecordStore> recordStores = IMapAccessors.getAllRecordStoresOf(map);
+        for (RecordStore recordStore : recordStores) {
+            count += recordStore.getOffloadedOperations().size();
+        }
+        return count;
     }
 
     private static void assertMapImpl(IMap map) {

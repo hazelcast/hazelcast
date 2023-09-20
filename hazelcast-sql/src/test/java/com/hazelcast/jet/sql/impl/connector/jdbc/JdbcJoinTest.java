@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.junit.Test;
 
 import java.sql.SQLException;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
@@ -49,10 +48,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
@@ -67,10 +63,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertThatThrownBy(() ->
@@ -92,10 +85,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
@@ -125,10 +115,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
@@ -158,10 +145,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
@@ -205,6 +189,31 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                 "SELECT t1.id, t2.name " +
                         "FROM " + tableName + " t1 " +
                         "JOIN " + mapName + " t2 " +
+                        "   ON t1.id = t2.id",
+                newArrayList(
+                        new Row(0, "name-0"),
+                        new Row(1, "name-1"),
+                        new Row(2, "name-2"),
+                        new Row(3, "name-3"),
+                        new Row(4, "name-4")
+                )
+        );
+    }
+
+    @Test
+    public void joinWithOtherJdbcNonDefaultSchema() throws SQLException {
+        String schemaName = randomName();
+        executeJdbc("CREATE SCHEMA " + schemaName);
+        String fullyQualifiedTable = schemaName + "." + tableName;
+        createTable(fullyQualifiedTable);
+        insertItems(fullyQualifiedTable, ITEM_COUNT);
+        String mappingName = randomTableName();
+        createMapping(fullyQualifiedTable, mappingName);
+
+        assertRowsAnyOrder(
+                "SELECT t1.id, t2.name " +
+                        "FROM " + tableName + " t1 " +
+                        "JOIN \"" + mappingName + "\" t2 " +
                         "   ON t1.id = t2.id",
                 newArrayList(
                         new Row(0, "name-0"),

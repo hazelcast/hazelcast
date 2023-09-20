@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.expression.math;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
@@ -176,7 +176,7 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
                 function.code
         );
-        DoubleBiFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_DOUBLE_DOUBLE);
+        DoubleBiFunction restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_DOUBLE_DOUBLE);
 
         checkEquals(original, restored, true);
     }

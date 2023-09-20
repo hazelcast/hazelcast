@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,40 +142,6 @@ public class GlobalQueryContextWithStats extends QueryContext {
         @Override
         public Set<QueryableEntry> evaluate(Predicate predicate) {
             Set<QueryableEntry> result = delegate.evaluate(predicate);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
-            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(descending);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
-            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(value);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending) {
-            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(comparison, value, descending);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(
-            Comparable from,
-            boolean fromInclusive,
-            Comparable to,
-            boolean toInclusive,
-            boolean descending
-        ) {
-            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(from, fromInclusive, to, toInclusive, descending);
             hasQueries = true;
             return result;
         }

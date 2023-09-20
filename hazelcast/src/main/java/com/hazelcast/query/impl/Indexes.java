@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,19 +29,18 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterableUtil;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -51,7 +50,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * Contains all indexes for a data-structure, e.g. an IMap.
  */
-@SuppressWarnings({"checkstyle:finalclass", "rawtypes"})
+@SuppressWarnings("rawtypes")
 public class Indexes {
 
     /**
@@ -60,10 +59,6 @@ public class Indexes {
      * The negative value means the check should be skipped.
      */
     public static final int SKIP_PARTITIONS_COUNT_CHECK = -1;
-
-    // internal property, only for tests
-    public static final String CUSTOM_INDEXES_CLASS_NAME = "hazelcast.internal.indexes.className";
-
     private static final InternalIndex[] EMPTY_INDEXES = {};
 
     private static final ThreadLocal<CachedQueryEntry[]> CACHED_ENTRIES =
@@ -89,12 +84,13 @@ public class Indexes {
 
     private final int partitionCount;
 
+    private final int partitionId;
+
     private volatile InternalIndex[] indexes = EMPTY_INDEXES;
     private volatile InternalIndex[] compositeIndexes = EMPTY_INDEXES;
 
-    // package-private for testing
     @SuppressWarnings("checkstyle:ParameterNumber")
-    Indexes(Node node,
+    private Indexes(Node node,
                     String mapName,
                     InternalSerializationService ss,
                     IndexCopyBehavior indexCopyBehavior,
@@ -105,6 +101,7 @@ public class Indexes {
                     boolean global,
                     InMemoryFormat inMemoryFormat,
                     int partitionCount,
+                    int partitionId,
                     Supplier<java.util.function.Predicate<QueryableEntry>> resultFilterFactory) {
         this.node = node;
         this.mapName = mapName;
@@ -117,6 +114,7 @@ public class Indexes {
         this.indexProvider = indexProvider == null ? new DefaultIndexProvider() : indexProvider;
         this.queryContextProvider = createQueryContextProvider(this, global, statisticsEnabled);
         this.partitionCount = partitionCount;
+        this.partitionId = partitionId;
         this.resultFilterFactory = resultFilterFactory;
     }
 
@@ -180,6 +178,7 @@ public class Indexes {
                 indexCopyBehavior,
                 stats.createPerIndexStats(indexConfig.getType() == IndexType.SORTED, usesCachedQueryableEntries),
                 partitionCount,
+                partitionId,
                 mapName);
 
         indexesByName.put(name, index);
@@ -191,7 +190,7 @@ public class Indexes {
         converterCache.invalidate(index);
 
         InternalIndex[] internalIndexes = indexesByName.values().toArray(EMPTY_INDEXES);
-        /**
+        /*
          * Sort indexes by creation timestamp. Some high-level
          * sub-systems like HD SQL optimizer may need the oldest index that has the most
          * chances to be completely constructed and being usable for queries.
@@ -247,6 +246,16 @@ public class Indexes {
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public InternalIndex[] getIndexes() {
         return indexes;
+    }
+
+    public void getStepAwareStorages(Consumer<Step> stepCollector) {
+        for (int i = 0; i < indexes.length; i++) {
+            indexes[i].getStepAwareStorage().addAsHeadStep(stepCollector);
+        }
+    }
+
+    public String getMapName() {
+        return mapName;
     }
 
     /**
@@ -596,6 +605,9 @@ public class Indexes {
         private boolean statsEnabled;
         private boolean usesCachedQueryableEntries;
         private int partitionCount;
+
+        // By default the partitionId is not set
+        private int partitionId = -1;
         private Extractors extractors;
         private IndexProvider indexProvider;
         private InMemoryFormat inMemoryFormat;
@@ -681,30 +693,18 @@ public class Indexes {
             return this;
         }
 
+        public Builder partitionId(int partitionId) {
+            this.partitionId = partitionId;
+            return this;
+        }
+
         /**
          * @return a new instance of Indexes
          */
         public Indexes build() {
-            String customClassName = System.getProperty(CUSTOM_INDEXES_CLASS_NAME);
-            if (customClassName == null) {
-                return new Indexes(node, mapName, serializationService, indexCopyBehavior, extractors,
-                        indexProvider, usesCachedQueryableEntries, statsEnabled, global,
-                        inMemoryFormat, partitionCount, resultFilterFactory);
-            }
-            try {
-                Class<? extends Indexes> klass = (Class<? extends Indexes>)
-                        getClass().getClassLoader().loadClass(customClassName);
-                MethodType ctor = MethodType.methodType(void.class, Node.class, String.class, InternalSerializationService.class,
-                        IndexCopyBehavior.class, Extractors.class, IndexProvider.class,
-                        boolean.class, boolean.class, boolean.class, InMemoryFormat.class, int.class,
-                        Supplier.class);
-                MethodHandle indexesCtor = MethodHandles.publicLookup().findConstructor(klass, ctor);
-                return (Indexes) indexesCtor.invoke(node, mapName, serializationService, indexCopyBehavior, extractors,
-                        indexProvider, usesCachedQueryableEntries, statsEnabled, global,
-                        inMemoryFormat, partitionCount, resultFilterFactory);
-            } catch (Throwable e) {
-                throw rethrow(e);
-            }
+            return new Indexes(node, mapName, serializationService, indexCopyBehavior, extractors,
+                    indexProvider, usesCachedQueryableEntries, statsEnabled, global,
+                    inMemoryFormat, partitionCount, partitionId, resultFilterFactory);
         }
     }
 }

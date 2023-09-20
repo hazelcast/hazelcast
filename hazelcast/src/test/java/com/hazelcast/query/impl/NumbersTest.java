@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.query.impl.Numbers.canonicalizeForHashLookup;
 import static com.hazelcast.query.impl.Numbers.compare;
 import static com.hazelcast.query.impl.Numbers.equal;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.lessThan;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -186,11 +184,11 @@ public class NumbersTest {
             assertEquals(0, compare(lhs, rhs));
             assertEquals(0, compare(rhs, lhs));
         } else if (expected < 0) {
-            assertThat(compare(lhs, rhs), lessThan(0));
-            assertThat(compare(rhs, lhs), greaterThan(0));
+            assertThat(compare(lhs, rhs)).isLessThan(0);
+            assertThat(compare(rhs, lhs)).isGreaterThan(0);
         } else {
-            assertThat(compare(lhs, rhs), greaterThan(0));
-            assertThat(compare(rhs, lhs), lessThan(0));
+            assertThat(compare(lhs, rhs)).isGreaterThan(0);
+            assertThat(compare(rhs, lhs)).isLessThan(0);
         }
     }
 

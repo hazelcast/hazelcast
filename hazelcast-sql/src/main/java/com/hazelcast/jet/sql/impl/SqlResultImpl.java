@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.AbstractSqlResult;
+import com.hazelcast.sql.impl.CoreQueryUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -38,6 +38,7 @@ class SqlResultImpl extends AbstractSqlResult {
     private final QueryResultProducer rootResultConsumer;
     private final SqlRowMetadata rowMetadata;
     private final boolean isInfiniteRows;
+    private final int partitionArgumentIndex;
 
     private ResultIterator<SqlRow> iterator;
 
@@ -51,6 +52,21 @@ class SqlResultImpl extends AbstractSqlResult {
         this.rootResultConsumer = rootResultConsumer;
         this.rowMetadata = rowMetadata;
         this.isInfiniteRows = isInfiniteRows;
+        this.partitionArgumentIndex = -1;
+    }
+
+    SqlResultImpl(
+            QueryId queryId,
+            QueryResultProducer rootResultConsumer,
+            SqlRowMetadata rowMetadata,
+            boolean isInfiniteRows,
+            int partitionArgumentIndex
+    ) {
+        this.queryId = queryId;
+        this.rootResultConsumer = rootResultConsumer;
+        this.rowMetadata = rowMetadata;
+        this.isInfiniteRows = isInfiniteRows;
+        this.partitionArgumentIndex = partitionArgumentIndex;
     }
 
     @Override
@@ -61,6 +77,11 @@ class SqlResultImpl extends AbstractSqlResult {
     @Override
     public boolean isInfiniteRows() {
         return isInfiniteRows;
+    }
+
+    @Override
+    public int getPartitionArgumentIndex() {
+        return partitionArgumentIndex;
     }
 
     @Nonnull @Override
@@ -105,7 +126,7 @@ class SqlResultImpl extends AbstractSqlResult {
             try {
                 return delegate.hasNext();
             } catch (Exception e) {
-                throw QueryUtils.toPublicException(e, queryId.getMemberId());
+                throw CoreQueryUtils.toPublicException(e, queryId.getMemberId());
             }
         }
 
@@ -114,7 +135,7 @@ class SqlResultImpl extends AbstractSqlResult {
             try {
                 return delegate.hasNext(timeout, timeUnit);
             } catch (Exception e) {
-                throw QueryUtils.toPublicException(e, queryId.getMemberId());
+                throw CoreQueryUtils.toPublicException(e, queryId.getMemberId());
             }
         }
 
@@ -125,7 +146,7 @@ class SqlResultImpl extends AbstractSqlResult {
             } catch (NoSuchElementException e) {
                 throw e;
             } catch (Exception e) {
-                throw QueryUtils.toPublicException(e, queryId.getMemberId());
+                throw CoreQueryUtils.toPublicException(e, queryId.getMemberId());
             }
         }
     }

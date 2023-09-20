@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.isUnbounded;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 
 /**
@@ -42,7 +43,8 @@ public class ViewTable extends Table {
     private RelNode viewRel;
 
     public ViewTable(String schemaName, String viewName, String viewQuery, TableStatistics statistics) {
-        super(schemaName, viewName, null, statistics);
+        // will determine if the view is streaming later, when it is used
+        super(schemaName, viewName, null, statistics, "View", false);
         this.viewQuery = viewQuery;
     }
 
@@ -69,6 +71,7 @@ public class ViewTable extends Table {
             res.add(new TableField(f.getName(), toHazelcastType(f.getType()), false));
         }
         context.getUsedViews().add(getObjectKey());
+        streaming = isUnbounded(viewRel);
         return res;
     }
 
@@ -76,6 +79,12 @@ public class ViewTable extends Table {
         getFields(); // called for the side effect of calling initFields()
         assert viewRel != null;
         return viewRel;
+    }
+
+    @Override
+    public boolean isStreaming() {
+        getFields(); // called for the side effect of calling initFields()
+        return super.isStreaming();
     }
 
     static class ViewPlanObjectKey implements PlanObjectKey {

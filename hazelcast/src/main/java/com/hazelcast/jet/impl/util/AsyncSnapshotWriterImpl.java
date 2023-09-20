@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.impl.JobRepository.safeImap;
+
 public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
     public static final int DEFAULT_CHUNK_SIZE = 128 * 1024;
@@ -78,7 +80,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
     private long totalChunks;
     private long totalPayloadBytes;
 
-    private BiConsumer<Object, Throwable> putResponseConsumer = this::consumePutResponse;
+    private final BiConsumer<Object, Throwable> putResponseConsumer = this::consumePutResponse;
 
     public AsyncSnapshotWriterImpl(NodeEngine nodeEngine,
                                    SnapshotContext snapshotContext,
@@ -273,7 +275,9 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
             if (mapName == null) {
                 return false;
             }
-            currentMap = nodeEngine.getHazelcastInstance().getMap(mapName);
+            // Snapshot IMap proxy instance may be shared, but we always want it
+            // to have failOnIndeterminateOperationState enabled.
+            currentMap = safeImap(nodeEngine.getHazelcastInstance().getMap(mapName));
             this.currentSnapshotId = snapshotContext.currentSnapshotId();
         }
         return true;
@@ -386,7 +390,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(partitionKey);
             out.writeLong(snapshotId);
-            out.writeUTF(vertexName);
+            out.writeString(vertexName);
             out.writeInt(sequence);
         }
 
@@ -394,7 +398,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         public void readData(ObjectDataInput in) throws IOException {
             partitionKey = in.readInt();
             snapshotId = in.readLong();
-            vertexName = in.readUTF();
+            vertexName = in.readString();
             sequence = in.readInt();
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
 import java.util.Collections;
 
 import static com.hazelcast.test.MemcacheTestUtil.shutdownQuietly;
@@ -121,12 +120,12 @@ public class AdvancedNetworkingCommunicationIntegrationTest extends AbstractAdva
         }
     }
 
-    private void testRestCallFailsOnPort(HazelcastInstance hz, int port) throws IOException {
+    private void testRestCallFailsOnPort(HazelcastInstance hz, int port) {
         HTTPCommunicator communicator = new HTTPCommunicator(hz, "/127.0.0.1:" + port);
         try {
             communicator.getClusterVersion();
-            fail("REST call should throw SocketException for port " + port);
-        } catch (SocketException ex) {
+            fail("REST call should throw IOException for port " + port);
+        } catch (IOException ex) {
             // expected
         }
     }

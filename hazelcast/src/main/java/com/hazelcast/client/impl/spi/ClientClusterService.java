@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,15 @@ public interface ClientClusterService {
      * @return The collection of members. Null will never be returned.
      */
     Collection<Member> getMemberList();
+
+    /**
+     * Gets the collection of members, or an empty list if the client
+     * changed the cluster and the new member list is not received yet.
+     *
+     * @return The collection of members.
+     */
+    @Nonnull
+    Collection<Member> getEffectiveMemberList();
 
     /**
      * Returns a collection of the members that satisfy the given {@link MemberSelector}.

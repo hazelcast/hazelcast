@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.internal.serialization;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 
+import java.util.Map;
+
 public interface DataSerializerHook {
 
     int F_ID_OFFSET_WEBMODULE = -1000;
@@ -27,5 +29,13 @@ public interface DataSerializerHook {
 
     DataSerializableFactory createFactory();
 
+    /**
+     * Gives the hook a chance to further configure factories after all
+     * factories were created. It can be used for configuring constructors for
+     * classes in submodules, for which the factoryId and classId cannot be
+     * changed.
+     */
+    default void afterFactoriesCreated(Map<Integer, DataSerializableFactory> factories) {
+        // nothing by default
+    }
 }
-

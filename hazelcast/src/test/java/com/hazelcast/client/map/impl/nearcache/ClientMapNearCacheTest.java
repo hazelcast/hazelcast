@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -278,6 +278,28 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.removeAsync(i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertThatOwnedEntryCountEquals(clientMap, 0);
+            }
+        });
+    }
+
+    @Test
+    public void testAfterDeleteAsyncNearCacheIsInvalidated() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
+
+        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateMap(clientMap, mapSize);
+        populateNearCache(clientMap, mapSize);
+
+        for (int i = 0; i < mapSize; i++) {
+            clientMap.deleteAsync(i);
         }
 
         assertTrueEventually(new AssertTask() {

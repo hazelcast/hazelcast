@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.index;
 
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
@@ -55,7 +55,7 @@ public class IndexCompositeFilterTest extends IndexFilterTestSupport {
     @Test
     public void testSerialization() {
         IndexCompositeFilter original = new IndexCompositeFilter(Collections.singletonList(new IndexEqualsFilter(intValue(1))));
-        IndexCompositeFilter restored = serializeAndCheck(original, SqlDataSerializerHook.INDEX_FILTER_IN);
+        IndexCompositeFilter restored = serializeAndCheck(original, JetSqlSerializerHook.INDEX_FILTER_IN);
 
         checkEquals(original, restored, true);
     }

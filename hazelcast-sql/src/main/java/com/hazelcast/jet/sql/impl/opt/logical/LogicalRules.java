@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,15 +80,14 @@ public final class LogicalRules {
                 TableModifyLogicalRule.INSTANCE,
                 InsertLogicalRule.INSTANCE,
                 SinkLogicalRule.INSTANCE,
-                UpdateLogicalRules.SCAN_INSTANCE,
-                UpdateLogicalRules.VALUES_INSTANCE,
-                DeleteLogicalRule.INSTANCE,
+                UpdateWithScanLogicalRule.INSTANCE,
+                UpdateNoScanLogicalRule.INSTANCE,
+                DeleteWithScanLogicalRule.INSTANCE,
+                DeleteNoScanLogicalRule.INSTANCE,
 
                 // imap-by-key access optimization rules
                 InsertMapLogicalRule.INSTANCE,
-                SinkMapLogicalRule.INSTANCE,
-                UpdateByKeyMapLogicalRule.INSTANCE,
-                DeleteByKeyMapLogicalRule.INSTANCE
+                SinkMapLogicalRule.INSTANCE
         );
     }
 }

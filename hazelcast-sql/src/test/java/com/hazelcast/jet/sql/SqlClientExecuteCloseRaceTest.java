@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlErrorCode;
@@ -83,7 +83,7 @@ public class SqlClientExecuteCloseRaceTest extends SqlTestSupport {
         QueryId queryId = QueryId.create(UUID.randomUUID());
 
         // Send "execute"
-        Connection connection = clientService.getQueryConnection();
+        ClientConnection connection = clientService.getQueryConnection();
 
         ClientMessage executeResponse = sendExecuteRequest(connection, queryId);
 
@@ -104,7 +104,7 @@ public class SqlClientExecuteCloseRaceTest extends SqlTestSupport {
         QueryId queryId = QueryId.create(UUID.randomUUID());
 
         // Send "close"
-        Connection connection = clientService.getQueryConnection();
+        ClientConnection connection = clientService.getQueryConnection();
 
         ClientMessage closeRequest = SqlCloseCodec.encodeRequest(queryId);
 
@@ -125,7 +125,7 @@ public class SqlClientExecuteCloseRaceTest extends SqlTestSupport {
         QueryId queryId = QueryId.create(UUID.randomUUID());
 
         // Send "close"
-        Connection connection = clientService.getQueryConnection();
+        ClientConnection connection = clientService.getQueryConnection();
 
         ClientMessage closeRequest = SqlCloseCodec.encodeRequest(queryId);
 
@@ -152,7 +152,7 @@ public class SqlClientExecuteCloseRaceTest extends SqlTestSupport {
         }
     }
 
-    private ClientMessage sendExecuteRequest(Connection connection, QueryId queryId) {
+    private ClientMessage sendExecuteRequest(ClientConnection connection, QueryId queryId) {
         ClientMessage executeRequest = SqlExecuteCodec.encodeRequest(
                 SQL,
                 Collections.emptyList(),

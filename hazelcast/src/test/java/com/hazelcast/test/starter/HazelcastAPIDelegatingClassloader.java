@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.test.starter;
 import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.FilteringClassLoader;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -27,11 +26,8 @@ import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static com.hazelcast.test.compatibility.SamplingSerializationService.isTestClass;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static java.util.Collections.enumeration;
@@ -49,18 +45,14 @@ import static java.util.Collections.enumeration;
  */
 public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
-    static final Set<String> DELEGATION_WHITE_LIST;
+    static final Set<String> DELEGATION_WHITE_LIST = Set.of(
+            "com.hazelcast.test.starter.ProxyInvocationHandler",
+            "com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader",
+            "com.hazelcast.internal.serialization.impl.SampleIdentifiedDataSerializable"
+    );
 
-    private ContextMutexFactory mutexFactory = new ContextMutexFactory();
-    private ClassLoader parent;
-
-    static {
-        Set<String> alwaysDelegateWhiteList = new HashSet<>();
-        alwaysDelegateWhiteList.add("com.hazelcast.test.starter.ProxyInvocationHandler");
-        alwaysDelegateWhiteList.add("com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader");
-        alwaysDelegateWhiteList.add("com.hazelcast.internal.serialization.impl.SampleIdentifiedDataSerializable");
-        DELEGATION_WHITE_LIST = Collections.unmodifiableSet(alwaysDelegateWhiteList);
-    }
+    private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
+    private final ClassLoader parent;
 
     public HazelcastAPIDelegatingClassloader(URL[] urls, ClassLoader parent) {
         super(urls, parent);
@@ -105,8 +97,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
         if (shouldDelegate(name)) {
             return super.loadClass(name, resolve);
         } else {
-            Closeable classMutex = mutexFactory.mutexFor(name);
-            try {
+            try (var classMutex = mutexFactory.mutexFor(name)) {
                 synchronized (classMutex) {
                     Class<?> loadedClass = findLoadedClass(name);
                     if (loadedClass == null) {
@@ -126,8 +117,6 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
                     }
                     return loadedClass;
                 }
-            } finally {
-                closeResource(classMutex);
             }
         }
     }
@@ -137,17 +126,20 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
      */
     private Class<?> findClassInParentURLs(final String name) {
         String classFilePath = name.replaceAll("\\.", "/").concat(".class");
-        InputStream classInputStream = getParent().getResourceAsStream(classFilePath);
-        if (classInputStream != null) {
-            byte[] classBytes = null;
-            try {
-                classBytes = toByteArray(classInputStream);
-            } catch (IOException e) {
-                e.printStackTrace();
+        try (InputStream classInputStream = getParent().getResourceAsStream(classFilePath)) {
+            if (classInputStream != null) {
+                byte[] classBytes = null;
+                try {
+                    classBytes = classInputStream.readAllBytes();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                if (classBytes != null) {
+                    return defineClass(name, classBytes, 0, classBytes.length);
+                }
             }
-            if (classBytes != null) {
-                return defineClass(name, classBytes, 0, classBytes.length);
-            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return null;
     }

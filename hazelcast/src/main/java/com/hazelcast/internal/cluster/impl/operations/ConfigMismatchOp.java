@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,13 @@ public class ConfigMismatchOp extends AbstractClusterOperation {
     public void run() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Node node = nodeEngine.getNode();
+
         ILogger logger = nodeEngine.getLogger("com.hazelcast.cluster");
+
+        // Ignore shutdown requests if we are already in a cluster, as being
+        // part of a cluster means our config was already verified & accepted
+        JoinOperation.verifyCanShutdown(node, msg);
+
         logger.severe("Node could not join cluster. A Configuration mismatch was detected: "
                 + msg + " Node is going to shutdown now!");
         node.shutdown(true);

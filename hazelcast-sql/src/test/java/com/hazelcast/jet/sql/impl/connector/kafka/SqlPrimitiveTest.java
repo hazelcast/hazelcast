@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,52 @@ public class SqlPrimitiveTest extends SqlTestSupport {
                 asList(new Row(1, "value-1"), new Row(2, "value-2"))
         );
     }
+
+    @Test
+    public void createKafkaMappingWithDataConnection() {
+        String dlName = randomName();
+        sqlService.execute("CREATE DATA CONNECTION " + dlName + " TYPE Kafka NOT SHARED " + options());
+
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "DATA CONNECTION " + dlName + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
+                + ")"
+        );
+
+        String from = randomName();
+        TestBatchSqlConnector.create(sqlService, from, 4);
+
+        assertTopicEventually(
+                name,
+                "INSERT INTO " + name + " SELECT v, 'value-' || v FROM " + from,
+                createMap(0, "value-0", 1, "value-1", 2, "value-2", 3, "value-3")
+        );
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name + " WHERE __key > 0 AND __key < 3",
+                asList(new Row(1, "value-1"), new Row(2, "value-2"))
+        );
+    }
+
+    protected static String options() {
+        return String.format("OPTIONS ( " +
+                        "'bootstrap.servers' = '%s', " +
+                        "'key.deserializer' = '%s', " +
+                        "'key.serializer' = '%s', " +
+                        "'value.serializer' = '%s', " +
+                        "'value.deserializer' = '%s', " +
+                        "'auto.offset.reset' = 'earliest') ",
+                kafkaTestSupport.getBrokerConnectionString(),
+                IntegerDeserializer.class.getCanonicalName(),
+                IntegerSerializer.class.getCanonicalName(),
+                StringSerializer.class.getCanonicalName(),
+                StringDeserializer.class.getCanonicalName());
+    }
+
 
     @Test
     public void test_insertValues() {

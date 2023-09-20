@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,18 @@ package com.hazelcast.internal.util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class ClockIntegrationTest extends AbstractClockTest {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @After
     public void tearDown() {
@@ -57,15 +54,13 @@ public class ClockIntegrationTest extends AbstractClockTest {
     public void test_whenConfiguringInvalidClockOffset_thenExceptionIsThrown() {
         System.setProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET, "InvalidNumber");
 
-        expectedException.expectCause(new RootCauseMatcher(NumberFormatException.class));
-        startIsolatedNode();
+        assertThatThrownBy(this::startIsolatedNode).cause().has(rootCause(NumberFormatException.class));
     }
 
     @Test
     public void test_whenConfiguringNonExistingClockImpl_thenExceptionIsThrown() {
         System.setProperty(ClockProperties.HAZELCAST_CLOCK_IMPL, "NonExistingClockImpl");
 
-        expectedException.expectCause(new RootCauseMatcher(ClassNotFoundException.class));
-        startIsolatedNode();
+        assertThatThrownBy(this::startIsolatedNode).cause().has(rootCause(ClassNotFoundException.class));
     }
 }

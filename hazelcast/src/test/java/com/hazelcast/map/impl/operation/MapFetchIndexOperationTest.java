@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
@@ -40,7 +41,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionException;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.impl.CompositeValue;
@@ -72,7 +72,10 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getOperationService;
+import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -132,8 +135,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
         pointers[0] = IndexIterationPointer.create(30, true, 60, false, false, null);
 
-        MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 7);
+        MapOperation operation = new MapFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 7);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -159,8 +161,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
         pointers[0] = IndexIterationPointer.create(null, true, 60, false, true, null);
 
-        MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
+        MapOperation operation = new MapFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -186,8 +187,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
         pointers[0] = IndexIterationPointer.create(30, true, 60, false, true, null);
 
-        MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
+        MapOperation operation = new MapFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -220,8 +220,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 null
         );
 
-        MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, compositeOrderedIndexName, pointers, partitions, 10);
+        MapOperation operation = new MapFetchIndexOperation(mapName, compositeOrderedIndexName, pointers, partitions, 10);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -249,8 +248,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
         pointers[0] = IndexIterationPointer.create(null, true, null, true, false, null);
 
-        MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 20);
+        MapOperation operation = new MapFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 20);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -282,8 +280,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         pointers[1] = IndexIterationPointer.create(39, true, 39, true, false, null);
         pointers[2] = IndexIterationPointer.create(45, true, 45, true, false, null);
 
-        MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, hashIndexName, pointers, partitions, 10);
+        MapOperation operation = new MapFetchIndexOperation(mapName, hashIndexName, pointers, partitions, 10);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -309,8 +306,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         pointers[0] = IndexIterationPointer.create(30, true, 40, true, false, null);
         pointers[1] = IndexIterationPointer.create(50, true, 60, true, false, null);
 
-        MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
+        MapOperation operation = new MapFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -332,8 +328,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         pointers[0] = IndexIterationPointer.create(30, true, 50, false, false, null);
         pointers[1] = IndexIterationPointer.create(50, true, 60, true, false, null);
 
-        MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
+        MapOperation operation = new MapFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -353,7 +348,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         // First pointer is not done yet
         assertEquals(2, result.getPointers().length);
 
-        operation = operationProvider.createFetchIndexOperation(
+        operation = new MapFetchIndexOperation(
                 mapName, orderedIndexName, result.getPointers(), partitions, 5);
 
         result = operationService.createInvocationBuilder(
@@ -377,8 +372,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         pointers[0] = IndexIterationPointer.create(50, true, 60, true, true, null);
         pointers[1] = IndexIterationPointer.create(30, true, 50, false, true, null);
 
-        MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
+        MapOperation operation = new MapFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -398,7 +392,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         // First pointer is done in reverse case
         assertEquals(1, result.getPointers().length);
 
-        operation = operationProvider.createFetchIndexOperation(
+        operation = new MapFetchIndexOperation(
                 mapName, orderedIndexName, result.getPointers(), partitions, 5);
 
         result = operationService.createInvocationBuilder(
@@ -438,8 +432,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
         pointers[0] = IndexIterationPointer.create(10, true, 100, true, false, null);
 
-        MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
+        MapOperation operation = new MapFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -455,10 +448,20 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         }
     }
 
-    private MapOperationProvider getOperationProvider(IMap<?, ?> map) {
-        MapProxyImpl<?, ?> mapProxy = (MapProxyImpl<?, ?>) map;
-        MapServiceContext mapServiceContext = mapProxy.getService().getMapServiceContext();
-        return mapServiceContext.getMapOperationProvider(mapProxy.getName());
+    @Test
+    public void test_MapFetchIndexOperation_serialization() {
+        MapFetchIndexOperation op = new MapFetchIndexOperation("m", "i", new IndexIterationPointer[0], new PartitionIdSet(271), 100);
+        SerializationService ss = getNodeEngineImpl(instance).getSerializationService();
+        MapFetchIndexOperation cloned = ss.toObject(ss.toData(op));
+        assertThat(op).usingRecursiveComparison().isEqualTo(cloned);
+    }
+
+    @Test
+    public void test_MapFetchIndexOperationResult_serialization() {
+        MapFetchIndexOperationResult op = new MapFetchIndexOperationResult(emptyList(), new IndexIterationPointer[0]);
+        SerializationService ss = getNodeEngineImpl(instance).getSerializationService();
+        MapFetchIndexOperationResult cloned = ss.toObject(ss.toData(op));
+        assertThat(op).usingRecursiveComparison().isEqualTo(cloned);
     }
 
     private static PartitionIdSet getLocalPartitions(HazelcastInstance member) {

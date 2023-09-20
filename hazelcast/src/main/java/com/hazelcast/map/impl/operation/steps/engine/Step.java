@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,13 @@ public interface Step<S> {
      *
      * @param state state
      * @return next step or null if there is no next step.
+     * @implSpec This implementation always throws
+     * {@code UnsupportedOperationException}.
      */
     @Nullable
-    Step nextStep(S state);
+    default Step nextStep(S state) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * @return {@code true} if this step must be
@@ -61,6 +65,10 @@ public interface Step<S> {
      * @param state the state object
      * @return name of the executor to run
      * this step(valid if this step is an offload-step)
+     * @implSpec This implementation always throws
+     * {@code UnsupportedOperationException}.
      */
-    String getExecutorName(S state);
+    default String getExecutorName(S state) {
+        throw new UnsupportedOperationException();
+    }
 }

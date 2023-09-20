@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package com.hazelcast.config;
 import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.config.MapPartitionLostListenerConfigReadOnly;
 import com.hazelcast.internal.config.MapStoreConfigReadOnly;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
@@ -227,6 +227,22 @@ public class MapConfigTest {
         assertEquals(2, listenerConfigs.size());
         assertEquals(listener, listenerConfigs.get(0).getImplementation());
         assertEquals(listener, listenerConfigs.get(1).getImplementation());
+    }
+
+    @Test
+    public void testMapIndexConfigOrderIrrelevant() {
+        MapConfig config = new MapConfig("m");
+        IndexConfig idx1 = new IndexConfig(IndexType.SORTED, "foo");
+        idx1.setName("idx1");
+        IndexConfig idx2 = new IndexConfig(IndexType.SORTED, "bar");
+        idx2.setName("idx2");
+        config.setIndexConfigs(List.of(idx1, idx2));
+
+        MapConfig reordered = new MapConfig("m");
+        reordered.setIndexConfigs(List.of(idx2, idx1));
+
+        assertEquals(config, reordered);
+        assertEquals(config.hashCode(), reordered.hashCode());
     }
 
     @Test(expected = UnsupportedOperationException.class)

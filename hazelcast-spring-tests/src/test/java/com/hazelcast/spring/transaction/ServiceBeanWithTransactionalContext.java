@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ public class ServiceBeanWithTransactionalContext {
 
     TransactionalTaskContext transactionalContext;
     OtherServiceBeanWithTransactionalContext otherService;
+    static final int TIMEOUT = 1;
 
     public ServiceBeanWithTransactionalContext(TransactionalTaskContext transactionalContext,
                                                OtherServiceBeanWithTransactionalContext otherService) {
@@ -62,5 +63,25 @@ public class ServiceBeanWithTransactionalContext {
     public void putUsingOtherBean_thenSameBeanThrowingException_sameTransaction(DummyObject object, DummyObject otherObject) {
         otherService.put(otherObject);
         putWithException(object);
+    }
+
+    @Transactional
+    public void putWithDelay(DummyObject object, int delay) {
+        try {
+            Thread.sleep(delay * 1000);
+            put(object);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Transactional(timeout = TIMEOUT)
+    public void putWithDelay_transactionTimeoutValue(DummyObject object, int delay) {
+        try {
+            Thread.sleep(delay * 1000);
+            put(object);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

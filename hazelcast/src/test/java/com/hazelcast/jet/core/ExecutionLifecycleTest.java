@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -36,6 +37,7 @@ import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobResult;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -53,10 +55,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -75,6 +75,7 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
@@ -90,7 +91,7 @@ import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static java.lang.String.format;
 import static java.util.Collections.nCopies;
@@ -113,13 +114,26 @@ import static org.junit.Assume.assumeTrue;
 public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     private static final int MEMBER_COUNT = 2;
-    private static final Throwable MOCK_ERROR = new AssertionError("mock error");
+    public static final String MOCK_ERROR_MESSAGE = "mock error";
+    private static final SupplierEx<Throwable> MOCK_ERROR = () -> new AssertionError(MOCK_ERROR_MESSAGE);
+
+    /**
+      * An exception with a non-serializable field
+     */
+    public static class NonSerializableException extends RuntimeException {
+
+        private Object nonSerializableField = new Object();
+
+        public NonSerializableException(String message) {
+            super(message);
+        }
+    }
+
+    public static final SupplierEx<Throwable> NON_SERIALIZABLE_EXCEPTION =
+            () -> new NonSerializableException(MOCK_ERROR_MESSAGE);
 
     @Parameter
     public boolean useLightJob;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private int parallelism;
 
@@ -181,7 +195,87 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // Then
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
+    }
+
+    @Test
+    public void when_pmsInitThrowsNonSerializable_then_jobFails() {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier).setInitError(NON_SERIALIZABLE_EXCEPTION)));
+
+        // When
+        Job job = runJobExpectFailure(dag, false);
+
+        // Then
+        assertPmsClosedWithError();
+        assertJobFailed(job, NON_SERIALIZABLE_EXCEPTION.get());
+    }
+
+    @Test
+    public void when_pmsNonCooperativeInitThrowsNonSerializable_then_jobFails()
+            throws InterruptedException, ExecutionException {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier)
+                        .initBlocks()
+                        .setInitError(NON_SERIALIZABLE_EXCEPTION)));
+
+        Future<Job> jobFuture = spawn(() -> newJob(dag));
+
+        MockPMS.waitBlockingSemaphore();
+
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            MockPMS.unblock();
+        }
+
+        //Wait for job to finish
+        assertThrows(CompletionException.class, () -> {
+            jobFuture.get().getFuture().join();
+        });
+        assertJobFailed(jobFuture.get(), NON_SERIALIZABLE_EXCEPTION.get());
+    }
+
+    @Test
+    public void when_pmsCloseThrowsNonSerializable_then_jobSucceeds() {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier)
+                        .setCloseError(NON_SERIALIZABLE_EXCEPTION)));
+
+        // When
+        runJobExpectNoFailure(dag, false);
+    }
+
+    @Test
+    public void when_pmsNonCooperativeCloseThrowsNonSerializable_then_jobSucceeds()
+            throws InterruptedException, ExecutionException {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier)
+                        .closeBlocks()
+                        .setCloseError(NON_SERIALIZABLE_EXCEPTION)));
+
+        Future<Job> jobFuture = spawn(() -> newJob(dag));
+
+        MockPMS.waitBlockingSemaphore();
+
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            MockPMS.unblock();
+        }
+
+
+        //Wait for job to finish
+        Job job = jobFuture.get();
+        job.join();
+        assertPClosedWithoutError();
+        assertPsClosedWithoutError();
+        assertPmsClosedWithoutError();
+        assertJobSucceeded(job);
     }
 
     @Test
@@ -214,7 +308,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // Then
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
         assertsWhenOneJob();
     }
 
@@ -237,6 +331,89 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void when_psInitThrowsNonSerializable_then_jobFails() {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
+                .setInitError(NON_SERIALIZABLE_EXCEPTION);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier)));
+
+        // When
+        Job job = runJobExpectFailure(dag, false);
+
+        // Then
+        assertPsClosedWithError();
+        assertPmsClosedWithError();
+        assertThrows(CompletionException.class, () -> job.join());
+    }
+
+    @Test
+    public void when_psNonCooperativeInitThrowsNonSerializable_then_jobFails() throws ExecutionException,
+            InterruptedException {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
+                .initBlocks()
+                .setInitError(NON_SERIALIZABLE_EXCEPTION);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier)));
+
+        Future<Job> jobFuture = spawn(() -> newJob(dag));
+
+        MockPS.waitBlockingSemaphore();
+
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            MockPS.unblock();
+        }
+
+        //Wait for job to finish
+        assertThrows(CompletionException.class, () -> {
+            jobFuture.get().getFuture().join();
+        });
+        assertJobFailed(jobFuture.get(), NON_SERIALIZABLE_EXCEPTION.get());
+    }
+
+    @Test
+    public void when_psCloseThrowsNonSerializable_then_jobSucceeds() throws Exception {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
+                .setCloseError(NON_SERIALIZABLE_EXCEPTION);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier)));
+
+        Future<Job> jobFuture = spawn(() -> newJob(dag));
+
+        MockPS.waitBlockingSemaphore();
+
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            MockPS.unblock();
+        }
+
+        Job job = jobFuture.get();
+        job.join();
+    }
+
+    @Test
+    public void when_psNonCooperativeCloseThrowsNonSerializable_then_jobSucceeds() throws Exception {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
+                .closeBlocks()
+                .setCloseError(NON_SERIALIZABLE_EXCEPTION);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier)));
+
+        Future<Job> jobFuture = spawn(() -> newJob(dag));
+
+        MockPS.waitBlockingSemaphore();
+
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            MockPS.unblock();
+        }
+
+        Job job = jobFuture.get();
+        job.join();
+    }
+
+    @Test
     public void when_psInitThrows_then_jobFails() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test",
@@ -248,7 +425,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // Then
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
     }
 
     @Test
@@ -263,7 +440,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // Then
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
         assertsWhenOneJob();
     }
 
@@ -276,7 +453,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 ProcessorMetaSupplier.of(
                         (Address address) -> ProcessorSupplier.of(
                                 address.getPort() == localPort ? noopP() : () -> {
-                                    throw sneakyThrow(MOCK_ERROR);
+                                    throw sneakyThrow(MOCK_ERROR.get());
                                 })
                 )));
 
@@ -285,7 +462,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             executeAndPeel(newJob(dag));
         } catch (Throwable caught) {
             // Then
-            assertExceptionInCauses(MOCK_ERROR, caught);
+            assertExceptionInCauses(MOCK_ERROR.get(), caught);
         }
     }
 
@@ -321,7 +498,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPClosedWithError();
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
         assertsWhenOneJob();
     }
 
@@ -341,7 +518,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPClosedWithError();
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
     }
 
     @Test
@@ -358,7 +535,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPClosedWithError();
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
         assertsWhenOneJob();
     }
 
@@ -376,7 +553,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPClosedWithError();
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
     }
 
     @Test
@@ -394,7 +571,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPClosedWithError();
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
         assertsWhenOneJob();
     }
 
@@ -413,7 +590,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPClosedWithError();
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
     }
 
     @Test
@@ -445,7 +622,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
         cancelAndJoin(job);
         assertTrueEventually(() -> {
-            assertJobFailed(job, new CancellationException());
+            assertJobFailed(job, new CancellationByUserException());
             assertPsClosedWithError();
             assertPmsClosedWithError();
         });
@@ -488,8 +665,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         CompletableFuture<Void> future = executionContext.beginExecution(jetServiceBackend.getTaskletExecutionService());
 
         // Then
-        expectedException.expect(CancellationException.class);
-        future.join();
+        assertThatThrownBy(future::join)
+                .isInstanceOf(CancellationException.class);
     }
 
     @Test
@@ -529,23 +706,23 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         NoOutputSourceP.proceedLatch.countDown();
 
-        expectedException.expect(CancellationException.class);
-        job.join();
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationException.class);
 
         assertEquals("PS.close not called after execution finished", MEMBER_COUNT, MockPS.closeCount.get());
     }
 
     @Test
-    public void when_deserializationOnMembersFails_then_jobSubmissionFails__member() throws Throwable {
+    public void when_deserializationOnMembersFails_then_jobSubmissionFails__member() {
         when_deserializationOnMembersFails_then_jobSubmissionFails(instance());
     }
 
     @Test
-    public void when_deserializationOnMembersFails_then_jobSubmissionFails__client() throws Throwable {
+    public void when_deserializationOnMembersFails_then_jobSubmissionFails__client() {
         when_deserializationOnMembersFails_then_jobSubmissionFails(client());
     }
 
-    private void when_deserializationOnMembersFails_then_jobSubmissionFails(HazelcastInstance instance) throws Throwable {
+    private void when_deserializationOnMembersFails_then_jobSubmissionFails(HazelcastInstance instance) {
         // Given
         DAG dag = new DAG();
         // this is designed to fail when member deserializes the execution plan while executing
@@ -555,10 +732,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // Then
         // we can't assert the exception class. Sometimes the HazelcastSerializationException is wrapped
         // in JetException and sometimes it's not, depending on whether the job managed to write JobResult or not.
-        expectedException.expectMessage("java.lang.ClassNotFoundException: fake.Class");
-
-        // When
-        executeAndPeel(newJob(instance, dag, null));
+        assertThatThrownBy(() -> executeAndPeel(newJob(instance, dag, null)))
+                .hasMessageContaining("java.lang.ClassNotFoundException: fake.Class");
     }
 
     @Test
@@ -882,6 +1057,40 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         TestProcessors.assertNoErrorsInProcessors();
     }
 
+    @Test
+    public void when_processorThrowsNonSerializable_thenItsWrapped() {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = PSThrowingNonSerializable::new;
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(supplier)));
+
+        // When
+        try {
+            Job job = newJob(dag);
+            job.join();
+            fail("Job execution should have failed");
+        } catch (Throwable e) {
+            assertContains(e.getMessage(), "boom!");
+        }
+    }
+
+    public static class PSThrowingNonSerializable implements ProcessorSupplier {
+
+        public static class NonSerializableException extends RuntimeException {
+            @SuppressWarnings("unused")
+            private final Object nonSerializableField = new Object();
+
+            public NonSerializableException(String message) {
+                super(message);
+            }
+        }
+
+        @Nonnull @Override
+        public List<Processor> get(int count) {
+            throw new JetException(new NonSerializableException("boom!"));
+        }
+    }
+
+
     public static class NotSerializable_DataSerializable_ProcessorSupplier implements ProcessorSupplier, DataSerializable {
         @Nonnull @Override
         public Collection<? extends Processor> get(int count) {
@@ -913,6 +1122,25 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
     }
 
+    private Job runJobExpectNoFailure(@Nonnull DAG dag, boolean snapshotting) {
+        Job job = null;
+        assumeTrue(!snapshotting || !useLightJob); // snapshotting not supported for light jobs
+        try {
+            JobConfig config = null;
+            if (snapshotting) {
+                config = new JobConfig()
+                        .setProcessingGuarantee(EXACTLY_ONCE)
+                        .setSnapshotIntervalMillis(100);
+            }
+            job = newJob(instance(), dag, config);
+            job.join();
+
+        } catch (Exception actual) {
+            fail("Job execution has failed");
+        }
+        return job;
+    }
+
     private Job runJobExpectFailure(@Nonnull DAG dag, boolean snapshotting) {
         Job job = null;
         assumeTrue(!snapshotting || !useLightJob); // snapshotting not supported for light jobs
@@ -928,9 +1156,12 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             fail("Job execution should have failed");
         } catch (Exception actual) {
             String causeString = peel(actual).toString();
-            if (causeString == null
-                    || !(causeString.contains(MOCK_ERROR.toString()) || causeString.contains(CancellationException.class.getName()))) {
-                throw new AssertionError(format("'%s' didn't contain expected '%s'", causeString, MOCK_ERROR.getMessage()), actual);
+            if (causeString == null  ||
+                !(causeString.contains(MOCK_ERROR.get().toString()) ||
+                         causeString.contains(CancellationException.class.getName()) ||
+                        causeString.contains(NonSerializableException.class.getName()))
+            ) {
+                throw new AssertionError(format("'%s' didn't contain expected '%s'", causeString, MOCK_ERROR_MESSAGE), actual);
             }
         }
         return job;
@@ -946,8 +1177,10 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertTrue("init not called", MockPMS.initCount.get() > 0);
         assertTrue("close not called", MockPMS.closeCount.get() > 0);
         assertOneOfExceptionsInCauses(MockPMS.receivedCloseError.get(),
-                MOCK_ERROR,
+                NON_SERIALIZABLE_EXCEPTION.get(),
+                MOCK_ERROR.get(),
                 new CancellationException(),
+                new CancellationByUserException(),
                 new JobTerminateRequestedException(CANCEL_FORCEFUL));
     }
 
@@ -967,7 +1200,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         for (int i = 0; i < MockPS.receivedCloseErrors.size(); i++) {
             assertOneOfExceptionsInCauses(MockPS.receivedCloseErrors.get(i),
-                    MOCK_ERROR,
+                    MOCK_ERROR.get(),
                     new CancellationException(),
                     new JobTerminateRequestedException(CANCEL_FORCEFUL));
         }
@@ -1002,10 +1235,13 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             JobResult jobResult = getJobResult(job);
             assertTrue(jobResult.isSuccessful());
             assertNull(jobResult.getFailureText());
+            assertFalse(jobResult.isUserCancelled());
         }
     }
 
     private void assertJobFailed(Job job, Throwable expected) {
+        boolean isCancelled = expected instanceof CancellationByUserException;
+
         assertTrue(job.getFuture().isDone());
         try {
             job.join();
@@ -1013,13 +1249,21 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         } catch (Throwable caught) {
             assertExceptionInCauses(expected, caught);
         }
+
+        assertThat(job.isUserCancelled())
+                .as("job.isUserCancelled")
+                .isEqualTo(isCancelled);
+
         if (!job.isLightJob()) {
-            Job normalJob = job;
-            JobResult jobResult = getJobResult(normalJob);
+            JobResult jobResult = getJobResult(job);
             assertFalse("jobResult.isSuccessful", jobResult.isSuccessful());
             assertNotNull(jobResult.getFailureText());
             assertContains(jobResult.getFailureText(), expected.toString());
-            assertEquals("jobStatus", JobStatus.FAILED, normalJob.getStatus());
+            assertEquals("jobStatus", JobStatus.FAILED, job.getStatus());
+
+            assertThat(jobResult.isUserCancelled())
+                    .as("jobResult.isUserCancelled")
+                    .isEqualTo(isCancelled);
         }
     }
 

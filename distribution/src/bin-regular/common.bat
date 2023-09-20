@@ -2,8 +2,10 @@
 :: detect Java
 
 if "x%JAVA_HOME%" == "x" (
+    echo JAVA_HOME is not set, running Java as 'java'
     set RUN_JAVA=java
 ) else (
+    echo JAVA_HOME is set, running Java at '%JAVA_HOME%\bin\java'
     set "RUN_JAVA=%JAVA_HOME%\bin\java"
 )
 
@@ -16,7 +18,10 @@ if "x%JAVA_HOME%" == "x" (
 
 :: %~dp0 is the drive+path where this script lives
 if "x%HAZELCAST_HOME%" == "x" (
+    echo HAZELCAST_HOME is not set, expecting Hazelcast at '%~dp0..'
     set HAZELCAST_HOME=%~dp0..
+) else (
+    echo HAZELCAST_HOME is set, expecting Hazelcast at '%HAZELCAST_HOME%'
 )
 
 :: options
@@ -52,11 +57,12 @@ IF %JAVA_VERSION% GEQ 9 (
         --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
 
     FOR /F "tokens=2 delims== USEBACKQ" %%A IN (`CALL "%RUN_JAVA%" -XshowSettings:properties -version 2^>^&1 ^| findstr /c:"java.vm.name"`) DO SET VM_NAME=%%A
-    :: trim leading ws, trainling ws
-    FOR /F "tokens=* delims= " %%A IN ("%VM_NAME%") DO SET VM_NAME=%%~A
+
+    :: trim leading ws, trailing ws
+    FOR /F "tokens=* delims= " %%A IN ("!VM_NAME!") DO SET VM_NAME=%%~A
     FOR /L %%a in (1,1,15) DO IF "!VM_NAME:~-1!"==" " SET VM_NAME=!VM_NAME:~0,-1!
 
-    IF NOT "x%VM_NAME:OpenJ9=%"=="x%VM_NAME%" (
+    IF NOT "x!VM_NAME:OpenJ9=!" == "x!VM_NAME!" (
     	REM OpenJ9 detected, adding additional exports
     	set JAVA_OPTS=%JAVA_OPTS% --add-exports jdk.management/com.ibm.lang.management.internal=ALL-UNNAMED
     )
@@ -75,10 +81,13 @@ if "x%HAZELCAST_CONFIG%" == "x" (
       echo "Configuration file is missing. Create hazelcast.[xml|yaml|yml] in %HAZELCAST_HOME%\config or set the HAZELCAST_CONFIG environment variable."
       exit /b 2
     )
+    echo HAZELCAST_CONFIG is not set, using '%HAZELCAST_HOME%\!HAZELCAST_CONFIG!'
+) else (
+    echo HAZELCAST_CONFIG is set, using configuration file at '!HAZELCAST_CONFIG!'
 )
 
 set JAVA_OPTS=%JAVA_OPTS%^
-    -Dhazelcast.config="%HAZELCAST_HOME%\%HAZELCAST_CONFIG%"
+    -Dhazelcast.config="%HAZELCAST_HOME%\!HAZELCAST_CONFIG!"
 
 :: classpath
 

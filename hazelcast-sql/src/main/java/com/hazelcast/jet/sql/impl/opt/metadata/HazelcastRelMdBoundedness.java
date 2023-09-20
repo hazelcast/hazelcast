@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
-import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import org.apache.calcite.linq4j.tree.Types;
 import org.apache.calcite.plan.volcano.RelSubset;
@@ -50,7 +49,7 @@ public final class HazelcastRelMdBoundedness
 
     @SuppressWarnings("unused")
     public Boundedness extractBoundedness(TableScan rel, RelMetadataQuery mq) {
-        return SqlConnectorUtil.getJetSqlConnector(rel.getTable().unwrap(HazelcastTable.class).getTarget()).isStream()
+        return rel.getTable().unwrap(HazelcastTable.class).getTarget().isStreaming()
                 ? Boundedness.UNBOUNDED
                 : Boundedness.BOUNDED;
     }

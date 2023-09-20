@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,11 +34,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.test.Accessors.getAddress;
-import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -137,7 +136,7 @@ public class CPLiteMemberTest extends HazelcastRaftTestSupport {
         assertEquals(4, cpMembers.size());
 
         Set<Address> cpAddresses = cpMembers.stream().map(CPMember::getAddress).collect(Collectors.toSet());
-        assertThat(cpAddresses, hasItem(getAddress(hz_lite)));
+        assertThat(cpAddresses).contains(getAddress(hz_lite));
     }
 
 

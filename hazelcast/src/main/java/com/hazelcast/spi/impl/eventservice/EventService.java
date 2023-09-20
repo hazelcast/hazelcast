@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.eventservice;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
 
@@ -171,12 +172,23 @@ public interface EventService extends Consumer<Packet>, PreJoinAwareService<OnJo
                                                        @Nonnull Object id);
 
     /**
-     * Deregisters all listeners belonging to the given service and topic.
+     * Deregisters all local listeners belonging to the given service and topic.
      *
      * @param serviceName service name
      * @param topic       topic name
      */
-    void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic);
+    void deregisterAllLocalListeners(@Nonnull String serviceName, @Nonnull String topic);
+
+    /**
+     * Deregisters all listeners belonging to the given service and topic.
+     *
+     * @param serviceName service name
+     * @param topic       topic name
+     * @param orderKey    The {@link DeregistrationOperation} will be synchronized with
+     *                    events having the same {@code orderKey}, so that all events sent
+     *                    before the deregistration can be received by subscribers.
+     */
+    void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic, int orderKey);
 
     /**
      * Returns all registrations belonging to the given service and topic.

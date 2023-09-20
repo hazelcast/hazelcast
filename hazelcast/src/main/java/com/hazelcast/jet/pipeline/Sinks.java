@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,10 +38,10 @@ import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ReliableTopicPermission;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.topic.ITopic;
+import jakarta.jms.ConnectionFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.jms.ConnectionFactory;
 import javax.sql.CommonDataSource;
 import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
@@ -1102,8 +1102,8 @@ public final class Sinks {
     /**
      * Convenience for {@link #jmsQueueBuilder(SupplierEx)}. Creates a
      * connection without any authentication parameters. If a received item is
-     * not an instance of {@code javax.jms.Message}, the sink wraps {@code
-     * item.toString()} into a {@link javax.jms.TextMessage}.
+     * not an instance of {@code jakarta.jms.Message}, the sink wraps {@code
+     * item.toString()} into a {@link jakarta.jms.TextMessage}.
      *
      * @param queueName the name of the queue
      * @param factorySupplier supplier to obtain JMS connection factory. It
@@ -1126,7 +1126,7 @@ public final class Sinks {
      * <p>
      * In <b>exactly-once mode</b> the processor uses two-phase XA transactions
      * to guarantee exactly-once delivery. The supplier is expected to return
-     * an {@link javax.jms.XAConnectionFactory}. The transaction is committed
+     * an {@link jakarta.jms.XAConnectionFactory}. The transaction is committed
      * after all processors finished processing the items and stored all data
      * to the snapshot. Processor is also able to finish the commit after a
      * restart, should the job fail mid-way of the commit process. This mode
@@ -1163,7 +1163,7 @@ public final class Sinks {
      *
      * @param factorySupplier supplier to obtain JMS connection factory. For
      *      exactly-once the factory must implement {@link
-     *      javax.jms.XAConnectionFactory}. It must be stateless.
+     *      jakarta.jms.XAConnectionFactory}. It must be stateless.
      * @param <T> type of the items the sink accepts
      */
     @Nonnull
@@ -1184,7 +1184,7 @@ public final class Sinks {
      * @param topicName the name of the queue
      * @param factorySupplier supplier to obtain JMS connection factory. For
      *      exactly-once the factory must implement {@link
-     *      javax.jms.XAConnectionFactory}. It must be stateless.
+     *      jakarta.jms.XAConnectionFactory}. It must be stateless.
      */
     @Nonnull
     public static <T> Sink<T> jmsTopic(
@@ -1203,7 +1203,7 @@ public final class Sinks {
      * <p>
      * In <b>exactly-once mode</b> the processor uses two-phase XA transactions
      * to guarantee exactly-once delivery. The supplier is expected to return
-     * an {@link javax.jms.XAConnectionFactory}. The transaction is committed
+     * an {@link jakarta.jms.XAConnectionFactory}. The transaction is committed
      * after all processors finished processing the items and stored all data
      * to the snapshot. Processor is also able to finish the commit after a
      * restart, should the job fail mid-way of the commit process. This mode
@@ -1274,7 +1274,7 @@ public final class Sinks {
      * <pre>{@code
      *     Sinks.<T>jdbcBuilder()
      *             .updateQuery(updateQuery)
-     *             .externalDataStoreRef(externalDataStoreRef)
+     *             .dataConnectionRef(dataConnectionRef)
      *             .bindFn(bindFn)
      *             .build();
      * }</pre>
@@ -1287,12 +1287,12 @@ public final class Sinks {
     @Beta
     public static <T> Sink<T> jdbc(
             @Nonnull String updateQuery,
-            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
     ) {
         return Sinks.<T>jdbcBuilder()
                 .updateQuery(updateQuery)
-                .externalDataStoreRef(externalDataStoreRef)
+                .dataConnectionRef(dataConnectionRef)
                 .bindFn(bindFn)
                 .build();
     }
@@ -1326,7 +1326,7 @@ public final class Sinks {
      * builder you must specify a connection (either using a {@linkplain
      * JdbcSinkBuilder#jdbcUrl(String) JDBC URL} or using a {@linkplain
      * JdbcSinkBuilder#dataSourceSupplier(SupplierEx) datasource} or using a {@linkplain
-     * JdbcSinkBuilder#externalDataStoreRef(ExternalDataStoreRef) datastore}), the
+     * JdbcSinkBuilder#dataConnectionRef(DataConnectionRef) dataConnection}), the
      * {@linkplain JdbcSinkBuilder#updateQuery(String) SQL statement} and a
      * {@linkplain JdbcSinkBuilder#bindFn(BiConsumerEx) bind function}.
      * <p>

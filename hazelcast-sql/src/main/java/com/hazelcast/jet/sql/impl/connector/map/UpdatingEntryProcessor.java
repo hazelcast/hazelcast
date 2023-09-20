@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.map.EntryProcessor;
@@ -31,11 +34,13 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -43,14 +48,17 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 public final class UpdatingEntryProcessor
-        implements EntryProcessor<Object, Object, Long>, SerializationServiceAware, DataSerializable {
+        implements EntryProcessor<Object, Object, Long>, DataSerializable,
+        HazelcastInstanceAware, SerializationServiceAware {
 
     private KvRowProjector.Supplier rowProjectorSupplier;
     private Projector.Supplier valueProjectorSupplier;
     private List<Object> arguments;
 
+    private transient HazelcastInstance hzInstance;
     private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
 
@@ -61,8 +69,7 @@ public final class UpdatingEntryProcessor
     private UpdatingEntryProcessor(
             KvRowProjector.Supplier rowProjectorSupplier,
             Projector.Supplier valueProjectorSupplier,
-            List<Object> arguments
-    ) {
+            List<Object> arguments) {
         this.rowProjectorSupplier = rowProjectorSupplier;
         this.valueProjectorSupplier = valueProjectorSupplier;
         this.arguments = arguments;
@@ -85,8 +92,16 @@ public final class UpdatingEntryProcessor
     }
 
     @Override
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        this.hzInstance = hazelcastInstance;
+    }
+
+    @Override
     public void setSerializationService(SerializationService serializationService) {
-        this.evalContext = new ExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
+        this.evalContext = new ExpressionEvalContextImpl(
+                arguments,
+                (InternalSerializationService) serializationService,
+                Util.getNodeEngine(hzInstance));
         this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 
@@ -105,9 +120,13 @@ public final class UpdatingEntryProcessor
     }
 
     public static Supplier supplier(
-            PartitionedMapTable table,
-            Map<String, Expression<?>> updatesByFieldNames
+            @Nonnull PartitionedMapTable table,
+            @Nonnull List<String> fieldNames,
+            @Nonnull List<Expression<?>> expressions
     ) {
+        assert fieldNames.size() == expressions.size();
+        Map<String, Expression<?>> updatesByFieldNames = IntStream.range(0, fieldNames.size()).boxed()
+                .collect(toMap(fieldNames::get, expressions::get));
         table.keyFields().filter(field -> updatesByFieldNames.containsKey(field.getName())).findFirst().ifPresent(field -> {
             throw QueryException.error("Cannot update '" + field.getName() + '\'');
         });

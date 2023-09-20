@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,8 @@ public class InstallSnapshotHandlerTask extends RaftNodeStatusAwareTask implemen
                 logger.warning("Stale snapshot: " + req + " received in current term: " + state.term());
             }
 
-            raftNode.send(new AppendFailureResponse(localMember(), state.term(), snapshot.index() + 1), req.leader());
+            raftNode.send(new AppendFailureResponse(localMember(), state.term(), snapshot.index() + 1,
+                    req.flowControlSequenceNumber()), req.leader());
             return;
         }
 
@@ -85,7 +86,8 @@ public class InstallSnapshotHandlerTask extends RaftNodeStatusAwareTask implemen
         raftNode.updateLastAppendEntriesTimestamp();
 
         if (raftNode.installSnapshot(snapshot)) {
-            raftNode.send(new AppendSuccessResponse(localMember(), req.term(), snapshot.index(), req.queryRound()), req.leader());
+            raftNode.send(new AppendSuccessResponse(localMember(), req.term(), snapshot.index(), req.queryRound(),
+                            req.flowControlSequenceNumber()), req.leader());
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 import static com.hazelcast.test.HazelcastTestSupport.waitAllForSafeState;
 
@@ -40,8 +41,8 @@ public class MemberDriverFactory implements DriverFactory {
                 return drivers;
             case MEMBER:
                 for (int i = 0; i < drivers.length; i++) {
-                    Config driverConfig = getDriverConfig(testConfiguration);
-                    drivers[i] = rule.getFactory().newHazelcastInstance(driverConfig);
+                    Supplier<Config> driverConfigSupplier = getDriverConfig(testConfiguration);
+                    drivers[i] = rule.getFactory().newHazelcastInstance(driverConfigSupplier.get());
                 }
                 waitAllForSafeState(drivers);
                 return drivers;
@@ -51,12 +52,13 @@ public class MemberDriverFactory implements DriverFactory {
         }
     }
 
-    private Config getDriverConfig(BounceTestConfiguration testConfiguration) {
-        Config driverConfig = getConfig();
-        if (driverConfig == null) {
-            driverConfig = testConfiguration.getMemberConfig();
+    private Supplier<Config> getDriverConfig(BounceTestConfiguration testConfiguration) {
+        Config config = getConfig();
+        Supplier<Config> driverConfigSupplier = () -> config;
+        if (config == null) {
+            driverConfigSupplier = testConfiguration.getMemberConfigSupplier();
         }
-        return driverConfig;
+        return driverConfigSupplier;
     }
 
     /**

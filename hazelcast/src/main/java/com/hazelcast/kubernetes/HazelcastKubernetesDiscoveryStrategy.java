@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,13 +29,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.internal.util.HostnameUtil.getLocalHostname;
-
 final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
-    private final KubernetesClient client;
     private final EndpointResolver endpointResolver;
-    private final KubernetesConfig config;
 
     private final Map<String, String> memberMetadata = new HashMap<>();
 
@@ -43,106 +39,40 @@ final class HazelcastKubernetesDiscoveryStrategy
                                          ClusterTopologyIntentTracker clusterTopologyIntentTracker) {
         super(logger, properties);
 
-        config = new KubernetesConfig(properties);
+        KubernetesConfig config = new KubernetesConfig(properties);
         logger.info(config.toString());
 
-        client = buildKubernetesClient(config, clusterTopologyIntentTracker);
-
         if (DiscoveryMode.DNS_LOOKUP.equals(config.getMode())) {
-            endpointResolver = new DnsEndpointResolver(logger, config.getServiceDns(), config.getServicePort(),
-                    config.getServiceDnsTimeout());
+            endpointResolver = new DnsEndpointResolver(logger, config);
         } else {
-            endpointResolver = new KubernetesApiEndpointResolver(logger, config.getServiceName(), config.getServicePort(),
-                    config.getServiceLabelName(), config.getServiceLabelValue(),
-                    config.getPodLabelName(), config.getPodLabelValue(),
-                    config.isResolveNotReadyAddresses(), client);
+            endpointResolver = new KubernetesApiEndpointResolver(logger, config, clusterTopologyIntentTracker);
         }
 
         logger.info("Kubernetes Discovery activated with mode: " + config.getMode().name());
     }
 
-    private static KubernetesClient buildKubernetesClient(KubernetesConfig config,
-                                                          ClusterTopologyIntentTracker tracker) {
-        return new KubernetesClient(config.getNamespace(), config.getKubernetesMasterUrl(), config.getTokenProvider(),
-                config.getKubernetesCaCertificate(), config.getKubernetesApiRetries(), config.getExposeExternallyMode(),
-                config.isUseNodeNameAsExternalAddress(), config.getServicePerPodLabelName(),
-                config.getServicePerPodLabelValue(), tracker);
-    }
-
+    @Override
     public void start() {
-        client.start();
         endpointResolver.start();
     }
 
     @Override
     public Map<String, String> discoverLocalMetadata() {
         if (memberMetadata.isEmpty()) {
-            memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, discoverZone());
-            memberMetadata.put("hazelcast.partition.group.node", discoverNodeName());
+            memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, endpointResolver.resolveCurrentZone());
+            memberMetadata.put("hazelcast.partition.group.node", endpointResolver.resolveCurrentNodeName());
         }
         return memberMetadata;
     }
 
-    /**
-     * Discovers the availability zone in which the current Hazelcast member is running.
-     * <p>
-     * Note: ZONE_AWARE is available only for the Kubernetes API Mode.
-     */
-    private String discoverZone() {
-        if (DiscoveryMode.KUBERNETES_API.equals(config.getMode())) {
-            try {
-                String zone = client.zone(podName());
-                if (zone != null) {
-                    getLogger().info(String.format("Kubernetes plugin discovered availability zone: %s", zone));
-                    return zone;
-                }
-            } catch (Exception e) {
-                // only log the exception and the message, Hazelcast should still start
-                getLogger().finest(e);
-            }
-            getLogger().info("Cannot fetch the current zone, ZONE_AWARE feature is disabled");
-        }
-        return "unknown";
-    }
-
-    /**
-     * Discovers the name of the node which the current Hazelcast member pod is running on.
-     * <p>
-     * Note: NODE_AWARE is available only for the Kubernetes API Mode.
-     */
-    private String discoverNodeName() {
-        if (DiscoveryMode.KUBERNETES_API.equals(config.getMode())) {
-            try {
-                String nodeName = client.nodeName(podName());
-                if (nodeName != null) {
-                    getLogger().info(String.format("Kubernetes plugin discovered node name: %s", nodeName));
-                    return nodeName;
-                }
-            } catch (Exception e) {
-                // only log the exception and the message, Hazelcast should still start
-                getLogger().finest(e);
-            }
-            getLogger().warning("Cannot fetch name of the node, NODE_AWARE feature is disabled");
-        }
-        return "unknown";
-    }
-
-    private String podName() {
-        String podName = System.getenv("POD_NAME");
-        if (podName == null) {
-            podName = getLocalHostname();
-        }
-        return podName;
+    @Override
+    public Iterable<DiscoveryNode> discoverNodes() {
+        return endpointResolver.resolveNodes();
     }
 
     @Override
-    public Iterable<DiscoveryNode> discoverNodes() {
-        return endpointResolver.resolve();
-    }
-
     public void destroy() {
         endpointResolver.destroy();
-        client.destroy();
     }
 
     abstract static class EndpointResolver {
@@ -152,7 +82,25 @@ final class HazelcastKubernetesDiscoveryStrategy
             this.logger = logger;
         }
 
-        abstract List<DiscoveryNode> resolve();
+        abstract List<DiscoveryNode> resolveNodes();
+
+        /**
+         * Discovers the availability zone in which the current Hazelcast member is running.
+         * <p>
+         * Note: ZONE_AWARE is available only for the Kubernetes API Mode.
+         */
+        String resolveCurrentZone() {
+            return "unknown";
+        }
+
+        /**
+         * Discovers the name of the node which the current Hazelcast member pod is running on.
+         * <p>
+         * Note: NODE_AWARE is available only for the Kubernetes API Mode.
+         */
+        String resolveCurrentNodeName() {
+            return "unknown";
+        }
 
         void start() {
         }

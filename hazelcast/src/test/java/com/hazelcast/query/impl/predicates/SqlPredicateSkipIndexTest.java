@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class SqlPredicateSkipIndexTest
         SkipIndexPredicate skipIndexPredicate = (SkipIndexPredicate) p;
 
         InPredicate inPredicate = (InPredicate) skipIndexPredicate.getTarget();
-        assertEquals("age", inPredicate.attributeName, "age");
+        assertEquals("age", "age", inPredicate.attributeName);
         assertArrayEquals(new String[]{"1"}, inPredicate.values);
     }
 
@@ -53,7 +53,7 @@ public class SqlPredicateSkipIndexTest
         SkipIndexPredicate skipIndexPredicate = (SkipIndexPredicate) p;
 
         EqualPredicate equalPredicate = (EqualPredicate) skipIndexPredicate.getTarget();
-        assertEquals("age", equalPredicate.attributeName, "age");
+        assertEquals("age", "age", equalPredicate.attributeName);
         assertEquals("40", equalPredicate.value);
     }
 
@@ -70,7 +70,7 @@ public class SqlPredicateSkipIndexTest
         SkipIndexPredicate skipIndexPredicate = (SkipIndexPredicate) p;
 
         NotEqualPredicate equalPredicate = (NotEqualPredicate) skipIndexPredicate.getTarget();
-        assertEquals("age", equalPredicate.attributeName, "age");
+        assertEquals("age", "age", equalPredicate.attributeName);
         assertEquals("40", equalPredicate.value);
     }
 
@@ -89,7 +89,7 @@ public class SqlPredicateSkipIndexTest
         SkipIndexPredicate skipIndexPredicate = (SkipIndexPredicate) p;
 
         GreaterLessPredicate equalPredicate = (GreaterLessPredicate) skipIndexPredicate.getTarget();
-        assertEquals("age", equalPredicate.attributeName, "age");
+        assertEquals("age", "age", equalPredicate.attributeName);
         assertEquals("40", equalPredicate.value);
     }
 }

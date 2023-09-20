@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -25,6 +24,7 @@ import com.hazelcast.scheduledexecutor.NamedTask;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+//RU_COMPAT_5_3 "implements Versioned" can be removed in 5.5
 public class NamedTaskDecorator<V> extends AbstractTaskDecorator<V>
         implements NamedTask, Versioned {
 
@@ -58,25 +58,15 @@ public class NamedTaskDecorator<V> extends AbstractTaskDecorator<V>
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            super.writeData(out);
-            out.writeString(name);
-        } else {
-            out.writeString(name);
-            out.writeObject(delegate);
-        }
+        super.writeData(out);
+        out.writeString(name);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            super.readData(in);
-            name = in.readString();
-        } else {
-            name = in.readString();
-            delegate = in.readObject();
-        }
+        super.readData(in);
+        name = in.readString();
     }
 
     public static Runnable named(String name, Runnable runnable) {

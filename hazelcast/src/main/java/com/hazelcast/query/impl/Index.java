@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,43 +117,6 @@ public interface Index {
      * @return a set containing entries matching the given predicate.
      */
     Set<QueryableEntry> evaluate(Predicate predicate);
-
-    /**
-     * @param descending whether the entries should come in the descending order.
-     *                   {@code true} means a descending order,
-     *                   {@code false} means an ascending order.
-     * @return iterator over all index entries
-     */
-    Iterator<QueryableEntry> getSqlRecordIterator(boolean descending);
-
-    /**
-     * @param value value
-     * @return iterator over index entries that are equal to the given value
-     */
-    Iterator<QueryableEntry> getSqlRecordIterator(Comparable value);
-
-    /**
-     * @param comparison comparison type
-     * @param value value
-     * @param descending whether the entries should come in the descending order.
-     *                   {@code true} means a descending order,
-     *                   {@code false} means an ascending order.
-     * @return iterator over index entries that are matching the given comparions type and value
-     */
-    Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending);
-
-    /**
-     * @param from lower bound
-     * @param fromInclusive lower bound inclusive flag
-     * @param to upper bound
-     * @param toInclusive upper bound inclusive flag
-     * @param descending whether the entries should come in the descending order.
-     *                   {@code true} means a descending order,
-     *                   {@code false} means an ascending order.
-     * @return iterator over index entries matching the given range
-     */
-    Iterator<QueryableEntry> getSqlRecordIterator(Comparable from, boolean fromInclusive, Comparable to,
-                                                  boolean toInclusive, boolean descending);
 
     /**
      * @param value value

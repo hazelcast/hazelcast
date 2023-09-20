@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,19 @@
 package com.hazelcast.spi.utils;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.RestClientException;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -30,10 +39,25 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class})
 public class RestClientTest {
     private static final String API_ENDPOINT = "/some/endpoint";
     private static final String BODY_REQUEST = "some body request";
@@ -171,7 +195,7 @@ public class RestClientTest {
                         .get());
 
         // then
-        assertEquals(exception.getHttpErrorCode(), responseCode);
+        assertEquals(responseCode, exception.getHttpErrorCode());
     }
 
     @Test
@@ -191,7 +215,7 @@ public class RestClientTest {
                         .post());
 
         // then
-        assertEquals(exception.getHttpErrorCode(), unexpectedCode);
+        assertEquals(unexpectedCode, exception.getHttpErrorCode());
     }
 
     @Test
@@ -213,4 +237,134 @@ public class RestClientTest {
         assertEquals(responseCode, response.getCode());
         assertEquals(responseMessage, response.getBody());
     }
+
+    @Test
+    public void tls13SupportDefaultCacert() throws IOException {
+        assertTls13SupportInternal(null);
+    }
+
+    @Test
+    public void tls13SupportCustomCacert() throws IOException {
+        assertTls13SupportInternal("src/test/resources/kubernetes/ca.crt");
+    }
+
+    private void assertTls13SupportInternal(String caFileName) throws IOException {
+        try (Tls13CipherCheckingServer server = new Tls13CipherCheckingServer()) {
+            new Thread(server).start();
+            RestClient restClient = RestClient.create("https://127.0.0.1:" + server.getPort());
+            if (caFileName != null) {
+                restClient.withCaCertificates(readFile(caFileName));
+            }
+            try {
+                restClient.get();
+            } catch (Exception e) {
+                Logger.getLogger(getClass()).info("REST call failed (expected)", e);
+            }
+            assertTrueEventually(() -> assertTrue("No TLS 1.3 cipher used", server.tls13CipherFound.get()), 8);
+        }
+    }
+
+    private String readFile(String fileName) throws IOException {
+        return StringUtil.bytesToString(Files.readAllBytes(Paths.get(fileName)));
+    }
+
+    static final class Tls13CipherCheckingServer implements Runnable, AutoCloseable {
+        private static final ILogger LOGGER = Logger.getLogger(Tls13CipherCheckingServer.class);
+
+        private final AtomicBoolean tls13CipherFound = new AtomicBoolean();
+        private final ServerSocket serverSocket;
+        private volatile boolean shutdownRequested;
+
+        Tls13CipherCheckingServer() throws IOException {
+            this.serverSocket = new ServerSocket(0);
+            try {
+                this.serverSocket.setSoTimeout(500);
+            } catch (SocketException e) {
+                throw new RuntimeException(e);
+            }
+            LOGGER.info("The server will be listening on port " + serverSocket.getLocalPort());
+        }
+
+        public int getPort() {
+            return serverSocket.getLocalPort();
+        }
+
+        public void run() {
+            while (!(shutdownRequested || tls13CipherFound.get())) {
+                try {
+                    Socket socket = serverSocket.accept();
+                    new Thread(() -> {
+                        LOGGER.info("Socket accepted " + socket);
+                        try {
+                            socket.setSoTimeout(5000);
+                            tls13CipherFound.compareAndSet(false, hasTls13Cipher(socket.getInputStream()));
+                        } catch (IOException e) {
+                            LOGGER.warning("Reading from the socket (serverPort=" + getPort() + ") failed", e);
+                        } finally {
+                            LOGGER.info("Closing " + socket);
+                            IOUtil.close(socket);
+                        }
+                    }).start();
+                } catch (SocketTimeoutException e) {
+                    // it's fine
+                } catch (Exception e) {
+                    LOGGER.warning("The ServerSocket (" + getPort() + ") has thrown an exception", e);
+                }
+            }
+        }
+
+        public void close() {
+            shutdownRequested = true;
+            try {
+                serverSocket.close();
+            } catch (Exception e) {
+                LOGGER.warning("ServerSocket.close() has failed", e);
+            }
+        }
+
+        static boolean hasTls13Cipher(InputStream is) throws IOException {
+            try (DataInputStream dis = new DataInputStream(is)) {
+                int type = dis.readUnsignedByte();
+                // HANDSHAKE record
+                if (type != 0x16) {
+                    throw new IOException("Not a handshake record");
+                }
+                // skip protocol version
+                skip(dis, 2);
+                // skip record size
+                dis.readUnsignedShort();
+                int msgType = dis.readUnsignedByte();
+                if (msgType != 0x01) {
+                    throw new IOException("Not a ClientHello message");
+                }
+                // skip length
+                skip(dis, 3);
+                // skip client version
+                skip(dis, 2);
+                // skip client random
+                skip(dis, 32);
+                // skip sessionId
+                skip(dis, dis.readUnsignedByte());
+                // cipher suites
+                int cipherCount = dis.readUnsignedShort() / 2;
+                // check if at least one of TLS 1.3 mandatory cipher suites is present
+                for (int i = 0; i < cipherCount; i++) {
+                    int b1 = dis.readUnsignedByte();
+                    int b2 = dis.readUnsignedByte();
+                    // https://datatracker.ietf.org/doc/html/rfc8446#appendix-B.4
+                    if (b1 == 0x13 && b2 >= 1 && b2 <= 3) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private static void skip(DataInputStream dis, int toSkip) throws IOException {
+            for (int i = 0; i < toSkip; i++) {
+                dis.readByte();
+            }
+        }
+    }
+
 }

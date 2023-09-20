@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -255,12 +255,12 @@ public class YamlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testYamlSuffixSearchSequence() {
-        ArrayList<String> YAML_ACCEPTED_SUFFIXES_SORTED =
-            new ArrayList<>(DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES);
-        Collections.sort(YAML_ACCEPTED_SUFFIXES_SORTED);
+        ArrayList<String> yamlAcceptedSuffixesSorted =
+                new ArrayList<>(DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES);
+        Collections.sort(yamlAcceptedSuffixesSorted);
 
-        assertEquals("YAML_ACCEPTED_SUFFIXES sequence", YAML_ACCEPTED_SUFFIXES_SORTED, DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES);
-        assertEquals("YAML_ACCEPTED_SUFFIXES size", 2, YAML_ACCEPTED_SUFFIXES_SORTED.size());
+        assertEquals("YAML_ACCEPTED_SUFFIXES sequence", DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES, yamlAcceptedSuffixesSorted);
+        assertEquals("YAML_ACCEPTED_SUFFIXES size", 2, yamlAcceptedSuffixesSorted.size());
     }
 
 }

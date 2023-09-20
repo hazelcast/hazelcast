@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,6 +103,10 @@ public class LocalMapStatsProvider {
         return mapServiceContext;
     }
 
+    public boolean hasLocalMapStatsImpl(String name) {
+        return statsMap.containsKey(name);
+    }
+
     public LocalMapStatsImpl getLocalMapStatsImpl(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, constructorFunction);
     }
@@ -176,7 +180,10 @@ public class LocalMapStatsProvider {
             String mapName = mapProxy.getName();
 
             if (mapConfig.isStatisticsEnabled() && !statsPerMap.containsKey(mapName)) {
-                statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
+                // Lite members can invoke MapOperations, and their statistics are of importance for monitoring
+                // when Lite members are in use - so we should include these stats as well if they exist
+                LocalMapStatsImpl localMapStats = statsMap.get(mapName);
+                statsPerMap.put(mapName, localMapStats != null ? localMapStats : EMPTY_LOCAL_MAP_STATS);
             }
         }
     }
@@ -199,7 +206,8 @@ public class LocalMapStatsProvider {
 
     private void updateMapOnDemandStats(String mapName, LocalMapOnDemandCalculatedStats onDemandStats) {
         PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
-        for (PartitionContainer partitionContainer : partitionContainers) {
+        for (int i = 0; i < partitionContainers.length; i++) {
+            PartitionContainer partitionContainer = partitionContainers[i];
             IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
             RecordStore existingRecordStore = partitionContainer.getExistingRecordStore(mapName);
             if (existingRecordStore == null) {
@@ -226,10 +234,14 @@ public class LocalMapStatsProvider {
         // NOP
     }
 
-    private static void addStatsOfPrimaryReplica(RecordStore recordStore, LocalMapOnDemandCalculatedStats onDemandStats) {
+    private static void addStatsOfPrimaryReplica(RecordStore recordStore,
+                                                 LocalMapOnDemandCalculatedStats onDemandStats) {
+
         LocalRecordStoreStats stats = recordStore.getLocalRecordStoreStats();
 
         onDemandStats.incrementHits(stats.getHits());
+        onDemandStats.incrementEvictionCount(stats.getEvictionCount());
+        onDemandStats.incrementExpirationCount(stats.getExpirationCount());
         onDemandStats.incrementDirtyEntryCount(recordStore.getMapDataStore().notFinishedOperationsCount());
         onDemandStats.incrementOwnedEntryMemoryCost(recordStore.getOwnedEntryCost());
         if (NATIVE != recordStore.getMapContainer().getMapConfig().getInMemoryFormat()) {
@@ -239,8 +251,9 @@ public class LocalMapStatsProvider {
         onDemandStats.setLastAccessTime(stats.getLastAccessTime());
         onDemandStats.setLastUpdateTime(stats.getLastUpdateTime());
         onDemandStats.setBackupCount(recordStore.getMapContainer().getMapConfig().getTotalBackupCount());
-        // we need to update the locked entry count here whether or not the map is empty
-        // keys that are not contained by a map can be locked
+        // we need to update the locked entry count here
+        // without looking entry count in map keys that
+        // are not contained by a map can be locked
         onDemandStats.incrementLockedEntryCount(recordStore.getLockedEntryCount());
     }
 
@@ -305,7 +318,8 @@ public class LocalMapStatsProvider {
     private Address waitForReplicaAddress(int replica, IPartition partition, int backupCount) {
         int tryCount = RETRY_COUNT;
         Address replicaAddress = null;
-        while (replicaAddress == null && partitionService.getMaxAllowedBackupCount() >= backupCount && tryCount-- > 0) {
+        while (replicaAddress == null
+                && partitionService.getMaxAllowedBackupCount() >= backupCount && tryCount-- > 0) {
             sleep();
             replicaAddress = partition.getReplicaAddress(replica);
         }
@@ -336,7 +350,10 @@ public class LocalMapStatsProvider {
     }
 
     private void addIndexStats(String mapName, LocalMapStatsImpl localMapStats) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        MapContainer mapContainer = mapServiceContext.getExistingMapContainer(mapName);
+        if (mapContainer == null) {
+            return;
+        }
         Indexes globalIndexes = mapContainer.getIndexes();
 
         Map<String, OnDemandIndexStats> freshStats = null;
@@ -350,7 +367,8 @@ public class LocalMapStatsProvider {
             long queryCount = 0;
             long indexedQueryCount = 0;
             PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
-            for (PartitionContainer partitionContainer : partitionContainers) {
+            for (int i = 0; i < partitionContainers.length; i++) {
+                PartitionContainer partitionContainer = partitionContainers[i];
                 IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
                 if (!partition.isLocal()) {
                     continue;
@@ -448,6 +466,8 @@ public class LocalMapStatsProvider {
 
         private int backupCount;
         private long hits;
+        private long evictionCount;
+        private long expirationCount;
         private long ownedEntryCount;
         private long backupEntryCount;
         private long ownedEntryMemoryCost;
@@ -466,6 +486,14 @@ public class LocalMapStatsProvider {
 
         public void incrementHits(long hits) {
             this.hits += hits;
+        }
+
+        public void incrementEvictionCount(long evictionCount) {
+            this.evictionCount += evictionCount;
+        }
+
+        public void incrementExpirationCount(long expirationCount) {
+            this.expirationCount += expirationCount;
         }
 
         public void incrementOwnedEntryCount(long ownedEntryCount) {
@@ -503,6 +531,8 @@ public class LocalMapStatsProvider {
         public LocalMapStatsImpl updateAndGet(LocalMapStatsImpl stats) {
             stats.setBackupCount(backupCount);
             stats.setHits(hits);
+            stats.setEvictionCount(evictionCount);
+            stats.setExpirationCount(expirationCount);
             stats.setOwnedEntryCount(ownedEntryCount);
             stats.setBackupEntryCount(backupEntryCount);
             stats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);

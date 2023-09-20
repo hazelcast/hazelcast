@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -58,7 +58,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -93,16 +92,11 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    @Rule
-    public TestName name = new TestName();
-
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
     public void cleanup() {
         hazelcastFactory.terminateAll();
-
-        assertNoRunningInstancesEventually(name.getMethodName());
     }
 
     @Test
@@ -326,39 +320,31 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         assertEquals("removeIntercepted", map.remove("key3"));
     }
 
-    private static class MapInterceptorImpl implements MapInterceptor {
+    private static class MapInterceptorImpl extends MapInterceptorAdaptor {
+        private static final long serialVersionUID = 1L;
 
-        MapInterceptorImpl() {
-        }
-
+        @Override
         public Object interceptGet(Object value) {
             if ("value1".equals(value)) {
                 return "getIntercepted";
             }
-            return null;
+            return super.interceptGet(value);
         }
 
-        public void afterGet(Object value) {
-        }
-
+        @Override
         public Object interceptPut(Object oldValue, Object newValue) {
             if ("oldValue".equals(oldValue) && "newValue".equals(newValue)) {
                 return "putIntercepted";
             }
-            return null;
+            return super.interceptPut(oldValue, newValue);
         }
 
-        public void afterPut(Object value) {
-        }
-
+        @Override
         public Object interceptRemove(Object removedValue) {
             if ("value2".equals(removedValue)) {
                 return "removeIntercepted";
             }
-            return null;
-        }
-
-        public void afterRemove(Object value) {
+            return super.interceptRemove(removedValue);
         }
     }
 
@@ -701,12 +687,11 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClientReconnect_thenCheckRequestsAreRetriedWithoutException() throws InterruptedException {
+    public void testClientReconnect_thenCheckRequestsAreRetriedWithoutException() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         CountDownLatch clientStartedDoingRequests = new CountDownLatch(1);
-        CountDownLatch restartFinished = new CountDownLatch(1);
-        new Thread(() -> {
+        Thread restartThread = new Thread(() -> {
             try {
                 clientStartedDoingRequests.await();
             } catch (InterruptedException ignored) {
@@ -715,9 +700,8 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
             hazelcastInstance.shutdown();
 
             hazelcastFactory.newHazelcastInstance();
-            restartFinished.countDown();
-
-        }).start();
+        });
+        restartThread.start();
 
         ClientConfig clientConfig = new ClientConfig();
         //Retry all requests
@@ -741,7 +725,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
                 fail("Requests should not throw exception with this configuration. Last put key: " + i);
             }
         }
-        restartFinished.await();
+        assertJoinable(restartThread);
     }
 
     @Test

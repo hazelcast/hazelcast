@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,8 @@ public final class TypesUtils {
     private TypesUtils() {
     }
 
-    public static QueryDataType convertTypeToQueryDataType(final Type rootType, final TablesStorage tablesStorage) {
-        return convertTypeToQueryDataTypeInt(rootType.getName(), rootType, tablesStorage, new HashMap<>());
+    public static QueryDataType convertTypeToQueryDataType(final Type rootType, final RelationsStorage relationsStorage) {
+        return convertTypeToQueryDataTypeInt(rootType.getName(), rootType, relationsStorage, new HashMap<>());
     }
 
     public static Type convertPortableClassToType(
@@ -204,12 +204,12 @@ public final class TypesUtils {
     public static void enrichMappingFieldType(
             final TypeKind mappingTypeKind,
             final MappingField field,
-            final TablesStorage tablesStorage
+            final RelationsStorage relationsStorage
     ) {
         if (!field.type().isCustomType()) {
             return;
         }
-        final Type type = tablesStorage.getType(field.type().getObjectTypeName());
+        final Type type = relationsStorage.getType(field.type().getObjectTypeName());
         if (type == null) {
             throw QueryException.error("Non existing type found in the mapping: "
                     + field.type().getObjectTypeName());
@@ -220,7 +220,7 @@ public final class TypesUtils {
                     + type.getKind() + "] with " + mappingTypeKind + " mapping.");
         }
 
-        final QueryDataType resolved = convertTypeToQueryDataType(type, tablesStorage);
+        final QueryDataType resolved = convertTypeToQueryDataType(type, relationsStorage);
         field.setType(resolved);
     }
 
@@ -247,7 +247,7 @@ public final class TypesUtils {
     private static QueryDataType convertTypeToQueryDataTypeInt(
             @Nonnull final String typeName,
             @Nullable Type type,
-            @Nonnull final TablesStorage tablesStorage,
+            @Nonnull final RelationsStorage relationsStorage,
             @Nonnull final Map<String, QueryDataType> seen
     ) {
         QueryDataType convertedType = seen.get(typeName);
@@ -256,7 +256,7 @@ public final class TypesUtils {
         }
 
         if (type == null) {
-            type = tablesStorage.getType(typeName);
+            type = relationsStorage.getType(typeName);
         }
 
         if (type == null) {
@@ -272,7 +272,7 @@ public final class TypesUtils {
             QueryDataType queryDataType;
             if (field.getQueryDataType().isCustomType()) {
                 queryDataType = convertTypeToQueryDataTypeInt(field.getQueryDataType().getObjectTypeName(),
-                        null, tablesStorage, seen);
+                        null, relationsStorage, seen);
             } else {
                 queryDataType = field.getQueryDataType();
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,11 @@ import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-
 @Category(NightlyTest.class)
 public class MySQLJdbcSqlConnectorStabilityTest extends JdbcSqlConnectorStabilityTest {
 
     @BeforeClass
-    public static void beforeClass() {
-        initialize(new MySQLDatabaseProvider());
+    public static void beforeClass() throws Exception {
+        initializeStabilityTest(new MySQLDatabaseProvider());
     }
 }

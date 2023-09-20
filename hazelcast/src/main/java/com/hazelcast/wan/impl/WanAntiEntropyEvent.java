@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.wan.impl;
 
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -24,6 +23,11 @@ import java.util.UUID;
  * different types, e.g. consistency check or synchronization event.
  */
 public interface WanAntiEntropyEvent {
+
+    String getWanReplicationName();
+
+    String getWanPublisherId();
+
     /**
      * Returns the source cluster-wide unique ID for this anti-entropy event.
      *
@@ -39,11 +43,4 @@ public interface WanAntiEntropyEvent {
      * @return the object name on which this event occurred
      */
     String getObjectName();
-
-    /**
-     * Returns the set of partition IDs on which this event occurred.
-     *
-     * @return the set of partition IDs
-     */
-    Set<Integer> getPartitionSet();
 }

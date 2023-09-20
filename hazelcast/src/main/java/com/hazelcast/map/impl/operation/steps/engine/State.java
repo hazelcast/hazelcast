@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static com.hazelcast.map.impl.record.Record.UNSET;
 
@@ -77,7 +79,7 @@ public class State {
     private volatile boolean triggerMapLoader;
     private volatile boolean shouldLoad;
     private volatile boolean changeExpiryOnUpdate = true;
-    private volatile boolean entryProcessorOffload;
+    private volatile boolean entryProcessorOffloadable;
     private volatile Object oldValue;
     private volatile Object newValue;
     private volatile Object result;
@@ -100,6 +102,7 @@ public class State {
     private volatile Queue<InternalIndex> notMarkedIndexes;
     private volatile Set keysFromIndex;
     private volatile Throwable throwable;
+    private volatile Consumer backupOpAfterRun;
 
     public State(RecordStore recordStore, MapOperation operation) {
         this.recordStore = recordStore;
@@ -202,12 +205,12 @@ public class State {
         return this;
     }
 
-    public boolean isEntryProcessorOffload() {
-        return entryProcessorOffload;
+    public boolean isEntryProcessorOffloadable() {
+        return entryProcessorOffloadable;
     }
 
-    public State setEntryProcessorOffload(boolean entryProcessorOffload) {
-        this.entryProcessorOffload = entryProcessorOffload;
+    public State setEntryProcessorOffloadable(boolean entryProcessorOffloadable) {
+        this.entryProcessorOffloadable = entryProcessorOffloadable;
         return this;
     }
 
@@ -499,5 +502,15 @@ public class State {
 
     public boolean isChangeExpiryOnUpdate() {
         return changeExpiryOnUpdate;
+    }
+
+    public State setBackupOpAfterRun(Consumer backupOpAfterRun) {
+        this.backupOpAfterRun = backupOpAfterRun;
+        return this;
+    }
+
+    @Nullable
+    public Consumer getBackupOpAfterRun() {
+        return backupOpAfterRun;
     }
 }

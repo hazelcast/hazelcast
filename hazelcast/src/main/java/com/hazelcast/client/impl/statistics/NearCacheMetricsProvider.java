@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.spi.ProxyManager;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
-import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.nearcache.NearCacheStats;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_DISCRIMINATOR_NAME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_PREFIX;
@@ -47,7 +47,7 @@ class NearCacheMetricsProvider implements DynamicMetricsProvider {
                 .flatMap(nearCacheManager -> nearCacheManager.listAllNearCaches().stream())
                 .forEach(nearCache -> {
                     String nearCacheName = nearCache.getName();
-                    NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
+                    NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
                     context.collect(descriptor.copy().withDiscriminator(NEARCACHE_DISCRIMINATOR_NAME, nearCacheName),
                             nearCacheStats);
                 });

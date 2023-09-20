@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -775,6 +775,23 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         clientConfig.setSqlConfig(originalConfig);
         ClientSqlConfig generatedConfig = newConfigViaGenerator().getSqlConfig();
         assertEquals(originalConfig.getResubmissionMode(), generatedConfig.getResubmissionMode());
+    }
+
+    @Test
+    public void testTpcConfig() {
+        ClientTpcConfig originalConfig = new ClientTpcConfig().setEnabled(true);
+        clientConfig.setTpcConfig(originalConfig);
+        ClientTpcConfig generatedConfig = newConfigViaGenerator().getTpcConfig();
+        assertEquals(originalConfig, generatedConfig);
+    }
+
+    @Test
+    public void testNetworkCloud() {
+        ClientCloudConfig originalConfig = new ClientCloudConfig().setEnabled(true)
+                .setDiscoveryToken("pAB2kwCdHKbGpFBNd9iO9AmnYBiQa7rz8yfGW25iHEHRvoRWSN");
+        clientConfig.getNetworkConfig().setCloudConfig(originalConfig);
+        ClientCloudConfig generatedConfig = newConfigViaGenerator().getNetworkConfig().getCloudConfig();
+        assertEquals(originalConfig, generatedConfig);
     }
 
     private ClientConfig newConfigViaGenerator() {

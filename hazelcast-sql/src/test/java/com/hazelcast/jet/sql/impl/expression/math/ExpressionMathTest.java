@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.DECIMAL_MATH_CONTEXT;
 import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
 import static org.junit.Assert.assertEquals;
 
@@ -38,10 +39,10 @@ public class ExpressionMathTest {
 
     @Test
     public void testDecimalMathContext() {
-        assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, ExpressionMath.DECIMAL_MATH_CONTEXT.getPrecision());
-        assertEquals(RoundingMode.HALF_UP, ExpressionMath.DECIMAL_MATH_CONTEXT.getRoundingMode());
+        assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, DECIMAL_MATH_CONTEXT.getPrecision());
+        assertEquals(RoundingMode.HALF_UP, DECIMAL_MATH_CONTEXT.getRoundingMode());
 
-        BigDecimal r = BigDecimal.valueOf(1).divide(BigDecimal.valueOf(3), ExpressionMath.DECIMAL_MATH_CONTEXT);
+        BigDecimal r = BigDecimal.valueOf(1).divide(BigDecimal.valueOf(3), DECIMAL_MATH_CONTEXT);
         assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, r.precision());
     }
 

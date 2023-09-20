@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,9 +85,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         noStatsMapName = mapName + "_no_stats";
 
         Config config = getConfig();
-        config.setProperty(PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
-        config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat);
-        config.getMapConfig(noStatsMapName).setStatisticsEnabled(false);
+        addMapConfigs(config);
         config.getMetricsConfig().setEnabled(false);
 
         instance = createInstance(config);
@@ -96,9 +94,14 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         queryTypes = initQueryTypes();
     }
 
+    protected void addMapConfigs(Config config) {
+        config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat);
+        config.getMapConfig(noStatsMapName).setStatisticsEnabled(false);
+    }
+
     @Override
     protected Config getConfig() {
-        return smallInstanceConfig();
+        return smallInstanceConfig().setProperty(PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
     }
 
     protected HazelcastInstance createInstance(Config config) {
@@ -707,7 +710,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         }
     }
 
-    protected static void addIndex(IMap map, String attribute, boolean ordered) {
+    protected void addIndex(IMap map, String attribute, boolean ordered) {
         IndexConfig config = new IndexConfig(ordered ? IndexType.SORTED : IndexType.HASH, attribute).setName(attribute);
 
         map.addIndex(config);

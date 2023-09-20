@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,23 +19,33 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetAddJobStatusListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExportSnapshotCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSuspensionCauseCodec;
+import com.hazelcast.client.impl.protocol.codec.JetIsJobUserCancelledCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetRemoveJobStatusListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetUpdateJobConfigCodec;
+import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobStatusEvent;
+import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.JobStateSnapshot;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
@@ -44,6 +54,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -52,6 +63,7 @@ import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -79,13 +91,23 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
 
     @Nonnull
     @Override
-    public JobStatus getStatus0() {
+    protected JobStatus getStatus0() {
         assert !isLightJob();
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterId()).invoke().get();
             int jobStatusIndex = JetGetJobStatusCodec.decodeResponse(response);
             return JobStatus.values()[jobStatusIndex];
+        });
+    }
+
+    @Override
+    protected boolean isUserCancelled0() {
+        assert !isLightJob();
+        return callAndRetryIfTargetNotFound(()  -> {
+            ClientMessage request = JetIsJobUserCancelledCodec.encodeRequest(getId());
+            ClientMessage response = invocation(request, masterId()).invoke().get();
+            return JetIsJobUserCancelledCodec.decodeResponse(response);
         });
     }
 
@@ -197,6 +219,17 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
         });
     }
 
+    @Override
+    protected JobConfig doUpdateJobConfig(@Nonnull DeltaJobConfig deltaConfig) {
+        return callAndRetryIfTargetNotFound(() -> {
+            Data deltaConfigData = serializationService().toData(deltaConfig);
+            ClientMessage request = JetUpdateJobConfigCodec.encodeRequest(getId(), deltaConfigData);
+            ClientMessage response = invocation(request, masterId()).invoke().get();
+            Data configData = JetUpdateJobConfigCodec.decodeResponse(response);
+            return serializationService().toObject(configData);
+        });
+    }
+
     @Nonnull @Override
     protected UUID masterId() {
         Member masterMember = container().getClientClusterService().getMasterMember();
@@ -219,6 +252,81 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     @Override
     protected boolean isRunning() {
         return container().getLifecycleService().isRunning();
+    }
+
+    @Nonnull
+    @Override
+    protected UUID doAddStatusListener(@Nonnull JobStatusListener listener) {
+        requireNonNull(listener, "Listener cannot be null");
+        try {
+            ClientJobStatusEventHandler handler = new ClientJobStatusEventHandler(listener);
+            handler.registrationId = container().getListenerService()
+                    .registerListener(createJobStatusListenerCodec(getId()), handler);
+            return handler.registrationId;
+        } catch (Throwable t) {
+            throw rethrow(t.getCause());
+        }
+    }
+
+    @Override
+    public boolean removeStatusListener(@Nonnull UUID id) {
+        return container().getListenerService().deregisterListener(id);
+    }
+
+    private ListenerMessageCodec createJobStatusListenerCodec(final long jobId) {
+        return new ListenerMessageCodec() {
+            @Override
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return JetAddJobStatusListenerCodec.encodeRequest(jobId, lightJobCoordinator, localOnly);
+            }
+
+            @Override
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
+                return JetAddJobStatusListenerCodec.decodeResponse(clientMessage);
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(UUID registrationId) {
+                return JetRemoveJobStatusListenerCodec.encodeRequest(jobId, registrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return JetRemoveJobStatusListenerCodec.decodeResponse(clientMessage);
+            }
+        };
+    }
+
+    /**
+     * When a terminal job status event is published, the coordinator member sends a deregistration
+     * operation to every member. The same effect cannot be achieved by intercepting the messages to
+     * detect a terminal event since the listener is registered on all members, but the events are
+     * only sent to the subscriber member. However, deregistration on clients can be done by using an
+     * interceptor since the listener is only registered on the subscriber client. In fact, existing
+     * event handlers are essentially event interceptors, which do not introduce additional wrapping.
+     */
+    private class ClientJobStatusEventHandler implements EventHandler<ClientMessage> {
+        final JetAddJobStatusListenerCodec.AbstractEventHandler handler;
+        UUID registrationId;
+
+        ClientJobStatusEventHandler(final JobStatusListener listener) {
+            handler = new JetAddJobStatusListenerCodec.AbstractEventHandler() {
+                @Override
+                public void handleJobStatusEvent(long jobId, int previousStatus, int newStatus,
+                                                 @Nullable String description, boolean userRequested) {
+                    listener.jobStatusChanged(new JobStatusEvent(jobId, JobStatus.getById(previousStatus),
+                            JobStatus.getById(newStatus), description, userRequested));
+                    if (JobStatus.getById(newStatus).isTerminal()) {
+                        ((ClientListenerServiceImpl) container().getListenerService()).removeListener(registrationId);
+                    }
+                }
+            };
+        }
+
+        @Override
+        public void handle(ClientMessage event) {
+            handler.handle(event);
+        }
     }
 
     private ClientInvocation invocation(ClientMessage request, UUID invocationUuid) {

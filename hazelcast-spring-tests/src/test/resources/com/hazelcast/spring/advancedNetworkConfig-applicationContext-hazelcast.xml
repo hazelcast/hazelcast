@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.2.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.3.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -195,7 +195,15 @@
                         <hz:linger-seconds>9</hz:linger-seconds>
                         <hz:receive-buffer-size-kb>96</hz:receive-buffer-size-kb>
                         <hz:send-buffer-size-kb>196</hz:send-buffer-size-kb>
+                        <hz:keep-count>2</hz:keep-count>
+                        <hz:keep-idle-seconds>120</hz:keep-idle-seconds>
+                        <hz:keep-interval-seconds>5</hz:keep-interval-seconds>
                     </hz:socket-options>
+                    <hz:tpc-socket>
+                        <hz:port-range>14000-16000</hz:port-range>
+                        <hz:receive-buffer-size-kb>256</hz:receive-buffer-size-kb>
+                        <hz:send-buffer-size-kb>256</hz:send-buffer-size-kb>
+                    </hz:tpc-socket>
                 </hz:member-server-socket-endpoint-config>
 
                 <hz:wan-endpoint-config name="wan-tokyo">
@@ -211,10 +219,20 @@
                                              salt="thesalt"
                                              password="thepass"
                                              iteration-count="19"/>
+                    <hz:tpc-socket>
+                        <hz:port-range>14000-16000</hz:port-range>
+                        <hz:receive-buffer-size-kb>256</hz:receive-buffer-size-kb>
+                        <hz:send-buffer-size-kb>256</hz:send-buffer-size-kb>
+                    </hz:tpc-socket>
                 </hz:wan-endpoint-config>
 
                 <hz:client-server-socket-endpoint-config port="9919" port-auto-increment="false" port-count="10">
                     <hz:reuse-address>true</hz:reuse-address>
+                    <hz:tpc-socket>
+                        <hz:port-range>14000-16000</hz:port-range>
+                        <hz:receive-buffer-size-kb>256</hz:receive-buffer-size-kb>
+                        <hz:send-buffer-size-kb>256</hz:send-buffer-size-kb>
+                    </hz:tpc-socket>
                 </hz:client-server-socket-endpoint-config>
 
                 <hz:member-address-provider enabled="false" class-name="com.hazelcast.spring.DummyMemberAddressProvider">
@@ -241,7 +259,26 @@
                         <hz:endpoint-group name="CLUSTER_READ" enabled="true"/>
                         <hz:endpoint-group name="CLUSTER_WRITE" enabled="false"/>
                     </hz:endpoint-groups>
+                    <hz:tpc-socket>
+                        <hz:port-range>14000-16000</hz:port-range>
+                        <hz:receive-buffer-size-kb>256</hz:receive-buffer-size-kb>
+                        <hz:send-buffer-size-kb>256</hz:send-buffer-size-kb>
+                    </hz:tpc-socket>
                 </hz:rest-server-socket-endpoint-config>
+                <hz:memcache-server-socket-endpoint-config port="9989">
+                    <hz:tpc-socket>
+                        <hz:port-range>14000-16000</hz:port-range>
+                        <hz:receive-buffer-size-kb>256</hz:receive-buffer-size-kb>
+                        <hz:send-buffer-size-kb>256</hz:send-buffer-size-kb>
+                    </hz:tpc-socket>
+                </hz:memcache-server-socket-endpoint-config>
+                <hz:wan-server-socket-endpoint-config port="9979" name="wan-server-socket-config">
+                    <hz:tpc-socket>
+                        <hz:port-range>14000-16000</hz:port-range>
+                        <hz:receive-buffer-size-kb>256</hz:receive-buffer-size-kb>
+                        <hz:send-buffer-size-kb>256</hz:send-buffer-size-kb>
+                    </hz:tpc-socket>
+                </hz:wan-server-socket-endpoint-config>
             </hz:advanced-network>
             <hz:partition-group enabled="true" group-type="CUSTOM">
                 <hz:member-group>

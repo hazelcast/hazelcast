@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,7 +180,9 @@ public enum MergeOpSteps implements IMapOpStep {
                     // if same values, merge expiry and continue with next entry
                     if (recordStore.getValueComparator().isEqual(newValue, oldValue, serializationService)) {
                         Record record = recordStore.getRecord((Data) key);
-                        recordStore.mergeRecordExpiration((Data) key, record, mergingEntry, state.getNow());
+                        if (record != null) {
+                            recordStore.mergeRecordExpiration((Data) key, record, mergingEntry, state.getNow());
+                        }
                         continue;
                     }
 
@@ -276,7 +278,7 @@ public enum MergeOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -47,8 +45,8 @@ public class InternalSetMultiMapTest {
         multiMap.put(1, "value");
         Collection<String> results = multiMap.get(1);
 
-        assertThat(results, hasSize(1));
-        assertThat(results, contains("value"));
+        assertThat(results).hasSize(1);
+        assertThat(results).containsExactlyInAnyOrder("value");
     }
 
     @Test
@@ -59,13 +57,13 @@ public class InternalSetMultiMapTest {
 
         Collection<String> results = multiMap.get(1);
 
-        assertThat(results, hasSize(1));
-        assertThat(results, contains("value"));
+        assertThat(results).hasSize(1);
+        assertThat(results).containsExactlyInAnyOrder("value");
     }
 
     @Test
     public void entrySet_whenEmpty_thenReturnEmptySet() {
         Set<?> entries = multiMap.entrySet();
-        assertThat(entries, hasSize(0));
+        assertThat(entries).isEmpty();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.Processors;
 
 import javax.annotation.Nonnull;
@@ -36,14 +38,20 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
  */
 public class InsertWatermarksP<T> extends AbstractProcessor {
 
-    private final EventTimeMapper<? super T> eventTimeMapper;
+    private final FunctionEx<ProcessorSupplier.Context, EventTimePolicy<? super T>> eventTimePolicyProvider;
+    private EventTimeMapper<? super T> eventTimeMapper;
     private Traverser<Object> traverser;
 
     // value to be used temporarily during snapshot restore
     private long minRestoredWm = Long.MAX_VALUE;
 
-    public InsertWatermarksP(EventTimePolicy<? super T> eventTimePolicy) {
-        eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+    public InsertWatermarksP(FunctionEx<ProcessorSupplier.Context, EventTimePolicy<? super T>> eventTimePolicyProvider) {
+        this.eventTimePolicyProvider = eventTimePolicyProvider;
+    }
+
+    @Override
+    protected void init(@Nonnull Context context) throws Exception {
+        eventTimeMapper = new EventTimeMapper<>(eventTimePolicyProvider.apply(context));
         eventTimeMapper.addPartitions(1);
     }
 

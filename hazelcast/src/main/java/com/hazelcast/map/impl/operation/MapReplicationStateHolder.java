@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,7 +180,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
                     MapContainer mapContainer = recordStore.getMapContainer();
                     PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
-                        .getPartitionContainer(operation.getPartitionId());
+                            .getPartitionContainer(operation.getPartitionId());
                     for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
                         Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
                         indexes.addOrGetIndex(indexDefinition.getValue());
@@ -201,7 +201,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
                     long nowInMillis = Clock.currentTimeMillis();
                     forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore,
-                        populateIndexes, nowInMillis);
+                            populateIndexes, nowInMillis);
 
 
                     if (populateIndexes) {
@@ -218,7 +218,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             LocalRecordStoreStats stats = statsEntry.getValue();
 
             RecordStore recordStore = operation.getRecordStore(mapName);
-            recordStore.setStats(stats);
+            recordStore.setLocalRecordStoreStats(stats);
 
         }
     }
@@ -333,7 +333,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             RecordStore<Record> recordStore = entry.getValue();
             out.writeString(mapName);
             writeRecordStore(mapName, recordStore, out);
-            recordStore.getStats().writeData(out);
+            recordStore.getLocalRecordStoreStats().writeData(out);
         }
 
         out.writeInt(loaded.size());
@@ -350,12 +350,17 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
     private void writeRecordStore(String mapName, RecordStore<Record> recordStore, ObjectDataOutput out)
             throws IOException {
-        if (merkleTreeDiffByMapName.containsKey(mapName)) {
-            out.writeBoolean(true);
-            writeDifferentialData(mapName, recordStore, out);
-        } else {
-            out.writeBoolean(false);
-            writeRecordStoreData(recordStore, out);
+        recordStore.beforeOperation();
+        try {
+            if (merkleTreeDiffByMapName.containsKey(mapName)) {
+                out.writeBoolean(true);
+                writeDifferentialData(mapName, recordStore, out);
+            } else {
+                out.writeBoolean(false);
+                writeRecordStoreData(recordStore, out);
+            }
+        } finally {
+            recordStore.afterOperation();
         }
     }
 
@@ -369,21 +374,16 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         SerializationService ss = getSerializationService(recordStore.getMapContainer());
         out.writeInt(recordStore.size());
         // No expiration should be done in forEach, since we have serialized size before.
-        recordStore.beforeOperation();
-        try {
-            recordStore.forEach((dataKey, record) -> {
-                try {
-                    IOUtil.writeData(out, dataKey);
-                    Records.writeRecord(out, record, ss.toData(record.getValue()));
-                    Records.writeExpiry(out, recordStore.getExpirySystem()
+        recordStore.forEach((dataKey, record) -> {
+            try {
+                IOUtil.writeData(out, dataKey);
+                Records.writeRecord(out, record, ss.toData(record.getValue()));
+                Records.writeExpiry(out, recordStore.getExpirySystem()
                         .getExpiryMetadata(dataKey));
-                } catch (IOException e) {
-                    throw ExceptionUtil.rethrow(e);
-                }
-            }, operation.getReplicaIndex() != 0, true);
-        } finally {
-            recordStore.afterOperation();
-        }
+            } catch (IOException e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }, operation.getReplicaIndex() != 0, true);
         LocalReplicationStatsImpl replicationStats = statsByMapName.get(recordStore.getName());
         replicationStats.incrementFullPartitionReplicationCount();
         replicationStats.incrementFullPartitionReplicationRecordsCount(recordStore.size());

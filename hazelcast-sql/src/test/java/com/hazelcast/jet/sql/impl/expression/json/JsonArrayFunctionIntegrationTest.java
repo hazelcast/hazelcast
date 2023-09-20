@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ public class JsonArrayFunctionIntegrationTest extends SqlJsonTestSupport {
                 rows(1, json("[\"foo\",42,[1,2,3]]")));
     }
 
-    private List<Row> jsonArrayRow(final Object ...values) {
+    private List<Row> jsonArrayRow(final Object... values) {
         return rows(1, json(jsonString(values)));
     }
 

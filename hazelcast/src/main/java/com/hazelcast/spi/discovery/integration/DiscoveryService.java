@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,16 @@
 
 package com.hazelcast.spi.discovery.integration;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.NodeFilter;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The <code>DiscoveryService</code> interface defines the basic entry point
@@ -83,4 +87,33 @@ public interface DiscoveryService {
      * @since 3.7
      */
     Map<String, String> discoverLocalMetadata();
+
+    /**
+     * Marks the passed {@link Address} as unhealthy, which prevents it from being offered as a
+     * viable endpoint in some {@link DiscoveryStrategy} implementations, usually prompting
+     * this endpoint to be periodically probed for liveliness. If not supported by the underlying
+     * implementation, then this call does nothing.
+     *
+     * @see DiscoveryStrategy#markEndpointAsUnhealthy(Address)
+     *
+     * @param address the address to mark as unhealthy
+     * @since 5.4
+     */
+    @PrivateApi
+    default void markEndpointAsUnhealthy(Address address) { }
+
+    /**
+     * Fetches a set of {@link Address} marked as unhealthy by the underlying {@link DiscoveryStrategy}.
+     * If not supported by the underlying implementation, then this call returns an empty set.
+     *
+     * @see DiscoveryStrategy#getUnhealthyEndpoints()
+     *
+     * @return set of {@link Address} which are currently marked as unhealthy if supported by the
+     *  underlying implementation, otherwise an empty set.
+     * @since 5.4
+     */
+    @PrivateApi
+    default Set<Address> getUnhealthyEndpoints() {
+        return Collections.emptySet();
+    }
 }

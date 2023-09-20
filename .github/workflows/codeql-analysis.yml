@@ -32,7 +32,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.3.0
       with:
         ref: ${{ github.event.inputs.reference }}
 
@@ -58,7 +58,7 @@ jobs:
         
     - name: Custom Java build
       run: |
-        ./mvnw -B -V -e clean package -Dfindbugs.skip -Dcheckstyle.skip -Dpmd.skip=true -Dspotbugs.skip -Denforcer.skip -Dmaven.javadoc.skip -DskipTests -Dlicense.skip=true -Drat.skip=true -Dspotless.check.skip=true -Dattribution.skip -Danimal.sniffer.skip=true -Dmaven.source.skip=true
+        ./mvnw -B -V -e clean package -Dfindbugs.skip -Dcheckstyle.skip -Dpmd.skip=true -Dspotbugs.skip -Denforcer.skip -Dmaven.javadoc.skip -DskipTests -Dlicense.skip=true -Drat.skip=true -Dspotless.check.skip=true -Dattribution.skip -Dmaven.source.skip=true
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2

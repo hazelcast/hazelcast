@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,6 +127,9 @@ public final class OptUtils {
      * @return Logical input.
      */
     public static RelNode toPhysicalInput(RelNode rel) {
+        if (rel == null) {
+            return null;
+        }
         return RelOptRule.convert(rel, toPhysicalConvention(rel.getTraitSet()));
     }
 
@@ -434,7 +437,7 @@ public final class OptUtils {
             return null;
         }
 
-        int keyIndex = findKeyIndex(table.getTarget());
+        int keyIndex = findPrimaryKeyIndex(table.getTarget());
         switch (filter.getKind()) {
             // WHERE __key = true, calcite simplifies to just `WHERE __key`
             case INPUT_REF: {
@@ -462,13 +465,19 @@ public final class OptUtils {
         }
     }
 
-    private static int findKeyIndex(Table table) {
+    /**
+     * Returns the index of the primary key field in the given `table`. If
+     * there's no primary key, or if there's more than ona primary key field, it
+     * returns -1.
+     */
+    public static int findPrimaryKeyIndex(Table table) {
         List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
-        // just single field keys supported at the moment
-        assert primaryKey.size() == 1;
+        if (primaryKey.size() != 1) {
+            return -1;
+        }
 
         int keyIndex = table.getFieldIndex(primaryKey.get(0));
-        assert keyIndex > -1;
+        assert keyIndex >= 0;
 
         return keyIndex;
     }

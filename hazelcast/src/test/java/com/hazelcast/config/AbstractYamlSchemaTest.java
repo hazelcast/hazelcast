@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public abstract class AbstractYamlSchemaTest {
     private static final ILogger LOGGER = Logger.getLogger(AbstractYamlSchemaTest.class);
 
     public static final Schema SCHEMA = SchemaLoader.builder()
-            .schemaJson(readJSONObject("/hazelcast-config-5.2.json"))
+            .schemaJson(readJSONObject("/hazelcast-config-5.3.json"))
             .draftV6Support()
             .schemaClient(SchemaClient.classPathAwareClient())
             .build()

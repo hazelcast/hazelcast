@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.kinesis;
 
-import com.amazonaws.SDKGlobalConfiguration;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
@@ -25,18 +24,20 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.SerialTest;
-import com.hazelcast.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
 import org.testcontainers.containers.ToxiproxyContainer.ContainerProxy;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import java.util.List;
 import java.util.Map;
@@ -44,11 +45,10 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAXIMUM_KEY_LENGTH;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAX_RECORD_SIZE;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
-import static com.hazelcast.test.TestStringUtils.repeat;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
@@ -58,7 +58,6 @@ public class KinesisFailureTest extends AbstractKinesisTest {
 
     @ClassRule
     public static final Network NETWORK = Network.newNetwork();
-
     public static LocalStackContainer localStack;
 
     public static ToxiproxyContainer toxiProxy;
@@ -67,6 +66,8 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     private static AmazonKinesisAsync KINESIS;
     private static ContainerProxy PROXY;
     private static KinesisTestHelper HELPER;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KinesisFailureTest.class);
 
     public KinesisFailureTest() {
         super(AWS_CONFIG, KINESIS, HELPER);
@@ -77,19 +78,17 @@ public class KinesisFailureTest extends AbstractKinesisTest {
         assumeDockerEnabled();
 
         localStack = new LocalStackContainer(parse("localstack/localstack")
-                .withTag("0.12.3"))
+                .withTag(LOCALSTACK_VERSION))
                 .withNetwork(NETWORK)
-                .withServices(Service.KINESIS);
+                .withServices(Service.KINESIS)
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER));
         localStack.start();
-        toxiProxy = new ToxiproxyContainer(parse("shopify/toxiproxy")
-                .withTag("2.1.0"))
+        toxiProxy = new ToxiproxyContainer(parse("ghcr.io/shopify/toxiproxy")
+                .withTag("2.5.0"))
                 .withNetwork(NETWORK)
-                .withNetworkAliases("toxiproxy");
+                .withNetworkAliases("toxiproxy")
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER));
         toxiProxy.start();
-
-        System.setProperty(SDKGlobalConfiguration.AWS_CBOR_DISABLE_SYSTEM_PROPERTY, "true");
-        // with the jackson versions we use (2.11.x) Localstack doesn't without disabling CBOR
-        // https://github.com/localstack/localstack/issues/3208
 
         PROXY = toxiProxy.getProxy(localStack, 4566);
 
@@ -98,7 +97,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
                 .withRegion(localStack.getRegion())
                 .withCredentials(localStack.getAccessKey(), localStack.getSecretKey());
         KINESIS = AWS_CONFIG.buildClient();
-        HELPER = new KinesisTestHelper(KINESIS, STREAM, Logger.getLogger(KinesisIntegrationTest.class));
+        HELPER = new KinesisTestHelper(KINESIS, STREAM);
     }
 
     @AfterClass
@@ -210,8 +209,8 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     @Test
     @Category(SerialTest.class)
     public void keyTooLong() {
-        Entry<String, byte[]> valid = entry(repeat("*", MAXIMUM_KEY_LENGTH), new byte[0]);
-        Entry<String, byte[]> invalid = entry(repeat("*", MAXIMUM_KEY_LENGTH + 1), new byte[0]);
+        Entry<String, byte[]> valid = entry("*".repeat(MAXIMUM_KEY_LENGTH), new byte[0]);
+        Entry<String, byte[]> invalid = entry("*".repeat(MAXIMUM_KEY_LENGTH + 1), new byte[0]);
         invalidInputToSink(valid, invalid, "Key too long");
     }
 

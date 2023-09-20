@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ import com.hazelcast.client.impl.protocol.codec.MapLockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapProjectCodec;
 import com.hazelcast.client.impl.protocol.codec.MapProjectWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutAllWithMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentWithMaxIdleCodec;
@@ -109,6 +110,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
@@ -117,6 +119,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EventJournalMapEvent;
@@ -159,6 +162,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -184,6 +188,7 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Proxy implementation of {@link IMap}.
@@ -478,6 +483,25 @@ public class ClientMapProxy<K, V> extends ClientProxy
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             SerializationService ss = getSerializationService();
             return new ClientDelegatingFuture<>(future, ss, MapRemoveCodec::decodeResponse);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> deleteAsync(@Nonnull K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        return deleteAsyncInternal(key);
+    }
+
+    protected InternalCompletableFuture<Boolean> deleteAsyncInternal(Object key) {
+        try {
+            Data keyData = toData(key);
+            ClientMessage request = MapDeleteCodec.encodeRequest(name, keyData, getThreadId());
+            ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
+            SerializationService ss = getSerializationService();
+            return new ClientDelegatingFuture<>(future, ss,
+                clientMessage -> MapDeleteCodec.decodeResponse(clientMessage).response);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -1220,6 +1244,16 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return (Set<K>) new UnmodifiableLazySet(MapKeySetWithPredicateCodec.decodeResponse(response), getSerializationService());
     }
 
+    @Override
+    public Collection<V> localValues() {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
+    }
+
+    @Override
+    public Collection<V> localValues(@Nonnull Predicate<K, V> predicate) {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
+    }
+
     @SuppressWarnings("unchecked")
     private Set keySetWithPagingPredicate(Predicate predicate) {
         PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
@@ -1396,10 +1430,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor) {
         ClientMessage request = MapExecuteOnAllKeysCodec.encodeRequest(name, toData(entryProcessor));
         ClientMessage response = invoke(request);
-        return prepareResult(MapExecuteOnAllKeysCodec.decodeResponse(response));
+        boolean shouldInvalidate = !(entryProcessor instanceof ReadOnly);
+        return prepareResult(MapExecuteOnAllKeysCodec.decodeResponse(response), shouldInvalidate);
     }
 
-    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entries) {
+    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entries, boolean shouldInvalidate) {
         if (CollectionUtil.isEmpty(entries)) {
             return emptyMap();
         }
@@ -1421,8 +1456,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
-
-        return prepareResult(MapExecuteWithPredicateCodec.decodeResponse(response));
+        boolean shouldInvalidate = !(entryProcessor instanceof ReadOnly);
+        return prepareResult(MapExecuteWithPredicateCodec.decodeResponse(response), shouldInvalidate);
     }
 
     @Override
@@ -1553,9 +1588,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                                                             @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataKeys);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
+        boolean shouldInvalidate = !(entryProcessor instanceof ReadOnly);
+
         return new ClientDelegatingFuture<>(
                 future, getSerializationService(),
-                message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message)));
+                message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message), shouldInvalidate));
     }
 
     @Override
@@ -1651,7 +1688,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue(), triggerMapLoader);
             new ClientInvocation(getClient(), request, getName(), partitionId)
                     .invoke()
-                    .whenCompleteAsync(callback);
+                    .whenCompleteAsync(callback, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
         // if executing in sync mode, block for the responses
         if (future == null) {
@@ -1664,6 +1701,76 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     protected void finalizePutAll(Map<? extends K, ? extends V> map, Map<Integer, List<Entry<Data, Data>>> entryMap) {
+    }
+
+    public CompletableFuture<Void> putAllWithMetadataAsync(@Nonnull Collection<? extends EntryView<K, V>> entries) {
+        checkNotNull(entries, "Null argument entries is not allowed");
+        ClientPartitionService partitionService = getContext().getPartitionService();
+
+        Map<Integer, List<SimpleEntryView<Data, Data>>> entriesByPartition =
+                entries.stream()
+                       .map(e -> {
+                           checkNotNull(e.getKey(), NULL_KEY_IS_NOT_ALLOWED);
+                           checkNotNull(e.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
+
+                           Data keyData = toData(e.getKey());
+                           if (e instanceof SimpleEntryView
+                                   && e.getKey() instanceof Data
+                                   && e.getValue() instanceof Data
+                           ) {
+                               return (SimpleEntryView<Data, Data>) e;
+                           } else {
+                               return new SimpleEntryView<>(keyData, toData(e.getValue()))
+                                       .withCost(e.getCost())
+                                       .withCreationTime(e.getCreationTime())
+                                       .withExpirationTime(e.getExpirationTime())
+                                       .withHits(e.getHits())
+                                       .withLastAccessTime(e.getLastAccessTime())
+                                       .withLastStoredTime(e.getLastStoredTime())
+                                       .withLastUpdateTime(e.getLastUpdateTime())
+                                       .withVersion(e.getVersion())
+                                       .withTtl(e.getTtl())
+                                       .withMaxIdle(e.getMaxIdle());
+                           }
+                       })
+                       .collect(groupingBy(
+                               (SimpleEntryView<Data, Data> e) -> partitionService.getPartitionId(e.getKey())
+                       ));
+
+        AtomicInteger counter = new AtomicInteger(entriesByPartition.size());
+        InternalCompletableFuture<Void> resultFuture = new InternalCompletableFuture<>();
+        if (counter.get() == 0) {
+            resultFuture.complete(null);
+        }
+        for (Entry<Integer, ? extends List<SimpleEntryView<Data, Data>>> entry : entriesByPartition.entrySet()) {
+            Integer partitionId = entry.getKey();
+            ClientMessage request = MapPutAllWithMetadataCodec.encodeRequest(name, entry.getValue());
+            ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName(), partitionId)
+                    .invoke();
+
+            future.whenCompleteAsync((clientMessage, throwable) -> {
+                        if (throwable != null) {
+                            resultFuture.completeExceptionally(throwable);
+                            return;
+                        }
+                        if (counter.decrementAndGet() == 0) {
+                            finalizePutAll(
+                                    entries,
+                                    entriesByPartition
+                            );
+                            if (!resultFuture.isDone()) {
+                                resultFuture.complete(null);
+                            }
+                        }
+                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
+        }
+
+        return resultFuture;
+    }
+
+    protected void finalizePutAll(
+            Collection<? extends EntryView<K, V>> entries, Map<Integer,
+            List<SimpleEntryView<Data, Data>>> entryMap) {
     }
 
     @Override
@@ -1869,6 +1976,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
                     + " must be greater or equal to minSize " + minSize);
         }
         final SerializationService ss = getSerializationService();
+        final ManagedContext context = ss.getManagedContext();
+        predicate = (java.util.function.Predicate<? super EventJournalMapEvent<K, V>>) context.initialize(predicate);
+        projection = (Function<? super EventJournalMapEvent<K, V>, ? extends T>) context.initialize(projection);
         final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
                 name, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();

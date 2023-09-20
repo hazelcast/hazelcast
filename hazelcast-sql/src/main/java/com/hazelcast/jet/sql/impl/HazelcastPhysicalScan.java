@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,12 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.expression.Expression;
+import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
 public interface HazelcastPhysicalScan extends PhysicalRel {
 
-    Expression<Boolean> filter(QueryParameterMetadata parameterMetadata);
-    List<Expression<?>> projection(QueryParameterMetadata parameterMetadata);
+    RexNode filter();
+    List<RexNode> projection();
 }

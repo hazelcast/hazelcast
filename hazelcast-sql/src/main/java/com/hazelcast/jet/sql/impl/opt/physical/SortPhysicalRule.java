@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
-import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.immutables.value.Value;
@@ -74,7 +73,7 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
         for (RelNode physicalInput : OptUtils.extractPhysicalRelsFromSubset(sort.getInput())) {
             boolean requiresSort = requiresSort(
                     sort.getCollation(),
-                    physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
+                    physicalInput.getTraitSet().getCollation()
             );
             RelNode input = physicalInput;
             if (requiresSort) {

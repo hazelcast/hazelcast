@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
@@ -134,7 +135,7 @@ public class ParserNameResolutionTest extends SqlTestSupport {
         assertEquals(SqlIdentifier.getString(Arrays.asList(last(tableComponents), fieldName)), fieldIdentifier.toString());
 
         SqlCall from = (SqlCall) select.getFrom();
-        assertEquals(from.getKind(), SqlKind.AS);
+        assertEquals(SqlKind.AS, from.getKind());
         assertEquals(tableFqn, from.operand(0).toString());
         assertEquals(last(tableComponents), from.operand(1).toString());
     }
@@ -199,8 +200,9 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 null,
                 null,
                 null,
-                false
-        );
+                false,
+                Collections.emptyList(),
+                false);
         PartitionedMapTable table2 = new PartitionedMapTable(
                 SCHEMA_2,
                 TABLE_2,
@@ -212,8 +214,9 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 null,
                 null,
                 null,
-                false
-        );
+                false,
+                Collections.emptyList(),
+                false);
 
         TableResolver resolver1 = TestTableResolver.create(SCHEMA_1, table1);
         TableResolver resolver2 = TestTableResolver.create(SCHEMA_2, table2);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 
@@ -33,8 +33,8 @@ public final class WatermarkThrottlingFrameSizeCalculator {
     private WatermarkThrottlingFrameSizeCalculator() {
     }
 
-    public static long calculate(PhysicalRel rel) {
-        GcdCalculatorVisitor visitor = new GcdCalculatorVisitor();
+    public static long calculate(PhysicalRel rel, ExpressionEvalContext evalContext) {
+        GcdCalculatorVisitor visitor = new GcdCalculatorVisitor(evalContext);
         visitor.go(rel);
 
         if (visitor.gcd == 0) {
@@ -48,8 +48,10 @@ public final class WatermarkThrottlingFrameSizeCalculator {
     private static class GcdCalculatorVisitor extends RelVisitor {
         private long gcd;
         private long maximumIntervalForJoins = S2S_JOIN_MAX_THROTTLING_INTERVAL;
+        private ExpressionEvalContext eec;
 
-        GcdCalculatorVisitor() {
+        GcdCalculatorVisitor(ExpressionEvalContext evalContext) {
+            this.eec = evalContext;
         }
 
         @Override
@@ -60,7 +62,7 @@ public final class WatermarkThrottlingFrameSizeCalculator {
         private void visit0(RelNode node) {
             if (node instanceof SlidingWindowAggregatePhysicalRel) {
                 SlidingWindowAggregatePhysicalRel slidingWindow = (SlidingWindowAggregatePhysicalRel) node;
-                long windowSize = slidingWindow.windowPolicyProvider().apply(CreateDagVisitor.MOCK_EEC).frameSize();
+                long windowSize = slidingWindow.windowPolicyProvider().apply(eec).frameSize();
                 gcd = gcd > 0L ? Util.gcd(gcd, windowSize) : windowSize;
             } else if (node instanceof StreamToStreamJoinPhysicalRel) {
                 StreamToStreamJoinPhysicalRel s2sJoin = (StreamToStreamJoinPhysicalRel) node;

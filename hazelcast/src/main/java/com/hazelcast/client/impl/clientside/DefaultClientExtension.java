@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.connection.tcp.ClientPlainChannelInitializer;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceProductName;
@@ -56,7 +57,6 @@ import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Map;
@@ -150,8 +150,12 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {
-        String partitioningStrategyClassName = ClusterProperty.PARTITIONING_STRATEGY_CLASS.getSystemProperty();
-        if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
+        // This method historically only fetched our strategy from the client's local System Properties - this
+        //  behaviour is not correct (it should read the ClientConfig properties). By using ClientConfig#getProperty
+        //  we will be checking the ClientConfig first, and otherwise falling back to a System Property.
+        String partitioningStrategyClassName = client.getClientConfig().getProperty(
+                ClientProperty.PARTITIONING_STRATEGY_CLASS.getName());
+        if (partitioningStrategyClassName != null && !partitioningStrategyClassName.isEmpty()) {
             return ClassLoaderUtil.newInstance(configClassLoader, partitioningStrategyClassName);
         } else {
             return new DefaultPartitioningStrategy();

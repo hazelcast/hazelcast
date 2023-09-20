@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_CONTROL_FACTORY;
 
@@ -155,7 +156,7 @@ public class TenantControlServiceImpl
                 if (t != null) {
                     logger.warning("Failed to propagate tenant control", t);
                 }
-            });
+            }, CALLER_RUNS);
         }
     }
 
@@ -202,7 +203,7 @@ public class TenantControlServiceImpl
     /**
      * Returns {@code true} if tenant control is enabled.
      */
-    private boolean isTenantControlEnabled() {
+    public boolean isTenantControlEnabled() {
         return tenantControlFactory != NOOP_TENANT_CONTROL_FACTORY;
     }
 

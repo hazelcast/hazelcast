@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,15 +27,21 @@ import java.util.function.Supplier;
  */
 public class RegistrationOperationSupplier implements Supplier<Operation> {
     private final Registration reg;
+    private final int orderKey;
     private final ClusterService clusterService;
 
     public RegistrationOperationSupplier(Registration reg, ClusterService clusterService) {
+        this(reg, -1, clusterService);
+    }
+
+    public RegistrationOperationSupplier(Registration reg, int orderKey, ClusterService clusterService) {
         this.reg = reg;
+        this.orderKey = orderKey;
         this.clusterService = clusterService;
     }
 
     @Override
     public Operation get() {
-        return new RegistrationOperation(reg, clusterService.getMemberListVersion());
+        return new RegistrationOperation(reg, orderKey, clusterService.getMemberListVersion());
     }
 }

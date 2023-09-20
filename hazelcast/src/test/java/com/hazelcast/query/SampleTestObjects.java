@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class SampleTestObjects {
 
@@ -388,6 +391,86 @@ public final class SampleTestObjects {
                     + ", active=" + active
                     + ", salary=" + salary
                     + '}';
+        }
+    }
+
+    // Mockito encounters non-deterministic failures in some tests when mocking
+    // the Employee object - to avoid further time spent investigating that issue,
+    // we simply provide our own basic spied invocation counter instead
+    public static class SpiedEmployee extends Employee {
+        private final Map<String, AtomicInteger> invocationCounters = new ConcurrentHashMap<>();
+
+        public SpiedEmployee(long id, String name, int age, boolean live, double salary, State state) {
+            super(id, name, age, live, salary, state);
+        }
+
+        public SpiedEmployee(long id, String name, int age, boolean live, double salary) {
+            super(id, name, age, live, salary);
+        }
+
+        public SpiedEmployee(String name, int age, boolean live, double salary) {
+            super(name, age, live, salary);
+        }
+
+        public SpiedEmployee(String name, String city, int age, boolean live, double salary) {
+            super(name, city, age, live, salary);
+        }
+
+        public SpiedEmployee(long id, String name, String city, int age, boolean live, double salary) {
+            super(id, name, city, age, live, salary);
+        }
+
+        public SpiedEmployee() {
+        }
+
+        public long getId() {
+            invocationCounters.computeIfAbsent("getId", i -> new AtomicInteger(0)).getAndIncrement();
+            return super.getId();
+        }
+
+        public Date getCreateDate() {
+            invocationCounters.computeIfAbsent("getCreateDate", i -> new AtomicInteger(0)).getAndIncrement();
+            return super.getCreateDate();
+        }
+
+        public Timestamp getDate() {
+            invocationCounters.computeIfAbsent("getDate", i -> new AtomicInteger(0)).getAndIncrement();
+            return super.getDate();
+        }
+
+        public String getName() {
+            invocationCounters.computeIfAbsent("getName", i -> new AtomicInteger(0)).getAndIncrement();
+            return super.getName();
+        }
+
+        public String getCity() {
+            invocationCounters.computeIfAbsent("getCity", i -> new AtomicInteger(0)).getAndIncrement();
+            return super.getCity();
+        }
+
+        public int getAge() {
+            invocationCounters.computeIfAbsent("getAge", i -> new AtomicInteger(0)).getAndIncrement();
+            return super.getAge();
+        }
+
+        public double getSalary() {
+            invocationCounters.computeIfAbsent("getSalary", i -> new AtomicInteger(0)).getAndIncrement();
+            return super.getSalary();
+        }
+
+        public boolean isActive() {
+            invocationCounters.computeIfAbsent("isActive", i -> new AtomicInteger(0)).getAndIncrement();
+            return super.isActive();
+        }
+
+        public State getState() {
+            invocationCounters.computeIfAbsent("getState", i -> new AtomicInteger(0)).getAndIncrement();
+            return super.getState();
+        }
+
+        public int getInvocationCount(String methodName) {
+            AtomicInteger counter = invocationCounters.get(methodName);
+            return counter == null ? 0 : counter.get();
         }
     }
 

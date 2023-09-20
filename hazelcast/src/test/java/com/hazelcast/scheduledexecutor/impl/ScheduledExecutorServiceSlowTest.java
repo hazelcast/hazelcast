@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -430,7 +431,8 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         long counter = 0;
         long limit = 2000000;
 
-        Executors.newSingleThreadExecutor().submit(new Runnable() {
+        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+        singleThreadExecutor.submit(new Runnable() {
             @Override
             public void run() {
                 while (running.get()) {
@@ -465,5 +467,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
 
         // wait for running tasks to finish, keeping log clean of PassiveMode exceptions
         sleepSeconds(5);
+        singleThreadExecutor.shutdownNow();
+        executorService.shutdown();
     }
 }

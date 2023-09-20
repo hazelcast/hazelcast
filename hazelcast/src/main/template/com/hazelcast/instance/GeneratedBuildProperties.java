@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.instance;
 
+import javax.annotation.processing.Generated;
+
 /**
  * This class is generated in a build-time from a template stored at
  * src/main/template/com/hazelcast/instance/GeneratedBuildProperties.
@@ -31,6 +33,7 @@ package com.hazelcast.instance;
  * The fields are read via reflection at {@link com.hazelcast.instance.BuildInfoProvider}
  *
  */
+@Generated("")
 public final class GeneratedBuildProperties {
     public static final String VERSION = "${project.version}";
     public static final String BUILD = "${timestamp}";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.A
 import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.WAIT_KEY_ADDED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.spi.properties.ClusterProperty.METRICS_DATASTRUCTURES;
 
 /**
  * Contains Raft-based semaphore instances
@@ -59,7 +60,10 @@ public class SemaphoreService extends AbstractBlockingService<AcquireInvocationK
     @Override
     protected void initImpl() {
         super.initImpl();
-        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
+
+        if (nodeEngine.getProperties().getBoolean(METRICS_DATASTRUCTURES)) {
+            nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     public boolean initSemaphore(CPGroupId groupId, String name, int permits) {

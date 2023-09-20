@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,13 +37,11 @@ import java.util.Map;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.createMockVisitablePredicate;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.createPassthroughVisitor;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@SuppressWarnings("rawtypes")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NotPredicateTest {
@@ -60,7 +58,7 @@ public class NotPredicateTest {
         NotPredicate notPredicate = new NotPredicate(inner);
         Predicate negate = notPredicate.negate();
 
-        assertThat(negate, sameInstance(inner));
+        assertThat(negate).isSameAs(inner);
     }
 
     @Test
@@ -96,7 +94,7 @@ public class NotPredicateTest {
         NotPredicate notPredicate = new NotPredicate(null);
         NotPredicate result = (NotPredicate) notPredicate.accept(mockVisitor, mockIndexes);
 
-        assertThat(result, sameInstance(notPredicate));
+        assertThat(result).isSameAs(notPredicate);
     }
 
     @Test
@@ -110,8 +108,8 @@ public class NotPredicateTest {
         NotPredicate notPredicate = new NotPredicate(predicate);
         NotPredicate result = (NotPredicate) notPredicate.accept(mockVisitor, mockIndexes);
 
-        assertThat(result, not(sameInstance(notPredicate)));
-        assertThat(result.predicate, equalTo(transformed));
+        assertThat(result).isNotSameAs(notPredicate);
+        assertThat(result.predicate).isEqualTo(transformed);
     }
 
     @Test

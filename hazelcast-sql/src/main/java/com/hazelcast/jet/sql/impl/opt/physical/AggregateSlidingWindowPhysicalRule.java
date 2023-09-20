@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -188,6 +188,13 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
                     windowRel.windowPolicyProvider());
             if (transformedRel != null) {
                 call.transformTo(transformedRel);
+            } else {
+                call.transformTo(
+                        new ShouldNotExecuteRel(logicalAggregate.getCluster(),
+                                OptUtils.toPhysicalConvention(logicalAggregate.getTraitSet()),
+                                logicalAggregate.getRowType(),
+                                "Streaming aggregation is supported only for window aggregation, with imposed order, " +
+                                        "grouping by a window bound (see TUMBLE/HOP and IMPOSE_ORDER functions)"));
             }
         }
     }
@@ -230,7 +237,7 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
             List<Integer> windowEndIndexes,
             RelNode input
     ) {
-        // TODO: [viliam, sasha] besides watermark order, we can also use normal collation
+        // TODO [sasha]: besides watermark order, we can also use normal collation
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(input);
         WatermarkedFields watermarkedFields = query.extractWatermarkedFields(input);
         if (watermarkedFields == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import static com.hazelcast.cp.internal.RaftService.getObjectNameForProxy;
 import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.spi.properties.ClusterProperty.METRICS_DATASTRUCTURES;
 
 /**
  * Contains Raft-based count down latch instances
@@ -55,7 +56,10 @@ public class CountDownLatchService extends AbstractBlockingService<AwaitInvocati
     @Override
     protected void initImpl() {
         super.initImpl();
-        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
+
+        if (nodeEngine.getProperties().getBoolean(METRICS_DATASTRUCTURES)) {
+            nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     public boolean trySetCount(CPGroupId groupId, String name, int count) {

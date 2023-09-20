@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -437,6 +437,55 @@ public final class Processors {
     }
 
     /**
+     * Returns a supplier of processors for a vertex that aggregates events
+     * into a sliding window in a single stage (see the {@link Processors
+     * class Javadoc} for an explanation of aggregation stages). The vertex
+     * groups items by the grouping key (as obtained from the given
+     * key-extracting function) and by <em>frame</em>, which is a range of
+     * timestamps equal to the sliding step. It emits sliding window results
+     * labeled with the timestamp denoting the window's end time (the exclusive
+     * upper bound of the timestamps belonging to the window).
+     * <p>
+     * The vertex accepts input from one or more inbound edges. The type of
+     * items may be different on each edge. For each edge a separate key
+     * extracting function must be supplied and the aggregate operation must
+     * contain a separate accumulation function for each edge.
+     * <p>
+     * When the vertex receives a watermark with a given {@code wmVal}, it
+     * emits the result of aggregation for all the positions of the sliding
+     * window with {@code windowTimestamp <= wmVal}. It computes the window
+     * result by combining the partial results of the frames belonging to it
+     * and finally applying the {@code finish} aggregation primitive. After this
+     * it deletes from storage all the frames that trail behind the emitted
+     * windows. In the output there is one item per key per window position.
+     * <p>
+     * <i>Behavior on job restart</i><br>
+     * This processor saves its state to snapshot. After restart, it can
+     * continue accumulating where it left off.
+     * <p>
+     * After a restart in at-least-once mode, watermarks are allowed to go back
+     * in time. If such a watermark is received, some windows that were emitted
+     * in previous execution will be re-emitted. These windows might miss
+     * events as some of them had already been evicted before the snapshot was
+     * done in previous execution.
+     */
+    @Nonnull
+    public static <K, A, R, OUT> SupplierEx<Processor> aggregateToSlidingWindowP(
+            @Nonnull List<FunctionEx<?, ? extends K>> keyFns,
+            @Nonnull List<ToLongFunctionEx<?>> timestampFns,
+            @Nonnull TimestampKind timestampKind,
+            @Nonnull SlidingWindowPolicy winPolicy,
+            long earlyResultsPeriod,
+            @Nonnull AggregateOperation<A, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn,
+            byte windowWatermarkKey
+    ) {
+        return aggregateByKeyAndWindowP(
+                keyFns, timestampFns, timestampKind, winPolicy, earlyResultsPeriod, aggrOp, mapToOutputFn, true,
+                windowWatermarkKey);
+    }
+
+    /**
      * Returns a supplier of processors for the first-stage vertex in a
      * two-stage sliding window aggregation setup (see the {@link Processors
      * class Javadoc} for an explanation of aggregation stages). The vertex
@@ -485,6 +534,60 @@ public final class Processors {
                 aggrOp.withIdentityFinish(),
                 KeyedWindowResult::new,
                 false
+        );
+    }
+
+    /**
+     * Returns a supplier of processors for the first-stage vertex in a
+     * two-stage sliding window aggregation setup (see the {@link Processors
+     * class Javadoc} for an explanation of aggregation stages). The vertex
+     * groups items by the grouping key (as obtained from the given
+     * key-extracting function) and by <em>frame</em>, which is a range of
+     * timestamps equal to the sliding step. It applies the {@link
+     * AggregateOperation1#accumulateFn() accumulate} aggregation primitive to
+     * each key-frame group.
+     * <p>
+     * The frame is identified by the timestamp denoting its end time (equal to
+     * the exclusive upper bound of its timestamp range). {@link
+     * SlidingWindowPolicy#higherFrameTs(long)} maps the event timestamp to the
+     * timestamp of the frame it belongs to.
+     * <p>
+     * The vertex accepts input from one or more inbound edges. The type of
+     * items may be different on each edge. For each edge a separate key
+     * extracting function must be supplied and the aggregate operation must
+     * contain a separate accumulation function for each edge.
+     * <p>
+     * When the processor receives a keyed watermark with a given {@code wmVal}, it
+     * emits the current accumulated state of all frames with {@code
+     * timestamp <= wmVal} and deletes these frames from its storage. In the
+     * output there is one item per key per frame.
+     * <p>
+     * When a state snapshot is requested, the state is flushed to second-stage
+     * processor and nothing is saved to snapshot.
+     *
+     * @param <K> type of the grouping key
+     * @param <A> type of accumulator returned from {@code aggrOp.
+     *            createAccumulatorFn()}
+     */
+    @Nonnull
+    public static <K, A> SupplierEx<Processor> accumulateByFrameP(
+            @Nonnull List<FunctionEx<?, ? extends K>> keyFns,
+            @Nonnull List<ToLongFunctionEx<?>> timestampFns,
+            @Nonnull TimestampKind timestampKind,
+            @Nonnull SlidingWindowPolicy winPolicy,
+            @Nonnull AggregateOperation<A, ?> aggrOp,
+            byte watermarkKey
+    ) {
+        return aggregateByKeyAndWindowP(
+                keyFns,
+                timestampFns,
+                timestampKind,
+                winPolicy.toTumblingByFrame(),
+                0L,
+                aggrOp.withIdentityFinish(),
+                KeyedWindowResult::new,
+                false,
+                watermarkKey
         );
     }
 
@@ -759,7 +862,36 @@ public final class Processors {
     public static <T> SupplierEx<Processor> insertWatermarksP(
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
-        return () -> new InsertWatermarksP<>(eventTimePolicy);
+        return insertWatermarksP(ctx -> eventTimePolicy);
+    }
+
+    /**
+     * Returns a supplier of processors for a vertex that inserts {@link
+     * com.hazelcast.jet.core.Watermark watermark items} into the stream. The
+     * value of the watermark is determined by the supplied {@link
+     * com.hazelcast.jet.core.EventTimePolicy} instance.
+     * <p>
+     * This processor also drops late items. It never allows an event which is
+     * late with regard to already emitted watermark to pass.
+     * <p>
+     * The processor saves value of the last emitted watermark to snapshot.
+     * Different instances of this processor can be at different watermark at
+     * snapshot time. After restart all instances will start at watermark of
+     * the most-behind instance before the restart.
+     * <p>
+     * This might sound as it could break the monotonicity requirement, but
+     * thanks to watermark coalescing, watermarks are only delivered for
+     * downstream processing after they have been received from <i>all</i>
+     * upstream processors. Another side effect of this is, that a late event,
+     * which was dropped before restart, is not considered late after restart.
+     *
+     * @param <T> the type of the stream item
+     */
+    @Nonnull
+    public static <T> SupplierEx<Processor> insertWatermarksP(
+            @Nonnull FunctionEx<ProcessorSupplier.Context, EventTimePolicy<? super T>> eventTimePolicyProvider
+    ) {
+        return () -> new InsertWatermarksP<>(eventTimePolicyProvider);
     }
 
     /**

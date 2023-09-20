@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.BasicMapTest;
-import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.map.LocalMapStats;
@@ -38,7 +38,6 @@ import org.junit.runner.RunWith;
 import testsubjects.StaticSerializableBiFunction;
 import testsubjects.StaticSerializableBiFunctionEx;
 
-import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -876,13 +875,34 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
+    public void testDeleteAsync() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "value";
+
+        map.put(key, value);
+        Future<Boolean> result = map.deleteAsync(key).toCompletableFuture();
+
+        assertTrue(result.get());
+        assertNull(map.get(key));
+    }
+
+    @Test
+    public void testDeleteAsync_whenKeyNotPresent() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+
+        Future<Boolean> result = map.deleteAsync("NOT_THERE").toCompletableFuture();
+        assertFalse(result.get());
+    }
+
+    @Test
     public void testReplaceAllWithStaticSerializableFunction() {
         IMap<String, String> map = client.getMap(randomString());
         map.put("k1", "v1");
         map.put("k2", "v2");
         map.replaceAll(new StaticSerializableBiFunction("v_new"));
-        assertEquals(map.get("k1"), "v_new");
-        assertEquals(map.get("k2"), "v_new");
+        assertEquals("v_new", map.get("k1"));
+        assertEquals("v_new", map.get("k2"));
     }
 
     @Test
@@ -891,8 +911,8 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         map.put("k1", 1);
         map.put("k2", 2);
         map.replaceAll((k, v) -> v * 10);
-        assertEquals((int) map.get("k1"), 10);
-        assertEquals((int) map.get("k2"), 20);
+        assertEquals(10, (int) map.get("k1"));
+        assertEquals(20, (int) map.get("k2"));
     }
 
     @Test(expected = ArithmeticException.class)
@@ -1448,36 +1468,25 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         map.localKeySet(Predicates.alwaysFalse());
     }
 
-    private static class DelayGetRemoveMapInterceptor implements MapInterceptor, Serializable {
+    private static class DelayGetRemoveMapInterceptor extends MapInterceptorAdaptor {
+        private static final long serialVersionUID = 1L;
 
         @Override
         public Object interceptGet(Object value) {
             sleepMillis(1);
-            return value;
-        }
-
-        @Override
-        public void afterGet(Object value) {
+            return super.interceptGet(value);
         }
 
         @Override
         public Object interceptPut(Object oldValue, Object newValue) {
             sleepMillis(1);
-            return newValue;
-        }
-
-        @Override
-        public void afterPut(Object value) {
+            return super.interceptPut(oldValue, newValue);
         }
 
         @Override
         public Object interceptRemove(Object removedValue) {
             sleepMillis(1);
-            return removedValue;
-        }
-
-        @Override
-        public void afterRemove(Object value) {
+            return super.interceptRemove(removedValue);
         }
     }
 

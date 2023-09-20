@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,19 @@ package com.hazelcast.map.impl.operation.steps.engine;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
+import com.hazelcast.map.impl.recordstore.StepAwareStorage;
+import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 import static com.hazelcast.map.impl.operation.ForcedEviction.runStepWithForcedEvictionStrategies;
+import static com.hazelcast.map.impl.operation.steps.engine.AppendAsNewHeadStep.appendAsNewHeadStep;
 
 /**
  * <lu>
@@ -36,7 +40,7 @@ import static com.hazelcast.map.impl.operation.ForcedEviction.runStepWithForcedE
  * <li>Must be thread safe</li>
  * </lu>
  */
-public class StepSupplier implements Supplier<Runnable> {
+public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
 
     private final State state;
     private final OperationRunnerImpl operationRunner;
@@ -54,16 +58,39 @@ public class StepSupplier implements Supplier<Runnable> {
         this(operation, true);
     }
 
-    public StepSupplier(MapOperation operation, boolean checkCurrentThread) {
+    // package-private for testing purposes
+    StepSupplier(MapOperation operation,
+                 boolean checkCurrentThread) {
         assert operation != null;
 
         this.state = operation.createState();
         this.currentStep = operation.getStartingStep();
+        collectAndUpdateHeadSteps(operation);
         this.operationRunner = UtilSteps.getPartitionOperationRunner(state);
         this.checkCurrentThread = checkCurrentThread;
 
-        assert state != null;
-        assert currentStep != null;
+        assert this.currentStep != null;
+    }
+
+    @Override
+    public void accept(Step headStep) {
+        if (headStep == null) {
+            return;
+        }
+
+        this.currentStep = appendAsNewHeadStep(currentStep, headStep);
+    }
+
+    private void collectAndUpdateHeadSteps(MapOperation operation) {
+        Storage storage = operation.getRecordStore().getStorage();
+        if (storage instanceof StepAwareStorage) {
+            ((StepAwareStorage) storage).addAsHeadStep(this);
+        }
+    }
+
+    // used only for testing
+    Step getCurrentStep() {
+        return currentStep;
     }
 
     @Override
@@ -91,9 +118,7 @@ public class StepSupplier implements Supplier<Runnable> {
 
                 @Override
                 public void run() {
-                    if (checkCurrentThread) {
-                        assert !isRunningOnPartitionThread();
-                    }
+                    assert !checkCurrentThread || !isRunningOnPartitionThread();
 
                     runStepWithState(step, state);
                 }
@@ -139,17 +164,23 @@ public class StepSupplier implements Supplier<Runnable> {
         boolean runningOnPartitionThread = isRunningOnPartitionThread();
         boolean metWithPreconditions = true;
         try {
+            state.getRecordStore().beforeOperation();
             try {
                 if (runningOnPartitionThread && state.getThrowable() == null) {
                     metWithPreconditions = metWithPreconditions();
                 }
-                step.runStep(state);
+
+                if (metWithPreconditions) {
+                    step.runStep(state);
+                }
             } catch (NativeOutOfMemoryError e) {
                 assertRunningOnPartitionThread();
 
                 rerunWithForcedEviction(() -> {
                     step.runStep(state);
                 });
+            } finally {
+                state.getRecordStore().afterOperation();
             }
         } catch (Throwable throwable) {
             if (runningOnPartitionThread) {
@@ -173,11 +204,13 @@ public class StepSupplier implements Supplier<Runnable> {
         // check node and cluster health before running each step
         operationRunner.ensureNodeAndClusterHealth(state.getOperation());
 
-        // check timeout for only first step, as in no-offload flows
-        if (firstStep && operationRunner.timeout(state.getOperation())) {
-            return false;
+        // check timeout for only first step,
+        // as in regular operation-runner
+        if (firstStep) {
+            assert firstStep;
+            firstStep = false;
+            return !operationRunner.timeout(state.getOperation());
         }
-
         return true;
     }
 
@@ -186,7 +219,6 @@ public class StepSupplier implements Supplier<Runnable> {
      * otherwise finds next step by calling {@link Step#nextStep}
      */
     private Step nextStep(Step step) {
-        firstStep = false;
         if (state.getThrowable() != null
                 && currentStep != UtilSteps.HANDLE_ERROR) {
             return UtilSteps.HANDLE_ERROR;
@@ -200,7 +232,12 @@ public class StepSupplier implements Supplier<Runnable> {
 
     public void handleOperationError(Throwable throwable) {
         state.setThrowable(throwable);
-        UtilSteps.HANDLE_ERROR.runStep(state);
+        currentRunnable = null;
+        currentStep = UtilSteps.HANDLE_ERROR;
+    }
+
+    public MapOperation getOperation() {
+        return state.getOperation();
     }
 
     private interface ExecutorNameAwareRunnable extends Runnable, Offloadable {

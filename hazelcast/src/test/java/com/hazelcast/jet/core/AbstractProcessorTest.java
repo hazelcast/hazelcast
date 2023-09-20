@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ public class AbstractProcessorTest {
 
     @Test(expected = UnknownHostException.class)
     public void when_customInitThrows_then_initRethrows() throws Exception {
-        new MockP().setInitError(new UnknownHostException())
+        new MockP().setInitError(() -> new UnknownHostException())
                    .init(mock(Outbox.class), new TestProcessorContext());
     }
 

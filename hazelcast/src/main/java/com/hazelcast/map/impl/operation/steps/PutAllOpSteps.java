@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -167,7 +167,8 @@ public enum PutAllOpSteps implements IMapOpStep {
 
                 if (loadOldValue && oldValue != null) {
                     // TODO why do we need to convert to heap data here?
-                    oldValueByKey.put(perKeyState.getKey(), mapServiceContext.toData(oldValue));
+                    oldValueByKey.put(perKeyState.getKey(),
+                            mapServiceContext.toData(perKeyState.getOldValue()));
                 }
             }
 
@@ -191,6 +192,11 @@ public enum PutAllOpSteps implements IMapOpStep {
 
             List<Map.Entry<Data, Data>> entries = state.getMapEntries().entries();
             for (Map.Entry<Data, Data> entry : entries) {
+                // it is possible that forced-eviction can delete some
+                // entries, and we find some entries are missing.
+                if (recordStore.getRecord(entry.getKey()) == null) {
+                    continue;
+                }
 
                 Data dataKey = entry.getKey();
                 Object newValue = entry.getValue();
@@ -225,7 +231,7 @@ public enum PutAllOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

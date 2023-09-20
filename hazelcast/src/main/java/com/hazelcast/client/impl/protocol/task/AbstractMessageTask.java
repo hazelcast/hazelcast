@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,9 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -50,6 +53,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
+import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 
 /**
@@ -60,6 +65,9 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     private static final List<Class<? extends Throwable>> NON_PEELABLE_EXCEPTIONS =
             Arrays.asList(Error.class, MemberLeftException.class);
+
+    protected AsyncSocket asyncSocket;
+    protected IOBufferAllocator responseBufAllocator;
 
     protected final ClientMessage clientMessage;
     protected final ServerConnection connection;
@@ -82,6 +90,14 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         this.clientEngine = node.getClientEngine();
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = initEndpoint();
+    }
+
+    public void setAsyncSocket(AsyncSocket asyncSocket) {
+        this.asyncSocket = asyncSocket;
+    }
+
+    public void setResponseBufAllocator(IOBufferAllocator responseBufAllocator) {
+        this.responseBufAllocator = responseBufAllocator;
     }
 
     @SuppressWarnings("unchecked")
@@ -256,13 +272,43 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         }
     }
 
+    // PETER:
+    @SuppressWarnings({"java:S125", "java:S1135"})
     protected void sendClientMessage(ClientMessage resultClientMessage) {
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
+
+        if (asyncSocket == null) {
+            connection.write(resultClientMessage);
+        } else {
+            ClientMessage.Frame frame = resultClientMessage.getStartFrame();
+            IOBuffer buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
+            while (frame != null) {
+                buf.writeIntL(frame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
+
+                int flags = frame.flags;
+                if (frame == resultClientMessage.getEndFrame()) {
+                    flags = frame.flags | IS_FINAL_FLAG;
+                }
+
+                buf.writeShortL((short) flags);
+                buf.writeBytes(frame.content);
+                frame = frame.next;
+            }
+
+            buf.flip();
+            if (!asyncSocket.writeAndFlush(buf)) {
+                // Unlike the 'classic' networking, the asyncSocket has a bound on the
+                // number of packets on the write-queue to prevent running into OOME.
+                // So if the response can't be send, we close the connection to indicate
+                // that the connection was congested.
+                connection.close("Response could not be send due to congested socket "
+                        + asyncSocket, null);
+            }
+        }
         //TODO framing not implemented yet, should be split into frames before writing to connection
         // PETER: There is no point in chopping it up in frames and in 1 go write all these frames because it still will
         // not allow any interleaving with operations. It will only slow down the system. Framing should be done inside
         // the io system; not outside.
-        connection.write(resultClientMessage);
     }
 
     protected void sendClientMessage(Object key, ClientMessage resultClientMessage) {

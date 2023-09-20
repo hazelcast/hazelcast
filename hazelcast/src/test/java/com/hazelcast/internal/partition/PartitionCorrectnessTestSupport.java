@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,13 +54,10 @@ import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionRe
 import static com.hazelcast.test.Accessors.getClusterService;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getPartitionService;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSupport {
@@ -133,7 +130,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
     Collection<Address> terminateNodes(int count) throws InterruptedException {
         List<HazelcastInstance> instances = new ArrayList<>(factory.getAllHazelcastInstances());
-        assertThat(instances.size(), greaterThanOrEqualTo(count));
+        assertThat(instances.size()).isGreaterThanOrEqualTo(count);
 
         Collections.shuffle(instances);
 
@@ -280,8 +277,10 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                                          PartitionReplica localReplica, N ns) {
         for (Integer p : service.keys(ns)) {
             int replicaIndex = partitions[p].getReplicaIndex(localReplica);
-            assertThat("Partition: " + p + " is leaking on " + localReplica,
-                    replicaIndex, allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(backupCount)));
+            assertThat(replicaIndex)
+                    .as("Partition: " + p + " is leaking on " + localReplica)
+                    .isGreaterThanOrEqualTo(0)
+                    .isLessThanOrEqualTo(backupCount);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -36,9 +37,11 @@ public abstract class JetTable extends Table {
             @Nonnull List<TableField> fields,
             @Nonnull String schemaName,
             @Nonnull String name,
-            @Nonnull TableStatistics statistics
+            @Nonnull TableStatistics statistics,
+            @Nullable String objectType,
+            boolean isStreaming
     ) {
-        super(schemaName, name, fields, statistics);
+        super(schemaName, name, fields, statistics, objectType, isStreaming);
         this.sqlConnector = sqlConnector;
     }
 

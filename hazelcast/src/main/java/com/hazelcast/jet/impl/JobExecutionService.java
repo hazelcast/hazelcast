@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,8 +79,8 @@ import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
@@ -569,10 +569,11 @@ public class JobExecutionService implements DynamicMetricsProvider {
                       .thenApply(r -> {
                           RawJobMetrics terminalMetrics;
                           if (collectMetrics) {
-                              JobMetricsCollector metricsRenderer =
-                                      new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger);
-                              nodeEngine.getMetricsRegistry().collect(metricsRenderer);
-                              terminalMetrics = metricsRenderer.getMetrics();
+                              try (JobMetricsCollector metricsRenderer =
+                                      new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger)) {
+                                  nodeEngine.getMetricsRegistry().collect(metricsRenderer);
+                                  terminalMetrics = metricsRenderer.getMetrics();
+                              }
                           } else {
                               terminalMetrics = null;
                           }
@@ -740,7 +741,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
     }
 
-    private static class JobMetricsCollector implements MetricsCollector {
+    private static class JobMetricsCollector implements MetricsCollector, AutoCloseable {
 
         private final Long executionId;
         private final MetricsCompressor compressor;
@@ -758,10 +759,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         @Override
         public void collectLong(MetricDescriptor descriptor, long value) {
-            System.out.println("bbb: " + descriptor + ", v=" + value);
             Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
             if (this.executionId.equals(executionId)) {
-                System.out.println("taken");
                 compressor.addLong(addPrefixFn.apply(descriptor), value);
             }
         }
@@ -787,7 +786,12 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         @Nonnull
         public RawJobMetrics getMetrics() {
-            return RawJobMetrics.of(compressor.getBlobAndReset());
+            return RawJobMetrics.of(compressor.getBlobAndClose());
+        }
+
+        @Override
+        public void close() {
+            compressor.close();
         }
     }
 }

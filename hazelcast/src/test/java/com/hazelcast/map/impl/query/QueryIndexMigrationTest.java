@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.partition.PartitionTableView;
-import com.hazelcast.internal.partition.TestPartitionUtils;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.map.IMap;
@@ -30,21 +28,16 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.impl.IndexCopyBehavior;
-import com.hazelcast.query.impl.LoggingIndexes;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -65,8 +58,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.query.Predicates.equal;
-import static com.hazelcast.query.impl.Indexes.CUSTOM_INDEXES_CLASS_NAME;
-import static com.hazelcast.test.Accessors.getPartitionService;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.Thread.interrupted;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -78,17 +69,6 @@ import static org.junit.Assert.assertTrue;
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class QueryIndexMigrationTest extends HazelcastTestSupport {
-
-    // enable trace logging for migrations
-    // see
-    @ClassRule
-    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-trace-migrations.xml");
-
-    // change Indexes implementation to LoggingIndexes class that decorates plain
-    // Indexes class with logging.
-    @Rule
-    public OverridePropertyRule customIndexImplProperty = OverridePropertyRule.set(CUSTOM_INDEXES_CLASS_NAME,
-            LoggingIndexes.class.getName());
 
     private Random random = new Random();
 
@@ -183,30 +163,23 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     @Test
     public void testQueryWithIndexesWhileMigrating() {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(getTestConfig());
-        try {
-            IMap<String, Employee> map = instance.getMap("employees");
-            map.addIndex(IndexType.SORTED, "age");
-            map.addIndex(IndexType.HASH, "active");
+        IMap<String, Employee> map = instance.getMap("employees");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
 
-            for (int i = 0; i < 500; i++) {
-                map.put("e" + i, new Employee("name" + i, i % 50, ((i & 1) == 1), (double) i));
-            }
-            assertEquals(500, map.size());
-            Set<Map.Entry<String, Employee>> entries = map.entrySet(Predicates.sql("active=true and age>44"));
+        for (int i = 0; i < 500; i++) {
+            map.put("e" + i, new Employee("name" + i, i % 50, ((i & 1) == 1), (double) i));
+        }
+        assertEquals(500, map.size());
+        Set<Map.Entry<String, Employee>> entries = map.entrySet(Predicates.sql("active=true and age>44"));
+        assertEquals(30, entries.size());
+
+        nodeFactory.newInstances(getTestConfig(), 3);
+
+        long startNow = Clock.currentTimeMillis();
+        while ((Clock.currentTimeMillis() - startNow) < 10000) {
+            entries = map.entrySet(Predicates.sql("active=true and age>44"));
             assertEquals(30, entries.size());
-
-            nodeFactory.newInstances(getTestConfig(), 3);
-
-            long startNow = Clock.currentTimeMillis();
-            while ((Clock.currentTimeMillis() - startNow) < 10000) {
-                entries = map.entrySet(Predicates.sql("active=true and age>44"));
-                assertEquals(30, entries.size());
-            }
-        } catch (AssertionError e) {
-            PartitionTableView partitionTableView = getPartitionService(instance).createPartitionTableView();
-            System.out.println("Partition assignments at time of failure:\n"
-                    + TestPartitionUtils.dumpPartitionTable(partitionTableView));
-            throw e;
         }
     }
 

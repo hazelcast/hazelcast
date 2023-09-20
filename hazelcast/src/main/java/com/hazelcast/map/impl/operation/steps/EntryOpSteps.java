@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,8 @@ public enum EntryOpSteps implements IMapOpStep {
                 return EntryOpSteps.LOAD;
             }
 
-            if (state.isEntryProcessorOffload()) {
+            if (state.isEntryProcessorOffloadable()) {
+                updateOldValueByConvertingItToHeapData(state);
                 return EntryOpSteps.RUN_OFFLOADED_ENTRY_PROCESSOR;
             }
             return EntryOpSteps.PROCESS;
@@ -82,16 +83,17 @@ public enum EntryOpSteps implements IMapOpStep {
                 return EntryOpSteps.ON_LOAD;
             }
 
-            if (state.isEntryProcessorOffload()) {
+            if (state.isEntryProcessorOffloadable()) {
                 return EntryOpSteps.RUN_OFFLOADED_ENTRY_PROCESSOR;
             }
+
             return EntryOpSteps.PROCESS;
         }
     },
 
     RUN_OFFLOADED_ENTRY_PROCESSOR() {
         @Override
-        public boolean isStoreStep() {
+        public boolean isOffloadStep(State state) {
             return true;
         }
 
@@ -108,10 +110,17 @@ public enum EntryOpSteps implements IMapOpStep {
             ExecutorStats executorStats = mapContainer.getMapServiceContext()
                     .getOffloadedEntryProcessorExecutorStats();
 
+            EntryOpSteps.interceptGet(state);
+
             if (statisticsEnabled) {
-                new StatsAwareRunnable(() -> {
+                // When stats are enabled, to update
+                // the stats wrap execution inside a
+                // StatsAwareRunnable and run directly here
+                StatsAwareRunnable statsAwareRunnable = new StatsAwareRunnable(() -> {
                     runStepInternal(state);
-                }, getExecutorName(state), executorStats).run();
+                }, getExecutorName(state), executorStats);
+                // directly run StatsAwareRunnable
+                statsAwareRunnable.run();
             } else {
                 runStepInternal(state);
             }
@@ -119,10 +128,8 @@ public enum EntryOpSteps implements IMapOpStep {
 
         private void runStepInternal(State state) {
             EntryOperation operation = (EntryOperation) state.getOperation();
-            Object oldValueByInMemoryFormat = operation.getOldValueByInMemoryFormat(state.getOldValue());
-
             EntryOperator entryOperator = operator(operation, state.getEntryProcessor())
-                    .operateOnKeyValue(state.getKey(), oldValueByInMemoryFormat);
+                    .operateOnKeyValue(state.getKey(), state.getOldValue());
             state.setEntryOperator(entryOperator);
         }
 
@@ -134,7 +141,7 @@ public enum EntryOpSteps implements IMapOpStep {
                 return DO_POST_OPERATE_OPS;
             }
 
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     },
 
@@ -146,7 +153,8 @@ public enum EntryOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            if (state.isEntryProcessorOffload()) {
+            if (state.isEntryProcessorOffloadable()) {
+                updateOldValueByConvertingItToHeapData(state);
                 return EntryOpSteps.RUN_OFFLOADED_ENTRY_PROCESSOR;
             }
             return EntryOpSteps.PROCESS;
@@ -157,6 +165,7 @@ public enum EntryOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
+            EntryOpSteps.interceptGet(state);
 
             EntryOperator entryOperator = state.getOperator();
             entryOperator.init(state.getKey(), state.getOldValue(),
@@ -331,10 +340,23 @@ public enum EntryOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 
     EntryOpSteps() {
+    }
+
+    private static void updateOldValueByConvertingItToHeapData(State state) {
+        EntryOperation operation = (EntryOperation) state.getOperation();
+        Object oldValueByInMemoryFormat = operation.convertOldValueToHeapData(state.getOldValue());
+        state.setOldValue(oldValueByInMemoryFormat);
+    }
+
+    private static void interceptGet(State state) {
+        MapContainer mapContainer = state.getRecordStore().getMapContainer();
+        MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
+        Object value = mapServiceContext.interceptGet(mapContainer.getInterceptorRegistry(), state.getOldValue());
+        state.setOldValue(value);
     }
 }

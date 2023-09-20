@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,8 +59,6 @@ import java.util.function.BiConsumer;
 public interface RecordStore<R extends Record> {
 
     ExpirySystem getExpirySystem();
-
-    LocalRecordStoreStats getLocalRecordStoreStats();
 
     String getName();
 
@@ -276,11 +274,11 @@ public interface RecordStore<R extends Record> {
      * @param mergingEntry the {@link MapMergeTypes} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @param provenance   origin of call to this method.
-     * @return {@code true} if merge is applied, otherwise {@code false}
+     * @return the {@link MapMergeResponse} indicating the result of the merge
      */
-    boolean merge(MapMergeTypes<Object, Object> mergingEntry,
-                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
-                  CallerProvenance provenance);
+    MapMergeResponse merge(MapMergeTypes<Object, Object> mergingEntry,
+                                SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
+                                CallerProvenance provenance);
 
     R getRecord(Data key);
 
@@ -467,11 +465,12 @@ public interface RecordStore<R extends Record> {
     /**
      * Returns live record or null if record is already expired. Does not load missing keys from a map store.
      *
-     * @param key key to be accessed
+     * @param key      key to be accessed
+     * @param backup true if partition is a backup-partition otherwise set false
      * @return live record or null
      * @see #get
      */
-    R getRecordOrNull(Data key);
+    R getRecordOrNull(Data key, boolean backup);
 
     /**
      * Check if record is reachable according to TTL or idle times.
@@ -659,9 +658,9 @@ public interface RecordStore<R extends Record> {
 
     EvictionPolicy getEvictionPolicy();
 
-    LocalRecordStoreStatsImpl getStats();
+    LocalRecordStoreStatsImpl getLocalRecordStoreStats();
 
-    void setStats(LocalRecordStoreStats stats);
+    void setLocalRecordStoreStats(LocalRecordStoreStats stats);
 
     default void beforeOperation() {
         // no-op
@@ -678,4 +677,10 @@ public interface RecordStore<R extends Record> {
     void decMapStoreOffloadedOperationsCount();
 
     long getMapStoreOffloadedOperationsCount();
+
+    boolean isTieredStorageEnabled();
+
+    default void disposeOnSplitBrainHeal() {
+        // no-op
+    }
 }

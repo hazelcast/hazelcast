@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains the configuration specific to one Hazelcast Jet job.
+ * <p>
+ * Serialized form of this class should not be changed due to backward
+ * compatibility for {@link com.hazelcast.jet.impl.JobResult}.
  *
+ * @see DeltaJobConfig
  * @since Jet 3.0
  */
 public class JobConfig implements IdentifiedDataSerializable {
@@ -79,14 +83,15 @@ public class JobConfig implements IdentifiedDataSerializable {
     private boolean storeMetricsAfterJobCompletion;
     private long maxProcessorAccumulatedRecords = -1;
     private long timeoutMillis;
+    private String initialSnapshotName;
+    private JobClassLoaderFactory classLoaderFactory;
+
     // Note: new options in JobConfig must also be added to `SqlCreateJob`
 
     private Map<String, ResourceConfig> resourceConfigs = new LinkedHashMap<>();
     private Map<String, String> serializerConfigs = new HashMap<>();
     private Map<String, Object> arguments = new HashMap<>();
     private Map<String, List<String>> customClassPaths = new HashMap<>();
-    private JobClassLoaderFactory classLoaderFactory;
-    private String initialSnapshotName;
 
     /**
      * Returns the name of the job or {@code null} if no name was given.
@@ -162,6 +167,14 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
+     * Returns whether auto-scaling is enabled, see
+     * {@link #setAutoScaling(boolean)}.
+     */
+    public boolean isAutoScaling() {
+        return autoScaling;
+    }
+
+    /**
      * Sets whether Jet will scale the job up or down when a member is added or
      * removed from the cluster. Enabled by default. Ignored for {@linkplain
      * JetService#newLightJob(Pipeline) light jobs}.
@@ -177,43 +190,14 @@ public class JobConfig implements IdentifiedDataSerializable {
      * </pre>
      *
      * @return {@code this} instance for fluent API
-     * @see InstanceConfig#setScaleUpDelayMillis Configuring the scale-up delay
-     * @see #setProcessingGuarantee Enabling/disabling snapshots
+     * @see InstanceConfig#setScaleUpDelayMillis
+     *      Configuring the scale-up delay
+     * @see #setProcessingGuarantee
+     *      Enabling/disabling snapshots
      */
     public JobConfig setAutoScaling(boolean enabled) {
         throwIfLocked();
         this.autoScaling = enabled;
-        return this;
-    }
-
-    /**
-     * Returns whether auto scaling is enabled, see
-     * {@link #setAutoScaling(boolean)}.
-     */
-    public boolean isAutoScaling() {
-        return autoScaling;
-    }
-
-    /**
-     * Sets what happens if the job execution fails:
-     * <ul>
-     *     <li>If enabled, the job will be suspended. It can later be {@linkplain
-     *     Job#resume() resumed} or upgraded and the computation state will be
-     *     preserved.
-     *     <li>If disabled, the job will be terminated. The state snapshots will be
-     *     deleted.
-     * </ul>
-     * <p>
-     * By default it's disabled. Ignored for {@linkplain
-     * JetService#newLightJob(Pipeline) light jobs}.
-     *
-     * @return {@code this} instance for fluent API
-     *
-     * @since Jet 4.3
-     */
-    public JobConfig setSuspendOnFailure(boolean suspendOnFailure) {
-        throwIfLocked();
-        this.suspendOnFailure = suspendOnFailure;
         return this;
     }
 
@@ -225,6 +209,27 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     public boolean isSuspendOnFailure() {
         return suspendOnFailure;
+    }
+
+    /**
+     * Sets what happens if the job execution fails: <ul>
+     * <li> If enabled, the job will be suspended. It can later be {@linkplain
+     *      Job#resume() resumed} or upgraded and the computation state will be
+     *      preserved.
+     * <li> If disabled, the job will be terminated. The state snapshots will be
+     *      deleted. </ul>
+     * <p>
+     * By default, it's disabled. Ignored for {@linkplain
+     * JetService#newLightJob(Pipeline) light jobs}.
+     *
+     * @return {@code this} instance for fluent API
+     *
+     * @since Jet 4.3
+     */
+    public JobConfig setSuspendOnFailure(boolean suspendOnFailure) {
+        throwIfLocked();
+        this.suspendOnFailure = suspendOnFailure;
+        return this;
     }
 
     /**
@@ -341,7 +346,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Adds a JAR whose contents will be accessible to all the code attached to the
      * underlying pipeline or DAG, but not to any other code. An important example
      * is the {@code IMap} data source, which can instantiate only the classes from
-     * the Jet instance's classpath.)
+     * the Jet instance's classpath.
      * <p>
      * This variant identifies the JAR with a URL, which must contain at least one
      * path segment. The last path segment ("filename") will be used as the resource
@@ -367,7 +372,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Adds a JAR whose contents will be accessible to all the code attached to the
      * underlying pipeline or DAG, but not to any other code. An important example
      * is the {@code IMap} data source, which can instantiate only the classes from
-     * the Jet instance's classpath.)
+     * the Jet instance's classpath.
      * <p>
      * This variant identifies the JAR with a {@code File}. The filename part of the
      * path will be used as the resource ID, so two JARs with the same filename will
@@ -393,7 +398,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Adds a JAR whose contents will be accessible to all the code attached to the
      * underlying pipeline or DAG, but not to any other code. An important example
      * is the {@code IMap} data source, which can instantiate only the classes from
-     * the Jet instance's classpath.)
+     * the Jet instance's classpath.
      * <p>
      * This variant identifies the JAR with a path string. The filename part will be
      * used as the resource ID, so two JARs with the same filename will be in
@@ -1268,6 +1273,15 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
+     * Returns if metrics collection is enabled for the job.
+     *
+     * @since Jet 3.2
+     */
+    public boolean isMetricsEnabled() {
+        return enableMetrics;
+    }
+
+    /**
      * Sets whether metrics collection should be enabled for the job. Needs
      * {@link MetricsConfig#isEnabled()} to be on in order to function.
      * <p>
@@ -1282,15 +1296,6 @@ public class JobConfig implements IdentifiedDataSerializable {
         throwIfLocked();
         this.enableMetrics = enabled;
         return this;
-    }
-
-    /**
-     * Returns if metrics collection is enabled for the job.
-     *
-     * @since Jet 3.2
-     */
-    public boolean isMetricsEnabled() {
-        return enableMetrics;
     }
 
     /**
@@ -1312,8 +1317,8 @@ public class JobConfig implements IdentifiedDataSerializable {
     /**
      * Sets whether metrics should be stored in the cluster after the job
      * completes. If enabled, metrics can be retrieved for the configured job
-     * after it has completed successfully and it is no longer running by
-     * calling {@link Job#getMetrics()}.
+     * after it has completed successfully and is no longer running by calling
+     * {@link Job#getMetrics()}.
      * <p>
      * If disabled, once the configured job stops running {@link
      * Job#getMetrics()} will always return empty metrics for it, regardless of
@@ -1321,8 +1326,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * collection} or {@link JobConfig#isMetricsEnabled() per job metrics
      * collection}.
      * <p>
-     * It's disabled by default. Ignored for {@linkplain
-     * JetService#newLightJob(Pipeline) light jobs}.
+     * It's disabled by default. Ignored for {@linkplain JetService#newLightJob
+     * light jobs}.
      *
      * @since Jet 3.2
      */
@@ -1346,11 +1351,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Sets the maximum number of records that can be accumulated by any single
      * {@link Processor} instance in the context of the job.
      * <p>
-     * For more info see {@link InstanceConfig#setMaxProcessorAccumulatedRecords(long)}.
+     * For more info see {@link JetConfig#setMaxProcessorAccumulatedRecords(long)}.
      * <p>
-     * If set, it has precedence over {@link InstanceConfig}'s one.
+     * If set, it has precedence over {@link JetConfig}'s one.
      * <p>
-     * The default value is {@code -1} - in that case {@link InstanceConfig}'s value
+     * The default value is {@code -1} - in that case {@link JetConfig}'s value
      * is used.
      *
      * @since 5.0

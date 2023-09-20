@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -119,6 +120,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private final ReentrantLock clusterServiceLock = new ReentrantLock();
     private final AtomicReference<JoinHolder> joined =
             new AtomicReference<>(new JoinHolder(false));
+    private final AtomicBoolean joinedBefore = new AtomicBoolean();
 
     private volatile UUID clusterId;
     private volatile Address masterAddress;
@@ -686,11 +688,24 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     void setJoined(boolean val) {
         assert clusterServiceLock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         joined.getAndUpdate(holder -> new JoinHolder(val)).latch.countDown();
+        joinedBefore.compareAndSet(false, val);
+        if (!node.getNodeExtension().getInternalHotRestartService().isStartCompleted()) {
+            // Hot restart can reset join state. We should allow it to reset joinBefore
+            // because a member which didn't complete hot restart is more similar to a
+            // member which never joined before. Because that member's nodeEngine can't
+            // return true to nodeEngine.isStartCompleted() call.
+            joinedBefore.set(val);
+        }
     }
 
     @Override
     public boolean isJoined() {
         return joined.get().isJoined;
+    }
+
+    @Override
+    public boolean isJoinedBefore() {
+        return joinedBefore.get();
     }
 
     @Probe(name = CLUSTER_METRIC_CLUSTER_SERVICE_SIZE)

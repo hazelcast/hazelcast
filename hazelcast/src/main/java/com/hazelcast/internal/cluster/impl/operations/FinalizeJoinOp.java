@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.UUID;
 
-import static com.hazelcast.internal.cluster.Versions.V5_2;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 /**
@@ -126,6 +125,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         if (deserializationFailure != null) {
             getLogger().severe("Node could not join cluster.", deserializationFailure);
             Node node = clusterService.getNodeEngine().getNode();
+            JoinOperation.verifyCanShutdown(node, deserializationFailure.getMessage());
             node.shutdown(true);
             throw ExceptionUtil.rethrow(deserializationFailure);
         }
@@ -201,10 +201,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         out.writeObject(preJoinOp);
         out.writeObject(postJoinOp);
         out.writeBoolean(deferPartitionProcessing);
-        // RU_COMPAT 5.1
-        if (clusterVersion.isGreaterOrEqual(V5_2)) {
-            out.writeByte(clusterTopologyIntent.getId());
-        }
+        out.writeByte(clusterTopologyIntent.getId());
     }
 
     @Override
@@ -223,11 +220,8 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
             return;
         }
         deferPartitionProcessing = in.readBoolean();
-        // RU_COMPAT 5.1
-        if (clusterVersion.isGreaterOrEqual(V5_2)) {
-            byte topologyIntentId = in.readByte();
-            clusterTopologyIntent = ClusterTopologyIntent.of(topologyIntentId);
-        }
+        byte topologyIntentId = in.readByte();
+        clusterTopologyIntent = ClusterTopologyIntent.of(topologyIntentId);
     }
 
     private OnJoinOp readOnJoinOp(ObjectDataInput in) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -62,9 +63,14 @@ public final class InvocationUtil {
      * implies the operation should be idempotent.
      *
      * <p>
-     * If there is an exception - other than {@link com.hazelcast.core.MemberLeftException} or
-     * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
+     * If there is an exception - other than {@link MemberLeftException},
+     * {@link TargetNotMemberException} or
+     * {@link HazelcastInstanceNotActiveException} while invoking then the iteration
      * is interrupted and the exception is propagated to the caller.
+     * <p>
+     * When invocations fail with <b>only</b> {@link ClusterTopologyChangedException}, the invocations are retried.
+     * When invocations fail {@link MemberLeftException}, {@link TargetNotMemberException} or
+     * {@link HazelcastInstanceNotActiveException} the exceptions are ignored.
      */
     public static <V> InternalCompletableFuture<V> invokeOnStableClusterSerial(
             NodeEngine nodeEngine,
@@ -242,7 +248,7 @@ public final class InvocationUtil {
                     } else {
                         future.completeExceptionally(t);
                     }
-                });
+                }, nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
             }
         }
     }

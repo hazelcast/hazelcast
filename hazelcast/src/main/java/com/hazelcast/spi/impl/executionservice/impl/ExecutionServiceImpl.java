@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -56,6 +57,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_PREFIX_INTERNAL;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_PREFIX_SCHEDULED_INTERNAL;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
 
@@ -316,34 +318,47 @@ public final class ExecutionServiceImpl implements ExecutionService {
     public void shutdown() {
         logger.finest("Stopping executors...");
         scheduledExecutorService.notifyShutdownInitiated();
-        for (ExecutorService executorService : executors.values()) {
-            executorService.shutdown();
-        }
-        for (ExecutorService executorService : durableExecutors.values()) {
-            executorService.shutdown();
-        }
-        for (ExecutorService executorService : scheduleDurableExecutors.values()) {
-            executorService.shutdown();
-        }
+
+        shutdown(executors);
+        shutdown(durableExecutors);
+        shutdown(scheduleDurableExecutors);
         scheduledExecutorService.shutdownNow();
         cachedExecutorService.shutdown();
-        try {
-            scheduledExecutorService.awaitTermination(AWAIT_TIME, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            currentThread().interrupt();
-            logger.finest(e);
+
+        awaitAndForceShutdown(executors);
+        awaitAndForceShutdown(scheduledExecutorService);
+        awaitAndForceShutdown(cachedExecutorService);
+
+        executors.clear();
+        durableExecutors.clear();
+        scheduleDurableExecutors.clear();
+    }
+
+    private void shutdown(Map<?, ? extends ExecutorService> executorServiceMap) {
+        for (ExecutorService executorService : executorServiceMap.values()) {
+            executorService.shutdown();
         }
+    }
+
+    private void awaitAndForceShutdown(Map<?, ? extends ExecutorService> executorServiceMap) {
+        for (ExecutorService executorService : executorServiceMap.values()) {
+            awaitAndForceShutdown(executorService);
+        }
+    }
+
+    private void awaitAndForceShutdown(ExecutorService executorService) {
         try {
-            if (!cachedExecutorService.awaitTermination(AWAIT_TIME, TimeUnit.SECONDS)) {
-                cachedExecutorService.shutdownNow();
+            // Some of our ExecutorService implementations (such as CachedExecutorServiceDelegate) do not support
+            // the awaitTermination method. So we should handle the UnsupportedOperationException.
+            if (!executorService.awaitTermination(AWAIT_TIME, TimeUnit.MILLISECONDS)) {
+                executorService.shutdownNow();
             }
         } catch (InterruptedException e) {
             currentThread().interrupt();
             logger.finest(e);
+        } catch (UnsupportedOperationException e) {
+            ignore(e);
         }
-        executors.clear();
-        durableExecutors.clear();
-        scheduleDurableExecutors.clear();
     }
 
     @Override

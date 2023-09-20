@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,6 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -299,7 +298,7 @@ public class ProcessorTaskletTest_Blocking {
         }
         final ProcessorTasklet t = new ProcessorTasklet(context, DIRECT_EXECUTOR,
                 new DefaultSerializationServiceBuilder().build(), processor, instreams, outstreams,
-                mock(SnapshotContext.class), new MockOutboundCollector(10), false);
+                new MockSnapshotContext(), new MockOutboundCollector(10), false);
         t.init();
         return t;
     }

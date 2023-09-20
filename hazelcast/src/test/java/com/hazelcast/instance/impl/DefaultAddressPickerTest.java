@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,18 @@
 
 package com.hazelcast.instance.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EndpointConfig;
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.impl.DefaultAddressPicker.AddressDefinition;
 import com.hazelcast.instance.impl.DefaultAddressPicker.InterfaceDefinition;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
@@ -35,8 +38,10 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
+import java.io.File;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -47,14 +52,17 @@ import java.util.Enumeration;
 
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK;
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
+import static com.hazelcast.instance.impl.DelegatingAddressPickerTest.assertAddressBetweenPorts;
+import static com.hazelcast.internal.util.AddressUtil.getAddressHolder;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static com.hazelcast.internal.util.AddressUtil.getAddressHolder;
 import static java.net.InetAddress.getByName;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -73,9 +81,11 @@ public class DefaultAddressPickerTest {
     public final OverridePropertyRule ruleSysPropPreferIpv4Stack = set(PREFER_IPV4_STACK, "false");
     @Rule
     public final OverridePropertyRule ruleSysPropPreferIpv6Addresses = clear(PREFER_IPV6_ADDRESSES);
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
-    private ILogger logger = Logger.getLogger(AddressPicker.class);
-    private Config config = new Config();
+    private final ILogger logger = Logger.getLogger(AddressPicker.class);
+    private final Config config = new Config();
     private AddressPicker addressPicker;
     private InetAddress loopback;
 
@@ -96,6 +106,23 @@ public class DefaultAddressPickerTest {
         if (addressPicker != null) {
             IOUtil.closeResource(addressPicker.getServerSocketChannel(null));
         }
+    }
+
+    @Test
+    public void testEndpointConfigFromClusterProperty() {
+        Config config = new Config();
+        config.setProperty(ClusterProperty.SOCKET_KEEP_ALIVE.getName(), "false");
+        config.setProperty(ClusterProperty.SOCKET_KEEP_IDLE.getName(), "30");
+        config.setProperty(ClusterProperty.SOCKET_KEEP_COUNT.getName(), "5");
+        config.setProperty(ClusterProperty.SOCKET_KEEP_INTERVAL.getName(), "6");
+        config.setProperty(ClusterProperty.SOCKET_RECEIVE_BUFFER_SIZE.getName(), "512");
+        HazelcastProperties properties = new HazelcastProperties(config);
+        EndpointConfig endpointConfig = DefaultAddressPicker.endpointConfigFromProperties(properties);
+        assertFalse(endpointConfig.isSocketKeepAlive());
+        assertEquals(30, endpointConfig.getSocketKeepIdleSeconds());
+        assertEquals(5, endpointConfig.getSocketKeepCount());
+        assertEquals(6, endpointConfig.getSocketKeepIntervalSeconds());
+        assertEquals(512, endpointConfig.getSocketRcvBufferSizeKb());
     }
 
     @Test
@@ -241,16 +268,20 @@ public class DefaultAddressPickerTest {
     }
 
     private void testPublicAddress(String host, int port) throws Exception {
-        config.getNetworkConfig().setPublicAddress(port < 0 ? host : (host + ":" + port));
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.setPublicAddress(port < 0 ? host : (host + ":" + port));
         addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
 
         if (port < 0) {
-            port = config.getNetworkConfig().getPort();
+            port = networkConfig.getPort();
         }
 
-        assertEquals(new Address(host, port), addressPicker.getPublicAddress(null));
+        Address expected = new Address(host, port);
+        Address actual = addressPicker.getPublicAddress(null);
+        assertAddressBetweenPorts(expected, actual, networkConfig);
     }
+
 
     @Test
     public void testPublicAddress_withSpecifiedHostAndPortViaProperty() throws Exception {
@@ -264,12 +295,29 @@ public class DefaultAddressPickerTest {
         assertEquals(new Address(host, port), addressPicker.getPublicAddress(null));
     }
 
-    @Test(expected = UnknownHostException.class)
+
+    @Test
+    public void testPublicAddress_whenBlankViaProperty() throws Exception {
+        config.setProperty("hazelcast.local.publicAddress", " ");
+
+        addressPicker = new DefaultAddressPicker(config, logger);
+        assertThrows(IllegalArgumentException.class, () -> addressPicker.pickAddress());
+    }
+
+    @Test
     public void testPublicAddress_withInvalidAddress() throws Exception {
         config.getNetworkConfig().setPublicAddress("invalid");
 
         addressPicker = new DefaultAddressPicker(config, logger);
-        addressPicker.pickAddress();
+        assertThrows(UnknownHostException.class, () -> addressPicker.pickAddress());
+    }
+
+    @Test
+    public void testPublicAddress_withBlankAddress() throws Exception {
+        config.getNetworkConfig().setPublicAddress(" ");
+
+        addressPicker = new DefaultAddressPicker(config, logger);
+        assertThrows(IllegalArgumentException.class, () -> addressPicker.pickAddress());
     }
 
     @Test
@@ -305,8 +353,8 @@ public class DefaultAddressPickerTest {
         assertEquals(interfaceDefinition, interfaceDefinition);
         assertEquals(interfaceDefinition, interfaceDefinitionSameAttributes);
 
-        assertNotEquals(interfaceDefinition, null);
-        assertNotEquals(interfaceDefinition, new Object());
+        assertNotEquals(null, interfaceDefinition);
+        assertNotEquals(new Object(), interfaceDefinition);
 
         assertNotEquals(interfaceDefinition, interfaceDefinitionOtherHost);
         assertNotEquals(interfaceDefinition, interfaceDefinitionOtherAddress);
@@ -322,8 +370,8 @@ public class DefaultAddressPickerTest {
         assertEquals(addressDefinition, addressDefinition);
         assertEquals(addressDefinition, addressDefinitionSameAttributes);
 
-        assertNotEquals(addressDefinition, null);
-        assertNotEquals(addressDefinition, new Object());
+        assertNotEquals(null, addressDefinition);
+        assertNotEquals(new Object(), addressDefinition);
 
         assertNotEquals(addressDefinition, addressDefinitionOtherHost);
         assertNotEquals(addressDefinition, addressDefinitionOtherPort);
@@ -338,6 +386,29 @@ public class DefaultAddressPickerTest {
         assertNotEquals(addressDefinition.hashCode(), addressDefinitionOtherInetAddress.hashCode());
     }
 
+    @Test
+    public void testNotMatchingInterface_forCustomConfigFile() throws Exception {
+        Config config = new Config();
+        File cfgFile = tempFolder.newFile("custom_file.xml");
+        config.setConfigurationFile(cfgFile);
+        config.getNetworkConfig().getInterfaces().setEnabled(true);
+        config.getNetworkConfig().getInterfaces().addInterface("123.456.789");
+        RuntimeException thrown =  assertThrows(RuntimeException.class,
+                () -> HazelcastInstanceFactory.newHazelcastInstance(config));
+        assertTrue(thrown.getMessage().contentEquals("Hazelcast CANNOT start on this node. No matching network interface found.\n"
+                + "Interface matching must be either disabled or updated in the custom_file.xml config file."));
+    }
+
+    @Test
+    public void testNotMatchingInterface_forNoConfigFile() throws Exception {
+        Config config = new Config();
+        config.getNetworkConfig().getInterfaces().setEnabled(true);
+        config.getNetworkConfig().getInterfaces().addInterface("123.456.789");
+        RuntimeException thrown =  assertThrows(RuntimeException.class,
+                () -> HazelcastInstanceFactory.newHazelcastInstance(config));
+        assertTrue(thrown.getMessage().contentEquals("Hazelcast CANNOT start on this node. No matching network interface found.\n"
+                + "Interface matching must be either disabled or updated in the member configuration."));
+    }
     private static InetAddress findAnyNonLoopbackInterface() {
         return findNonLoopbackInterface(false, false);
     }

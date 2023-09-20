@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package com.hazelcast.jet.sql.impl.processors;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.core.test.TestSupport.TestMode;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -37,6 +39,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,51 +49,120 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
 
+import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
+import static com.hazelcast.jet.core.test.TestSupport.TEST_CONTEXT;
 import static com.hazelcast.jet.core.test.TestSupport.in;
 import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
-import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.calcite.rel.core.JoinRelType.INNER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamToStreamJoinPInnerTest extends JetTestSupport {
+public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
+
+    /**
+     * An output checker that will consider the actual and expected object lists
+     * equal if they both contain the same items, in any order. If some item is
+     * expected multiple times, it must also be present the same number of times
+     * in the actual output.
+     * <p>
+     * When restoring from the snapshot, a different mechanism is used to
+     * compare watermarks. The WMs must be monotonic, but not strictly monotonic
+     * - after a restore the same WM can be emitted that was already emitted
+     * before restore. The highest actual WM can be lower than the highest
+     * expected one, but not higher - again, after a restore, it might go back.
+     */
+    protected static final BiPredicate<List<?>, List<?>> SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS =
+            (expected, actual) -> {
+                TestMode testMode = TEST_CONTEXT.get().getTestMode();
+                if (!testMode.isSnapshotsEnabled() || testMode.snapshotRestoreInterval() == Integer.MAX_VALUE) {
+                    return SAME_ITEMS_ANY_ORDER.test(expected, actual);
+                }
+
+                Function<List<?>, Map<Object, Integer>> transformFn = l -> l.stream().filter(o -> !(o instanceof Watermark)).collect(toMap(identity(), e -> 1, Integer::sum));
+                Map<Object, Integer> expectedMap = transformFn.apply(expected);
+                Map<Object, Integer> actualMap = transformFn.apply(actual);
+                if (!expectedMap.equals(actualMap)) {
+                    return false;
+                }
+                Map<Byte, Long> expectedWms = new HashMap<>();
+                Map<Byte, Long> actualWms = new HashMap<>();
+
+                for (Object o : expected) {
+                    if (o instanceof Watermark) {
+                        long newVal = ((Watermark) o).timestamp();
+                        Long oldVal = expectedWms.put(((Watermark) o).key(), newVal);
+                        if (oldVal != null && oldVal >= newVal) {
+                            return false; // not strictly monotonic expected val
+                        }
+                    }
+                }
+
+                for (Object o : actual) {
+                    if (o instanceof Watermark) {
+                        long newVal = ((Watermark) o).timestamp();
+                        Long oldVal = actualWms.put(((Watermark) o).key(), newVal);
+                        if (oldVal != null && oldVal > newVal) {
+                            return false; // not monotonic expected val
+                        }
+                    }
+                }
+
+                for (Entry<Byte, Long> en : expectedWms.entrySet()) {
+                    Long actualVal = actualWms.get(en.getKey());
+                    long expectedVal = en.getValue();
+                    if (actualVal != null && actualVal > expectedVal) {
+                        return false; // expected lower than actual
+                    }
+                }
+                actualWms.keySet().removeAll(expectedWms.keySet());
+                assertTrue("unexpected WM keys received: " + actualWms, actualWms.isEmpty());
+
+                return true;
+            };
 
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
+
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, null);
+    }
 
     @Test
     public void test_equalTimes_singleWmKeyPerInput() {
         // l.time=r.time
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
-        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1, true));
 
         TestSupport.verifyProcessor(processorSupplier)
-                .disableSnapshots()
+                .hazelcastInstance(instance())
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
-                        in(0, jetRow(0L)),
-                        in(1, jetRow(0L)),
-                        out(jetRow(0L, 0L)),
+                        in(wm(0L, (byte) 1)),
                         in(0, jetRow(1L)),
                         in(1, jetRow(1L)),
                         out(jetRow(1L, 1L)),
-                        in(wm(1L, (byte) 0)),
+                        in(0, jetRow(2L)),
+                        in(1, jetRow(2L)),
+                        out(jetRow(2L, 2L)),
+                        in(wm(2L, (byte) 0)),
                         out(wm(0L, (byte) 0)),
-                        in(wm(2L, (byte) 1)),
-                        out(wm(1L, (byte) 0)),
-                        out(wm(1L, (byte) 1))
+                        out(wm(0L, (byte) 1))
                 );
     }
 
@@ -108,11 +180,11 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         leftExtractors.put((byte) 1, l -> l.getRow().get(1));
         rightExtractors = singletonMap((byte) 2, r -> r.getRow().get(0));
 
-        SupplierEx<Processor> supplier = createProcessor(2, 1);
+        SupplierEx<Processor> supplier = createProcessor(2, 1, false);
 
         TestSupport.verifyProcessor(supplier)
-                .outputChecker(SAME_ITEMS_ANY_ORDER)
-                .disableSnapshots()
+                .hazelcastInstance(instance())
+                .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
                 .expectExactOutput(
                         in(0, jetRow(12L, 9L)),
                         in(1, jetRow(9L)),
@@ -124,24 +196,22 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                             assertEquals(jetRow(9L), p.buffer[1].content().iterator().next());
                         }),
                         in(1, wm(15L, (byte) 2)),
-                        out(wm(9L, (byte) 2)),
                         processorAssertion((StreamToStreamJoinP p) -> {
                             assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0].content());
                             assertEquals(jetRow(9L), p.buffer[1].content().iterator().next());
                         }),
                         in(0, wm(12L, (byte) 1)),
-                        out(wm(12L, (byte) 1)),
-                        out(wm(15L, (byte) 2)),
+                        out(wm(11L, (byte) 1)),
+                        out(wm(11L, (byte) 2)),
                         processorAssertion((StreamToStreamJoinP p) -> {
                             assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0].content());
                             assertTrue(p.buffer[1].isEmpty());
                         }),
                         in(0, wm(13L, (byte) 0)),
-                        out(wm(12L, (byte) 0)),
                         in(1, jetRow(16L)),
                         // out(jetRow(12L, 13L, 16L)), // doesn't satisfy the join condition
                         in(0, wm(13L, (byte) 1)),
-                        out(wm(13L, (byte) 1)),
+                        out(wm(12L, (byte) 2)),
                         in(1, jetRow(16L))
                 );
     }
@@ -167,11 +237,12 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         rightExtractors.put((byte) 2, r -> r.getRow().get(0));
         rightExtractors.put((byte) 3, r -> r.getRow().get(1));
 
-        SupplierEx<Processor> supplier = createProcessor(2, 2);
+        SupplierEx<Processor> supplier = createProcessor(2, 2, false);
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
-                .outputChecker(SAME_ITEMS_ANY_ORDER)
+                .hazelcastInstance(instance())
+                .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(0, jetRow(12L, 10L)),
                         in(1, jetRow(12L, 10L)),
@@ -187,15 +258,12 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                         // wmState: [{0:min, 1:min, 2:13, 3:11]
                         // leftBuffer: [{12, 10}, {12, 13}]
                         // rightBuffer: []
-                        out(wm(12L, (byte) 0)),
                         in(1, wm(15L, (byte) 2)),
                         // wmState: [{0:14, 1:min, 2:13, 3:11]
                         // leftBuffer: []
                         // rightBuffer: []
-                        out(wm(15L, (byte) 0)),
-                        out(wm(15L, (byte) 2)),
-                        in(0, wm(16L, (byte) 1)),
-                        out(wm(16L, (byte) 1))
+                        out(wm(13L, (byte) 2)),
+                        out(wm(14L, (byte) 0))
                 );
     }
 
@@ -227,7 +295,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                 Tuple2.tuple2(2, 1));
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(1, jetRow(3L)),
                         in(0, jetRow(2L, 2)), // doesn't join, field1 <= 10
@@ -241,11 +309,12 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
 
-        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(2, 1, 1, 2));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(2, 1, true, 1, 2));
 
         TestSupport.verifyProcessor(processorSupplier)
-                .disableSnapshots()
+                .hazelcastInstance(instance())
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
+                .cooperativeTimeout(0) // todo remove
                 .expectExactOutput(
                         in(0, jetRow(1L, 42)),
                         in(0, jetRow(1L, 43)),
@@ -269,13 +338,12 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
         rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
 
-        SupplierEx<Processor> supplier = createProcessor(1, 1);
+        SupplierEx<Processor> supplier = createProcessor(1, 1, false);
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(0, wm(10, (byte) 0)),
-                        out(wm(10, (byte) 0)),
                         processorAssertion((StreamToStreamJoinP p) ->
                                 assertEquals(ImmutableMap.of((byte) 0, Long.MIN_VALUE + 1, (byte) 1, 9L), p.wmState)),
                         // This item is not late according to the WM for key=1, but is off the join limit according
@@ -291,15 +359,14 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         // l.time=r.time
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
-        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1, true));
 
         TestSupport.verifyProcessor(processorSupplier)
-                .disableSnapshots()
+                .hazelcastInstance(instance())
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
                         in(0, jetRow(0L)),
                         in(0, wm(10L, (byte) 0)),
-                        out(wm(0L, (byte) 0)),
                         // this item is:
                         // 1. not late
                         // 2. can't possibly match a future row from #0, therefore doesn't go to the buffer
@@ -321,15 +388,17 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
         rightExtractors = singletonMap((byte) 1, r -> r.getRow().get(0));
 
-        SupplierEx<Processor> supplier = createProcessor(1, 1);
+        SupplierEx<Processor> supplier = createProcessor(1, 1, false);
 
         TestSupport.verifyProcessor(supplier)
-                .outputChecker(SAME_ITEMS_ANY_ORDER)
-                .disableSnapshots()
+                .hazelcastInstance(instance())
+                .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
                 .expectExactOutput(
                         in(0, wm(10, (byte) 0)),
-                        out(wm(10, (byte) 0)),
-                        in(0, jetRow(8L)),
+                        in(1, wm(10, (byte) 1)),
+                        out(wm(9, (byte) 1)),
+                        out(wm(9, (byte) 0)),
+                        in(1, jetRow(8L)),
                         processorAssertion((StreamToStreamJoinP p) -> {
                             assertEquals(0, p.buffer[0].size());
                             assertEquals(0, p.buffer[1].size());
@@ -383,9 +452,11 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         return AndPredicate.create(conditions.toArray(new Expression[0]));
     }
 
-    private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount, int... wmKeyToColumnIndex) {
+    private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount, boolean assumeEquiJoin,
+                                                  int... wmKeyToColumnIndex) {
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap, wmKeyToColumnIndex);
-        JetJoinInfo joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
+        int[] equiJoinIndices = new int[assumeEquiJoin ? 1 : 0];
+        JetJoinInfo joinInfo = new JetJoinInfo(INNER, equiJoinIndices, equiJoinIndices, condition, condition);
         return () -> new StreamToStreamJoinP(
                 joinInfo,
                 leftExtractors,

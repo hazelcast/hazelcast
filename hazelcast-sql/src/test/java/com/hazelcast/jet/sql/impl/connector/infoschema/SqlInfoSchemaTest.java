@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.sql.SqlService;
@@ -23,10 +25,14 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,11 +48,15 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
 
     private final String mappingName = randomName();
     private final String viewName = randomName();
+    private final String firstTypeName = randomName();
+    private final String secondTypeName = randomName();
     private final String mappingExternalName = "my_map";
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(1, null);
+        Config config = smallInstanceConfig()
+                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+        initialize(1, config);
         sqlService = instance().getSql();
     }
 
@@ -63,6 +73,24 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                         + ", '" + OPTION_VALUE_CLASS + "'='" + Value.class.getName() + "'\n"
                         + ")");
         sqlService.execute("CREATE VIEW " + viewName + " AS SELECT * FROM " + mappingName);
+        sqlService.execute("CREATE TYPE " + firstTypeName + "("
+                + "id BIGINT, "
+                + "name VARCHAR,"
+                + "created TIMESTAMP WITH TIME ZONE,"
+                + "balance DOUBLE"
+                + ") OPTIONS ("
+                + "'format'='compact',"
+                + "'compactTypeName'='" + firstTypeName + "'"
+                + ")");
+
+        sqlService.execute("CREATE TYPE " + secondTypeName + "("
+                + "id BIGINT, "
+                + "name VARCHAR, "
+                + "other " + firstTypeName
+                + ") OPTIONS ("
+                + "'format'='compact',"
+                + "'compactTypeName'='" + firstTypeName + "'"
+                + ")");
     }
 
     @Test
@@ -81,6 +109,33 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_dataConnections() {
+        // given
+        String type = "dummy";
+        // create config-originated data connection
+        getNodeEngineImpl(instance()).getDataConnectionService().createConfigDataConnection(
+                new DataConnectionConfig()
+                        .setName("c_dc")
+                        .setType(type)
+        );
+
+        // create SQL-originated data connection
+        sqlService.execute("CREATE DATA CONNECTION sql_default_shared_dc TYPE DUMMY");
+        sqlService.execute("CREATE DATA CONNECTION sql_shared_dc TYPE DUMMY SHARED");
+        sqlService.execute("CREATE DATA CONNECTION sql_non_shared_dc TYPE DUMMY NOT SHARED");
+
+        assertRowsAnyOrder(
+                "SELECT * FROM information_schema.dataconnections",
+                asList(
+                        new Row("hazelcast", "public", "sql_default_shared_dc", type, true, "{}", "SQL"),
+                        new Row("hazelcast", "public", "sql_shared_dc", type, true, "{}", "SQL"),
+                        new Row("hazelcast", "public", "sql_non_shared_dc", type, false, "{}", "SQL"),
+                        new Row("hazelcast", "public", "c_dc", type, true, "{}", "CONFIG")
+                )
+        );
+    }
+
+    @Test
     public void test_mappings() {
         assertRowsAnyOrder(
                 "SELECT * FROM information_schema.mappings",
@@ -89,7 +144,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                                 "hazelcast",
                                 "public",
                                 mappingName,
-                                mappingExternalName,
+                                '"' + mappingExternalName + '"',
                                 IMapSqlConnector.TYPE_NAME,
                                 "{"
                                         + "\"keyFormat\":\"int\""
@@ -197,6 +252,50 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     public void test_planCache_columns() {
         sqlService.execute("SELECT column_name FROM information_schema.columns WHERE ordinal_position = 2");
         assertThat(planCache(instance()).size()).isZero();
+    }
+
+    @Test
+    public void test_userDefinedTypes() {
+        assertRowsAnyOrder("SELECT "
+                        + "user_defined_type_catalog, "
+                        + "user_defined_type_schema, "
+                        + "user_defined_type_name, "
+                        + "user_defined_type_category FROM information_schema.user_defined_types",
+                rows(4,
+                        "hazelcast", "public", firstTypeName, "STRUCTURED",
+                        "hazelcast", "public", secondTypeName, "STRUCTURED"
+                ));
+    }
+
+    @Test
+    public void test_attributes() {
+        final List<Row> expected = Arrays.asList(
+                new Row("hazelcast", "public", firstTypeName, "id", 1, "YES", "BIGINT", null, null, 64, 2, 0, null, null, null, null),
+                new Row("hazelcast", "public", firstTypeName, "name", 2, "YES", "VARCHAR", 2147483647, 2147483647, null, null, null, null, null, null, null),
+                new Row("hazelcast", "public", firstTypeName, "created", 3, "YES", "TIMESTAMP_WITH_LOCAL_TIME_ZONE", null, null, null, null, null, 9, null, null, null),
+                new Row("hazelcast", "public", firstTypeName, "balance", 4, "YES", "DOUBLE", null, null, 53, 2, null, null, null, null, null),
+                new Row("hazelcast", "public", secondTypeName, "id", 1, "YES", "BIGINT", null, null, 64, 2, 0, null, null, null, null),
+                new Row("hazelcast", "public", secondTypeName, "name", 2, "YES", "VARCHAR", 2147483647, 2147483647, null, null, null, null, null, null, null),
+                new Row("hazelcast", "public", secondTypeName, "other", 3, "YES", "USER-DEFINED", null, null, null, null, null, null, "hazelcast", "public", firstTypeName)
+        );
+        assertRowsAnyOrder("SELECT "
+                + "udt_catalog, "
+                + "udt_schema, "
+                + "udt_name, "
+                + "attribute_name, "
+                + "ordinal_position, "
+                + "is_nullable, "
+                + "data_type, "
+                + "character_maximum_length, "
+                + "character_octet_length, "
+                + "numeric_precision, "
+                + "numeric_precision_radix, "
+                + "numeric_scale, "
+                + "datetime_precision, "
+                + "attribute_udt_catalog, "
+                + "attribute_udt_schema, "
+                + "attribute_udt_name "
+                + "FROM information_schema.attributes", expected);
     }
 
     public static final class Value {

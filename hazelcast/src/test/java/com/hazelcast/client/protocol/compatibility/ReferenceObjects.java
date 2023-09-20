@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,13 @@ import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
 import com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.DiscoveryConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.DiscoveryStrategyConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanBatchPublisherConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanConsumerConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanCustomPublisherConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanSyncConfigHolder;
 import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
@@ -34,6 +40,8 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHol
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.AzureConfig;
 import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
@@ -41,13 +49,17 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiskTierConfig;
+import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastJsonValue;
@@ -922,9 +934,59 @@ public class ReferenceObjects {
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlSummary aSqlSummary = CustomTypeFactory.createSqlSummary(aString, aBoolean);
-    public static JobAndSqlSummary aJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, 2, aLong, aLong, aString, aSqlSummary, true, aString);
+    public static JobAndSqlSummary aJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, 2, aLong, aLong, aString, aSqlSummary, true, aString, true, false);
     public static List<JobAndSqlSummary> aListJobAndSqlSummary = Collections.singletonList(aJobAndSqlSummary);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
     public static HazelcastJsonValue aHazelcastJsonValue = new HazelcastJsonValue("{'value': ''}");
+    public static List<PartitioningAttributeConfig> aListOfPartitioningAttributeConfigs = Collections.singletonList(
+            new PartitioningAttributeConfig(aString)
+    );
+
+    public static List<SimpleEntryView<Data, Data>> aListOfSimpleEntryViews = Collections.singletonList(
+            aSimpleEntryView
+    );
+
+    public static WanConsumerConfigHolder aWanConsumerConfigHolder =
+            new WanConsumerConfigHolder(aBoolean, aString,aData, Map.of(aString, aData));
+    public static List<WanCustomPublisherConfigHolder> aListOfWanCustomPublisherConfigsHolders =
+            Collections.singletonList(new WanCustomPublisherConfigHolder(aString, aString, aData, Map.of(aString, aData)));
+    public static List<WanBatchPublisherConfigHolder> aListOfWanBatchPublisherConfigHolders =
+            Collections.singletonList(
+                    new WanBatchPublisherConfigHolder(
+                            aString,
+                            aString,
+                            aData,
+                            Map.of(aString, aData),
+                            aString,
+                            aBoolean,
+                            aByte,
+                            anInt,
+                            anInt,
+                            anInt,
+                            anInt,
+                            anInt,
+                            anInt,
+                            anInt,
+                            anInt,
+                            anInt,
+                            aBoolean,
+                            aLong,
+                            aLong,
+                            aString,
+                            new AwsConfig(aString, aBoolean, aBoolean, Map.of(aString, aString)),
+                            new GcpConfig(aString, aBoolean, aBoolean, Map.of(aString, aString)),
+                            new AzureConfig(aString, aBoolean, aBoolean, Map.of(aString, aString)),
+                            new KubernetesConfig(aString, aBoolean, aBoolean, Map.of(aString, aString)),
+                            new EurekaConfig(aString, aBoolean, aBoolean, Map.of(aString, aString)),
+                            new DiscoveryConfigHolder(
+                                    Collections.singletonList(new DiscoveryStrategyConfigHolder(aString, Map.of(aString, aData))),
+                                    aData,
+                                    aData,
+                                    aString
+                            ),
+                            new WanSyncConfigHolder(aByte),
+                            aString
+                    )
+            );
 }

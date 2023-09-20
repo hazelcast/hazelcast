@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hazelcast.client.test.ringbuffer.filter.StartsWithStringFilter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -389,7 +389,9 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
     }
 
-    class MapGetInterceptor implements MapInterceptor, IdentifiedDataSerializable {
+    class MapGetInterceptor extends MapInterceptorAdaptor implements IdentifiedDataSerializable {
+        private static final long serialVersionUID = 1L;
+
         private String prefix;
 
         @Override
@@ -400,28 +402,6 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
             String val = (String) value;
             return prefix + val;
-        }
-
-        @Override
-        public void afterGet(Object value) {
-        }
-
-        @Override
-        public Object interceptPut(Object oldValue, Object newValue) {
-            return null;
-        }
-
-        @Override
-        public void afterPut(Object value) {
-        }
-
-        @Override
-        public Object interceptRemove(Object removedValue) {
-            return null;
-        }
-
-        @Override
-        public void afterRemove(Object value) {
         }
 
         @Override

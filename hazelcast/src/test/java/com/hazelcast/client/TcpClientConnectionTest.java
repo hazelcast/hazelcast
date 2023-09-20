@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -81,7 +83,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
     @Test
     public void testNullAsAddress() {
         ClientNetworkConfig networkConfig = new ClientConfig().getNetworkConfig();
-        assertThrows(IllegalArgumentException.class, () -> networkConfig.addAddress(null));
+        assertThrows(IllegalArgumentException.class, () -> networkConfig.addAddress((String[]) null));
     }
 
     @Test
@@ -104,7 +106,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
 
         Collection<Client> connectedClients = server.getClientService().getConnectedClients();
-        assertEquals(connectedClients.size(), 1);
+        assertEquals(1, connectedClients.size());
 
         Client serverSideClientInfo = connectedClients.iterator().next();
         assertEquals(serverSideClientInfo.getUuid(), client.getLocalEndpoint().getUuid());
@@ -129,10 +131,10 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         hazelcastFactory.newHazelcastClient(config);
 
         Collection<Client> connectedClients1 = server1.getClientService().getConnectedClients();
-        assertEquals(connectedClients1.size(), 1);
+        assertEquals(1, connectedClients1.size());
 
         Collection<Client> connectedClients2 = server2.getClientService().getConnectedClients();
-        assertEquals(connectedClients2.size(), 0);
+        assertEquals(0, connectedClients2.size());
     }
 
     @Test
@@ -234,7 +236,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals(listener.connectionAddedCount.get(), 2);
+                assertEquals(2, listener.connectionAddedCount.get());
             }
         });
     }
@@ -262,5 +264,13 @@ public class TcpClientConnectionTest extends ClientTestSupport {
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         makeSureConnectedToServers(client, memberCount);
+    }
+
+    public static class DummySerializableCallable implements Callable, Serializable {
+
+        @Override
+        public Object call() throws Exception {
+            return null;
+        }
     }
 }

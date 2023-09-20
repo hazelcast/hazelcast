@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,9 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionTimedOutException;
-import org.junit.Rule;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -46,7 +45,9 @@ import java.util.logging.Level;
 import static com.hazelcast.internal.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -55,13 +56,16 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class FutureUtilTest extends HazelcastTestSupport {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
+    private ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+    @After
+    public void tearDown() throws Exception {
+        executorService.shutdownNow();
+    }
 
     @Test
     public void test_waitWithDeadline_first_wait_second_finished() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future> futures = new ArrayList<Future>();
         for (int i = 0; i < 2; i++) {
@@ -69,12 +73,12 @@ public class FutureUtilTest extends HazelcastTestSupport {
         }
 
         waitWithDeadline(futures, 10, TimeUnit.SECONDS, logAllExceptions(Level.WARNING));
+        executorService.shutdownNow();
     }
 
     @Test
     public void test_waitWithDeadline_first_finished_second_wait() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future> futures = new ArrayList<Future>();
         for (int i = 0; i < 2; i++) {
@@ -87,7 +91,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
     @Test
     public void test_returnWithDeadline_first_wait_second_finished() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
         for (int i = 0; i < 2; i++) {
@@ -105,7 +108,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
     @Test
     public void test_returnWithDeadline_first_finished_second_wait() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
         for (int i = 0; i < 2; i++) {
@@ -123,7 +125,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
     @Test(expected = TimeoutException.class)
     public void test_returnWithDeadline_timeout_exception() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
         for (int i = 0; i < 2; i++) {
@@ -145,7 +146,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
     @Test
     public void test_waitWithDeadline_failing_second() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future> futures = new ArrayList<Future>();
         for (int i = 0; i < 2; i++) {
@@ -164,7 +164,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
     @Test
     public void test_returnWithDeadline_failing_second() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
         for (int i = 0; i < 2; i++) {
@@ -190,29 +189,30 @@ public class FutureUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testAllDone_whenAllFuturesCompleted() {
-        Collection<Future> futures = Arrays.asList(InternalCompletableFuture.newCompletedFuture(null));
+        Collection<Future<?>> futures = Arrays.asList(InternalCompletableFuture.newCompletedFuture(null));
         assertTrue(FutureUtil.allDone(futures));
 
-        futures = Arrays.asList((Future) new UncancellableFuture());
+        futures = Arrays.asList(new UncancellableFuture<>());
         assertFalse(FutureUtil.allDone(futures));
     }
 
     @Test
-    public void testGetAllDoneThrowsException_whenSomeFutureHasException() throws Exception {
+    public void testGetAllDoneThrowsException_whenSomeFutureHasException() {
         InterruptedException exception = new InterruptedException();
-        Collection<Future> futures = Arrays.asList(InternalCompletableFuture.completedExceptionally(exception));
+        Collection<Future<?>> futures = List.of(InternalCompletableFuture.completedExceptionally(exception));
         // the future is completedExceptionally with an InterruptedException (thread was not
         // interrupted during future.get()), so it is normal to expect
         // InterruptedException wrapped within an ExecutionException.
-        expectedException.expect(ExecutionException.class);
-        expectedException.expectCause(new RootCauseMatcher(InterruptedException.class));
-        FutureUtil.checkAllDone(futures);
+        assertThatThrownBy(() -> FutureUtil.checkAllDone(futures))
+                .isInstanceOf(ExecutionException.class)
+                .cause().has(rootCause(InterruptedException.class));
     }
 
     @Test
     public void testGetAllDone_whenSomeFuturesAreCompleted() {
-        Future completedFuture = InternalCompletableFuture.newCompletedFuture(null);
-        Collection<Future> futures = asList(new UncancellableFuture(), completedFuture, new UncancellableFuture());
+        Future<?> completedFuture = InternalCompletableFuture.newCompletedFuture(null);
+        Collection<Future<?>> futures =
+                asList(new UncancellableFuture<>(), completedFuture, new UncancellableFuture<>());
 
         assertEquals(1, FutureUtil.getAllDone(futures).size());
         assertEquals(completedFuture, FutureUtil.getAllDone(futures).get(0));

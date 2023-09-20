@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,9 +67,7 @@ import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
 import static java.util.Arrays.asList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.isIn;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -308,8 +306,8 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         long newGroupIdSeed = getRaftService(newInstances[0]).getMetadataGroupManager().getGroupIdSeed();
         RaftGroupId newGroupId = getRaftInvocationManager(instances[0]).createRaftGroup(CPGroup.DEFAULT_GROUP_NAME).get();
 
-        assertThat(newGroupIdSeed, greaterThan(groupIdSeed));
-        assertThat(newGroupId.getSeed(), greaterThan(groupId.getSeed()));
+        assertThat(newGroupIdSeed).isGreaterThan(groupIdSeed);
+        assertThat(newGroupId.getSeed()).isGreaterThan(groupId.getSeed());
 
         try {
             long1.incrementAndGet();
@@ -327,7 +325,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
             for (HazelcastInstance instance : newInstances) {
                 Member localMember = instance.getCluster().getLocalMember();
-                assertThat(new CPMemberInfo(localMember), isIn(endpoints));
+                assertThat(new CPMemberInfo(localMember)).isIn(endpoints);
             }
         });
     }
@@ -1082,13 +1080,13 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         HazelcastInstance[] instances = newInstances(7, 5, 0);
 
         int concurrent = 5;
-        Future[] futures = new Future[concurrent];
+        Future<?>[] futures = new Future[concurrent];
         for (int i = 0; i < concurrent; i++) {
             int ix = i;
             futures[i] = spawn(() -> instances[ix].shutdown());
         }
 
-        for (Future f : futures) {
+        for (var f : futures) {
             assertCompletesEventually(f);
             f.get();
         }

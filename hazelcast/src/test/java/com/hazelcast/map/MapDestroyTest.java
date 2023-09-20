@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.jet.impl.JobRepository;
@@ -26,29 +28,51 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class MapDestroyTest extends HazelcastTestSupport {
 
-    private HazelcastInstance instance1;
-    private HazelcastInstance instance2;
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category(ParallelJVMTest.class)
+public class MapDestroyTest extends HazelcastTestSupport {
+    @Parameterized.Parameters(name = "sortedIndex:{0}, hashIndex:{1}")
+    public static Collection<Object[]> data() {
+        return asList(new Object[][]{
+                {false, false},
+                {false, true},
+                {true, false},
+                {true, true}
+        });
+    }
+
+    @Parameterized.Parameter
+    public boolean sortedIndex;
+
+    @Parameterized.Parameter(1)
+    public boolean hashIndex;
+
+    protected HazelcastInstance instance1;
+    protected HazelcastInstance instance2;
 
     @Before
     public void setUp() {
@@ -66,16 +90,38 @@ public class MapDestroyTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(QuickTest.class)
     public void destroyAllReplicasIncludingBackups() {
+        createFillAndDestroyMap();
+
+        assertAllPartitionContainersAreEmptyEventually(instance1);
+        assertAllPartitionContainersAreEmptyEventually(instance2);
+    }
+
+    @Test
+    @Category(SlowTest.class)
+    public void destroyRepeatedly() {
+        for (int rep = 0; rep < 1_000; ++rep) {
+            createFillAndDestroyMap();
+        }
+
+        assertAllPartitionContainersAreEmptyEventually(instance1);
+        assertAllPartitionContainersAreEmptyEventually(instance2);
+    }
+
+    protected void createFillAndDestroyMap() {
         IMap<Integer, Integer> map = instance1.getMap(randomMapName());
+        if (sortedIndex) {
+            map.addIndex(new IndexConfig(IndexType.SORTED, "this").setName("idxSorted"));
+        }
+        if (hashIndex) {
+            map.addIndex(new IndexConfig(IndexType.HASH, "this").setName("idxHash"));
+        }
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
         }
 
         map.destroy();
-
-        assertAllPartitionContainersAreEmptyEventually(instance1);
-        assertAllPartitionContainersAreEmptyEventually(instance2);
     }
 
     private void assertAllPartitionContainersAreEmptyEventually(final HazelcastInstance instance) {

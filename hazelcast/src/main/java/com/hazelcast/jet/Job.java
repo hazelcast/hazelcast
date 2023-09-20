@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
@@ -28,6 +29,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
@@ -134,12 +136,7 @@ public interface Job {
      * submission. For light jobs it always returns {@code null}.
      */
     @Nullable
-    default String getName() {
-        if (isLightJob()) {
-            return null;
-        }
-        return getConfig().getName();
-    }
+    String getName();
 
     /**
      * Returns the current status of this job. Each invocation queries the
@@ -150,6 +147,37 @@ public interface Job {
     @Nonnull
     JobStatus getStatus();
 
+    /**
+     * Returns true, if the job is user-cancelled. Returns false, if it
+     * completed normally or failed due to another error. Jobs running in
+     * clusters before version 5.3 lack this information and will always return
+     * false.
+     *
+     * @throws IllegalStateException if the job is not done.
+     * @since 5.3
+     */
+    boolean isUserCancelled();
+
+    /**
+     * Associates the given listener to this job. The listener is automatically
+     * removed after a {@linkplain JobStatus#isTerminal terminal event}.
+     *
+     * @return The registration id
+     * @throws UnsupportedOperationException if the cluster version is less than 5.3
+     * @throws IllegalStateException if the job is completed or failed
+     * @since 5.3
+     */
+    UUID addStatusListener(@Nonnull JobStatusListener listener);
+
+    /**
+     * Stops delivering all events to the listener with the given registration id.
+     *
+     * @return Whether the specified registration was removed
+     * @throws UnsupportedOperationException if the cluster version is less than 5.3
+     * @since 5.3
+     */
+    boolean removeStatusListener(@Nonnull UUID id);
+
     // ### Methods below apply only to normal (non-light) jobs.
 
 
@@ -159,6 +187,16 @@ public interface Job {
      */
     @Nonnull
     JobConfig getConfig();
+
+    /**
+     * Applies the specified delta configuration to a {@link #suspend()
+     * suspended} job and returns the updated configuration.
+     *
+     * @throws IllegalStateException if this job is not suspended
+     * @throws UnsupportedOperationException if called for a light job
+     * @since 5.3
+     */
+    JobConfig updateConfig(@Nonnull DeltaJobConfig deltaConfig);
 
     /**
      * Return a {@link JobSuspensionCause description of the cause} that has
@@ -276,6 +314,17 @@ public interface Job {
      * If the terminal snapshot fails, Jet will suspend this job instead of
      * cancelling it.
      * <p>
+     * <strong>NOTE:</strong> if the cluster becomes unstable (a member leaves
+     * or similar) while the job is in the process of being cancelled, it may
+     * end up getting immediately restarted. Call {@link #getStatus()} to find
+     * out and possibly try to cancel again. Should this restart happen,
+     * created snapshot cannot be regarded as exported terminal snapshot. It
+     * shall be neither overwritten nor deleted until there is a new snapshot
+     * created, either automatic or via cancelAndExportSnapshot method,
+     * otherwise data can be lost. If cancelAndExportSnapshot is used again,
+     * ensure that there was a regular snapshot made or use different snapshot
+     * name.
+     * <p>
      * You can call this method for a suspended job, too: in that case it will
      * export the last successful snapshot and cancel the job.
      * <p>
@@ -302,7 +351,7 @@ public interface Job {
      * start a new job using the exported state using {@link
      * JobConfig#setInitialSnapshotName(String)}. Not supported for light jobs.
      * <p>
-     * The snapshot will be independent from the job that created it. Jet won't
+     * The snapshot will be independent of the job that created it. Jet won't
      * automatically delete the IMap it is exported into. You must manually
      * call {@linkplain JobStateSnapshot#destroy() snapshot.destroy()} to
      * delete it. If your state is large, make sure you have enough memory to

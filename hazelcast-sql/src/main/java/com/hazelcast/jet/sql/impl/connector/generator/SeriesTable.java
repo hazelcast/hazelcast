@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -47,12 +49,12 @@ class SeriesTable extends JetTable {
             String name,
             List<Expression<?>> argumentExpressions
     ) {
-        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(0));
+        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(0), null, false);
 
         this.argumentExpressions = argumentExpressions;
     }
 
-    BatchSource<JetSqlRow> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
+    BatchSource<JetSqlRow> items(@Nullable Expression<Boolean> predicate, @Nonnull List<Expression<?>> projections) {
         List<Expression<?>> argumentExpressions = this.argumentExpressions;
         return SourceBuilder
                 .batch("series", ctx -> {
@@ -104,14 +106,14 @@ class SeriesTable extends JetTable {
                 int start,
                 int stop,
                 int step,
-                Expression<Boolean> predicate,
-                List<Expression<?>> projections,
-                ExpressionEvalContext evalContext
+                @Nullable Expression<Boolean> predicate,
+                @Nonnull List<Expression<?>> projections,
+                @Nonnull ExpressionEvalContext evalContext
         ) {
             this.iterator = IntStream.iterate(start, i -> i + step)
                     .limit(numberOfItems(start, stop, step))
-                    .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections,
-                            new JetSqlRow(evalContext.getSerializationService(), new Object[]{i}), evalContext))
+                    .mapToObj(i -> ExpressionUtil.projection(predicate, projections,
+                            new SingleIntRow(i), evalContext))
                     .filter(Objects::nonNull)
                     .iterator();
         }

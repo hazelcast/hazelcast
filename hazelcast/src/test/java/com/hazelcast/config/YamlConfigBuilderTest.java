@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -41,6 +43,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -135,8 +138,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testConfigurationWithFileName()
             throws Exception {
-        assumeThatNotZingJDK6(); // https://github.com/hazelcast/hazelcast/issues/9044
-
         File file = createTempFile("foo", "bar");
         file.deleteOnExit();
 
@@ -3313,7 +3314,22 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         int readIOThreadCount = 16;
         int writeIOThreadCount = 1;
 
-        String yaml = ""
+        String yaml =  ""
+                + "hazelcast:\n";
+        Config config = new InMemoryYamlConfig(yaml);
+
+        // default device
+        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
+        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), localDeviceConfig.getBaseDir());
+        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
+        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
+        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
+
+
+
+        yaml = ""
                 + "hazelcast:\n"
                 + "  local-device:\n"
                 + "    my-device:\n"
@@ -3325,8 +3341,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      read-io-thread-count: " + readIOThreadCount + "\n"
                 + "      write-io-thread-count: " + writeIOThreadCount + "\n";
 
-        Config config = new InMemoryYamlConfig(yaml);
-        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig("my-device");
+        config = new InMemoryYamlConfig(yaml);
+        localDeviceConfig = config.getDeviceConfig("my-device");
 
         assertEquals("my-device", localDeviceConfig.getName());
         assertEquals(new File(baseDir).getAbsolutePath(), localDeviceConfig.getBaseDir().getAbsolutePath());
@@ -3353,7 +3369,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      write-io-thread-count: " + (writeIOThreadCount * device1Multiplier) + "\n";
 
         config = new InMemoryYamlConfig(yaml);
-        assertEquals(3, config.getDeviceConfigs().size());
+        // default device is removed.
+        assertEquals(2, config.getDeviceConfigs().size());
+        assertNull(config.getDeviceConfig(DEFAULT_DEVICE_NAME));
 
         localDeviceConfig = config.getDeviceConfig("device0");
         assertEquals(blockSize * device0Multiplier, localDeviceConfig.getBlockSize());
@@ -3365,15 +3383,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(blockSize * device1Multiplier, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device1Multiplier, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device1Multiplier, localDeviceConfig.getWriteIOThreadCount());
-
-        // default device
-        localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
-        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
-        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), localDeviceConfig.getBaseDir());
-        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
-        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
-        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
 
         // override the default device config
         String newBaseDir = "/some/random/base/dir/for/tiered/store";
@@ -3715,15 +3724,18 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  security:\n"
                 + "    enabled: true\n"
                 + "    client-permissions:\n"
+                + "      priority-grant: true\n"
                 + "      config:\n"
+                + "        deny: true\n"
                 + "        principal: dev\n"
                 + "        endpoints:\n"
                 + "          - 127.0.0.1";
 
         Config config = buildConfig(yaml);
-        PermissionConfig expected = new PermissionConfig(CONFIG, null, "dev");
+        PermissionConfig expected = new PermissionConfig(CONFIG, null, "dev").setDeny(true);
         expected.getEndpoints().add("127.0.0.1");
         assertPermissionConfig(expected, config);
+        assertTrue(config.getSecurityConfig().isPermissionPriorityGrant());
     }
 
     @Override
@@ -3950,6 +3962,45 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepIdleSeconds() {
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", -1);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid1));
+
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 0);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid2));
+
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 32768);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepIntervalSeconds() {
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", -1);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid1));
+
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 0);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid2));
+
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 32768);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepCount() {
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-count", -1);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid1));
+
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-count", 0);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid2));
+
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-count", 128);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
     public void testAmbiguousNetworkConfig_throwsException() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -4067,6 +4118,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        send-buffer-size-kb: 34\n"
                 + "        receive-buffer-size-kb: 67\n"
                 + "        linger-seconds: 11\n"
+                + "        keep-count: 12\n"
+                + "        keep-interval-seconds: 13\n"
+                + "        keep-idle-seconds: 14\n"
                 + "      symmetric-encryption:\n"
                 + "        enabled: true\n"
                 + "        algorithm: Algorithm\n"
@@ -4196,10 +4250,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  sql:\n"
-                + "    statement-timeout-millis: 30\n";
+                + "    statement-timeout-millis: 30\n"
+                + "    catalog-persistence-enabled: true\n";
         Config config = buildConfig(yaml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+        assertTrue(sqlConfig.isCatalogPersistenceEnabled());
     }
 
     @Override
@@ -4537,35 +4593,53 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void testExternalDataStoreConfigs() {
+    public void testDataConnectionConfigs() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  external-data-store:\n"
+                + "  data-connection:\n"
                 + "    mysql-database:\n"
-                + "      class-name: com.hazelcast.datastore.JdbcDataStore\n"
+                + "      type: jdbc\n"
                 + "      properties:\n"
                 + "        jdbcUrl: jdbc:mysql://dummy:3306\n"
                 + "        some.property: dummy-value\n"
                 + "      shared: true\n"
                 + "    other-database:\n"
-                + "      class-name: com.hazelcast.datastore.OtherDataStore\n";
+                + "      type: other\n";
 
         Config config = new InMemoryYamlConfig(yaml);
 
-        Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = config.getExternalDataStoreConfigs();
+        Map<String, DataConnectionConfig> dataConnectionConfigs = config.getDataConnectionConfigs();
 
-        assertThat(externalDataStoreConfigs).hasSize(2);
-        assertThat(externalDataStoreConfigs).containsKey("mysql-database");
-        ExternalDataStoreConfig mysqlDataStoreConfig = externalDataStoreConfigs.get("mysql-database");
-        assertThat(mysqlDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.JdbcDataStore");
-        assertThat(mysqlDataStoreConfig.getName()).isEqualTo("mysql-database");
-        assertThat(mysqlDataStoreConfig.isShared()).isTrue();
-        assertThat(mysqlDataStoreConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
-        assertThat(mysqlDataStoreConfig.getProperty("some.property")).isEqualTo("dummy-value");
+        assertThat(dataConnectionConfigs).hasSize(2);
+        assertThat(dataConnectionConfigs).containsKey("mysql-database");
+        DataConnectionConfig mysqlDataConnectionConfig = dataConnectionConfigs.get("mysql-database");
+        assertThat(mysqlDataConnectionConfig.getType()).isEqualTo("jdbc");
+        assertThat(mysqlDataConnectionConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataConnectionConfig.isShared()).isTrue();
+        assertThat(mysqlDataConnectionConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataConnectionConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
-        assertThat(externalDataStoreConfigs).containsKey("other-database");
-        ExternalDataStoreConfig otherDataStoreConfig = externalDataStoreConfigs.get("other-database");
-        assertThat(otherDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.OtherDataStore");
+        assertThat(dataConnectionConfigs).containsKey("other-database");
+        DataConnectionConfig otherDataConnectionConfig = dataConnectionConfigs.get("other-database");
+        assertThat(otherDataConnectionConfig.getType()).isEqualTo("other");
+    }
+
+    @Override
+    @Test
+    public void testPartitioningAttributeConfigs() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    test:\n"
+                + "      partition-attributes:\n"
+                + "        - name: attr1\n"
+                + "        - name: attr2\n";
+
+        final MapConfig mapConfig = buildConfig(yaml).getMapConfig("test");
+        assertThat(mapConfig.getPartitioningAttributeConfigs()).containsExactly(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
     }
 
     @Override
@@ -4582,5 +4656,104 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(Integer.MAX_VALUE, mapConfig.getTimeToLiveSeconds());
         assertEquals(Integer.MAX_VALUE, mapConfig.getMaxIdleSeconds());
+    }
+
+    @Override
+    @Test
+    public void testTpcConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  tpc:\n"
+                + "    enabled: true\n"
+                + "    eventloop-count: 12\n";
+
+        TpcConfig tpcConfig = buildConfig(yaml).getTpcConfig();
+
+        assertThat(tpcConfig.isEnabled()).isTrue();
+        assertThat(tpcConfig.getEventloopCount()).isEqualTo(12);
+    }
+
+    @Override
+    @Test
+    public void testTpcSocketConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  network:\n"
+                + "    tpc-socket:\n"
+                + "      port-range: 14000-16000\n"
+                + "      receive-buffer-size-kb: 256\n"
+                + "      send-buffer-size-kb: 256\n";
+
+        TpcSocketConfig tpcSocketConfig = buildConfig(yaml).getNetworkConfig().getTpcSocketConfig();
+
+        assertThat(tpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+        assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+        assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+    }
+
+    @Override
+    @Test
+    public void testTpcSocketConfigAdvanced() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  advanced-network:\n"
+                + "    enabled: true\n"
+                + "    member-server-socket-endpoint-config: \n"
+                + "      tpc-socket: \n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    client-server-socket-endpoint-config:\n"
+                + "      tpc-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    memcache-server-socket-endpoint-config:\n"
+                + "      tpc-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    rest-server-socket-endpoint-config:\n"
+                + "      tpc-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    wan-endpoint-config: \n"
+                + "      tokyo:\n"
+                + "        tpc-socket:\n"
+                + "          port-range: 14000-16000\n"
+                + "          receive-buffer-size-kb: 256\n"
+                + "          send-buffer-size-kb: 256\n"
+                + "    wan-server-socket-endpoint-config: \n"
+                + "      london:\n"
+                + "        tpc-socket:\n"
+                + "          port-range: 14000-16000\n"
+                + "          receive-buffer-size-kb: 256\n"
+                + "          send-buffer-size-kb: 256\n";
+
+        Map<EndpointQualifier, EndpointConfig> endpointConfigs = buildConfig(yaml)
+                .getAdvancedNetworkConfig()
+                .getEndpointConfigs();
+
+        assertThat(endpointConfigs).hasSize(6);
+
+        endpointConfigs.forEach((endpointQualifier, endpointConfig) -> {
+            TpcSocketConfig tpcSocketConfig = endpointConfig.getTpcSocketConfig();
+
+            assertThat(tpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+            assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+            assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+        });
+    }
+
+    public String getAdvancedNetworkConfigWithSocketOption(String socketOption, int value) {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  advanced-network:\n"
+                + "    enabled: true\n"
+                + "    member-server-socket-endpoint-config: \n"
+                + "      socket-options: \n"
+                + "        " + socketOption + ": " + value + "\n";
+        return yaml;
     }
 }

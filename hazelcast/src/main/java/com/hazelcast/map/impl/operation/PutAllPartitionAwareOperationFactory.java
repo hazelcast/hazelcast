@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
@@ -36,6 +35,7 @@ import java.util.Map;
  * <p>
  * Used to reduce the number of remote invocations of an {@link IMap#putAll(Map)} or {@link IMap#setAll(Map)} call.
  */
+// RU_COMPAT_5_3 "implements Versioned" can be removed in 5.5
 public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperationFactory implements Versioned {
 
     protected String name;
@@ -71,9 +71,7 @@ public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperatio
         for (MapEntries entry : mapEntries) {
             entry.writeData(out);
         }
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeBoolean(triggerMapLoader);
-        }
+        out.writeBoolean(triggerMapLoader);
     }
 
     @Override
@@ -86,11 +84,7 @@ public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperatio
             entry.readData(in);
             mapEntries[i] = entry;
         }
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            triggerMapLoader = in.readBoolean();
-        } else {
-            triggerMapLoader = true;
-        }
+        triggerMapLoader = in.readBoolean();
     }
 
     @Override

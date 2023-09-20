@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,13 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.jet.kafka.HazelcastKafkaAvroDeserializer;
+import com.hazelcast.jet.kafka.HazelcastKafkaAvroSerializer;
 import com.hazelcast.jet.kafka.impl.HazelcastJsonValueDeserializer;
 import com.hazelcast.jet.kafka.impl.HazelcastJsonValueSerializer;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.JavaClassNameResolver;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -37,18 +38,17 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 
 final class PropertiesResolver {
-
     static final String KEY_SERIALIZER = "key.serializer";
     static final String KEY_DESERIALIZER = "key.deserializer";
     static final String VALUE_SERIALIZER = "value.serializer";
     static final String VALUE_DESERIALIZER = "value.deserializer";
 
-    private static final Set<String> NON_KAFKA_OPTIONS = new HashSet<String>() {{
-        add(OPTION_KEY_FORMAT);
-        add(OPTION_KEY_CLASS);
-        add(OPTION_VALUE_FORMAT);
-        add(OPTION_VALUE_CLASS);
-    }};
+    private static final Set<String> NON_KAFKA_OPTIONS = Set.of(
+            OPTION_KEY_FORMAT,
+            OPTION_KEY_CLASS,
+            OPTION_VALUE_FORMAT,
+            OPTION_VALUE_CLASS
+    );
 
     // using strings instead of canonical names to not fail without Kafka on the classpath
 
@@ -70,8 +70,11 @@ final class PropertiesResolver {
     private static final String STRING_SERIALIZER = "org.apache.kafka.common.serialization.StringSerializer";
     private static final String STRING_DESERIALIZER = "org.apache.kafka.common.serialization.StringDeserializer";
 
-    private static final String AVRO_SERIALIZER = "io.confluent.kafka.serializers.KafkaAvroSerializer";
-    private static final String AVRO_DESERIALIZER = "io.confluent.kafka.serializers.KafkaAvroDeserializer";
+    private static final String CONFLUENT_AVRO_SERIALIZER = "io.confluent.kafka.serializers.KafkaAvroSerializer";
+    private static final String CONFLUENT_AVRO_DESERIALIZER = "io.confluent.kafka.serializers.KafkaAvroDeserializer";
+
+    private static final String HAZELCAST_AVRO_SERIALIZER = HazelcastKafkaAvroSerializer.class.getName();
+    private static final String HAZELCAST_AVRO_DESERIALIZER = HazelcastKafkaAvroDeserializer.class.getName();
 
     private static final String BYTE_ARRAY_SERIALIZER = "org.apache.kafka.common.serialization.ByteArraySerializer";
     private static final String BYTE_ARRAY_DESERIALIZER = "org.apache.kafka.common.serialization.ByteArrayDeserializer";
@@ -79,8 +82,7 @@ final class PropertiesResolver {
     private static final String JSON_SERIALIZER = HazelcastJsonValueSerializer.class.getName();
     private static final String JSON_DESERIALIZER = HazelcastJsonValueDeserializer.class.getName();
 
-    private PropertiesResolver() {
-    }
+    private PropertiesResolver() { }
 
     static Properties resolveConsumerProperties(Map<String, String> options) {
         Properties properties = from(options);
@@ -124,7 +126,8 @@ final class PropertiesResolver {
         if (format == null && isKey) {
             properties.putIfAbsent(deserializer, BYTE_ARRAY_DESERIALIZER);
         } else if (AVRO_FORMAT.equals(format)) {
-            properties.putIfAbsent(deserializer, AVRO_DESERIALIZER);
+            properties.putIfAbsent(deserializer, options.containsKey("schema.registry.url")
+                    ? CONFLUENT_AVRO_DESERIALIZER : HAZELCAST_AVRO_DESERIALIZER);
         } else if (JSON_FLAT_FORMAT.equals(format)) {
             properties.putIfAbsent(deserializer, BYTE_ARRAY_DESERIALIZER);
         } else if (JAVA_FORMAT.equals(format)) {
@@ -175,7 +178,8 @@ final class PropertiesResolver {
         if (format == null && isKey) {
             properties.putIfAbsent(serializer, BYTE_ARRAY_SERIALIZER);
         } else if (AVRO_FORMAT.equals(format)) {
-            properties.putIfAbsent(serializer, AVRO_SERIALIZER);
+            properties.putIfAbsent(serializer, options.containsKey("schema.registry.url")
+                    ? CONFLUENT_AVRO_SERIALIZER : HAZELCAST_AVRO_SERIALIZER);
         } else if (JSON_FLAT_FORMAT.equals(format)) {
             properties.putIfAbsent(serializer, BYTE_ARRAY_SERIALIZER);
         } else if (JAVA_FORMAT.equals(format)) {

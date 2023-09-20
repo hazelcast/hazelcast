@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.server.FirewallingServer.FirewallingServerConnectionManager;
 import com.hazelcast.internal.server.OperationPacketFilter;
 import com.hazelcast.internal.server.PacketFilter;
@@ -95,30 +95,31 @@ public final class PacketFiltersUtil {
 
     private static void filterOperationsFrom(HazelcastInstance instance, int factory, List<Integer> opTypes,
             PacketFilter.Action action) {
-        Node node = getNode(instance);
-        FirewallingServerConnectionManager cm = (FirewallingServerConnectionManager)
-                node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
-        PacketFilter packetFilter = new EndpointAgnosticPacketFilter(node.getSerializationService(), factory, opTypes, action);
-        cm.setPacketFilter(packetFilter);
+        PacketFilter packetFilter = new EndpointAgnosticPacketFilter(getNode(instance).getSerializationService(), factory, opTypes, action);
+        setCustomFilter(instance, packetFilter);
     }
 
     private static void filterOperationsBetween(HazelcastInstance from, Collection<Address> addresses, int factory, List<Integer> opTypes,
                                                 PacketFilter.Action action) {
-        Node node = getNode(from);
-        FirewallingServerConnectionManager cm = (FirewallingServerConnectionManager)
-                node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
-        PacketFilter packetFilter = new EndpointAwarePacketFilter(node.getSerializationService(), addresses, factory,
+        PacketFilter packetFilter = new EndpointAwarePacketFilter(getNode(from).getSerializationService(), addresses, factory,
                 opTypes, action);
-        cm.setPacketFilter(packetFilter);
+        setCustomFilter(from, packetFilter);
     }
 
     private static Collection<Address> getAddresses(Collection<HazelcastInstance> instances) {
-        List<Address> addresses = new ArrayList<Address>();
+        List<Address> addresses = new ArrayList<>();
         for (HazelcastInstance instance : instances) {
             addresses.add(getAddress(instance));
         }
 
         return addresses;
+    }
+
+    public static void setCustomFilter(HazelcastInstance from, PacketFilter packetFilter) {
+        Node node = getNode(from);
+        FirewallingServerConnectionManager cm = (FirewallingServerConnectionManager)
+                node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
+        cm.setPacketFilter(packetFilter);
     }
 
     private static class EndpointAgnosticPacketFilter extends OperationPacketFilter {
@@ -146,7 +147,7 @@ public final class PacketFiltersUtil {
 
     private static class EndpointAwarePacketFilter extends EndpointAgnosticPacketFilter {
 
-        final Set<Address> blacklist = new HashSet<Address>();
+        final Set<Address> blacklist = new HashSet<>();
 
         EndpointAwarePacketFilter(InternalSerializationService serializationService, Collection<Address> blacklist, int factory,
                                   List<Integer> typeIds, Action action) {

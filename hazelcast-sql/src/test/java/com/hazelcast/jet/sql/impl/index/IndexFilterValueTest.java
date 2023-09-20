@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.index;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.query.impl.AbstractIndex;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -98,7 +98,7 @@ public class IndexFilterValueTest extends IndexFilterTestSupport {
                 singletonList(true)
         );
 
-        IndexFilterValue restored = serializeAndCheck(original, SqlDataSerializerHook.INDEX_FILTER_VALUE);
+        IndexFilterValue restored = serializeAndCheck(original, JetSqlSerializerHook.INDEX_FILTER_VALUE);
 
         checkEquals(original, restored, true);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,14 +41,12 @@ abstract class StreamToStreamJoinBuffer implements Iterable<JetSqlRow> {
 
     public abstract boolean isEmpty();
 
-    // for testing purposes only
     abstract Collection<JetSqlRow> content();
 
     /**
      * Clears expired items in current buffer, and returns a new minimums time array.
      *
-     * @param limits              array of limits for
-     * @return a new minimums time array.
+     * @param limits array of limits for
      */
-    public abstract long[] clearExpiredItems(long[] limits, @Nonnull Consumer<JetSqlRow> clearedRowsConsumer);
+    public abstract void clearExpiredItems(long[] limits, @Nonnull Consumer<JetSqlRow> clearedRowsConsumer);
 }

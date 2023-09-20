@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,8 +58,15 @@ public final class GenericRecordQueryReader implements ValueReader {
 
     private final InternalGenericRecord rootRecord;
 
+    private final boolean useLazyDeserialization;
+
     public GenericRecordQueryReader(InternalGenericRecord rootRecord) {
+        this(rootRecord, false);
+    }
+
+    public GenericRecordQueryReader(InternalGenericRecord rootRecord, boolean useLazyDeserialization) {
         this.rootRecord = rootRecord;
+        this.useLazyDeserialization = useLazyDeserialization;
     }
 
     @SuppressWarnings("unchecked")
@@ -250,6 +257,10 @@ public final class GenericRecordQueryReader implements ValueReader {
             return null;
         }
         FieldKind kind = record.getFieldKind(path);
+        if ((kind == FieldKind.COMPACT || kind == FieldKind.PORTABLE) && useLazyDeserialization) {
+            // Use lazy deserialization for the queries that will read a nested compact or portable field
+            return record.getInternalGenericRecord(path);
+        }
         return fieldOperations(kind).readAsLeafObjectOnQuery(record, path);
     }
 

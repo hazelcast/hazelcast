@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,11 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.spi.annotation.Beta;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 import javax.annotation.Nonnull;
@@ -106,6 +108,72 @@ public final class KafkaSinks {
     }
 
     /**
+     * Returns a sink that publishes messages to Apache Kafka topic(s). It
+     * transforms each received item to a {@code ProducerRecord} using the
+     * supplied mapping function.
+     * <p>
+     * The sink uses the supplied DataConnection to obtain a {@code KafkaProducer}
+     * instance for each {@code Processor}. Depending on the DataConnection
+     * configuration it may be either a new instance for each processor,
+     * or a shared instance. NOTE: Shared instance can't be used with
+     * exactly-once.
+     * <p>
+     * The behavior depends on the job's processing guarantee:
+     * <ul>
+     *     <li><em>EXACTLY_ONCE:</em> the sink will use Kafka transactions to
+     *     commit the messages. Transactions are committed after a snapshot is
+     *     completed. This increases the latency of the messages because they
+     *     are only visible to consumers after they are committed and slightly
+     *     reduces the throughput because no messages are sent between the
+     *     snapshot phases.
+     * <p>
+     *     When using transactions pay attention to your {@code
+     *     transaction.timeout.ms} config property. It limits the entire
+     *     duration of the transaction since it is begun, not just inactivity
+     *     timeout. It must not be smaller than your snapshot interval,
+     *     otherwise the Kafka broker will roll the transaction back before Jet
+     *     is done with it. Also it should be large enough so that Jet has time
+     *     to restart after a failure: a member can crash just before it's
+     *     about to commit, and Jet will attempt to commit the transaction
+     *     after the restart, but the transaction must be still waiting in the
+     *     broker. The default in Kafka 2.4 is 1 minute.
+     * <p>
+     *     Also keep in mind the consumers need to use {@code
+     *     isolation.level=read_committed}, which is not the default. Otherwise
+     *     the consumers will see duplicate messages.
+     *
+     *     <li><em>AT_LEAST_ONCE:</em> messages are committed immediately, the
+     *     sink ensure that all async operations are done at 1st snapshot
+     *     phase. This ensures that each message is written if the job fails,
+     *     but might be written again after the job restarts.
+     * </ul>
+     * <p>
+     * If you want to avoid the overhead of transactions, you can reduce the
+     * guarantee just for the sink. To do so, use the builder version and call
+     * {@link Builder#exactlyOnce(boolean) exactlyOnce(false)} on the builder.
+     * <p>
+     * IO failures are generally handled by Kafka producer and do not cause the
+     * processor to fail. Refer to Kafka documentation for details.
+     * <p>
+     * The default local parallelism for this processor is 1.
+     *
+     * @param dataConnectionRef DataConnection reference to use to obtain the KafkaProducer
+     * @param toRecordFn        function that extracts the key from the stream item
+     * @param <E>               type of stream item
+     * @param <K>               type of the key published to Kafka
+     * @param <V>               type of the value published to Kafka
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public static <E, K, V> Sink<E> kafka(
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull FunctionEx<? super E, ProducerRecord<K, V>> toRecordFn
+    ) {
+        return Sinks.fromProcessor("kafkaSink", writeKafkaP(dataConnectionRef, toRecordFn, true));
+    }
+
+    /**
      * Convenience for {@link #kafka(Properties, FunctionEx)} which creates
      * a {@code ProducerRecord} using the given topic and the given key and value
      * mapping functions
@@ -131,6 +199,62 @@ public final class KafkaSinks {
     }
 
     /**
+     * Convenience for {@link #kafka(Properties, FunctionEx)} which creates
+     * a {@code ProducerRecord} using the given topic and the given key and value
+     * mapping functions
+     *
+     * @param <E>               type of stream item
+     * @param <K>               type of the key published to Kafka
+     * @param <V>               type of the value published to Kafka
+     * @param dataConnectionRef producer properties which should contain broker
+     *                          address and key/value serializers
+     * @param topic             name of the Kafka topic to publish to
+     * @param extractKeyFn      function that extracts the key from the stream item
+     * @param extractValueFn    function that extracts the value from the stream item
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public static <E, K, V> Sink<E> kafka(
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull String topic,
+            @Nonnull FunctionEx<? super E, K> extractKeyFn,
+            @Nonnull FunctionEx<? super E, V> extractValueFn
+    ) {
+        return Sinks.fromProcessor("kafkaSink(" + topic + ")",
+                writeKafkaP(dataConnectionRef, topic, extractKeyFn, extractValueFn, true));
+    }
+
+    /**
+     * Convenience for {@link #kafka(Properties, FunctionEx)} which creates
+     * a {@code ProducerRecord} using the given topic and the given key and value
+     * mapping functions with additional properties available
+     *
+     * @param <E>               type of stream item
+     * @param <K>               type of the key published to Kafka
+     * @param <V>               type of the value published to Kafka
+     * @param dataConnectionRef producer properties which should contain broker
+     *                          address and key/value serializers
+     * @param properties        additional properties
+     * @param topic             name of the Kafka topic to publish to
+     * @param extractKeyFn      function that extracts the key from the stream item
+     * @param extractValueFn    function that extracts the value from the stream item
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public static <E, K, V> Sink<E> kafka(
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull Properties properties,
+            @Nonnull String topic,
+            @Nonnull FunctionEx<? super E, K> extractKeyFn,
+            @Nonnull FunctionEx<? super E, V> extractValueFn
+    ) {
+        return Sinks.fromProcessor("kafkaSink(" + topic + ")",
+                writeKafkaP(dataConnectionRef, properties, topic, extractKeyFn, extractValueFn, true));
+    }
+
+    /**
      * Convenience for {@link #kafka(Properties, String, FunctionEx, FunctionEx)}
      * which expects {@code Map.Entry<K, V>} as input and extracts its key and value
      * parts to be published to Kafka.
@@ -144,6 +268,23 @@ public final class KafkaSinks {
     @Nonnull
     public static <K, V> Sink<Entry<K, V>> kafka(@Nonnull Properties properties, @Nonnull String topic) {
         return kafka(properties, topic, Entry::getKey, Entry::getValue);
+    }
+
+    /**
+     * Convenience for {@link #kafka(DataConnectionRef, String, FunctionEx, FunctionEx)}
+     * which expects {@code Map.Entry<K, V>} as input and extracts its key and value
+     * parts to be published to Kafka.
+     *
+     * @param <K>               type of the key published to Kafka
+     * @param <V>               type of the value published to Kafka
+     * @param dataConnectionRef DataConnection reference to use to obtain the KafkaProducer
+     * @param topic             Kafka topic name to publish to
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public static <K, V> Sink<Entry<K, V>> kafka(@Nonnull DataConnectionRef dataConnectionRef, @Nonnull String topic) {
+        return kafka(dataConnectionRef, topic, Entry::getKey, Entry::getValue);
     }
 
     /**
@@ -196,6 +337,58 @@ public final class KafkaSinks {
         return new Builder<>(properties);
     }
 
+
+    /**
+     * Returns a builder object that you can use to create an Apache Kafka
+     * pipeline sink.
+     * <p>
+     * The sink creates a single {@code KafkaProducer} per processor using
+     * the supplied {@code properties}.
+     * <p>
+     * The behavior depends on the job's processing guarantee:
+     * <ul>
+     *     <li><em>EXACTLY_ONCE:</em> the sink will use Kafka transactions to
+     *     commit the messages. This brings some overhead on the broker side,
+     *     slight throughput reduction (we don't send messages between snapshot
+     *     phases) and, most importantly, increases the latency of the messages
+     *     because they are only visible to consumers after they are committed.
+     *     <p>
+     *     When using transactions pay attention to your {@code
+     *     transaction.timeout.ms} config property. It limits the entire
+     *     duration of the transaction since it is begun, not just inactivity
+     *     timeout. It must not be smaller than your snapshot interval,
+     *     otherwise the Kafka broker will roll the transaction back before Jet
+     *     is done with it. Also it should be large enough so that Jet has time
+     *     to restart after a failure: a member can crash just before it's
+     *     about to commit, and Jet will attempt to commit the transaction
+     *     after the restart, but the transaction must be still waiting in the
+     *     broker. The default in Kafka 2.4 is 1 minute.
+     *
+     *     <li><em>AT_LEAST_ONCE:</em> messages are committed immediately, the
+     *     sink ensure that all async operations are done at 1st snapshot
+     *     phase. This ensures that each message is written if the job fails,
+     *     but might be written again after the job restarts.
+     * </ul>
+     *
+     * If you want to avoid the overhead of transactions, you can reduce the
+     * guarantee just for the sink by calling {@link
+     * Builder#exactlyOnce(boolean) exactlyOnce(false)} on the returned builder.
+     * <p>
+     * IO failures are generally handled by Kafka producer and do not cause the
+     * processor to fail. Refer to Kafka documentation for details.
+     * <p>
+     * Default local parallelism for this processor is 1.
+     *
+     * @param dataConnectionRef DataConnection reference to use to obtain the KafkaProducer
+     * @param <E> type of stream item
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public static <E> Builder<E> kafka(@Nonnull DataConnectionRef dataConnectionRef) {
+        return new Builder<>(dataConnectionRef);
+    }
+
     /**
      * A builder for Kafka sink.
      *
@@ -204,6 +397,7 @@ public final class KafkaSinks {
     public static final class Builder<E> {
 
         private final Properties properties;
+        private final DataConnectionRef dataConnectionRef;
         private FunctionEx<? super E, ? extends ProducerRecord<Object, Object>> toRecordFn;
         private String topic;
         private FunctionEx<? super E, ?> extractKeyFn;
@@ -212,6 +406,12 @@ public final class KafkaSinks {
 
         private Builder(Properties properties) {
             this.properties = properties;
+            this.dataConnectionRef = null;
+        }
+
+        private Builder(DataConnectionRef dataConnectionRef) {
+            this.properties = null;
+            this.dataConnectionRef = dataConnectionRef;
         }
 
         /**
@@ -332,12 +532,24 @@ public final class KafkaSinks {
                 throw new IllegalArgumentException("either `topic` or `toRecordFn` must be set");
             }
             if (topic != null) {
+                ProcessorMetaSupplier metaSupplier;
                 FunctionEx<? super E, ?> extractKeyFn1 = extractKeyFn != null ? extractKeyFn : t -> null;
                 FunctionEx<? super E, ?> extractValueFn1 = extractValueFn != null ? extractValueFn : t -> t;
-                return Sinks.fromProcessor("kafkaSink(" + topic + ")",
-                        writeKafkaP(properties, topic, extractKeyFn1, extractValueFn1, exactlyOnce));
+                if (properties != null) {
+                    metaSupplier = writeKafkaP(properties, topic, extractKeyFn1, extractValueFn1, exactlyOnce);
+                } else {
+                    assert dataConnectionRef != null;
+                    metaSupplier = writeKafkaP(dataConnectionRef, topic, extractKeyFn1, extractValueFn1, exactlyOnce);
+                }
+                return Sinks.fromProcessor("kafkaSink(" + topic + ")", metaSupplier);
             } else {
-                ProcessorMetaSupplier metaSupplier = writeKafkaP(properties, toRecordFn, exactlyOnce);
+                ProcessorMetaSupplier metaSupplier;
+                if (properties != null) {
+                    metaSupplier = writeKafkaP(properties, toRecordFn, exactlyOnce);
+                } else {
+                    assert dataConnectionRef != null;
+                    metaSupplier = writeKafkaP(dataConnectionRef, toRecordFn, exactlyOnce);
+                }
                 return Sinks.fromProcessor("kafkaSink", metaSupplier);
             }
         }

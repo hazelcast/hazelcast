@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,20 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ExternalDataStoreConfig;
-import com.hazelcast.datastore.JdbcDataStoreFactory;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -36,21 +39,27 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * TestSupport for tests of JdbcSqlConnector
  */
+@Category(IgnoreInJenkinsOnWindows.class)
 public abstract class JdbcSqlTestSupport extends SqlTestSupport {
 
-    protected static final String TEST_DATABASE_REF = "test-database-ref";
+    protected static final String TEST_DATABASE_REF = "testDatabaseRef";
 
     protected static TestDatabaseProvider databaseProvider;
 
     protected static String dbConnectionUrl;
     protected static SqlService sqlService;
+
+    @BeforeClass
+    public static void checkDockerEnabled() {
+        assumeDockerEnabled();
+    }
 
     public static void initialize(TestDatabaseProvider provider) {
         initialize(provider, smallInstanceConfig());
@@ -61,9 +70,9 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", dbConnectionUrl);
-        config.addExternalDataStoreConfig(
-                new ExternalDataStoreConfig(TEST_DATABASE_REF)
-                        .setClassName(JdbcDataStoreFactory.class.getName())
+        config.addDataConnectionConfig(
+                new DataConnectionConfig(TEST_DATABASE_REF)
+                        .setType("jdbc")
                         .setProperties(properties)
         );
         initialize(2, config);
@@ -71,8 +80,8 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     }
 
     @AfterClass
-    public static void afterClass() throws SQLException {
-        if (dbConnectionUrl != null) {
+    public static void afterClass() {
+        if (databaseProvider != null) {
             databaseProvider.shutdown();
             databaseProvider = null;
             dbConnectionUrl = null;
@@ -82,6 +91,10 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     @Nonnull
     protected static String randomTableName() {
         return "table_" + randomName();
+    }
+
+    protected String quote(String... parts) {
+        return databaseProvider.quote(parts);
     }
 
     /**
@@ -95,25 +108,6 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         executeJdbc("CREATE TABLE " + tableName + " (" + String.join(", ", columns) + ")");
     }
 
-    static void createTableWithAllTypes(String tableName) throws SQLException {
-        executeJdbc("CREATE TABLE " + tableName + " (" +
-                "v VARCHAR(100)," +
-                "b BOOLEAN, " +
-                "ti TINYINT, " +
-                "si SMALLINT, " +
-                "i INTEGER, " +
-                "bi BIGINT, " +
-                "dc DECIMAL, " +
-                "r REAL, " +
-                "dbl DOUBLE, " +
-                "tm TIME, " +
-                "dt DATE, " +
-                "ts TIMESTAMP, " +
-                "tstz TIMESTAMP WITH TIME ZONE" +
-                ")"
-        );
-    }
-
     public static void executeJdbc(String sql) throws SQLException {
         requireNonNull(dbConnectionUrl, "dbConnectionUrl must be set");
 
@@ -124,64 +118,63 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         }
     }
 
-    public static void insertItems(String tableName, int count) throws SQLException {
+    public static void insertItems(String tableName, int start, int count) throws SQLException {
+        int end = start + count;
+        String sql = String.format("INSERT INTO %s VALUES(?, ?)", tableName);
+
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
-             Statement stmt = conn.createStatement()
+             PreparedStatement stmt = conn.prepareStatement(sql)
         ) {
-            for (int i = 0; i < count; i++) {
-                stmt.execute(String.format("INSERT INTO " + tableName + " VALUES(%d, 'name-%d')", i, i));
+
+            for (int i = start; i < end; i++) {
+                stmt.setInt(1, i);
+                stmt.setString(2, String.format("name-%d", i));
+                stmt.addBatch();
+                stmt.clearParameters();
             }
+            stmt.executeBatch();
         }
+    }
+
+    public static void insertItems(String tableName, int count) throws SQLException {
+        insertItems(tableName, 0, count);
     }
 
     protected static void createMapping(String tableName) {
         execute(
                 "CREATE MAPPING \"" + tableName + "\" ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
     protected static void createMapping(String tableName, String mappingName) {
         execute(
                 "CREATE MAPPING \"" + mappingName + "\""
-                        + " EXTERNAL NAME \"" + tableName + "\""
-                        + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                + " EXTERNAL NAME " + tableName + " "
+                + " ("
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
+    protected static void createJdbcMappingUsingDataConnection(String name, String dataConnection) {
+        try (SqlResult result = instance().getSql().execute("CREATE OR REPLACE MAPPING " + name +
+                                                            " DATA CONNECTION " + quoteName(dataConnection) + "\n"
+        )) {
+            assertThat(result.updateCount()).isZero();
+        }
+    }
 
     protected static void execute(String sql, Object... arguments) {
         requireNonNull(dbConnectionUrl);
         try (SqlResult ignored = sqlService.execute(sql, arguments)) {
             // empty try-with-resources
         }
-    }
-
-    /**
-     * Assert the contents of a given table via Hazelcast SQL engine
-     */
-    protected static void assertRowsAnyOrder(String sql, Row... rows) {
-        assertRowsAnyOrder(sql, Arrays.asList(rows));
-    }
-
-    /**
-     * Assert the contents of a given table via Hazelcast SQL engine
-     */
-    protected static void assertRowsAnyOrder(String sql, List<Object> arguments, Row... rows) {
-        assertRowsAnyOrder(sql, arguments, Arrays.asList(rows));
     }
 
     /**
@@ -192,29 +185,56 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
+    protected static void assertJdbcRowsAnyOrder(String tableName, List<Class<?>> columnType, Row... rows) {
+        List<Row> actualRows = jdbcRowsTable(tableName, columnType);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
+    }
+
+    protected static void assertJdbcQueryRowsAnyOrder(String query, Row... rows) {
+        List<Row> actualRows = jdbcRows(query);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
+    }
+
     protected static List<Row> jdbcRowsTable(String tableName) {
         return jdbcRows("SELECT * FROM " + tableName);
     }
 
+    protected static List<Row> jdbcRowsTable(String tableName, List<Class<?>> columnType) {
+        return jdbcRows("SELECT * FROM " + tableName, columnType);
+    }
+
     @Nonnull
     protected static List<Row> jdbcRows(String query) {
+        return jdbcRows(query, dbConnectionUrl);
+    }
+
+    protected static List<Row> jdbcRows(String query, List<Class<?>> columnType) {
+        return jdbcRows(query, dbConnectionUrl, columnType);
+    }
+
+    public static List<Row> jdbcRows(String query, String connectionUrl) {
+        return jdbcRows(query, connectionUrl, null);
+    }
+
+    public static List<Row> jdbcRows(String query, String connectionUrl, List<Class<?>> columnType) {
         List<Row> rows = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(query);
-            ResultSet resultSet = stmt.getResultSet();
+        try (Connection connection = DriverManager.getConnection(connectionUrl);
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
             while (resultSet.next()) {
                 Object[] values = new Object[resultSet.getMetaData().getColumnCount()];
                 for (int i = 0; i < values.length; i++) {
-                    values[i] = resultSet.getObject(i + 1);
+                    if (columnType == null) {
+                        values[i] = resultSet.getObject(i + 1);
+                    } else {
+                        values[i] = resultSet.getObject(i + 1, columnType.get(i));
+                    }
                 }
                 rows.add(new Row(values));
             }
             return rows;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        } catch (SQLException sqlException) {
+            throw new RuntimeException(sqlException);
         }
     }
-
 }

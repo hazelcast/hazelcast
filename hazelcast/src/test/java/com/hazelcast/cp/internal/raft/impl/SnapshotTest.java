@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,12 +54,11 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getMatchIndex;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getStatus;
 import static com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup.LocalRaftGroupBuilder.newGroup;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -502,11 +501,11 @@ public class SnapshotTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(() -> assertThat(getSnapshotEntry(leader).index(), greaterThanOrEqualTo((long) entryCount)));
+        assertTrueEventually(() -> assertThat(getSnapshotEntry(leader).index()).isGreaterThanOrEqualTo(entryCount));
 
         group.allowAllMessagesToMember(leader.getLeader(), slowFollower.getLocalMember());
 
-        assertTrueEventually(() -> assertThat(getSnapshotEntry(slowFollower).index(), greaterThanOrEqualTo((long) entryCount)));
+        assertTrueEventually(() -> assertThat(getSnapshotEntry(slowFollower).index()).isGreaterThanOrEqualTo(entryCount));
 
         assertTrueEventually(() -> {
             assertEquals(getCommittedGroupMembers(leader).index(), getCommittedGroupMembers(slowFollower).index());
@@ -568,10 +567,12 @@ public class SnapshotTest extends HazelcastTestSupport {
                 if (entries.length > 0) {
                     if (entries[entries.length - 1].operation() instanceof UpdateRaftGroupMembersCmd) {
                         entries = Arrays.copyOf(entries, entries.length - 1);
-                        return new AppendRequest(request.leader(), request.term(), request.prevLogTerm(), request.prevLogIndex(), request.leaderCommitIndex(), entries, request.queryRound());
+                        return new AppendRequest(request.leader(), request.term(), request.prevLogTerm(), request.prevLogIndex(),
+                                request.leaderCommitIndex(), entries, request.queryRound(), request.flowControlSequenceNumber());
                     } else if (entries[0].operation() instanceof UpdateRaftGroupMembersCmd) {
                         entries = new LogEntry[0];
-                        return new AppendRequest(request.leader(), request.term(), request.prevLogTerm(), request.prevLogIndex(), request.leaderCommitIndex(), entries, request.queryRound());
+                        return new AppendRequest(request.leader(), request.term(), request.prevLogTerm(), request.prevLogIndex(),
+                                request.leaderCommitIndex(), entries, request.queryRound(), request.flowControlSequenceNumber());
                     }
                 }
             }

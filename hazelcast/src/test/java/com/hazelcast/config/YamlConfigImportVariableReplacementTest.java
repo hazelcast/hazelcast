@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,12 @@ package com.hazelcast.config;
 import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -36,6 +32,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -43,8 +41,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class YamlConfigImportVariableReplacementTest extends AbstractConfigImportVariableReplacementTest {
-    @Rule
-    public ExpectedException rule = ExpectedException.none();
 
     private DeclarativeConfigFileHelper helper;
 
@@ -676,8 +672,8 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "    - ${config.location}\n"
                 + "  cluster-name: name2";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
-        buildConfig(yaml, "config.location", path);
+        assertThatThrownBy(() -> buildConfig(yaml, "config.location", path))
+                .has(rootCause(InvalidConfigurationException.class, "hazelcast/cluster-name"));
     }
 
     @Test
@@ -711,9 +707,8 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "    - ${config.location}\n"
                 + "  cluster-name:\n"
                 + "    - seqName: {}";
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
-
-        buildConfig(yaml, "config.location", path);
+        assertThatThrownBy(() -> buildConfig(yaml, "config.location", path))
+                .has(rootCause(InvalidConfigurationException.class, "hazelcast/cluster-name"));
     }
 
     @Test
@@ -728,9 +723,9 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  import:\n"
                 + "    - ${config.location}\n"
                 + "  cluster-name: {}";
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
 
-        buildConfig(yaml, "config.location", path);
+        assertThatThrownBy(() -> buildConfig(yaml, "config.location", path))
+                .has(rootCause(InvalidConfigurationException.class, "hazelcast/cluster-name"));
     }
 
     @Test
@@ -747,8 +742,8 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "    - ${config.location}\n"
                 + "  cluster-name: {}";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
-        buildConfig(yaml, "config.location", path);
+        assertThatThrownBy(() -> buildConfig(yaml, "config.location", path))
+                .has(rootCause(InvalidConfigurationException.class, "hazelcast/cluster-name"));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public enum RemoveIfSameOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             return state.getOldValue() == null
-                    ? UtilSteps.SEND_RESPONSE : RemoveIfSameOpSteps.ON_LOAD;
+                    ? UtilSteps.FINAL_STEP : RemoveIfSameOpSteps.ON_LOAD;
         }
     },
 
@@ -88,7 +88,7 @@ public enum RemoveIfSameOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             return state.isStopExecution()
-                    ? UtilSteps.SEND_RESPONSE : RemoveIfSameOpSteps.DELETE;
+                    ? UtilSteps.FINAL_STEP : RemoveIfSameOpSteps.DELETE;
         }
     },
 
@@ -126,7 +126,7 @@ public enum RemoveIfSameOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,15 +87,15 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
             if (setter != null) {
                 String returnTypeName = returnType.getName();
                 if (Properties.class.isAssignableFrom(returnType)) {
-                    Properties original = (Properties) method.invoke(thisConfigObject, null);
+                    Properties original = (Properties) method.invoke(thisConfigObject);
                     updateConfig(setter, otherConfigObject, copy(original));
                 } else if (Map.class.isAssignableFrom(returnType) || ConcurrentMap.class.isAssignableFrom(returnType)) {
-                    Map map = (Map) method.invoke(thisConfigObject, null);
+                    Map map = (Map) method.invoke(thisConfigObject);
                     Map otherMap = ConcurrentMap.class.isAssignableFrom(returnType) ? new ConcurrentHashMap() : new HashMap();
                     copyMap(map, otherMap, classloader);
                     updateConfig(setter, otherConfigObject, otherMap);
                 } else if (returnType.equals(List.class)) {
-                    List list = (List) method.invoke(thisConfigObject, null);
+                    List list = (List) method.invoke(thisConfigObject);
                     List otherList = new ArrayList();
                     for (Object item : list) {
                         Object otherItem = cloneConfig(item, classloader);
@@ -103,12 +103,12 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                     }
                     updateConfig(setter, otherConfigObject, otherList);
                 } else if (returnType.isEnum()) {
-                    Enum thisSubConfigObject = (Enum) method.invoke(thisConfigObject, null);
+                    Enum thisSubConfigObject = (Enum) method.invoke(thisConfigObject);
                     Class otherEnumClass = classloader.loadClass(thisSubConfigObject.getClass().getName());
                     Object otherEnumValue = Enum.valueOf(otherEnumClass, thisSubConfigObject.name());
                     updateConfig(setter, otherConfigObject, otherEnumValue);
                 } else if (returnTypeName.startsWith("java") || returnType.isPrimitive()) {
-                    Object thisSubConfigObject = method.invoke(thisConfigObject, null);
+                    Object thisSubConfigObject = method.invoke(thisConfigObject);
                     updateConfig(setter, otherConfigObject, thisSubConfigObject);
                 } else if (returnTypeName.equals("com.hazelcast.ringbuffer.RingbufferStore")
                         || returnTypeName.equals("com.hazelcast.ringbuffer.RingbufferStoreFactory")
@@ -119,7 +119,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                         || returnTypeName.startsWith("com.hazelcast.memory.Capacity")) {
                     // ignore
                 } else if (returnTypeName.startsWith("com.hazelcast")) {
-                    Object thisSubConfigObject = method.invoke(thisConfigObject, null);
+                    Object thisSubConfigObject = method.invoke(thisConfigObject);
                     Object otherSubConfig = cloneConfig(thisSubConfigObject, classloader);
                     updateConfig(setter, otherConfigObject, otherSubConfig);
                 }
@@ -143,7 +143,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         if (!method.getName().startsWith("get") && !method.getName().startsWith("is")) {
             return false;
         }
-        if (method.getParameterTypes().length != 0) {
+        if (method.getParameterCount() != 0) {
             return false;
         }
         return !void.class.equals(method.getReturnType());
@@ -188,11 +188,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
     private static void updateConfig(Method setterMethod, Object otherConfigObject, Object value) {
         try {
             setterMethod.invoke(otherConfigObject, value);
-        } catch (IllegalAccessException e) {
-            debug("Could not update config via %s: %s", setterMethod.getName(), e.getMessage());
-        } catch (InvocationTargetException e) {
-            debug("Could not update config via %s: %s", setterMethod.getName(), e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
             debug("Could not update config via %s: %s", setterMethod.getName(), e.getMessage());
         }
     }

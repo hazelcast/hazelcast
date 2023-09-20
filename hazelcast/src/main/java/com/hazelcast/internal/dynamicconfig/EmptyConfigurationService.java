@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
@@ -34,6 +34,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.List;
@@ -209,12 +210,22 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public ExternalDataStoreConfig findExternalDataStoreConfig(String baseName) {
+    public DataConnectionConfig findDataConnectionConfig(String baseName) {
         return null;
     }
 
     @Override
-    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
+    public Map<String, DataConnectionConfig> getDataConnectionConfigs() {
+        return emptyMap();
+    }
+
+    @Override
+    public WanReplicationConfig findWanReplicationConfig(String name) {
+        return null;
+    }
+
+    @Override
+    public Map<String, WanReplicationConfig> getWanReplicationConfigs() {
         return emptyMap();
     }
 

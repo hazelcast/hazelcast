@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
@@ -33,7 +33,6 @@ import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -71,6 +70,7 @@ import static com.hazelcast.jet.sql.SqlBasicTest.DataSerializablePojoKey;
 import static com.hazelcast.jet.sql.SqlBasicTest.IdentifiedDataSerializablePojo;
 import static com.hazelcast.jet.sql.SqlBasicTest.IdentifiedDataSerializablePojoKey;
 import static com.hazelcast.jet.sql.SqlBasicTest.PORTABLE_FACTORY_ID;
+import static com.hazelcast.jet.sql.SqlBasicTest.PORTABLE_KEY_CLASS_ID;
 import static com.hazelcast.jet.sql.SqlBasicTest.PORTABLE_VALUE_CLASS_ID;
 import static com.hazelcast.jet.sql.SqlBasicTest.PortablePojo;
 import static com.hazelcast.jet.sql.SqlBasicTest.PortablePojoKey;
@@ -82,6 +82,7 @@ import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.serializationConfig;
 import static com.hazelcast.jet.sql.SqlTestSupport.createMapping;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -103,9 +104,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
     private static final int DATA_SET_SIZE = 4096;
     private static final int DATA_SET_MAX_POSITIVE = DATA_SET_SIZE / 2;
 
-    private final TestHazelcastFactory factory = new TestHazelcastFactory();
-
-    private List<HazelcastInstance> members;
+    private HazelcastInstance[] members;
 
     @Parameter
     public SerializationMode serializationMode;
@@ -137,15 +136,12 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
     @Before
     public void before() {
-        members = new ArrayList<>(membersCount);
-        for (int i = 0; i < membersCount; ++i) {
-            members.add(factory.newHazelcastInstance(memberConfig()));
-        }
+        members = createHazelcastInstances(memberConfig(), membersCount);
 
         if (isPortable()) {
-            createMapping(members.get(0), mapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
+            createMapping(members[0], mapName(), PORTABLE_FACTORY_ID, PORTABLE_KEY_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
         } else {
-            createMapping(members.get(0), mapName(), keyClass(), valueClass());
+            createMapping(members[0], mapName(), keyClass(), valueClass());
         }
 
         // Get proper map
@@ -188,18 +184,13 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         }
 
         if (isPortable()) {
-            createMapping(members.get(0), stableMapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
+            createMapping(members[0], stableMapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
         } else {
-            createMapping(members.get(0), stableMapName(), keyClass(), valueClass());
+            createMapping(members[0], stableMapName(), keyClass(), valueClass());
         }
 
         IMap<Object, AbstractPojo> stableMap = getTarget().getMap(stableMapName());
         stableMap.putAll(stableData);
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
     }
 
     protected Config memberConfig() {
@@ -215,7 +206,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
 
     protected HazelcastInstance getTarget() {
-        return members.get(0);
+        return members[0];
     }
 
     protected String stableMapName() {
@@ -308,7 +299,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
     public void testSelectWithOrderByAndProject() {
         // SELECT intVal, intVal + bigIntVal FROM t ORDER BY intVal, bigIntVal
         String sql = sqlWithOrderBy(Arrays.asList("intVal",
-                "intVal + bigIntVal"),
+                        "intVal + bigIntVal"),
                 Arrays.asList("intVal", "bigIntVal"), Arrays.asList(true, true));
 
         checkSelectWithOrderBy(Arrays.asList("intVal", "bigIntVal"),
@@ -365,6 +356,32 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
         String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
                 + " WHERE " + intValField + " = 1 AND " + realValField + " = 1 ORDER BY " + intValField;
+
+        assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
+    }
+
+    @Test
+    public void testSelectWithOrderBy2FieldsAndWhere1Conditions() {
+        getTarget().getMap(mapName());
+        String intValField = "intVal";
+        String realValField = "realVal";
+        addIndex(Arrays.asList(intValField, realValField), SORTED);
+
+        String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
+                + " WHERE " + intValField + " = 1 ORDER BY " + intValField + ", " + realValField;
+
+        assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
+    }
+
+    @Test
+    public void testSelectWithOrderBy2FieldsAndWhere2Conditions() {
+        getTarget().getMap(mapName());
+        String intValField = "intVal";
+        String realValField = "realVal";
+        addIndex(Arrays.asList(intValField, realValField), SORTED);
+
+        String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
+                + " WHERE " + intValField + " = 1 AND " + realValField + " = 1 ORDER BY " + intValField + ", " + realValField;
 
         assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
     }
@@ -608,20 +625,20 @@ public class SqlOrderByTest extends HazelcastTestSupport {
                 .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
     }
 
-    @Test
+    @Test(timeout = 10 * 60 * 1000)
     public void testConcurrentPutAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
 
         IndexConfig indexConfig = new IndexConfig()
-            .setName("Index_" + randomName())
-            .setType(SORTED);
+                .setName("Index_" + randomName())
+                .setType(SORTED);
 
         indexConfig.addAttribute("intVal");
         map.addIndex(indexConfig);
 
-        ExecutorService executor = Executors.newFixedThreadPool(10);
+        int threadsCount = RuntimeAvailableProcessors.get() - 2;
+        ExecutorService executor = Executors.newFixedThreadPool(threadsCount);
 
-        int threadsCount = 10;
         int keysPerThread = 5000;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -656,26 +673,26 @@ public class SqlOrderByTest extends HazelcastTestSupport {
             });
         }
 
-        assertOpenEventually(latch, 240000);
+        assertOpenEventually(latch, 400);
         assertNull(exception.get());
-        executor.shutdown();
+        executor.shutdownNow();
     }
 
-    @Test
+    @Test(timeout = 10 * 60 * 1000)
     public void testConcurrentUpdateAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
 
         IndexConfig indexConfig = new IndexConfig()
-            .setName("Index_" + randomName())
-            .setType(SORTED);
+                .setName("Index_" + randomName())
+                .setType(SORTED);
 
         indexConfig.addAttribute("intVal");
         map.addIndex(indexConfig);
 
-        ExecutorService executor = Executors.newFixedThreadPool(10);
+        int threadsCount = RuntimeAvailableProcessors.get() - 2;
+        ExecutorService executor = Executors.newFixedThreadPool(threadsCount);
 
-        int threadsCount = 10;
-        int keysPerThread = serializationMode == SERIALIZABLE ? 2500 : 5000;
+        int keysPerThread = 2500;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
 
@@ -717,12 +734,101 @@ public class SqlOrderByTest extends HazelcastTestSupport {
             });
         }
 
-        assertOpenEventually(latch, 240000);
+        assertOpenEventually(latch, 400);
         assertNull(exception.get());
-        executor.shutdown();
+        executor.shutdownNow();
     }
 
-        private void addIndex(List<String> fieldNames, IndexType type) {
+    // equal to LocalMapIndexReader.FETCH_SIZE_HINT
+    private static final int FETCH_SIZE_HINT = 128;
+    // to demonstrate issues number of entries with the same key should not be divisible by FETCH_SIZE_HINT
+    private static final int BATCH_FETCH_DATA_SIZE = 2 * FETCH_SIZE_HINT + 1;
+
+    @Test
+    public void testOrderBy_comparatorLength() {
+        createMapping(getTarget(), "strange", String.class, String.class);
+        IMap<Object, Object> map = this.getTarget().getMap("strange");
+        map.addIndex(IndexType.SORTED, "this");
+
+        // create data with different lexicographical and length-first order
+        for (int i = 0; i < BATCH_FETCH_DATA_SIZE ; ++i) {
+            char c = (char) (65 + i);
+            map.put(String.valueOf(c).repeat(BATCH_FETCH_DATA_SIZE + 2 - i), "value");
+        }
+
+        assertSqlResultUnique("select __key from strange where this='value' order by this", BATCH_FETCH_DATA_SIZE, true);
+    }
+
+    @Test
+    public void testOrderBy_comparatorSerialized() {
+        // use value class as IMap key - has more interesting serialization
+        createMapping(getTarget(), "strange", valueClass(), String.class);
+        IMap<Object, Object> map = this.getTarget().getMap("strange");
+        map.addIndex(IndexType.SORTED, "this");
+
+        // create data with different lexicographical and length-first order
+        // (length of string is encoded as part of serialized data)
+        for (int i = 0; i < BATCH_FETCH_DATA_SIZE; ++i) {
+            AbstractPojo key = value();
+            key.intVal = i; // make unique
+            key.varcharVal = (i % 2 == 0) ? "s" : "llllllllllllllllllll";
+            map.put(key, "value");
+        }
+
+        assertSqlResultUnique("select intVal from strange where this='value' order by this", BATCH_FETCH_DATA_SIZE, true);
+    }
+
+    @Test
+    public void testOrderBy_comparatorHeterogeneousConvertibleKey() {
+        createMapping(getTarget(), "strange", Long.class, valueClass());
+        IMap<Object, Object> map = this.getTarget().getMap("strange");
+        map.addIndex(IndexType.SORTED, "varcharVal");
+
+        // heap data format:
+        // - partition hash (0)
+        // - type id
+        // - serialized data (may be prefixed with length as part of serialization)
+        // MapFetchIndexOperation compares everything including hash and type id.
+        // HD B+Tree index compares only length and then raw data without type id.
+
+        // create data with different lexicographical and length-first order
+        for (int i = 0; i < BATCH_FETCH_DATA_SIZE; ++i) {
+            // note that value serialization format does not matter for this test, but use it for consistency
+            AbstractPojo value = value(null);
+            value.intVal = i;
+            value.varcharVal = "value";
+            if (i % 2 == 0) {
+                map.put(Integer.valueOf(i), value);
+            } else {
+                map.put(Long.valueOf(i), value);
+            }
+        }
+
+        // Only OBJECT in sql is lazily deserialized, concrete type cannot be used in projection
+        // if values are heterogeneous, even if convertible but still should work as IMap key.
+        assertSqlResultUnique("select intVal from strange where varcharVal='value' order by varcharVal", BATCH_FETCH_DATA_SIZE, true);
+    }
+
+    @Test
+    public void testOrderBy_comparatorHeterogeneousObjectKey() {
+        createMapping(getTarget(), "strange", Object.class, String.class);
+        IMap<Object, Object> map = this.getTarget().getMap("strange");
+        map.addIndex(IndexType.SORTED, "this");
+
+        // create data with different lexicographical and length-first order
+        for (int i = 0; i < BATCH_FETCH_DATA_SIZE; ++i) {
+            if (i % 2 == 0) {
+                map.put(Integer.valueOf(i), "value");
+            } else {
+                map.put(Long.valueOf(i), "value");
+            }
+        }
+
+        // OBJECT in sql is lazily deserialized
+        assertSqlResultUnique("select __key from strange where this='value' order by this", BATCH_FETCH_DATA_SIZE, true);
+    }
+
+    private void addIndex(List<String> fieldNames, IndexType type) {
         addIndex(fieldNames, type, mapName());
     }
 
@@ -826,6 +932,17 @@ public class SqlOrderByTest extends HazelcastTestSupport {
     }
 
     private void assertSqlResultCount(String sql, int expectedCount) {
+        assertSqlResultCount(sql, expectedCount, false);
+    }
+
+    /**
+     * @param sql
+     * @param expectedCount
+     * @param stopEarly if entire result should be fetched first
+     *                  or fail as soon as there are more rows than expected
+     *                  (useful if the query might loop infinitely).
+     */
+    private void assertSqlResultCount(String sql, int expectedCount, boolean stopEarly) {
         try (SqlResult res = query(sql)) {
 
             Iterator<SqlRow> rowIterator = res.iterator();
@@ -834,13 +951,38 @@ public class SqlOrderByTest extends HazelcastTestSupport {
             while (rowIterator.hasNext()) {
                 rowIterator.next();
                 count++;
-
+                if (stopEarly && count > expectedCount) {
+                    break;
+                }
             }
-            assertEquals(expectedCount, count);
+            assertEquals("Should return expected row count" + (stopEarly ? " (might stop before full result was obtained)" : ""),
+                    expectedCount, count);
 
             assertThrows(NoSuchElementException.class, rowIterator::next);
 
             assertThrows(IllegalStateException.class, res::iterator);
+        }
+    }
+
+    private void assertSqlResultUnique(String sql, int expectedCount, boolean stopEarly) {
+        try (SqlResult res = query(sql)) {
+
+            Iterator<SqlRow> rowIterator = res.iterator();
+            List<Object> results = new ArrayList<>(expectedCount);
+            boolean early = false;
+            while (rowIterator.hasNext()) {
+                results.add(rowIterator.next().getObject(0));
+                if (stopEarly && results.size() > expectedCount) {
+                    early = true;
+                    break;
+                }
+            }
+
+            assertThat(results)
+                    .as("Should return expected row count" + (early ? " (early stop)" : ""))
+                    .hasSize(expectedCount)
+                    .as("Should contain only unique elements")
+                    .doesNotHaveDuplicates();
         }
     }
 

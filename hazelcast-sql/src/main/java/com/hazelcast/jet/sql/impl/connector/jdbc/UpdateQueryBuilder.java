@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,52 +16,67 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import org.apache.calcite.rel.rel2sql.SqlImplementor.SimpleContext;
+import com.google.common.primitives.Ints;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.parser.SqlParserPos;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
-import static java.util.stream.Collectors.joining;
+class UpdateQueryBuilder extends AbstractQueryBuilder {
 
-class UpdateQueryBuilder {
+    private final List<Integer> dynamicParams = new ArrayList<>();
+    private final List<Integer> inputRefs = new ArrayList<>();
 
-    private final String query;
-    private final ParamCollectingVisitor paramCollectingVisitor = new ParamCollectingVisitor();
+    UpdateQueryBuilder(
+            JdbcTable table,
+            SqlDialect dialect,
+            List<String> fieldNames,
+            List<RexNode> expressions,
+            RexNode predicate,
+            boolean hasInput
+    ) {
+        super(table, dialect);
 
-    UpdateQueryBuilder(JdbcTable table, List<String> pkFields, Map<String, RexNode> updates) {
-        SqlDialect dialect = table.sqlDialect();
-        SimpleContext simpleContext = new SimpleContext(dialect, value -> {
-            JdbcTableField field = table.getField(value);
-            return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
-        });
+        assert fieldNames.size() == expressions.size();
 
-        String setSqlFragment = updates.entrySet().stream()
-                                       .map(entry -> {
-                                           SqlNode sqlNode = simpleContext.toSql(null, entry.getValue());
-                                           sqlNode.accept(paramCollectingVisitor);
-                                           return '\"' + table.getField(entry.getKey()).externalName() + "\" ="
-                                                   + sqlNode.toSqlString(dialect).toString();
-                                       })
-                                       .collect(joining(", "));
+        StringBuilder sb = new StringBuilder();
+        sb.append("UPDATE ");
+        dialect.quoteIdentifier(sb, Arrays.asList(table.getExternalName()));
 
-        String whereClause = pkFields.stream().map(e -> '\"' + e + "\" = ?")
-                                     .collect(joining(" AND "));
+        sb.append(" SET ");
+        ParamCollectingVisitor dynamicParamVisitor = new ParamCollectingVisitor(dynamicParams);
+        for (int i = 0; i < fieldNames.size(); i++) {
+            RexNode rexNode = expressions.get(i);
 
-        query = "UPDATE " + table.getExternalName() +
-                " SET " + setSqlFragment +
-                " WHERE " + whereClause;
+            SqlNode sqlNode = context.toSql(null, rexNode);
+            sqlNode.accept(dynamicParamVisitor);
+
+            String externalFieldName = table.getField(fieldNames.get(i)).externalName();
+            dialect.quoteIdentifier(sb, externalFieldName);
+            sb.append('=');
+            sb.append(sqlNode.toSqlString(dialect).toString());
+            if (i < fieldNames.size() - 1) {
+                sb.append(", ");
+            }
+        }
+
+        if (predicate != null) {
+            appendPredicate(sb, predicate, dynamicParams);
+        } else if (hasInput) {
+            appendPrimaryKeyPredicate(sb, inputRefs);
+        }
+
+        query = sb.toString();
     }
 
-    String query() {
-        return query;
+    int[] dynamicParams() {
+        return Ints.toArray(dynamicParams);
     }
 
-    int[] parameterPositions() {
-        return paramCollectingVisitor.parameterPositions();
+    int[] inputRefs() {
+        return Ints.toArray(inputRefs);
     }
 }

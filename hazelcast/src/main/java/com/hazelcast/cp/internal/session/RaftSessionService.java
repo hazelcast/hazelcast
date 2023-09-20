@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
@@ -102,10 +103,12 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
     private volatile RaftService raftService;
 
     private final Map<CPGroupId, RaftSessionRegistry> registries = new ConcurrentHashMap<>();
+    private final Executor internalAsyncExecutor;
 
     public RaftSessionService(NodeEngine nodeEngine) {
         super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
+        this.internalAsyncExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     @Override
@@ -174,14 +177,14 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
         raftService.getCPGroup(groupName).whenCompleteAsync((group, t) -> {
             if (t == null) {
                 if (group != null) {
-                    getAllSessions(group.id()).whenCompleteAsync(completingCallback(future));
+                    getAllSessions(group.id()).whenCompleteAsync(completingCallback(future), internalAsyncExecutor);
                 } else {
                     future.completeExceptionally(new IllegalArgumentException());
                 }
             } else {
                 future.completeExceptionally(t);
             }
-        });
+        }, internalAsyncExecutor);
 
         return future;
     }
@@ -199,14 +202,14 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
             if (t == null) {
                 if (group != null) {
                     raftService.getInvocationManager().<Boolean>invoke(group.id(), new CloseSessionOp(sessionId))
-                            .whenCompleteAsync(completingCallback(future));
+                            .whenCompleteAsync(completingCallback(future), internalAsyncExecutor);
                 } else {
                     future.complete(false);
                 }
             } else {
                 future.completeExceptionally(t);
             }
-        });
+        }, internalAsyncExecutor);
 
         return future;
     }
@@ -517,14 +520,21 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
         for (RaftSessionRegistry registry : registries.values()) {
             CPGroupId groupId = registry.groupId();
             for (CPSession session : registry.getSessions()) {
+                // We want to provide a dedicated `qualifiedSessionId` tag for use in cross-referencing with Lock metrics, but
+                // also want to keep the `id` tag consistent with other CP related metrics (just happens to be the same here)
+                String qualifiedSessionId = session.id() + "@" + groupId.getName();
                 MetricDescriptor desc = root.copy()
-                        .withDiscriminator("id", session.id() + "@" + groupId.getName())
+                        .withDiscriminator("id", qualifiedSessionId)
+                        .withTag("qualifiedSessionId", qualifiedSessionId)
                         .withTag("sessionId", String.valueOf(session.id()))
                         .withTag("group", groupId.getName());
 
                 context.collect(desc.copy().withTag("endpoint", session.endpoint().toString()).withMetric("endpoint"), 0);
                 context.collect(desc.copy().withTag("endpointType", session.endpointType().toString())
                         .withMetric("endpointType"), 0);
+                String endpointName = session.endpointName() != null ? session.endpointName() : session.endpoint().toString();
+                context.collect(desc.copy().withTag("endpointName", endpointName)
+                        .withMetric("endpointName"), 0);
 
                 context.collect(desc.copy().withMetric("version"), session.version());
                 context.collect(desc.copy().withUnit(ProbeUnit.MS).withMetric("creationTime"), session.creationTime());

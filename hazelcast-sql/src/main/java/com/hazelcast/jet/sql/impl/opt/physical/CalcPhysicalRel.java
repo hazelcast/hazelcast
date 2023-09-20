@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
@@ -44,25 +43,22 @@ public class CalcPhysicalRel extends Calc implements PhysicalRel {
         super(cluster, traits, input, program);
     }
 
-    public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema schema = ((PhysicalRel) getInput()).schema(parameterMetadata);
-        return filter(schema, program.expandLocalRef(program.getCondition()), parameterMetadata);
+    public RexNode filter() {
+        return program.expandLocalRef(program.getCondition());
     }
 
-    public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema inputSchema = ((PhysicalRel) getInput()).schema(parameterMetadata);
-        List<RexNode> projectList = program.expandList(program.getProjectList());
-        return project(inputSchema, projectList, parameterMetadata);
+    public List<RexNode> projection() {
+        return program.expandList(program.getProjectList());
     }
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        List<QueryDataType> fieldTypes = toList(projection(parameterMetadata), Expression::getType);
+        List<QueryDataType> fieldTypes = toList(projection(), n -> HazelcastTypeUtils.toHazelcastType(n.getType()));
         return new PlanNodeSchema(fieldTypes);
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onCalc(this);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,11 +37,11 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -143,7 +143,7 @@ public class MapInternalStateSplitBrainTest extends SplitBrainTestSupport {
         }
     }
 
-    @NotNull
+    @Nonnull
     private String mapPartitionSizesToString(HazelcastInstance[] instances) {
         String rs = "";
         for (HazelcastInstance instance : instances) {
@@ -166,7 +166,7 @@ public class MapInternalStateSplitBrainTest extends SplitBrainTestSupport {
         return rs;
     }
 
-    @NotNull
+    @Nonnull
     private String toOwnersMsg(HazelcastInstance[] instances) {
         Map<UUID, List<GlobalIndexPartitionTracker.PartitionStamp>> uuidListMap = toPerMemberIndexStamps(instances);
         String members = "\n";

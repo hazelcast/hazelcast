@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,80 @@
 
 package com.hazelcast.test.jdbc;
 
-import org.testcontainers.jdbc.ContainerDatabaseDriver;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.Network;
+
+import java.util.Arrays;
+import java.util.Map;
+
+import static java.util.stream.Collectors.joining;
 
 public class MySQLDatabaseProvider implements TestDatabaseProvider {
 
+    public static final String TEST_MYSQL_VERSION = System.getProperty("test.mysql.version", "8.0.32");
     private static final int LOGIN_TIMEOUT = 120;
 
-    private String jdbcUrl;
+    private MySQLContainer<?> container;
+    private Network network = Network.newNetwork();
 
     @Override
     public String createDatabase(String dbName) {
-        jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";
+        //noinspection resource
+        container = new MySQLContainer<>("mysql:" + TEST_MYSQL_VERSION)
+                .withNetwork(network)
+                .withNetworkAliases("mysql")
+                .withDatabaseName(dbName)
+                .withUsername("root")
+                .withUrlParam("user", "root")
+                .withUrlParam("password", "test")
+                .withTmpFs(Map.of(
+                        "/var/lib/mysql/", "rw",
+                        "/tmp/", "rw"
+                ));
+        container.start();
+        String jdbcUrl = container.getJdbcUrl();
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }
 
     @Override
+    public String noAuthJdbcUrl() {
+        return container.getJdbcUrl()
+                        .replaceAll("&?user=root", "")
+                        .replaceAll("&?password=test", "");
+    }
+
+    @Override
+    public String user() {
+        return "root";
+    }
+
+    @Override
+    public String password() {
+        return "test";
+    }
+
+    public MySQLContainer<?> container() {
+        return container;
+    }
+
+    public Network getNetwork() {
+        return network;
+    }
+
+    @Override
     public void shutdown() {
-        if (jdbcUrl != null) {
-            ContainerDatabaseDriver.killContainer(jdbcUrl);
-            jdbcUrl = null;
+        if (container != null) {
+            container.stop();
+            container = null;
         }
+    }
+
+    @Override
+    public String quote(String[] parts) {
+        return Arrays.stream(parts)
+                     .map(part -> '`' + part.replaceAll("`", "``") + '`')
+                     .collect(joining("."));
+
     }
 }

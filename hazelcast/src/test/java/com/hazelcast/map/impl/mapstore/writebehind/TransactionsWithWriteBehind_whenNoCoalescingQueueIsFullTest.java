@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,12 +52,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.map.IMapAccessors.getPendingOffloadedOpCount;
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindFlushTest.assertWriteBehindQueuesEmpty;
+import static com.hazelcast.spi.impl.operationservice.impl.OperationServiceAccessor.getAsyncOperationsCount;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.hamcrest.core.Is.isA;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -119,24 +121,25 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
 
     @Test
     public void prepare_step_throws_reached_max_size_exception_when_two_phase() {
-        expectedException.expect(TransactionException.class);
-        expectedException.expectCause(isA(ReachedMaxSizeException.class));
+        assertThatThrownBy(() -> {
+            String mapName = "map";
+            long maxWbqCapacity = 100;
 
-        String mapName = "map";
-        long maxWbqCapacity = 100;
+            Config config = getConfig(mapName, maxWbqCapacity);
+            HazelcastInstance node = createHazelcastInstance(config);
 
-        Config config = getConfig(mapName, maxWbqCapacity);
-        HazelcastInstance node = createHazelcastInstance(config);
+            TransactionContext context = newTransactionContext(node, TWO_PHASE);
+            context.beginTransaction();
 
-        TransactionContext context = newTransactionContext(node, TWO_PHASE);
-        context.beginTransaction();
+            TransactionalMap<String, String> map = context.getMap(mapName);
 
-        TransactionalMap map = context.getMap(mapName);
-
-        for (int i = 0; i < 101; i++) {
-            map.put("item-" + i, "value");
-        }
-        context.commitTransaction();
+            for (int i = 0; i < 101; i++) {
+                map.put("item-" + i, "value");
+            }
+            context.commitTransaction();
+        })
+                .isInstanceOf(TransactionException.class)
+                .hasCauseInstanceOf(ReachedMaxSizeException.class);
     }
 
     private static TransactionContext newTransactionContext(HazelcastInstance node,
@@ -303,15 +306,15 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
         factory.newHazelcastInstance(config);
 
         AtomicBoolean stop = new AtomicBoolean(false);
-        int availableProcessors = Math.min(4, RuntimeAvailableProcessors.get());
+        int availableProcessors = Math.min(6, RuntimeAvailableProcessors.get());
         ExecutorService executorService = Executors.newFixedThreadPool(availableProcessors);
 
-        for (int i = 0; i < availableProcessors; i++) {
+        for (int i = 0; i < availableProcessors - 1; i++) {
             executorService.submit(() -> {
                 while (!stop.get()) {
                     OpType[] values = OpType.values();
                     OpType op = values[RandomPicker.getInt(values.length)];
-                    op.doOp(mapName, node1, RandomPicker.getInt(2, keySpace));
+                    op.doOp(node1, mapName, RandomPicker.getInt(2, keySpace));
                 }
             });
         }
@@ -324,7 +327,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
             }
         });
 
-        sleepSeconds(30);
+        sleepSeconds(15);
         stop.set(true);
         executorService.shutdown();
         if (!executorService.awaitTermination(60, SECONDS)) {
@@ -336,6 +339,9 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
         assertTrueEventually(() -> {
             Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
             for (HazelcastInstance node : instances) {
+                assertEquals(0, getAsyncOperationsCount(node));
+                assertEquals(0, getPendingOffloadedOpCount(node.getMap(mapName)));
+
                 String msg = "Failed on instance " + node;
                 assertWriteBehindQueuesEmpty(mapName, Collections.singletonList(node));
 
@@ -356,7 +362,9 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
         for (PartitionContainer partitionContainer : partitionContainers) {
             RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
             if (recordStore != null) {
-                reservedCapacity += recordStore.getMapDataStore().getTxnReservedCapacityCounter().getReservedCapacityCountPerTxnId().size();
+                reservedCapacity += recordStore.getMapDataStore()
+                        .getTxnReservedCapacityCounter()
+                        .getReservedCapacityCountPerTxnId().size();
             }
         }
         return reservedCapacity;
@@ -371,7 +379,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
     private enum OpType {
         TX_PUT {
             @Override
-            void doOp(String mapName, HazelcastInstance node, int keySpace) {
+            void doOp(HazelcastInstance node, String mapName, int keySpace) {
                 TransactionContext context = newTransactionContext(node, TWO_PHASE);
                 context.beginTransaction();
 
@@ -391,7 +399,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
 
         TX_REMOVE {
             @Override
-            void doOp(String mapName, HazelcastInstance node, int keySpace) {
+            void doOp(HazelcastInstance node, String mapName, int keySpace) {
                 TransactionContext context = newTransactionContext(node, TWO_PHASE);
                 context.beginTransaction();
 
@@ -411,7 +419,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
 
         TX_PUT_REMOVE {
             @Override
-            void doOp(String mapName, HazelcastInstance node, int keySpace) {
+            void doOp(HazelcastInstance node, String mapName, int keySpace) {
                 TransactionContext context = newTransactionContext(node, TWO_PHASE);
                 context.beginTransaction();
 
@@ -436,7 +444,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
         OpType() {
         }
 
-        abstract void doOp(String mapName, HazelcastInstance node, int keySpace);
+        abstract void doOp(HazelcastInstance node, String mapName, int keySpace);
     }
 
     @Test

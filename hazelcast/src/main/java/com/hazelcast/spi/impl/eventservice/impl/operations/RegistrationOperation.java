@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,25 +27,19 @@ import java.io.IOException;
 public class RegistrationOperation extends AbstractRegistrationOperation {
 
     private Registration registration;
-    private boolean response;
 
     public RegistrationOperation() {
     }
 
-    public RegistrationOperation(Registration registration, int memberListVersion) {
-        super(memberListVersion);
+    public RegistrationOperation(Registration registration, int orderKey, int memberListVersion) {
+        super(memberListVersion, orderKey);
         this.registration = registration;
     }
 
     @Override
     protected void runInternal() {
         EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
-        response = eventService.handleRegistration(registration);
-    }
-
-    @Override
-    public Object getResponse() {
-        return response;
+        eventService.handleRegistration(registration);
     }
 
     @Override

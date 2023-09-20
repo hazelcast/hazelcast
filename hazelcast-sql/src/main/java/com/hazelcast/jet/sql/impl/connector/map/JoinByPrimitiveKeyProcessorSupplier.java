@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,8 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
             String mapName = this.mapName;
             KvRowProjector projector = rightRowProjectorSupplier.get(evalContext, extractors);
             Processor processor = new AsyncTransformUsingServiceOrderedP<>(
-                    ServiceFactories.nonSharedService(SecuredFunctions.iMapFn(mapName)),
+                    ServiceFactories.nonSharedService(SecuredFunctions.iMapFn(mapName))
+                            .setCooperative(projector.isCooperative()),
                     null,
                     MAX_CONCURRENT_OPS,
                     (IMap<Object, Object> map, JetSqlRow left) -> {

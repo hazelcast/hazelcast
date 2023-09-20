@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
@@ -261,6 +262,20 @@ public class RestTest {
     }
 
     @Test
+    public void wanSyncProgress() throws Exception {
+        Config config = instance.getConfig();
+        ConnectionResponse response = communicator.wanSyncGetProgress(UUID.randomUUID());
+
+        int responseCode = response.responseCode;
+        String result = response.response;
+
+        assertEquals(500, responseCode);
+        assertJsonContains(result,
+                "status", "fail",
+                "message", "Wan Sync requires Hazelcast Enterprise Edition.");
+    }
+
+    @Test
     public void wanClearQueues() throws Exception {
         Config config = instance.getConfig();
         String result = communicator.wanClearQueues(config.getClusterName(), "", "atob", "b");
@@ -415,7 +430,7 @@ public class RestTest {
         map.put("key 1", "value1");
         ConnectionResponse response = communicator.mapGet(mapName + "%20a", "key%201");
         assertEquals(HTTP_OK, response.responseCode);
-        assertEquals(response.response, "value1");
+        assertEquals("value1", response.response);
     }
 
     @Test
@@ -425,7 +440,7 @@ public class RestTest {
         assertTrue(queue.offer("value 1"));
         ConnectionResponse response = communicator.queuePoll(queueName + "%20a", 10);
         assertEquals(HTTP_OK, response.responseCode);
-        assertEquals(response.response, "value 1");
+        assertEquals("value 1", response.response);
     }
 
     @Test
@@ -433,11 +448,11 @@ public class RestTest {
         String queueName = randomString();
         IQueue<Object> queue = instance.getQueue(queueName + " a");
         assertEquals(HTTP_OK, communicator.queueOffer(queueName + "%20a" + "/value%201", "data"));
-        assertEquals(queue.size(), 1);
+        assertEquals(1, queue.size());
 
         ConnectionResponse response = communicator.queuePoll(queueName + "%20a", 10);
         assertEquals(HTTP_OK, response.responseCode);
-        assertEquals(response.response, "value 1");
+        assertEquals("value 1", response.response);
     }
 
     @Test
@@ -446,7 +461,7 @@ public class RestTest {
         IMap<String, RestValue> map = instance.getMap(mapName + " a");
         assertEquals(HTTP_OK, communicator.mapPut(mapName + "%20a", "key%201", "value1"));
         assertEquals(1, map.size());
-        assertArrayEquals(map.get("key 1").getValue(), "value1".getBytes(StandardCharsets.UTF_8));
+        assertArrayEquals("value1".getBytes(StandardCharsets.UTF_8), map.get("key 1").getValue());
     }
 
     @Test

@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Default data declarations for parsers.
+# Each of these may be overridden in a parser's config.fmpp file.
+# In addition, each parser must define "package" and "class".
 data: {
   parser: {
     # Generated parser implementation package and class name.
@@ -23,6 +26,7 @@ data: {
     imports: [
       "com.hazelcast.jet.sql.impl.parse.ParserResource"
       "com.hazelcast.jet.sql.impl.parse.SqlAlterJob"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateDataConnection"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
@@ -30,6 +34,7 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlCreateType"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateView"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropDataConnection"
       "com.hazelcast.jet.sql.impl.parse.SqlDropIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlDropJob"
       "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
@@ -52,6 +57,8 @@ data: {
     # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is
     # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
+      "CONNECTOR"
+      "CONNECTIONS"
       "IF"
       "INDEX"
       "JOB"
@@ -60,10 +67,12 @@ data: {
       "MAPPINGS"
       "RESUME"
       "SINK"
+      "SHARED"
       "SNAPSHOT"
       "SUSPEND"
       "VIEWS"
       "TYPES"
+      "RESOURCES"
     ]
 
     # List of keywords from "keywords" section that are not reserved.
@@ -122,8 +131,14 @@ data: {
       "CURSOR_NAME"
       "DATA"
       "DATABASE"
+      "DATE_DIFF"
+      "DATE_TRUNC"
+      "DATETIME_DIFF"
       "DATETIME_INTERVAL_CODE"
       "DATETIME_INTERVAL_PRECISION"
+      "DATETIME_TRUNC"
+      "DAYOFWEEK"
+      "DAYOFYEAR"
       "DAYS"
       "DECADE"
       "DEFAULTS"
@@ -242,6 +257,8 @@ data: {
       "PASSTHROUGH"
       "PAST"
       "PATH"
+      "PERCENTILE_CONT"
+      "PERCENTILE_DISC"
       "PIVOT"
       "PLACING"
       "PLAN"
@@ -252,6 +269,7 @@ data: {
       "PRIVILEGES"
       "PUBLIC"
       "QUARTER"
+      "QUARTERS"
       "READ"
       "RELATIVE"
       "REPEATABLE"
@@ -353,8 +371,12 @@ data: {
       "TABLE_NAME"
       "TEMPORARY"
       "TIES"
+      "TIME_DIFF"
+      "TIME_TRUNC"
       "TIMESTAMPADD"
       "TIMESTAMPDIFF"
+      "TIMESTAMP_DIFF"
+      "TIMESTAMP_TRUNC"
       "TOP_LEVEL_COUNT"
       "TRANSACTION"
       "TRANSACTIONS_ACTIVE"
@@ -384,6 +406,7 @@ data: {
       "VERSION"
       "VIEW"
       "WEEK"
+      "WEEKS"
       "WORK"
       "WRAPPER"
       "WRITE"
@@ -392,6 +415,7 @@ data: {
       "ZONE"
 
       # added by Hazelcast
+      "CONNECTOR"
       "EXTERNAL"
       "JOB"
       "JOBS"
@@ -400,9 +424,11 @@ data: {
       "RESUME"
       "SINK"
       "SNAPSHOT"
+      "SHARED"
       "SUSPEND"
       "VIEWS"
       "TYPES"
+      "RESOURCES"
     ]
 
     # List of non-reserved keywords to add;
@@ -459,6 +485,7 @@ data: {
     # Each must accept arguments "(SqlParserPos pos, boolean replace)".
     # Example: "SqlCreateForeignSchema".
     createStatementParserMethods: [
+      "SqlCreateDataConnection"
       "SqlCreateIndex"
       "SqlCreateJob"
       "SqlCreateMapping"
@@ -471,12 +498,19 @@ data: {
     # Each must accept arguments "(SqlParserPos pos)".
     # Example: "SqlDropSchema".
     dropStatementParserMethods: [
+      "SqlDropDataConnection"
       "SqlDropIndex"
       "SqlDropJob"
       "SqlDropMapping"
       "SqlDropSnapshot"
       "SqlDropType"
       "SqlDropView"
+    ]
+
+    # List of methods for parsing extensions to "TRUNCATE" calls.
+    # Each must accept arguments "(SqlParserPos pos)".
+    # Example: "SqlTruncate".
+    truncateStatementParserMethods: [
     ]
 
     # Binary operators tokens.
@@ -498,10 +532,15 @@ data: {
       "parserImpls.ftl"
     ]
 
+    # Custom identifier token.
+    # Example: "< IDENTIFIER: (<LETTER>|<DIGIT>)+ >".
+    customIdentifierToken: ""
+
     includePosixOperators: false
     includeCompoundIdentifier: true
     includeBraces: true
     includeAdditionalDeclarations: false
+    includeParsingStringLiteralAsArrayLiteral: false
   }
 }
 

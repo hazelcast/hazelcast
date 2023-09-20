@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.function.BiConsumer;
 
-import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_REF_ID_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
 import static java.time.OffsetDateTime.of;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -79,10 +79,10 @@ public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
                         (r, s) -> assertThat(r.getBoolean(s)).isTrue(),
                         (BiConsumer<GenericRecordBuilder, String>) (rb, s) -> rb.setBoolean(s, true)},
                 {"TINYINT", "1", (BiConsumer<GenericRecord, String>)
-                        (r, s) -> assertThat(r.getInt32(s)).isEqualTo(1),
+                        (r, s) -> assertThat(r.getInt8(s)).isEqualTo((byte) 1),
                         (BiConsumer<GenericRecordBuilder, String>) (rb, s) -> rb.setInt8(s, (byte) 1)},
                 {"SMALLINT", "2", (BiConsumer<GenericRecord, String>)
-                        (r, s) -> assertThat(r.getInt32(s)).isEqualTo(2),
+                        (r, s) -> assertThat(r.getInt16(s)).isEqualTo((short) 2),
                         (BiConsumer<GenericRecordBuilder, String>) (rb, s) -> rb.setInt16(s, (short) 2)},
                 {"INTEGER", "3", (BiConsumer<GenericRecord, String>)
                         (r, s) -> assertThat(r.getInt32(s)).isEqualTo(3),
@@ -135,15 +135,19 @@ public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
         tableName = randomTableName();
         createTable(tableName, "id INT PRIMARY KEY", "table_column " + type);
 
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
+        mapStoreConfig.setProperties(properties);
+
         MapConfig mapConfig = new MapConfig(tableName);
         mapConfig.setMapStoreConfig(mapStoreConfig);
 
         instance().getConfig().addMapConfig(mapConfig);
 
-        Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+
 
         mapStore = new GenericMapStore<>();
         mapStore.init(instance(), properties, tableName);

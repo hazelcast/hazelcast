@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,8 @@ public enum ClientConfigSections {
     CLUSTER_NAME("cluster-name", false),
     METRICS("metrics", false),
     INSTANCE_TRACKING("instance-tracking", false),
-    SQL("sql", false);
+    SQL("sql", false),
+    TPC("tpc", false);
 
     final boolean multipleOccurrence;
     private final String name;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -69,8 +70,8 @@ import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -90,12 +91,14 @@ class RaftGroupMembershipManager {
     private final ILogger logger;
     private final RaftInvocationManager invocationManager;
     private final AtomicBoolean initialized = new AtomicBoolean();
+    private final Executor internalAsyncExecutor;
 
     RaftGroupMembershipManager(NodeEngine nodeEngine, RaftService raftService) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
         this.raftService = raftService;
         this.invocationManager = raftService.getInvocationManager();
+        this.internalAsyncExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     void init() {
@@ -158,7 +161,7 @@ class RaftGroupMembershipManager {
                     } else {
                         logger.warning("Could not get CP group info of " + groupId, t);
                     }
-                });
+                }, internalAsyncExecutor);
             }
         }
 
@@ -311,7 +314,7 @@ class RaftGroupMembershipManager {
                         latch.countDown();
                     }
                 }
-            });
+            }, internalAsyncExecutor);
         }
 
         private void addMember(CountDownLatch latch, Map<CPGroupId, BiTuple<Long, Long>> changedGroups,
@@ -326,7 +329,7 @@ class RaftGroupMembershipManager {
                     checkMemberAddCommitIndex(changedGroups, change, t);
                     latch.countDown();
                 }
-            });
+            }, internalAsyncExecutor);
         }
 
         private void checkMemberAddCommitIndex(Map<CPGroupId, BiTuple<Long, Long>> changedGroups, CPGroupMembershipChange change,
@@ -585,7 +588,6 @@ class RaftGroupMembershipManager {
                                                 Collection<CPGroupSummary> cpGroupSummaries,
                                                 Collection<CPMember> allMembers) {
             final int avgGroupsPerMember = cpGroupSummaries.size() / priorityMembers.size();
-            final boolean overAvgAllowed = cpGroupSummaries.size() % priorityMembers.size() != 0;
 
             logger.fine("Searching for leadership imbalance in " + cpGroupSummaries.size() + " CPGroups, "
                     + "average groups per member is " + avgGroupsPerMember);
@@ -612,21 +614,9 @@ class RaftGroupMembershipManager {
                 Collection<CPGroupSummary> groups
                         = getLeaderGroupsOf(from.element1, leaderships.get(from.element1), cpGroupSummaries);
 
-                int maxLeaderships;
-                if (overAvgAllowed) {
-                    // - When from-member has more than (avg + 1), then leadership can be transferred to any member
-                    // which has leaderships equal to or less than avg.
-                    // - When from-member has equal to (avg + 1), then leadership can be transferred to only members
-                    // which have leaderships less than avg.
-                    if (from.element2 > avgGroupsPerMember + 1) {
-                        maxLeaderships = avgGroupsPerMember;
-                    } else {
-                        maxLeaderships = avgGroupsPerMember - 1;
-                    }
-                } else {
-                    maxLeaderships = avgGroupsPerMember;
-                }
-                BiTuple<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(groups, leaderships, maxLeaderships);
+                // if there is at least 2 leadership difference, this transfer will make overall state more even
+                BiTuple<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(groups, leaderships, from.element2 - 2);
+
                 if (to.element1 == null) {
                     logger.info("No candidate could be found to get leadership from " + from.element1 + ". Skipping to next...");
                     // could not found target member to transfer membership

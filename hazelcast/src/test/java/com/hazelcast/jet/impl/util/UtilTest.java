@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -48,6 +49,7 @@ import static com.hazelcast.jet.impl.util.Util.subtractClamped;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.entry;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -180,6 +182,25 @@ public class UtilTest {
         assertEquals(AT_LEAST_ONCE, Util.min(AT_LEAST_ONCE, EXACTLY_ONCE));
         assertEquals(NONE, Util.min(NONE, EXACTLY_ONCE));
         assertEquals(NONE, Util.min(NONE, NONE));
+    }
+
+    @Test
+    public void test_mergeProps() {
+        Properties newProps = new Properties();
+        newProps.put("A", "B");
+        newProps.put("B", "C");
+
+        Properties existingProps =  new Properties();
+        existingProps.put("B", "D");
+        existingProps.put("D", "E");
+
+        Properties mergedProps = Util.mergeProps(existingProps, newProps);
+        assertThat(mergedProps.size()).isEqualTo(existingProps.size() + newProps.size() - 1);
+        assertThat(mergedProps).contains(
+                entry("A", "B"),
+                entry("B", "C"),
+                entry("D", "E")
+        );
     }
 
     @Test

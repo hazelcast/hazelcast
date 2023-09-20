@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.sql.impl.SqlInternalService;
+import com.hazelcast.sql.impl.InternalSqlService;
 
 import java.security.AccessControlException;
 import java.security.Permission;
-
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
  * SQL query fetch task.
@@ -38,7 +36,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
 
     @Override
     protected Object call() {
-        SqlInternalService service = nodeEngine.getSqlService().getInternalService();
+        InternalSqlService service = nodeEngine.getSqlService();
 
         return service.getClientStateRegistry().fetch(
             parameters.queryId,
@@ -75,7 +73,9 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
         if (!(throwable instanceof Exception)) {
             return super.encodeException(throwable);
         }
-        logFine(logger, "Client SQL error: %s", throwable);
+        if (logger.isFineEnabled()) {
+            logger.fine("Client SQL error: " + throwable, throwable);
+        }
         SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
 
         return SqlFetchCodec.encodeResponse(
@@ -86,7 +86,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
 
     @Override
     public String getServiceName() {
-        return SqlInternalService.SERVICE_NAME;
+        return InternalSqlService.SERVICE_NAME;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,10 +50,11 @@ public class DelegatingScheduledFutureStripperTest {
 
     private ScheduledExecutorService scheduler;
     private DelegatingTaskScheduler taskScheduler;
+    private ExecutorService executor;
 
     @Before
     public void setup() {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor = Executors.newSingleThreadExecutor();
         scheduler = Executors.newSingleThreadScheduledExecutor();
         taskScheduler = new DelegatingTaskScheduler(scheduler, executor);
     }
@@ -62,6 +63,7 @@ public class DelegatingScheduledFutureStripperTest {
     public void teardown() throws Exception {
         scheduler.shutdownNow();
         scheduler.awaitTermination(10, TimeUnit.SECONDS);
+        executor.shutdownNow();
     }
 
     @Test(expected = NullPointerException.class)

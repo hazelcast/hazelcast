@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.IndexConfig;
@@ -56,6 +56,7 @@ import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -98,6 +99,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
@@ -149,7 +151,7 @@ public class DynamicConfigYamlGenerator {
         wanReplicationYamlGenerator(root, config);
         networkConfigYamlGenerator(root, config);
         advancedNetworkConfigYamlGenerator(root, config);
-        externalDataStoreYamlGenerator(root, config);
+        dataConnectionYamlGenerator(root, config);
         DumpSettings dumpSettings = DumpSettings.builder()
                 .setDefaultFlowStyle(FlowStyle.BLOCK)
                 .setIndicatorIndent(INDENT - 2)
@@ -231,6 +233,8 @@ public class DynamicConfigYamlGenerator {
                     getQueryCacheConfigsAsMap(subConfigAsObject.getQueryCacheConfigs()));
             addNonNullToMap(subConfigAsMap, "tiered-store",
                     getTieredStoreConfigAsMap(subConfigAsObject.getTieredStoreConfig()));
+            addNonNullToMap(subConfigAsMap, "partition-attributes",
+                    getPartitioningAttributesAsList(subConfigAsObject.getPartitioningAttributeConfigs()));
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -662,26 +666,26 @@ public class DynamicConfigYamlGenerator {
         parent.put("pn-counter", child);
     }
 
-    public static void externalDataStoreYamlGenerator(Map<String, Object> parent, Config config) {
-        if (config.getExternalDataStoreConfigs().isEmpty()) {
+    public static void dataConnectionYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getDataConnectionConfigs().isEmpty()) {
             return;
         }
 
         Map<String, Object> child = new LinkedHashMap<>();
-        for (ExternalDataStoreConfig externalDataStoreConfig : config.getExternalDataStoreConfigs().values()) {
+        for (DataConnectionConfig dataConnectionConfig : config.getDataConnectionConfigs().values()) {
             Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
 
-            addNonNullToMap(subConfigAsMap, "class-name",
-                    externalDataStoreConfig.getClassName());
+            addNonNullToMap(subConfigAsMap, "type",
+                    dataConnectionConfig.getType());
             addNonNullToMap(subConfigAsMap, "shared",
-                    externalDataStoreConfig.isShared());
+                    dataConnectionConfig.isShared());
             addNonNullToMap(subConfigAsMap, "properties",
-                    getPropertiesAsMap(externalDataStoreConfig.getProperties()));
+                    getPropertiesAsMap(dataConnectionConfig.getProperties()));
 
-            child.put(externalDataStoreConfig.getName(), subConfigAsMap);
+            child.put(dataConnectionConfig.getName(), subConfigAsMap);
         }
 
-        parent.put("external-data-store", child);
+        parent.put("data-connection", child);
     }
 
     public static void wanReplicationYamlGenerator(Map<String, Object> parent, Config config) {
@@ -1255,6 +1259,22 @@ public class DynamicConfigYamlGenerator {
 
         return classNameOrImplClass(partitioningStrategyConfig.getPartitioningStrategyClass(),
                 partitioningStrategyConfig.getPartitioningStrategy());
+    }
+
+    private static List<Map<String, Object>> getPartitioningAttributesAsList(List<PartitioningAttributeConfig> attributeConfigs) {
+        if (attributeConfigs == null || attributeConfigs.isEmpty()) {
+            return null;
+        }
+
+        return attributeConfigs.stream()
+                .map(DynamicConfigYamlGenerator::getPartitionAttributeAsMap)
+                .collect(Collectors.toList());
+    }
+
+    private static Map<String, Object> getPartitionAttributeAsMap(PartitioningAttributeConfig config) {
+        final Map<String, Object> configAsMap = new LinkedHashMap<>();
+        configAsMap.put("name", config.getAttributeName());
+        return configAsMap;
     }
 
     private static Map<String, Object> getPredicateConfigAsMap(PredicateConfig predicateConfig) {

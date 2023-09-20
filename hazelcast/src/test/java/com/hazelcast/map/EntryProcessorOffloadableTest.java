@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     @Override
     public Config getConfig() {
-        Config config = smallInstanceConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         config.setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(),
                 String.valueOf(runWithForceOffload));
         config.getMetricsConfig().setEnabled(false);
@@ -137,14 +137,14 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
                 .setImplementation(new MapStoreAdapter() {
                     @Override
                     public Object load(Object key) {
-                        sleepAtLeastSeconds(1000);
+                        sleepSeconds(1000);
                         // just returns a random number
                         return System.currentTimeMillis();
                     }
 
                     @Override
                     public void store(Object key, Object value) {
-                        sleepAtLeastSeconds(1000);
+                        sleepSeconds(1000);
                         super.store(key, value);
                     }
                 });

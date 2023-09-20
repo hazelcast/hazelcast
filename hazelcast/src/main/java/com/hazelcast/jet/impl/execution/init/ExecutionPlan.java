@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
 import static com.hazelcast.jet.impl.execution.TaskletExecutionService.TASKLET_INIT_CLOSE_EXECUTOR_NAME;
@@ -191,7 +192,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return procSuppliersInitFuture.thenAccept(r -> {
             initDag(jobSerializationService);
 
-            this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
+            this.ptionArrgmt = new PartitionArrangement(
+                    partitionAssignment,
+                    nodeEngine.getThisAddress(),
+                    jobConfig.getArgument(KEY_REQUIRED_PARTITIONS) != null);
             Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
             for (Address destAddr : remoteMembers.get()) {
                 Connection conn = getMemberConnection(nodeEngine, destAddr);
@@ -522,7 +526,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * Each edge is represented by an array of conveyors between the producers and consumers.
      * There are as many conveyors as there are consumers.
      * Each conveyor has one queue per producer.
-     *
+     * <p>
      * For a distributed edge, there is one additional producer per member represented
      * by the ReceiverTasklet.
      */
@@ -603,10 +607,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.get(edge.edgeId());
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED) {
             OutboundCollector[] localCollectors = IntStream.range(0, downstreamParallelism)
-                            .filter(i -> i % upstreamParallelism == processorIndex % downstreamParallelism)
-                            .mapToObj(i -> new ConveyorCollector(localConveyors[i],
-                                    processorIndex / downstreamParallelism, null))
-                            .toArray(OutboundCollector[]::new);
+                    .filter(i -> i % upstreamParallelism == processorIndex % downstreamParallelism)
+                    .mapToObj(i -> new ConveyorCollector(localConveyors[i],
+                            processorIndex / downstreamParallelism, null))
+                    .toArray(OutboundCollector[]::new);
             return compositeCollector(localCollectors, edge, totalPartitionCount, true, false);
         } else {
             OutboundCollector[] localCollectors = new OutboundCollector[downstreamParallelism];
@@ -831,14 +835,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     public int getStoreSnapshotTaskletCount() {
         return (int) tasklets.stream()
-                             .filter(t -> t instanceof StoreSnapshotTasklet)
-                             .count();
+                .filter(t -> t instanceof StoreSnapshotTasklet)
+                .count();
     }
 
     public int getProcessorTaskletCount() {
         return (int) tasklets.stream()
-                             .filter(t -> t instanceof ProcessorTasklet)
-                             .count();
+                .filter(t -> t instanceof ProcessorTasklet)
+                .count();
     }
 
     public int getHigherPriorityVertexCount() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.data.Offset;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -30,6 +31,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.aggregation.TestSamples.addValues;
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
@@ -47,10 +49,8 @@ import static com.hazelcast.aggregation.ValueContainer.ValueType.DOUBLE;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.INTEGER;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.LONG;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.NUMBER;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -65,16 +65,16 @@ public class SumAggregationTest {
         List<BigDecimal> values = sampleBigDecimals();
         BigDecimal expectation = Sums.sumBigDecimals(values);
 
-        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> aggregation = Aggregators.bigDecimalSum();
+        Aggregator<Entry<BigDecimal, BigDecimal>, BigDecimal> aggregation = Aggregators.bigDecimalSum();
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalSum();
+        Aggregator<Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalSum();
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -82,17 +82,17 @@ public class SumAggregationTest {
         List<ValueContainer> values = sampleValueContainers(BIG_DECIMAL);
         BigDecimal expectation = Sums.sumValueContainer(values, BIG_DECIMAL);
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalSum("bigDecimal");
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalSum("bigDecimal");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
                 = Aggregators.bigDecimalSum("bigDecimal");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
@@ -112,16 +112,16 @@ public class SumAggregationTest {
         List<BigInteger> values = sampleBigIntegers();
         BigInteger expectation = Sums.sumBigIntegers(values);
 
-        Aggregator<Map.Entry<BigInteger, BigInteger>, BigInteger> aggregation = Aggregators.bigIntegerSum();
+        Aggregator<Entry<BigInteger, BigInteger>, BigInteger> aggregation = Aggregators.bigIntegerSum();
         for (BigInteger value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<BigInteger, BigInteger>, BigInteger> resultAggregation = Aggregators.bigIntegerSum();
+        Aggregator<Entry<BigInteger, BigInteger>, BigInteger> resultAggregation = Aggregators.bigIntegerSum();
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -129,17 +129,17 @@ public class SumAggregationTest {
         List<ValueContainer> values = sampleValueContainers(BIG_INTEGER);
         BigInteger expectation = Sums.sumValueContainer(values, BIG_INTEGER);
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> aggregation = Aggregators.bigIntegerSum("bigInteger");
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigInteger> aggregation = Aggregators.bigIntegerSum("bigInteger");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation
                 = Aggregators.bigIntegerSum("bigInteger");
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
@@ -168,7 +168,7 @@ public class SumAggregationTest {
         resultAggregation.combine(aggregation);
         Double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isCloseTo(expectation, Offset.offset(ERROR));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -176,16 +176,16 @@ public class SumAggregationTest {
         List<ValueContainer> values = sampleValueContainers(DOUBLE);
         double expectation = Sums.sumValueContainer(values, DOUBLE).doubleValue();
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleSum("doubleValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleSum("doubleValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.doubleSum("doubleValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.doubleSum("doubleValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
@@ -205,16 +205,16 @@ public class SumAggregationTest {
         List<Integer> values = sampleIntegers();
         long expectation = Sums.sumIntegers(values);
 
-        Aggregator<Map.Entry<Integer, Integer>, Long> aggregation = Aggregators.integerSum();
+        Aggregator<Entry<Integer, Integer>, Long> aggregation = Aggregators.integerSum();
         for (Integer value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<Integer, Integer>, Long> resultAggregation = Aggregators.integerSum();
+        Aggregator<Entry<Integer, Integer>, Long> resultAggregation = Aggregators.integerSum();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -222,16 +222,16 @@ public class SumAggregationTest {
         List<ValueContainer> values = sampleValueContainers(INTEGER);
         long expectation = Sums.sumValueContainer(values, INTEGER).intValue();
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.integerSum("intValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.integerSum("intValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.integerSum("intValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.integerSum("intValue");
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
@@ -251,16 +251,16 @@ public class SumAggregationTest {
         List<Long> values = sampleLongs();
         long expectation = Sums.sumLongs(values);
 
-        Aggregator<Map.Entry<Long, Long>, Long> aggregation = Aggregators.longSum();
+        Aggregator<Entry<Long, Long>, Long> aggregation = Aggregators.longSum();
         for (Long value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<Long, Long>, Long> resultAggregation = Aggregators.longSum();
+        Aggregator<Entry<Long, Long>, Long> resultAggregation = Aggregators.longSum();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -268,16 +268,16 @@ public class SumAggregationTest {
         List<ValueContainer> values = sampleValueContainers(LONG);
         long expectation = Sums.sumValueContainer(values, LONG).longValue();
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.longSum("longValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.longSum("longValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.longSum("longValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.longSum("longValue");
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
@@ -300,16 +300,16 @@ public class SumAggregationTest {
         values.addAll(sampleBigIntegers());
         long expectation = Sums.sumFixedPointNumbers(values);
 
-        Aggregator<Map.Entry<Number, Number>, Long> aggregation = Aggregators.fixedPointSum();
+        Aggregator<Entry<Number, Number>, Long> aggregation = Aggregators.fixedPointSum();
         for (Number value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<Number, Number>, Long> resultAggregation = Aggregators.fixedPointSum();
+        Aggregator<Entry<Number, Number>, Long> resultAggregation = Aggregators.fixedPointSum();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -318,16 +318,16 @@ public class SumAggregationTest {
         addValues(values, BIG_INTEGER);
         double expectation = Sums.sumValueContainer(values, NUMBER).doubleValue();
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.fixedPointSum("numberValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.fixedPointSum("numberValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.fixedPointSum("numberValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.fixedPointSum("numberValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
@@ -359,7 +359,7 @@ public class SumAggregationTest {
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isCloseTo(expectation, Offset.offset(ERROR));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -378,7 +378,7 @@ public class SumAggregationTest {
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isCloseTo(expectation, Offset.offset(ERROR));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)

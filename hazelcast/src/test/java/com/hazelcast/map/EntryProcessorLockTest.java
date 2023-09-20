@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,7 +177,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Serialization_LockAwareLazyMapEntry_deserializesAs_LazyMapEntry() throws ExecutionException, InterruptedException {
+    public void test_Serialization_LockAwareLazyMapEntry_deserializesAs_LazyMapEntry() {
         InternalSerializationService ss = getSerializationService(createHazelcastInstance(getConfig()));
         LockAwareLazyMapEntry entry = new LockAwareLazyMapEntry(ss.toData("key"), "value", ss,
                 Extractors.newBuilder(ss).build(), false);

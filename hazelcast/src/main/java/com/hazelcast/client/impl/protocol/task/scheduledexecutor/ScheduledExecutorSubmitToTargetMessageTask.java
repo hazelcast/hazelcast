@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,12 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import javax.security.auth.Subject;
 import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -44,6 +46,13 @@ public class ScheduledExecutorSubmitToTargetMessageTask
     @Override
     protected Operation prepareOperation() {
         Callable callable = serializationService.toObject(parameters.task);
+        SecurityContext securityContext = clientEngine.getSecurityContext();
+        if (securityContext != null) {
+            Subject subject = endpoint.getSubject();
+            callable = securityContext.createSecureCallable(subject, callable);
+            serializationService.getManagedContext().initialize(callable);
+        }
+
         TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
                 parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
                 TimeUnit.MILLISECONDS, isAutoDisposable());

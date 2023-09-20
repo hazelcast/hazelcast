@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     private static final long TIMEOUT_FACTOR = 500;
     private static final long MINIMAL_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
 
+    protected Map<String, Collection<Store>> mergingStoresByName;
     protected final SplitBrainMergePolicyProvider mergePolicyProvider;
 
     private final ILogger logger;
@@ -73,7 +74,6 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     private final AbstractSplitBrainHandlerService<Store> splitBrainHandlerService;
     private final Semaphore semaphore = new Semaphore(0);
 
-    private Map<String, Collection<Store>> mergingStoresByName;
 
     protected AbstractMergeRunnable(String serviceName,
                                     Collection<Store> mergingStores,

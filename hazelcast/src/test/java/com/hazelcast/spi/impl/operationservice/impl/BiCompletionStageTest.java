@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.spi.impl.operationservice.impl.CompletableFutureTestUtil.CountingExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.CompletableFutureTestUtil.InvocationPromise;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -27,10 +26,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -40,7 +37,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -50,6 +49,7 @@ import static org.junit.Assert.assertTrue;
  * Tests for InvocationFuture methods operating on two
  * CompletionStages.
  */
+@SuppressWarnings("CodeBlock2Expr")
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -88,19 +88,16 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
     @Parameter(1)
     public InvocationPromise invocation2;
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     private final Object expectedResult = new Object();
 
-    private HazelcastInstance local;
     private CompletableFuture<Object> future1;
     private CompletableFuture<Object> future2;
     private CountingExecutor countingExecutor;
 
     @Before
     public void setup() {
-        local = createHazelcastInstance(smallInstanceConfig());
+        HazelcastInstance local = createHazelcastInstance(smallInstanceConfig());
         future1 = invocation1.invoke(local);
         future2 = invocation2.invoke(local);
         countingExecutor = new CountingExecutor();
@@ -120,12 +117,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(combinedFuture.isDone());
         });
         if (exceptionalCompletion) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            combinedFuture.join();
+            assertThatThrownBy(combinedFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertEquals(1, (int) combinedFuture.join());
         }
-        // non-exceptional completion
-        assertEquals(1, (int) combinedFuture.join());
     }
 
     @Test
@@ -142,12 +140,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(combinedFuture.isDone());
         });
         if (exceptionalCompletion) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            combinedFuture.join();
+            assertThatThrownBy(combinedFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertEquals(1, (int) combinedFuture.join());
         }
-        // non-exceptional completion
-        assertEquals(1, (int) combinedFuture.join());
     }
 
     @Test
@@ -164,13 +163,14 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(combinedFuture.isDone());
         });
         if (exceptionalCompletion) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            combinedFuture.join();
+            assertThatThrownBy(combinedFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertEquals(1, (int) combinedFuture.join());
+            assertEquals(1, countingExecutor.counter.get());
         }
-        // non-exceptional completion
-        assertEquals(1, (int) combinedFuture.join());
-        assertEquals(1, countingExecutor.counter.get());
     }
 
     @Test
@@ -186,12 +186,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(combinedFuture.isDone());
         });
         if (exceptionalCompletion) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            combinedFuture.join();
+            assertThatThrownBy(combinedFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertNull(combinedFuture.join());
         }
-        // non-exceptional completion
-        assertNull(combinedFuture.join());
     }
 
     @Test
@@ -207,12 +208,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(combinedFuture.isDone());
         });
         if (exceptionalCompletion) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            combinedFuture.join();
+            assertThatThrownBy(combinedFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertNull(combinedFuture.join());
         }
-        // non-exceptional completion
-        assertNull(combinedFuture.join());
     }
 
     @Test
@@ -228,13 +230,14 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(combinedFuture.isDone());
         });
         if (exceptionalCompletion) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            combinedFuture.join();
+            assertThatThrownBy(combinedFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertNull(combinedFuture.join());
+            assertEquals(1, countingExecutor.counter.get());
         }
-        // non-exceptional completion
-        assertNull(combinedFuture.join());
-        assertEquals(1, countingExecutor.counter.get());
     }
 
     @Test
@@ -246,12 +249,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
         boolean exceptionalCompletion = invocation1.throwsException || invocation2.throwsException;
         assertTrueEventually(() -> assertTrue(combinedFuture.isDone()));
         if (exceptionalCompletion) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            combinedFuture.join();
+            assertThatThrownBy(combinedFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertNull(combinedFuture.join());
         }
-        // non-exceptional completion
-        assertNull(combinedFuture.join());
     }
 
     @Test
@@ -265,12 +269,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(combinedFuture.isDone());
         });
         if (exceptionalCompletion) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            combinedFuture.join();
+            assertThatThrownBy(combinedFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertNull(combinedFuture.join());
         }
-        // non-exceptional completion
-        assertNull(combinedFuture.join());
     }
 
     @Test
@@ -284,13 +289,14 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(combinedFuture.isDone());
         });
         if (exceptionalCompletion) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            combinedFuture.join();
+            assertThatThrownBy(combinedFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertNull(combinedFuture.join());
+            assertEquals(1, countingExecutor.counter.get());
         }
-        // non-exceptional completion
-        assertNull(combinedFuture.join());
-        assertEquals(1, countingExecutor.counter.get());
     }
 
 
@@ -310,12 +316,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(eitherFuture.isDone());
         });
         if (exceptionalCompletion && eitherFuture.isCompletedExceptionally()) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            eitherFuture.join();
+            assertThatThrownBy(eitherFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertNull(eitherFuture.join());
         }
-        // non-exceptional completion
-        assertNull(eitherFuture.join());
     }
 
     @Test
@@ -328,12 +335,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(eitherFuture.isDone());
         });
         if (exceptionalCompletion && eitherFuture.isCompletedExceptionally()) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            eitherFuture.join();
+            assertThatThrownBy(eitherFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertNull(eitherFuture.join());
         }
-        // non-exceptional completion
-        assertNull(eitherFuture.join());
     }
 
     @Test
@@ -348,13 +356,14 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(eitherFuture.isDone());
         });
         if (exceptionalCompletion && eitherFuture.isCompletedExceptionally()) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            eitherFuture.join();
+            assertThatThrownBy(eitherFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertNull(eitherFuture.join());
+            assertEquals(1, executionCounter.get());
         }
-        // non-exceptional completion
-        assertNull(eitherFuture.join());
-        assertEquals(1, executionCounter.get());
     }
 
     @Test
@@ -367,12 +376,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(eitherFuture.isDone());
         });
         if (exceptionalCompletion && eitherFuture.isCompletedExceptionally()) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            eitherFuture.join();
+            assertThatThrownBy(eitherFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertNull(eitherFuture.join());
         }
-        // non-exceptional completion
-        assertNull(eitherFuture.join());
     }
 
     @Test
@@ -385,12 +395,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(eitherFuture.isDone());
         });
         if (exceptionalCompletion && eitherFuture.isCompletedExceptionally()) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            eitherFuture.join();
+            assertThatThrownBy(eitherFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertNull(eitherFuture.join());
         }
-        // non-exceptional completion
-        assertNull(eitherFuture.join());
     }
 
     @Test
@@ -405,13 +416,14 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(eitherFuture.isDone());
         });
         if (exceptionalCompletion && eitherFuture.isCompletedExceptionally()) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            eitherFuture.join();
+            assertThatThrownBy(eitherFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertNull(eitherFuture.join());
+            assertEquals(1, executionCounter.get());
         }
-        // non-exceptional completion
-        assertNull(eitherFuture.join());
-        assertEquals(1, executionCounter.get());
     }
 
     @Test
@@ -425,12 +437,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(eitherFuture.isDone());
         });
         if (exceptionalCompletion && eitherFuture.isCompletedExceptionally()) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            eitherFuture.join();
+            assertThatThrownBy(eitherFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertSame(expectedResult, eitherFuture.join());
         }
-        // non-exceptional completion
-        assertSame(expectedResult, eitherFuture.join());
     }
 
     @Test
@@ -444,12 +457,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(eitherFuture.isDone());
         });
         if (exceptionalCompletion && eitherFuture.isCompletedExceptionally()) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            eitherFuture.join();
+            assertThatThrownBy(eitherFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertSame(expectedResult, eitherFuture.join());
         }
-        // non-exceptional completion
-        assertSame(expectedResult, eitherFuture.join());
     }
 
     @Test
@@ -465,12 +479,13 @@ public class BiCompletionStageTest extends HazelcastTestSupport {
             assertTrue(eitherFuture.isDone());
         });
         if (exceptionalCompletion && eitherFuture.isCompletedExceptionally()) {
-            expected.expect(CompletionException.class);
-            expected.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
-            eitherFuture.join();
+            assertThatThrownBy(eitherFuture::join)
+                    .isInstanceOf(CompletionException.class)
+                    .cause().has(rootCause(ExpectedRuntimeException.class));
+        } else {
+            // non-exceptional completion
+            assertSame(expectedResult, eitherFuture.join());
+            assertEquals(1, executionCounter.get());
         }
-        // non-exceptional completion
-        assertSame(expectedResult, eitherFuture.join());
-        assertEquals(1, executionCounter.get());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,9 @@ public class SqlCreateMappingTest {
         Mapping mapping = new Mapping(
                 "name",
                 "external-name",
+                null,
                 "Type",
+                null,
                 asList(
                         new MappingField("field1", QueryDataType.VARCHAR, "__key.field1"),
                         new MappingField("field2", QueryDataType.INT, "this.field2")
@@ -44,14 +46,15 @@ public class SqlCreateMappingTest {
         );
 
         String sql = SqlCreateMapping.unparse(mapping);
-        assertThat(sql).isEqualTo("CREATE MAPPING \"name\" EXTERNAL NAME \"external-name\" (" + LE +
+        assertThat(sql).isEqualTo("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"name\" " +
+                "EXTERNAL NAME \"external-name\" (" + LE +
                 "  \"field1\" VARCHAR EXTERNAL NAME \"__key.field1\"," + LE +
                 "  \"field2\" INTEGER EXTERNAL NAME \"this.field2\"" + LE +
                 ")" + LE +
-                "TYPE Type" + LE +
+                "TYPE \"Type\"" + LE +
                 "OPTIONS (" + LE +
-                "  'key1' = 'value1'," + LE +
-                "  'key2' = 'value2'" + LE +
+                "  'key1'='value1'," + LE +
+                "  'key2'='value2'" + LE +
                 ")"
         );
     }
@@ -61,18 +64,45 @@ public class SqlCreateMappingTest {
         Mapping mapping = new Mapping(
                 "na\"me",
                 "external\"name",
+                null,
                 "Type",
+                null,
                 singletonList(new MappingField("fi\"eld", QueryDataType.VARCHAR, "__key\"field")),
                 ImmutableMap.of("ke'y", "val'ue")
         );
 
         String sql = SqlCreateMapping.unparse(mapping);
-        assertThat(sql).isEqualTo("CREATE MAPPING \"na\"\"me\" EXTERNAL NAME \"external\"\"name\" (" + LE +
+        assertThat(sql).isEqualTo("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"na\"\"me\" " +
+                "EXTERNAL NAME \"external\"\"name\" (" + LE +
                 "  \"fi\"\"eld\" VARCHAR EXTERNAL NAME \"__key\"\"field\"" + LE +
                 ")" + LE +
-                "TYPE Type" + LE +
+                "TYPE \"Type\"" + LE +
                 "OPTIONS (" + LE +
-                "  'ke''y' = 'val''ue'" + LE +
+                "  'ke''y'='val''ue'" + LE +
+                ")"
+        );
+    }
+
+    @Test
+    public void test_unparse_external_name_with_schema() {
+        Mapping mapping = new Mapping(
+                "name",
+                new String[]{"external\"schema", "external\"name"},
+                null,
+                "Type",
+                null,
+                singletonList(new MappingField("field", QueryDataType.VARCHAR, "__key.field")),
+                ImmutableMap.of("key", "value")
+        );
+
+        String sql = SqlCreateMapping.unparse(mapping);
+        assertThat(sql).isEqualTo("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"name\" " +
+                "EXTERNAL NAME \"external\"\"schema\".\"external\"\"name\" (" + LE +
+                "  \"field\" VARCHAR EXTERNAL NAME \"__key.field\"" + LE +
+                ")" + LE +
+                "TYPE \"Type\"" + LE +
+                "OPTIONS (" + LE +
+                "  'key'='value'" + LE +
                 ")"
         );
     }

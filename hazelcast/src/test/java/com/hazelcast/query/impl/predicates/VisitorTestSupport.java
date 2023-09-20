@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.test.ObjectTestUtils;
 
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 
-import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 import static com.hazelcast.internal.util.collection.ArrayUtils.createCopy;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertArrayEquals;
@@ -238,15 +238,15 @@ public abstract class VisitorTestSupport {
     }
 
     private static boolean compositeRangePredicatesAreEqual(CompositeRangePredicate lhs, CompositeRangePredicate rhs) {
-        return ObjectTestUtils.equals(lhs.indexName, rhs.indexName)
-            && ObjectTestUtils.equals(lhs.components, rhs.components)
+        return Objects.equals(lhs.indexName, rhs.indexName)
+            && Objects.equals(lhs.components, rhs.components)
             && lhs.from.equals(rhs.from) && lhs.fromInclusive == rhs.fromInclusive && lhs.to.equals(rhs.to)
             && lhs.toInclusive == rhs.toInclusive;
     }
 
     private static boolean compositeEqualPredicatesAreEqual(CompositeEqualPredicate lhs, CompositeEqualPredicate rhs) {
-        return ObjectTestUtils.equals(lhs.indexName, rhs.indexName)
-            && ObjectTestUtils.equals(lhs.components, rhs.components) && lhs.value.equals(rhs.value);
+        return Objects.equals(lhs.indexName, rhs.indexName)
+            && Objects.equals(lhs.components, rhs.components) && lhs.value.equals(rhs.value);
     }
 
     private static class ReferencePredicate implements Predicate {

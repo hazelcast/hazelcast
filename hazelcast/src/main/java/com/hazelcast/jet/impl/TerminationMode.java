@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.jet.Job;
 
 import javax.annotation.CheckReturnValue;
 
+import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.CANCEL;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
 
@@ -35,8 +36,8 @@ public enum TerminationMode {
 
     // terminate and complete the job
     /** Used to implement {@link Job#cancelAndExportSnapshot} in enterprise */
-    CANCEL_GRACEFUL(true, ActionAfterTerminate.CANCEL),
-    CANCEL_FORCEFUL(false, ActionAfterTerminate.CANCEL);
+    CANCEL_GRACEFUL(true, CANCEL),
+    CANCEL_FORCEFUL(false, CANCEL);
 
     private final boolean withTerminalSnapshot;
     private final ActionAfterTerminate actionAfterTerminate;
@@ -80,10 +81,20 @@ public enum TerminationMode {
 
     public enum ActionAfterTerminate {
         /** Start the job again. */
-        RESTART,
+        RESTART("Restart"),
         /** Don't start the job again, mark the job as suspended. */
-        SUSPEND,
+        SUSPEND("Suspend"),
         /** Cancel the job. */
-        CANCEL
+        CANCEL("Cancel");
+
+        private final String description;
+
+        ActionAfterTerminate(String description) {
+            this.description = description;
+        }
+
+        public String description() {
+            return description;
+        }
     }
 }

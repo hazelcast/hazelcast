@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastWindowTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastOperandTypeCheckerAware;
@@ -66,7 +65,6 @@ public class HazelcastSqlOperatorTableTest {
         for (SqlOperator operator : HazelcastSqlOperatorTable.instance().getOperatorList()) {
             boolean valid = operator instanceof HazelcastOperandTypeCheckerAware
                     || operator instanceof HazelcastTableFunction
-                    || operator instanceof HazelcastWindowTableFunction
                     || operator instanceof HazelcastCaseOperator
                     || operator == HazelcastSqlOperatorTable.ARGUMENT_ASSIGNMENT
                     || operator == HazelcastSqlOperatorTable.DOT;
@@ -80,7 +78,6 @@ public class HazelcastSqlOperatorTableTest {
     public void testReturnTypeInference() {
         for (SqlOperator operator : HazelcastSqlOperatorTable.instance().getOperatorList()) {
             if (operator instanceof HazelcastTableFunction
-                    || operator instanceof HazelcastWindowTableFunction
                     || operator == HazelcastSqlOperatorTable.IN
                     || operator == HazelcastSqlOperatorTable.NOT_IN
                     || operator == HazelcastSqlOperatorTable.UNION
@@ -95,4 +92,3 @@ public class HazelcastSqlOperatorTableTest {
         }
     }
 }
-

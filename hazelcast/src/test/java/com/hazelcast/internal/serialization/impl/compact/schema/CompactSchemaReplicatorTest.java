@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.SimpleMemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.internal.util.executor.CachedExecutorServiceDelegate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -41,6 +43,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ForkJoinPool;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -62,16 +65,22 @@ public class CompactSchemaReplicatorTest extends HazelcastTestSupport {
     private SchemaReplicator replicator;
     private MemberSchemaService schemaService;
     private ClusterService clusterService;
+    private ExecutionService executionService;
 
     @Before
     public void setUp() {
         schemaService = mock(MemberSchemaService.class);
         replicator = spy(new SchemaReplicator(schemaService));
         clusterService = mock(ClusterService.class);
+        executionService = mock(ExecutionService.class);
+        when(executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR))
+                .thenReturn(new CachedExecutorServiceDelegate("test", new ForkJoinPool(3),
+                        8, 1000));
         when(clusterService.getMembers()).thenReturn(Collections.emptySet());
         NodeEngine nodeEngine = mock(NodeEngine.class);
         when(nodeEngine.getClusterService()).thenReturn(clusterService);
         when(nodeEngine.getProperties()).thenReturn(new HazelcastProperties(new Config()));
+        when(nodeEngine.getExecutionService()).thenReturn(executionService);
         replicator.init(nodeEngine);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,16 @@ import javax.annotation.Nonnull;
  * associated with them.
  */
 public class CompactSerializableRegistration {
-
+    public static final CompactSerializableRegistration GENERIC_RECORD_REGISTRATION = new CompactSerializableRegistration();
     private final Class clazz;
     private final CompactSerializer compactSerializer;
     private final String typeName;
+
+    private CompactSerializableRegistration() {
+        this.clazz = null;
+        this.typeName = null;
+        this.compactSerializer = null;
+    }
 
     public CompactSerializableRegistration(@Nonnull Class clazz, @Nonnull String typeName,
                                            @Nonnull CompactSerializer compactSerializer) {

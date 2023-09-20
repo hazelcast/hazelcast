@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,6 +36,7 @@ import javax.security.auth.login.LoginException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
+import java.util.concurrent.Executor;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
@@ -79,6 +81,7 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
     // WAN
     public static final String URI_WAN_SYNC_MAP = URI_WAN_BASE_URL + "/sync/map";
     public static final String URI_WAN_SYNC_ALL_MAPS = URI_WAN_BASE_URL + "/sync/allmaps";
+    public static final String URI_WAN_SYNC_PROGRESS = URI_WAN_BASE_URL + "/sync/progress";
     public static final String URI_WAN_CLEAR_QUEUES = URI_WAN_BASE_URL + "/clearWanQueues";
     public static final String URI_ADD_WAN_CONFIG = URI_WAN_BASE_URL + "/addWanConfig";
     public static final String URI_WAN_PAUSE_PUBLISHER = URI_WAN_BASE_URL + "/pausePublisher";
@@ -111,11 +114,13 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
 
     protected final ILogger logger;
     protected final RestCallCollector restCallCollector;
+    protected final Executor internalAsyncExecutor;
 
     protected HttpCommandProcessor(TextCommandService textCommandService, ILogger logger) {
         super(textCommandService);
         this.logger = logger;
         this.restCallCollector = textCommandService.getRestCallCollector();
+        internalAsyncExecutor = getNode().getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     /**

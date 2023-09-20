@@ -1,0 +1,16 @@
+{
+  "instance": {
+    "hazelcast": {
+      "data-connection": {
+        "mysql-database": {
+          "type": "jdbc",
+          "properties": {
+            "jdbcUrl": "jdbc:mysql://dummy:3306"
+          },
+          "shared": false
+        }
+      }
+    }
+  },
+  "error": null
+}

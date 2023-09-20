@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,8 +178,8 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
         map.put("present_key", "present_value");
 
         Function function = (k) -> "new_value";
-        assertEquals(map.computeIfAbsent("present_key", function), "present_value");
-        assertEquals(map.get("present_key"), "present_value");
+        assertEquals("present_value", map.computeIfAbsent("present_key", function));
+        assertEquals("present_value", map.get("present_key"));
     }
 
     @Test

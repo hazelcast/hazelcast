@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class ChangeRecordImpl implements ChangeRecord {
             long sequenceSource,
             long sequenceValue,
             Operation operation,
-            @Nonnull String keyJson,
+            @Nullable String keyJson,
             Supplier<String> oldValueJsonSupplier,
             Supplier<String> newValueJsonSupplier,
             String table,
@@ -58,7 +58,7 @@ public class ChangeRecordImpl implements ChangeRecord {
         this.sequenceSource = sequenceSource;
         this.sequenceValue = sequenceValue;
         this.operation = operation;
-        this.keyJson = requireNonNull(keyJson, "keyJson");
+        this.keyJson = keyJson;
         this.oldValue = oldValueJsonSupplier == null ? null : new RecordPartImpl(oldValueJsonSupplier);
         this.newValue = newValueJsonSupplier == null ? null : new RecordPartImpl(newValueJsonSupplier);
         this.table = table;
@@ -71,7 +71,7 @@ public class ChangeRecordImpl implements ChangeRecord {
             long sequenceSource,
             long sequenceValue,
             Operation operation,
-            @Nonnull String keyJson,
+            String keyJson,
             String oldValueJson,
             String newValueJson,
             String table,
@@ -82,7 +82,7 @@ public class ChangeRecordImpl implements ChangeRecord {
         this.sequenceSource = sequenceSource;
         this.sequenceValue = sequenceValue;
         this.operation = operation;
-        this.keyJson = requireNonNull(keyJson, "keyJson");
+        this.keyJson = keyJson;
         this.oldValue = oldValueJson == null ? null : new RecordPartImpl(oldValueJson);
         this.newValue = newValueJson == null ? null : new RecordPartImpl(newValueJson);
         this.table = table;
@@ -120,9 +120,12 @@ public class ChangeRecordImpl implements ChangeRecord {
     }
 
     @Override
-    @Nonnull
+    @Nullable
     public RecordPart key() {
         if (key == null) {
+            if (keyJson == null) {
+                return null;
+            }
             key = new RecordPartImpl(() -> keyJson);
         }
         return key;

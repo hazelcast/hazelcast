@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,15 +46,25 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapPreconditionsTest extends HazelcastTestSupport {
 
+    /**
+     * Number of item that will trigger {@link QueryResultSizeExceededException}.
+     * Note that the exact value depends on rounding in the calculation.
+     */
+    public static final int TOO_MANY_ITEMS_COUNT = 115002;
     private final int MINUTES = 60 * 1000;
     private IMap<Object, Object> map;
 
-    @Before
-    public void setUp() {
-        Config config = new Config();
+    @Override
+    protected Config getConfig() {
+        Config config = smallInstanceConfig();
         // default minimum is 100000 * 1.5f
         config.setProperty(ClusterProperty.QUERY_RESULT_SIZE_LIMIT.getName(), "1");
-        HazelcastInstance hz = createHazelcastInstance(config);
+        return config;
+    }
+
+    @Before
+    public void setUp() {
+        HazelcastInstance hz = createHazelcastInstance();
         map = hz.getMap("trial");
     }
 
@@ -139,6 +149,11 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testRemoveAsync() {
         map.removeAsync(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testDeleteAsync() {
+        map.deleteAsync(null);
     }
 
     @Test(expected = NullPointerException.class)
@@ -485,7 +500,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = QueryResultSizeExceededException.class, timeout = 10 * MINUTES)
     public void testKeySet() {
-        for (int i = 0; i < 115001; i++) {
+        for (int i = 0; i < TOO_MANY_ITEMS_COUNT; i++) {
             map.put(i, i);
         }
 
@@ -494,7 +509,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = QueryResultSizeExceededException.class, timeout = 10 * MINUTES)
     public void testValues() {
-        for (int i = 0; i < 115001; i++) {
+        for (int i = 0; i < TOO_MANY_ITEMS_COUNT; i++) {
             map.put(i, i);
         }
 
@@ -503,7 +518,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = QueryResultSizeExceededException.class, timeout = 10 * MINUTES)
     public void testEntrySet() {
-        for (int i = 0; i < 115001; i++) {
+        for (int i = 0; i < TOO_MANY_ITEMS_COUNT; i++) {
             map.put(i, i);
         }
 
@@ -517,7 +532,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = QueryResultSizeExceededException.class, timeout = 10 * MINUTES)
     public void testKeySetWithPredicate() {
-        for (int i = 0; i < 115001; i++) {
+        for (int i = 0; i < TOO_MANY_ITEMS_COUNT; i++) {
             map.put(i, i);
         }
 
@@ -531,7 +546,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = QueryResultSizeExceededException.class, timeout = 10 * MINUTES)
     public void testEntrySetWithPredicate() {
-        for (int i = 0; i < 115001; i++) {
+        for (int i = 0; i < TOO_MANY_ITEMS_COUNT; i++) {
             map.put(i, i);
         }
 
@@ -545,7 +560,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = QueryResultSizeExceededException.class, timeout = 10 * MINUTES)
     public void testValuesWitPredicate() {
-        for (int i = 0; i < 115001; i++) {
+        for (int i = 0; i < TOO_MANY_ITEMS_COUNT; i++) {
             map.put(i, i);
         }
 
@@ -554,7 +569,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = QueryResultSizeExceededException.class, timeout = 10 * MINUTES)
     public void testLocalKeySet() {
-        for (int i = 0; i < 115001; i++) {
+        for (int i = 0; i < TOO_MANY_ITEMS_COUNT; i++) {
             map.put(i, i);
         }
 
@@ -563,7 +578,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = QueryResultSizeExceededException.class, timeout = 10 * MINUTES)
     public void testLocalKeySetWithPredicate() {
-        for (int i = 0; i < 115001; i++) {
+        for (int i = 0; i < TOO_MANY_ITEMS_COUNT; i++) {
             map.put(i, i);
         }
 
@@ -572,7 +587,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class, timeout = 10 * MINUTES)
     public void testLocalKeySetWithNullPredicate() {
-        for (int i = 0; i < 115001; i++) {
+        for (int i = 0; i < TOO_MANY_ITEMS_COUNT; i++) {
             map.put(i, i);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,11 +44,13 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Map configuration can be updated dynamically at runtime by using management center ui.
@@ -68,6 +70,7 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         String mapName = randomMapName();
         CountDownLatch expiredLatch = new CountDownLatch(1);
         CountDownLatch evictedLatch = new CountDownLatch(1);
+        final AtomicReference<String> failureMessage = new AtomicReference<>();
 
         Config config = getConfig();
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
@@ -83,8 +86,13 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         }, 1, false);
         map.addEntryListener((EntryEvictedListener<Integer, Integer>) event -> {
             logger.info("Entry evicted: " + event);
+            // ensure the correct key was evicted
+            if (event.getKey() != 2) {
+                failureMessage.set(String.format("Expected eviction of key '2', but received key '%d' instead",
+                        event.getKey()));
+            }
             evictedLatch.countDown();
-        }, 2, false);
+        }, false);
 
         // trigger recordStore creation
         map.put(1, 1);
@@ -96,6 +104,9 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
 
         assertTrue("Entry didn't expire", expiredLatch.await(60, TimeUnit.SECONDS));
 
+        // test map size to ensure the expired entry was removed
+        assertEquals(0, map.size());
+
         // test eviction with infinite ttl and max-idle
         map.put(2, 2, 0, TimeUnit.SECONDS, 0, TimeUnit.SECONDS);
         map.put(3, 3);
@@ -103,6 +114,11 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         assertEquals(1, map.size());
 
         assertTrue("Entry didn't evict", evictedLatch.await(60, TimeUnit.SECONDS));
+
+        // check if eviction resulted in a failure message
+        if (failureMessage.get() != null) {
+            fail("Eviction failed: " + failureMessage.get());
+        }
     }
 
     private void updateMapConfig(String mapName, HazelcastInstance node) {

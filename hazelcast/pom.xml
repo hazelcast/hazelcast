@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.3.0-SNAPSHOT</version>
+        <version>5.4.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -177,6 +177,10 @@
                                     <shadedPattern>${relocation.root}.org.snakeyaml</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>org.jctools</pattern>
+                                    <shadedPattern>${relocation.root}.org.jctools</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>io.github.classgraph</pattern>
                                     <shadedPattern>${relocation.root}.io.github.classgraph</shadedPattern>
                                 </relocation>
@@ -205,9 +209,16 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
                             </transformers>
                             <filters>
+                                <filter>
+                                    <artifact>org.jctools:jctools-core</artifact>
+                                    <includes>
+                                        <include>org/jctools/queues/*</include>
+                                        <include>org/jctools/util/*</include>
+                                    </includes>
+                                </filter>
                                 <filter>
                                     <artifact>com.fasterxml.jackson.core:*</artifact>
                                     <excludes>
@@ -267,6 +278,7 @@
                                     !org.junit,
                                     !com.hazelcast.*,
                                     !com.fasterxml.jackson.*,
+                                    !com.zaxxer.hikari.*,
                                     !org.snakeyaml.*,
                                     !io.github.classgraph.*,
                                     !org.everit.json.*,
@@ -281,7 +293,6 @@
                                     org.apache.logging.log4j.spi;resolution:=optional,
                                     org.slf4j;resolution:=optional,
                                     org.codehaus.groovy.jsr223;resolution:=optional,
-                                    org.jruby.embed.jsr223;resolution:=optional,
                                     com.damnhandy.uri.template;resolution:=optional,
                                     org.apache.commons.validator.routines;resolution:=optional,
                                     com.google.re2j;resolution:=optional,
@@ -295,6 +306,9 @@
                                     org.hibernate.engine.jdbc.connections.spi;resolution:=optional,
                                     org.hibernate.service;resolution:=optional,
                                     org.hibernate.service.spi;resolution:=optional,
+                                    net.openhft.affinity;resolution:=optional,
+                                    jakarta.jms;resolution:=optional,
+                                    org.osgi.framework;resolution:=optional,
                                     *
                                 </Import-Package>
                                 <Bundle-Name>Hazelcast(Core)</Bundle-Name>
@@ -423,7 +437,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <phase>clean</phase>
@@ -447,14 +461,13 @@
     </build>
 
     <dependencies>
-        <!-- needed for thread affinity -->
+        <!-- Needed for TPC -->
         <dependency>
-            <groupId>net.openhft</groupId>
-            <artifactId>affinity</artifactId>
-            <version>3.20.0</version>
-            <scope>provided</scope>
-            <optional>true</optional>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-tpc-engine</artifactId>
+            <version>5.4.0-SNAPSHOT</version>
         </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -497,7 +510,7 @@
         <dependency>
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
-            <version>1.14.1</version>
+            <version>1.14.2</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.re2j</groupId>
@@ -544,8 +557,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>javax.jms</groupId>
-            <artifactId>javax.jms-api</artifactId>
+            <groupId>jakarta.jms</groupId>
+            <artifactId>jakarta.jms-api</artifactId>
             <version>${jms.api.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
@@ -554,7 +567,22 @@
             <groupId>javax.cache</groupId>
             <artifactId>cache-tests</artifactId>
             <classifier>tests</classifier>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
             <version>${jsr107.tck.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Required as dependency of cache-tests -->
+        <!-- Tests like CacheExpiryTest won't work if it's not provided, -->
+        <!-- although javax.cache does not declare dependency -->
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <version>2.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -562,10 +590,16 @@
             <artifactId>cache-tests</artifactId>
             <version>${jsr107.tck.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -604,14 +638,6 @@
             <scope>test</scope>
             <version>1.1.1</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>${http.components.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <!-- OSGi -->
         <dependency>
             <groupId>org.osgi</groupId>
@@ -627,13 +653,6 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>org.jruby</groupId>
-            <artifactId>jruby-complete</artifactId>
-            <version>1.7.22</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
 
         <!-- OSGI testing -->
         <dependency>
@@ -641,6 +660,12 @@
             <artifactId>pax-exam-junit4</artifactId>
             <version>${pax.exam.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.ops4j.pax.exam</groupId>
@@ -676,27 +701,17 @@
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8-standalone</artifactId>
-            <version>2.34.0</version>
+            <version>2.35.1</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.activemq</groupId>
-            <artifactId>apache-artemis</artifactId>
+            <artifactId>artemis-jakarta-server</artifactId>
             <version>${activemq-artemis.version}</version>
             <type>pom</type>
             <scope>test</scope>
 
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.activemq</groupId>
-                    <artifactId>artemis-jms-client-all</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -704,6 +719,19 @@
             <artifactId>artemis-junit</artifactId>
             <version>${activemq-artemis.version}</version>
             <scope>test</scope>
+
+            <!-- Exclude dependencies that bring in jms namespace -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.activemq</groupId>
+                    <artifactId>artemis-jms-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
+
         </dependency>
 
         <dependency>
@@ -711,11 +739,17 @@
             <artifactId>rabbitmq</artifactId>
             <version>${testcontainers.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.rabbitmq.jms</groupId>
             <artifactId>rabbitmq-jms</artifactId>
-            <version>2.4.0</version>
+            <version>3.1.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -733,12 +767,41 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mssqlserver</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mariadb</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresql.version}</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql.connector.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+            <version>${mssql.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
@@ -765,5 +828,24 @@
             <artifactId>HikariCP</artifactId>
             <version>${hikari.version}</version>
         </dependency>
-    </dependencies>
+
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-server-mock</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-resolver-provider</artifactId>
+            <version>3.9.4</version>
+            <scope>test</scope>
+        </dependency>
+	</dependencies>
 </project>

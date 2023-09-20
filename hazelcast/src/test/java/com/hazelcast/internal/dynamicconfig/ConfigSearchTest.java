@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,7 @@ import javax.annotation.Nonnull;
 import java.util.UUID;
 
 import static com.hazelcast.spi.properties.ClusterProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -92,7 +91,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 MapConfig dataConfig = hazelcastInstance.getConfig().findMapConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getMaxIdleSeconds(), equalTo(staticMapConfig().getMaxIdleSeconds()));
+                assertThat(dataConfig.getMaxIdleSeconds()).isEqualTo(staticMapConfig().getMaxIdleSeconds());
             }
         };
         testTemplate(testCase);
@@ -114,7 +113,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 MapConfig dataConfig = hazelcastInstance.getConfig().findMapConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getMaxIdleSeconds(), equalTo(dynamicMapConfig().getMaxIdleSeconds()));
+                assertThat(dataConfig.getMaxIdleSeconds()).isEqualTo(dynamicMapConfig().getMaxIdleSeconds());
             }
         };
         testTemplate(testCase);
@@ -147,7 +146,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 CacheSimpleConfig dataConfig = hazelcastInstance.getConfig().findCacheConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getBackupCount(), equalTo(STATIC_MAX_SIZE));
+                assertThat(dataConfig.getBackupCount()).isEqualTo(STATIC_MAX_SIZE);
             }
         };
         testTemplate(testCase);
@@ -170,7 +169,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 CacheSimpleConfig dataConfig = hazelcastInstance.getConfig().findCacheConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getBackupCount(), equalTo(DYNAMIC_MAX_SIZE));
+                assertThat(dataConfig.getBackupCount()).isEqualTo(DYNAMIC_MAX_SIZE);
             }
         };
         testTemplate(testCase);
@@ -193,7 +192,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 QueueConfig dataConfig = hazelcastInstance.getConfig().findQueueConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getMaxSize(), equalTo(STATIC_MAX_SIZE));
+                assertThat(dataConfig.getMaxSize()).isEqualTo(STATIC_MAX_SIZE);
             }
         };
         testTemplate(testCase);
@@ -216,7 +215,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 QueueConfig dataConfig = hazelcastInstance.getConfig().findQueueConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getMaxSize(), equalTo(DYNAMIC_MAX_SIZE));
+                assertThat(dataConfig.getMaxSize()).isEqualTo(DYNAMIC_MAX_SIZE);
             }
         };
         testTemplate(testCase);
@@ -239,7 +238,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 ListConfig dataConfig = hazelcastInstance.getConfig().findListConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getMaxSize(), equalTo(STATIC_MAX_SIZE));
+                assertThat(dataConfig.getMaxSize()).isEqualTo(STATIC_MAX_SIZE);
             }
         };
         testTemplate(testCase);
@@ -262,7 +261,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 ListConfig dataConfig = hazelcastInstance.getConfig().findListConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getMaxSize(), equalTo(DYNAMIC_MAX_SIZE));
+                assertThat(dataConfig.getMaxSize()).isEqualTo(DYNAMIC_MAX_SIZE);
             }
         };
         testTemplate(testCase);
@@ -285,7 +284,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 SetConfig dataConfig = hazelcastInstance.getConfig().findSetConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(STATIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -308,7 +307,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 SetConfig dataConfig = hazelcastInstance.getConfig().findSetConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(DYNAMIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -331,7 +330,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 MultiMapConfig dataConfig = hazelcastInstance.getConfig().findMultiMapConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(STATIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -354,7 +353,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 MultiMapConfig dataConfig = hazelcastInstance.getConfig().findMultiMapConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(DYNAMIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -377,7 +376,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 ReplicatedMapConfig dataConfig = hazelcastInstance.getConfig().findReplicatedMapConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(STATIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -400,7 +399,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 ReplicatedMapConfig dataConfig = hazelcastInstance.getConfig().findReplicatedMapConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(DYNAMIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -423,7 +422,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 RingbufferConfig dataConfig = hazelcastInstance.getConfig().findRingbufferConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(STATIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -446,7 +445,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 RingbufferConfig dataConfig = hazelcastInstance.getConfig().findRingbufferConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(DYNAMIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -469,7 +468,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 TopicConfig dataConfig = hazelcastInstance.getConfig().findTopicConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(STATIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -492,7 +491,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 TopicConfig dataConfig = hazelcastInstance.getConfig().findTopicConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(DYNAMIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -515,7 +514,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 ReliableTopicConfig dataConfig = hazelcastInstance.getConfig().findReliableTopicConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(STATIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -538,7 +537,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 ReliableTopicConfig dataConfig = hazelcastInstance.getConfig().findReliableTopicConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(DYNAMIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -561,7 +560,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 ExecutorConfig dataConfig = hazelcastInstance.getConfig().findExecutorConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(STATIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -584,7 +583,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 ExecutorConfig dataConfig = hazelcastInstance.getConfig().findExecutorConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(DYNAMIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -608,7 +607,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 DurableExecutorConfig dataConfig = hazelcastInstance.getConfig().findDurableExecutorConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(STATIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -631,7 +630,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 DurableExecutorConfig dataConfig = hazelcastInstance.getConfig().findDurableExecutorConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(DYNAMIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -654,7 +653,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 ScheduledExecutorConfig dataConfig = hazelcastInstance.getConfig().findScheduledExecutorConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(STATIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -677,7 +676,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 ScheduledExecutorConfig dataConfig = hazelcastInstance.getConfig().findScheduledExecutorConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(DYNAMIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -702,7 +701,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             void asserts() {
                 CardinalityEstimatorConfig dataConfig
                         = hazelcastInstance.getConfig().findCardinalityEstimatorConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(STATIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -727,7 +726,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             void asserts() {
                 CardinalityEstimatorConfig dataConfig
                         = hazelcastInstance.getConfig().findCardinalityEstimatorConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(DYNAMIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -750,7 +749,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 FlakeIdGeneratorConfig dataConfig = hazelcastInstance.getConfig().findFlakeIdGeneratorConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(STATIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -773,7 +772,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 FlakeIdGeneratorConfig dataConfig = hazelcastInstance.getConfig().findFlakeIdGeneratorConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(DYNAMIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -797,7 +796,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 PNCounterConfig dataConfig = hazelcastInstance.getConfig().findPNCounterConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(STATIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(STATIC_NAME);
             }
         };
         testTemplate(testCase);
@@ -820,7 +819,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 PNCounterConfig dataConfig = hazelcastInstance.getConfig().findPNCounterConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getName(), equalTo(DYNAMIC_NAME));
+                assertThat(dataConfig.getName()).isEqualTo(DYNAMIC_NAME);
             }
         };
         testTemplate(testCase);

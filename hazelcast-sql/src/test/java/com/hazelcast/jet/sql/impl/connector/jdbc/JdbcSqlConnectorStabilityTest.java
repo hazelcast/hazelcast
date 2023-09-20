@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,86 +18,54 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
-import org.junit.Before;
+import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.function.ConsumerEx.noop;
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
 public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
 
-    private static final int ITEM_COUNT = 5;
-
-    private String tableName;
+    private static String tableName;
 
     @BeforeClass
-    public static void beforeClass() {
-        initialize(new H2DatabaseProvider());
+    public static void beforeClass() throws Exception {
+        initializeStabilityTest(new H2DatabaseProvider());
     }
 
-    @Before
-    public void setUp() throws Exception {
+    public static void initializeStabilityTest(TestDatabaseProvider provider) throws Exception {
+        initialize(provider);
+
         tableName = randomTableName();
         createTable(tableName);
-        insertItems(tableName, ITEM_COUNT);
+        insertItems(tableName, 5);
 
         execute(
                 "CREATE MAPPING " + tableName + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
-        );
-    }
-
-    @Test
-    public void dataStoreDownShouldTimeout() {
-
-        assertRowsAnyOrder(
-                "SELECT * FROM " + tableName,
-                newArrayList(
-                        new Row(0, "name-0"),
-                        new Row(1, "name-1"),
-                        new Row(2, "name-2"),
-                        new Row(3, "name-3"),
-                        new Row(4, "name-4")
-                )
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         databaseProvider.shutdown();
+    }
 
+    // We should not be able to access DB anymore
+    @Test
+    public void dataConnectionDownShouldTimeout() {
         assertThatThrownBy(() -> {
-            instance()
-                    .getSql()
+            sqlService
                     .execute("SELECT * FROM " + tableName)
                     .forEach(noop());
         }).isInstanceOf(HazelcastSqlException.class);
     }
 
+    // We should be able to read from generated table even if the DB is stopped
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/22651")
-    public void dataStoreDownShouldNotAffectUnrelatedQueries() {
-
-        assertRowsAnyOrder(
-                "SELECT * FROM " + tableName,
-                newArrayList(
-                        new Row(0, "name-0"),
-                        new Row(1, "name-1"),
-                        new Row(2, "name-2"),
-                        new Row(3, "name-3"),
-                        new Row(4, "name-4")
-                )
-        );
-
-        databaseProvider.shutdown();
-
+    public void dataConnectionDownShouldNotAffectUnrelatedQueries() {
         assertRowsAnyOrder(
                 "SELECT * FROM TABLE(generate_series(0, 4))",
                 newArrayList(
@@ -109,5 +77,4 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
                 )
         );
     }
-
 }

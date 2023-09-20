@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,8 +51,7 @@ import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.getCacheService;
 import static com.hazelcast.cache.CacheTestSupport.getTenantControl;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assume.assumeTrue;
@@ -150,8 +149,9 @@ public class TenantControlTest extends TenantControlTestSupport {
         // in most cases it would be three times, but there is a case when the structure
         // gets destroyed before operation completes, in which case it's valid
         // to only have thread context cleared only twice
-        assertTrueEventually(() -> assertThat("thread context not cleared enough times",
-                clearedThreadInfoCount.get(), greaterThanOrEqualTo(2)), 10);
+        assertTrueEventually(() -> assertThat(clearedThreadInfoCount.get())
+                .as("thread context not cleared enough times")
+                .isGreaterThanOrEqualTo(2), 10);
     }
 
     @Test

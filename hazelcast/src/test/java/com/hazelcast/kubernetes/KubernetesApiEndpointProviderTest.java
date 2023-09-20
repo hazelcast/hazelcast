@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,14 +40,14 @@ public class KubernetesApiEndpointProviderTest
           + "              \"ip\": \"192.168.0.25\",\n"
           + "              \"nodeName\": \"node-name-1\",\n"
           + "              \"targetRef\": {\n"
-          + "                \"name\": \"hazelcast-1\""
+          + "                \"name\": \"hazelcast-0\""
           + "              }\n"
           + "            },\n"
           + "            {\n"
           + "              \"ip\": \"172.17.0.5\",\n"
           + "              \"nodeName\": \"node-name-2\",\n"
           + "              \"targetRef\": {\n"
-          + "                \"name\": \"hazelcast-2\""
+          + "                \"name\": \"hazelcast-1\""
           + "              }\n"
           + "            }\n"
           + "          ],\n"
@@ -199,7 +199,7 @@ public class KubernetesApiEndpointProviderTest
                + "              \"port\": 5701\n"
                + "            },\n"
                + "            {\n"
-               + "              \"name\": \"hazelcast-service-port\",\n"
+               + "              \"name\": \"hazelcast\",\n"
                + "              \"protocol\": \"TCP\",\n"
                + "              \"port\": 5702\n"
                + "            }\n"

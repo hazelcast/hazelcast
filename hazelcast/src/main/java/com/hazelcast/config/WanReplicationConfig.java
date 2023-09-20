@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,13 +56,14 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @see MapConfig#setWanReplicationRef
  * @see CacheConfig#setWanReplicationRef
  */
-public class WanReplicationConfig implements IdentifiedDataSerializable {
+public class WanReplicationConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private String name;
     private WanConsumerConfig consumerConfig;
     private List<WanCustomPublisherConfig> customPublisherConfigs = new ArrayList<>(0);
     private List<WanBatchPublisherConfig> batchPublisherConfigs = new ArrayList<>(1);
 
+    @Override
     public String getName() {
         return name;
     }
@@ -75,6 +76,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * @return this config
      * @see WanReplicationRef#getName()
      */
+    @Override
     public WanReplicationConfig setName(@Nonnull String name) {
         this.name = checkNotNull(name, "Name must not be null");
         return this;

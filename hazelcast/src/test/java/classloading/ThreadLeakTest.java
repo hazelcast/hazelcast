@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,10 @@ package classloading;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -27,10 +31,15 @@ import org.junit.runner.RunWith;
 
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 
 import static classloading.ThreadLeakTestUtils.assertHazelcastThreadShutdown;
 import static classloading.ThreadLeakTestUtils.getAndLogThreads;
 import static classloading.ThreadLeakTestUtils.getThreads;
+import static com.hazelcast.instance.impl.TestUtil.getNode;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -81,5 +90,42 @@ public class ThreadLeakTest {
         assertNull("Expected to get null, but found running threads", runningThreads);
 
         assertHazelcastThreadShutdown(threads);
+    }
+
+    // Fixes https://github.com/hazelcast/hazelcast/issues/24484
+    @Test
+    public void testThreadLeakWithAsynExecutor() {
+        Set<Thread> oldThreads = getThreads();
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+
+        Node node = getNode(hz);
+        ExecutorService executorService =
+                node.getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
+
+        executorService.submit(
+                () -> {
+                    InternalCompletableFuture<String> future = new InternalCompletableFuture<>();
+                    PartitionSpecificRunnable task = new PartitionSpecificRunnable() {
+                        @Override
+                        public void run() {
+                            future.complete("X");
+                        }
+
+                        @Override
+                        public int getPartitionId() {
+                            return 0;
+                        }
+                    };
+
+                    hz.shutdown();
+                    node.getNodeEngine().getOperationService().execute(task);
+                    try {
+                        future.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw sneakyThrow(peel(e));
+                    }
+                });
+
+        assertHazelcastThreadShutdown(oldThreads);
     }
 }

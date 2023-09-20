@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.Version;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,11 +42,14 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-
 public class DataSerializableSerializationTest extends HazelcastTestSupport {
+    private static SerializationService ss;
 
-    private SerializationService ss = new DefaultSerializationServiceBuilder().setVersion(InternalSerializationService.VERSION_1)
-                                                                              .build();
+    @BeforeClass
+    public static void setUp() {
+        ss = new DefaultSerializationServiceBuilder().setVersion(InternalSerializationService.VERSION_1)
+                .build();
+    }
 
     @Test
     public void serializeAndDeserialize_DataSerializable() {
@@ -113,7 +117,6 @@ public class DataSerializableSerializationTest extends HazelcastTestSupport {
             } catch (HazelcastSerializationException e) {
                 assertInstanceOf(NoSuchMethodException.class, e.getCause());
                 assertContains(e.getCause().getMessage(), "can't conform to DataSerializable");
-                assertInstanceOf(NoSuchMethodException.class, e.getCause().getCause());
                 continue;
             }
             fail("deserialization of '" + throwingInstance.getClass() + "' is expected to fail");
@@ -123,9 +126,8 @@ public class DataSerializableSerializationTest extends HazelcastTestSupport {
             try {
                 ss.toObject(ss.toData(throwingInstance), throwingInstance.getClass());
             } catch (HazelcastSerializationException e) {
-                assertInstanceOf(InstantiationException.class, e.getCause());
+                assertInstanceOf(ReflectiveOperationException.class, e.getCause());
                 assertContains(e.getCause().getMessage(), "can't conform to DataSerializable");
-                assertInstanceOf(InstantiationException.class, e.getCause().getCause());
                 continue;
             }
             fail("deserialization of '" + throwingInstance.getClass() + "' is expected to fail");

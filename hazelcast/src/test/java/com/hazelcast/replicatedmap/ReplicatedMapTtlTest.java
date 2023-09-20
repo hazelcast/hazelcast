@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
                                 boolean causeMigration) {
         TimeUnit timeUnit = TimeUnit.MILLISECONDS;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance[] instances = factory.newInstances(null, nodeCount);
+        HazelcastInstance[] instances = factory.newInstances(() -> null, nodeCount);
         String mapName = randomMapName();
         List<ReplicatedMap<String, Object>> maps = createMapOnEachInstance(instances, mapName);
         ArrayList<Integer> keys = generateRandomIntegerList(keyCount);

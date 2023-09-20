@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,6 +154,11 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testRemoveAsync() {
         map.removeAsync(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testDeleteAsync() {
+        map.deleteAsync(null);
     }
 
     @Test(expected = NullPointerException.class)

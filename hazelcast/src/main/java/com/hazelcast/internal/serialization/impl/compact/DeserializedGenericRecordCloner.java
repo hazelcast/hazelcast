@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,20 +32,26 @@ import java.util.TreeMap;
 public class DeserializedGenericRecordCloner extends AbstractGenericRecordBuilder {
     private final TreeMap<String, Object> objects;
     private final Schema schema;
-    private final Set<String> overwrittenFields = new HashSet<>();
+    private final Set<String> overwrittenFields;
+    private boolean built;
 
     public DeserializedGenericRecordCloner(Schema schema, TreeMap<String, Object> objects) {
         this.objects = objects;
+        this.overwrittenFields = new HashSet<>();
         this.schema = schema;
     }
 
     @Nonnull
     @Override
     public GenericRecord build() {
+        this.built = true;
         return new DeserializedGenericRecord(schema, objects);
     }
 
     protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldKind fieldKind) {
+        if (this.built) {
+            throw new UnsupportedOperationException("Cannot modify the GenericRecordBuilder after building");
+        }
         checkTypeWithSchema(schema, fieldName, fieldKind);
         if (!overwrittenFields.add(fieldName)) {
             throw new HazelcastSerializationException("Field can only be written once");

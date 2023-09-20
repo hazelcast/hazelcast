@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.version.MemberVersion;
 
 import javax.annotation.Nullable;
@@ -39,8 +38,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMa
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
-// RU_COMPAT 5.2 No need to implement Versioned after 5.3 release
-public class MemberInfo implements IdentifiedDataSerializable, Versioned {
+public class MemberInfo implements IdentifiedDataSerializable {
 
     private Address address;
     private UUID uuid;

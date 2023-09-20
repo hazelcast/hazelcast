@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.ExecutorStats;
@@ -50,6 +51,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutRespons
 import com.hazelcast.wan.impl.CallerProvenance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.RejectedExecutionException;
@@ -161,7 +163,6 @@ public class EntryOperation extends LockAwareOperation
     private transient boolean readOnly;
     private transient int setUnlockRetryCount;
     private transient long begin;
-    private transient boolean mapStoreOffloadEnabled;
 
     public EntryOperation() {
     }
@@ -185,10 +186,31 @@ public class EntryOperation extends LockAwareOperation
         // When EP is readOnly and entry is in memory, we
         // don't expect any map-store api call, so no need
         // to enter map-store-api-offloading procedure.
-        if (readOnly && recordStore.existInMemory(dataKey)) {
+        if (readOnly && existInMemory(dataKey)) {
             mapStoreOffloadEnabled = false;
+            tieredStoreOffloadEnabled = false;
         } else {
             mapStoreOffloadEnabled = isMapStoreOffloadEnabled();
+            tieredStoreOffloadEnabled = isTieredStoreOffloadEnabled();
+        }
+    }
+
+    private boolean existInMemory(Data dataKey) {
+        // When tieredStoreAndPartitionCompactorEnabled is false.
+        if (!tieredStoreOffloadEnabled) {
+            return recordStore.existInMemory(dataKey);
+        }
+
+        // When tieredStoreAndPartitionCompactorEnabled is true, in this
+        // case we will set tieredStoreAndPartitionCompactorEnabled to
+        // false if entry is in memory and flow will continue based on
+        // the false value of tieredStoreAndPartitionCompactorEnabled
+        recordStore.beforeOperation();
+        if (recordStore.existInMemory(dataKey)) {
+            return true;
+        } else {
+            recordStore.afterOperation();
+            return false;
         }
     }
 
@@ -203,10 +225,11 @@ public class EntryOperation extends LockAwareOperation
         // to EntryOffloadableSetUnlockOperation
         disposeDeferredBlocks = !offload;
 
-        // When mapStoreOffloadEnabled is true, run all procedure
-        // in this class, including EP-offload, as a series
-        // of Steps. See EntryOpSteps to check how it works.
-        if (mapStoreOffloadEnabled) {
+        // When mapStoreOffloadEnabled or
+        // tieredStoreAndPartitionCompactorEnabled is true, run
+        // all procedure in this class, including EP-offload, as a
+        // series of Steps. See EntryOpSteps to check how it works.
+        if (steppedOperationOffloadEnabled()) {
             assert recordStore != null;
             return offloadOperation();
         }
@@ -223,13 +246,17 @@ public class EntryOperation extends LockAwareOperation
         }
     }
 
+    private boolean steppedOperationOffloadEnabled() {
+        return mapStoreOffloadEnabled || tieredStoreOffloadEnabled;
+    }
+
     @Override
     public State createState() {
         return super.createState()
                 .setKey(dataKey)
                 .setCallerProvenance(CallerProvenance.NOT_WAN)
                 .setEntryProcessor(entryProcessor)
-                .setEntryProcessorOffload(offload)
+                .setEntryProcessorOffloadable(offload)
                 .setStaticPutParams(StaticParams.SET_WITH_NO_ACCESS_PARAMS);
     }
 
@@ -281,7 +308,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public Object getResponse() {
-        if (offload && !mapStoreOffloadEnabled) {
+        if (offload && !steppedOperationOffloadEnabled()) {
             return null;
         }
         return response;
@@ -289,7 +316,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public boolean returnsResponse() {
-        if (offload && !mapStoreOffloadEnabled) {
+        if (offload && !steppedOperationOffloadEnabled()) {
             // This has to be false, since the operation uses the
             // deferred-response mechanism. This method returns false, but
             // the response will be send later on using the response handler
@@ -301,7 +328,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public void onExecutionFailure(Throwable e) {
-        if (offload && !mapStoreOffloadEnabled) {
+        if (offload && !steppedOperationOffloadEnabled()) {
             // This is required since if the returnsResponse() method returns
             // false there won't be any response sent to the invoking
             // party - this means that the operation won't be retried if
@@ -317,7 +344,7 @@ public class EntryOperation extends LockAwareOperation
             value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
             justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
-        if (offload && !mapStoreOffloadEnabled) {
+        if (offload && !steppedOperationOffloadEnabled()) {
             return null;
         }
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
@@ -327,7 +354,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public boolean shouldBackup() {
-        if (offload && !mapStoreOffloadEnabled) {
+        if (offload && !steppedOperationOffloadEnabled()) {
             return false;
         }
         return mapContainer.getTotalBackupCount() > 0
@@ -361,7 +388,10 @@ public class EntryOperation extends LockAwareOperation
         out.writeObject(entryProcessor);
     }
 
-    public Object getOldValueByInMemoryFormat(Object oldValue) {
+    @Nullable
+    public Data convertOldValueToHeapData(Object oldValue) {
+        assert ThreadUtil.isRunningOnPartitionThread();
+
         InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         switch (inMemoryFormat) {
             case NATIVE:
@@ -370,7 +400,7 @@ public class EntryOperation extends LockAwareOperation
                 return getNodeEngine().getSerializationService()
                         .toData(oldValue);
             case BINARY:
-                return oldValue;
+                return (Data) oldValue;
             default:
                 throw new IllegalArgumentException("Unknown in memory format: " + inMemoryFormat);
         }
@@ -381,7 +411,7 @@ public class EntryOperation extends LockAwareOperation
 
         public EntryOperationOffload(Object oldValue) {
             super(EntryOperation.this);
-            this.oldValue = getOldValueByInMemoryFormat(oldValue);
+            this.oldValue = convertOldValueToHeapData(oldValue);
         }
 
         @Override

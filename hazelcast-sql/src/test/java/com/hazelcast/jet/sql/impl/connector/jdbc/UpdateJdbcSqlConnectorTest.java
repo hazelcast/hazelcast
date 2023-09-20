@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
 
 public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
@@ -46,10 +44,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated'");
@@ -69,10 +64,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE id=0");
@@ -92,10 +84,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE id = ?", 0);
@@ -115,10 +104,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE name='name-0'");
@@ -138,10 +124,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " person_id INT EXTERNAL NAME id, "
                         + " name VARCHAR"
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE person_id = 0");
@@ -161,10 +144,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name"
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET fullName = 'updated' WHERE id = 0");
@@ -184,10 +164,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated-'||id");
@@ -195,6 +172,30 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "updated-0"),
                 new Row(1, "updated-1")
+        );
+    }
+
+    @Test
+    public void updateTableSetUsingExpressionWithTableColumnNoPushDown() throws Exception {
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)", "data VARCHAR(100)");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', '{\"value\":0}')");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', '{\"value\":1}')");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(2, 'name-2', '{\"value\":2}')");
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " id INT, "
+                        + " name VARCHAR, "
+                        + " data VARCHAR"
+                        + ") "
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        execute("UPDATE " + tableName + " SET name = 'updated-'||id WHERE JSON_QUERY(data, '$.value') = '2'");
+
+        assertJdbcQueryRowsAnyOrder("SELECT id, name FROM " + tableName,
+                new Row(0, "name-0"),
+                new Row(1, "name-1"),
+                new Row(2, "updated-2")
         );
     }
 
@@ -207,10 +208,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = ?", "updated");
@@ -229,10 +227,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " person_id INT EXTERNAL NAME id, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated-'||person_id");
@@ -254,10 +249,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " fullName VARCHAR EXTERNAL NAME name,"
                         + " age INT "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET age = 42 WHERE fullName='name-0'");
@@ -279,10 +271,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " name VARCHAR,"
                         + " age INT "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET age = ? WHERE name = ?", 42, "name-0");
@@ -304,10 +293,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " name VARCHAR,"
                         + " age INT "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET age = ?, name = ? WHERE id = ?", 42, "updated", 0);
@@ -346,10 +332,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id2 INT, "
                         + " name VARCHAR"
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE id = 0 AND id2 = 1");
@@ -358,6 +341,31 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 new Row(0, 0, "name-0"),
                 new Row(1, 0, "name-1"),
                 new Row(0, 1, "updated")
+        );
+    }
+
+    @Test
+    public void updateTableWithMultiplePKColumnsNoPredicatePushDown() throws Exception {
+        createTable(tableName, "id INT", "id2 INT", "name VARCHAR(10)", "PRIMARY KEY(id, id2)", "data VARCHAR(100)");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 0, 'name-0', '{\"value\":0}')");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 0, 'name-1', '{\"value\":1}')");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 1, 'name-2', '{\"value\":2}')");
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " id INT, "
+                        + " id2 INT, "
+                        + " name VARCHAR, "
+                        + " data VARCHAR"
+                        + ") "
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        execute("UPDATE " + tableName + " SET name = 'updated' WHERE JSON_QUERY(data, '$.value') = '2'");
+
+        assertJdbcQueryRowsAnyOrder("SELECT name FROM " + tableName,
+                new Row("name-0"),
+                new Row("name-1"),
+                new Row("updated")
         );
     }
 
@@ -371,10 +379,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " name VARCHAR, "
                         + " id INT "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE id = 0");
@@ -390,13 +395,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         createTable(tableName);
         insertItems(tableName, 1);
 
-        execute(
-                "CREATE MAPPING " + tableName
-                        + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + " OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
-        );
+        execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE id = 0");
         assertJdbcRowsAnyOrder(tableName,
@@ -406,16 +405,10 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateMappingWithQuotedColumnInWhere() throws Exception {
-        createTable(tableName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(tableName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(tableName, 1);
 
-        execute(
-                "CREATE MAPPING " + tableName
-                        + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + " OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
-        );
+        execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE \"person-id\" = 0");
         assertJdbcRowsAnyOrder(tableName,
@@ -425,20 +418,15 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateMappingWithQuotedColumnInSet() throws Exception {
-        createTable(tableName, "id INT PRIMARY KEY", "\"full-name\" VARCHAR(100)");
+        createTable(tableName, "id INT PRIMARY KEY", quote("full-name") + " VARCHAR(100)");
         insertItems(tableName, 1);
 
-        execute(
-                "CREATE MAPPING " + tableName
-                        + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + " OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
-        );
+        execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);
 
         execute("UPDATE " + tableName + " SET \"full-name\" = 'updated' WHERE id = 0");
         assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "updated")
         );
     }
+
 }

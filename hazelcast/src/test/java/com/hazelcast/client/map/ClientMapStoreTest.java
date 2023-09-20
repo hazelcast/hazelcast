@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,10 +40,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -59,7 +57,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.startsWith;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -67,12 +65,9 @@ import static org.junit.Assert.fail;
 @Category(SlowTest.class)
 public class ClientMapStoreTest extends HazelcastTestSupport {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     private static final String MAP_NAME = "clientMapStoreLoad";
 
-    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private Config nodeConfig;
 
     @After
@@ -188,8 +183,8 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
             }
         }
 
-        assertEquals(success, maxCapacity);
-        assertEquals(map.size(), maxCapacity);
+        assertEquals(maxCapacity, success);
+        assertEquals(maxCapacity, map.size());
     }
 
     @Test
@@ -275,10 +270,10 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<String, String> map = node.getMap(MAP_NAME);
 
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage(startsWith("Neither key nor value can be loaded as null"));
         // load entries.
-        map.getAll(new HashSet<>(asList("key1", "key2", "key3")));
+        assertThatThrownBy(() -> map.getAll(new HashSet<>(asList("key1", "key2", "key3"))))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("Neither key nor value can be loaded as null");
     }
 
     @Test
@@ -439,7 +434,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         String mapNameWithStoreAndSize = "MapStoreMaxSize*";
 
         String xml = "<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n"
-                + "                             http://www.hazelcast.com/schema/config/hazelcast-config-5.2.xsd\"\n"
+                + "                             http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd\"\n"
                 + "                             xmlns=\"http://www.hazelcast.com/schema/config\"\n"
                 + "                             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
                 + "\n"

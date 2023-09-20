@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
@@ -77,18 +76,13 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
 
     @Override
     protected void runInternal() {
-        recordStore.beforeOperation();
+        verifyLock();
         try {
-            verifyLock();
-            try {
-                operator(this).init(dataKey, oldValue, newValue,
-                                null, modificationType, null, changeExpiryOnUpdate, newTtl)
-                        .doPostOperateOps();
-            } finally {
-                unlockKey();
-            }
+            operator(this).init(dataKey, oldValue, newValue,
+                            null, modificationType, null, changeExpiryOnUpdate, newTtl)
+                    .doPostOperateOps();
         } finally {
-            recordStore.afterOperation();
+            unlockKey();
         }
     }
 
@@ -108,18 +102,6 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
                     String.format("Unexpected error! EntryOffloadableSetUnlockOperation finished but the unlock method "
                             + "returned false for caller=%s and threadId=%d", caller, threadId));
         }
-    }
-
-    @Override
-    protected void innerBeforeRun() throws Exception {
-        // Do registration on the record store in the run
-        // to avoid nested registrations
-    }
-
-    @Override
-    public void afterRunFinal() {
-        // Do de-registration on the record store in the run
-        // to avoid nested registrations
     }
 
     @Override
@@ -180,11 +162,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         out.writeLong(begin);
         out.writeObject(entryBackupProcessor);
         out.writeLong(newTtl);
-
-        // RU_COMPAT 5.1
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_2)) {
-            out.writeBoolean(changeExpiryOnUpdate);
-        }
+        out.writeBoolean(changeExpiryOnUpdate);
     }
 
     @Override
@@ -199,10 +177,6 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         begin = in.readLong();
         entryBackupProcessor = in.readObject();
         newTtl = in.readLong();
-
-        // RU_COMPAT 5.1
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_2)) {
-            changeExpiryOnUpdate = in.readBoolean();
-        }
+        changeExpiryOnUpdate = in.readBoolean();
     }
 }

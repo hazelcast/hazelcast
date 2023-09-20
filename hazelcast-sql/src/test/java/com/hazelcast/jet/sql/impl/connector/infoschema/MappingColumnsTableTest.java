@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,9 @@ public class MappingColumnsTableTest {
         Mapping mapping = new Mapping(
                 "table-name",
                 "table-external-name",
+                null,
                 "table-type",
+                null,
                 singletonList(new MappingField("table-field-name", INT, "table-field-external-name")),
                 emptyMap());
         View view = new View("view-name", "select * from table-name", singletonList("col1"), singletonList(INT));

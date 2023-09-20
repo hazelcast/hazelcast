@@ -1,5 +1,5 @@
 <#--
-// Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,9 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     SqlIdentifier name;
     SqlIdentifier externalName = null;
     SqlNodeList columns = SqlNodeList.EMPTY;
-    SqlIdentifier type;
+    SqlIdentifier dataConnection = null;
+    SqlIdentifier connectorType = null;
+    SqlIdentifier objectType = null;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
     boolean ifNotExists = false;
 }
@@ -35,11 +37,23 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     ]
     name = CompoundIdentifier()
     [
-        <EXTERNAL> <NAME> { externalName = SimpleIdentifier(); }
+        <EXTERNAL> <NAME> { externalName = CompoundIdentifier(); }
     ]
     columns = MappingColumns()
-    <TYPE>
-    type = SimpleIdentifier()
+
+    (
+        <DATA> <CONNECTION>
+        dataConnection = CompoundIdentifier()
+        |
+        [ <CONNECTOR> ] <TYPE>
+        connectorType = SimpleIdentifier()
+    )
+
+    [
+        <OBJECT> <TYPE>
+        objectType = SimpleIdentifier()
+    ]
+
     [
         <OPTIONS>
         sqlOptions = SqlOptions()
@@ -49,11 +63,61 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
             name,
             externalName,
             columns,
-            type,
+            dataConnection,
+            connectorType,
+            objectType,
             sqlOptions,
             replace,
             ifNotExists,
             startPos.plus(getPos())
+        );
+    }
+}
+
+/**
+ * Parses CREATE DATA CONNECTION statement.
+ */
+SqlCreate SqlCreateDataConnection(Span span, boolean replace) :
+{
+    SqlParserPos startPos = span.pos();
+    boolean ifNotExists = false;
+    boolean shared = true;
+    SqlIdentifier name;
+    SqlIdentifier type;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
+}
+{
+    <DATA> <CONNECTION>
+    [
+        <IF> <NOT> <EXISTS> { ifNotExists = true; }
+    ]
+    name = CompoundIdentifier()
+
+    <TYPE>
+    type = SimpleIdentifier()
+
+    [
+        (
+            <NOT> <SHARED>  { shared = false; }
+            |
+            <SHARED>  { shared = true; }
+        )
+    ]
+
+    [
+        <OPTIONS>
+        sqlOptions = SqlOptions()
+    ]
+
+    {
+        return new SqlCreateDataConnection(
+            startPos.plus(getPos()),
+            replace,
+            ifNotExists,
+            name,
+            type,
+            shared,
+            sqlOptions
         );
     }
 }
@@ -71,8 +135,9 @@ SqlCreate SqlCreateType(Span span, boolean replace) :
     [
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
-    name = SimpleIdentifier()
+    name = CompoundIdentifier()
     columns = TypeColumns()
+
     <OPTIONS>
     sqlOptions = SqlOptions()
     {
@@ -322,6 +387,27 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
 }
 
 /**
+ * Parses DROP DATA CONNECTION statement.
+ */
+SqlDrop SqlDropDataConnection(Span span, boolean replace) :
+{
+    SqlParserPos pos = span.pos();
+
+    SqlIdentifier name;
+    boolean ifExists = false;
+}
+{
+    <DATA> <CONNECTION>
+    [
+        <IF> <EXISTS> { ifExists = true; }
+    ]
+    name = CompoundIdentifier()
+    {
+        return new SqlDropDataConnection(name, ifExists, pos.plus(getPos()));
+    }
+}
+
+/**
  * Parses DROP TYPE statement.
  */
 SqlDrop SqlDropType(Span span, boolean replace) :
@@ -336,7 +422,7 @@ SqlDrop SqlDropType(Span span, boolean replace) :
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
-    name = SimpleIdentifier()
+    name = CompoundIdentifier()
     {
         return new SqlDropType(name, ifExists, pos.plus(getPos()));
     }
@@ -486,12 +572,21 @@ SqlAlterJob SqlAlterJob() :
     SqlParserPos pos = getPos();
 
     SqlIdentifier name;
-    SqlAlterJob.AlterJobOperation operation;
+    SqlNodeList sqlOptions = null;
+    SqlAlterJob.AlterJobOperation operation = null;
 }
 {
     <ALTER> <JOB>
     name = SimpleIdentifier()
     (
+        <OPTIONS>
+        sqlOptions = SqlOptions()
+        [
+            <RESUME> {
+                operation = SqlAlterJob.AlterJobOperation.RESUME;
+            }
+        ]
+    |
         <SUSPEND> {
             operation = SqlAlterJob.AlterJobOperation.SUSPEND;
         }
@@ -505,7 +600,7 @@ SqlAlterJob SqlAlterJob() :
         }
     )
     {
-        return new SqlAlterJob(name, operation, pos.plus(getPos()));
+        return new SqlAlterJob(name, sqlOptions, operation, pos.plus(getPos()));
     }
 }
 
@@ -626,7 +721,7 @@ SqlDrop SqlDropView(Span span, boolean replace) :
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
-    name = SimpleIdentifier()
+    name = CompoundIdentifier()
     {
         return new SqlDropView(name, ifExists, pos.plus(getPos()));
     }
@@ -682,6 +777,7 @@ SqlOption SqlOption() :
 SqlShowStatement SqlShowStatement() :
 {
     ShowStatementTarget target;
+    SqlIdentifier dataConnectionName = null;
 }
 {
     <SHOW>
@@ -693,9 +789,13 @@ SqlShowStatement SqlShowStatement() :
         <JOBS> { target = ShowStatementTarget.JOBS; }
     |
         <TYPES> { target = ShowStatementTarget.TYPES; }
+    |
+        <DATA> <CONNECTIONS> { target = ShowStatementTarget.DATACONNECTIONS; }
+    |
+        <RESOURCES> <FOR> { dataConnectionName = CompoundIdentifier(); target = ShowStatementTarget.RESOURCES; }
     )
     {
-        return new SqlShowStatement(getPos(), target);
+        return new SqlShowStatement(getPos(), target, dataConnectionName);
     }
 }
 

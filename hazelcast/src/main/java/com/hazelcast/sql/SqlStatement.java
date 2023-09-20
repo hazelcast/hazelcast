@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -44,10 +45,14 @@ public final class SqlStatement {
      */
     public static final long TIMEOUT_DISABLED = 0;
 
-    /** Default timeout. */
+    /**
+     * Default timeout.
+     */
     public static final long DEFAULT_TIMEOUT = TIMEOUT_NOT_SET;
 
-    /** Default cursor buffer size. */
+    /**
+     * Default cursor buffer size.
+     */
     public static final int DEFAULT_CURSOR_BUFFER_SIZE = 4096;
 
     private String sql;
@@ -56,6 +61,7 @@ public final class SqlStatement {
     private int cursorBufferSize = DEFAULT_CURSOR_BUFFER_SIZE;
     private String schema;
     private SqlExpectedResultType expectedResultType = SqlExpectedResultType.ANY;
+    private int partitionArgumentIndex = -1;
 
     public SqlStatement(@Nonnull String sql) {
         setSql(sql);
@@ -65,12 +71,13 @@ public final class SqlStatement {
      * Copying constructor.
      */
     private SqlStatement(
-        String sql,
-        List<Object> arguments,
-        long timeout,
-        int cursorBufferSize,
-        String schema,
-        SqlExpectedResultType expectedResultType
+            String sql,
+            List<Object> arguments,
+            long timeout,
+            int cursorBufferSize,
+            String schema,
+            SqlExpectedResultType expectedResultType,
+            int partitionArgumentIndex
     ) {
         this.sql = sql;
         this.arguments = arguments;
@@ -78,6 +85,7 @@ public final class SqlStatement {
         this.cursorBufferSize = cursorBufferSize;
         this.schema = schema;
         this.expectedResultType = expectedResultType;
+        this.partitionArgumentIndex = partitionArgumentIndex;
     }
 
     /**
@@ -97,7 +105,7 @@ public final class SqlStatement {
      *
      * @param sql SQL string
      * @return this instance for chaining
-     * @throws NullPointerException if passed SQL string is null
+     * @throws NullPointerException     if passed SQL string is null
      * @throws IllegalArgumentException if passed SQL string is empty
      */
     @Nonnull
@@ -164,7 +172,6 @@ public final class SqlStatement {
      *
      * @param parameters statement parameters
      * @return this instance for chaining
-     *
      * @see #addParameter(Object)
      * @see #clearParameters()
      */
@@ -184,7 +191,6 @@ public final class SqlStatement {
      *
      * @param value parameter value
      * @return this instance for chaining
-     *
      * @see #setParameters(List)
      * @see #clearParameters()
      */
@@ -199,7 +205,6 @@ public final class SqlStatement {
      * Clears statement parameter values.
      *
      * @return this instance for chaining
-     *
      * @see #setParameters(List)
      * @see #addParameter(Object)
      */
@@ -231,7 +236,6 @@ public final class SqlStatement {
      *
      * @param timeout execution timeout in milliseconds, {@code 0} for no timeout, {@code -1} to user member's default timeout
      * @return this instance for chaining
-     *
      * @see SqlConfig#getStatementTimeoutMillis()
      */
     @Nonnull
@@ -271,7 +275,6 @@ public final class SqlStatement {
      *
      * @param cursorBufferSize cursor buffer size (measured in the number of rows)
      * @return this instance for chaining
-     *
      * @see SqlService#execute(SqlStatement)
      * @see SqlResult
      */
@@ -314,13 +317,50 @@ public final class SqlStatement {
     }
 
     /**
+     * Get the partition argument index value
+     *
+     * @return partitionArgumentIndex, -1 if not set.
+     */
+    @PrivateApi
+    public int getPartitionArgumentIndex() {
+        return partitionArgumentIndex;
+    }
+
+    /**
+     * Set the partition argument index. If there's no such argument, use -1.
+     * <p>
+     * Setting a wrong argument index will not cause incorrect query results,
+     * but might cause performance degradation due to more network
+     * communication. Setting a value higher than the actual number of arguments
+     * will have no effect.
+     *
+     * @param partitionArgumentIndex index of the partition-determining argument
+     *     of the statement
+     */
+    @PrivateApi
+    public void setPartitionArgumentIndex(final int partitionArgumentIndex) {
+        if (partitionArgumentIndex < -1) {
+            throw new IllegalArgumentException("The argument index must be >=0, or -1");
+        }
+        this.partitionArgumentIndex = partitionArgumentIndex;
+    }
+
+    /**
      * Creates a copy of this instance
      *
      * @return Copy of this instance
      */
     @Nonnull
     public SqlStatement copy() {
-        return new SqlStatement(sql, new ArrayList<>(arguments), timeout, cursorBufferSize, schema, expectedResultType);
+        return new SqlStatement(
+                sql,
+                new ArrayList<>(arguments),
+                timeout,
+                cursorBufferSize,
+                schema,
+                expectedResultType,
+                partitionArgumentIndex
+        );
     }
 
     @Override
@@ -340,7 +380,8 @@ public final class SqlStatement {
             && timeout == sqlStatement.timeout
             && cursorBufferSize == sqlStatement.cursorBufferSize
             && Objects.equals(schema, sqlStatement.schema)
-            && expectedResultType == sqlStatement.expectedResultType;
+            && expectedResultType == sqlStatement.expectedResultType
+            && partitionArgumentIndex == sqlStatement.partitionArgumentIndex;
     }
 
     @Override
@@ -352,6 +393,7 @@ public final class SqlStatement {
         result = 31 * result + cursorBufferSize;
         result = 31 * result + (schema != null ? schema.hashCode() : 0);
         result = 31 * result + expectedResultType.ordinal();
+        result = 31 * result + partitionArgumentIndex;
 
         return result;
     }
@@ -365,6 +407,7 @@ public final class SqlStatement {
             + ", timeout=" + timeout
             + ", cursorBufferSize=" + cursorBufferSize
             + ", expectedResultType=" + expectedResultType
+            + ", partitionArgumentIndex=" + partitionArgumentIndex
             + '}';
     }
 }

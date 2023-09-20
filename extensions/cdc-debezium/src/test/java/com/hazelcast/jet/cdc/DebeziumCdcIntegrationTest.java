@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,17 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import io.debezium.connector.mongodb.MongoDbConnector;
 import io.debezium.connector.mysql.MySqlConnector;
+import io.debezium.connector.postgresql.PostgresConnector;
+import org.bson.Document;
 import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -56,9 +62,12 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 @RunWith(HazelcastSerialClassRunner.class)
 public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
     private static final DockerImageName MYSQL_IMAGE =
-            DockerImageName.parse("debezium/example-mysql:1.9.3.Final").asCompatibleSubstituteFor("mysql");
+            DockerImageName.parse("debezium/example-mysql:2.3.0.Final").asCompatibleSubstituteFor("mysql");
     private static final DockerImageName POSTGRES_IMAGE =
-            DockerImageName.parse("debezium/example-postgres:1.7").asCompatibleSubstituteFor("postgres");
+            DockerImageName.parse("debezium/example-postgres:2.3.0.Final").asCompatibleSubstituteFor("postgres");
+    private static final DockerImageName MONGODB_IMAGE =
+            DockerImageName.parse("mongo:6.0.3").asCompatibleSubstituteFor("mongodb");
+
     @Test
     public void mysql() throws Exception {
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
@@ -104,8 +113,9 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
             //when
             try (Connection connection = getMySqlConnection(container.withDatabaseName("inventory").getJdbcUrl(),
-                    container.getUsername(), container.getPassword())) {
-                Statement statement = connection.createStatement();
+                    container.getUsername(), container.getPassword());
+                 Statement statement = connection.createStatement()
+            ) {
                 statement.addBatch("UPDATE customers SET first_name='Anne Marie' WHERE id=1004");
                 statement.addBatch("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
                 statement.addBatch("DELETE FROM customers WHERE id=1005");
@@ -128,7 +138,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
         return DebeziumCdcSources.debezium("mysql",
                         MySqlConnector.class)
                         .setProperty("include.schema.changes", "true")
-                        .setProperty("database.hostname", container.getContainerIpAddress())
+                        .setProperty("database.hostname", container.getHost())
                         .setProperty("database.port", Integer.toString(container.getMappedPort(MYSQL_PORT)))
                         .setProperty("database.user", "debezium")
                         .setProperty("database.password", "dbz")
@@ -191,7 +201,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             StreamSource<Entry<String, String>> source = DebeziumCdcSources.debeziumJson("mysql",
                     MySqlConnector.class)
                     .setProperty("include.schema.changes", "false")
-                    .setProperty("database.hostname", container.getContainerIpAddress())
+                    .setProperty("database.hostname", container.getHost())
                     .setProperty("database.port", Integer.toString(container.getMappedPort(MYSQL_PORT)))
                     .setProperty("database.user", "debezium")
                     .setProperty("database.password", "dbz")
@@ -248,7 +258,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             StreamSource<ChangeRecord> source = DebeziumCdcSources.debezium("postgres",
                     "io.debezium.connector.postgresql.PostgresConnector")
                     .setProperty("database.server.name", "dbserver1")
-                    .setProperty("database.hostname", container.getContainerIpAddress())
+                    .setProperty("database.hostname", container.getHost())
                     .setProperty("database.port", Integer.toString(container.getMappedPort(POSTGRESQL_PORT)))
                     .setProperty("database.user", "postgres")
                     .setProperty("database.password", "postgres")
@@ -282,11 +292,12 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             try (Connection connection = getPostgreSqlConnection(container.getJdbcUrl(), container.getUsername(),
                     container.getPassword())) {
                 connection.setSchema("inventory");
-                Statement statement = connection.createStatement();
-                statement.addBatch("UPDATE customers SET first_name='Anne Marie' WHERE id=1004");
-                statement.addBatch("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
-                statement.addBatch("DELETE FROM customers WHERE id=1005");
-                statement.executeBatch();
+                try (Statement statement = connection.createStatement()) {
+                    statement.addBatch("UPDATE customers SET first_name='Anne Marie' WHERE id=1004");
+                    statement.addBatch("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
+                    statement.addBatch("DELETE FROM customers WHERE id=1005");
+                    statement.executeBatch();
+                }
             }
 
             //then
@@ -344,7 +355,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             StreamSource<Entry<String, String>> source = DebeziumCdcSources.debeziumJson("postgres",
                     "io.debezium.connector.postgresql.PostgresConnector")
                     .setProperty("database.server.name", "dbserver1")
-                    .setProperty("database.hostname", container.getContainerIpAddress())
+                    .setProperty("database.hostname", container.getHost())
                     .setProperty("database.port", Integer.toString(container.getMappedPort(POSTGRESQL_PORT)))
                     .setProperty("database.user", "postgres")
                     .setProperty("database.password", "postgres")
@@ -429,6 +440,42 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             assertTrueEventually(() -> assertThat(hz.getList("notFailWhenOldValueNotPresent")).isNotEmpty());
         }
     }
+    @Test
+    public void noFailWhenNoPrimaryKey() throws Exception {
+        try (PostgreSQLContainer<?> container = postgresContainer()) {
+            container.start();
+            //when
+            try (Connection connection = getPostgreSqlConnection(container.getJdbcUrl(), container.getUsername(),
+                    container.getPassword())) {
+                connection.setSchema("inventory");
+                Statement statement = connection.createStatement();
+                statement.addBatch("CREATE TABLE NO_PK (SOME_INT INT);");
+                statement.addBatch("INSERT INTO NO_PK VALUES (1)");
+                statement.executeBatch();
+            }
+
+            Pipeline pipeline = Pipeline.create();
+
+            StreamSource<ChangeRecord> source = DebeziumCdcSources
+                    .debezium("postgres", PostgresConnector.class)
+                    .setProperty("database.server.name", "dbserver1")
+                    .setProperty("database.hostname", container.getHost())
+                    .setProperty("database.port", Integer.toString(container.getMappedPort(POSTGRESQL_PORT)))
+                    .setProperty("database.user", "postgres")
+                    .setProperty("database.password", "postgres")
+                    .setProperty("database.dbname", "postgres")
+                    .setProperty("table.whitelist", "inventory.no_pk")
+                    .build();
+            pipeline.readFrom(source)
+                    .withNativeTimestamps(1)
+                    .writeTo(Sinks.list("no_pk"));
+
+            HazelcastInstance hz = createHazelcastInstances(1)[0];
+            hz.getJet().newJob(pipeline);
+
+            assertTrueEventually(() -> assertThat(hz.getList("no_pk")).isNotEmpty());
+        }
+    }
 
     @Test
     public void nullIsNotValidOperationId() {
@@ -455,6 +502,52 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                 assertThat(changeRecordList).as("nullIsNotValidOperationId").isNotEmpty();
                 logger.info(changeRecordList.get(0).toString()); // <-- 'null' is not a valid operation id
             });
+        }
+    }
+
+    /**
+     * {@code before} field in MongoDB CDC is not present at all
+     */
+    @Test
+    public void noFailWhenBeforeIsNotPresent() {
+        try (MongoDBContainer container =  new MongoDBContainer(MONGODB_IMAGE).withExposedPorts(27017)
+                                                                              .withNetworkAliases("mongo")) {
+            container.start();
+            String connectionString = container.getConnectionString();
+
+            try (MongoClient mc = MongoClients.create(connectionString)) {
+
+                HazelcastInstance hz = createHazelcastInstance();
+                IList<ChangeRecord> changeRecordList = hz.getList("noFailWhenBeforeIsNotPresent");
+                mc.getDatabase("test").getCollection("test").insertOne(new Document("test", "test"));
+
+                StreamSource<ChangeRecord> source = DebeziumCdcSources
+                        .debezium("mongo", MongoDbConnector.class)
+                        .setProperty("mongodb.hosts", container.getHost() + ":" + container.getMappedPort(27017))
+                        .setProperty("mongodb.members.auto.discover", "false")
+                        .setProperty("mongodb.name", "test")
+                        .setProperty("topic.prefix", "customer")
+                        .setProperty("snapshot.mode", "initial")
+                        .setProperty("connect.keep.alive", "true")
+                        .setProperty("connect.keep.alive.interval.ms", "1000")
+                        .setProperty("capture.mode", "change_streams_update_full")
+                        .build();
+
+                Pipeline p = Pipeline.create();
+                p
+                        .readFrom(source)
+                        .withIngestionTimestamps()
+                        .setLocalParallelism(1)
+                        .writeTo(Sinks.list(changeRecordList));
+
+                Job job = hz.getJet().newJob(p);
+
+                assertJobStatusEventually(job, JobStatus.RUNNING);
+                mc.getDatabase("test").getCollection("test").insertOne(new Document("test", "test"));
+
+                assertTrueEventually(() ->
+                        assertThat(changeRecordList).as("Should receive record without exception").isNotEmpty());
+            }
         }
     }
 

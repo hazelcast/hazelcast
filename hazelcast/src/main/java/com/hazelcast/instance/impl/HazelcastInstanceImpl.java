@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ import com.hazelcast.transaction.impl.xa.XAService;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -135,6 +136,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
                 ((HazelcastInstanceAware) classLoader).setHazelcastInstance(this);
             }
         } catch (Throwable e) {
+            //noinspection CatchMayIgnoreException
             try {
                 // terminate the node by terminating the NodeEngine, ConnectionManager, services, operation threads etc.
                 node.shutdown(true);
@@ -159,6 +161,15 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     public ManagementService getManagementService() {
         return managementService;
+    }
+
+    /**
+     * Indicates that instance is not shutting down or it has not already shut down
+     *
+     * @return true if instance is not shutting down or it has not already shut down
+     */
+    public boolean isRunning() {
+        return node.isRunning();
     }
 
     @Nonnull
@@ -432,7 +443,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
             return false;
         }
         HazelcastInstance that = (HazelcastInstance) o;
-        return !(name != null ? !name.equals(that.getName()) : that.getName() != null);
+        return Objects.equals(this.name, that.getName());
     }
 
     @Override

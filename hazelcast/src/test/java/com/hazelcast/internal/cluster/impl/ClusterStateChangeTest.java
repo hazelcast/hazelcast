@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,8 @@ public class ClusterStateChangeTest {
         assertEquals(clusterStateChange, clusterStateChange);
         assertEquals(clusterStateChange, clusterStateChangeSameAttributes);
 
-        assertNotEquals(clusterStateChange, null);
-        assertNotEquals(clusterStateChange, new Object());
+        assertNotEquals(null, clusterStateChange);
+        assertNotEquals(new Object(), clusterStateChange);
 
         assertNotEquals(clusterStateChange, clusterStateChangeOtherType);
         assertNotEquals(clusterStateChange, clusterStateChangeOtherNewState);

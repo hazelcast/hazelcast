@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -197,10 +196,6 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     }
 
     private void filterAlreadyAppliedPromotions() {
-        if (getNodeEngine().getClusterService().getClusterVersion().isUnknownOrLessOrEqual(Versions.V4_0)) {
-            return;
-        }
-
         ILogger logger = getLogger();
         InternalPartitionServiceImpl partitionService = getService();
         PartitionStateManager stateManager = partitionService.getPartitionStateManager();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
         RuntimeException result = (RuntimeException) ExceptionUtil.peel(new ExecutionException(expectedException),
                 null, null, (throwable, message) -> new IllegalStateException(message, throwable));
 
-        assertEquals(result.getClass(), IllegalStateException.class);
+        assertEquals(IllegalStateException.class, result.getClass());
         assertEquals(result.getCause(), expectedException);
     }
 
@@ -93,7 +93,7 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
         IOException expectedException = new IOException();
         ExecutionException result = ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace(new ExecutionException(expectedException));
 
-        assertEquals(result.getClass(), ExecutionException.class);
+        assertEquals(ExecutionException.class, result.getClass());
         assertEquals(result.getCause(), expectedException);
     }
 

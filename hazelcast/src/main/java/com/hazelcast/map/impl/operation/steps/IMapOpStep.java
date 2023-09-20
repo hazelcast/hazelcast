@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,12 @@ public interface IMapOpStep extends Step<State> {
      * </ul>
      */
     default boolean isOffloadStep(State state) {
+        if (state.getRecordStore()
+                .getMapDataStore().isNullImpl()) {
+            // indicates no map-store is configured
+            return false;
+        }
+
         if (isLoadStep()) {
             return true;
         }
@@ -69,7 +75,7 @@ public interface IMapOpStep extends Step<State> {
 
     /**
      * @return {@code true} when this step is loading
-     * data via MapLoader, otherwise {@code false}
+     * data via MapLoader, so it can be offloaded otherwise {@code false}
      */
     default boolean isLoadStep() {
         return false;

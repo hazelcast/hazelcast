@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -56,12 +55,8 @@ import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.valueOf;
 import static java.util.Arrays.asList;
-import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThan;
-import static org.hamcrest.core.AllOf.allOf;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -91,15 +86,16 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Parameter
+    @SuppressWarnings("rawtypes")
     public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
 
     // the ConcurrentMap just for the convenience of the putIfAbsent(), no real concurrency needs here
     private final ConcurrentMap<String, IScheduledFuture<Double>> expectedScheduledFutures
-            = new ConcurrentHashMap<String, IScheduledFuture<Double>>();
+            = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, IScheduledFuture<Double>> unexpectedScheduledFutures
-            = new ConcurrentHashMap<String, IScheduledFuture<Double>>();
+            = new ConcurrentHashMap<>();
 
-    private String scheduledExecutorName = randomMapName("scheduledExecutor-");
+    private final String scheduledExecutorName = randomMapName("scheduledExecutor-");
     private IScheduledExecutorService scheduledExecutorService1;
     private IScheduledExecutorService scheduledExecutorService2;
     private MergeLifecycleListener mergeLifecycleListener;
@@ -255,8 +251,9 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
                 String taskName = future.getHandler().getTaskName();
                 double value = future.get();
 
-                assertThat(parseInt(future.getHandler().getTaskName()),
-                        allOf(greaterThanOrEqualTo(0), lessThan(expectedScheduledFutures.size())));
+                assertThat(parseInt(future.getHandler().getTaskName()))
+                        .isGreaterThanOrEqualTo(0)
+                                .isLessThan(expectedScheduledFutures.size());
                 assertEquals(EXPECTED_RESULT, value, 0);
                 assertFalse(seenSoFar.contains(taskName));
                 seenSoFar.add(taskName);
@@ -265,14 +262,11 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void assertHandlersAreStillCorrect() throws Exception {
-        List<IScheduledFuture<Double>> allFutures = new ArrayList<IScheduledFuture<Double>>(expectedScheduledFutures.values());
-        sort(allFutures, new Comparator<IScheduledFuture<Double>>() {
-            @Override
-            public int compare(IScheduledFuture<Double> o1, IScheduledFuture<Double> o2) {
-                int a = parseInt(o1.getHandler().getTaskName());
-                int b = parseInt(o2.getHandler().getTaskName());
-                return new Integer(a).compareTo(b);
-            }
+        List<IScheduledFuture<Double>> allFutures = new ArrayList<>(expectedScheduledFutures.values());
+        allFutures.sort((o1, o2) -> {
+            int a = parseInt(o1.getHandler().getTaskName());
+            int b = parseInt(o2.getHandler().getTaskName());
+            return Integer.compare(a, b);
         });
 
         int counter = 0;

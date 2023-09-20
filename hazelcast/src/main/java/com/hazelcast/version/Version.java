@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,15 +26,16 @@ import com.hazelcast.internal.util.StringUtil;
 import java.io.IOException;
 
 /**
- * A generic version to be used with {@link VersionAware} classes. The version is composed of two bytes,
- * denoting MAJOR.MINOR version. It is used to represent the Hazelcast cluster version and the serialization
- * version of {@link VersionAware} classes.
+ * A generic version to be used with {@link VersionAware} classes. The version is composed of two bytes, denoting
+ * {@code MAJOR.MINOR} version. It is used to represent the Hazelcast cluster version and the serialization version of
+ * {@link VersionAware} classes.
  *
  * @since 3.8
  */
 @SuppressWarnings("checkstyle:magicnumber")
 public final class Version implements IdentifiedDataSerializable, Comparable<Version> {
 
+    // Accessible for testing
     /**
      * Use 0 as major &amp; minor values for UNKNOWN version
      */
@@ -43,11 +44,12 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
     /**
      * Version 0.0 is UNKNOWN constant
      * <ul>
-     * <li>UNKNOWN is only equal to itself.</li>
-     * <li>{@code is(Less|Greater)Than} method with an UNKNOWN operand returns false.</li>
-     * <li>{@code is(Less|Greater)OrEqual} with an UNKNOWN operand returns false, unless both operands are UNKNOWN.</li>
+     * <li>{@code UNKNOWN} is only equal to itself.</li>
+     * <li>{@code is(Less|Greater)Than} method with an {@code UNKNOWN} operand returns false.</li>
+     * <li>{@code is(Less|Greater)OrEqual} with an {@code UNKNOWN} operand returns false, unless both operands are
+     * {@code UNKNOWN}.</li>
      * <li>{@code UNKNOWN.isUnknown(Less|Greater)(Than|OrEqual)} returns true.</li>
-     * <li>{@code otherVersion.isUnknown(Less|Greater)(Than|OrEqual)} with an UNKNOWN argument returns false.</li>
+     * <li>{@code otherVersion.isUnknown(Less|Greater)(Than|OrEqual)} with an {@code UNKNOWN} argument returns false.</li>
      * </ul>
      */
     public static final Version UNKNOWN = new Version(UNKNOWN_VERSION, UNKNOWN_VERSION);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,13 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CancellationException;
@@ -36,6 +33,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -45,7 +44,7 @@ import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -56,10 +55,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     private static final String EXCEPTION_MESSAGE = "You screwed buddy!";
     private static final Exception EXCEPTION = new RuntimeException(EXCEPTION_MESSAGE);
 
-    private Executor executor = CALLER_RUNS;
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
+    private final Executor executor = CALLER_RUNS;
 
     @Test
     public void future_notExecuted_notDoneNotCancelled() {
@@ -176,9 +172,8 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
         TestFutureImpl future = new TestFutureImpl();
         future.completeExceptionally(EXCEPTION);
 
-        expected.expect(ExecutionException.class);
-        expected.expectCause(new RootCauseMatcher(EXCEPTION.getClass(), EXCEPTION_MESSAGE));
-        future.get();
+        assertThatThrownBy(future::get).isInstanceOf(ExecutionException.class)
+                .cause().has(rootCause(EXCEPTION.getClass(), EXCEPTION_MESSAGE));
     }
 
     @Test
@@ -186,9 +181,9 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
         TestFutureImpl future = new TestFutureImpl();
         future.completeExceptionally(EXCEPTION);
 
-        expected.expect(ExecutionException.class);
-        expected.expectCause(new RootCauseMatcher(EXCEPTION.getClass(), EXCEPTION_MESSAGE));
-        future.get(1, TimeUnit.NANOSECONDS);
+        assertThatThrownBy(() -> future.get(1, TimeUnit.NANOSECONDS))
+                .isInstanceOf(ExecutionException.class)
+                .cause().has(rootCause(EXCEPTION.getClass(), EXCEPTION_MESSAGE));
     }
 
     @Test
@@ -245,8 +240,8 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
         Thread.currentThread().interrupt();
 
-        expected.expect(InterruptedException.class);
-        future.get(100, TimeUnit.MILLISECONDS);
+        assertThatThrownBy(() -> future.get(100, TimeUnit.MILLISECONDS))
+                .isInstanceOf(InterruptedException.class);
     }
 
     @Test(timeout = 60000)
@@ -265,8 +260,8 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
         submitCancelAfterTimeInMillis(future, 200);
 
-        expected.expect(CancellationException.class);
-        future.get(30000, TimeUnit.MILLISECONDS);
+        assertThatThrownBy(() -> future.get(30000, TimeUnit.MILLISECONDS))
+                .isInstanceOf(CancellationException.class);
     }
 
     @Test
@@ -373,7 +368,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
         future.whenCompleteAsync(callback, executor);
 
-        verifyZeroInteractions(callback);
+        verifyNoInteractions(callback);
     }
 
     @Test
@@ -396,8 +391,8 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
         future.whenCompleteAsync(callback1, executor);
         future.whenCompleteAsync(callback2, executor);
 
-        verifyZeroInteractions(callback1);
-        verifyZeroInteractions(callback2);
+        verifyNoInteractions(callback1);
+        verifyNoInteractions(callback2);
     }
 
     @Test

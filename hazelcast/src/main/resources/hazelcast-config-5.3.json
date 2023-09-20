@@ -148,8 +148,11 @@
         "integrity-checker": {
           "$ref": "#/definitions/IntegrityChecker"
         },
-        "external-data-store": {
-          "$ref": "#/definitions/ExternalDataStoreConfig"
+        "data-connection": {
+          "$ref": "#/definitions/DataConnectionConfig"
+        },
+        "tpc": {
+          "$ref": "#/definitions/TpcConfig"
         }
       }
     },
@@ -233,6 +236,9 @@
         },
         "sql": {
           "$ref": "#/definitions/ClientSql"
+        },
+        "tpc": {
+          "$ref": "#/definitions/ClientTpc"
         }
       }
     },
@@ -762,6 +768,9 @@
         },
         "socket-interceptor": {
           "$ref": "#/definitions/SocketInterceptor"
+        },
+        "tpc-socket": {
+          "$ref": "#/definitions/TpcSocketConfig"
         }
       }
     },
@@ -832,7 +841,8 @@
                   "ssl",
                   "socket-interceptor",
                   "symmetric-encryption",
-                  "socket-options"
+                  "socket-options",
+                  "tpc-socket"
                 ]
               }
             }
@@ -1570,6 +1580,14 @@
           },
           "partition-strategy": {
             "type": "string"
+          },
+          "partition-attributes": {
+            "type": "array",
+            "description": "List of key attributes to use for partitioning the data in the maps. Providing this list automatically sets the strategy to `com.hazelcast.partition.strategy.AttributePartitioningStrategy` regardless of the class name provided in the `partition-strategy` property.",
+            "items": {
+              "$ref": "#/definitions/PartitionAttribute"
+            },
+            "minItems": 1
           }
         }
       }
@@ -2988,7 +3006,14 @@
         "write",
         "instance",
         "member",
-        "migration"
+        "migration",
+        "create-view",
+        "drop-view",
+        "create-type",
+        "drop-type",
+        "view-dataconnection",
+        "create-dataconnection",
+        "drop-dataconnection"
       ]
     },
     "Capacity": {
@@ -3980,6 +4005,9 @@
         },
         "socket-options": {
           "$ref": "#/definitions/SocketOptions"
+        },
+        "tpc-socket": {
+          "$ref": "#/definitions/TpcSocketConfig"
         }
       }
     },
@@ -4023,6 +4051,21 @@
           "type": "integer",
           "default": 0,
           "description": "Specifies the TCP linger seconds."
+        },
+        "keep-idle-seconds": {
+          "type": "integer",
+          "default": 7200,
+          "description": "Specifies the TCP Keep-Alive idle time: the number of seconds of idle time before keep-alive initiates a probe. Valid values are 1 to 32767."
+        },
+        "keep-interval-seconds": {
+          "type": "integer",
+          "default": 75,
+          "description": "Specifies the TCP keep-alive interval: the number of seconds between keep-alive probes. Valid values are 1 to 32767."
+        },
+        "keep-count": {
+          "type": "integer",
+          "default": 8,
+          "description": "Specifies the TCP Keep-Alive count: the maximum number of TCP keep-alive probes to send before giving up and closing the connection if no response is obtained from the other side. Valid values are 1 to 127."
         }
       }
     },
@@ -4243,6 +4286,11 @@
           "type": "integer",
           "default": 0,
           "description": "Defines the timeout in milliseconds that is applied to queries without an explicit timeout."
+        },
+        "catalog-persistence-enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Sets whether SQL Catalog persistence is enabled for the node. With SQL Catalog persistence enabled you can restart the whole cluster without losing schema definition objects (such as MAPPINGs, TYPEs, VIEWs and DATA CONNECTIONs). The feature is implemented on top of the Hot Restart feature of Hazelcast which persists the data to disk. If enabled, you have to also configure Hot Restart. Feature is disabled by default. If you enable this option in open-source, the member will fail to start, you need Enterprise to run it and obtain a license from Hazelcast."
         }
       }
     },
@@ -4293,6 +4341,18 @@
           "description": "The configuration when to retry query that fails with reasons CONNECTION_PROBLEM, PARTITION_DISTRIBUTION, TOPOLOGY_CHANGE."
         }
       }
+    },
+    "ClientTpc": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enables or disables the TPC-aware mode."
+        }
+      },
+      "required": ["enabled"],
+      "description": "Configures the client for TPC, which is the next generation Hazelcast that uses thread-per-core model. TPC-aware clients will maintain connections to all cores of all cluster members. The client will route partition-specific invocations to the correct core of the correct member in the best effort basis. This configuration is introduced as BETA, and it might be subject to changes, or it can be removed in future releases without a prior notice."
     },
     "OutboundPortDefinition": {
       "anyOf": [
@@ -4965,7 +5025,7 @@
       ],
       "description": "Enables/disables Integrity Checker. Integrity Checker can be disabled to improve startup time."
     },
-    "ExternalDataStoreConfig": {
+    "DataConnectionConfig": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
@@ -4973,22 +5033,69 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Name of the external data store configuration."
+            "description": "Name of the data connection configuration."
           },
-          "class-name": {
+          "type": {
             "type": "string",
-            "description": "The name of the class implementing ExternalDataStoreFactory."
+            "description": "The type of the DataConnection."
           },
           "shared": {
             "type": "boolean",
-            "description": "If true reuse an instance of JDBC pool or any other storage driver (e.g. kafka client) between jobs or instances of MapStore."
+            "description": "true if an instance of the data connection will be shared. Depending on the implementation of the data connection, the shared instance may be single a thread-safe instance, or not thread-safe, but a pooled instance; false when on each usage a new instance of the underlying resource should be created.The default is true."
           },
           "properties": {
-            "description": "The \"properties\" used for configuring external data store",
+            "description": "The \"properties\" used for configuring data connection",
             "type": "object"
           }
         }
       }
+    },
+    "TpcConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enabled Hazelcast TPC. Disabled by default."
+        },
+        "eventloop-count": {
+          "type": "integer",
+          "description": "Configures the number of eventloops. It's equal to available processor count by default."
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "description": "Hazelcast TPC is the next generation of Hazelcast built with thread per core architecture. It's still being developed and everything is subject to change. TPC is disabled by default."
+    },
+    "TpcSocketConfig": {
+      "type": "object",
+      "properties": {
+        "port-range": {
+          "type": "string",
+          "description": "Configures the port range available for TPC sockets."
+        },
+        "receive-buffer-size-kb": {
+          "type": "integer",
+          "description": "Configures SO_RCVBUF socket option for TPC sockets."
+        },
+        "send-buffer-size-kb": {
+          "type": "integer",
+          "description": "Configures SO_SNDBUF socket option for TPC sockets."
+        }
+      },
+      "description": "Socket configuration for TPC. In TPC, each eventloop has its own sockets."
+    },
+    "PartitionAttribute": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
     }
   }
 }

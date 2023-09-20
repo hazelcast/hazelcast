@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt;
 
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
@@ -44,18 +43,17 @@ import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerTestSupport {
-    static ExpressionEvalContext MOCK_EEC;
+    private static ExpressionEvalContext MOCK_EEC;
 
     @BeforeClass
     public static void beforeClass() {
         initialize(1, null);
-        MOCK_EEC = new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
+        MOCK_EEC = createExpressionEvalContext();
     }
 
     @Test
@@ -73,7 +71,8 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
         ));
 
         assertThat(optimizedPhysicalRel.getInput(0)).isInstanceOf(FullScanPhysicalRel.class);
-        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(S2S_JOIN_MAX_THROTTLING_INTERVAL);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel, MOCK_EEC))
+                .isEqualTo(S2S_JOIN_MAX_THROTTLING_INTERVAL);
     }
 
     @Test
@@ -90,7 +89,8 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
 
         assertPlan(optimizedPhysicalRel, plan(planRow(0, ShouldNotExecuteRel.class)));
 
-        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(S2S_JOIN_MAX_THROTTLING_INTERVAL);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel, MOCK_EEC))
+                .isEqualTo(S2S_JOIN_MAX_THROTTLING_INTERVAL);
 
         ShouldNotExecuteRel sneRel = (ShouldNotExecuteRel) optimizedPhysicalRel;
         assertThat(sneRel.message()).contains("Streaming aggregation is supported only for window aggregation");
@@ -116,7 +116,8 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
                 planRow(3, FullScanPhysicalRel.class)
         ));
 
-        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(3L);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel, MOCK_EEC))
+                .isEqualTo(3L);
     }
 
     @Test
@@ -148,7 +149,8 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
         ));
 
         // GCD(15, 6) = 3
-        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(1L);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel, MOCK_EEC))
+                .isEqualTo(1L);
     }
 
     @Test
@@ -187,7 +189,8 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
         ));
 
         // GCD(48, 36, 24) = 12
-        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(expectedGcd);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel, MOCK_EEC))
+                .isEqualTo(expectedGcd);
     }
 
     @Test
@@ -220,7 +223,8 @@ public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerT
         ));
 
         // GCD(100, 40) = 4
-        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optPhysicalRel)).isEqualTo(expectedWindowSize);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optPhysicalRel, MOCK_EEC))
+                .isEqualTo(expectedWindowSize);
     }
 
     @SuppressWarnings("SameParameterValue")

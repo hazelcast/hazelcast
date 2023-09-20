@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,27 @@
 
 package com.hazelcast.internal.util;
 
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeMatcher;
+import org.assertj.core.api.Condition;
 
 /**
- * Matcher for {@link org.junit.rules.ExpectedException#expectCause(Matcher)} to assert the root cause of an exception.
+ * Matcher for {@link org.assertj.core.api.Assertions#assertThatThrownBy} to assert the root cause of an exception.
  * <p>
  * Optionally the exception message can be tested as well.
  * <p>
  * Example usage:
  * <pre><code>
- *  {@literal @}Rule
- *   public ExpectedException expect = ExpectedException.none();
- *
  *  {@literal @}Test
  *   public void testRootCause() {
- *     expected.expect(ExecutionException.class);
- *     expected.expectCause(new RootCauseMatcher(StaleTaskException.class));
- *     throwException();
+ *     assertThatThrownBy(() -> throwException()).cause().has(rootCauseStaleTaskException.class());
  *   }
  *
  *  {@literal @}Test
  *   public void testRootCause_withMessage() {
- *     expected.expect(ExecutionException.class);
- *     expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Expected message"));
- *     throwException();
+ *     assertThatThrownBy(() -> throwException()).cause().has(rootCauseStaleTaskException.class(), "Expected message");
  *   }
  * </code></pre>
  */
-public class RootCauseMatcher extends TypeSafeMatcher<Throwable> {
+public class RootCauseMatcher {
 
     private final Class<? extends Throwable> expectedType;
     private final String expectedMessage;
@@ -59,26 +50,21 @@ public class RootCauseMatcher extends TypeSafeMatcher<Throwable> {
         this.expectedMessage = expectedMessage;
     }
 
-    @Override
-    protected boolean matchesSafely(Throwable item) {
+    public static Condition<Throwable> rootCause(Class<? extends Throwable> expectedType, String expectedMessage) {
+        var matcher = new RootCauseMatcher(expectedType, expectedMessage);
+        return new Condition<>(matcher::matches, expectedMessage);
+    }
+
+    public static Condition<Throwable> rootCause(Class<? extends Throwable> expectedType) {
+        return rootCause(expectedType, null);
+    }
+
+    private boolean matches(Throwable item) {
         item = getRootCause(item);
         if (expectedMessage == null) {
             return item.getClass().isAssignableFrom(expectedType);
         }
         return item.getClass().isAssignableFrom(expectedType) && item.getMessage().contains(expectedMessage);
-    }
-
-    @Override
-    public void describeTo(Description description) {
-        description.appendText("expects type ").appendValue(expectedType);
-        if (expectedMessage != null) {
-            description.appendText(" with message ").appendValue(expectedMessage);
-        }
-    }
-
-    @Override
-    protected void describeMismatchSafely(Throwable item, Description mismatchDescription) {
-        super.describeMismatchSafely(getRootCause(item), mismatchDescription);
     }
 
     public static Throwable getRootCause(Throwable item) {

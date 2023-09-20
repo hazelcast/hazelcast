@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,16 +30,29 @@ public class CompactGetter extends Getter {
         this.serializationService = serializationService;
     }
 
-    @Override
-    public Object getValue(Object target, String fieldPath) throws Exception {
+    private Object getValueInternal(Object target, String fieldPath, boolean useLazyDeserialization) throws Exception {
         InternalGenericRecord record;
         if (target instanceof CompactGenericRecord) {
             record = (InternalGenericRecord) target;
         } else {
             record = serializationService.readAsInternalGenericRecord((Data) target);
         }
-        GenericRecordQueryReader reader = new GenericRecordQueryReader(record);
+        GenericRecordQueryReader reader = new GenericRecordQueryReader(record, useLazyDeserialization);
         return reader.read(fieldPath);
+    }
+
+    @Override
+    public Object getValue(Object target, String fieldPath) throws Exception {
+        return getValueInternal(target, fieldPath, false);
+    }
+
+    @Override
+    public Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
+        if (metadata == null) {
+            return getValue(obj, attributePath);
+        }
+        boolean useLazyDeserialization = (boolean) metadata;
+        return getValueInternal(obj, attributePath, useLazyDeserialization);
     }
 
     @Override

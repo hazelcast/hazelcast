@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,11 +48,16 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
     }
 
     public AliasedDiscoveryConfig(AliasedDiscoveryConfig aliasedDiscoveryConfig) {
-        tag = aliasedDiscoveryConfig.tag;
-        enabled = aliasedDiscoveryConfig.enabled;
-        usePublicIp = aliasedDiscoveryConfig.usePublicIp;
-        properties = new HashMap<>();
-        properties.putAll(aliasedDiscoveryConfig.properties);
+        this(aliasedDiscoveryConfig.tag, aliasedDiscoveryConfig.enabled, aliasedDiscoveryConfig.usePublicIp,
+                aliasedDiscoveryConfig.properties);
+    }
+
+    public AliasedDiscoveryConfig(String tag, boolean enabled, boolean usePublicIp, Map<String, String> properties) {
+        this.tag = tag;
+        this.enabled = enabled;
+        this.usePublicIp = usePublicIp;
+        this.properties = new HashMap<>();
+        this.properties.putAll(properties);
     }
 
     /**

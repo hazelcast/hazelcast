@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,9 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
@@ -37,7 +39,9 @@ import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -46,6 +50,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.version.Version;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.rules.Timeout;
@@ -67,14 +73,18 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -84,7 +94,7 @@ import static org.junit.Assert.fail;
 
 public abstract class JetTestSupport extends HazelcastTestSupport {
 
-    public static final SerializationService TEST_SS = new DefaultSerializationServiceBuilder().build();
+    public static final InternalSerializationService TEST_SS = new DefaultSerializationServiceBuilder().build();
 
     /**
      * This is needed to finish tests which got stuck in @Before, @BeforeClass, @After or @AfterClass method.
@@ -118,6 +128,8 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                         "This is a bug, but it is not necessarily related to this test. " +
                         "The classloader was leaked for the following jobIds: " + ids);
             }
+
+            instanceFactory = null;
         }
     }
 
@@ -300,6 +312,20 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return executionId;
     }
 
+    /**
+     * Asserts that the {@code job} is eventually SUSPENDED and waits until the suspension cause is set.
+     */
+    public static void assertJobSuspendedEventually(Job job) {
+        assertJobStatusEventually(job, SUSPENDED);
+        assertTrueEventually(() -> {
+            try {
+                assertNotNull(job.getSuspensionCause());
+            } catch (IllegalStateException notSuspended) {
+                Assertions.fail("Suspension cause is not set yet", notSuspended);
+            }
+        });
+    }
+
     public static void assertJobStatusEventually(Job job, JobStatus expected, int timeoutSeconds) {
         assertNotNull(job);
         assertTrueEventually(() ->
@@ -320,6 +346,31 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance instance) {
         return Accessors.getNodeEngineImpl(instance);
+    }
+
+    public Map<Address, int[]> getPartitionAssignment(HazelcastInstance instance) {
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
+        MembersView membersView = Util.getMembersView(nodeEngine);
+        Version coordinatorVersion = nodeEngine.getLocalMember().getVersion().asVersion();
+        List<MemberInfo> members = membersView.getMembers().stream()
+                .filter(m -> m.getVersion().asVersion().equals(coordinatorVersion) && !m.isLiteMember())
+                .collect(Collectors.toList());
+        return ExecutionPlanBuilder.getPartitionAssignment(nodeEngine, members, false, null, null, null)
+                .entrySet()
+                .stream()
+                .collect(toMap(en -> en.getKey().getAddress(), Map.Entry::getValue));
+    }
+
+    public Address getAddressForPartitionId(HazelcastInstance instance, int partitionId) {
+        Map<Address, int[]> partitionAssignment = getPartitionAssignment(instance);
+        for (Entry<Address, int[]> entry : partitionAssignment.entrySet()) {
+            for (int pId : entry.getValue()) {
+                if (pId == partitionId) {
+                    return entry.getKey();
+                }
+            }
+        }
+        throw new AssertionError("Partition " + partitionId + " is not present in cluster.");
     }
 
     public Address nextAddress() {
@@ -473,7 +524,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
             sleepMillis(500);
             SUPPORT_LOGGER.warning("Failed to cancel the job and it is " + status + ", retrying. Failure: "
-                                   + cancellationFailure, cancellationFailure);
+                    + cancellationFailure, cancellationFailure);
         }
         // if we got here, 10 attempts to cancel the job have failed. Cluster is in bad shape probably, shut it down
         try {
@@ -489,15 +540,12 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     /**
      * Cancel the job and wait until it cancels using {@link Job#join()},
-     * ignoring the CancellationException.
+     * ignoring the {@link CancellationException}.
      */
     public static void cancelAndJoin(@Nonnull Job job) {
         job.cancel();
-        try {
-            job.join();
-            fail("join didn't fail with CancellationException");
-        } catch (CancellationException ignored) {
-        }
+        assertThatThrownBy(job::join).as("join didn't fail with CancellationException")
+                .isInstanceOf(CancellationException.class);
     }
 
     public static <T> ProcessorMetaSupplier processorFromPipelineSource(BatchSource<T> source) {
@@ -532,9 +580,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     /**
      * Asserts that the {@code job} is already visible by {@linkplain JetService#getJob} methods.
-     * @param client Hazelcast Instance used to query the cluster
+     *
+     * @param client     Hazelcast Instance used to query the cluster
      * @param jobToCheck job to be checked for visibility
-     * @param jobName job name, for better assertion message
+     * @param jobName    job name, for better assertion message
      */
     public static void assertJobVisible(HazelcastInstance client, Job jobToCheck, String jobName) {
         assertTrueEventually(jobName + " not found",

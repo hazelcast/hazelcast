@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.SetOperation;
+import com.hazelcast.map.impl.operation.steps.IMapOpStep;
+import com.hazelcast.map.impl.operation.steps.PutOpSteps;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -45,8 +47,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -134,6 +140,64 @@ public class StepSupplierTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void firstStepIsNotExecuted_whenOperationTimesOut() {
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(), "true");
+        HazelcastInstance node = createHazelcastInstance(config);
+
+        // latch for to be sure operation is executed
+        CountDownLatch latch = new CountDownLatch(1);
+
+        // create and call slow operation
+        Data data = Accessors.getSerializationService(node).toData("data");
+        int partitionId = Accessors.getPartitionService(node).getPartitionId(data);
+
+        MapOperation operation = new SetOperation("test-map", data, data) {
+            @Override
+            protected void innerBeforeRun() throws Exception {
+                super.innerBeforeRun();
+                sleepAtLeastSeconds(2);
+            }
+
+            @Override
+            public Step getStartingStep() {
+                return DummyPutOpSteps.DUMMY_READ;
+            }
+        };
+
+        operation.setNodeEngine(Accessors.getNodeEngineImpl(node));
+        operation.setPartitionId(partitionId);
+        operation.setServiceName(MapService.SERVICE_NAME);
+        operation.setOperationResponseHandler((op, response) -> latch.countDown());
+
+        // set op times out after 1 second
+        OperationAccessor.setCallTimeout(operation, 1000);
+        OperationAccessor.setInvocationTime(operation, Clock.currentTimeMillis());
+        Accessors.getOperationService(node).execute(operation);
+
+        // wait operation end
+        assertOpenEventually(latch);
+        assertFalse(DummyPutOpSteps.executed);
+    }
+
+    private enum DummyPutOpSteps implements IMapOpStep {
+        DUMMY_READ {
+            @Override
+            public void runStep(State state) {
+                executed = true;
+                PutOpSteps.READ.runStep(state);
+            }
+
+            @Override
+            public Step nextStep(State state) {
+                return PutOpSteps.READ.nextStep(state);
+            }
+        };
+
+        private static volatile boolean executed;
+    }
+
+    @Test
     public void step_supplier_handles_rejected_execution_exception_then_operations_finish() {
         Config config = getConfig();
         // configure offloadable executor to throw
@@ -160,5 +224,46 @@ public class StepSupplierTest extends HazelcastTestSupport {
         }
 
         FutureUtil.waitUntilAllResponded(futures);
+    }
+
+    @Test
+    public void head_steps_are_ran_in_provided_order() throws Exception {
+        HazelcastInstance node = createHazelcastInstance(getConfig());
+        Data data = Accessors.getSerializationService(node).toData("data");
+        MapOperation operation = new SetOperation("map", data, data);
+        operation.setNodeEngine(Accessors.getNodeEngineImpl(node));
+        operation.setPartitionId(1);
+        operation.beforeRun();
+
+        List<Integer> actualExecutionOrder = new ArrayList<>();
+        List<Step> expectedSteps = new ArrayList<>();
+
+        int headSteps = 10;
+        for (int i = 0; i < headSteps; i++) {
+            int finalI = i;
+            expectedSteps.add(state -> actualExecutionOrder.add(finalI));
+        }
+
+        StepSupplier stepSupplier = new StepSupplier(operation, false);
+        for (int i = expectedSteps.size() - 1; i >= 0; i--) {
+              stepSupplier.accept(expectedSteps.get(i));
+        }
+
+        List<Step> actualSteps = new ArrayList<>();
+        for (int i = 0; i < headSteps; i++) {
+            Step currentStep = stepSupplier.getCurrentStep();
+            actualSteps.add(((AppendAsNewHeadStep) currentStep).getAppendedStep());
+
+            // execute current step to move next one.
+            Runnable nextStepsRunnable = stepSupplier.get();
+            if (nextStepsRunnable != null) {
+                nextStepsRunnable.run();
+            }
+        }
+
+        assertTrue(expectedSteps.equals(actualSteps));
+        int[] expectedExecutions = IntStream.range(0, headSteps).toArray();
+        int[] actualExecutions = actualExecutionOrder.stream().mapToInt(i -> i).toArray();
+        assertArrayEquals(expectedExecutions, actualExecutions);
     }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -78,7 +78,8 @@
                 <xs:element name="local-device" type="local-device" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="dynamic-configuration" type="dynamic-configuration" minOccurs="0"/>
                 <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="external-data-store" type="external-data-store" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="data-connection" type="data-connection" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="tpc" type="tpc" minOccurs="0"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
@@ -298,6 +299,20 @@
             </xs:element>
             <xs:element name="query-caches" type="query-caches" minOccurs="0"/>
             <xs:element name="tiered-store" type="tiered-store" minOccurs="0"/>
+            <xs:element name="partition-attributes" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        List of key attributes to use for partitioning the data in the maps. Providing this list automatically sets the
+                        strategy to `com.hazelcast.partition.strategy.AttributePartitioningStrategy` regardless
+                        of the class name provided in the `partition-strategy` property.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="attribute" type="partition-attribute" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1356,6 +1371,7 @@
             <xs:element name="failure-detector" type="failure-detector" minOccurs="0"/>
             <xs:element name="rest-api" type="rest-api" minOccurs="0"/>
             <xs:element name="memcache-protocol" type="memcache-protocol" minOccurs="0"/>
+            <xs:element name="tpc-socket" type="tpc-socket" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="tcp-ip">
@@ -2657,7 +2673,7 @@
                         Includes allowed IP addresses for Management Center connections.
                         More preciselly, the element configures addresses from which clients are allowed to run cluster
                         management tasks over the Hazelcast client protocol.
-                        You can give an IP addresses range using the wildcard (*) on the last digit of the IP address
+                        You can give an IP addresses range using the wildcards (*) or intervals in the IPv4 address
                         (e.g. 192.168.1.* or 192.168.1.100-110).
                     </xs:documentation>
                 </xs:annotation>
@@ -2880,6 +2896,13 @@
                         <xs:enumeration value="instance"/>
                         <xs:enumeration value="member"/>
                         <xs:enumeration value="migration"/>
+                        <xs:enumeration value="create-view"/>
+                        <xs:enumeration value="drop-view"/>
+                        <xs:enumeration value="create-type"/>
+                        <xs:enumeration value="drop-type"/>
+                        <xs:enumeration value="view-dataconnection"/>
+                        <xs:enumeration value="create-dataconnection"/>
+                        <xs:enumeration value="drop-dataconnection"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
@@ -4885,6 +4908,7 @@
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
+            <xs:element name="tpc-socket" type="tpc-socket" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="">
             <xs:annotation>
@@ -4954,6 +4978,7 @@
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
+            <xs:element name="tpc-socket" type="tpc-socket" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="">
             <xs:annotation>
@@ -4972,6 +4997,9 @@
             <xs:element name="send-buffer-size-kb" type="xs:positiveInteger" minOccurs="0"/>
             <xs:element name="receive-buffer-size-kb" type="xs:positiveInteger" minOccurs="0"/>
             <xs:element name="linger-seconds" type="xs:nonNegativeInteger" minOccurs="0"/>
+            <xs:element name="keep-idle-seconds" type="xs:positiveInteger" minOccurs="0" default="7200"/>
+            <xs:element name="keep-interval-seconds" type="xs:positiveInteger" minOccurs="0" default="75"/>
+            <xs:element name="keep-count" type="xs:positiveInteger" minOccurs="0" default="8"/>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="rest-server-socket-endpoint-config">
@@ -5049,6 +5077,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="tpc-socket" type="tpc-socket" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="">
             <xs:annotation>
@@ -5581,6 +5610,20 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="catalog-persistence-enabled" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets whether SQL Catalog persistence is enabled for the node.
+                        With SQL Catalog persistence enabled you can restart the whole cluster without
+                        losing schema definition objects (such as MAPPINGs, TYPEs, VIEWs and DATA CONNECTIONs).
+                        The feature is implemented on top of the Hot Restart feature of Hazelcast
+                        which persists the data to disk. If enabled, you have to also configure
+                        Hot Restart. Feature is disabled by default. If you enable this option in
+                        open-source, the member will fail to start, you need Enterprise to run it
+                        and obtain a license from Hazelcast.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
     </xs:complexType>
 
@@ -6002,6 +6045,16 @@
     <xs:complexType name="realm-reference">
         <xs:attribute name="realm" type="xs:string" use="required"/>
     </xs:complexType>
+    <xs:complexType name="partition-attribute">
+        <xs:annotation>
+            <xs:documentation>
+                The name of the attribute.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string"/>
+        </xs:simpleContent>
+    </xs:complexType>
 
     <!-- SIMPLE TYPES -->
 
@@ -6026,20 +6079,24 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="external-data-store">
+    <xs:complexType name="data-connection">
         <xs:all>
-            <xs:element name="class-name" type="xs:string">
+            <xs:element name="type" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>
-                        The name of the class implementing ExternalDataStoreFactory.
+                        The type of the DataConnection.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="shared" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
-                        If true reuse an instance of JDBC pool or any other storage driver (e.g. kafka client) between jobs or
-                        instances of MapStore.
+                        True if an instance of the data connection will be shared.
+                        Depending on the implementation of the data connection, the shared instance may be
+                        single a thread-safe instance, or not thread-safe, but a pooled instance.
+                        False when on each usage a new instance of the underlying resource
+                        should be created.
+                        The default is true.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -6048,9 +6105,65 @@
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    Name of the external data store configuration
+                    Name of the data connection configuration
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="tpc">
+        <xs:annotation>
+            <xs:documentation>
+                Hazelcast TPC is the next generation of Hazelcast built with thread per core architecture. It's still
+                being developed and everything is subject to change. TPC is disabled by default.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="eventloop-count" type="xs:integer" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures the number of eventloops. It's equal to available processor count by default.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Enables Hazelcast TPC. Disabled by default.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="tpc-socket">
+        <xs:annotation>
+            <xs:documentation>
+                Socket configuration for TPC. In TPC, each eventloop has its own sockets.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="port-range" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures the port range available for TPC sockets.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="receive-buffer-size-kb" type="xs:integer" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures SO_RCVBUF socket option for TPC sockets.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="send-buffer-size-kb" type="xs:integer" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures SO_SNDBUF socket option for TPC sockets.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
     </xs:complexType>
 </xs:schema>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -236,32 +236,6 @@ public class AttributeIndexRegistry {
         @Override
         public Set<QueryableEntry> evaluate(Predicate predicate) {
             return delegate.evaluate(predicate);
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
-            throw new UnsupportedOperationException("Should not be called");
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
-            throw new UnsupportedOperationException("Should not be called");
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending) {
-            throw new UnsupportedOperationException("Should not be called");
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(
-            Comparable from,
-            boolean fromInclusive,
-            Comparable to,
-            boolean toInclusive,
-            boolean descending
-        ) {
-            throw new UnsupportedOperationException("Should not be called");
         }
 
         @Override

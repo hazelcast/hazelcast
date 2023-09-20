@@ -82,7 +82,7 @@ Use the ⚠️ or ❓icon to indicate an outstanding issue or question, and use 
 Example usage of the source:
 ```java
 BatchSource<Document> batchSource =
-        MongoDBSources.batch(
+        MongoSources.batch(
                 "batch-source",
                 "mongodb://127.0.0.1:27017",
                 "myDatabase",
@@ -108,7 +108,7 @@ Pipeline p = Pipeline.create();
 p.readFrom(Sources.list(list))
  .map(i -> new Document("key", i))
  .writeTo(
-     MongoDBSinks.mongodb(
+     MongoSinks.mongodb(
         "sink", 
         "mongodb://localhost:27017",
         "myDatabase",
@@ -121,10 +121,7 @@ p.readFrom(Sources.list(list))
 User should be able to run following SQL query:
 ```sql
 CREATE MAPPING people
-TYPE MONGODB 
-OPTIONS (
-  'externalDataStoreRef'='mongodb-ref' 
-)
+DATA CONNECTION "mongodb-ref"
 ```
 
 In such cases, automatic schema inference will be used. User may also want
@@ -136,10 +133,7 @@ CREATE MAPPING people (
     lastName VARCHAR(100),
     age INT
 )
-TYPE MONGODB 
-OPTIONS (
-  'externalDataStoreRef'='mongodb-ref' 
-)
+DATA CONNECTION "mongodb-ref"
 ```
 
 #### GenericMapStore support
@@ -147,16 +141,16 @@ OPTIONS (
 User will be able to configure map store:
 ```java
 Config config = new Config();
-config.addExternalDataStoreConfig(
-        new ExternalDataStoreConfig("mongodb-ref")
-            .setClassName(MongoDbDataStoreFactory.class.getName())
-            .setProperty("url", dbConnectionUrl)
+config.addDataConnectionConfig(
+        new DataConnectionConfig("mongodb-ref")
+            .setType("MongoDB")
+            .setProperty("connectionString", dbConnectionUrl)
   );
 
 MapConfig mapConfig = new MapConfig(mapName);
 MapStoreConfig mapStoreConfig = new MapStoreConfig();
 mapStoreConfig.setClassName(GenericMapStore.class.getName());
-mapStoreConfig.setProperty(OPTION_EXTERNAL_DATASTORE_REF, "mongodb-ref");
+mapStoreConfig.setProperty(OPTION_DATA_CONNECTION_REF, "mongodb-ref");
 mapConfig.setMapStoreConfig(mapStoreConfig);
 instance().getConfig().addMapConfig(mapConfig);
 ```
@@ -268,7 +262,7 @@ The implementation will be split into 4 parts:
     * Support for hot updates is not planned. All nodes should have the same version of processors.
     
   - What are the possible interactions with other features or sub-systems inside Hazelcast? How does the behavior of other code change implicitly as a result of the changes outlined in the design document?
-    * This feature will use GenericMapStore and External Data Factories, as mentioned in the examples above.
+    * This feature will use GenericMapStore and Data Connections, as mentioned in the examples above.
     
   - What are the edge cases? What are example uses or inputs that we think are uncommon but are still possible and thus need to be handled? How are these edge cases handled?
     * User may have documents of very different schemas in one collection. In such cases the connector should not fail - for inserts

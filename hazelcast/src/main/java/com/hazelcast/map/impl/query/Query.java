@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -38,6 +37,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * Object representing a Query together with all possible co-variants: like a predicate, iterationType, etc.
  */
+// RU_COMPAT_5_3 "implements Versioned" can be removed in 5.5
 public class Query implements IdentifiedDataSerializable, Versioned {
 
     private String mapName;
@@ -145,9 +145,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
         out.writeByte(iterationType.getId());
         out.writeObject(aggregator);
         out.writeObject(projection);
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
-            out.writeObject(partitionIdSet);
-        }
+        out.writeObject(partitionIdSet);
     }
 
     @Override
@@ -157,9 +155,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
         this.iterationType = IterationType.getById(in.readByte());
         this.aggregator = in.readObject();
         this.projection = in.readObject();
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
-            this.partitionIdSet = in.readObject();
-        }
+        this.partitionIdSet = in.readObject();
     }
 
     public static final class QueryBuilder {

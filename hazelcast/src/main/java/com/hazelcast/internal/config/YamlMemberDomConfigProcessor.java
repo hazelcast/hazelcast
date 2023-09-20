@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.IndexConfig;
@@ -48,6 +48,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PersistentMemoryConfig;
@@ -139,10 +140,11 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                     .valueOf(upperCaseInternal(onJoinOp));
             config.getSecurityConfig().setOnJoinPermissionOperation(onJoinPermissionOperation);
         }
+        config.getSecurityConfig().setPermissionPriorityGrant(getBooleanValue(getAttribute(node, "priority-grant")));
         Iterable<Node> nodes = childElements(node);
         for (Node child : nodes) {
             String nodeName = cleanNodeName(child);
-            if (matches("on-join-operation", nodeName)) {
+            if (matches("on-join-operation", nodeName) || matches("priority-grant", nodeName)) {
                 continue;
             }
             nodeName = matches("all", nodeName) ? nodeName + "-permissions" : nodeName + "-permission";
@@ -318,12 +320,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleExternalDataStores(Node parentNode) {
+    protected void handleDataConnections(Node parentNode) {
         for (Node deviceNode : childElements(parentNode)) {
             String name = deviceNode.getNodeName();
-            ExternalDataStoreConfig externalDataStoreConfig = ConfigUtils.
-                    getByNameOrNew(config.getExternalDataStoreConfigs(), name, ExternalDataStoreConfig.class);
-            handleExternalDataStore(deviceNode, externalDataStoreConfig);
+            DataConnectionConfig dataConnectionConfig = ConfigUtils.
+                    getByNameOrNew(config.getDataConnectionConfigs(), name, DataConnectionConfig.class);
+            handleDataConnection(deviceNode, dataConnectionConfig);
         }
     }
 
@@ -966,5 +968,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         } else {
             persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
         }
+    }
+
+    @Override
+    protected void handlePartitioningAttributeConfig(Node node, PartitioningAttributeConfig config) {
+        config.setAttributeName(getAttribute(node, "name"));
     }
 }

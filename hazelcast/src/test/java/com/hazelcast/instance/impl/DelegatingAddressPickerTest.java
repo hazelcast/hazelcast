@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -198,11 +198,11 @@ public class DelegatingAddressPickerTest {
         return config;
     }
 
-    private void assertAddressBetweenPorts(Address expected, Address actual, NetworkConfig networkConfig) {
-       assertAddressBetweenPorts(expected, actual, networkConfig.isPortAutoIncrement(), networkConfig.getPortCount());
+    static void assertAddressBetweenPorts(Address expected, Address actual, NetworkConfig networkConfig) {
+        assertAddressBetweenPorts(expected, actual, networkConfig.isPortAutoIncrement(), networkConfig.getPortCount());
     }
 
-    private void assertAddressBetweenPorts(Address expected, Address actual, boolean isPortAutoIncrement, int portCount) {
+    static void assertAddressBetweenPorts(Address expected, Address actual, boolean isPortAutoIncrement, int portCount) {
         int beginPort = expected.getPort();
         int endPort = beginPort;
 

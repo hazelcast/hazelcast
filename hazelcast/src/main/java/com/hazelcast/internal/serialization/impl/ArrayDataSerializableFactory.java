@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.VersionedDataSerializableFactory;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.VersionAwareConstructorFunction;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.VersionedDataSerializableFactory;
 import com.hazelcast.version.Version;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public final class ArrayDataSerializableFactory implements VersionedDataSerializableFactory {
 
@@ -38,6 +41,7 @@ public final class ArrayDataSerializableFactory implements VersionedDataSerializ
     }
 
     @Override
+    @Nullable
     public IdentifiedDataSerializable create(int typeId) {
         if (typeId >= 0 && typeId < len) {
             ConstructorFunction<Integer, IdentifiedDataSerializable> factory = constructors[typeId];
@@ -47,6 +51,7 @@ public final class ArrayDataSerializableFactory implements VersionedDataSerializ
     }
 
     @Override
+    @Nullable
     public IdentifiedDataSerializable create(int typeId,
                                              Version clusterVersion,
                                              Version wanProtocolVersion) {
@@ -63,5 +68,19 @@ public final class ArrayDataSerializableFactory implements VersionedDataSerializ
             }
         }
         return null;
+    }
+
+    public void mergeConstructors(@Nonnull ConstructorFunction<Integer, IdentifiedDataSerializable>[] ctorArray) {
+        if (constructors.length < ctorArray.length) {
+            throw new IllegalArgumentException("Too many constructors");
+        }
+        for (int i = 0; i < ctorArray.length; i++) {
+            if (ctorArray[i] != null) {
+                if (constructors[i] != null) {
+                    throw new IllegalArgumentException("Overwriting a constructor");
+                }
+                constructors[i] = ctorArray[i];
+            }
+        }
     }
 }

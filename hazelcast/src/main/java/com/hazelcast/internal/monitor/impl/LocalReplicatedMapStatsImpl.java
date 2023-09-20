@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.partition.LocalReplicationStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
@@ -196,6 +197,18 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
         return hits;
     }
 
+    // TODO: Not implemented for replicated map
+    @Override
+    public long getEvictionCount() {
+        return 0;
+    }
+
+    // TODO: Not implemented for replicated map
+    @Override
+    public long getExpirationCount() {
+        return 0;
+    }
+
     public void setHits(long hits) {
         HITS.set(this, hits);
     }
@@ -330,7 +343,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     @Override
-    public NearCacheStatsImpl getNearCacheStats() {
+    public NearCacheStats getNearCacheStats() {
         throw new UnsupportedOperationException("Replicated map has no Near Cache!");
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
@@ -35,6 +36,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.version.Version;
@@ -48,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,6 +59,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -63,6 +67,10 @@ import java.util.stream.Collectors;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.core.JobStatus.COMPLETED;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -80,7 +88,10 @@ public final class LightMasterContext {
         }
     };
 
+    private final ReentrantLock lock = new ReentrantLock();
+
     private final NodeEngine nodeEngine;
+    private final JobEventService jobEventService;
     private final long jobId;
 
     private final ILogger logger;
@@ -93,11 +104,13 @@ public final class LightMasterContext {
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
     private final Set<Vertex> vertices;
     private final JobClassLoaderService jobClassLoaderService;
+    private volatile boolean userInitiatedTermination;
 
     private LightMasterContext(NodeEngine nodeEngine, long jobId, ILogger logger, String jobIdString,
-                              JobConfig jobConfig, Map<MemberInfo, ExecutionPlan> executionPlanMap,
-                              Set<Vertex> vertices) {
+                               JobConfig jobConfig, Map<MemberInfo, ExecutionPlan> executionPlanMap,
+                               Set<Vertex> vertices) {
         this.nodeEngine = nodeEngine;
+        this.jobEventService = nodeEngine.getService(JobEventService.SERVICE_NAME);
         this.jobId = jobId;
         this.logger = logger;
         this.jobIdString = jobIdString;
@@ -139,6 +152,7 @@ public final class LightMasterContext {
             logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"
                             + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.",
                     jobIdString, dotRepresentation);
+            logFine(logger, "Job config for %s: %s", jobIdString, jobConfig);
             logFine(logger, "Building execution plan for %s", jobIdString);
         }
 
@@ -154,6 +168,10 @@ public final class LightMasterContext {
                     }
                     logFine(logger, "Built execution plans for %s", jobIdString);
                     Set<MemberInfo> participants = planMap.keySet();
+
+                    coordinationService.jobInvocationObservers.forEach(obs ->
+                            obs.onLightJobInvocation(jobId, participants, dag, jobConfig));
+
                     Function<ExecutionPlan, Operation> operationCtor = plan -> {
                         Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
                         return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), coordinatorVersion,
@@ -179,27 +197,54 @@ public final class LightMasterContext {
         // close ProcessorMetaSuppliers
         for (Vertex vertex : vertices) {
             ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
-            Executor executor  = metaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
+            Executor executor = metaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
             futures.add(runAsync(() -> invokeClose(failure, metaSupplier), executor));
         }
 
         CompletableFuture<Void> combined = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
 
         combined.whenComplete((ignored, e) -> {
-            Throwable fail = failure;
-            if (fail == null) {
-                jobCompletionFuture.complete(null);
-            } else {
-                // translate JobTerminateRequestedException(CANCEL_FORCEFUL) to CancellationException
-                if (fail instanceof JobTerminateRequestedException
-                        && ((JobTerminateRequestedException) fail).mode() == CANCEL_FORCEFUL) {
-                    CancellationException newFailure = new CancellationException();
-                    newFailure.initCause(failure);
-                    fail = newFailure;
+            lock.lock();
+            try {
+                Throwable fail = failure;
+                if (fail == null) {
+                    jobCompletionFuture.complete(null);
+                    jobEventService.publishEvent(jobId, RUNNING, COMPLETED, null, false);
+                } else {
+                    TerminationMode requestedTerminationMode = fail instanceof JobTerminateRequestedException
+                            ? ((JobTerminateRequestedException) fail).mode() : null;
+                    // translate JobTerminateRequestedException(CANCEL_FORCEFUL)
+                    // to CancellationException or CancellationByUserException
+                    if (requestedTerminationMode == CANCEL_FORCEFUL) {
+                        Throwable newFailure = userInitiatedTermination
+                                ? new CancellationByUserException()
+                                : new CancellationException();
+                        newFailure.initCause(failure);
+                        fail = newFailure;
+                    }
+                    jobCompletionFuture.completeExceptionally(fail);
+                    jobEventService.publishEvent(jobId, RUNNING, FAILED, requestedTerminationMode != null
+                                    ? requestedTerminationMode.actionAfterTerminate().description() : fail.toString(),
+                            userInitiatedTermination);
                 }
-                jobCompletionFuture.completeExceptionally(fail);
+                jobEventService.removeAllEventListeners(jobId);
+            } finally {
+                lock.unlock();
             }
         });
+    }
+
+    public UUID addStatusListener(Registration registration) {
+        lock.lock();
+        try {
+            if (jobCompletionFuture.isDone()) {
+                throw cannotAddStatusListener(
+                        jobCompletionFuture.isCompletedExceptionally() ? FAILED : COMPLETED);
+            }
+            return jobEventService.handleAllRegistrations(jobId, registration).getId();
+        } finally {
+            lock.unlock();
+        }
     }
 
     private void invokeClose(@Nullable Throwable failure, ProcessorMetaSupplier metaSupplier) {
@@ -233,8 +278,8 @@ public final class LightMasterContext {
      *                           response (including a null response) or an
      *                           exception thrown from the operation; size will
      *                           be equal to participant count
-     * @param errorCallback A callback that will be called after each a
-     *                     failure of each individual operation
+     * @param errorCallback      A callback that will be called after each a
+     *                           failure of each individual operation
      */
     private void invokeOnParticipants(
             Function<ExecutionPlan, Operation> operationCtor,
@@ -259,8 +304,8 @@ public final class LightMasterContext {
             AtomicInteger remainingCount
     ) {
         InvocationFuture<Object> future = nodeEngine.getOperationService()
-                                                    .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, address)
-                                                    .invoke();
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, address)
+                .invoke();
 
         future.whenComplete((r, throwable) -> {
             Object response = r != null ? r : throwable != null ? peel(throwable) : NULL_OBJECT;
@@ -279,8 +324,8 @@ public final class LightMasterContext {
                     "Duplicate response for " + address + ". Old=" + oldResponse + ", new=" + response;
             if (remainingCount.decrementAndGet() == 0 && completionCallback != null) {
                 completionCallback.accept(collectedResponses.values().stream()
-                                                            .map(o -> o == NULL_OBJECT ? null : o)
-                                                            .collect(Collectors.toList()));
+                        .map(o -> o == NULL_OBJECT ? null : o)
+                        .collect(Collectors.toList()));
             }
         });
     }
@@ -295,8 +340,8 @@ public final class LightMasterContext {
         for (Object response : responses) {
             if (response instanceof Throwable
                     && (result == null
-                            || result instanceof JobTerminateRequestedException
-                            || result instanceof CancellationException)
+                    || result instanceof JobTerminateRequestedException
+                    || result instanceof CancellationException)
             ) {
                 result = (Throwable) response;
             }
@@ -312,7 +357,8 @@ public final class LightMasterContext {
         return result;
     }
 
-    public void requestTermination() {
+    public void requestTermination(boolean userInitiated) {
+        this.userInitiatedTermination = userInitiated;
         cancelInvocations();
     }
 

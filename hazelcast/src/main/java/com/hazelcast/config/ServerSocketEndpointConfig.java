@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -28,6 +31,7 @@ import java.util.Objects;
  *
  * @since 3.12
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class ServerSocketEndpointConfig
         extends EndpointConfig {
 
@@ -87,7 +91,7 @@ public class ServerSocketEndpointConfig
 
     /**
      * Sets the port the Hazelcast member will try to bind on.
-     *
+     * <p>
      * A valid port value is between 0 and 65535.
      * A port number of 0 will let the system pick up an ephemeral port.
      *
@@ -119,8 +123,8 @@ public class ServerSocketEndpointConfig
      * The maximum number of ports allowed to use.
      *
      * @param portCount the maximum number of ports allowed to use
-     * @see #setPortAutoIncrement(boolean) for more information
      * @return this configuration
+     * @see #setPortAutoIncrement(boolean) for more information
      */
     public ServerSocketEndpointConfig setPortCount(int portCount) {
         if (portCount < 1) {
@@ -273,9 +277,35 @@ public class ServerSocketEndpointConfig
         return this;
     }
 
+    @Beta
+    @Nonnull
+    @Override
+    public ServerSocketEndpointConfig setTpcSocketConfig(@Nonnull TpcSocketConfig tpcSocketConfig) {
+        super.setTpcSocketConfig(tpcSocketConfig);
+        return this;
+    }
+
     @Override
     public ServerSocketEndpointConfig setSymmetricEncryptionConfig(SymmetricEncryptionConfig symmetricEncryptionConfig) {
         super.setSymmetricEncryptionConfig(symmetricEncryptionConfig);
+        return this;
+    }
+
+    @Override
+    public ServerSocketEndpointConfig setSocketKeepIdleSeconds(int socketKeepIdleSeconds) {
+        super.setSocketKeepIdleSeconds(socketKeepIdleSeconds);
+        return this;
+    }
+
+    @Override
+    public ServerSocketEndpointConfig setSocketKeepIntervalSeconds(int socketKeepIntervalSeconds) {
+        super.setSocketKeepIntervalSeconds(socketKeepIntervalSeconds);
+        return this;
+    }
+
+    @Override
+    public ServerSocketEndpointConfig setSocketKeepCount(int socketKeepCount) {
+        super.setSocketKeepCount(socketKeepCount);
         return this;
     }
 

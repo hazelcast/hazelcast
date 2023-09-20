@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,9 +142,11 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
         for (int mapIndex = 0; mapIndex < MAP_COUNT; mapIndex++) {
             String mapName = mapNames.get(mapIndex);
             IMap<Integer, Integer> map = instances[0].getMap(mapName);
-            assertEquals(format("expected %d entries in map %d/%d (iteration %d)",
-                            ENTRY_COUNT, mapIndex, MAP_COUNT, iteration),
-                    ENTRY_COUNT, map.size());
+            int finalMapIndex = mapIndex;
+            assertTrueEventually(() -> assertEquals(format("expected %d entries in map %d/%d (iteration %d)",
+                            ENTRY_COUNT, finalMapIndex, MAP_COUNT, iteration),
+                    ENTRY_COUNT, map.size()));
+
             for (int key = 0; key < ENTRY_COUNT; key++) {
                 int value = map.get(key);
                 assertEquals(format("expected value %d for key %d in map %d/%d (iteration %d)",

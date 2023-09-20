@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -361,9 +361,9 @@ public abstract class AbstractCacheService implements ICacheService,
 
         WanReplicationService wanService = nodeEngine.getWanReplicationService();
         wanService.removeWanEventCounters(ICacheService.SERVICE_NAME, cacheNameWithPrefix);
-        cacheContexts.remove(cacheNameWithPrefix);
         operationProviderCache.remove(cacheNameWithPrefix);
         deregisterAllListener(cacheNameWithPrefix);
+        cacheContexts.remove(cacheNameWithPrefix);
         setStatisticsEnabled(config, cacheNameWithPrefix, false);
         setManagementEnabled(config, cacheNameWithPrefix, false);
         deleteCacheStat(cacheNameWithPrefix);
@@ -676,7 +676,7 @@ public abstract class AbstractCacheService implements ICacheService,
                 removeFromLocalResources(registration.getId());
             }
         }
-        eventService.deregisterAllListeners(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix);
+        eventService.deregisterAllLocalListeners(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix);
         CacheContext cacheContext = cacheContexts.get(cacheNameWithPrefix);
         if (cacheContext != null) {
             cacheContext.resetCacheEntryListenerCount();

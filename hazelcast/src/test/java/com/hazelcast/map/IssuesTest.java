@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -257,7 +257,8 @@ public class IssuesTest extends HazelcastTestSupport {
         }
     }
 
-    static class InstanceAwareMapInterceptorImpl implements MapInterceptor, HazelcastInstanceAware {
+    static class InstanceAwareMapInterceptorImpl extends MapInterceptorAdaptor implements HazelcastInstanceAware {
+        private static final long serialVersionUID = 1L;
 
         transient HazelcastInstance hazelcastInstance;
 
@@ -267,33 +268,11 @@ public class IssuesTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object interceptGet(Object value) {
-            return null;
-        }
-
-        @Override
-        public void afterGet(Object value) {
-        }
-
-        @Override
         public Object interceptPut(Object oldValue, Object newValue) {
             if (hazelcastInstance != null) {
                 return "notNull";
             }
             return ">null";
-        }
-
-        @Override
-        public void afterPut(Object value) {
-        }
-
-        @Override
-        public Object interceptRemove(Object removedValue) {
-            return null;
-        }
-
-        @Override
-        public void afterRemove(Object value) {
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,10 @@ public final class HazelcastProperty {
         this(name, String.valueOf(defaultValue));
     }
 
+    public HazelcastProperty(String name, Long defaultValue) {
+        this(name, String.valueOf(defaultValue));
+    }
+
     public HazelcastProperty(String name, Double defaultValue) {
         this(name, String.valueOf(defaultValue));
     }
@@ -102,7 +106,7 @@ public final class HazelcastProperty {
     }
 
     /**
-     * Sets the deprecated name of ths property. Useful if compatibility needs to be provided on property names.
+     * Sets the deprecated name of this property. Useful if compatibility needs to be provided on property names.
      *
      * This method is thread-safe, but is expected to be called immediately after the HazelcastProperty is constructed.
      *

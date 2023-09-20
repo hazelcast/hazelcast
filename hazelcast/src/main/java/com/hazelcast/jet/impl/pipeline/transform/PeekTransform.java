@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,10 +49,10 @@ public class PeekTransform<T> extends AbstractTransform {
     @Override
     public void addToDag(Planner p, Context context) {
         determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, p.isPreserveOrder());
-        PlannerVertex peekedPv = p.xform2vertex.get(this.upstream().get(0));
+        PlannerVertex peekedPv = p.transform2vertex.get(this.upstream().get(0));
         // Peeking transform doesn't add a vertex, so point to the upstream
         // transform's vertex:
-        p.xform2vertex.put(this, peekedPv);
+        p.transform2vertex.put(this, peekedPv);
         peekedPv.v.updateMetaSupplier(sup -> peekOutputP(toStringFn, shouldLogFn, sup));
     }
 }

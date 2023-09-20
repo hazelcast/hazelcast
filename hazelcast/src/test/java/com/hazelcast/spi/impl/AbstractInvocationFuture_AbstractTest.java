@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,12 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.After;
 import org.junit.Before;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +36,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.InvocationFuture.retu
 public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTestSupport {
 
     protected ILogger logger;
-    protected Executor executor;
+    protected ExecutorService executor;
     protected TestFuture future;
     protected Object value = "somevalue";
 
@@ -45,6 +47,10 @@ public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTes
         future = new TestFuture();
     }
 
+    @After
+    public void tearDown() throws Exception {
+        executor.shutdownNow();
+    }
 
     class TestFuture extends AbstractInvocationFuture {
         volatile boolean interruptDetected;

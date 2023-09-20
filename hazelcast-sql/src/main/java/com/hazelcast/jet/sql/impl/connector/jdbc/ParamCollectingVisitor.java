@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.google.common.primitives.Ints;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,18 +27,15 @@ import java.util.List;
  */
 class ParamCollectingVisitor extends SqlBasicVisitor<SqlNode> {
 
-    private final List<Integer> parameterPositions = new ArrayList<>();
+    private final List<Integer> parameterPositions;
+
+    ParamCollectingVisitor(List<Integer> parameterPositions) {
+        this.parameterPositions = parameterPositions;
+    }
 
     @Override
     public SqlNode visit(SqlDynamicParam param) {
         parameterPositions.add(param.getIndex());
         return param;
-    }
-
-    /**
-     * Mapping of parameters in the built query to actual query parameters
-     */
-    public int[] parameterPositions() {
-        return Ints.toArray(parameterPositions);
     }
 }

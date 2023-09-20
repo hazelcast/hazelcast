@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 package com.hazelcast.spi.properties;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.reflect.ClassPath;
+import com.google.common.reflect.ClassPath.ClassInfo;
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -24,15 +28,27 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import java.net.URL;
 
 import static com.hazelcast.spi.properties.ClusterProperty.ENTERPRISE_LICENSE_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import org.apache.commons.lang3.StringUtils;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -311,5 +327,90 @@ public class HazelcastPropertiesTest {
         String value = properties.getString(property);
 
         assertEquals("10", value);
+    }
+
+    /**
+     * Prints to the console any {@link HazelcastProperty}'s where an alternative British English version of their
+     * {@link HazelcastProperty#name} or {@link HazelcastProperty#deprecatedName} exists.
+     * <p>
+     * e.g. {@code hazelcast.enterprise.license.key} vs {@code hazelcast.enterprise.licence.key}
+     *
+     * @see <a href="https://github.com/hazelcast/hazelcast/pull/25460">Print a warning when British spelling of "License" is
+     *      used</a>
+     */
+    public static void main(final String[] args) throws Exception {
+        // Load translation data
+        // https://github.com/hyperreality/American-British-English-Translator/
+        final Map<String, String> rawMap = new ObjectMapper().readValue(new URL(
+                "https://raw.githubusercontent.com/hyperreality/American-British-English-Translator/master/data/american_spellings.json"),
+                new TypeReference<Map<String, String>>() {
+                });
+
+        final Map<String, String> americanToBritish = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+        americanToBritish.putAll(rawMap);
+
+        final UnaryOperator<String> translateStringToBritishEnglish = str -> {
+            final String translated = americanToBritish.get(str);
+
+            if (translated == null) {
+                return str;
+            } else {
+                // Highlight difference in red
+                return "\u001B[31m" + translated + "\u001B[0m";
+            }
+        };
+
+        final Pattern delimiterPattern = Pattern.compile("([^\\w])");
+        final Function<HazelcastProperty, String> translatePropertyToBritishEnglish = property -> {
+            // Generate a British English version of the properties' name
+            final Matcher matcher = delimiterPattern.matcher(property.getName());
+            final StringBuffer builder = new StringBuffer();
+
+            int prevEnd = 0;
+            while (matcher.find()) {
+                builder.append(translateStringToBritishEnglish.apply(property.getName().substring(prevEnd, matcher.start())))
+                        .append(matcher.group(1));
+                prevEnd = matcher.end();
+            }
+            builder.append(translateStringToBritishEnglish.apply(property.getName().substring(prevEnd)));
+
+            return builder.toString();
+        };
+
+        // Ideally you'd use the Reflections library to do this, but this struggles to return *everything*:
+        // https://github.com/ronmamo/reflections/issues/385
+        // Instead use Guava:
+        // https://www.baeldung.com/java-find-all-classes-in-package#3-google-guava-library
+        final Stream<Class<?>> allHazelcastClasses = ClassPath.from(ClassLoader.getSystemClassLoader()).getAllClasses()
+                .parallelStream().filter(clazz -> clazz.getPackageName().startsWith("com.hazelcast")).map(ClassInfo::load);
+
+        final Stream<HazelcastProperty> hazelcastProperties = allHazelcastClasses.map(Class::getDeclaredFields)
+                .flatMap(Arrays::stream).filter(field -> HazelcastProperty.class.isAssignableFrom(field.getType())
+                        && Modifier.isStatic(field.getModifiers()))
+                .map(field -> {
+                    try {
+                        field.setAccessible(true);
+                        return field.get(null);
+                    } catch (final ReflectiveOperationException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).map(HazelcastProperty.class::cast);
+
+        // Print the output
+        int columnWidth = 50;
+        final String format = "%-" + columnWidth + "s | %-" + columnWidth + "s%n";
+        System.out.printf(format, "Property Name", "Suggested British English Property Name");
+        System.out.printf(format, StringUtils.repeat("-", columnWidth), StringUtils.repeat("-", columnWidth));
+
+        hazelcastProperties.sorted(Comparator.comparing(HazelcastProperty::getName)).forEachOrdered(property -> {
+            final String britishEnglishPropertyTranslation = translatePropertyToBritishEnglish.apply(property);
+
+            // If the British English translation differs from the properties' name / deprecated name, log it
+            if (!StringUtils.equalsIgnoreCase(property.getName(), britishEnglishPropertyTranslation)
+                    && !StringUtils.equalsIgnoreCase(property.getDeprecatedName(), britishEnglishPropertyTranslation)) {
+                System.out.printf(format, property.toString(), britishEnglishPropertyTranslation);
+            }
+        });
     }
 }

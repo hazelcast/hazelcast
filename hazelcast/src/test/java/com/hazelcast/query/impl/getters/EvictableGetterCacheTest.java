@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,7 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -46,8 +44,8 @@ public class EvictableGetterCacheTest {
         cache.putGetter(String.class, "y", y);
 
         // THEN
-        assertThat(cache.getGetter(String.class, "x"), equalTo(x));
-        assertThat(cache.getGetter(String.class, "y"), equalTo(y));
+        assertThat(cache.getGetter(String.class, "x")).isEqualTo(x);
+        assertThat(cache.getGetter(String.class, "y")).isEqualTo(y);
     }
 
     @Test
@@ -62,9 +60,9 @@ public class EvictableGetterCacheTest {
         cache.putGetter(Double.class, "y", y);
 
         // THEN
-        assertThat(cache.getClassCacheSize(), equalTo(2));
-        assertThat(cache.getGetterPerClassCacheSize(String.class), equalTo(1));
-        assertThat(cache.getGetterPerClassCacheSize(Double.class), equalTo(1));
+        assertThat(cache.getClassCacheSize()).isEqualTo(2);
+        assertThat(cache.getGetterPerClassCacheSize(String.class)).isEqualTo(1);
+        assertThat(cache.getGetterPerClassCacheSize(Double.class)).isEqualTo(1);
     }
 
     @Test
@@ -80,8 +78,8 @@ public class EvictableGetterCacheTest {
         }
 
         // THEN
-        assertThat(cache.getClassCacheSize(), equalTo(1));
-        assertThat(cache.getGetterPerClassCacheSize(String.class), equalTo(getterCacheSize - 1));
+        assertThat(cache.getClassCacheSize()).isEqualTo(1);
+        assertThat(cache.getGetterPerClassCacheSize(String.class)).isEqualTo(getterCacheSize - 1);
     }
 
     @Test
@@ -98,8 +96,8 @@ public class EvictableGetterCacheTest {
 
         // THEN
         int expectedSizeAfterEviction = (int) (getterCacheSize * (1 - evictPercentage));
-        assertThat(cache.getClassCacheSize(), equalTo(1));
-        assertThat(cache.getGetterPerClassCacheSize(String.class), equalTo(expectedSizeAfterEviction));
+        assertThat(cache.getClassCacheSize()).isEqualTo(1);
+        assertThat(cache.getGetterPerClassCacheSize(String.class)).isEqualTo(expectedSizeAfterEviction);
     }
 
     @Test
@@ -119,7 +117,7 @@ public class EvictableGetterCacheTest {
         }
 
         // THEN
-        assertThat(cache.getClassCacheSize(), equalTo(classCacheSize - 1));
+        assertThat(cache.getClassCacheSize()).isEqualTo(classCacheSize - 1);
     }
 
     @Test
@@ -140,6 +138,6 @@ public class EvictableGetterCacheTest {
 
         // THEN
         int expectedSizeAfterEviction = (int) (classCacheSize * (1 - evictPercentage));
-        assertThat(cache.getClassCacheSize(), equalTo(expectedSizeAfterEviction));
+        assertThat(cache.getClassCacheSize()).isEqualTo(expectedSizeAfterEviction);
     }
 }

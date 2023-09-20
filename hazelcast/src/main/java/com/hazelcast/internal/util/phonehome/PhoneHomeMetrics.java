@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,7 +139,13 @@ public enum PhoneHomeMetrics {
      *   D means it runs in docker but not on kubernetes ,
      *   N means it doesn't run in docker
      */
+
     DOCKER("dck"),
+
+    /*
+     *  Value of the environment variable "HZ_CLOUD_ENVIRONMENT" passed to this member.
+     */
+    VIRIDIAN("vrd"),
 
     //JET METRICS
     JET_ENABLED("jet"),

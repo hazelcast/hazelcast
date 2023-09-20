@@ -45,7 +45,7 @@ compile group: 'com.hazelcast.jet', name: 'hazelcast-jet-mongodb', version: ${ve
 
 ### As a Batch Source
 
-MongoDB batch source (`MongoDBSources.mongodb()`)  executes the 
+MongoDB batch source (`MongoSources.mongodb()`)  executes the 
 query and emits the results as they arrive.
 
 Here's an example which queries documents in a collection having the field 
@@ -54,7 +54,7 @@ the `age` field is returned in the emitted document.
 
 ```java
 BatchSource<Document> batchSource =
-        MongoDBSources.batch(
+        MongoSources.batch(
                 "batch-source",
                 "mongodb://127.0.0.1:27017",
                 "myDatabase",
@@ -67,14 +67,14 @@ BatchStage<Document> srcStage = p.readFrom(batchSource);
 ```
 
 For more detail check out 
-[MongoDBSources](src/main/java/com/hazelcast/jet/mongodb/MongoDBSources.java),
-[MongoDBSourceBuilder](src/main/java/com/hazelcast/jet/mongodb/MongoDBSourceBuilder.java)
+[MongoSources](src/main/java/com/hazelcast/jet/mongodb/MongoSources.java),
+[MongoSourceBuilder](src/main/java/com/hazelcast/jet/mongodb/MongoSourceBuilder.java)
 and 
-[MongoDBSourceTest](src/test/java/com/hazelcast/jet/contrib/mongodb/MongoDBSourceTest.java).
+[MongoSourceTest](src/test/java/com/hazelcast/jet/contrib/mongodb/MongoSourceTest.java).
 
 ### As a Stream Source
 
-MongoDB stream source (`MongoDBSources.streamMongodb()`) watches the changes to
+MongoDB stream source (`MongoSources.streamMongodb()`) watches the changes to
 documents in a collection and emits these changes as they arrive. Source uses 
 ( `ChangeStreamDocument.getClusterTime()` ) as native timestamp.
 
@@ -101,7 +101,7 @@ field is returned in the emitted document.
 
 ```java
 StreamSource<? extends Document> streamSource =
-        MongoDBSources.stream(
+        MongoSources.stream(
                 "stream-source",
                 "mongodb://127.0.0.1:27017",
                 "myDatabase",
@@ -115,15 +115,15 @@ StreamSourceStage<? extends Document> srcStage = p.readFrom(streamSource);
 ```
 
 For more detail check out 
-[MongoDBSources](src/main/java/com/hazelcast/jet/mongodb/MongoDBSources.java),
-[MongoDBSourceBuilder](src/main/java/com/hazelcast/jet/mongodb/MongoDBSourceBuilder.java)
+[MongoSources](src/main/java/com/hazelcast/jet/mongodb/MongoSources.java),
+[MongoSourceBuilder](src/main/java/com/hazelcast/jet/mongodb/MongoSourceBuilder.java)
 and 
-[MongoDBSourceTest](src/test/java/com/hazelcast/jet/contrib/mongodb/MongoDBSourceTest.java).
+[MongoSourceTest](src/test/java/com/hazelcast/jet/contrib/mongodb/MongoSourceTest.java).
 
 
 ### As a Sink
 
-MongoDB sink (`MongoDBSinks.mongodb()`) is used to write documents from 
+MongoDB sink (`MongoSinks.mongodb()`) is used to write documents from 
 Hazelcast Jet Pipeline to MongoDB. 
 
 Following is an example pipeline which reads out items from Hazelcast
@@ -134,7 +134,7 @@ Pipeline p = Pipeline.create();
 p.readFrom(Sources.list(list))
  .map(i -> new Document("key", i))
  .writeTo(
-     MongoDBSinks.mongodb(
+     MongoSinks.mongodb(
         "sink", 
         "mongodb://localhost:27017",
         "myDatabase",
@@ -144,10 +144,10 @@ p.readFrom(Sources.list(list))
 ```
 
 For more detail check out 
-[MongoDBSinks](src/main/java/com/hazelcast/jet/mongodb/MongoDBSinks.java),
-[MongoDBSinkBuilder](src/main/java/com/hazelcast/jet/mongodb/MongoDBSinkBuilder.java)
+[MongoSinks](src/main/java/com/hazelcast/jet/mongodb/MongoSinks.java),
+[MongoSinkBuilder](src/main/java/com/hazelcast/jet/mongodb/MongoSinkBuilder.java)
 and 
-[MongoDBSinkTest](src/test/java/com/hazelcast/jet/contrib/mongodb/MongoDBSinkTest.java).
+[MongoSinkTest](src/test/java/com/hazelcast/jet/contrib/mongodb/MongoSinkTest.java).
 
 ## Fault Tolerance
 

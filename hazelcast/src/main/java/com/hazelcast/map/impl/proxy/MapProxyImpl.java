@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.Data;
@@ -86,7 +85,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static com.hazelcast.query.impl.predicates.PredicateUtils.checkDoesNotContainPagingPredicate;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
@@ -99,6 +97,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.map.impl.record.Record.UNSET;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.checkDoesNotContainPagingPredicate;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newDelegatingFuture;
 import static java.util.Collections.emptyMap;
@@ -458,6 +457,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
+    public InternalCompletableFuture<Boolean> deleteAsync(@Nonnull K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
+        return newDelegatingFuture(serializationService, deleteAsyncInternal(key));
+    }
+
+    @Override
     public Map<K, V> getAll(@Nullable Set<K> keys) {
         if (CollectionUtil.isEmpty(keys)) {
             // Wrap emptyMap() into unmodifiableMap to make sure put/putAll methods throw UnsupportedOperationException
@@ -721,6 +727,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         return executePredicate(predicate, IterationType.KEY, true, Target.ALL_NODES);
     }
 
+    @Override
+    public Collection<V> localValues() {
+        return localValues(Predicates.alwaysTrue());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Collection<V> localValues(@Nonnull Predicate<K, V> predicate) {
+        return executePredicate(predicate, IterationType.VALUE, false, Target.LOCAL_NODE);
+    }
+
     /**
      * Execute the {@code keySet} operation only on the given {@code
      * partitions}.
@@ -841,6 +858,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public <R> InternalCompletableFuture<Map<K, R>> submitToKeys(@Nonnull Set<K> keys,
                                                                  @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
+        checkNotNull(entryProcessor, NULL_ENTRYPROCESSOR_IS_NOT_ALLOWED);
         if (keys.isEmpty()) {
             return newCompletedFuture(Collections.emptyMap());
         }
@@ -854,6 +872,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public <R> InternalCompletableFuture<R> submitToKey(@Nonnull K key,
                                                         @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(entryProcessor, NULL_ENTRYPROCESSOR_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
         InternalCompletableFuture<Data> future = executeOnKeyInternal(key, entryProcessor);
@@ -869,6 +888,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor,
                                           @Nonnull Predicate<K, V> predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkNotNull(entryProcessor, NULL_ENTRYPROCESSOR_IS_NOT_ALLOWED);
         checkDoesNotContainPagingPredicate(predicate, "executeOnEntries");
         handleHazelcastInstanceAwareParams(entryProcessor, predicate);
         List<Data> result = new ArrayList<>();
@@ -1253,10 +1273,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public V computeIfPresent(@Nonnull K key,
                               @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+        checkNotNull(remappingFunction, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
-        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)
-                && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
+        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)) {
             ComputeIfPresentEntryProcessor<K, V> ep = new ComputeIfPresentEntryProcessor<>(remappingFunction);
             return executeOnKey(key, ep);
         } else {
@@ -1290,8 +1309,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(mappingFunction, NULL_FUNCTION_IS_NOT_ALLOWED);
 
-        if (SerializationUtil.isClassStaticAndSerializable(mappingFunction)
-                && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
+        if (SerializationUtil.isClassStaticAndSerializable(mappingFunction)) {
             ComputeIfAbsentEntryProcessor<K, V> ep = new ComputeIfAbsentEntryProcessor<>(mappingFunction);
             return executeOnKey(key, ep);
         } else {
@@ -1322,8 +1340,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public void forEach(@Nonnull BiConsumer<? super K, ? super V> action) {
         checkNotNull(action, NULL_CONSUMER_IS_NOT_ALLOWED);
 
-        if (SerializationUtil.isClassStaticAndSerializable(action)
-                && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
+        if (SerializationUtil.isClassStaticAndSerializable(action)) {
             KeyValueConsumingEntryProcessor<K, V> ep = new KeyValueConsumingEntryProcessor<>(action);
             executeOnEntries(ep);
         } else {
@@ -1333,10 +1350,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     public V compute(@Nonnull K key, @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+        checkNotNull(remappingFunction, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
-        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)
-                && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
+        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)) {
             ComputeEntryProcessor<K, V> ep = new ComputeEntryProcessor<>(remappingFunction);
             return executeOnKey(key, ep);
         } else {
@@ -1380,8 +1396,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(remappingFunction, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
-        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)
-                && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
+        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)) {
             MergeEntryProcessor<K, V> ep = new MergeEntryProcessor<>(remappingFunction, value);
             return executeOnKey(key, ep);
         } else {
@@ -1418,8 +1433,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
         checkNotNull(function, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
-        if (SerializationUtil.isClassStaticAndSerializable(function)
-                && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
+        if (SerializationUtil.isClassStaticAndSerializable(function)) {
             MapEntryReplacingEntryProcessor<K, V> ep = new MapEntryReplacingEntryProcessor<>(function);
             executeOnEntries(ep);
         } else {

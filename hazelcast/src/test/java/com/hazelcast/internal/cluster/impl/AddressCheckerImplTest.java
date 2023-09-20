@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,33 @@ public class AddressCheckerImplTest extends HazelcastTestSupport {
         AddressCheckerImpl joinMessageTrustChecker = new AddressCheckerImpl(singleton("127.0.0.1-100"), logger);
         Address address = createAddress("127.0.0.101");
         assertFalse(joinMessageTrustChecker.isTrusted(address));
+    }
+
+    @Test
+    public void testAsteriskWildcard() throws UnknownHostException {
+        AddressCheckerImpl joinMessageTrustChecker = new AddressCheckerImpl(singleton("127.0.*.*"), logger);
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.1.1")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.1.1.1")));
+
+        joinMessageTrustChecker = new AddressCheckerImpl(singleton("127.*.1.*"), logger);
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.1.1")));
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.127.1.127")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.127.127.127")));
+    }
+
+    @Test
+    public void testIntervalRange() throws UnknownHostException {
+        AddressCheckerImpl joinMessageTrustChecker = new AddressCheckerImpl(singleton("127.0.110-115.*"), logger);
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.110.1")));
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.112.1")));
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.115.255")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.0.116.255")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.0.1.1")));
+
+        joinMessageTrustChecker = new AddressCheckerImpl(singleton("127.0.110-115.1-2"), logger);
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.110.2")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.0.110.3")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.0.109.2")));
     }
 
     private Address createAddress(String ip) throws UnknownHostException {

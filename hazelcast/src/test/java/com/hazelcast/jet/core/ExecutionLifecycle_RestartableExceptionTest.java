@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertTrue;
 
@@ -64,8 +65,8 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
 
     private static final int MEMBER_COUNT = 2;
 
-    private static final RestartableException RESTARTABLE_EXCEPTION =
-            new RestartableException("mock restartable exception");
+    private static final SupplierEx<Throwable> RESTARTABLE_EXCEPTION =
+            () -> new RestartableException("mock restartable exception");
 
     private static final JobConfig jobConfigWithAutoScaling = new JobConfig().setAutoScaling(true);
 
@@ -135,7 +136,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
         Job job = newJob(dag);
         if (useLightJob) {
             assertThatThrownBy(() -> job.join())
-                    .hasRootCause(RESTARTABLE_EXCEPTION);
+                    .hasRootCause(RESTARTABLE_EXCEPTION.get());
         } else {
             assertTrueEventually(() ->
                     assertGreaterOrEquals("MockPS.init not call count", MockPS.initCount.get(), 2 * MEMBER_COUNT), 10);
@@ -158,7 +159,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
         Job job = newJob(dag);
         if (useLightJob) {
             assertThatThrownBy(() -> job.join())
-                    .hasRootCause(RESTARTABLE_EXCEPTION);
+                    .hasRootCause(RESTARTABLE_EXCEPTION.get());
         } else {
             assertTrueEventually(() ->
                     assertTrue("MockPS.init not called enough times", MockPS.initCount.get() >= 2 * MEMBER_COUNT), 10);
@@ -181,7 +182,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
         Job job = newJob(dag);
         if (useLightJob) {
             assertThatThrownBy(() -> job.join())
-                    .hasRootCause(RESTARTABLE_EXCEPTION);
+                    .hasRootCause(RESTARTABLE_EXCEPTION.get());
         } else {
             assertTrueEventually(() ->
                     assertTrue("MockPMS.init not called enough times", RestartableMockPMS.initCount.get() > 2), 10);
@@ -195,15 +196,15 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
     private static class RestartableMockPMS implements ProcessorMetaSupplier {
         static final AtomicInteger initCount = new AtomicInteger();
 
-        private RuntimeException initError;
-        private RuntimeException getError;
+        private SupplierEx<Throwable> initError;
+        private SupplierEx<Throwable> getError;
 
-        RestartableMockPMS setInitError(RuntimeException initError) {
+        RestartableMockPMS setInitError(SupplierEx<Throwable> initError) {
             this.initError = initError;
             return this;
         }
 
-        RestartableMockPMS setGetError(RuntimeException getError) {
+        RestartableMockPMS setGetError(SupplierEx<Throwable> getError) {
             this.getError = getError;
             return this;
         }
@@ -212,7 +213,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
         public void init(@Nonnull Context context) {
             initCount.incrementAndGet();
             if (initError != null) {
-                throw initError;
+                throw sneakyThrow(initError.get());
             }
         }
 
@@ -220,7 +221,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
         @Override
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             if (getError != null) {
-                throw getError;
+                throw sneakyThrow(getError.get());
             }
             throw new AssertionError("should never get here");
         }

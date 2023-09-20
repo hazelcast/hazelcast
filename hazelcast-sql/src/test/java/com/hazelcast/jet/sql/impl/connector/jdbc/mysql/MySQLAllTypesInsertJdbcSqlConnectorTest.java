@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,14 @@ public class MySQLAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbcS
 
     @Before
     public void setUp() throws Exception {
-        assumeThat(type).isNotEqualTo("TIMESTAMP WITH TIME ZONE")
-                        .describedAs("TIMESTAMP WITH TIME ZONE not supported on MySQL");
+        assumeThat(type).describedAs("TIMESTAMP WITH TIME ZONE not supported on MySQL")
+                .isNotEqualTo("TIMESTAMP WITH TIME ZONE");
+
+        // MySQL REAL type is by default a synonym for DOUBLE PRECISION
+        // MySQL uses FLOAT as 4-byte floating point type
+        if (type.equals("REAL")) {
+            type = "FLOAT";
+        }
     }
 
 }

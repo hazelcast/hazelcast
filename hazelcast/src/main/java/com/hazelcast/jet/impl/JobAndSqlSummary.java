@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,13 @@ public class JobAndSqlSummary {
     private final String failureText;
     private final SqlSummary sqlSummary;
     private final String suspensionCause;
+    /**
+     * True, if the job has been cancelled based on a user request, false
+     * otherwise (also while the job is running).
+     */
+    private final boolean userCancelled;
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public JobAndSqlSummary(
             boolean isLightJob,
             long jobId,
@@ -44,7 +50,8 @@ public class JobAndSqlSummary {
             long completionTime,
             String failureText,
             SqlSummary sqlSummary,
-            @Nullable String suspensionCause) {
+            @Nullable String suspensionCause,
+            boolean userCancelled) {
         this.isLightJob = isLightJob;
         this.jobId = jobId;
         this.executionId = executionId;
@@ -55,6 +62,7 @@ public class JobAndSqlSummary {
         this.failureText = failureText;
         this.sqlSummary = sqlSummary;
         this.suspensionCause = suspensionCause;
+        this.userCancelled = userCancelled;
     }
 
     public boolean isLightJob() {
@@ -97,6 +105,14 @@ public class JobAndSqlSummary {
         return suspensionCause;
     }
 
+    /**
+     * @return true, if the job has been cancelled based on a user request,
+     * false otherwise (also while the job is running).
+     */
+    public boolean isUserCancelled() {
+        return userCancelled;
+    }
+
     @Override
     public String toString() {
         return "JobAndSqlSummary{" +
@@ -110,6 +126,7 @@ public class JobAndSqlSummary {
                 ", failureText='" + failureText + '\'' +
                 ", sqlSummary=" + sqlSummary +
                 ", suspensionCause=" + suspensionCause +
+                ", userCancelled=" + userCancelled +
                 '}';
     }
 
@@ -132,12 +149,13 @@ public class JobAndSqlSummary {
                 && Objects.equals(nameOrId, that.nameOrId) && status == that.status
                 && Objects.equals(failureText, that.failureText)
                 && Objects.equals(sqlSummary, that.sqlSummary)
-                && suspensionCauseEquals;
+                && suspensionCauseEquals
+                && userCancelled == that.userCancelled;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(isLightJob, jobId, executionId, nameOrId, status, submissionTime,
-                completionTime, failureText, sqlSummary, suspensionCause);
+                completionTime, failureText, sqlSummary, suspensionCause, userCancelled);
     }
 }

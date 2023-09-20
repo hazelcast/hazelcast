@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,17 @@ package com.hazelcast.client.connectionstrategy;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,6 +38,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import usercodedeployment.IncrementingEntryProcessor;
 
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -42,6 +46,7 @@ import java.util.concurrent.CountDownLatch;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -111,6 +116,52 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
                 fail();
             }
         });
+    }
+
+    @Test
+    public void testAsyncStartTrueShouldNotBlock_whenThereIsClientStateToSend() {
+        Config config = new Config();
+        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
+        config.setClassLoader(filteringCL);
+        config.getUserCodeDeploymentConfig().setEnabled(true);
+        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(-1);
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addClass(IncrementingEntryProcessor.class);
+        clientUserCodeDeploymentConfig.setEnabled(true);
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig);
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+
+        CountDownLatch connectedLatch = new CountDownLatch(1);
+        clientConfig.addListenerConfig(new ListenerConfig((LifecycleListener) event -> {
+            if (event.getState().equals(CLIENT_CONNECTED)) {
+                connectedLatch.countDown();
+            }
+        }));
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        assertOpenEventually(connectedLatch);
+
+        // The following logic verifies user code deployment works
+        int keyCount = 100;
+        IMap<Integer, Integer> map = client.getMap(randomName());
+
+        for (int i = 0; i < keyCount; i++) {
+            map.put(i, 0);
+        }
+
+        int incrementCount = 5;
+        //doing the call a few times so that the invocation can be done on different members
+        for (int i = 0; i < incrementCount; i++) {
+            map.executeOnEntries(new IncrementingEntryProcessor());
+        }
+
+        for (int i = 0; i < keyCount; i++) {
+            assertEquals(incrementCount, (int) map.get(i));
+        }
     }
 
     @Test(expected = HazelcastClientNotActiveException.class)

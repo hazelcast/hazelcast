@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ class PortableUpsertTarget implements UpsertTarget {
 
         return value -> {
             if (fieldIndex == -1 && value != null) {
-                throw QueryException.error("Unable to inject a non-null value to \"" + path + "\"");
+                throw QueryException.error("Field \"" + path + "\" doesn't exist in Portable Class Definition");
             }
 
             if (fieldIndex > -1) {

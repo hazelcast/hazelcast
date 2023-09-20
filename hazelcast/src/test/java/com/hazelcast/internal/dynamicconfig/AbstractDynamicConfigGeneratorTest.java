@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.ConsistencyCheckStrategy;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -40,7 +41,6 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
@@ -59,6 +59,7 @@ import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -281,6 +282,25 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
         assertEquals(23, actualConfig.getEvictionConfig().getSize());
         assertEquals("LRU", actualConfig.getEvictionConfig().getEvictionPolicy().name());
         assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapPartitioningAttributes() {
+        final List<PartitioningAttributeConfig> attributes = asList(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
+
+        MapConfig mapConfig = newMapConfig()
+                .setName("partitioningAttributesTest")
+                .setPartitioningAttributeConfigs(attributes);
+
+        Config config = new Config()
+                .addMapConfig(mapConfig);
+
+        Config decConfig = getNewConfigViaGenerator(config);
+        assertEquals(attributes,
+                decConfig.getMapConfig("partitioningAttributesTest").getPartitioningAttributeConfigs());
     }
 
     // CACHE
@@ -878,23 +898,23 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
     }
 
 
-    // EXTERNAL DATA STORE
+    // DATA CONNECTION
 
     @Test
-    public void testExternalDataStore() {
+    public void testDataConnection() {
         Properties properties = new Properties();
         properties.setProperty("prop1", "val1");
         properties.setProperty("prop2", "val2");
-        ExternalDataStoreConfig expectedConfig = new ExternalDataStoreConfig()
+        DataConnectionConfig expectedConfig = new DataConnectionConfig()
                 .setName("some-name")
-                .setClassName("some-class-name")
+                .setType("some-type")
                 .setProperties(properties);
 
-        Config config = new Config().addExternalDataStoreConfig(expectedConfig);
+        Config config = new Config().addDataConnectionConfig(expectedConfig);
 
         Config decConfig = getNewConfigViaGenerator(config);
 
-        ExternalDataStoreConfig actualConfig = decConfig.getExternalDataStoreConfig(expectedConfig.getName());
+        DataConnectionConfig actualConfig = decConfig.getDataConnectionConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
     }
 

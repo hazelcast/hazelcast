@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,14 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.EntryOperator;
-import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -56,7 +55,7 @@ public enum MultipleEntryOpSteps implements IMapOpStep {
             }
 
             if (!keysToLoad.isEmpty()) {
-                state.setKeysToLoad(Collections.unmodifiableList(keysToLoad));
+                state.setKeysToLoad(keysToLoad);
             }
         }
 
@@ -78,7 +77,8 @@ public enum MultipleEntryOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             Collection<Data> keysToLoad = state.getKeysToLoad();
-            state.setLoadedKeyValuePairs(state.getRecordStore().getMapDataStore().loadAll(keysToLoad));
+            Map loadedKeyValuePairs = state.getRecordStore().getMapDataStore().loadAll(keysToLoad);
+            state.setLoadedKeyValuePairs(loadedKeyValuePairs);
         }
 
         @Override
@@ -232,7 +232,7 @@ public enum MultipleEntryOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

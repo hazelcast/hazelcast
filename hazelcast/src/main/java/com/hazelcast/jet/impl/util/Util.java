@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,12 +62,14 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -80,6 +82,7 @@ import java.util.function.ToIntFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
@@ -88,7 +91,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.lang.String.format;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -96,7 +99,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
-import static java.util.stream.IntStream.range;
 
 public final class Util {
     public static final String CONFIG_OVERRIDE_WARNING = "(for Hazelcast embedded, works only when " +
@@ -238,7 +240,7 @@ public final class Util {
         if (!(object instanceof Serializable)) {
             throw new IllegalArgumentException('"' + objectName + "\" must implement Serializable");
         }
-        try (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
+        try (ObjectOutputStream os = new ObjectOutputStream(OutputStream.nullOutputStream())) {
             os.writeObject(object);
         } catch (NotSerializableException | InvalidClassException e) {
             throw new IllegalArgumentException("\"" + objectName + "\" must be serializable", e);
@@ -288,7 +290,7 @@ public final class Util {
      * the value
      */
     public static <T> Map<Integer, List<T>> distributeObjects(int count, List<T> objects) {
-        Map<Integer, List<T>> processorToObjects = range(0, objects.size())
+        Map<Integer, List<T>> processorToObjects = IntStream.range(0, objects.size())
                 .mapToObj(i -> entry(i, objects.get(i)))
                 .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, Collectors.toList())));
 
@@ -344,13 +346,6 @@ public final class Util {
             res[i] = j;
         }
         return res;
-    }
-
-    private static class NullOutputStream extends OutputStream {
-        @Override
-        public void write(int b) {
-            // do nothing
-        }
     }
 
     public static String jobNameAndExecutionId(String jobName, long executionId) {
@@ -452,6 +447,23 @@ public final class Util {
      */
     public static void lazyAdd(AtomicLongArray counters, int index, long addend) {
         counters.lazySet(index, counters.get(index) + addend);
+    }
+
+    /**
+     * Returns list of integers from begin (inclusive) to end (exclusive).
+     */
+    public static List<Integer> range(final int begin, final int end) {
+        return new AbstractList<>() {
+            @Override
+            public Integer get(int index) {
+                return begin + index;
+            }
+
+            @Override
+            public int size() {
+                return end - begin;
+            }
+        };
     }
 
     /**
@@ -571,6 +583,17 @@ public final class Util {
     }
 
     /**
+     * Merge two {@link Properties} instances into one.
+     * {@code newProperties}'s keys has priority over {@code original} keys.
+     */
+    public static Properties mergeProps(Properties original, Properties newProperties) {
+        Properties props = new Properties();
+        props.putAll(original);
+        props.putAll(newProperties);
+        return props;
+    }
+
+    /**
      * Edits the permissions on the file denoted by {@code path} by calling
      * {@code editFn} with the set of that file's current permissions. {@code
      * editFn} should modify that set to the desired permission set, and this
@@ -657,7 +680,7 @@ public final class Util {
      * output order. The output field named {@code age} is missing in input, so
      * the value for it is {@code null} for any input.
      *
-     * @param inputFields the input headers
+     * @param inputFields  the input headers
      * @param outputFields the output headers
      * @return the indices to map input to output
      */
@@ -697,7 +720,7 @@ public final class Util {
         } else if (instance instanceof HazelcastInstanceProxy) {
             return ((HazelcastInstanceProxy) instance).getSerializationService();
         } else if (instance instanceof HazelcastClientInstanceImpl) {
-            return  ((HazelcastClientInstanceImpl) instance).getSerializationService();
+            return ((HazelcastClientInstanceImpl) instance).getSerializationService();
         } else if (instance instanceof HazelcastClientProxy) {
             return ((HazelcastClientProxy) instance).getSerializationService();
         } else {
@@ -717,7 +740,7 @@ public final class Util {
             return ((HazelcastInstanceProxy) instance).getOriginal();
         } else {
             throw new IllegalArgumentException("This method can be called only with member" +
-                    " instances such as HazelcastInstanceImpl and HazelcastInstanceProxy.");
+                    " instances such as HazelcastInstanceImpl and HazelcastInstanceProxy, but not " + instance.getClass());
         }
     }
 
