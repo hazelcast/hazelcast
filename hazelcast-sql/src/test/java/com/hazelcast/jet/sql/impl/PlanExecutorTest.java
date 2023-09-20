@@ -47,6 +47,7 @@ import org.mockito.Mock;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.sql.impl.security.NoOpSqlSecurityContext.INSTANCE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -157,7 +158,7 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
                 .willReturn(job);
 
         // when
-        SqlResult result = planExecutor.execute(plan, queryId, emptyList(), 0L, null);
+        SqlResult result = planExecutor.execute(plan, queryId, emptyList(), 0L, INSTANCE);
 
         // then
         assertThat(result.updateCount()).isEqualTo(0);
