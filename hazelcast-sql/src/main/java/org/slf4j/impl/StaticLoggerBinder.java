@@ -50,6 +50,6 @@ public class StaticLoggerBinder implements LoggerFactoryBinder {
 
     @Override
     public String getLoggerFactoryClassStr() {
-        return StaticLoggerBinder.class.getName();
+        return NOPLoggerFactory.class.getName();
     }
 }
