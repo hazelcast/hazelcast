@@ -40,15 +40,15 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * A MethodProbe is a {@link ProbeFunction} that invokes a method that is annotated with {@link Probe}.
+ * A {@link MethodProbe} is a {@link ProbeFunction} that invokes a method that is annotated with {@link Probe}.
  * <p>
  * Internally accesses the method using reflection via one of these mechanisms (as a pose to a simple {@link Method#invoke} for
- * <a href="https://github.com/hazelcast/hazelcast/pull/25279">performance reasons</a>:
- * <ol>
+ * <a href="https://github.com/hazelcast/hazelcast/pull/25279">performance reasons</a>):
+ * <ul>
  * <li>{@link #methodHandle}
  * <li>{@link #staticAccessor}
  * <li>{@link #nonStaticAccessor}
- * </ol>
+ * </ul>
  */
 abstract class MethodProbe implements ProbeFunction {
     private static final Lookup LOOKUP = MethodHandles.lookup();
@@ -65,7 +65,7 @@ abstract class MethodProbe implements ProbeFunction {
     final MethodHandle methodHandle;
 
     /**
-     * A {@link Supplier} used to access static methods returning objects (reference types).+
+     * A {@link Supplier} used to access static methods returning objects (reference types).
      * <p>
      * Generated via a {@link LambdaMetafactory}, bound to a {@link MethodHandle} derived from {@link #methodHandle}.
      * <p>
