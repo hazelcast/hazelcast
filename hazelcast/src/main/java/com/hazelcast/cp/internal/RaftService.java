@@ -104,7 +104,6 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
@@ -546,9 +545,12 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     void publishGracefulShutdownEvents(Map<CPGroupId, Collection<CPMember>> myMemberships, CPMemberInfo me) {
         for (Map.Entry<CPGroupId, Collection<CPMember>> myMembership : myMemberships.entrySet()) {
             ArrayList<CPMember> unavailable = new ArrayList<>();
-            unavailable.add(me); // TODO this should also include others that are missing -- but, they are already removed from group
+            // TODO this should also include others that are missing -- but, they are already removed from group
+            unavailable.add(me);
             List<CPMember> availableWithoutMe =
-                    myMembership.getValue().stream().filter(member -> !member.getUuid().equals(me.getUuid())).collect(Collectors.toList());
+                    myMembership.getValue().stream()
+                                .filter(member -> !member.getUuid().equals(me.getUuid()))
+                                .collect(Collectors.toList());
             CPGroupAvailabilityEventGracefulImpl e =
                     new CPGroupAvailabilityEventGracefulImpl(
                             myMembership.getKey(),
