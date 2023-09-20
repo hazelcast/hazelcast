@@ -114,12 +114,10 @@ public abstract class AbstractJobProxy<C, M> implements Job {
                      long jobId,
                      boolean isLightJob,
                      @Nonnull Object jobDefinition,
-                     @Nonnull JobConfig config,
-                     @Nullable Subject subject) {
+                     @Nonnull JobConfig config) {
         this.jobId = jobId;
         this.container = container;
         this.lightJobCoordinator = isLightJob ? findLightJobCoordinator() : null;
-        this.subject = subject;
         this.logger = loggingService().getLogger(Job.class);
         submittingInstance = true;
 

@@ -20,8 +20,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.JobStateSnapshot;
+import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -38,9 +38,9 @@ import com.hazelcast.jet.impl.operation.GetJobSuspensionCauseOperation;
 import com.hazelcast.jet.impl.operation.IsJobUserCancelledOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
-import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
+import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -48,6 +48,7 @@ import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.util.List;
 import java.util.UUID;
@@ -61,8 +62,12 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
  * {@link Job} proxy on member.
  */
 public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
+    // Subject that is used to submit a job. Not available for jobs obtained by id.
+    private final Subject subject;
+
     public JobProxy(NodeEngineImpl nodeEngine, long jobId, Address coordinator) {
         super(nodeEngine, jobId, coordinator);
+        subject = null;
     }
 
     public JobProxy(NodeEngineImpl nodeEngine,
@@ -70,8 +75,9 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
                     boolean isLightJob,
                     Object jobDefinition,
                     JobConfig config,
-                    Subject subject) {
-        super(nodeEngine, jobId, isLightJob, jobDefinition, config, subject);
+                    @Nullable Subject subject) {
+        super(nodeEngine, jobId, isLightJob, jobDefinition, config);
+        this.subject = subject;
     }
 
     @Nonnull @Override
