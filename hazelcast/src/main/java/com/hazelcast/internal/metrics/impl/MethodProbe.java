@@ -44,6 +44,7 @@ abstract class MethodProbe implements ProbeFunction {
     private static final Lookup LOOKUP = MethodHandles.lookup();
 
     final Method method;
+    /** {@link MethodHandle} used to access primitives to avoid boxing */
     final MethodHandle methodHandle;
     final boolean isMethodStatic;
     final CachedProbe probe;
@@ -66,7 +67,7 @@ abstract class MethodProbe implements ProbeFunction {
                 methodType = methodType.changeParameterType(0, Object.class);
             }
 
-            this.methodHandle = unreflected.asType(methodType);
+            methodHandle = unreflected.asType(methodType);
 
             this.probe = new CachedProbe(probe);
             this.type = type;
@@ -123,7 +124,7 @@ abstract class MethodProbe implements ProbeFunction {
         public long get(final S source) throws Throwable {
             switch (type) {
                 case TYPE_LONG_PRIMITIVE:
-                    return invokeLongPrimitive(source);
+                    return isMethodStatic ? (long) methodHandle.invokeExact() : (long) methodHandle.invokeExact(source);
                 case TYPE_LONG_NUMBER:
                     final Number longNumber = invoke(source);
                     return longNumber == null ? 0 : longNumber.longValue();
@@ -154,7 +155,7 @@ abstract class MethodProbe implements ProbeFunction {
         public double get(final S source) throws Throwable {
             switch (type) {
                 case TYPE_DOUBLE_PRIMITIVE:
-                    return invokeDoublePrimitive(source);
+                    return isMethodStatic ? (double) methodHandle.invokeExact() : (double) methodHandle.invokeExact(source);
                 case TYPE_DOUBLE_NUMBER:
                     final Number result = invoke(source);
                     return result == null ? 0 : result.doubleValue();
@@ -170,13 +171,5 @@ abstract class MethodProbe implements ProbeFunction {
         // Compiling to a CallSite with a LambdaMetafactory is likely to be *much* faster, but struggles to copy with private
         // methods
         return (T) method.invoke(source, EMPTY_ARGS);
-    }
-
-    protected double invokeDoublePrimitive(final Object source) throws Throwable {
-        return isMethodStatic ? (double) methodHandle.invokeExact() : (double) methodHandle.invokeExact(source);
-    }
-
-    protected long invokeLongPrimitive(final Object source) throws Throwable {
-        return isMethodStatic ? (long) methodHandle.invokeExact() : (long) methodHandle.invokeExact(source);
     }
 }
