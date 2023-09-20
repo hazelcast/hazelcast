@@ -37,27 +37,24 @@ import java.util.concurrent.atomic.LongAdder;
  */
 enum ProbeUtils {
     TYPE_LONG_PRIMITIVE(long.class, byte.class, short.class, int.class, long.class),
-    TYPE_LONG_NUMBER(long.class,  Byte.class, Integer.class, Short.class, Long.class, AtomicInteger.class,
-            AtomicLong.class, LongAdder.class, LongAccumulator.class),
+    TYPE_LONG_NUMBER(long.class, Byte.class, Integer.class, Short.class, Long.class, AtomicInteger.class, AtomicLong.class,
+            LongAdder.class, LongAccumulator.class),
     TYPE_DOUBLE_PRIMITIVE(double.class, double.class, float.class),
-    TYPE_DOUBLE_NUMBER(double.class,  Double.class, Float.class),
-    TYPE_COLLECTION(long.class,  Collection.class),
-    TYPE_MAP(long.class,  Map.class),
-    TYPE_COUNTER(long.class,  Counter.class),
-    TYPE_SEMAPHORE(long.class,  Semaphore.class);
+    TYPE_DOUBLE_NUMBER(double.class, Double.class, Float.class),
+    TYPE_COLLECTION(long.class, Collection.class),
+    TYPE_MAP(long.class, Map.class),
+    TYPE_COUNTER(long.class, Counter.class),
+    TYPE_SEMAPHORE(long.class, Semaphore.class);
 
     private static final Map<Class<?>, ProbeUtils> TYPES;
 
     /** The type the {@link Probe} would return */
     private final Class<?> mapsTo;
-    /** If {@link #types} are all {@link Class#isPrimitive()} */
-    private final boolean primitive;
     /** The type(s) the {@link Probe} could be attached to */
     private final Class<?>[] types;
 
     ProbeUtils(final Class<?> mapsTo, final Class<?>... types) {
         this.mapsTo = mapsTo;
-        this.primitive = Arrays.stream(types).allMatch(Class::isPrimitive);
         this.types = types;
     }
 
@@ -77,8 +74,9 @@ enum ProbeUtils {
         return mapsTo;
     }
 
+    /** @return if {@link #types} are all {@link Class#isPrimitive()} */
     boolean isPrimitive() {
-        return primitive;
+        return Arrays.stream(types).allMatch(Class::isPrimitive);
     }
 
     /**
