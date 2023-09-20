@@ -36,7 +36,7 @@ public final class SqlErrorCodec {
     public static void encode(ClientMessage clientMessage, com.hazelcast.sql.impl.client.SqlError sqlError) {
         clientMessage.add(BEGIN_FRAME.copy());
 
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        Frame initialFrame = new Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, CODE_FIELD_OFFSET, sqlError.getCode());
         encodeUUID(initialFrame.content, ORIGINATING_MEMBER_ID_FIELD_OFFSET, sqlError.getOriginatingMemberId());
         clientMessage.add(initialFrame);
@@ -48,23 +48,23 @@ public final class SqlErrorCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.sql.impl.client.SqlError decode(ClientMessage.ForwardFrameIterator iterator) {
+    public static com.hazelcast.sql.impl.client.SqlError decode(ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 
-        ClientMessage.Frame initialFrame = iterator.next();
+        Frame initialFrame = iterator.next();
         int code = decodeInt(initialFrame.content, CODE_FIELD_OFFSET);
         java.util.UUID originatingMemberId = decodeUUID(initialFrame.content, ORIGINATING_MEMBER_ID_FIELD_OFFSET);
 
-        java.lang.String message = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        String message = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         boolean isSuggestionExists = false;
-        java.lang.String suggestion = null;
+        String suggestion = null;
         if (!iterator.peekNext().isEndFrame()) {
             suggestion = CodecUtil.decodeNullable(iterator, StringCodec::decode);
             isSuggestionExists = true;
         }
         boolean isCauseStackTraceExists = false;
-        java.lang.String causeStackTrace = null;
+        String causeStackTrace = null;
         if (!iterator.peekNext().isEndFrame()) {
             causeStackTrace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
             isCauseStackTraceExists = true;

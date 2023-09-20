@@ -32,10 +32,6 @@ public class SqlError {
     private final boolean isCauseStackTraceExists;
     private final String causeStackTrace;
 
-    public SqlError(int code, String message, UUID originatingMemberId) {
-        this(code, message, originatingMemberId, false, null, false, null);
-    }
-
     public SqlError(
             int code,
             String message,
@@ -79,27 +75,56 @@ public class SqlError {
         return causeStackTrace;
     }
 
+    @SuppressWarnings({
+            "checkstyle:CyclomaticComplexity",
+            "checkstyle:NPathComplexity",
+    })
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
+
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+
         SqlError sqlError = (SqlError) o;
-        return code == sqlError.code
-               && suggestionExists == sqlError.suggestionExists
-               && isCauseStackTraceExists == sqlError.isCauseStackTraceExists
-               && Objects.equals(message, sqlError.message)
-               && Objects.equals(originatingMemberId, sqlError.originatingMemberId)
-               && Objects.equals(suggestion, sqlError.suggestion)
-               && Objects.equals(causeStackTrace, sqlError.causeStackTrace);
+
+        if (code != sqlError.code) {
+            return false;
+        }
+
+        if (!message.equals(sqlError.message)) {
+            return false;
+        }
+
+        if (!originatingMemberId.equals(sqlError.originatingMemberId)) {
+            return false;
+        }
+
+        if (suggestionExists && sqlError.suggestionExists) {
+            if (!Objects.equals(suggestion, sqlError.suggestion)) {
+                return false;
+            }
+        }
+        if (isCauseStackTraceExists && sqlError.isCauseStackTraceExists) {
+            if (!Objects.equals(causeStackTrace, sqlError.causeStackTrace)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(code, message, originatingMemberId, suggestionExists, suggestion, isCauseStackTraceExists,
-                causeStackTrace);
+        int result = code;
+
+        result = 31 * result + message.hashCode();
+        result = 31 * result + originatingMemberId.hashCode();
+        result = 31 * result + Objects.hashCode(suggestion);
+        result = 31 * result + Objects.hashCode(causeStackTrace);
+
+        return result;
     }
 }
