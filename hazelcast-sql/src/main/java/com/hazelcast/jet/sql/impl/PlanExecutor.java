@@ -505,7 +505,11 @@ public class PlanExecutor {
         );
     }
 
-    SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
+    SqlResult execute(SelectPlan plan,
+                      QueryId queryId,
+                      List<Object> arguments,
+                      long timeout,
+                      @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
@@ -542,7 +546,8 @@ public class PlanExecutor {
                 if (t != null) {
                     int errorCode = findQueryExceptionCode(t);
                     String errorMessage = findQueryExceptionMessage(t);
-                    queryResultProducer.onError(QueryException.error(errorCode, "The Jet SQL job failed: " + errorMessage, t));
+                    queryResultProducer.onError(
+                            QueryException.error(errorCode, "The Jet SQL job failed: " + errorMessage, t));
                 }
             });
         } catch (Throwable e) {
@@ -558,7 +563,11 @@ public class PlanExecutor {
         );
     }
 
-    SqlResult execute(DmlPlan plan, QueryId queryId, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
+    SqlResult execute(DmlPlan plan,
+                      QueryId queryId,
+                      List<Object> arguments,
+                      long timeout,
+                      @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
