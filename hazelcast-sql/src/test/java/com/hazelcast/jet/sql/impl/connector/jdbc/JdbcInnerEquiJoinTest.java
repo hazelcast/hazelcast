@@ -233,6 +233,37 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
         );
     }
 
+    // Left side is batch : joinInfo indices are used
+    @Test
+    public void joinWithOtherJdbcWhereClauseOnRightSideColumn() throws SQLException {
+        String otherTableName = randomTableName();
+        createTable(otherTableName);
+        insertItems(otherTableName, ITEM_COUNT);
+
+        execute(
+                "CREATE MAPPING " + otherTableName + " ("
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        // Join on two columns
+        assertRowsAnyOrder(
+                "SELECT t1.id, t2.name " +
+                "FROM " + tableName + " t1 " +
+                "JOIN " + otherTableName + " t2 " +
+                "   ON t1.id = t2.id AND t1.name = t2.name " +
+                "WHERE t2.id > 0",
+                newArrayList(
+                        new Row(1, "name-1"),
+                        new Row(2, "name-2"),
+                        new Row(3, "name-3"),
+                        new Row(4, "name-4")
+                )
+        );
+    }
+
 
     // Left side is batch : joinInfo indices are used
     @Test
