@@ -164,6 +164,13 @@ public final class ExceptionUtil {
         return sw.toString();
     }
 
+    public static Throwable getRootCause(Throwable item) {
+        while (item.getCause() != null) {
+            item = item.getCause();
+        }
+        return item;
+    }
+
     /**
      * If the given exception has "java.lang.ClassCastException: cannot assign
      * instance of java.lang.invoke.SerializedLambda" in the causes, wrap it in

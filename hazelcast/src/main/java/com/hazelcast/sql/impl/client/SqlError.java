@@ -29,22 +29,29 @@ public class SqlError {
     private final UUID originatingMemberId;
     private final boolean suggestionExists;
     private final String suggestion;
+    private final boolean isCauseStackTraceExists;
+    private final String causeStackTrace;
 
     public SqlError(int code, String message, UUID originatingMemberId) {
-        this(code, message, originatingMemberId, false, null);
+        this(code, message, originatingMemberId, false, null, false, null);
     }
 
     public SqlError(
             int code,
             String message,
             UUID originatingMemberId,
-            boolean suggestionExists, String suggestion
+            boolean suggestionExists,
+            String suggestion,
+            boolean isCauseStackTraceExists,
+            String causeStackTrace
     ) {
         this.code = code;
         this.message = message;
         this.originatingMemberId = originatingMemberId;
         this.suggestionExists = suggestionExists;
         this.suggestion = suggestion;
+        this.isCauseStackTraceExists = isCauseStackTraceExists;
+        this.causeStackTrace = causeStackTrace;
     }
 
     public int getCode() {
@@ -63,41 +70,36 @@ public class SqlError {
         return suggestion;
     }
 
+
+    public boolean isCauseStackTraceExists() {
+        return isCauseStackTraceExists;
+    }
+
+    public String getCauseStackTrace() {
+        return causeStackTrace;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         SqlError sqlError = (SqlError) o;
-
-        if (code != sqlError.code) {
-            return false;
-        }
-
-        if (!message.equals(sqlError.message)) {
-            return false;
-        }
-
-        if (!originatingMemberId.equals(sqlError.originatingMemberId)) {
-            return false;
-        }
-
-        return !suggestionExists || !sqlError.suggestionExists || Objects.equals(suggestion, sqlError.suggestion);
+        return code == sqlError.code
+               && suggestionExists == sqlError.suggestionExists
+               && isCauseStackTraceExists == sqlError.isCauseStackTraceExists
+               && Objects.equals(message, sqlError.message)
+               && Objects.equals(originatingMemberId, sqlError.originatingMemberId)
+               && Objects.equals(suggestion, sqlError.suggestion)
+               && Objects.equals(causeStackTrace, sqlError.causeStackTrace);
     }
 
     @Override
     public int hashCode() {
-        int result = code;
-
-        result = 31 * result + message.hashCode();
-        result = 31 * result + originatingMemberId.hashCode();
-        result = 31 * result + Objects.hashCode(suggestion);
-
-        return result;
+        return Objects.hash(code, message, originatingMemberId, suggestionExists, suggestion, isCauseStackTraceExists,
+                causeStackTrace);
     }
 }
