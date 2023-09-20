@@ -98,7 +98,7 @@ public class JobTimeoutTest extends JetTestSupport {
 
             assertJobStatusEventually(job, SUSPENDED, 10);
             job.resume();
-        } catch (Throwable ignored) {
+        } catch (AssertionError | IllegalStateException ignored) {
         }
 
         assertThrows(CancellationException.class, job::join);
@@ -120,7 +120,7 @@ public class JobTimeoutTest extends JetTestSupport {
             job.suspend();
 
             assertJobStatusEventually(job, SUSPENDED);
-        } catch (Throwable ignored) {
+        } catch (AssertionError | IllegalStateException ignored) {
         }
         assertThrows(CancellationException.class, job::join);
         assertEquals(FAILED, job.getStatus());
