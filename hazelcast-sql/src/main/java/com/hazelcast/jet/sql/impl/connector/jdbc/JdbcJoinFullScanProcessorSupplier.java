@@ -65,10 +65,13 @@ public class JdbcJoinFullScanProcessorSupplier
     public JdbcJoinFullScanProcessorSupplier() {
     }
 
-    public JdbcJoinFullScanProcessorSupplier(@Nonnull NestedLoopReaderParams nestedLoopReaderParams,
-                                             @Nonnull String selectQuery) {
-        super(nestedLoopReaderParams.getJdbcTable().getDataConnectionName());
-        this.jdbcJoinParameters = new JdbcJoinParameters(selectQuery, nestedLoopReaderParams);
+    public JdbcJoinFullScanProcessorSupplier(
+            @Nonnull String dataConnectionName,
+            @Nonnull String selectQuery,
+            @Nonnull JetJoinInfo joinInfo,
+            List<Expression<?>> projections) {
+        super(dataConnectionName);
+        this.jdbcJoinParameters = new JdbcJoinParameters(selectQuery, joinInfo, projections);
     }
 
     @Override

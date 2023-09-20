@@ -38,10 +38,12 @@ public class JdbcJoinParameters implements DataSerializable {
     public JdbcJoinParameters() {
     }
 
-    public JdbcJoinParameters(String selectQuery, NestedLoopReaderParams nestedLoopReaderParams) {
+    public JdbcJoinParameters(String selectQuery,
+                              JetJoinInfo joinInfo,
+                              List<Expression<?>> projections) {
         this.selectQuery = selectQuery;
-        this.joinInfo = nestedLoopReaderParams.getJoinInfo();
-        this.projections = nestedLoopReaderParams.getProjections();
+        this.joinInfo = joinInfo;
+        this.projections = projections;
     }
 
     public String getSelectQuery() {

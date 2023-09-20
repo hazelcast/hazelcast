@@ -17,51 +17,65 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector.DagBuildContext;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlDialect;
 
-import javax.annotation.Nonnull;
+import java.util.List;
 
-public class JdbcJoiner {
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.resolveDialect;
 
-    private final NestedLoopReaderParams nestedLoopReaderParams;
+public final class JdbcJoiner {
 
-    public JdbcJoiner(@Nonnull NestedLoopReaderParams nestedLoopReaderParams) {
-        this.nestedLoopReaderParams = nestedLoopReaderParams;
+    private JdbcJoiner() {
     }
 
-    public ProcessorSupplier createProcessorSupplier() {
-        ProcessorSupplier processorSupplier;
-        JetJoinInfo joinInfo = nestedLoopReaderParams.getJoinInfo();
+    public static ProcessorSupplier createJoinProcessorSupplier(
+            JetJoinInfo joinInfo,
+            DagBuildContext context,
+            HazelcastRexNode predicate,
+            List<HazelcastRexNode> projection) {
+
+        JdbcTable jdbcTable = context.getTable();
+        SqlDialect dialect = resolveDialect(jdbcTable, context);
 
         if (!joinInfo.isEquiJoin()) {
             // Indices are not given
-            processorSupplier = createFullScanProcessorSupplier();
+            SelectQueryBuilder queryBuilder = new SelectQueryBuilder(
+                    jdbcTable,
+                    dialect,
+                    predicate == null ? null : predicate.unwrap(RexNode.class),
+                    Util.toList(projection, n -> n.unwrap(RexNode.class))
+            );
+            String selectQuery = queryBuilder.query();
+            return new JdbcJoinFullScanProcessorSupplier(
+                    jdbcTable.getDataConnectionName(),
+                    selectQuery,
+                    joinInfo,
+                    context.convertProjection(projection)
+            );
         } else {
+            // TODO predicate is not used in this branch - see failing test in
+            // JdbcInnerEquiJoinTest.joinWithOtherJdbcWhereClauseOnRightSideColumn
+
             // Indices are given
-            processorSupplier = createIndexScanProcessorSupplier(joinInfo);
+            IndexScanSelectQueryBuilder queryBuilder = new IndexScanSelectQueryBuilder(
+                    jdbcTable,
+                    dialect,
+                    Util.toList(projection, n -> n.unwrap(RexNode.class)),
+                    joinInfo
+            );
+            String selectQuery = queryBuilder.query();
+            return new JdbcJoinIndexScanProcessorSupplier(
+                    jdbcTable.getDataConnectionName(),
+                    selectQuery,
+                    joinInfo,
+                    context.convertProjection(projection)
+            );
         }
-        return processorSupplier;
     }
 
-    ProcessorSupplier createFullScanProcessorSupplier() {
-        SelectQueryBuilder queryBuilder = new SelectQueryBuilder(
-                nestedLoopReaderParams.getJdbcTable(),
-                nestedLoopReaderParams.getSqlDialect(),
-                nestedLoopReaderParams.getRexPredicate(),
-                nestedLoopReaderParams.getRexProjection()
-        );
-        String selectQuery = queryBuilder.query();
-        return new JdbcJoinFullScanProcessorSupplier(nestedLoopReaderParams, selectQuery);
-    }
-
-    ProcessorSupplier createIndexScanProcessorSupplier(JetJoinInfo joinInfo) {
-        IndexScanSelectQueryBuilder queryBuilder = new IndexScanSelectQueryBuilder(
-                nestedLoopReaderParams.getJdbcTable(),
-                nestedLoopReaderParams.getSqlDialect(),
-                nestedLoopReaderParams.getRexProjection(),
-                joinInfo
-        );
-        String selectQuery = queryBuilder.query();
-        return new JdbcJoinIndexScanProcessorSupplier(nestedLoopReaderParams, selectQuery);
-    }
 }

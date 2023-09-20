@@ -31,6 +31,7 @@ import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.mongodb.lang.NonNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -70,10 +71,13 @@ public class JdbcJoinIndexScanProcessorSupplier
     public JdbcJoinIndexScanProcessorSupplier() {
     }
 
-    public JdbcJoinIndexScanProcessorSupplier(@Nonnull NestedLoopReaderParams nestedLoopReaderParams,
-                                              @Nonnull String selectQuery) {
-        super(nestedLoopReaderParams.getJdbcTable().getDataConnectionName());
-        this.jdbcJoinParameters = new JdbcJoinParameters(selectQuery, nestedLoopReaderParams);
+    public JdbcJoinIndexScanProcessorSupplier(
+            @Nonnull String dataConnectionName,
+            @Nonnull String selectQuery,
+            @NonNull JetJoinInfo joinInfo,
+            List<Expression<?>> projections) {
+        super(dataConnectionName);
+        this.jdbcJoinParameters = new JdbcJoinParameters(selectQuery, joinInfo, projections);
     }
 
     @Override

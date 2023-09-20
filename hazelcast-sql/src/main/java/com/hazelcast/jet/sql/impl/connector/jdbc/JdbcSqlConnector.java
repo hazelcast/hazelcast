@@ -25,7 +25,6 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -274,7 +273,7 @@ public class JdbcSqlConnector implements SqlConnector {
         );
     }
 
-    private static SqlDialect resolveDialect(JdbcTable table, DagBuildContext context) {
+    static SqlDialect resolveDialect(JdbcTable table, DagBuildContext context) {
         String dataConnectionName = table.getDataConnectionName();
         JdbcDataConnection dataConnection = context
                 .getNodeEngine()
@@ -304,27 +303,22 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public VertexWithInputConfig nestedLoopReader(@Nonnull DagBuildContext context,
-                                                  @Nullable HazelcastRexNode predicate,
-                                                  @Nonnull List<HazelcastRexNode> projection,
-                                                  @Nonnull JetJoinInfo joinInfo) {
-
-        NestedLoopReaderParams nestedLoopReaderParams = new NestedLoopReaderParams(context, predicate, projection, joinInfo);
+    public VertexWithInputConfig nestedLoopReader(
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
+            @Nonnull JetJoinInfo joinInfo) {
 
         JdbcTable jdbcTable = context.getTable();
-        nestedLoopReaderParams.setDerivedParameters();
-
-        SqlDialect dialect = resolveDialect(jdbcTable, context);
-        nestedLoopReaderParams.setSqlDialect(dialect);
-
-        JdbcJoiner jdbcJoiner = new JdbcJoiner(nestedLoopReaderParams);
-        ProcessorSupplier processorSupplier = jdbcJoiner.createProcessorSupplier();
 
         String namePrefix = "nestedLoopReader(" + jdbcTable.getExternalNameList() + ")";
         DAG dag = context.getDag();
         Vertex vertex = dag.newUniqueVertex(
                 namePrefix,
-                processorSupplier
+                JdbcJoiner.createJoinProcessorSupplier(
+                        joinInfo,
+                        context, predicate, projection
+                )
         );
         return new VertexWithInputConfig(vertex.localParallelism(1));
     }
