@@ -27,6 +27,7 @@ import com.hazelcast.cp.event.CPGroupAvailabilityEvent;
 import com.hazelcast.cp.event.CPGroupAvailabilityListener;
 import com.hazelcast.cp.event.CPMembershipEvent;
 import com.hazelcast.cp.event.CPMembershipListener;
+import com.hazelcast.cp.event.impl.CPGroupAvailabilityEventGracefulImpl;
 import com.hazelcast.cp.event.impl.CPGroupAvailabilityEventImpl;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
@@ -103,9 +104,11 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -122,6 +125,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
@@ -529,13 +533,47 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
         logger.fine("Triggering remove member procedure for " + localMember);
 
+        Map<CPGroupId, Collection<CPMember>> myMemberships = getMyMemberships(localMember);
         if (ensureCPMemberRemoved(localMember, unit.toNanos(timeout))) {
+            publishGracefulShutdownEvents(myMemberships, localMember);
             return true;
         }
 
         logger.fine("Remove member procedure NOT completed for " + localMember + " in " + unit.toMillis(timeout) + " ms.");
         return false;
     }
+
+    void publishGracefulShutdownEvents(Map<CPGroupId, Collection<CPMember>> myMemberships, CPMemberInfo me) {
+        for (Map.Entry<CPGroupId, Collection<CPMember>> myMembership : myMemberships.entrySet()) {
+            ArrayList<CPMember> unavailable = new ArrayList<>();
+            unavailable.add(me); // TODO this should also include others that are missing -- but, they are already removed from group
+            List<CPMember> availableWithoutMe =
+                    myMembership.getValue().stream().filter(member -> !member.getUuid().equals(me.getUuid())).collect(Collectors.toList());
+            CPGroupAvailabilityEventGracefulImpl e =
+                    new CPGroupAvailabilityEventGracefulImpl(
+                            myMembership.getKey(),
+                            availableWithoutMe,
+                            unavailable);
+
+            nodeEngine.getEventService().publishEvent(SERVICE_NAME, EVENT_TOPIC_AVAILABILITY, e,
+                    EVENT_TOPIC_AVAILABILITY.hashCode());
+        }
+    }
+
+   Map<CPGroupId, Collection<CPMember>> getMyMemberships(CPMemberInfo me) {
+       Map<CPGroupId, Collection<CPMember>> myMemberships = new HashMap<>();
+       UUID myUuid = me.getUuid();
+       for (CPGroupId groupId : metadataGroupManager.getActiveGroupIds()) {
+           CPGroupSummary group = metadataGroupManager.getGroup(groupId);
+           for (CPMember member : group.members()) {
+               if (member.getUuid().equals(myUuid)) {
+                   myMemberships.put(groupId, group.members());
+                   break;
+               }
+           }
+       }
+       return myMemberships;
+   }
 
     private boolean ensureCPMemberRemoved(CPMemberInfo member, long remainingTimeNanos) {
         while (remainingTimeNanos > 0) {
