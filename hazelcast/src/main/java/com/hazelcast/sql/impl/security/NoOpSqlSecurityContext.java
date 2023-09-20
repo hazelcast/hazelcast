@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.security;
 
+import javax.security.auth.Subject;
 import java.security.Permission;
 
 /**
@@ -37,5 +38,10 @@ public final class NoOpSqlSecurityContext implements SqlSecurityContext {
     @Override
     public void checkPermission(Permission permission) {
         // No-op.
+    }
+
+    @Override
+    public Subject subject() {
+        return null;
     }
 }
