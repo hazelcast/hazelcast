@@ -34,8 +34,6 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 public final class IOUtil {
 
-    private static final int BUFFER_SIZE = 1 << 14;
-
     private IOUtil() {
     }
 
@@ -85,18 +83,9 @@ public final class IOUtil {
     public static void packStreamIntoZip(
             @Nonnull InputStream source, @Nonnull OutputStream destination, @Nonnull String fileName
     ) throws IOException {
-        try (
-                ZipOutputStream dstZipStream = new ZipOutputStream(destination)
-        ) {
+        try (ZipOutputStream dstZipStream = new ZipOutputStream(destination)) {
             dstZipStream.putNextEntry(new ZipEntry(fileName));
-            copyStream(source, dstZipStream);
-        }
-    }
-
-    public static void copyStream(InputStream in, OutputStream out) throws IOException {
-        byte[] buf = new byte[BUFFER_SIZE];
-        for (int readCount; (readCount = in.read(buf)) > 0; ) {
-            out.write(buf, 0, readCount);
+            source.transferTo(dstZipStream);
         }
     }
 

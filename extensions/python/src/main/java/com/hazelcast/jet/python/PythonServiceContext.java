@@ -40,7 +40,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.jet.impl.util.IOUtil.copyStream;
 import static com.hazelcast.jet.impl.util.Util.editPermissionsRecursively;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.attribute.PosixFilePermission.GROUP_WRITE;
@@ -192,7 +191,7 @@ class PythonServiceContext {
                     PythonServiceContext.class.getClassLoader().getResourceAsStream(fname), fname);
                  OutputStream out = Files.newOutputStream(destPath)
             ) {
-                copyStream(in, out);
+                in.transferTo(out);
             }
             if (EXECUTABLE_SCRIPTS.contains(fname)) {
                 makeExecutable(destPath);

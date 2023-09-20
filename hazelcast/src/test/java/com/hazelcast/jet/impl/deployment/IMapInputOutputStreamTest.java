@@ -37,7 +37,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.ByteBuffer;
 
-import static com.hazelcast.jet.impl.util.IOUtil.copyStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -117,11 +116,10 @@ public class IMapInputOutputStreamTest extends SimpleTestInClusterSupport {
         IMap<String, byte[]> map = instance().getMap(randomMapName());
 
         // When
-        try (
-                InputStream in = resource.openStream();
-                IMapOutputStream ios = new IMapOutputStream(map, "test")
+        try (InputStream in = resource.openStream();
+             IMapOutputStream ios = new IMapOutputStream(map, "test")
         ) {
-            copyStream(in, ios);
+            in.transferTo(ios);
         }
 
         // Then
@@ -152,11 +150,10 @@ public class IMapInputOutputStreamTest extends SimpleTestInClusterSupport {
         IMap<String, byte[]> map = instance().getMap(randomMapName());
 
         // When
-        try (
-                InputStream inputStream = resource.openStream();
-                IMapOutputStream ios = new IMapOutputStream(map, "test")
+        try (InputStream inputStream = resource.openStream();
+             IMapOutputStream ios = new IMapOutputStream(map, "test")
         ) {
-            copyStream(inputStream, ios);
+            inputStream.transferTo(ios);
         }
 
         // Then
