@@ -43,8 +43,7 @@ class IndexScanSelectQueryBuilder extends AbstractQueryBuilder {
         RexLiteral rexLiteral = HazelcastRexBuilder.INSTANCE.makeLiteral(ROW_NUMBER);
         newProjection.add(rexLiteral);
 
-        SelectQueryBuilder selectQueryBuilder = new SelectQueryBuilder(table, dialect, null,
-                newProjection);
+        SelectQueryBuilder selectQueryBuilder = new SelectQueryBuilder(table, dialect, null, newProjection);
         this.query = selectQueryBuilder.query();
 
         // Create the where clause from indices
