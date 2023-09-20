@@ -86,7 +86,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
             @Nonnull Object jobDefinition,
             @Nonnull JobConfig config
             ) {
-        super(client, jobId, isLightJob, jobDefinition, config);
+        super(client, jobId, isLightJob, jobDefinition, config, null);
     }
 
     @Nonnull

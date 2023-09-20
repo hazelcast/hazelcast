@@ -74,7 +74,12 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
     /** Null for normal jobs, non-null for light jobs  */
     protected final M lightJobCoordinator;
-    protected Subject subject;
+    // Subject that is used to submit a job. Not available for jobs obtained by id.
+    //
+    // Technical debt: this field should is used only in JobProxy and should be there
+    // but because AbstractJobProxy constructor invokes overriden (!) invokeSubmitJob method
+    // that needs this field we initialize in it superclass constructor.
+    protected final Subject subject;
 
     private final long jobId;
     private volatile String name = NOT_LOADED;
@@ -108,18 +113,21 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         future = new NonCompletableFuture();
         joinJobCallback = new JoinJobCallback();
         submittingInstance = false;
+        subject = null;
     }
 
     AbstractJobProxy(C container,
                      long jobId,
                      boolean isLightJob,
                      @Nonnull Object jobDefinition,
-                     @Nonnull JobConfig config) {
+                     @Nonnull JobConfig config,
+                     @Nullable Subject subject) {
         this.jobId = jobId;
         this.container = container;
         this.lightJobCoordinator = isLightJob ? findLightJobCoordinator() : null;
         this.logger = loggingService().getLogger(Job.class);
         submittingInstance = true;
+        this.subject = subject;
 
         try {
             NonCompletableFuture submitFuture = doSubmitJob(jobDefinition, config);

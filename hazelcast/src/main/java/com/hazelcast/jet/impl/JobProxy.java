@@ -62,12 +62,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
  * {@link Job} proxy on member.
  */
 public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
-    // Subject that is used to submit a job. Not available for jobs obtained by id.
-    private final Subject subject;
-
     public JobProxy(NodeEngineImpl nodeEngine, long jobId, Address coordinator) {
         super(nodeEngine, jobId, coordinator);
-        subject = null;
     }
 
     public JobProxy(NodeEngineImpl nodeEngine,
@@ -76,8 +72,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
                     Object jobDefinition,
                     JobConfig config,
                     @Nullable Subject subject) {
-        super(nodeEngine, jobId, isLightJob, jobDefinition, config);
-        this.subject = subject;
+        super(nodeEngine, jobId, isLightJob, jobDefinition, config, subject);
     }
 
     @Nonnull @Override
