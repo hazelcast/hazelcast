@@ -26,6 +26,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.util.counters.Counter;
 
+import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -35,39 +36,107 @@ import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * A MethodProbe is a {@link ProbeFunction} that invokes a method that is annotated with {@link Probe}.
+ * <p>
+ * Internally accesses the method using reflection via one of these mechanisms (as a pose to a simple {@link Method#invoke} for
+ * <a href="https://github.com/hazelcast/hazelcast/pull/25279">performance reasons</a>:
+ * <ol>
+ * <li>{@link #methodHandle}
+ * <li>{@link #staticAccessor}
+ * <li>{@link #nonStaticAccessor}
+ * </ol>
  */
 abstract class MethodProbe implements ProbeFunction {
-    private static final Object[] EMPTY_ARGS = new Object[0];
     private static final Lookup LOOKUP = MethodHandles.lookup();
 
-    final Method method;
-    /** {@link MethodHandle} used to access primitives to avoid boxing */
+    /**
+     * {@link MethodHandle} used to access primitives to avoid boxing, specifically to reduce redundant object creation.
+     * <p>
+     * E.G. for a method that returns {@link long}, when typically invoked via reflection, an {@link Object} would instead be
+     * returned. The {@link long} would be boxed to {@link Long}, and then immediately unboxed again back to a {@link long} for
+     * returning from {@link LongProbeFunction#get(S)}.
+     * <p>
+     * Faster than basic reflection, but slower than a {@link LambdaMetafactory} generated accessor.
+     */
     final MethodHandle methodHandle;
+
+    /**
+     * A {@link Supplier} used to access static methods returning objects (reference types).+
+     * <p>
+     * Generated via a {@link LambdaMetafactory}, bound to a {@link MethodHandle} derived from {@link #methodHandle}.
+     * <p>
+     * Faster than basic reflection and {@link MethodHandle#invokeExact()}, but only applicable for reference types.
+     *
+     * @see <a href=
+     *      "https://www.optaplanner.org/blog/2018/01/09/JavaReflectionButMuchFaster.html#_lambdametafactory_update_on_2018_01_11">Further
+     *      reading</a>
+     */
+    final Supplier<?> staticAccessor;
+    /**
+     * A {@link Function} used to access instance methods returning objects (reference types)
+     * <p>
+     * {@link Function#apply(T)}'s parameter is the instance to retrieve the value from.
+     *
+     * @see #staticAccessor
+     */
+    final Function<Object, ?> nonStaticAccessor;
+
     final boolean isMethodStatic;
     final CachedProbe probe;
     final ProbeUtils type;
     final SourceMetadata sourceMetadata;
     final String probeName;
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     MethodProbe(final Method method, final Probe probe, final ProbeUtils type, final SourceMetadata sourceMetadata) {
         try {
-            this.method = method;
             method.setAccessible(true);
             final MethodHandle unreflected = LOOKUP.unreflect(method);
 
             isMethodStatic = Modifier.isStatic(method.getModifiers());
 
-            // Modify return types to support invokeExact
-            MethodType methodType = unreflected.type().changeReturnType(type.isPrimitive() ? type.getMapsTo() : Object.class);
+            if (type.isPrimitive()) {
+                // Modify return types to support invokeExact
+                MethodType methodType = unreflected.type().changeReturnType(type.getMapsTo());
 
-            if (!isMethodStatic) {
-                methodType = methodType.changeParameterType(0, Object.class);
+                if (!isMethodStatic) {
+                    methodType = methodType.changeParameterType(0, Object.class);
+                }
+
+                methodHandle = unreflected.asType(methodType);
+                staticAccessor = null;
+                nonStaticAccessor = null;
+            } else {
+                methodHandle = null;
+
+                final Lookup privateLookup = MethodHandles.privateLookupIn(method.getDeclaringClass(), LOOKUP);
+                final MethodType methodReturnType = MethodType.methodType(method.getReturnType());
+                final MethodHandle implementation;
+                final MethodType dynamicMethodType = unreflected.type();
+
+                if (isMethodStatic) {
+                    implementation = privateLookup.findStatic(method.getDeclaringClass().getClass(), method.getName(),
+                            methodReturnType);
+
+                    staticAccessor = (Supplier<?>) LambdaMetafactory
+                            .metafactory(privateLookup, "get", MethodType.methodType(Supplier.class),
+                                    MethodType.methodType(Object.class, new Class<?>[0]), implementation, dynamicMethodType)
+                            .getTarget().invokeExact();
+                    nonStaticAccessor = null;
+                } else {
+                    implementation = privateLookup.findVirtual(method.getDeclaringClass(), method.getName(), methodReturnType);
+
+                    staticAccessor = null;
+                    nonStaticAccessor = (Function<Object, ?>) LambdaMetafactory
+                            .metafactory(privateLookup, "apply", MethodType.methodType(Function.class),
+                                    MethodType.methodType(Object.class, Object.class), implementation, dynamicMethodType)
+                            .getTarget().invokeExact();
+                }
             }
-
-            methodHandle = unreflected.asType(methodType);
 
             this.probe = new CachedProbe(probe);
             this.type = type;
@@ -75,8 +144,8 @@ abstract class MethodProbe implements ProbeFunction {
             probeName = probe.name();
             assert probeName != null;
             assert probeName.length() > 0;
-        } catch (final ReflectiveOperationException e) {
-            throw new RuntimeException(e);
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
         }
     }
 
@@ -120,6 +189,7 @@ abstract class MethodProbe implements ProbeFunction {
             super(method, probe, type, sourceMetadata);
         }
 
+        @SuppressWarnings("checkstyle:CyclomaticComplexity")
         @Override
         public long get(final S source) throws Throwable {
             switch (type) {
@@ -166,10 +236,7 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     @SuppressWarnings("unchecked")
-    protected <T> T invoke(final Object source) throws ReflectiveOperationException {
-        // In benchmarking, MethodHandles proved slower with objects
-        // Compiling to a CallSite with a LambdaMetafactory is likely to be *much* faster, but struggles to copy with private
-        // methods
-        return (T) method.invoke(source, EMPTY_ARGS);
+    protected <T> T invoke(final Object source) {
+        return isMethodStatic ? (T) staticAccessor.get() : (T) nonStaticAccessor.apply(source);
     }
 }
