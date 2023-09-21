@@ -215,13 +215,22 @@ public class StringUtilTest extends HazelcastTestSupport {
 
     @Test
     public void isNotBlank() {
-        assertTrue(!StringUtil.isNullOrEmptyAfterTrim("string"));
+        assertFalse(StringUtil.isNullOrEmptyAfterTrim("string"));
         // Non-breaking space
-        assertTrue(!StringUtil.isNullOrEmptyAfterTrim(" "));
+        assertFalse(StringUtil.isNullOrEmptyAfterTrim(" "));
+        // null unicode character
+        assertFalse(StringUtil.isNullOrEmptyAfterTrim("\u0000"));
+        // Non-breaking space
+        assertFalse(StringUtil.isNullOrEmptyAfterTrim("\u00A0"));
 
-        assertFalse(!StringUtil.isNullOrEmptyAfterTrim("  "));
-        assertFalse(!StringUtil.isNullOrEmptyAfterTrim(""));
-        assertFalse(!StringUtil.isNullOrEmptyAfterTrim(null));
+        assertTrue(StringUtil.isNullOrEmptyAfterTrim("  "));
+        assertTrue(StringUtil.isNullOrEmptyAfterTrim(""));
+        // Em quad
+        assertTrue(StringUtil.isNullOrEmptyAfterTrim("\u2001"));
+        // Tab
+        assertTrue(StringUtil.isNullOrEmptyAfterTrim("\t"));
+        assertTrue(StringUtil.isNullOrEmptyAfterTrim("\n\r  "));
+        assertTrue(StringUtil.isNullOrEmptyAfterTrim(null));
     }
 
     @Test
