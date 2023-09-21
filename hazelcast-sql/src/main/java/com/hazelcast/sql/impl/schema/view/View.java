@@ -47,6 +47,7 @@ public class View implements Versioned, SqlCatalogObject {
         this.viewColumnTypes = columnTypes;
     }
 
+    @Override
     public String name() {
         return name;
     }

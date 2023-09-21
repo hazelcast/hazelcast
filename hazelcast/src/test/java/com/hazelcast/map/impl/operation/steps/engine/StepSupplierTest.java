@@ -244,12 +244,15 @@ public class StepSupplierTest extends HazelcastTestSupport {
             expectedSteps.add(state -> actualExecutionOrder.add(finalI));
         }
 
-        StepSupplier stepSupplier = new StepSupplier(operation, expectedSteps, false);
+        StepSupplier stepSupplier = new StepSupplier(operation, false);
+        for (int i = expectedSteps.size() - 1; i >= 0; i--) {
+              stepSupplier.accept(expectedSteps.get(i));
+        }
 
         List<Step> actualSteps = new ArrayList<>();
         for (int i = 0; i < headSteps; i++) {
             Step currentStep = stepSupplier.getCurrentStep();
-            actualSteps.add(((AppendAsHeadStep) currentStep).getAppendedStep());
+            actualSteps.add(((AppendAsNewHeadStep) currentStep).getAppendedStep());
 
             // execute current step to move next one.
             Runnable nextStepsRunnable = stepSupplier.get();

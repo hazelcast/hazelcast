@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.Record;
@@ -34,7 +35,8 @@ import java.util.function.BiConsumer;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
-class MapMergeRunnable extends AbstractMergeRunnable<Object, Object, RecordStore, MapMergeTypes<Object, Object>> {
+class MapMergeRunnable extends AbstractMergeRunnable<Object, Object, RecordStore, MapMergeTypes<Object, Object>>
+        implements Disposable {
 
     private final MapServiceContext mapServiceContext;
 
@@ -101,5 +103,15 @@ class MapMergeRunnable extends AbstractMergeRunnable<Object, Object, RecordStore
     private MapConfig getMapConfig(String dataStructureName) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(dataStructureName);
         return mapContainer.getMapConfig();
+    }
+
+    @Override
+    public void dispose() {
+        Collection<Collection<RecordStore>> collections = mergingStoresByName.values();
+        for (Collection<RecordStore> recordStores : collections) {
+            for (RecordStore recordStore : recordStores) {
+                recordStore.disposeOnSplitBrainHeal();
+            }
+        }
     }
 }

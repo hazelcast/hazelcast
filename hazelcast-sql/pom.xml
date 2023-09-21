@@ -494,7 +494,6 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.code.findbugs</groupId>
@@ -513,7 +512,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jsurfer</groupId>
@@ -542,7 +540,6 @@
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
-            <version>${avro.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -630,7 +627,6 @@
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro-mapred</artifactId>
-            <version>${avro.version}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -642,7 +638,6 @@
         <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-avro</artifactId>
-            <version>${parquet.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -695,7 +690,6 @@
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
-            <version>${jaxb.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -737,7 +731,12 @@
             <version>${log4j2.version}</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-archunit-rules</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>kafka</artifactId>

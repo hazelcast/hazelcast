@@ -81,7 +81,7 @@ public class UserDefinedTypesTable extends InfoSchemaTable {
             rows.add(new Object[] {
                 catalog(),
                 schema,
-                type.getName(),
+                type.name(),
                 "STRUCTURED",
                 null,
                 null,

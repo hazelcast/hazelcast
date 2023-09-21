@@ -238,11 +238,11 @@ public class TableResolverImpl implements TableResolver {
 
     public void createType(Type type, boolean replace, boolean ifNotExists) {
         if (ifNotExists) {
-            relationsStorage.putIfAbsent(type.getName(), type);
+            relationsStorage.putIfAbsent(type.name(), type);
         } else if (replace) {
-            relationsStorage.put(type.getName(), type);
-        } else if (!relationsStorage.putIfAbsent(type.getName(), type)) {
-            throw QueryException.error("Type already exists: " + type.getName());
+            relationsStorage.put(type.name(), type);
+        } else if (!relationsStorage.putIfAbsent(type.name(), type)) {
+            throw QueryException.error("Type already exists: " + type.name());
         }
     }
 
@@ -293,8 +293,8 @@ public class TableResolverImpl implements TableResolver {
             }
         }
 
-        ADDITIONAL_TABLE_PRODUCERS.forEach(
-                producer -> tables.add(producer.apply(mappings, views, types, connectorCache, nodeEngine)));
+        ADDITIONAL_TABLE_PRODUCERS.forEach(producer ->
+                tables.add(producer.apply(mappings, views, types, connectorCache, nodeEngine)));
 
         this.lastViewsSize = views.size();
         this.lastMappingsSize = mappings.size();

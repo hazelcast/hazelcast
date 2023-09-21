@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.jet.mongodb.ResourceChecks;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.jet.mongodb.impl.MongoUtilities;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -62,14 +63,19 @@ final class Options {
     static final String PK_COLUMN = "idColumn";
 
     /**
-     * If set to true, the reading from MongoDB will be done in one processor instance.
+     * If set to true, the reading and/or writing from/to MongoDB will be done in one processor instance.
      * <p>
      * Normally user wants to distribute the work, however the {@code $function} aggregate is not present on
      * e.g. Atlas Serverless instances. In such cases setting this property to {@code true} allows user
      * to query the Atlas Serverless - in one processor only, but better one than nothing. Maybe some day MongoDB will
      * change that restriction.
      */
-    static final String FORCE_PARALLELISM_ONE = "forceMongoReadParallelismOne";
+    static final String FORCE_READ_PARALLELISM_ONE = "forceReadTotalParallelismOne";
+
+    /**
+     * If set to true, the reading will be preceded with checking the existence of database and collection.
+     */
+    static final String CHECK_EXISTENCE = "checkExistence";
 
     private static final String POSSIBLE_VALUES = "This property should " +
             " have value of: a) 'now' b) time in epoch milliseconds or c) " +
@@ -78,7 +84,7 @@ final class Options {
     private Options() {
     }
 
-    static BsonTimestamp startAt(Map<String, String> options) {
+    static BsonTimestamp startAtTimestamp(Map<String, String> options) {
         String startAtValue = options.get(START_AT_OPTION);
         if (isNullOrEmpty(startAtValue)) {
             throw QueryException.error("startAt property is required for MongoDB stream. " + POSSIBLE_VALUES);
@@ -128,5 +134,9 @@ final class Options {
         } else {
             return mf -> mf.externalName().equalsIgnoreCase(value);
         }
+    }
+
+    static ResourceChecks readExistenceChecksFlag(Map<String, String> options) {
+        return ResourceChecks.fromString(options.getOrDefault(CHECK_EXISTENCE, "only-initial"));
     }
 }
