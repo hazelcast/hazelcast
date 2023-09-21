@@ -583,7 +583,11 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(IMapSelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
+    SqlResult execute(IMapSelectPlan plan,
+                      QueryId queryId,
+                      List<Object> arguments,
+                      long timeout,
+                      @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(

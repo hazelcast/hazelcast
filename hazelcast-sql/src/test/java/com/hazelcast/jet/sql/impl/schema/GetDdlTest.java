@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryException;
 import org.junit.BeforeClass;
