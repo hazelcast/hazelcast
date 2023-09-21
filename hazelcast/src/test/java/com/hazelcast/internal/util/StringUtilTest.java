@@ -216,8 +216,6 @@ public class StringUtilTest extends HazelcastTestSupport {
     @Test
     public void isNotBlank() {
         assertFalse(StringUtil.isNullOrEmptyAfterTrim("string"));
-        // Non-breaking space
-        assertFalse(StringUtil.isNullOrEmptyAfterTrim(" "));
         // null unicode character
         assertFalse(StringUtil.isNullOrEmptyAfterTrim("\u0000"));
         // Non-breaking space
