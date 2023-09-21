@@ -216,6 +216,9 @@ public class StringUtilTest extends HazelcastTestSupport {
     @Test
     public void isNotBlank() {
         assertTrue(!StringUtil.isNullOrEmptyAfterTrim("string"));
+        // Non-breaking space
+        assertTrue(!StringUtil.isNullOrEmptyAfterTrim(" "));
+
         assertFalse(!StringUtil.isNullOrEmptyAfterTrim("  "));
         assertFalse(!StringUtil.isNullOrEmptyAfterTrim(""));
         assertFalse(!StringUtil.isNullOrEmptyAfterTrim(null));
