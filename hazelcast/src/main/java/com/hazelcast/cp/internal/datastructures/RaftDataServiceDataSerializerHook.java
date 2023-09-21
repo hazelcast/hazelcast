@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal.datastructures;
 
 import com.hazelcast.cp.internal.datastructures.spi.blocking.WaitKeyContainer;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.operation.ExpireWaitKeysOp;
+import com.hazelcast.cp.internal.datastructures.spi.operation.CreateOrGetRaftObjectOp;
 import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -37,6 +38,7 @@ public class RaftDataServiceDataSerializerHook implements DataSerializerHook {
     public static final int WAIT_KEY_CONTAINER = 1;
     public static final int EXPIRE_WAIT_KEYS_OP = 2;
     public static final int DESTROY_RAFT_OBJECT_OP = 3;
+    public static final int CREATE_RAFT_OBJECT_OP = 4;
 
     @Override
     public int getFactoryId() {
@@ -53,6 +55,8 @@ public class RaftDataServiceDataSerializerHook implements DataSerializerHook {
                     return new ExpireWaitKeysOp();
                 case DESTROY_RAFT_OBJECT_OP:
                     return new DestroyRaftObjectOp();
+                case CREATE_RAFT_OBJECT_OP:
+                    return new CreateOrGetRaftObjectOp();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }

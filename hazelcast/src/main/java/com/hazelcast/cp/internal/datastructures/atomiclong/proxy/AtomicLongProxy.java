@@ -32,6 +32,7 @@ import com.hazelcast.cp.internal.datastructures.atomiclong.operation.CompareAndS
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndAddOp;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndSetOp;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.LocalGetOp;
+import com.hazelcast.cp.internal.datastructures.spi.operation.CreateOrGetRaftObjectOp;
 import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -39,6 +40,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
+import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
@@ -56,6 +58,7 @@ public class AtomicLongProxy implements IAtomicLong {
     private final String proxyName;
     private final String objectName;
     private final Executor internalAsyncExecutor;
+    private UUID objectUUID;
 
     public AtomicLongProxy(NodeEngine nodeEngine, RaftGroupId groupId, String proxyName, String objectName) {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
@@ -64,6 +67,12 @@ public class AtomicLongProxy implements IAtomicLong {
         this.proxyName = proxyName;
         this.objectName = objectName;
         this.internalAsyncExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
+        this.objectUUID = createOrGetAsync().joinInternal();
+    }
+
+    public InternalCompletableFuture<UUID> createOrGetAsync() {
+        return invocationManager.invoke(groupId,
+                new CreateOrGetRaftObjectOp(getServiceName(), objectName));
     }
 
     @Override
@@ -118,7 +127,7 @@ public class AtomicLongProxy implements IAtomicLong {
 
     @Override
     public InternalCompletableFuture<Long> addAndGetAsync(long delta) {
-        RaftOp op = new AddAndGetOp(objectName, delta);
+        RaftOp op = new AddAndGetOp(getCombinedObjectName(), delta);
         return delta == 0 ? invocationManager.query(groupId, op, LINEARIZABLE) : invocationManager.invoke(groupId, op);
     }
 
@@ -134,12 +143,12 @@ public class AtomicLongProxy implements IAtomicLong {
 
     @Override
     public InternalCompletableFuture<Boolean> compareAndSetAsync(long expect, long update) {
-        return invocationManager.invoke(groupId, new CompareAndSetOp(objectName, expect, update));
+        return invocationManager.invoke(groupId, new CompareAndSetOp(getCombinedObjectName(), expect, update));
     }
 
     @Override
     public InternalCompletableFuture<Long> getAndAddAsync(long delta) {
-        RaftOp op = new GetAndAddOp(objectName, delta);
+        RaftOp op = new GetAndAddOp(getCombinedObjectName(), delta);
         return delta == 0 ? invocationManager.query(groupId, op, LINEARIZABLE) : invocationManager.invoke(groupId, op);
     }
 
@@ -160,7 +169,7 @@ public class AtomicLongProxy implements IAtomicLong {
 
     @Override
     public InternalCompletableFuture<Long> getAndSetAsync(long newValue) {
-        return invocationManager.invoke(groupId, new GetAndSetOp(objectName, newValue));
+        return invocationManager.invoke(groupId, new GetAndSetOp(getCombinedObjectName(), newValue));
     }
 
     @Override
@@ -188,7 +197,7 @@ public class AtomicLongProxy implements IAtomicLong {
     }
 
     private InternalCompletableFuture<Long> doAlterAsync(IFunction<Long, Long> function, AlterResultType alterResultType) {
-        return invocationManager.invoke(groupId, new AlterOp(objectName, function, alterResultType));
+        return invocationManager.invoke(groupId, new AlterOp(getCombinedObjectName(), function, alterResultType));
     }
 
     @Override
@@ -213,7 +222,7 @@ public class AtomicLongProxy implements IAtomicLong {
 
     @Override
     public <R> InternalCompletableFuture<R> applyAsync(IFunction<Long, R> function) {
-        return invocationManager.query(groupId, new ApplyOp<>(objectName, function), LINEARIZABLE);
+        return invocationManager.query(groupId, new ApplyOp<>(getCombinedObjectName(), function), LINEARIZABLE);
     }
 
     public long localGet(QueryPolicy queryPolicy) {
@@ -227,7 +236,7 @@ public class AtomicLongProxy implements IAtomicLong {
 
     public InternalCompletableFuture<Long> localGetAsync(QueryPolicy queryPolicy) {
         InternalCompletableFuture<Long> resultFuture = new InternalCompletableFuture<>();
-        InternalCompletableFuture<Long> localFuture = invocationManager.queryLocally(groupId, new LocalGetOp(objectName),
+        InternalCompletableFuture<Long> localFuture = invocationManager.queryLocally(groupId, new LocalGetOp(getCombinedObjectName()),
                 queryPolicy);
 
         localFuture.whenCompleteAsync((response, throwable) -> {
@@ -235,7 +244,7 @@ public class AtomicLongProxy implements IAtomicLong {
                 resultFuture.complete(response);
             } else {
                 InternalCompletableFuture<Long> future =
-                        invocationManager.query(groupId, new LocalGetOp(objectName), queryPolicy);
+                        invocationManager.query(groupId, new LocalGetOp(getCombinedObjectName()), queryPolicy);
                 future.whenCompleteAsync(completingCallback(resultFuture), internalAsyncExecutor);
             }
         }, internalAsyncExecutor);
@@ -259,7 +268,11 @@ public class AtomicLongProxy implements IAtomicLong {
 
     @Override
     public void destroy() {
-        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).joinInternal();
+        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), getCombinedObjectName())).joinInternal();
+    }
+
+    private String getCombinedObjectName() {
+        return objectName + "@" + objectUUID;
     }
 
     public CPGroupId getGroupId() {

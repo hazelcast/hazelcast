@@ -37,6 +37,8 @@ import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.Retu
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
+import java.util.UUID;
+
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.NO_RETURN_VALUE;
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.RETURN_NEW_VALUE;
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.RETURN_OLD_VALUE;
@@ -52,11 +54,13 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
 
     private final RaftGroupId groupId;
     private final String objectName;
+    private UUID objectUUID;
 
-    public AtomicRefProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
+    public AtomicRefProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName, UUID objectUUID) {
         super(AtomicRefService.SERVICE_NAME, proxyName, context);
         this.groupId = groupId;
         this.objectName = objectName;
+        this.objectUUID = objectUUID;
     }
 
     @Override
@@ -118,14 +122,14 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
     public InternalCompletableFuture<Boolean> compareAndSetAsync(T expect, T update) {
         Data expectedData = getContext().getSerializationService().toData(expect);
         Data newData = getContext().getSerializationService().toData(update);
-        ClientMessage request = AtomicRefCompareAndSetCodec.encodeRequest(groupId, objectName, expectedData, newData);
+        ClientMessage request = AtomicRefCompareAndSetCodec.encodeRequest(groupId, getCombinedObjectName(), expectedData, newData);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
         return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefCompareAndSetCodec::decodeResponse);
     }
 
     @Override
     public InternalCompletableFuture<T> getAsync() {
-        ClientMessage request = AtomicRefGetCodec.encodeRequest(groupId, objectName);
+        ClientMessage request = AtomicRefGetCodec.encodeRequest(groupId, getCombinedObjectName());
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
         return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefGetCodec::decodeResponse);
     }
@@ -133,7 +137,7 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
     @Override
     public InternalCompletableFuture<Void> setAsync(T newValue) {
         Data data = getContext().getSerializationService().toData(newValue);
-        ClientMessage request = AtomicRefSetCodec.encodeRequest(groupId, objectName, data, false);
+        ClientMessage request = AtomicRefSetCodec.encodeRequest(groupId, getCombinedObjectName(), data, false);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
         return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefSetCodec::decodeResponse);
     }
@@ -141,7 +145,7 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
     @Override
     public InternalCompletableFuture<T> getAndSetAsync(T newValue) {
         Data data = getContext().getSerializationService().toData(newValue);
-        ClientMessage request = AtomicRefSetCodec.encodeRequest(groupId, objectName, data, true);
+        ClientMessage request = AtomicRefSetCodec.encodeRequest(groupId, getCombinedObjectName(), data, true);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
         return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefSetCodec::decodeResponse);
     }
@@ -159,7 +163,7 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
     @Override
     public InternalCompletableFuture<Boolean> containsAsync(T expected) {
         Data data = getContext().getSerializationService().toData(expected);
-        ClientMessage request = AtomicRefContainsCodec.encodeRequest(groupId, objectName, data);
+        ClientMessage request = AtomicRefContainsCodec.encodeRequest(groupId, getCombinedObjectName(), data);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
         return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefContainsCodec::decodeResponse);
     }
@@ -186,13 +190,17 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
 
     @Override
     public void onDestroy() {
-        ClientMessage request = CPGroupDestroyCPObjectCodec.encodeRequest(groupId, getServiceName(), objectName);
+        ClientMessage request = CPGroupDestroyCPObjectCodec.encodeRequest(groupId, getServiceName(), getCombinedObjectName());
         new ClientInvocation(getClient(), request, name).invoke().joinInternal();
     }
 
     @Override
     public String getPartitionKey() {
         throw new UnsupportedOperationException();
+    }
+
+    private String getCombinedObjectName() {
+        return objectName + "@" + objectUUID;
     }
 
     public CPGroupId getGroupId() {
@@ -203,7 +211,7 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
                                                                boolean alter) {
         checkTrue(function != null, "Function cannot be null");
         Data data = getContext().getSerializationService().toData(function);
-        ClientMessage request = AtomicRefApplyCodec.encodeRequest(groupId, objectName, data, returnValueType.value(), alter);
+        ClientMessage request = AtomicRefApplyCodec.encodeRequest(groupId, getCombinedObjectName(), data, returnValueType.value(), alter);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
         return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefApplyCodec::decodeResponse);
     }

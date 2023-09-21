@@ -19,6 +19,8 @@ package com.hazelcast.cp.internal.datastructures.spi;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.cp.CPGroupId;
 
+import java.util.UUID;
+
 /**
  * Creates and destroys CP data structure instances and their proxies
  */
@@ -38,4 +40,8 @@ public interface RaftRemoteService {
      * This operation is committed on the given CP group.
      */
     boolean destroyRaftObject(CPGroupId groupId, String objectName);
+
+    default UUID createOrGetRaftObject(CPGroupId groupId, String objectName, UUID objectUuid) {
+        return null;
+    }
 }

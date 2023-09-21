@@ -19,6 +19,8 @@ package com.hazelcast.cp.internal.datastructures.atomiclong;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValue;
 
+import java.util.UUID;
+
 /**
  * State-machine implementation of the Raft-based atomic long
  */
@@ -26,8 +28,8 @@ public class AtomicLong extends RaftAtomicValue<Long> {
 
     private volatile long value;
 
-    AtomicLong(CPGroupId groupId, String name, long value) {
-        super(groupId, name);
+    AtomicLong(CPGroupId groupId, String name, long value, UUID uuid) {
+        super(groupId, name, uuid);
         this.value = value;
     }
 
@@ -69,6 +71,7 @@ public class AtomicLong extends RaftAtomicValue<Long> {
 
     @Override
     public String toString() {
-        return "AtomicLong{" + "groupId=" + groupId() + ", name='" + name() + '\'' + ", value=" + value + '}';
+        return "AtomicLong{" + "groupId=" + groupId() + ", name='" + name() + '\'' + ", value=" + value +
+                ", uuid=" + uuid() + '}';
     }
 }

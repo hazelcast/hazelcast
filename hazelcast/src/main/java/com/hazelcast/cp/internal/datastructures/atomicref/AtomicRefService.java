@@ -31,6 +31,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
 import static com.hazelcast.spi.properties.ClusterProperty.METRICS_DATASTRUCTURES;
@@ -66,8 +67,8 @@ public class AtomicRefService extends RaftAtomicValueService<Data, AtomicRef, At
     }
 
     @Override
-    protected AtomicRef newAtomicValue(CPGroupId groupId, String name, Data val) {
-        return new AtomicRef(groupId, name, val);
+    protected AtomicRef newAtomicValue(CPGroupId groupId, String name, Data val, UUID uuid) {
+        return new AtomicRef(groupId, name, val, uuid);
     }
 
     @Override

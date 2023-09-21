@@ -34,8 +34,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -54,6 +56,7 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         extends AbstractCPMigrationAwareService
         implements RaftManagedService, RaftRemoteService, RaftNodeLifecycleAwareService, SnapshotAwareService<S> {
 
+    private static final UUID ZERO_UUID = new UUID(0, 0);
     protected final Map<BiTuple<CPGroupId, String>, V> atomicValues = new ConcurrentHashMap<>();
     private final Set<BiTuple<CPGroupId, String>> destroyedValues = newSetFromMap(new ConcurrentHashMap<>());
     private volatile RaftService raftService;
@@ -95,7 +98,7 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         Map<String, T> values = new HashMap<>();
         for (V value : atomicValues.values()) {
             if (value.groupId().equals(groupId)) {
-                values.put(value.name(), value.get());
+                values.put(getCombinedObjectName(value.name(), value.uuid()), value.get());
             }
         }
 
@@ -117,7 +120,9 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         for (Map.Entry<String, T> e : snapshot.getValues()) {
             String name = e.getKey();
             T val = e.getValue();
-            atomicValues.put(BiTuple.of(groupId, name), newAtomicValue(groupId, name, val));
+            UUID uuid = getUuidFromName(name).orElse(ZERO_UUID);
+            String objectName = getObjectName(name);
+            atomicValues.put(BiTuple.of(groupId, objectName), newAtomicValue(groupId, objectName, val, uuid));
         }
 
         for (String name : snapshot.getDestroyed()) {
@@ -125,7 +130,7 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         }
     }
 
-    protected abstract V newAtomicValue(CPGroupId groupId, String name, T val);
+    protected abstract V newAtomicValue(CPGroupId groupId, String name, T val, UUID uuid);
 
     @Override
     public final void onRaftNodeTerminated(CPGroupId groupId) {
@@ -145,7 +150,9 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
 
     @Override
     public final boolean destroyRaftObject(CPGroupId groupId, String name) {
-        BiTuple<CPGroupId, String> key = BiTuple.of(groupId, name);
+        V atomicValue = getAtomicValue(groupId, name);
+        System.out.println("Destroying: " + atomicValue);
+        BiTuple<CPGroupId, String> key = BiTuple.of(groupId, atomicValue.name());
         destroyedValues.add(key);
         return atomicValues.remove(key) != null;
     }
@@ -157,16 +164,42 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
     public final V getAtomicValue(CPGroupId groupId, String name) {
         checkNotNull(groupId);
         checkNotNull(name);
-        BiTuple<CPGroupId, String> key = BiTuple.of(groupId, name);
-        if (destroyedValues.contains(key)) {
+        System.out.println("getAtomicValueName: " + name);
+        Optional<UUID> uuid = getUuidFromName(name);
+        String objectName = getObjectName(name);
+        BiTuple<CPGroupId, String> key = BiTuple.of(groupId, objectName);
+        // Commented to check destroy-recreate object cycle
+//        if (destroyedValues.contains(key)) {
+//            throw new DistributedObjectDestroyedException("AtomicValue[" + name + "] is already destroyed!");
+//        }
+        V atomicValue = atomicValues.get(key);
+        System.out.println("getAtomicValue: " + atomicValue);
+        // For 5.3 compatibility
+        if (atomicValue == null && uuid.isEmpty()) {
+            atomicValue = newAtomicValue(groupId, name, null, ZERO_UUID);
+            System.out.println("Create " + key + ": " + atomicValue);
+            atomicValues.put(key, atomicValue);
+        } else if (atomicValue == null || (uuid.isPresent() && !atomicValue.uuid().equals(uuid.get()))) {
             throw new DistributedObjectDestroyedException("AtomicValue[" + name + "] is already destroyed!");
         }
+        return atomicValue;
+    }
+
+    public final UUID createOrGetRaftObject(CPGroupId groupId, String objectName, UUID uuid) {
+        checkNotNull(groupId);
+        checkNotNull(objectName);
+        BiTuple<CPGroupId, String> key = BiTuple.of(groupId, objectName);
+        // Commented to check destroy-recreate object cycle
+//        if (destroyedValues.contains(key)) {
+//            throw new DistributedObjectDestroyedException("AtomicValue[" + name + "] is already destroyed!");
+//        }
         V atomicValue = atomicValues.get(key);
         if (atomicValue == null) {
-            atomicValue = newAtomicValue(groupId, name, null);
+            atomicValue = newAtomicValue(groupId, objectName, null, uuid);
             atomicValues.put(key, atomicValue);
+            System.out.println("Init " + key + ": " + atomicValue);
         }
-        return atomicValue;
+        return atomicValue.uuid();
     }
 
     @Override
@@ -203,5 +236,22 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
     @Override
     protected final void clearPartitionReplica(int partitionId) {
         atomicValues.keySet().removeIf(t -> raftService.getCPGroupPartitionId(t.element1) == partitionId);
+    }
+
+    private static Optional<UUID> getUuidFromName(String name) {
+        int index = name.indexOf("@");
+        if (index > 0) {
+            return Optional.of(UUID.fromString(name.substring(index + 1)));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private static String getObjectName(String name) {
+        return name.indexOf("@") > 0 ? name.substring(0, name.indexOf("@")).trim() : name;
+    }
+
+    private String getCombinedObjectName(String objectName, UUID objectUUID) {
+        return objectName + "@" + objectUUID;
     }
 }

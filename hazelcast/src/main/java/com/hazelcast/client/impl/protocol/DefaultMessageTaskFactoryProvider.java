@@ -29,6 +29,7 @@ import com.hazelcast.client.impl.protocol.codec.AtomicRefContainsCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefSetCodec;
 import com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPGroupCodec;
+import com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPObjectCodec;
 import com.hazelcast.client.impl.protocol.codec.CPGroupDestroyCPObjectCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSessionCloseSessionCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSessionCreateSessionCodec;
@@ -840,6 +841,7 @@ import com.hazelcast.cp.internal.datastructures.semaphore.client.GetSemaphoreTyp
 import com.hazelcast.cp.internal.datastructures.semaphore.client.InitSemaphoreMessageTask;
 import com.hazelcast.cp.internal.datastructures.semaphore.client.ReleasePermitsMessageTask;
 import com.hazelcast.cp.internal.datastructures.spi.client.CreateRaftGroupMessageTask;
+import com.hazelcast.cp.internal.datastructures.spi.client.CreateRaftObjectMessageTask;
 import com.hazelcast.cp.internal.datastructures.spi.client.DestroyRaftObjectMessageTask;
 import com.hazelcast.cp.internal.session.client.CloseSessionMessageTask;
 import com.hazelcast.cp.internal.session.client.CreateSessionMessageTask;
@@ -1703,6 +1705,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new CreateRaftGroupMessageTask(cm, node, con));
         factories.put(CPGroupDestroyCPObjectCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new DestroyRaftObjectMessageTask(cm, node, con));
+        factories.put(CPGroupCreateCPObjectCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new CreateRaftObjectMessageTask(cm, node, con));
 
         factories.put(CPSessionCreateSessionCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CreateSessionMessageTask(cm, node, con));

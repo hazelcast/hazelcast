@@ -25,6 +25,7 @@ import com.hazelcast.client.cp.internal.datastructures.semaphore.SessionlessSema
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPGroupCodec;
+import com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPObjectCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreGetSemaphoreTypeCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
@@ -39,6 +40,7 @@ import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.lock.FencedLock;
 
 import javax.annotation.Nonnull;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -70,11 +72,12 @@ public class ClientRaftProxyFactory {
 
 
         RaftGroupId groupId = getGroupId(proxyName, objectName);
+        UUID objectUUID = getObjectId(groupId, serviceName, objectName);
 
         if (serviceName.equals(AtomicLongService.SERVICE_NAME)) {
-            return (T) new AtomicLongProxy(context, groupId, proxyName, objectName);
+            return (T) new AtomicLongProxy(context, groupId, proxyName, objectName, objectUUID);
         } else if (serviceName.equals(AtomicRefService.SERVICE_NAME)) {
-            return (T) new AtomicRefProxy(context, groupId, proxyName, objectName);
+            return (T) new AtomicRefProxy(context, groupId, proxyName, objectName, objectUUID);
         } else if (serviceName.equals(CountDownLatchService.SERVICE_NAME)) {
             return (T) new CountDownLatchProxy(context, groupId, proxyName, objectName);
         } else if (serviceName.equals(LockService.SERVICE_NAME)) {
@@ -123,6 +126,12 @@ public class ClientRaftProxyFactory {
         ClientMessage request = CPGroupCreateCPGroupCodec.encodeRequest(proxyName);
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
         return CPGroupCreateCPGroupCodec.decodeResponse(response);
+    }
+
+    private UUID getObjectId(RaftGroupId groupId, String serviceName, String objectName) {
+        ClientMessage request = CPGroupCreateCPObjectCodec.encodeRequest(groupId, serviceName, objectName);
+        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
+        return CPGroupCreateCPObjectCodec.decodeResponse(response);
     }
 
 }

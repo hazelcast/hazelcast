@@ -18,6 +18,8 @@ package com.hazelcast.cp.internal.datastructures.spi.atomic;
 
 import com.hazelcast.cp.CPGroupId;
 
+import java.util.UUID;
+
 /**
  * State-machine implementation of the Raft-based atomic value
  */
@@ -25,10 +27,12 @@ public abstract class RaftAtomicValue<T> {
 
     private final CPGroupId groupId;
     private final String name;
+    private UUID uuid;
 
-    public RaftAtomicValue(CPGroupId groupId, String name) {
+    public RaftAtomicValue(CPGroupId groupId, String name, UUID uuid) {
         this.groupId = groupId;
         this.name = name;
+        this.uuid = uuid;
     }
 
     public CPGroupId groupId() {
@@ -40,4 +44,8 @@ public abstract class RaftAtomicValue<T> {
     }
 
     public abstract T get();
+
+    public UUID uuid() {
+        return uuid;
+    }
 }

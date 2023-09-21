@@ -29,11 +29,14 @@ import com.hazelcast.cp.internal.datastructures.atomicref.operation.CompareAndSe
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ContainsOp;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.GetOp;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.SetOp;
+import com.hazelcast.cp.internal.datastructures.spi.operation.CreateOrGetRaftObjectOp;
 import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.serialization.SerializationService;
+
+import java.util.UUID;
 
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.NO_RETURN_VALUE;
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.RETURN_NEW_VALUE;
@@ -53,6 +56,7 @@ public class AtomicRefProxy<T> implements IAtomicReference<T> {
     private final RaftGroupId groupId;
     private final String proxyName;
     private final String objectName;
+    private UUID objectUUID;
 
     public AtomicRefProxy(NodeEngine nodeEngine, RaftGroupId groupId, String proxyName, String objectName) {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
@@ -61,6 +65,12 @@ public class AtomicRefProxy<T> implements IAtomicReference<T> {
         this.groupId = groupId;
         this.proxyName = proxyName;
         this.objectName = objectName;
+        this.objectUUID = createOrGetAsync().joinInternal();
+    }
+
+    public InternalCompletableFuture<UUID> createOrGetAsync() {
+        return invocationManager.invoke(groupId,
+                new CreateOrGetRaftObjectOp(getServiceName(), objectName));
     }
 
     @Override
@@ -120,22 +130,22 @@ public class AtomicRefProxy<T> implements IAtomicReference<T> {
 
     @Override
     public InternalCompletableFuture<Boolean> compareAndSetAsync(T expect, T update) {
-        return invocationManager.invoke(groupId, new CompareAndSetOp(objectName, toData(expect), toData(update)));
+        return invocationManager.invoke(groupId, new CompareAndSetOp(getCombinedObjectName(), toData(expect), toData(update)));
     }
 
     @Override
     public InternalCompletableFuture<T> getAsync() {
-        return invocationManager.query(groupId, new GetOp(objectName), LINEARIZABLE);
+        return invocationManager.query(groupId, new GetOp(getCombinedObjectName()), LINEARIZABLE);
     }
 
     @Override
     public InternalCompletableFuture<Void> setAsync(T newValue) {
-        return invocationManager.invoke(groupId, new SetOp(objectName, toData(newValue), false));
+        return invocationManager.invoke(groupId, new SetOp(getCombinedObjectName(), toData(newValue), false));
     }
 
     @Override
     public InternalCompletableFuture<T> getAndSetAsync(T newValue) {
-        return invocationManager.invoke(groupId, new SetOp(objectName, toData(newValue), true));
+        return invocationManager.invoke(groupId, new SetOp(getCombinedObjectName(), toData(newValue), true));
     }
 
     @Override
@@ -150,31 +160,31 @@ public class AtomicRefProxy<T> implements IAtomicReference<T> {
 
     @Override
     public InternalCompletableFuture<Boolean> containsAsync(T expected) {
-        return invocationManager.query(groupId, new ContainsOp(objectName, toData(expected)), LINEARIZABLE);
+        return invocationManager.query(groupId, new ContainsOp(getCombinedObjectName(), toData(expected)), LINEARIZABLE);
     }
 
     @Override
     public InternalCompletableFuture<Void> alterAsync(IFunction<T, T> function) {
         checkTrue(function != null, "Function cannot be null");
-        return invocationManager.invoke(groupId, new ApplyOp(objectName, toData(function), NO_RETURN_VALUE, true));
+        return invocationManager.invoke(groupId, new ApplyOp(getCombinedObjectName(), toData(function), NO_RETURN_VALUE, true));
     }
 
     @Override
     public InternalCompletableFuture<T> alterAndGetAsync(IFunction<T, T> function) {
         checkTrue(function != null, "Function cannot be null");
-        return invocationManager.invoke(groupId, new ApplyOp(objectName, toData(function), RETURN_NEW_VALUE, true));
+        return invocationManager.invoke(groupId, new ApplyOp(getCombinedObjectName(), toData(function), RETURN_NEW_VALUE, true));
     }
 
     @Override
     public InternalCompletableFuture<T> getAndAlterAsync(IFunction<T, T> function) {
         checkTrue(function != null, "Function cannot be null");
-        return invocationManager.invoke(groupId, new ApplyOp(objectName, toData(function), RETURN_OLD_VALUE, true));
+        return invocationManager.invoke(groupId, new ApplyOp(getCombinedObjectName(), toData(function), RETURN_OLD_VALUE, true));
     }
 
     @Override
     public <R> InternalCompletableFuture<R> applyAsync(IFunction<T, R> function) {
         checkTrue(function != null, "Function cannot be null");
-        RaftOp op = new ApplyOp(objectName, toData(function), RETURN_NEW_VALUE, false);
+        RaftOp op = new ApplyOp(getCombinedObjectName(), toData(function), RETURN_NEW_VALUE, false);
         return invocationManager.query(groupId, op, LINEARIZABLE);
     }
 
@@ -195,7 +205,11 @@ public class AtomicRefProxy<T> implements IAtomicReference<T> {
 
     @Override
     public void destroy() {
-        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).joinInternal();
+        invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), getCombinedObjectName())).joinInternal();
+    }
+
+    private String getCombinedObjectName() {
+        return objectName + "@" + objectUUID;
     }
 
     public CPGroupId getGroupId() {

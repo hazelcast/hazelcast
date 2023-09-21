@@ -30,6 +30,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
 import static com.hazelcast.spi.properties.ClusterProperty.METRICS_DATASTRUCTURES;
@@ -65,8 +66,8 @@ public class AtomicLongService extends RaftAtomicValueService<Long, AtomicLong, 
     }
 
     @Override
-    protected AtomicLong newAtomicValue(CPGroupId groupId, String name, Long val) {
-        return new AtomicLong(groupId, name, val != null ? val : 0L);
+    protected AtomicLong newAtomicValue(CPGroupId groupId, String name, Long val, UUID uuid) {
+        return new AtomicLong(groupId, name, val != null ? val : 0L, uuid);
     }
 
     @Override

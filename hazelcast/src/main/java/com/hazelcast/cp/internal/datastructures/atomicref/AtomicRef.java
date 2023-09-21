@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.cp.CPGroupId;
 
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * State-machine implementation of the Raft-based atomic reference
@@ -29,8 +30,8 @@ public class AtomicRef extends RaftAtomicValue<Data> {
 
     private Data value;
 
-    AtomicRef(CPGroupId groupId, String name, Data value) {
-        super(groupId, name);
+    AtomicRef(CPGroupId groupId, String name, Data value, UUID uuid) {
+        super(groupId, name, uuid);
         this.value = value;
     }
 
@@ -49,6 +50,7 @@ public class AtomicRef extends RaftAtomicValue<Data> {
 
     @Override
     public String toString() {
-        return "AtomicRef{" + "groupId=" + groupId() + ", name='" + name() + '\'' + ", value=" + value + '}';
+        return "AtomicRef{" + "groupId=" + groupId() + ", name='" + name() + '\'' + ", value=" + value +
+                ", uuid=" + uuid() + '}';
     }
 }
