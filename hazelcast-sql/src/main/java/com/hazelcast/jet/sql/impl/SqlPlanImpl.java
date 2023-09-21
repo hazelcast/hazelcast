@@ -47,6 +47,7 @@ import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 
+import javax.annotation.Nonnull;
 import java.security.Permission;
 import java.util.Collections;
 import java.util.List;
@@ -55,6 +56,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.sql.impl.CalciteSqlOptimizer.extractPermissions;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_DATACONNECTION;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_TYPE;
@@ -414,19 +416,15 @@ abstract class SqlPlanImpl extends SqlPlan {
     static class DropIndexPlan extends SqlPlanImpl {
         private final String name;
         private final boolean ifExists;
-        private final PlanExecutor planExecutor;
 
         DropIndexPlan(
                 PlanKey planKey,
                 String name,
-                boolean ifExists,
-                PlanExecutor planExecutor
+                boolean ifExists
         ) {
             super(planKey);
-
             this.name = name;
             this.ifExists = ifExists;
-            this.planExecutor = planExecutor;
         }
 
         String name() {
@@ -1044,7 +1042,13 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
+        public void checkPermissions(SqlSecurityContext context) {
+            // Note: it must not expose the presence of the mapping.
+            extractPermissions(rel).forEach(context::checkPermission);
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoTimeout("EXPLAIN", timeout);
             return planExecutor.execute(this);
         }
