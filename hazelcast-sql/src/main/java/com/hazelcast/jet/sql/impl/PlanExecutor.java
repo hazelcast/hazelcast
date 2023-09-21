@@ -618,12 +618,13 @@ public class PlanExecutor {
         );
     }
 
-    SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
+    SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 Util.getSerializationService(hazelcastInstance),
-                Util.getNodeEngine(hazelcastInstance));
+                Util.getNodeEngine(hazelcastInstance),
+                ssc);
         List<Entry<Object, Object>> entries = plan.entriesFn().apply(evalContext);
         if (!entries.isEmpty()) {
             assert entries.size() == 1;
@@ -642,12 +643,13 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyParamIndex());
     }
 
-    SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
+    SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 Util.getSerializationService(hazelcastInstance),
-                Util.getNodeEngine(hazelcastInstance));
+                Util.getNodeEngine(hazelcastInstance),
+                ssc);
         Map<Object, Object> entries = plan.entriesFn().apply(evalContext);
         CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .putAllAsync(entries)
@@ -656,27 +658,29 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout) {
+    SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 Util.getSerializationService(hazelcastInstance),
-                Util.getNodeEngine(hazelcastInstance));
+                Util.getNodeEngine(hazelcastInstance),
+                ssc);
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Long> future = hazelcastInstance.getMap(plan.mapName())
-                .submitToKey(key, plan.updaterSupplier().get(arguments))
+                .submitToKey(key, plan.updaterSupplier().get(arguments, evalContext))
                 .toCompletableFuture();
         await(future, timeout);
         directIMapQueriesExecuted.getAndIncrement();
         return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
 
-    SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
+    SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 Util.getSerializationService(hazelcastInstance),
-                Util.getNodeEngine(hazelcastInstance));
+                Util.getNodeEngine(hazelcastInstance),
+                ssc);
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
@@ -827,7 +831,7 @@ public class PlanExecutor {
                 partitions.add(partitionId);
             }
         }
-        return allVariantsValid && partitions.size() > 0 ? partitions : emptySet();
+        return allVariantsValid && !partitions.isEmpty() ? partitions : emptySet();
     }
 
     // package-private for test purposes

@@ -106,10 +106,8 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     public void checkPermission(Permission permission) {
         if (contextRef != null) {
             contextRef.checkPermission(permission);
-        } else if (ssc != null) {
+        } else if (ssc != null && ssc.isSecurityEnabled()) {
             ssc.checkPermission(permission);
-        } else {
-            throw new AssertionError("Unreachable : any of contexts must be available");
         }
     }
 

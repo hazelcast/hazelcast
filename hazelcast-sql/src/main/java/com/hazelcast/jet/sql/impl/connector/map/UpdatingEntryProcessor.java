@@ -75,6 +75,17 @@ public final class UpdatingEntryProcessor
         this.arguments = arguments;
     }
 
+    private UpdatingEntryProcessor(
+            KvRowProjector.Supplier rowProjectorSupplier,
+            Projector.Supplier valueProjectorSupplier,
+            List<Object> arguments,
+            ExpressionEvalContext evalContext) {
+        this.rowProjectorSupplier = rowProjectorSupplier;
+        this.valueProjectorSupplier = valueProjectorSupplier;
+        this.arguments = arguments;
+        this.evalContext = evalContext;
+    }
+
     @Override
     public Long process(Map.Entry<Object, Object> entry) {
         if (entry.getValue() == null) {
@@ -98,10 +109,12 @@ public final class UpdatingEntryProcessor
 
     @Override
     public void setSerializationService(SerializationService serializationService) {
-        this.evalContext = new ExpressionEvalContextImpl(
-                arguments,
-                (InternalSerializationService) serializationService,
-                Util.getNodeEngine(hzInstance));
+        if (this.evalContext == null) {
+            this.evalContext = new ExpressionEvalContextImpl(
+                    arguments,
+                    (InternalSerializationService) serializationService,
+                    Util.getNodeEngine(hzInstance));
+        }
         this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 
@@ -188,6 +201,10 @@ public final class UpdatingEntryProcessor
 
         public EntryProcessor<Object, Object, Long> get(List<Object> arguments) {
             return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, arguments);
+        }
+
+        public EntryProcessor<Object, Object, Long> get(List<Object> arguments, ExpressionEvalContext eec) {
+            return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, arguments, eec);
         }
 
         @Override
