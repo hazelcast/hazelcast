@@ -22,6 +22,8 @@ import com.hazelcast.client.impl.protocol.codec.CacheRemoveInvalidationListenerC
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 
 import java.security.Permission;
 import java.util.UUID;
@@ -72,7 +74,7 @@ public class CacheRemoveInvalidationListenerMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(parameters.name, ActionConstants.ACTION_LISTEN);
     }
 
     @Override

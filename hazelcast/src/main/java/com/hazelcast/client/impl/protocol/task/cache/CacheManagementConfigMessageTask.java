@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ConfigPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
@@ -67,7 +68,7 @@ public class CacheManagementConfigMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new ConfigPermission();
     }
 
     @Override
