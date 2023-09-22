@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.config;
 
+import com.google.common.base.Defaults;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.DAG;
@@ -26,19 +27,15 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
-import java.io.File;
-import java.net.URL;
+import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static java.lang.Boolean.FALSE;
@@ -49,12 +46,11 @@ import static org.assertj.core.util.Lists.newArrayList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Assert;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobConfigTest extends JetTestSupport {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void when_setName_thenReturnsName() {
@@ -114,9 +110,8 @@ public class JobConfigTest extends JetTestSupport {
         config.getJetConfig().setEnabled(true).setLosslessRestartEnabled(true);
 
         // Then
-        exception.expect(IllegalStateException.class);
-        exception.expectMessage("Lossless Restart requires Hazelcast Enterprise Edition");
-        createHazelcastInstance(config);
+        Assert.assertThrows("Lossless Restart requires Hazelcast Enterprise Edition", IllegalStateException.class,
+                () -> createHazelcastInstance(config));
     }
 
     @Test
@@ -127,9 +122,8 @@ public class JobConfigTest extends JetTestSupport {
 
         // When
         // Then
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Serializer for class java.lang.Object already registered");
-        config.registerSerializer(Object.class, ObjectSerializer.class);
+        Assert.assertThrows("Serializer for class java.lang.Object already registered", IllegalArgumentException.class,
+                () -> config.registerSerializer(Object.class, ObjectSerializer.class));
     }
 
     @Test
@@ -231,50 +225,30 @@ public class JobConfigTest extends JetTestSupport {
         );
     }
 
+    /**
+     * Assert that any mutating method (defined as any {@link JobConfig} method returning itself, a fluent configuration) throws
+     * a {@link IllegalStateException} after {@link JobConfig#lock} has been called
+     */
     @Test
-    @SuppressWarnings("rawtypes")
     public void when_mutatingLockedJobConfig_then_fail() {
-        JobConfig jobConfig = new JobConfig();
-
-        URL mockUrl;
-        try {
-            File file = File.createTempFile("jobConfig", "suffix");
-            mockUrl = file.toURI().toURL();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        List<Supplier> mutatingMethods = Arrays.asList(
-                () -> jobConfig.setName(""),
-                () -> jobConfig.setSplitBrainProtection(false),
-                () -> jobConfig.setAutoScaling(false),
-                () -> jobConfig.setSuspendOnFailure(false),
-                () -> jobConfig.setProcessingGuarantee(null),
-                () -> jobConfig.setSnapshotIntervalMillis(0L),
-                () -> jobConfig.addClass(this.getClass()),
-                () -> jobConfig.addPackage(this.getClass().getPackage().getName()),
-                () -> jobConfig.addJar(mockUrl),
-                () -> jobConfig.addJarsInZip(mockUrl),
-                () -> jobConfig.addClasspathResource(mockUrl),
-                () -> jobConfig.addCustomClasspath(null, null),
-                () -> jobConfig.addCustomClasspaths(null, null),
-                () -> jobConfig.attachFile(mockUrl),
-                () -> jobConfig.attachDirectory(""),
-                () -> jobConfig.attachAll(null),
-                () -> jobConfig.registerSerializer(null, null),
-                () -> jobConfig.setArgument("", ""),
-                () -> jobConfig.setClassLoaderFactory(null),
-                () -> jobConfig.setInitialSnapshotName(""),
-                () -> jobConfig.setMetricsEnabled(false),
-                () -> jobConfig.setStoreMetricsAfterJobCompletion(false),
-                () -> jobConfig.setMaxProcessorAccumulatedRecords(0L),
-                () -> jobConfig.setTimeoutMillis(0L)
-        );
+        final JobConfig jobConfig = new JobConfig();
 
         jobConfig.lock();
-        for (Supplier mutatingMethod : mutatingMethods) {
-            assertThrows(IllegalStateException.class, mutatingMethod::get);
-        }
+
+        final Stream<Method> mutatorMethods = Arrays.stream(jobConfig.getClass().getMethods())
+                .filter(method -> method.getReturnType().equals(jobConfig.getClass()));
+
+        mutatorMethods.forEach(method -> {
+            // Set parameters:
+            // Reference types to null,
+            // Primitives to default
+            final Object[] params = Arrays.stream(method.getParameterTypes()).map(Defaults::defaultValue).toArray();
+
+            final Exception thrown = Assert.assertThrows(method.toString(), Exception.class,
+                    () -> method.invoke(jobConfig, params));
+
+            assertEquals(method.toString(), IllegalStateException.class, thrown.getCause().getClass());
+        });
     }
 
     private static class ObjectSerializer implements StreamSerializer<Object> {

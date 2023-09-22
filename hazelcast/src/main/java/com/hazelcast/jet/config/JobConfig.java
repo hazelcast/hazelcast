@@ -307,8 +307,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @return {@code this} instance for fluent API
      */
     @Nonnull
-    @SuppressWarnings("rawtypes")
-    public JobConfig addClass(@Nonnull Class... classes) {
+    public JobConfig addClass(@Nonnull Class<?>... classes) {
+        throwIfLocked();
         ReflectionUtils.nestedClassesOf(classes).forEach(this::addClass);
         return this;
     }
@@ -335,6 +335,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addPackage(@Nonnull String... packages) {
+        throwIfLocked();
         checkNotNull(packages, "Packages cannot be null");
         Resources resources = ReflectionUtils.resourcesOf(packages);
         resources.classes().forEach(classResource -> add(classResource.getUrl(), classResource.getId(), CLASS));
@@ -390,6 +391,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addJar(@Nonnull File file) {
+        throwIfLocked();
         ensureIsFile(file);
         return addJar(fileToUrl(file));
     }
@@ -416,6 +418,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addJar(@Nonnull String path) {
+        throwIfLocked();
         return addJar(new File(path));
     }
 
@@ -444,6 +447,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addJarsInZip(@Nonnull URL url) {
+        throwIfLocked();
         return add(url, filenamePart(url), ResourceType.JARS_IN_ZIP);
     }
 
@@ -472,6 +476,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addJarsInZip(@Nonnull File file) {
+        throwIfLocked();
         ensureIsFile(file);
         return addJarsInZip(fileToUrl(file));
     }
@@ -501,6 +506,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addJarsInZip(@Nonnull String path) {
+        throwIfLocked();
         return addJarsInZip(new File(path));
     }
 
@@ -524,6 +530,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addClasspathResource(@Nonnull URL url) {
+        throwIfLocked();
         return addClasspathResource(url, filenamePart(url));
     }
 
@@ -567,6 +574,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addClasspathResource(@Nonnull File file) {
+        throwIfLocked();
         ensureIsFile(file);
         return addClasspathResource(fileToUrl(file), file.getName());
     }
@@ -589,6 +597,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addClasspathResource(@Nonnull File file, @Nonnull String id) {
+        throwIfLocked();
         ensureIsFile(file);
         return add(fileToUrl(file), id, ResourceType.CLASSPATH_RESOURCE);
     }
@@ -611,6 +620,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addClasspathResource(@Nonnull String path) {
+        throwIfLocked();
         return addClasspathResource(new File(path));
     }
 
@@ -632,6 +642,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addClasspathResource(@Nonnull String path, @Nonnull String id) {
+        throwIfLocked();
         return addClasspathResource(new File(path), id);
     }
 
@@ -709,6 +720,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull URL url) {
+        throwIfLocked();
         return attachFile(url, filenamePart(url));
     }
 
@@ -737,6 +749,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull URL url, @Nonnull String id) {
+        throwIfLocked();
         ensureHasPath(url);
         return add(url, id, ResourceType.FILE);
     }
@@ -766,6 +779,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull File file) {
+        throwIfLocked();
         return attachFile(file, file.getName());
     }
 
@@ -794,6 +808,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull File file, @Nonnull String id) {
+        throwIfLocked();
         ensureIsFile(file);
         return attachFile(fileToUrl(file), id);
     }
@@ -824,6 +839,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull String path) {
+        throwIfLocked();
         return attachFile(new File(path));
     }
 
@@ -852,6 +868,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull String path, @Nonnull String id) {
+        throwIfLocked();
         return attachFile(new File(path), id);
     }
 
@@ -882,6 +899,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull URL url) {
+        throwIfLocked();
         return attachDirectory(url, urlToFile(url).getName());
     }
 
@@ -911,6 +929,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull URL url, @Nonnull String id) {
+        throwIfLocked();
         ensureHasPath(url);
         ensureIsDirectory(urlToFile(url));
         return add(url, id, ResourceType.DIRECTORY);
@@ -943,6 +962,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull String path) {
+        throwIfLocked();
         return attachDirectory(new File(path));
     }
 
@@ -972,6 +992,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull String path, @Nonnull String id) {
+        throwIfLocked();
         return attachDirectory(new File(path), id);
     }
 
@@ -1001,6 +1022,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull File file) {
+        throwIfLocked();
         return attachDirectory(file, file.getName());
     }
 
@@ -1030,6 +1052,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull File file, @Nonnull String id) {
+        throwIfLocked();
         return attachDirectory(fileToUrl(file), id);
     }
 
@@ -1170,7 +1193,6 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     private void addClass(@Nonnull Class<?> clazz) {
-        throwIfLocked();
         ResourceConfig cfg = new ResourceConfig(clazz);
         resourceConfigs.put(cfg.getId(), cfg);
     }
