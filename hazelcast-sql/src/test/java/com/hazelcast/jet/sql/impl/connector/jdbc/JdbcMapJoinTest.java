@@ -66,8 +66,12 @@ public class JdbcMapJoinTest extends JdbcSqlTestSupport {
                 ")"
         );
 
+        // generate_series(1,5)
+        // This way we will have
+        //  - 1 item in the table (0, name-0) which does not have a corresponding item in the IMap
+        // - 1 item from the IMap (5, name-5), that does not have a corresponding item in the table
         execute("INSERT INTO " + mapName + "(__key, id, name)" +
-                " SELECT v,v,'name-' || v FROM TABLE(generate_series(0,4))");
+                " SELECT v,v,'name-' || v FROM TABLE(generate_series(1,5))");
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
@@ -75,7 +79,6 @@ public class JdbcMapJoinTest extends JdbcSqlTestSupport {
                 "JOIN " + mapName + " t2 " +
                 "   ON t1.id = t2.id",
                 newArrayList(
-                        new Row(0, "name-0"),
                         new Row(1, "name-1"),
                         new Row(2, "name-2"),
                         new Row(3, "name-3"),
@@ -83,5 +86,4 @@ public class JdbcMapJoinTest extends JdbcSqlTestSupport {
                 )
         );
     }
-
 }
