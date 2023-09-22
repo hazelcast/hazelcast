@@ -107,7 +107,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -124,7 +123,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
@@ -532,50 +530,14 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
         logger.fine("Triggering remove member procedure for " + localMember);
 
-        Map<CPGroupId, Collection<CPMember>> myMemberships = getMyMemberships(localMember);
+        publishGroupAvailabilityEventsForGracefulShutdown(nodeEngine.getLocalMember());
         if (ensureCPMemberRemoved(localMember, unit.toNanos(timeout))) {
-            publishGracefulShutdownEvents(myMemberships, localMember);
             return true;
         }
 
         logger.fine("Remove member procedure NOT completed for " + localMember + " in " + unit.toMillis(timeout) + " ms.");
         return false;
     }
-
-    void publishGracefulShutdownEvents(Map<CPGroupId, Collection<CPMember>> myMemberships, CPMemberInfo me) {
-        for (Map.Entry<CPGroupId, Collection<CPMember>> myMembership : myMemberships.entrySet()) {
-            ArrayList<CPMember> unavailable = new ArrayList<>();
-            // TODO this should also include others that are missing -- but, they are already removed from group
-            unavailable.add(me);
-            List<CPMember> availableWithoutMe =
-                    myMembership.getValue().stream()
-                                .filter(member -> !member.getUuid().equals(me.getUuid()))
-                                .collect(Collectors.toList());
-            CPGroupAvailabilityEventGracefulImpl e =
-                    new CPGroupAvailabilityEventGracefulImpl(
-                            myMembership.getKey(),
-                            availableWithoutMe,
-                            unavailable);
-
-            nodeEngine.getEventService().publishEvent(SERVICE_NAME, EVENT_TOPIC_AVAILABILITY, e,
-                    EVENT_TOPIC_AVAILABILITY.hashCode());
-        }
-    }
-
-   Map<CPGroupId, Collection<CPMember>> getMyMemberships(CPMemberInfo me) {
-       Map<CPGroupId, Collection<CPMember>> myMemberships = new HashMap<>();
-       UUID myUuid = me.getUuid();
-       for (CPGroupId groupId : metadataGroupManager.getActiveGroupIds()) {
-           CPGroupSummary group = metadataGroupManager.getGroup(groupId);
-           for (CPMember member : group.members()) {
-               if (member.getUuid().equals(myUuid)) {
-                   myMemberships.put(groupId, group.members());
-                   break;
-               }
-           }
-       }
-       return myMemberships;
-   }
 
     private boolean ensureCPMemberRemoved(CPMemberInfo member, long remainingTimeNanos) {
         while (remainingTimeNanos > 0) {
@@ -633,10 +595,17 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         updateMissingMembers();
     }
 
-    private void publishGroupAvailabilityEvents(MemberImpl removedMember) {
-        ClusterService clusterService = nodeEngine.getClusterService();
 
-        // since only the Metadata CP group members keep the CP groups,
+    private void publishGroupAvailabilityEvents(MemberImpl removedMember) {
+        publishGroupAvailabilityEvents(removedMember, false);
+    }
+
+    private void publishGroupAvailabilityEventsForGracefulShutdown(MemberImpl removedMember) {
+        publishGroupAvailabilityEvents(removedMember, true);
+    }
+
+    private void publishGroupAvailabilityEvents(MemberImpl removedMember, boolean isShutdown) {
+        ClusterService clusterService = nodeEngine.getClusterService();
         // they will be the ones that keep track of unreachable CP members.
         for (CPGroupId groupId : metadataGroupManager.getActiveGroupIds()) {
             CPGroupSummary group = metadataGroupManager.getGroup(groupId);
@@ -653,7 +622,10 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             }
 
             if (availabilityDecreased) {
-                CPGroupAvailabilityEvent e = new CPGroupAvailabilityEventImpl(group.id(), group.members(), missing);
+                CPGroupAvailabilityEvent e =
+                        isShutdown
+                                ? new CPGroupAvailabilityEventGracefulImpl(group.id(), group.members(), missing)
+                                : new CPGroupAvailabilityEventImpl(group.id(), group.members(), missing);
                 nodeEngine.getEventService().publishEvent(SERVICE_NAME, EVENT_TOPIC_AVAILABILITY, e,
                         EVENT_TOPIC_AVAILABILITY.hashCode());
             }
