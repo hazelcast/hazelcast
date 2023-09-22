@@ -26,7 +26,6 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,7 +35,6 @@ import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
-import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.security.permission.ConnectorPermission.mongo;
 
@@ -53,8 +51,8 @@ public class ReadMongoParams<I> implements Serializable {
     EventTimePolicy<? super I> eventTimePolicy;
     BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn;
     boolean nonDistributed;
-    boolean throwOnNonExisting = true;
-    private List<Document> aggregates = new ArrayList<>();
+    private boolean checkExistenceOnEachConnect;
+    private Aggregates aggregates = new Aggregates();
 
     public ReadMongoParams(boolean stream) {
         this.stream = stream;
@@ -100,16 +98,28 @@ public class ReadMongoParams<I> implements Serializable {
     }
 
     @Nonnull
-    public List<Document> getAggregates() {
+    public Aggregates getAggregates() {
         return aggregates;
     }
 
-    public ReadMongoParams<I> setAggregates(@Nonnull List<Bson> aggregates) {
-        List<Document> aggregateDocs = new ArrayList<>();
-        for (Bson aggregate : aggregates) {
-            aggregateDocs.add(bsonToDocument(aggregate));
-        }
-        this.aggregates = aggregateDocs;
+    @Nonnull
+    public ReadMongoParams<I> setAggregates(Aggregates aggregates) {
+        this.aggregates = aggregates;
+        return this;
+    }
+
+    public ReadMongoParams<I> setFilter(Document filter) {
+        this.aggregates.filter = filter;
+        return this;
+    }
+
+    public ReadMongoParams<I> setProjection(Document projection) {
+        this.aggregates.projection = projection;
+        return this;
+    }
+
+    public ReadMongoParams<I> setSort(Document sort) {
+        this.aggregates.sort = sort;
         return this;
     }
 
@@ -171,20 +181,6 @@ public class ReadMongoParams<I> implements Serializable {
         return this;
     }
 
-    public ReadMongoParams<I> addAggregate(@Nonnull Bson doc) {
-        this.aggregates.add(bsonToDocument(doc));
-        return this;
-    }
-
-    public boolean isThrowOnNonExisting() {
-        return throwOnNonExisting;
-    }
-
-    public ReadMongoParams<I> setThrowOnNonExisting(boolean throwOnNonExisting) {
-        this.throwOnNonExisting = throwOnNonExisting;
-        return this;
-    }
-
     public ReadMongoParams<I> setNonDistributed(boolean nonDistributed) {
         this.nonDistributed = nonDistributed;
         return this;
@@ -194,10 +190,70 @@ public class ReadMongoParams<I> implements Serializable {
         return nonDistributed;
     }
 
+    public boolean isCheckExistenceOnEachConnect() {
+        return checkExistenceOnEachConnect;
+    }
+
+    /**
+     * If true, the database and collection existence checks will be performed on every reconnection.
+     */
+    public ReadMongoParams<I> setCheckExistenceOnEachConnect(boolean checkExistenceOnEachConnect) {
+        this.checkExistenceOnEachConnect = checkExistenceOnEachConnect;
+        return this;
+    }
+
     public ConnectorPermission buildPermissions() {
         return mongo(dataConnectionRef == null ? null : dataConnectionRef.getName(),
                 getDatabaseName(),
                 getCollectionName(),
                 ActionConstants.ACTION_READ);
+    }
+
+    public static final class Aggregates implements Serializable {
+        private Document filter;
+        private Document projection;
+        private Document sort;
+
+        public List<Document> nonNulls() {
+            var list = new ArrayList<Document>();
+            if (filter != null) {
+                list.add(filter);
+            }
+            if (projection != null) {
+                list.add(projection);
+            }
+            if (sort != null) {
+                list.add(sort);
+            }
+            return list;
+        }
+
+        public int indexAfterFilter() {
+            return filter == null ? 0 : 1;
+        }
+
+        public void setFilter(Document filter) {
+            this.filter = filter;
+        }
+
+        public void setProjection(Document projection) {
+            this.projection = projection;
+        }
+
+        public void setSort(Document sort) {
+            this.sort = sort;
+        }
+
+        public Document getFilter() {
+            return filter;
+        }
+
+        public Document getProjection() {
+            return projection;
+        }
+
+        public Document getSort() {
+            return sort;
+        }
     }
 }

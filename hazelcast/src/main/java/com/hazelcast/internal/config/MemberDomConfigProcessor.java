@@ -1431,8 +1431,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 if (!requiresArg) {
                     return method;
                 }
-                Class<?>[] args = method.getParameterTypes();
-                if (args.length != 1) {
+                if (method.getParameterCount() != 1) {
                     continue;
                 }
                 Class<?> arg = method.getParameterTypes()[0];
@@ -2894,6 +2893,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     .valueOf(upperCaseInternal(onJoinOp));
             config.getSecurityConfig().setOnJoinPermissionOperation(onJoinPermissionOperation);
         }
+        config.getSecurityConfig().setPermissionPriorityGrant(getBooleanValue(getAttribute(node, "priority-grant")));
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             PermissionType type = PermissionConfig.PermissionType.getType(nodeName);
@@ -2911,6 +2911,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         Node principalNode = getNamedItemNode(node, "principal");
         String principal = principalNode != null ? getTextContent(principalNode) : null;
         PermissionConfig permConfig = new PermissionConfig(type, name, principal);
+        permConfig.setDeny(getBooleanValue(getAttribute(node, "deny")));
         cfg.addClientPermissionConfig(permConfig);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);

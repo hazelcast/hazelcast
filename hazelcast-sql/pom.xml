@@ -222,6 +222,7 @@
                                     <include>org.antlr:antlr4-runtime</include>
                                     <include>com.jayway.jsonpath:json-path</include>
                                     <include>commons-codec:commons-codec</include>
+                                    <include>org.apache.commons:commons-math3</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
                                     <include>org.codehaus.janino:janino</include>
                                     <include>com.google.code.gson:gson</include>
@@ -269,6 +270,10 @@
                                     <shadedPattern>${relocation.root}.org.apache.commons</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>org.apache.commons.math3</pattern>
+                                    <shadedPattern>${relocation.root}.org.apache.commons.math3</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>org.codehaus</pattern>
                                     <shadedPattern>${relocation.root}.org.codehaus</shadedPattern>
                                 </relocation>
@@ -308,6 +313,9 @@
                                     <artifact>*:*</artifact>
                                     <excludes>
                                         <exclude>Parser.jj</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>META-INF/NOTICE-binary</exclude>
+                                        <exclude>META-INF/licenses-binary/**</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -317,6 +325,7 @@
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
+                                        <exclude>META-INF/licenses-binary/**</exclude>
                                         <exclude>**/package-info.java</exclude>
                                         <exclude>org/apache/calcite/runtime/CalciteResource.properties</exclude>
                                     </excludes>
@@ -329,54 +338,7 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
                                         <exclude>*.proto</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.checkerframework:checker-qual</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.hazelcast.jsurfer:jsurfer-core</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.hazelcast.jsurfer:jsurfer-jackson-jr</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.fasterxml.jackson.jr:jackson-jr-objects</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.fasterxml.jackson.core:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.antlr:antlr4-runtime</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.google.code.gson:gson</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>commons-codec:commons-codec</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>META-INF/licenses-binary/**</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -385,18 +347,6 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
                                         <exclude>org.codehaus.commons.compiler.properties</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.google.guava:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.locationtech.jts:jts-core</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -544,7 +494,6 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.code.findbugs</groupId>
@@ -563,7 +512,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jsurfer</groupId>
@@ -592,7 +540,6 @@
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
-            <version>${avro.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -651,6 +598,12 @@
             <artifactId>JUnitParams</artifactId>
             <version>1.1.1</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -674,7 +627,6 @@
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro-mapred</artifactId>
-            <version>${avro.version}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -686,7 +638,6 @@
         <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-avro</artifactId>
-            <version>${parquet.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -739,7 +690,6 @@
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
-            <version>${jaxb.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -781,7 +731,12 @@
             <version>${log4j2.version}</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-archunit-rules</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>kafka</artifactId>
@@ -825,13 +780,13 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mssqlserver</artifactId>
-            <version>1.18.3</version>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>12.4.0.jre8-preview</version>
+            <version>${mssql.version}</version>
             <scope>test</scope>
         </dependency>
 

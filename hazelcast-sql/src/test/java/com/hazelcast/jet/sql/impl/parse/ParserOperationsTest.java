@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -195,7 +196,8 @@ public class ParserOperationsTest extends SqlTestSupport {
                 null,
                 null,
                 false,
-                Collections.emptyList());
+                Collections.emptyList(),
+                false);
 
         TableResolver resolver = TestTableResolver.create(
                 "public",
@@ -208,8 +210,8 @@ public class ParserOperationsTest extends SqlTestSupport {
                 new SqlCatalog(tableResolvers),
                 searchPaths,
                 emptyList(),
-                1,
-                name -> null
+                name -> null,
+                NoOpSqlSecurityContext.INSTANCE
         );
     }
 

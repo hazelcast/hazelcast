@@ -207,11 +207,11 @@ public class SqlJsonTypeTest extends SqlJsonTestSupport {
 
     }
 
-    public void execute(final String sql, final Object ...arguments) {
+    public void execute(final String sql, final Object... arguments) {
         instance().getSql().execute(sql, arguments);
     }
 
-    public void executeClient(final String sql, final Object ...arguments) {
+    public void executeClient(final String sql, final Object... arguments) {
         client().getSql().execute(sql, arguments);
     }
 }

@@ -17,9 +17,13 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
+import java.security.Permission;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -31,6 +35,7 @@ import static java.util.Objects.requireNonNull;
  * @see Expression#eval
  */
 public class ExpressionEvalContextImpl implements ExpressionEvalContext {
+    private transient MetaSupplierCtx contextRef;
 
     private final List<Object> arguments;
     private final transient InternalSerializationService serializationService;
@@ -39,11 +44,19 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     public ExpressionEvalContextImpl(
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
-            @Nonnull NodeEngine nodeEngine
-    ) {
+            @Nonnull NodeEngine nodeEngine) {
         this.arguments = requireNonNull(arguments);
         this.serializationService = requireNonNull(serializationService);
         this.nodeEngine = requireNonNull(nodeEngine);
+    }
+
+    public ExpressionEvalContextImpl(
+            @Nonnull MetaSupplierCtx context,
+            @Nonnull List<Object> arguments,
+            @Nonnull InternalSerializationService serializationService,
+            @Nonnull NodeEngine nodeEngine) {
+        this(arguments, serializationService, nodeEngine);
+        this.contextRef = context;
     }
 
     /**
@@ -73,5 +86,16 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
      */
     public NodeEngine getNodeEngine() {
         return nodeEngine;
+    }
+
+    @Override
+    public void checkPermission(Permission permission) {
+        contextRef.checkPermission(permission);
+    }
+
+    @Override
+    @Nullable
+    public Subject subject() {
+        return contextRef != null ? contextRef.subject() : null;
     }
 }

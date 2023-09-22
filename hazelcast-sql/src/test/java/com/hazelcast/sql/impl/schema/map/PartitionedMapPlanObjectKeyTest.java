@@ -84,21 +84,24 @@ public class PartitionedMapPlanObjectKeyTest extends CoreSqlTestSupport {
         List<String> partitioningAttributes1 = singletonList("attr1");
         List<String> partitioningAttributes2 = emptyList();
 
-        PartitionedMapPlanObjectKey objectId = new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes1);
+        boolean supportsPartitionPruning1 = true;
+        boolean supportsPartitionPruning2 = false;
 
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes1), true);
+        PartitionedMapPlanObjectKey objectId = new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes1, supportsPartitionPruning1);
 
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema2, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema2, tableName2, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName2, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields2, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas2, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor2, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2, keyJetMetadata2, valueJetMetadata1, indexes1, hd1, partitioningAttributes2), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2, keyJetMetadata1, valueJetMetadata2, indexes1, hd1, partitioningAttributes2), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes2, hd1, partitioningAttributes2), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd2, partitioningAttributes2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes1, supportsPartitionPruning1), true);
+
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema2, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2, supportsPartitionPruning2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema2, tableName2, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2, supportsPartitionPruning2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName2, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2, supportsPartitionPruning2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields2, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2, supportsPartitionPruning2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas2, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2, supportsPartitionPruning2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor2, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2, supportsPartitionPruning2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2, keyJetMetadata1, valueJetMetadata1, indexes1, hd1, partitioningAttributes2, supportsPartitionPruning2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2, keyJetMetadata2, valueJetMetadata1, indexes1, hd1, partitioningAttributes2, supportsPartitionPruning2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2, keyJetMetadata1, valueJetMetadata2, indexes1, hd1, partitioningAttributes2, supportsPartitionPruning2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes2, hd1, partitioningAttributes2, supportsPartitionPruning2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd2, partitioningAttributes2, supportsPartitionPruning2), false);
     }
 
     private static class TestTargetDescriptor implements QueryTargetDescriptor {

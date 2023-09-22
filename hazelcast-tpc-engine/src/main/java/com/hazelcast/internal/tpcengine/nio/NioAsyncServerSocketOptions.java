@@ -18,12 +18,14 @@ package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
+import com.hazelcast.internal.tpcengine.util.OS;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.nio.channels.ServerSocketChannel;
+import java.util.Set;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
@@ -32,6 +34,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  */
 public class NioAsyncServerSocketOptions implements AsyncSocketOptions {
 
+    private static final Set<SocketOption<?>> WINDOWS_UNSUPPORTED_OPTIONS = Set.of(StandardSocketOptions.SO_REUSEPORT);
     private final ServerSocketChannel serverSocketChannel;
 
     NioAsyncServerSocketOptions(ServerSocketChannel serverSocketChannel) {
@@ -59,7 +62,13 @@ public class NioAsyncServerSocketOptions implements AsyncSocketOptions {
     }
 
     private boolean isSupported(SocketOption socketOption) {
-        return socketOption != null && serverSocketChannel.supportedOptions().contains(socketOption);
+        if (socketOption == null) {
+            return false;
+        }
+        if (OS.isWindows() && WINDOWS_UNSUPPORTED_OPTIONS.contains(socketOption)) {
+            return false;
+        }
+        return serverSocketChannel.supportedOptions().contains(socketOption);
     }
 
     @Override

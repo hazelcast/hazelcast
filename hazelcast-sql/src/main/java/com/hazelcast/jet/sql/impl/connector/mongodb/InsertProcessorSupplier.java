@@ -15,22 +15,23 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.bson.BsonType;
 import org.bson.Document;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.List;
@@ -45,25 +46,19 @@ import static java.util.Collections.singletonList;
  * ProcessorSupplier that creates {@linkplain WriteMongoP} processors on each instance
  * that will insert given item.
  */
-public class InsertProcessorSupplier implements ProcessorSupplier {
+public class InsertProcessorSupplier extends MongoProcessorSupplier implements DataSerializable {
 
-    private final String connectionString;
-    private final String databaseName;
-    private final String collectionName;
-    private final String[] paths;
-    private final WriteMode writeMode;
-    private final QueryDataType[] types;
-    private final BsonType[] externalTypes;
-    private transient SupplierEx<MongoClient> clientSupplier;
-    private final String dataConnectionName;
-    private final String idField;
+    private WriteMode writeMode;
+    private QueryDataType[] types;
+    private BsonType[] externalTypes;
+    private String idField;
+
+    @SuppressWarnings("unused")
+    public InsertProcessorSupplier() {
+    }
 
     InsertProcessorSupplier(MongoTable table, WriteMode writeMode) {
-        this.connectionString = table.connectionString;
-        this.databaseName = table.databaseName;
-        this.dataConnectionName = table.dataConnectionName;
-        this.collectionName = table.collectionName;
-        this.paths = table.externalNames();
+        super(table);
         this.types = table.fieldTypes();
         this.externalTypes = table.externalTypes();
         this.writeMode = writeMode;
@@ -103,6 +98,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
                             .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
                             .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
                             .setIntermediateMappingFn(this::rowToDoc)
+                            .setCheckExistenceOnEachConnect(checkExistenceOnEachConnect)
                             .setWriteMode(writeMode)
                     );
 
@@ -117,7 +113,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
 
         // assuming values is exactly the length of schema
         for (int i = 0; i < row.getFieldCount(); i++) {
-            String fieldName = paths[i];
+            String fieldName = externalNames[i];
             Object value = values[i];
 
             if (fieldName.equals("_id") && value == null) {
@@ -130,4 +126,38 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
         return doc;
     }
 
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(connectionString);
+        out.writeString(databaseName);
+        out.writeString(collectionName);
+        out.writeStringArray(externalNames);
+        out.writeString(writeMode == null ? null : writeMode.name());
+        out.writeObject(types);
+        out.writeInt(externalTypes == null ? 0 : externalTypes.length);
+        for (BsonType externalType : externalTypes) {
+            out.writeInt(externalType.getValue());
+        }
+        out.writeString(dataConnectionName);
+        out.writeString(idField);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        connectionString = in.readString();
+        databaseName = in.readString();
+        collectionName = in.readString();
+        externalNames = in.readStringArray();
+        String writeModeName = in.readString();
+        writeMode = writeModeName == null ? null : WriteMode.valueOf(writeModeName);
+        types = in.readObject();
+        int howManyExtTypes = in.readInt();
+        var extTypes = new BsonType[howManyExtTypes];
+        for (int i = 0; i < howManyExtTypes; i++) {
+            extTypes[i] = BsonType.findByValue(in.readInt());
+        }
+        externalTypes = extTypes;
+        dataConnectionName = in.readString();
+        idField = in.readString();
+    }
 }

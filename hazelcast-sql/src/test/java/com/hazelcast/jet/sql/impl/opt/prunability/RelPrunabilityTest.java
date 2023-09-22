@@ -91,11 +91,10 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
                 mapTableFields,
                 emptyList(),
                 10,
-                singletonList("comp1"));
+                singletonList("comp1"), true);
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/25033")
     public void test_fullScanWithDefaultKey() {
         this.mapTableFields = asList(
                 mapField(KEY, BIGINT, QueryPath.KEY_PATH),
@@ -106,7 +105,7 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
                 mapTableFields,
                 emptyList(),
                 10,
-                emptyList());
+                emptyList(), true);
 
         PhysicalRel root = optimizePhysical("SELECT * FROM m WHERE __key = 10 AND this IS NOT NULL",
                 asList(BIGINT, BIGINT), table)
@@ -165,8 +164,8 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
                 mapTableFields,
                 getPartitionedMapIndexes(mapContainer(map), mapTableFields),
                 1, // we can place random number, doesn't matter in current case.
-                singletonList("comp1")
-        );
+                singletonList("comp1"),
+                true);
 
         PhysicalRel root = optimizePhysical(
                 "SELECT * FROM " + mapName + " WHERE comp1 = 10",

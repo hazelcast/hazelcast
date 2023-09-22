@@ -737,7 +737,8 @@ public final class ClusterProperty {
 
     /**
      * Class name implementing {@link com.hazelcast.partition.PartitioningStrategy}, which
-     * defines key to partition mapping.
+     * defines key to partition mapping. Member-side equivalent of client property
+     * {@link com.hazelcast.client.properties.ClientProperty#PARTITIONING_STRATEGY_CLASS}.
      */
     public static final HazelcastProperty PARTITIONING_STRATEGY_CLASS
             = new HazelcastProperty("hazelcast.partitioning.strategy.class", "");
@@ -1628,8 +1629,10 @@ public final class ClusterProperty {
     /**
      * Hazelcast IMDG Enterprise license key.
      */
-    public static final HazelcastProperty ENTERPRISE_LICENSE_KEY
-            = new HazelcastProperty("hazelcast.enterprise.license.key");
+    public static final HazelcastProperty ENTERPRISE_LICENSE_KEY = new HazelcastProperty("hazelcast.enterprise.license.key")
+            // Print a warning when British spelling of "License" is used
+            // https://github.com/hazelcast/hazelcast/issues/13161
+            .setDeprecatedName("hazelcast.enterprise.licence.key");
 
     /**
      * Hazelcast serialization version. This is single byte value between 1 and

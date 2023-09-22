@@ -104,9 +104,10 @@ public class PartitionContainer {
         keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getEvictionConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
+        int partitionId = getPartitionId();
 
         if (!mapContainer.isGlobalIndexEnabled()) {
-            Indexes indexesForMap = mapContainer.createIndexes(false);
+            Indexes indexesForMap = mapContainer.createIndexes(false, partitionId);
             indexes.putIfAbsent(name, indexesForMap);
         }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
@@ -176,10 +177,13 @@ public class PartitionContainer {
         mapContainer.onBeforeDestroy();
 
         String name = mapContainer.getName();
-        RecordStore recordStore = maps.remove(name);
+        RecordStore recordStore = maps.get(name);
         if (recordStore != null) {
             // this call also clears and disposes Indexes for that partition
             recordStore.destroy();
+            // Remove record store from the maps after destroy since it could be accessed by
+            // mutation observers.
+            maps.remove(name);
         } else {
             // It can be that, map is used only for locking,
             // because of that RecordStore is not created.
@@ -274,8 +278,9 @@ public class PartitionContainer {
             if (mapContainer.isGlobalIndexEnabled()) {
                 throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
             }
+            int partitionId = getPartitionId();
 
-            Indexes indexesForMap = mapContainer.createIndexes(false);
+            Indexes indexesForMap = mapContainer.createIndexes(false, partitionId);
             ixs = indexes.putIfAbsent(name, indexesForMap);
             if (ixs == null) {
                 ixs = indexesForMap;

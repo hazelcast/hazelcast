@@ -43,6 +43,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
@@ -128,8 +129,8 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 HazelcastSchemaUtils.createCatalog(schema),
                 QueryUtils.prepareSearchPaths(null, null),
                 emptyList(),
-                1,
-                name -> null
+                name -> null,
+                NoOpSqlSecurityContext.INSTANCE
         );
 
         ParameterConverter[] parameterConverters = IntStream.range(0, parameterTypes.length)
@@ -151,15 +152,17 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             List<MapTableIndex> indexes,
             long rowCount
     ) {
-        return partitionedTable(name, fields, indexes, rowCount, emptyList());
+        return partitionedTable(name, fields, indexes, rowCount, emptyList(), false);
     }
 
+    // TODO: migrate this code to builder
     protected static HazelcastTable partitionedTable(
             String name,
             List<TableField> fields,
             List<MapTableIndex> indexes,
             long rowCount,
-            List<String> partitioningAttributes
+            List<String> partitioningAttributes,
+            boolean supportsPartitionPruning
     ) {
         PartitionedMapTable table = new PartitionedMapTable(
                 SCHEMA_NAME_PUBLIC,
@@ -173,7 +176,8 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 PrimitiveUpsertTargetDescriptor.INSTANCE,
                 indexes,
                 false,
-                partitioningAttributes);
+                partitioningAttributes,
+                supportsPartitionPruning);
         return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
     }
 

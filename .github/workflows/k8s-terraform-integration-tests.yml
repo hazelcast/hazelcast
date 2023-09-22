@@ -1,0 +1,99 @@
+name: k8s-tests
+
+on:
+  workflow_dispatch:
+  pull_request_target:
+    types:
+      - labeled
+    branches:
+      - "master"
+      - "*.z"
+    paths:
+      - 'hazelcast/src/main/java/com/hazelcast/kubernetes/**'
+
+env:
+  GAR_PROJECT_ID: hazelcast-33
+  GAR_REGION: us-east1
+  GAR_REPO: auto-discovery-test-suite
+  AWS_REGION: us-east-1
+
+jobs:
+  build:
+    name: Build Jar's And Docker Images
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'workflow_dispatch' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'run-discovery-tests' 
+        )
+      )
+    uses: ./.github/workflows/build-artifact.yml
+    secrets: inherit
+
+  test:
+    name: Run Tests
+    needs: build
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        suite: ['gke']
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3.0.0
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get Secrets
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
+            DEVOPS_GITHUB_TOKEN,CN/DEVOPS_GITHUB_TOKEN
+            GCLOUD_KEYFILE_JSON,CN/GKE_SA_KEY
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1.1.1
+        with:
+          credentials_json: ${{ env.GCLOUD_KEYFILE_JSON }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          install_components: 'gke-gcloud-auth-plugin,kubectl'
+
+      - name: Copy kubeconfig
+        run: |
+          mkdir ${HOME}/.kube/
+          touch ${HOME}/.kube/config
+          kubectl config view > ${HOME}/.kube/config
+
+      - name: Checkout Auto Discovery Test Suite
+        uses: actions/checkout@v3
+        with:
+          repository: hazelcast/auto-discovery-test-suite
+          token: ${{ env.DEVOPS_GITHUB_TOKEN }}
+          path: auto-discovery-suite
+
+      - name : Set-up Terraform
+        uses: hashicorp/setup-terraform@v2.0.3
+        with:
+          terraform_version: 1.5.4
+          terraform_wrapper: false
+
+      - name: Cache Golang dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run Tests
+        working-directory: auto-discovery-suite/terraform/test
+        run: |
+          go test -v -timeout 20m -run TestSuite -suite ${{ matrix.suite }} -member-image ${{ needs.build.outputs.HZ_IMG }} -client-image ${{ needs.build.outputs.CL_IMG }}

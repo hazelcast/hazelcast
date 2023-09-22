@@ -27,7 +27,9 @@ import com.hazelcast.jet.impl.connector.HazelcastReaders.LocalMapReaderFunction;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorSupplier;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.Reader;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.jet.impl.util.FixedCapacityIntArrayList;
+import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -51,14 +53,18 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
  */
 public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFuture, B, R>
         extends LocalProcessorMetaSupplier<F, B, R> {
+    // visible for tests
     transient int[] partitionsToScan;
     private final List<List<Expression<?>>> requiredPartitionsExprs;
+    private final PartitioningStrategy<?> partitioningStrategy;
     private transient Map<Address, int[]> partitionAssignment;
 
     private SpecificPartitionsImapReaderPms(
             final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier,
+            @Nullable PartitioningStrategy<?> partitioningStrategy,
             @Nullable final List<List<Expression<?>>> requiredPartitionsExprs) {
         super(readerSupplier);
+        this.partitioningStrategy = partitioningStrategy;
         this.requiredPartitionsExprs = requiredPartitionsExprs;
     }
 
@@ -66,9 +72,7 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
     public void init(@Nonnull Context context) throws Exception {
         super.init(context);
         if (requiredPartitionsExprs != null) {
-            List<Integer> partitionsToScanList = new ArrayList<>();
-            partitionsToScan = new int[requiredPartitionsExprs.size()];
-            int j = 0;
+            FixedCapacityIntArrayList partitionsToScanList = new FixedCapacityIntArrayList(requiredPartitionsExprs.size());
 
             HazelcastInstance hazelcastInstance = context.hazelcastInstance();
             ExpressionEvalContext eec = ExpressionEvalContext.from(context);
@@ -79,17 +83,22 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
                     partitionKeyComponents[i++] = expression.evalTop(null, eec);
                 }
 
-                final Partition partition = hazelcastInstance.getPartitionService().getPartition(
-                        PartitioningStrategyUtil.constructAttributeBasedKey(partitionKeyComponents)
-                );
-                if (partition == null) {
-                    // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to
-                    // non-pruning logic. Alternative scenario is if the produced partitioning key somehow invalid.
+                final Integer partitionId = PartitioningStrategyUtil.getPartitionIdFromKeyComponents(
+                        Util.getNodeEngine(hazelcastInstance), partitioningStrategy, partitionKeyComponents);
+                if (partitionId == null) {
+                    // The produced partitioning key is somehow invalid, most likely null.
+                    // In this case we revert to non-pruning logic.
                     return;
                 }
-                partitionsToScanList.add(partition.getPartitionId());
+                assert context.partitionAssignment().values().stream()
+                        .anyMatch(pa -> Arrays.binarySearch(pa, partitionId) >= 0)
+                        : "Partition calculated for PMS is not present in the job";
+                partitionsToScanList.add(partitionId);
             }
-            partitionsToScan = partitionsToScanList.stream().sorted().mapToInt(i -> i).toArray();
+
+            // requiredPartitionsExprs may produce the same partition multiple times
+            // partitionsToScan is required to be unique and sorted
+            partitionsToScan = partitionsToScanList.stream().sorted().distinct().toArray();
             partitionAssignment = context.partitionAssignment();
         }
     }
@@ -129,8 +138,11 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
     }
 
     // TODO: name it properly.
-    public static ProcessorMetaSupplier mapReader(String mapName, @Nullable List<List<Expression<?>>> requiredPartitionsExprs) {
-        return new SpecificPartitionsImapReaderPms<>(new LocalMapReaderFunction(mapName), requiredPartitionsExprs) {
+    public static ProcessorMetaSupplier mapReader(String mapName,
+                                                  @Nullable PartitioningStrategy<?> partitioningStrategy,
+                                                  @Nullable List<List<Expression<?>>> requiredPartitionsExprs) {
+        return new SpecificPartitionsImapReaderPms<>(new LocalMapReaderFunction(mapName),
+                partitioningStrategy, requiredPartitionsExprs) {
             @Override
             public Permission getRequiredPermission() {
                 return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);

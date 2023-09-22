@@ -23,7 +23,7 @@ import com.hazelcast.logging.Logger;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Static utility class to retry operations related to connecting to AWS Services.

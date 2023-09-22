@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
@@ -31,6 +32,8 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -45,6 +48,8 @@ import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
@@ -137,8 +142,45 @@ public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalSc
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
+        final HazelcastTable hazelcastTable = OptUtils.extractHazelcastTable(this);
+        final var candidates = OptUtils.metadataQuery(this).extractPrunability(this);
+        final boolean isPrunable = !candidates.isEmpty();
+        String partitioningKey = "";
+        String partitioningKeyValues = "";
+        if (hazelcastTable.getTarget() instanceof PartitionedMapTable && isPrunable) {
+            final PartitionedMapTable target = hazelcastTable.getTarget();
+            final List<Integer> fieldIndexes = target.partitioningAttributes().isEmpty() ?
+                    target.keyFields()
+                            .map(f -> target.getFieldIndex(f.getName()))
+                            .collect(Collectors.toList())
+                    : target.keyFields()
+                            .filter(kf -> target.partitioningAttributes().contains(kf.getPath().getPath()))
+                            .map(TableField::getName)
+                            .map(target::getFieldIndex)
+                            .collect(Collectors.toList());
+
+            partitioningKey = fieldIndexes.stream()
+                    .map(index -> "$" + index)
+                    .collect(Collectors.joining(", "));
+
+            final List<String> fieldNames = fieldIndexes.stream()
+                    .map(fieldIndex -> (TableField) target.getField(fieldIndex))
+                    .map(TableField::getName)
+                    .collect(Collectors.toList());
+
+            partitioningKeyValues = candidates.get(target.getSqlName()).stream()
+                    .map(candidate -> fieldNames.stream()
+                            .map(candidate::get)
+                            .filter(Objects::nonNull)
+                            .map(RexNode::toString)
+                            .collect(Collectors.joining(", ")))
+                    .map(s -> "(" + s + ")")
+                    .collect(Collectors.joining(", "));
+        }
         return super.explainTerms(pw)
-                .item("discriminator", discriminator);
+                .item("discriminator", discriminator)
+                .itemIf("partitioningKey", partitioningKey, isPrunable)
+                .itemIf("partitioningKeyValues", partitioningKeyValues, isPrunable);
     }
 
     @Override

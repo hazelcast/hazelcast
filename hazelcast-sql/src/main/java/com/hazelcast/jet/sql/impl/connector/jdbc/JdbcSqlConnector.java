@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionService;
+import com.hazelcast.dataconnection.impl.DatabaseDialect;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
@@ -30,6 +31,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.jdbc.mssql.HazelcastMSSQLDialect;
 import com.hazelcast.jet.sql.impl.connector.jdbc.mysql.HazelcastMySqlDialect;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -292,10 +294,11 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private static SqlDialect resolveDialect(DatabaseMetaData databaseMetaData) throws SQLException {
-        switch (databaseMetaData.getDatabaseProductName().toUpperCase(Locale.ROOT).trim()) {
-            case "MYSQL":
+        switch (DatabaseDialect.resolveDialect(databaseMetaData)) {
+            case MYSQL:
                 return new HazelcastMySqlDialect(SqlDialects.createContext(databaseMetaData));
-
+            case MICROSOFT_SQL_SERVER:
+                return new HazelcastMSSQLDialect(SqlDialects.createContext(databaseMetaData));
             default:
                 return SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
         }
@@ -349,7 +352,8 @@ public class JdbcSqlConnector implements SqlConnector {
                         new SelectProcessorSupplier(
                                 table.getDataConnectionName(),
                                 builder.query(),
-                                builder.parameterPositions()
+                                builder.parameterPositions(),
+                                dialect.getClass().getSimpleName()
                         ))
         );
     }
@@ -575,9 +579,11 @@ public class JdbcSqlConnector implements SqlConnector {
                 return QueryDataType.TIME;
 
             case "TIMESTAMP":
+            case "DATETIME":
                 return QueryDataType.TIMESTAMP;
 
             case "TIMESTAMP WITH TIME ZONE":
+            case "DATETIMEOFFSET":
                 return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
 
             default:

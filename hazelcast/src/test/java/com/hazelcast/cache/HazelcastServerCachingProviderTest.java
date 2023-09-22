@@ -21,8 +21,16 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+import javax.cache.spi.CachingProvider;
+
+import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByLocation;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -40,5 +48,21 @@ public class HazelcastServerCachingProviderTest
     public static void cleanup() {
         JsrTestUtil.cleanup();
         System.clearProperty("javax.cache.spi.CachingProvider");
+    }
+
+    @Test
+    public void testMemberCachingProviderYamlConfig() {
+        testCachingProvider("classpath:test-hazelcast.yaml");
+    }
+
+    @Test
+    public void testMemberCachingProviderXmlConfig() {
+        testCachingProvider("classpath:test-hazelcast.xml");
+    }
+
+    private void testCachingProvider(String config) {
+        CachingProvider cachingProvider = Caching.getCachingProvider(HazelcastCachingProvider.MEMBER_CACHING_PROVIDER);
+        CacheManager cacheManager = cachingProvider.getCacheManager(null, null, propertiesByLocation(config));
+        assertNotNull(cacheManager);
     }
 }

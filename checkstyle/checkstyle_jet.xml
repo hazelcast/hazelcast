@@ -116,7 +116,7 @@
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
         <!-- Only for methods on public APIs we agreed to have JavaDoc. -->
         <module name="JavadocMethod">
-            <property name="scope" value="public"/>
+            <property name="accessModifiers" value="public"/>
             <property name="allowMissingParamTags" value="true"/>
             <property name="allowMissingReturnTag" value="true"/>
             <property name="validateThrows" value="false"/>
@@ -268,7 +268,11 @@
 
         <!-- Checks for class design                         -->
         <!-- See http://checkstyle.sf.net/config_design.html -->
+        <!-- 
+        Disabled it forces the majority of private inner classes to be final, which just adds noise
+        https://github.com/hazelcast/hazelcast-enterprise/pull/6368/#issuecomment-1689625486
         <module name="FinalClass"/>
+        -->
         <module name="HideUtilityClassConstructor"/>
         <module name="InterfaceIsType"/>
         <module name="VisibilityModifier">

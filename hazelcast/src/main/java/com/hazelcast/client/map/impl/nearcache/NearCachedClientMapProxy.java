@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -39,6 +40,7 @@ import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.core.ReadOnly;
@@ -251,6 +253,18 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         InternalCompletableFuture<V> future;
         try {
             future = super.removeAsyncInternal(key);
+        } finally {
+            invalidateNearCache(key);
+        }
+        return future;
+    }
+
+    @Override
+    protected InternalCompletableFuture<Boolean> deleteAsyncInternal(Object key) {
+        key = toNearCacheKey(key);
+        InternalCompletableFuture<Boolean> future;
+        try {
+            future = super.deleteAsyncInternal(key);
         } finally {
             invalidateNearCache(key);
         }
@@ -556,6 +570,24 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         } else {
             for (K key : map.keySet()) {
                 invalidateNearCache(key);
+            }
+        }
+    }
+
+    @Override
+    protected void finalizePutAll(
+            Collection<? extends EntryView<K, V>> entries,
+            Map<Integer, List<SimpleEntryView<Data, Data>>> entriesByPartition
+    ) {
+        if (serializeKeys) {
+            for (List<SimpleEntryView<Data, Data>> partitionEntries : entriesByPartition.values()) {
+                for (EntryView<Data, Data> entry : partitionEntries) {
+                    invalidateNearCache(entry.getKey());
+                }
+            }
+        } else {
+            for (EntryView<K, V> entry : entries) {
+                invalidateNearCache(entry.getKey());
             }
         }
     }

@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static java.lang.Math.abs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -52,7 +51,7 @@ public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
 
     @Test
     public void imbalanceDetected_shouldReturnFalseWhenNoPipelineExist() {
-        ownerPipelines.put(imbalance.srcOwner, Collections.<MigratablePipeline>emptySet());
+        ownerPipelines.put(imbalance.srcOwner, Collections.emptySet());
 
         boolean imbalanceDetected = strategy.imbalanceDetected(imbalance);
         assertFalse(imbalanceDetected);
@@ -60,8 +59,8 @@ public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        ownerPipelines = new HashMap<NioThread, Set<MigratablePipeline>>();
-        pipelineLoadCounter = new ItemCounter<MigratablePipeline>();
+        ownerPipelines = new HashMap<>();
+        pipelineLoadCounter = new ItemCounter<>();
         imbalance = new LoadImbalance(ownerPipelines, pipelineLoadCounter);
         imbalance.srcOwner = mock(NioThread.class);
 
@@ -72,7 +71,7 @@ public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
     public void imbalanceDetected_shouldReturnTrueWhenPipelineExist() {
         MigratablePipeline pipeline = mock(MigratablePipeline.class);
 
-        ownerPipelines.put(imbalance.srcOwner, setOf(pipeline));
+        ownerPipelines.put(imbalance.srcOwner, Set.of(pipeline));
         boolean imbalanceDetected = strategy.imbalanceDetected(imbalance);
         assertTrue(imbalanceDetected);
     }
@@ -81,7 +80,7 @@ public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
     public void findPipelineToMigrate_shouldWorkEvenWithASinglePipelineAvailable() {
         MigratablePipeline pipeline = mock(MigratablePipeline.class);
 
-        ownerPipelines.put(imbalance.srcOwner, setOf(pipeline));
+        ownerPipelines.put(imbalance.srcOwner, Set.of(pipeline));
         MigratablePipeline pipelineToMigrate = strategy.findPipelineToMigrate(imbalance);
         assertEquals(pipeline, pipelineToMigrate);
     }
@@ -93,7 +92,7 @@ public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
 
         MigratablePipeline pipeline1 = mock(MigratablePipeline.class);
         MigratablePipeline pipeline2 = mock(MigratablePipeline.class);
-        ownerPipelines.put(imbalance.srcOwner, setOf(pipeline1, pipeline2));
+        ownerPipelines.put(imbalance.srcOwner, Set.of(pipeline1, pipeline2));
 
         assertFairSelection(iterationCount, toleranceFactor, pipeline1, pipeline2);
     }

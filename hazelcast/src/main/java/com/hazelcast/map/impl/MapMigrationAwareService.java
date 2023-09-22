@@ -243,7 +243,12 @@ class MapMigrationAwareService
                 continue;
             }
 
-            indexes.clearAll();
+            recordStore.beforeOperation();
+            try {
+                indexes.clearAll();
+            } finally {
+                recordStore.afterOperation();
+            }
         }
     }
 
@@ -309,7 +314,12 @@ class MapMigrationAwareService
             MapContainer mapContainer = recordStore.getMapContainer();
 
             Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
-            indexes.createIndexesFromRecordedDefinitions();
+            recordStore.beforeOperation();
+            try {
+                indexes.createIndexesFromRecordedDefinitions();
+            } finally {
+                recordStore.afterOperation();
+            }
             if (!indexes.haveAtLeastOneIndex()) {
                 // no indexes to work with
                 continue;

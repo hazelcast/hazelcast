@@ -41,7 +41,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.impl.util.IOUtil.copyStream;
-import static com.hazelcast.jet.impl.util.IOUtil.readFully;
 import static com.hazelcast.jet.impl.util.Util.editPermissionsRecursively;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.attribute.PosixFilePermission.GROUP_WRITE;
@@ -120,7 +119,7 @@ class PythonServiceContext {
             Process process = new ProcessBuilder("python3", "--version").redirectErrorStream(true).start();
             process.waitFor();
             try (InputStream inputStream = process.getInputStream()) {
-                String output = new String(readFully(inputStream), UTF_8);
+                String output = new String(inputStream.readAllBytes(), UTF_8);
                 if (process.exitValue() != 0) {
                     logger.severe("python3 version check returned non-zero exit value, output: " + output);
                     throw new IllegalStateException("python3 is not available");
@@ -246,8 +245,7 @@ class PythonServiceContext {
 
     static String processPid(Process process) {
         try {
-            // Process.pid() is @since 9
-            return Process.class.getMethod("pid").invoke(process).toString();
+            return String.valueOf(process.pid());
         } catch (Exception e) {
             return process.toString().replaceFirst("^.*pid=(\\d+).*$", "$1");
         }

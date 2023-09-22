@@ -16,13 +16,17 @@
 
 package com.hazelcast.jet.sql.impl.connector.map.index;
 
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.SortPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
@@ -35,8 +39,12 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.assertj.core.api.JUnitSoftAssertions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
@@ -46,11 +54,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.and;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.eq;
@@ -93,6 +103,9 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     @Parameterized.Parameter(3)
     public ExpressionType<?> f2;
 
+    @Rule
+    public final JUnitSoftAssertions softly = new JUnitSoftAssertions();
+
     protected final String mapName = "map" + MAP_NAME_GEN.incrementAndGet();
 
     private IMap<Integer, ExpressionBiValue> map;
@@ -117,6 +130,16 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         fill();
     }
 
+    @After
+    public void after() {
+        if (map != null) {
+            // keep memory usage low, especially important for TS
+            map.clear();
+            map.destroy();
+            map = null;
+        }
+    }
+
     @Test
     public void test() {
         checkFirstColumn();
@@ -124,7 +147,63 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         checkBothColumns();
     }
 
-    // Test helpers
+    @Test
+    @Ignore("HZ-3013")
+    public void testDisjunctionSameValue() {
+        // Test for index scans with disjunctions that match the same row.
+        // SQL query must not return duplicate rows in such case.
+
+        // WHERE f1=? or f1=?
+        check(query("(field1=? or field1=?)", f1.valueFrom(), f1.valueFrom()),
+                c_notHashComposite(),
+                eq(f1.valueFrom())
+        );
+
+        // WHERE f1=? or (f1=? and f2=?)
+        check(query("((field1=? and field2=?) or (field1=? and field2=?))", f1.valueFrom(), f2.valueFrom(), f1.valueFrom(), f2.valueFrom()),
+                // OR is currently not converted to union of index results or index scan with many ranges.
+                // With literals Calcite produces Sarg which is single expression so is converted to a better plan.
+                false,
+                and(eq(f1.valueFrom()), eq_2(f2.valueFrom()))
+        );
+    }
+
+    @Test
+    public void testDisjunctionOverlappingRange() {
+        // WHERE f1=? or (f1>=? and f1<=?) with eq value belonging to range
+        check(query("field1=? or (field1>=? and field1<=?)", f1.valueFrom(), f1.valueFrom(), f1.valueTo()),
+                // OR is currently not converted to union of index results or index scan with many ranges.
+                // With literals Calcite produces Sarg which is single expression so is converted to a better plan.
+                false,
+                and(gte(f1.valueFrom()), lte(f1.valueTo()))
+        );
+
+        // this query might not use index also due to selectivity of predicates
+        check(query("field1>=? or field1<=?", f1.valueFrom(), f1.valueTo()),
+                false, //TODO: HZ-3014 c_sorted(),
+                isNotNull()
+        );
+    }
+
+    @Test
+    public void testOrderBy() {
+        check0(query("1=1 order by field1"), c_sorted(), v -> true);
+        check0(query("1=1 order by field1 desc"), c_sorted(), v -> true);
+
+        // even though we could get use composite index for ordering on prefix of columns
+        // we do not do this currently
+        check0(query("1=1 order by field1, field2"), c_sorted() && c_composite(), v -> true);
+        check0(query("1=1 order by field1 desc, field2 desc"), c_sorted() && c_composite(), v -> true);
+
+        // different ordering on columns cannot use composite index
+        check0(query("1=1 order by field1 asc, field2 desc"), false, v -> true);
+        check0(query("1=1 order by field1 desc, field2 asc"), false, v -> true);
+
+        check0(query("1=1 order by field2"), false, v -> true);
+        check0(query("1=1 order by field2 desc"), false, v -> true);
+    }
+
+        // Test helpers
 
     private void checkFirstColumn() {
         // WHERE f1 IS NULL
@@ -157,8 +236,16 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check(query("field1=? or field1 is null", f1.valueFrom()),
                 c_notHashComposite(), or(eq(f1.valueFrom()), isNull()));
 
+        // WHERE f1 is null or f1=?
+        check(query("field1 is null or field1=?", f1.valueFrom()),
+                c_notHashComposite(), or(eq(f1.valueFrom()), isNull()));
+
         // WHERE f1=literal or f1 is null
         check(query("field1=" + toLiteral(f1, f1.valueFrom()) + " or field1 is null"),
+                c_notHashComposite(), or(eq(f1.valueFrom()), isNull()));
+
+        // WHERE f1 is null or f1=literal
+        check(query("field1 is null or field1=" + toLiteral(f1, f1.valueFrom())),
                 c_notHashComposite(), or(eq(f1.valueFrom()), isNull()));
 
         // WHERE f1!=literal
@@ -201,6 +288,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check(query("field1<=?", f1.valueFrom()), c_sorted(), lte(f1.valueFrom()));
         check(query("?>=field1", f1.valueFrom()), c_sorted(), lte(f1.valueFrom()));
 
+        ///// single range from...to
         if (!(f1 instanceof ExpressionType.BooleanType)) {
             // WHERE f1>literal AND f1<literal
             check(
@@ -259,12 +347,22 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 and(gte(f1.valueFrom()), lte(f1.valueTo()))
         );
 
+        ///// 2 disjoint unlimited ranges
+
         // WHERE f1<literal OR f1>literal (range from -inf..val1 and val2..+inf)
         check(
                 query("field1<" + toLiteral(f1, f1.valueFrom()) + " OR field1>" + toLiteral(f1, f1.valueTo())),
                 c_sorted(),
                 or(lt(f1.valueFrom()), gt(f1.valueTo()))
         );
+        // WHERE f1<? OR f1>? (range from -inf..val1 and val2..+inf)
+        check(
+                query("field1<? OR field1>?", f1.valueFrom(), f1.valueTo()),
+                false, //TODO: HZ-3014 c_sorted(),
+                or(lt(f1.valueFrom()), gt(f1.valueTo()))
+        );
+
+        ///// 2 limited ranges - disjoint and overlapping
 
         if (!(f1 instanceof ExpressionType.BooleanType)) {
             // WHERE (f1>=literal and f1<=literal) OR f1=literal (range and equality)
@@ -274,6 +372,14 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                     c_sorted(),
                     or(and(gte(f1.valueFrom()), lte(f1.valueMiddle())), eq(f1.valueTo()))
             );
+            // WHERE (f1>=? and f1<=?) OR f1=? (range and equality)
+            check(
+                    query("(field1>=? AND field1<=?) OR field1=?", f1.valueFrom(), f1.valueMiddle(), f1.valueTo()),
+                    // OR is currently not converted to union of index results or index scan with many ranges.
+                    // With literals Calcite produces Sarg which is single expression so is converted to a better plan.
+                    false,
+                    or(and(gte(f1.valueFrom()), lte(f1.valueMiddle())), eq(f1.valueTo()))
+            );
 
             // WHERE (f1>=literal and f1<literal) OR (f1>literal and f1<=literal)  (non-overlapping ranges)
             check(
@@ -281,6 +387,31 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                             ") OR (field1>" + toLiteral(f1, f1.valueMiddle()) + " AND field1<=" + toLiteral(f1, f1.valueTo()) +
                             ")"),
                     c_sorted(),
+                    or(and(gte(f1.valueFrom()), lt(f1.valueMiddle())), and(gt(f1.valueMiddle()), lte(f1.valueTo())))
+            );
+            check(
+                    query("(field1>=? AND field1<?) OR (field1>? AND field1<=?)",
+                            f1.valueFrom(), f1.valueMiddle(), f1.valueMiddle(), f1.valueTo()),
+                    // OR is currently not converted to union of index results or index scan with many ranges.
+                    // With literals Calcite produces Sarg which is single expression so is converted to a better plan.
+                    false,
+                    or(and(gte(f1.valueFrom()), lt(f1.valueMiddle())), and(gt(f1.valueMiddle()), lte(f1.valueTo())))
+            );
+
+            // WHERE (f1>=literal and f1<literal) OR (f1>literal and f1<=literal)  (non-overlapping ranges, reverse order)
+            check(
+                    query("(field1>" + toLiteral(f1, f1.valueMiddle()) + " AND field1<=" + toLiteral(f1, f1.valueTo()) +
+                            ") OR (field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<" + toLiteral(f1, f1.valueMiddle()) +
+                            ")"),
+                    c_sorted(),
+                    or(and(gte(f1.valueFrom()), lt(f1.valueMiddle())), and(gt(f1.valueMiddle()), lte(f1.valueTo())))
+            );
+            check(
+                    query("(field1>? AND field1<=?) OR (field1>=? AND field1<?)",
+                            f1.valueMiddle(), f1.valueTo(), f1.valueFrom(), f1.valueMiddle()),
+                    // OR is currently not converted to union of index results or index scan with many ranges.
+                    // With literals Calcite produces Sarg which is single expression so is converted to a better plan.
+                    false,
                     or(and(gte(f1.valueFrom()), lt(f1.valueMiddle())), and(gt(f1.valueMiddle()), lte(f1.valueTo())))
             );
         }
@@ -417,6 +548,10 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         return indexType == IndexType.SORTED;
     }
 
+    private boolean c_composite() {
+        return composite;
+    }
+
     private boolean c_notComposite() {
         return !composite;
     }
@@ -435,10 +570,18 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     }
 
     private void check(Query query, boolean expectedUseIndex, Predicate<ExpressionValue> expectedKeysPredicate) {
+        check(query, expectedUseIndex, expectedUseIndex, expectedKeysPredicate);
+
+    }
+
+    private void check(Query query, boolean expectedUseIndex, boolean expectedUseIndexWithAndCondition,
+                       Predicate<ExpressionValue> expectedKeysPredicate) {
         // Prepare two additional queries with an additional AND/OR predicate
         String condition = "__key / 2 = 0";
         Query queryWithAnd = addConditionToQuery(query, condition, true);
         Query queryWithOr = addConditionToQuery(query, condition, false);
+        Query queryWithOrderBy = new Query(query.sql + " ORDER BY field1", query.parameters);
+        Query queryWithOrderByDesc = new Query(query.sql + " ORDER BY field1 DESC", query.parameters);
 
         Predicate<ExpressionValue> predicate = value -> value.key / 2 == 0;
         Predicate<ExpressionValue> expectedKeysPredicateWithAnd = and(expectedKeysPredicate, predicate);
@@ -448,10 +591,22 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check0(query, expectedUseIndex, expectedKeysPredicate);
 
         // Run query with AND, the same index should be used
-        check0(queryWithAnd, expectedUseIndex, expectedKeysPredicateWithAnd);
+        check0(queryWithAnd, expectedUseIndexWithAndCondition, expectedKeysPredicateWithAnd);
 
         // Run query with OR, no index should be used
         check0(queryWithOr, false, expectedKeysPredicateWithOr);
+
+        // TODO: enable after fixing HZ-3012 and HZ-3013
+        // TODO: remove `or field1 is null` condition after those fixes as well
+        // Sorting is so costly that index should be preferred regardless of predicates
+        // For hash index sorting does not use index, but scan still can use it.
+        if (!query.sql.toLowerCase(Locale.ROOT).contains("or field1 is null") || !c_sorted()) {
+            check0(queryWithOrderBy, expectedUseIndex || c_sorted(), expectedKeysPredicate);
+            if (!c_sorted()) {
+                // TODO: DESC works correctly only for HASH, will be enabled globally after fixing HZ-3012 and HZ-3013
+                check0(queryWithOrderByDesc, expectedUseIndex || c_sorted(), expectedKeysPredicate);
+            }
+        }
     }
 
     private void check0(Query query, boolean expectedUseIndex, Predicate<ExpressionValue> expectedKeysPredicate) {
@@ -464,24 +619,27 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             boolean expectedUseIndex,
             Predicate<ExpressionValue> expectedKeysPredicate
     ) {
-        int runId = runIdGen++;
-        checkPlan(expectedUseIndex, sql);
+        softly.assertThatCode(() -> {
+            int runId = runIdGen++;
+            checkPlan(expectedUseIndex, sql);
 
-        Set<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
-        Set<Integer> expectedMapKeys = expectedMapKeys(expectedKeysPredicate);
+            // SQL might return duplicates, expectedMapKeys never contains duplicates
+            Multiset<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
+            Set<Integer> expectedMapKeys = expectedMapKeys(expectedKeysPredicate);
 
-        if (!sqlKeys.equals(expectedMapKeys)) {
-            failOnDifference(
-                    runId,
-                    sql,
-                    params,
-                    sqlKeys,
-                    expectedMapKeys,
-                    "actual SQL keys differ from expected map keys",
-                    "actual SQL keys",
-                    "expected map keys"
-            );
-        }
+            if (!sqlKeys.equals(HashMultiset.create(expectedMapKeys))) {
+                failOnDifference(
+                        runId,
+                        sql,
+                        params,
+                        sqlKeys,
+                        expectedMapKeys,
+                        "actual SQL keys differ from expected map keys",
+                        "actual SQL keys",
+                        "expected map keys"
+                );
+            }
+        }).as("Test failed for query " + sql).doesNotThrowAnyException();
     }
 
     @SuppressWarnings("StringConcatenationInsideStringBufferAppend")
@@ -489,7 +647,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             int runId,
             String sql,
             List<Object> params,
-            Set<Integer> first,
+            Multiset<Integer> first,
             Set<Integer> second,
             String mainMessage,
             String firstCaption,
@@ -501,7 +659,12 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         firstOnly.removeAll(second);
         secondOnly.removeAll(first);
 
-        assertTrue(!firstOnly.isEmpty() || !secondOnly.isEmpty());
+        List<Integer> duplicates = first.entrySet().stream()
+                .filter(e -> e.getCount() > 1)
+                .map(Multiset.Entry::getElement)
+                .collect(Collectors.toList());
+
+        assertTrue(!firstOnly.isEmpty() || !secondOnly.isEmpty() || !duplicates.isEmpty());
 
         StringBuilder message = new StringBuilder();
 
@@ -525,6 +688,14 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             }
         }
 
+        if (!duplicates.isEmpty()) {
+            message.append("\tduplicated " + firstCaption + ":\n");
+
+            for (Integer key : duplicates) {
+                message.append("\t\t" + key + " -> " + map.get(key) + " occurred " + first.count(key) + " times\n");
+            }
+        }
+
         fail(message.toString());
     }
 
@@ -542,14 +713,49 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 map.size()
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);
-        assertPlan(
-                optimizationResult.getLogical(),
-                plan(planRow(0, FullScanLogicalRel.class))
-        );
-        assertPlan(
-                optimizationResult.getPhysical(),
-                plan(planRow(0, withIndex ? IndexScanMapPhysicalRel.class : FullScanPhysicalRel.class))
-        );
+        if (sql.toLowerCase(Locale.ROOT).contains("order by")) {
+            // for ORDER BY queries index:
+            // 1) can be used for filtering only, with separate sort step afterwards
+            // 2) can be used for filtering and sorting if the same column is used for both
+            // 3) can be unused
+
+            if (withIndex) {
+                if (c_sorted()) {
+                    assertPlan(
+                            optimizationResult.getPhysical(),
+                            plan(
+                                    planRow(0, CalcPhysicalRel.class),
+                                    planRow(1, IndexScanMapPhysicalRel.class))
+                    );
+                } else {
+                    // hash index does not use index for sorting, only for filtering
+                    assertPlan(
+                            optimizationResult.getPhysical(),
+                            plan(
+                                    planRow(0, CalcPhysicalRel.class),
+                                    planRow(1, SortPhysicalRel.class),
+                                    planRow(2, IndexScanMapPhysicalRel.class))
+                    );
+                }
+            } else {
+                assertPlan(
+                        optimizationResult.getPhysical(),
+                        plan(
+                                planRow(0, CalcPhysicalRel.class),
+                                planRow(1, SortPhysicalRel.class),
+                                planRow(2, FullScanPhysicalRel.class))
+                );
+            }
+        } else {
+            assertPlan(
+                    optimizationResult.getLogical(),
+                    plan(planRow(0, FullScanLogicalRel.class))
+            );
+            assertPlan(
+                    optimizationResult.getPhysical(),
+                    plan(planRow(0, withIndex ? IndexScanMapPhysicalRel.class : FullScanPhysicalRel.class))
+            );
+        }
     }
 
     protected MapConfig getMapConfig() {
@@ -624,14 +830,16 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         return "SELECT __key FROM " + mapName + " WHERE " + condition;
     }
 
-    private Set<Integer> sqlKeys(boolean withIndex, String sql, List<Object> params) {
+    private Multiset<Integer> sqlKeys(boolean withIndex, String sql, List<Object> params) {
         SqlStatement query = new SqlStatement(sql);
+        // with some bugs the queries could hang, prevent long waiting in such cases
+        query.setTimeoutMillis(10_000);
 
         if (!params.isEmpty()) {
             query.setParameters(params);
         }
 
-        Set<Integer> keys = new HashSet<>();
+        Multiset<Integer> keys = HashMultiset.create();
 
         try (SqlResult result = instance().getSql().execute(query)) {
             for (SqlRow row : result) {

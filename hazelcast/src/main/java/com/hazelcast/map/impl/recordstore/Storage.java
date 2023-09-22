@@ -38,20 +38,11 @@ import java.util.Map;
 public interface Storage<K, R> {
 
     /**
-     * @return true if compaction for tiered
-     * store is enabled, false otherwise.
+     * @return true if current configuration of this {@link Storage}
+     * supports executions as a chain of {@link Step} , false otherwise.
      */
-    default boolean isPartitionCompactorEnabled() {
+    default boolean supportsSteppedRun() {
         return false;
-    }
-
-    /**
-     * Injects extra step for an operation which
-     * is modeled as a sequence of {@link Step}
-     * @return new step to be injected before an operation is finalized.
-     */
-    default Step newInjectedStep() {
-        return null;
     }
 
     void put(K key, R record);
@@ -60,9 +51,10 @@ public interface Storage<K, R> {
      * Updates record's value. Performs an update in-place if the record can accommodate the
      * new value (applicable for the inlined records only). Otherwise, creates a new record
      * with the new value.
-     * @param key the entry's key
+     *
+     * @param key    the entry's key
      * @param record the record
-     * @param value the new value
+     * @param value  the new value
      * @return the record that contains new value.
      */
     R updateRecordValue(K key, R record, Object value);

@@ -34,7 +34,7 @@ import java.util.Queue;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Utility to handle transactions in a processor that is able to have unbounded
