@@ -39,4 +39,9 @@ public class CPGroupAvailabilityEventGracefulImpl extends CPGroupAvailabilityEve
     public int getClassId() {
         return CpEventDataSerializerHook.GROUP_AVAILABILITY_GRACEFUL_EVENT;
     }
+
+    @Override
+    public String toString() {
+        return "CPGroupAvailabilityEventGracefulImpl{" + super.toString() + "}";
+    }
 }

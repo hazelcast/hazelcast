@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
@@ -73,7 +74,9 @@ public class CPGroupAvailabilityEventImpl implements CPGroupAvailabilityEvent, I
 
     @Override
     public boolean isMajorityAvailable() {
-        return missingMembers.size() < getMajority();
+        HashSet<CPMember> leftMembers = new HashSet<>(members);
+        leftMembers.removeAll(missingMembers);
+        return leftMembers.size() > 1 && missingMembers.size() < getMajority();
     }
 
     @Override
