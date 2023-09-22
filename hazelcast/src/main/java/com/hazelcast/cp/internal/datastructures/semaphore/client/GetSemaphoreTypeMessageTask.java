@@ -23,6 +23,8 @@ import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.SemaphorePermission;
 
 import java.security.Permission;
 
@@ -59,7 +61,7 @@ public class GetSemaphoreTypeMessageTask extends AbstractMessageTask<String> {
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new SemaphorePermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override

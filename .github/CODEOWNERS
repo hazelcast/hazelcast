@@ -7,3 +7,4 @@
 **/client/**           @hazelcast/apis
 **/hazelcast-client**  @hazelcast/apis
 **/serialization**     @hazelcast/apis
+**/MessageTaskSecurityTest* @hazelcast/security-working-group
