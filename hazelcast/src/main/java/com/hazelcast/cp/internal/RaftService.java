@@ -131,6 +131,7 @@ import static com.hazelcast.cp.internal.RaftGroupMembershipManager.MANAGEMENT_TA
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.config.ConfigValidator.checkCPSubsystemConfig;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_DISCRIMINATOR_GROUPID;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_RAFT_SERVICE_DESTROYED_GROUP_IDS;
@@ -601,6 +602,11 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     private void publishGroupAvailabilityEventsForGracefulShutdown(MemberImpl removedMember) {
+        // TODO CPGroupAvailabilityEventGracefulImpl added in V5_4; we require cluster to be on at least V5_4 for its publication
+        // TODO consider removing this check in versions > V5_4
+        if (nodeEngine.getClusterService().getClusterVersion().isUnknownOrLessThan(V5_4)) {
+            return;
+        }
         publishGroupAvailabilityEvents(removedMember, true);
     }
 
