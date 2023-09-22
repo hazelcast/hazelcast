@@ -1034,6 +1034,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             boolean persist = persistenceEnabledFor(provenance);
             updateRecord(record, key, oldValue, newValue, UNSET, UNSET, UNSET, now,
                     null, persist, true, false);
+            mergeRecordExpiration(key, record, mergingEntry, now);
         }
 
         return newValue != null;
