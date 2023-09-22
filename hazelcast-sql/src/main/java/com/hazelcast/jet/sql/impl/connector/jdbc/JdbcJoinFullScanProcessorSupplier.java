@@ -35,6 +35,12 @@ import java.util.List;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
+/**
+ * This class retrieves the right-side data for a Join operation.
+ * The SQL provided to this processor does not include a WHERE clause,
+ * resulting in the retrieval of all records from the right-side tables
+ * and performing a full scan of the right side.
+ */
 public class JdbcJoinFullScanProcessorSupplier
         extends AbstractJoinProcessorSupplier
         implements DataSerializable, SecuredFunction {

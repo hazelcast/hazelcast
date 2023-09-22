@@ -28,6 +28,9 @@ import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.resolveDialect;
 
+/**
+ * Provides the Processor for the right side of a Join operation
+ */
 public final class JdbcJoiner {
 
     private JdbcJoiner() {
@@ -42,40 +45,40 @@ public final class JdbcJoiner {
         JdbcTable jdbcTable = context.getTable();
         SqlDialect dialect = resolveDialect(jdbcTable, context);
 
+        RexNode rexNodePredicate = predicate == null ? null : predicate.unwrap(RexNode.class);
+        List<RexNode> rexNodeProjection = Util.toList(projection, n -> n.unwrap(RexNode.class));
+
         if (!joinInfo.isEquiJoin()) {
-            // Indices are not given
+            // Indices are not given.
             SelectQueryBuilder queryBuilder = new SelectQueryBuilder(
                     jdbcTable,
                     dialect,
-                    predicate == null ? null : predicate.unwrap(RexNode.class),
-                    Util.toList(projection, n -> n.unwrap(RexNode.class))
+                    rexNodePredicate,
+                    rexNodeProjection
             );
-            String selectQuery = queryBuilder.query();
+            String selectQueryForRightSide = queryBuilder.query();
             return new JdbcJoinFullScanProcessorSupplier(
                     jdbcTable.getDataConnectionName(),
-                    selectQuery,
+                    selectQueryForRightSide,
                     joinInfo,
                     context.convertProjection(projection)
             );
         } else {
-            // TODO predicate is not used in this branch - see failing test in
-            // JdbcInnerEquiJoinTest.joinWithOtherJdbcWhereClauseOnRightSideColumn
-
-            // Indices are given
+            // Indices are given.
             IndexScanSelectQueryBuilder queryBuilder = new IndexScanSelectQueryBuilder(
                     jdbcTable,
                     dialect,
-                    Util.toList(projection, n -> n.unwrap(RexNode.class)),
+                    rexNodePredicate,
+                    rexNodeProjection,
                     joinInfo
             );
-            String selectQuery = queryBuilder.query();
+            String selectQueryForRightSide = queryBuilder.query();
             return new JdbcJoinIndexScanProcessorSupplier(
                     jdbcTable.getDataConnectionName(),
-                    selectQuery,
+                    selectQueryForRightSide,
                     joinInfo,
                     context.convertProjection(projection)
             );
         }
     }
-
 }

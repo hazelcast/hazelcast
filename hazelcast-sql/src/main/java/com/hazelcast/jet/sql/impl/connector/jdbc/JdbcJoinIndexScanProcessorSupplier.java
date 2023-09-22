@@ -42,6 +42,16 @@ import java.util.stream.StreamSupport;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
+/**
+ * This class retrieves the right-side data for a Join operation.
+ * The SQL provided to this processor includes a WHERE clause.
+ * <p>
+ * This processor operates with batches of JetSqlRow instances coming from the processor on the left side.
+ * For each JetSqlRow, the WHERE clause is populated, resulting in the generation of a new SQL statement.
+ * For optimization purposes, all generated SQL statements are merged into a single statement using the UNION ALL clause.
+ * <p>
+ * For a visual explanation, refer to {@link IndexScanSelectQueryBuilder}.
+ */
 public class JdbcJoinIndexScanProcessorSupplier
         extends AbstractJoinProcessorSupplier
         implements DataSerializable, SecuredFunction {
@@ -74,11 +84,13 @@ public class JdbcJoinIndexScanProcessorSupplier
     }
 
     private String generateSql(List<JetSqlRow> leftRowsList) {
-        String delimiter = "UNION ALL ";
-        return IntStream.range(0, leftRowsList.size())
-                        .mapToObj(i -> query.replaceFirst(IndexScanSelectQueryBuilder.ROW_NUMBER_LITERAL,
-                                String.valueOf(i)))
-                        .collect(Collectors.joining(delimiter));
+        String delimiter = " UNION ALL ";
+        String sql = IntStream.range(0, leftRowsList.size())
+                .mapToObj(i -> query.replaceFirst(IndexScanSelectQueryBuilder.ROW_NUMBER,
+                        String.valueOf(i)))
+                .collect(Collectors.joining(delimiter));
+        sql = sql + " ORDER BY " + IndexScanSelectQueryBuilder.ROW_NUMBER_ALIAS;
+        return sql;
     }
 
     private List<JetSqlRow> joinUnionAll(List<JetSqlRow> leftRowsList, String unionAllSql) {

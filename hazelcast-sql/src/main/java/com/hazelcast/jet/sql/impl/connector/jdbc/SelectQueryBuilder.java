@@ -30,26 +30,27 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
 
     private final List<Integer> dynamicParams = new ArrayList<>();
 
-    @SuppressWarnings("ExecutableStatementCount")
+
     SelectQueryBuilder(JdbcTable table, SqlDialect dialect, RexNode predicate, List<RexNode> projection) {
         super(table, dialect);
 
         StringBuilder sb = new StringBuilder();
+        selectClause(sb, projection);
+        fromClause(sb, predicate);
+
+        query = sb.toString();
+    }
+
+    protected void selectClause(StringBuilder sb, List<RexNode> projection) {
         sb.append("SELECT ");
         if (!projection.isEmpty()) {
             appendProjection(sb, projection);
         } else {
             sb.append("*");
         }
-        sb.append(" FROM ");
-        dialect.quoteIdentifier(sb, table.getExternalNameList());
-        if (predicate != null) {
-            appendPredicate(sb, predicate, dynamicParams);
-        }
-        query = sb.toString();
     }
 
-    private void appendProjection(StringBuilder sb, List<RexNode> projection) {
+    protected void appendProjection(StringBuilder sb, List<RexNode> projection) {
         Iterator<RexNode> it = projection.iterator();
         while (it.hasNext()) {
             RexNode node = it.next();
@@ -62,6 +63,13 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
         }
     }
 
+    protected void fromClause(StringBuilder sb, RexNode predicate) {
+        sb.append(" FROM ");
+        dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
+        if (predicate != null) {
+            appendPredicate(sb, predicate, dynamicParams);
+        }
+    }
     int[] parameterPositions() {
         return Ints.toArray(dynamicParams);
     }
