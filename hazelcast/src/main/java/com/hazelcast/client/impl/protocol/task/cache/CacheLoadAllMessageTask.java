@@ -25,6 +25,8 @@ import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import javax.cache.CacheException;
@@ -84,7 +86,7 @@ public class CacheLoadAllMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override

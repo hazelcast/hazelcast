@@ -33,6 +33,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -98,8 +100,8 @@ public class MapPublisherCreateWithValueMessageTask
             Object result;
             try {
                 result = future.get();
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
             }
             if (result == null) {
                 continue;
@@ -139,7 +141,7 @@ public class MapPublisherCreateWithValueMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new MapPermission(parameters.mapName, ActionConstants.ACTION_LISTEN);
     }
 
     @Override

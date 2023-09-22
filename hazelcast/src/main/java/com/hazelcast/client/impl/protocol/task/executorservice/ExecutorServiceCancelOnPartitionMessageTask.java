@@ -23,6 +23,8 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.ExecutorServicePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
@@ -50,7 +52,8 @@ public class ExecutorServiceCancelOnPartitionMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return null;
+        DistributedExecutorService service = getService(getServiceName());
+        return service.getName(parameters.uuid);
     }
 
     @Override
@@ -60,7 +63,13 @@ public class ExecutorServiceCancelOnPartitionMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        String name = getDistributedObjectName();
+        if (name == null) {
+            // The permission constructor expects a non-null name.
+            name = ExecutorServicePermission.EMPTY_EXECUTOR_NAME;
+        }
+
+        return new ExecutorServicePermission(name, ActionConstants.ACTION_MODIFY);
     }
 
     @Override
