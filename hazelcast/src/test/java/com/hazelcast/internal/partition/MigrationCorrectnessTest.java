@@ -33,7 +33,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
-import static com.hazelcast.spi.properties.ClusterProperty.WAIT_SECONDS_BEFORE_JOIN_ASYNC;
+import static com.hazelcast.spi.properties.ClusterProperty.ASYNC_JOIN_STRATEGY_ENABLED;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.util.Arrays.asList;
 
@@ -46,7 +46,7 @@ public class MigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {
     public boolean join_async;
 
     @Rule
-    public final OverridePropertyRule overrideAsyncJoinPropertyRule = set(WAIT_SECONDS_BEFORE_JOIN_ASYNC.getName(), Boolean.toString(join_async));
+    public final OverridePropertyRule overrideAsyncJoinPropertyRule = set(ASYNC_JOIN_STRATEGY_ENABLED.getName(), Boolean.toString(join_async));
 
     @ClassRule
     public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-trace-migrations.xml");

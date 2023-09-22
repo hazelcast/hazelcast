@@ -144,8 +144,8 @@ public class ClusterJoinManager {
         waitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN);
         staleJoinPreventionDurationInMillis = TimeUnit.SECONDS.toMillis(
             Integer.getInteger(STALE_JOIN_PREVENTION_DURATION_PROP, DEFAULT_STALE_JOIN_PREVENTION_DURATION_IN_SECS));
-        syncJoinStrategy = node.getProperties().getBoolean(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN_ASYNC)
-                ? null : new ClusterJoinManagerSyncJoinStrategy(logger, maxWaitMillisBeforeJoin, waitMillisBeforeJoin);
+        syncJoinStrategy = node.getProperties().getBoolean(ClusterProperty.ASYNC_JOIN_STRATEGY_ENABLED)
+                ? null : new ClusterJoinManagerSyncJoinStrategy(logger, this, maxWaitMillisBeforeJoin, waitMillisBeforeJoin);
     }
 
     boolean isJoinInProgress() {
@@ -293,7 +293,7 @@ public class ClusterJoinManager {
             if (syncJoinStrategy == null) {
                 startJoin(joinRequest.toMemberInfo(), joinRequest.getPreJoinOperation());
             } else {
-                syncJoinStrategy.startJoinRequest(this, joinRequest.toMemberInfo(), joinRequest.getPreJoinOperation());
+                syncJoinStrategy.startJoinRequest(joinRequest.toMemberInfo(), joinRequest.getPreJoinOperation());
             }
         } finally {
             clusterServiceLock.unlock();
@@ -822,7 +822,6 @@ public class ClusterJoinManager {
     }
 
     private boolean shouldTriggerRepartitionSyncStrategyOnly(MemberMap memberMap) {
-        boolean trigger = true;
         if (syncJoinStrategy != null) {
             for (BiTuple<MemberInfo, OnJoinOp> tuple : joiningMembers.values()) {
                 MemberInfo member = tuple.element1();
@@ -830,11 +829,11 @@ public class ClusterJoinManager {
                     && isMemberRejoining(memberMap, member.getAddress(), member.getUuid())) {
                     logger.info(member + " is rejoining the cluster");
                     // do not trigger repartition immediately, wait for joining member to load hot-restart data
-                    trigger = false;
+                    return false;
                 }
             }
         }
-        return trigger;
+        return true;
     }
 
     private void sendFinalizeJoinOp(MemberInfo member, UUID thisUuid, MembersView newMembersView,

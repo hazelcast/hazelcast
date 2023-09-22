@@ -22,7 +22,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
-import static com.hazelcast.spi.properties.ClusterProperty.WAIT_SECONDS_BEFORE_JOIN_ASYNC;
+import static com.hazelcast.spi.properties.ClusterProperty.ASYNC_JOIN_STRATEGY_ENABLED;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -33,6 +33,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import java.util.List;
 
 /**
  * Make sure there are no delays when joining the cluster
@@ -45,7 +46,7 @@ public class ClusterJoinDelayTest extends HazelcastTestSupport {
     @Rule
     public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_TEST_USE_NETWORK, "true");
     @Rule
-    public final OverridePropertyRule overridePropertyRule2 = set(WAIT_SECONDS_BEFORE_JOIN_ASYNC.getName(), "true");
+    public final OverridePropertyRule overridePropertyRule2 = set(ASYNC_JOIN_STRATEGY_ENABLED.getName(), "true");
 
     private TestHazelcastInstanceFactory fact;
     private final int numInstances = 3;
@@ -73,11 +74,11 @@ public class ClusterJoinDelayTest extends HazelcastTestSupport {
         return config;
     }
 
-    @Test(timeout = 30 * 1000)
+    @Test
     public void noBlockingBeforeJoin() {
         HazelcastInstance hz1 = fact.newHazelcastInstance(getConfig());
         HazelcastInstance hz2 = fact.newHazelcastInstance(getConfig());
         HazelcastInstance hz3 = fact.newHazelcastInstance(getConfig());
-        assertClusterSizeEventually(numInstances, hz1, hz2, hz3);
+        assertClusterSizeEventually(numInstances, List.of(hz1, hz2, hz3), 30);
     }
 }

@@ -32,6 +32,7 @@ import static java.lang.String.format;
  * @author lprimak
  */
 public class ClusterJoinManagerSyncJoinStrategy {
+    private final ClusterJoinManager clusterJoinManager;
     long timeToStartJoin;
     private final ILogger logger;
     private final long maxWaitMillisBeforeJoin;
@@ -39,9 +40,10 @@ public class ClusterJoinManagerSyncJoinStrategy {
 
     private long firstJoinRequest;
 
-    ClusterJoinManagerSyncJoinStrategy(ILogger logger, long maxWaitMillisBeforeJoin,
-            long waitMillisBeforeJoin) {
+    ClusterJoinManagerSyncJoinStrategy(ILogger logger, ClusterJoinManager clusterJoinManager,
+                                       long maxWaitMillisBeforeJoin, long waitMillisBeforeJoin) {
         this.logger = logger;
+        this.clusterJoinManager = clusterJoinManager;
         this.maxWaitMillisBeforeJoin = maxWaitMillisBeforeJoin;
         this.waitMillisBeforeJoin = waitMillisBeforeJoin;
     }
@@ -59,12 +61,12 @@ public class ClusterJoinManagerSyncJoinStrategy {
      * @param memberInfo the joining member info
      * @param preJoinOperation which is prepared on joining members and will run on the master
      */
-    void startJoinRequest(ClusterJoinManager manager, MemberInfo memberInfo, OnJoinOp preJoinOperation) {
+    void startJoinRequest(MemberInfo memberInfo, OnJoinOp preJoinOperation) {
         long now = Clock.currentTimeMillis();
         if (logger.isFineEnabled()) {
             String timeToStart = (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
             logger.fine(format("Handling join from %s, joinInProgress: %b%s", memberInfo.getAddress(),
-                    manager.isJoinInProgress(), timeToStart));
+                    clusterJoinManager.isJoinInProgress(), timeToStart));
         }
 
         if (firstJoinRequest == 0) {
@@ -73,10 +75,10 @@ public class ClusterJoinManagerSyncJoinStrategy {
 
         // Store the OnJoinOp passed in joiningMembers map to execute later; otherwise when we batch
         //  join request, only the final joiner's OnJoinOp is executed - we want to execute them all!
-        final BiTuple<MemberInfo, OnJoinOp> existing = manager.joiningMembers.put(memberInfo.getAddress(),
+        final BiTuple<MemberInfo, OnJoinOp> existing = clusterJoinManager.joiningMembers.put(memberInfo.getAddress(),
                 BiTuple.of(memberInfo, preJoinOperation));
         if (existing == null) {
-            manager.sendMasterAnswer(memberInfo.getAddress());
+            clusterJoinManager.sendMasterAnswer(memberInfo.getAddress());
             if (now - firstJoinRequest < maxWaitMillisBeforeJoin) {
                 timeToStartJoin = now + waitMillisBeforeJoin;
             }
@@ -86,8 +88,8 @@ public class ClusterJoinManagerSyncJoinStrategy {
                     + ". Previous UUID was " + existing.element1().getUuid());
         }
 
-        if (!manager.isBatchingJoins(now)) {
-            manager.startJoin(memberInfo, preJoinOperation);
+        if (!clusterJoinManager.isBatchingJoins(now)) {
+            clusterJoinManager.startJoin(memberInfo, preJoinOperation);
         }
     }
 
