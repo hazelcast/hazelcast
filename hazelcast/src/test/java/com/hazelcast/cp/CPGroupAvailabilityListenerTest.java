@@ -30,10 +30,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -151,7 +151,7 @@ public class CPGroupAvailabilityListenerTest extends HazelcastRaftTestSupport {
         GracefulShutdownAvailabilityListener() {
             availabilityDecreased = new AtomicInteger();
             majorityLost = new AtomicInteger();
-            membersShutdown = Collections.synchronizedSet(new HashSet<>());
+            membersShutdown = ConcurrentHashMap.newKeySet();
         }
 
         @Override
