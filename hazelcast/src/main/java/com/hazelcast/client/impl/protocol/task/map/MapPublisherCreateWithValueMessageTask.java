@@ -100,8 +100,8 @@ public class MapPublisherCreateWithValueMessageTask
             Object result;
             try {
                 result = future.get();
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
             }
             if (result == null) {
                 continue;
