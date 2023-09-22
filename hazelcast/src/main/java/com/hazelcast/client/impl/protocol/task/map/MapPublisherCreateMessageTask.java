@@ -33,6 +33,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -136,7 +138,7 @@ public class MapPublisherCreateMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new MapPermission(parameters.mapName, ActionConstants.ACTION_LISTEN);
     }
 
     @Override
