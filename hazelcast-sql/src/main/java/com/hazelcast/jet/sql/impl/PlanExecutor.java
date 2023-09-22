@@ -515,7 +515,8 @@ public class PlanExecutor {
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 serializationService,
-                Util.getNodeEngine(hazelcastInstance));
+                Util.getNodeEngine(hazelcastInstance),
+                ssc);
 
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
