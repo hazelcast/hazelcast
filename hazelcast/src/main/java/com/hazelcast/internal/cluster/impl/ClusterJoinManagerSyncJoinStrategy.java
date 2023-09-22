@@ -32,18 +32,18 @@ import static java.lang.String.format;
  * @author lprimak
  */
 public class ClusterJoinManagerSyncJoinStrategy {
-    private final ClusterJoinManager clusterJoinManager;
     long timeToStartJoin;
+    private final ClusterJoinManager clusterJoinManager;
     private final ILogger logger;
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
 
     private long firstJoinRequest;
 
-    ClusterJoinManagerSyncJoinStrategy(ILogger logger, ClusterJoinManager clusterJoinManager,
+    ClusterJoinManagerSyncJoinStrategy(ClusterJoinManager clusterJoinManager, ILogger logger,
                                        long maxWaitMillisBeforeJoin, long waitMillisBeforeJoin) {
-        this.logger = logger;
         this.clusterJoinManager = clusterJoinManager;
+        this.logger = logger;
         this.maxWaitMillisBeforeJoin = maxWaitMillisBeforeJoin;
         this.waitMillisBeforeJoin = waitMillisBeforeJoin;
     }

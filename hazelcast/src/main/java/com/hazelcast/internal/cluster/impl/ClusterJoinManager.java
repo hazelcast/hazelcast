@@ -145,7 +145,7 @@ public class ClusterJoinManager {
         staleJoinPreventionDurationInMillis = TimeUnit.SECONDS.toMillis(
             Integer.getInteger(STALE_JOIN_PREVENTION_DURATION_PROP, DEFAULT_STALE_JOIN_PREVENTION_DURATION_IN_SECS));
         syncJoinStrategy = node.getProperties().getBoolean(ClusterProperty.ASYNC_JOIN_STRATEGY_ENABLED)
-                ? null : new ClusterJoinManagerSyncJoinStrategy(logger, this, maxWaitMillisBeforeJoin, waitMillisBeforeJoin);
+                ? null : new ClusterJoinManagerSyncJoinStrategy(this, logger, maxWaitMillisBeforeJoin, waitMillisBeforeJoin);
     }
 
     boolean isJoinInProgress() {
