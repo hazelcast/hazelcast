@@ -19,11 +19,13 @@ package com.hazelcast.jet.sql.impl.inject;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.Field;
+import com.hazelcast.jet.sql.impl.extract.AvroQueryTarget;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.avro.generic.GenericRecord;
 
 import java.util.List;
 import java.util.Map;
@@ -80,6 +82,8 @@ public abstract class UpsertTarget {
             return (i, name) -> values.get(i);
         } else if (value instanceof Map) {
             return (i, name) -> ((Map<?, ?>) value).get(name);
+        } else if (value instanceof GenericRecord) {
+            return (i, name) -> AvroQueryTarget.extractValue((GenericRecord) value, name);
         } else {
             return (i, name) -> extractors.extract(value, name, false);
         }

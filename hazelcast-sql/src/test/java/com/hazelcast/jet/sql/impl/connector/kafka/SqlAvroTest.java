@@ -188,9 +188,14 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 row(1, "Alice", row(1, "Umbrella Corporation")),
                 row(1, "Alice", createRecord(orgSchema, 1, "Umbrella Corporation")));
 
+        insertParams(2, "Dennis", createRecord(orgSchema, 2, "Bell Labs"));
+
         assertRowsEventuallyInAnyOrder(
                 "SELECT name, (organization).name FROM " + name,
-                List.of(new Row("Alice", "Umbrella Corporation"))
+                List.of(
+                        new Row("Alice", "Umbrella Corporation"),
+                        new Row("Dennis", "Bell Labs")
+                )
         );
     }
 
@@ -257,14 +262,17 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 row(1, "Alice", row("Bob", "(111) 111-1111")),
                 row(1, "Alice", createRecord(parentSchema, "Bob", "<unknown>", "(111) 111-1111")));
 
+        Object[] parent = row("Erin", "Insignificant St. 34", "(999) 999-9999");
+        insertParams(2, "Carol", createRecord(parentSchema, parent));
+
         kafkaTestSupport.produce(name, createRecord(ID_SCHEMA, 3),
-                createRecord(studentSchema, "Dave", 123456789L,
-                        row("Erin", "Insignificant St. 34", "(999) 999-9999")));
+                createRecord(studentSchema, "Dave", 123456789L, parent));
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT name, (parent).name, (parent).phone FROM " + name,
                 List.of(
                         new Row("Alice", "Bob", "(111) 111-1111"),
+                        new Row("Carol", "Erin", "(999) 999-9999"),
                         new Row("Dave", "Erin", "(999) 999-9999")
                 )
         );
@@ -783,6 +791,10 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
     private void insertRecord(Object... values) {
         insertLiterals(instance(), mapping.name, values);
+    }
+
+    private void insertParams(Object... values) {
+        insertParams(instance(), mapping.name, values);
     }
 
     private void insertAndAssertRecord(Object... values) {

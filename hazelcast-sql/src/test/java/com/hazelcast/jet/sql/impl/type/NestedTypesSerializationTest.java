@@ -20,13 +20,18 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecordBuilder;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import org.apache.avro.Schema;
+import org.apache.avro.SchemaBuilder;
+import org.apache.avro.generic.GenericRecordBuilder;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,9 +44,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_COMPACT_TYPE_NAME;
@@ -52,7 +59,9 @@ import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENAB
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-public class NestedTypesSerializationTest extends SqlTestSupport {
+public class NestedTypesSerializationTest extends KafkaSqlTestSupport {
+    private static final int INITIAL_PARTITION_COUNT = 4;
+
     private static final ClassDefinition PORTABLE_ORG_SCHEMA = new ClassDefinitionBuilder(1, 2)
             .addStringField("name")
             .addStringField("taxId")
@@ -63,6 +72,19 @@ public class NestedTypesSerializationTest extends SqlTestSupport {
             .addStringField("phone")
             .addPortableField("organization", PORTABLE_ORG_SCHEMA)
             .build();
+
+    private static final Schema AVRO_ORG_SCHEMA = SchemaBuilder.record("Organization")
+            .fields()
+            .optionalString("name")
+            .optionalString("taxId")
+            .optionalBoolean("paidCustomer")
+            .endRecord();
+    private static final Schema AVRO_USER_SCHEMA = SchemaBuilder.record("User")
+            .fields()
+            .optionalString("name")
+            .optionalString("phone")
+            .name("organization").type().optional().type(AVRO_ORG_SCHEMA)
+            .endRecord();
 
     private static final Map<String, Object> ORG_VALUES = Map.of(
             "Portable", new PortableGenericRecordBuilder(PORTABLE_ORG_SCHEMA)
@@ -75,7 +97,12 @@ public class NestedTypesSerializationTest extends SqlTestSupport {
                     .setString("taxId", "1234567890")
                     .setBoolean("paidCustomer", true)
                     .build(),
-            "Java", new Organization("Bell Labs", "1234567890", true)
+            "Java", new Organization("Bell Labs", "1234567890", true),
+            "Avro", new GenericRecordBuilder(AVRO_ORG_SCHEMA)
+                    .set("name", "Bell Labs")
+                    .set("taxId", "1234567890")
+                    .set("paidCustomer", true)
+                    .build()
     );
 
     @Parameters(name = "{0} -> {1}")
@@ -90,7 +117,15 @@ public class NestedTypesSerializationTest extends SqlTestSupport {
                                  OPTION_VALUE_COMPACT_TYPE_NAME, "User"),
                 "Java", name -> mapping(name, IMapSqlConnector.class)
                         .options(OPTION_VALUE_FORMAT, JAVA_FORMAT,
-                                 OPTION_VALUE_CLASS, User.class.getName())
+                                 OPTION_VALUE_CLASS, User.class.getName()),
+                "Avro", name -> {
+                    kafkaTestSupport.createTopic("t_" + name, INITIAL_PARTITION_COUNT);
+                    return mapping(name, KafkaSqlConnector.class)
+                            .options(OPTION_VALUE_FORMAT, AVRO_FORMAT,
+                                     OPTION_VALUE_AVRO_SCHEMA, AVRO_USER_SCHEMA,
+                                     "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
+                                     "auto.offset.reset", "earliest");
+                }
         );
         return parameters((String) null, mappings, mappings);
     }
@@ -122,34 +157,43 @@ public class NestedTypesSerializationTest extends SqlTestSupport {
         serializationConfig.addClassDefinition(PORTABLE_ORG_SCHEMA);
         serializationConfig.addClassDefinition(PORTABLE_USER_SCHEMA);
 
-        initializeWithClient(2, config, null);
+        setupWithClient(2, config, null);
     }
 
     @Test
-    public void test_insertSelect() {
+    public void test_insertSelect() throws Exception {
         new SqlType("Organization").fields("name VARCHAR", "paidCustomer BOOLEAN").create();
 
         String from = randomName();
         getFromMapping.apply(from).create();
 
         // Insert using row syntax (...)
-        insertRow(client(), from, 1, "Alice", row("Umbrella Corporation", false));
+        insertLiterals(client(), from, 1, "Alice", row("Umbrella Corporation", false));
 
         // Insert using dynamic parameters (?)
-        insertRecord(client(), from, 2, "Dennis", ORG_VALUES.get(fromType));
+        insertParams(client(), from, 2, "Dennis", ORG_VALUES.get(fromType));
 
         String to = randomName();
         getToMapping.apply(to).create();
 
-        instance().getSql().execute("INSERT INTO " + to + " SELECT * FROM " + from);
+        Runnable insertTask = () ->
+                instance().getSql().execute("INSERT INTO " + to + " SELECT * FROM " + from);
+        AssertTask assertTask = () ->
+                assertRowsEventuallyInAnyOrder(
+                        "SELECT name, (organization).name, (organization).paidCustomer FROM " + to,
+                        List.of(
+                                new Row("Alice", "Umbrella Corporation", false),
+                                new Row("Dennis", "Bell Labs", true)
+                        )
+                );
 
-        assertRowsEventuallyInAnyOrder(
-                "SELECT name, (organization).name, (organization).paidCustomer FROM " + to,
-                List.of(
-                        new Row("Alice", "Umbrella Corporation", false),
-                        new Row("Dennis", "Bell Labs", true)
-                )
-        );
+        if (fromType.equals("Avro")) {
+            spawn(insertTask);
+            assertTrueEventually(assertTask);
+        } else {
+            insertTask.run();
+            assertTask.run();
+        }
     }
 
     public static class Organization implements Serializable {
