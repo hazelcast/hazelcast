@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -158,7 +159,7 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public void addBackupListener(UUID clientUUID, Consumer<Long> backupListener) {
+    public void addBackupListener(UUID clientUUID, LongConsumer backupListener) {
 
     }
 
@@ -168,7 +169,7 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public boolean deregisterBackupListener(UUID clientUUID, Consumer<Long> backupListener) {
+    public boolean deregisterBackupListener(UUID clientUUID, LongConsumer backupListener) {
         return false;
     }
 

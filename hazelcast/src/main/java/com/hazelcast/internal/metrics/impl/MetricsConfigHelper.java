@@ -32,6 +32,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
@@ -119,7 +120,7 @@ public final class MetricsConfigHelper {
                 "ClientMetricsConfig.collectionFrequencySeconds", logger);
     }
 
-    private static void tryOverride(HazelcastProperty property, Function<String, String> getPropertyValueFn,
+    private static void tryOverride(HazelcastProperty property, UnaryOperator<String> getPropertyValueFn,
                                     Consumer<String> setterFn, Supplier<String> getterFn, String configOverridden,
                                     ILogger logger) {
         String propertyValue = getPropertyValueFn.apply(property.getName());

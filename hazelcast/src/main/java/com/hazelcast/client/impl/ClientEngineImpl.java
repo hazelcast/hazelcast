@@ -80,6 +80,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
@@ -525,7 +526,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public void addBackupListener(UUID clientUuid, Consumer<Long> backupListener) {
+    public void addBackupListener(UUID clientUuid, LongConsumer backupListener) {
         backupListeners.put(clientUuid, backupListener);
     }
 
@@ -538,7 +539,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public boolean deregisterBackupListener(UUID clientUUID, Consumer<Long> backupListener) {
+    public boolean deregisterBackupListener(UUID clientUUID, LongConsumer backupListener) {
         return backupListeners.remove(clientUUID, backupListener);
     }
 

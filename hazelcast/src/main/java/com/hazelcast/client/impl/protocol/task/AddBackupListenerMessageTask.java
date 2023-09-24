@@ -31,7 +31,7 @@ import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFutur
 
 public class AddBackupListenerMessageTask
         extends AbstractAddListenerMessageTask<Void>
-        implements Consumer<Long> {
+        implements LongConsumer {
 
     public AddBackupListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

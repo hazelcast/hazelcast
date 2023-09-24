@@ -301,7 +301,7 @@ public final class ExecutionPlanBuilder {
 
     private static List<EdgeDef> toEdgeDefs(
             List<Edge> edges, EdgeConfig defaultEdgeConfig,
-            Function<Edge, Integer> oppositeVtxId, boolean isJobDistributed
+            ToIntFunction<Edge> oppositeVtxId, boolean isJobDistributed
     ) {
         List<EdgeDef> list = new ArrayList<>(edges.size());
         for (Edge edge : edges) {

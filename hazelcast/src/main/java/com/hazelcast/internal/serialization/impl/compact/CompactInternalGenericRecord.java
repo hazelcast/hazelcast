@@ -38,6 +38,7 @@ import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
@@ -787,7 +788,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     private <T> T[] getPrimitiveArrayAsNullableArray(FieldDescriptor fieldDescriptor,
-                                                     Function<Integer, T[]> constructor,
+                                                     IntFunction<T[]> constructor,
                                                      Reader<T> reader) {
         int currentPos = in.position();
         try {
@@ -811,7 +812,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     private <T> T[] getArrayOfVariableSize(FieldDescriptor fieldDescriptor,
-                                           Function<Integer, T[]> constructor,
+                                           IntFunction<T[]> constructor,
                                            Reader<T> reader) {
         int currentPos = in.position();
         try {
@@ -842,10 +843,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
-
     private <T> T[] getArrayOfVariableSize(@Nonnull String fieldName, FieldKind fieldKind,
-                                           Function<Integer, T[]> constructor,
-                                           Reader<T> reader) {
+            IntFunction<T[]> constructor, Reader<T> reader) {
         FieldDescriptor fieldDefinition = getFieldDescriptor(fieldName, fieldKind);
         return getArrayOfVariableSize(fieldDefinition, constructor, reader);
     }

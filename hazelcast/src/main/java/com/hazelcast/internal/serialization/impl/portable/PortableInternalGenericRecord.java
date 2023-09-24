@@ -42,6 +42,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import static com.hazelcast.internal.nio.Bits.BOOLEAN_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.BYTE_SIZE_IN_BYTES;
@@ -413,7 +414,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord impleme
     }
 
 
-    private <T> T[] readObjectArrayField(@Nonnull String fieldName, FieldType fieldType, Function<Integer, T[]> constructor,
+    private <T> T[] readObjectArrayField(@Nonnull String fieldName, FieldType fieldType, IntFunction<T[]> constructor,
                                          Reader<ObjectDataInput, T> reader) {
         int currentPos = in.position();
         try {
@@ -549,7 +550,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord impleme
         INTERNAL_GENERIC_RECORD
     }
 
-    private <T> T[] readNestedArray(@Nonnull String fieldName, Function<Integer, T[]> constructor,
+    private <T> T[] readNestedArray(@Nonnull String fieldName, IntFunction<Integer> constructor,
                                     PortableReadMethod readMethod) {
         int currentPos = in.position();
         try {
