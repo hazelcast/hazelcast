@@ -26,6 +26,7 @@ import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
