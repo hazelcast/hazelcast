@@ -18,13 +18,12 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.Field;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
+import com.hazelcast.jet.sql.impl.inject.UpsertTargetTestSupport;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,22 +31,26 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.core.JetTestSupport.TEST_SS;
+import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
+import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class KvProjectorTest {
+public class KvProjectorTest extends UpsertTargetTestSupport {
 
     @Test
     public void test_project() {
         KvProjector projector = new KvProjector(
-                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
-                new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
+                List.of(field(KEY, INT), field(VALUE, INT)),
                 new MultiplyingTarget(),
                 new MultiplyingTarget(),
                 false
@@ -62,8 +65,7 @@ public class KvProjectorTest {
     @Test
     public void test_projectAllowNulls() {
         KvProjector projector = new KvProjector(
-                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
-                new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
+                List.of(field(KEY, INT), field(VALUE, INT)),
                 new NullTarget(),
                 new NullTarget(),
                 false
@@ -78,8 +80,7 @@ public class KvProjectorTest {
     @Test
     public void test_projectKeyNullNotAllowed() {
         KvProjector projector = new KvProjector(
-                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
-                new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
+                List.of(field(KEY, INT), field(VALUE, INT)),
                 new NullTarget(),
                 new MultiplyingTarget(),
                 true
@@ -93,8 +94,7 @@ public class KvProjectorTest {
     @Test
     public void test_projectValueNullNotAllowed() {
         KvProjector projector = new KvProjector(
-                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
-                new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
+                List.of(field(KEY, INT), field(VALUE, INT)),
                 new MultiplyingTarget(),
                 new NullTarget(),
                 true
@@ -110,8 +110,7 @@ public class KvProjectorTest {
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         KvProjector.Supplier original = KvProjector.supplier(
-                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
-                new QueryDataType[]{QueryDataType.INT, QueryDataType.VARCHAR},
+                List.of(field(KEY, INT), field(VALUE, VARCHAR)),
                 PrimitiveUpsertTargetDescriptor.INSTANCE,
                 PrimitiveUpsertTargetDescriptor.INSTANCE,
                 true
@@ -123,38 +122,16 @@ public class KvProjectorTest {
     }
 
     private static final class MultiplyingTarget extends UpsertTarget {
-        private Object value = -1;
-
         @Override
-        public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
-            return value -> this.value = value;
-        }
-
-        @Override
-        public void init() {
-            value = null;
-        }
-
-        @Override
-        public Object conclude() {
-            return (int) value * 2;
+        protected Converter<Integer> createConverter(Stream<Field> fields) {
+            return value -> (int) value * 2;
         }
     }
 
     private static final class NullTarget extends UpsertTarget {
-
         @Override
-        public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
-            return value -> {
-            };
-        }
-
-        @Override
-        public void init() { }
-
-        @Override
-        public Object conclude() {
-            return null;
+        protected Converter<Object> createConverter(Stream<Field> fields) {
+            return value -> null;
         }
     }
 }

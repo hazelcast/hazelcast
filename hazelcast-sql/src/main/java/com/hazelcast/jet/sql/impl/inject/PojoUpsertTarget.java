@@ -18,27 +18,26 @@ package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.type.converter.ToConverters;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.ReflectionUtils.loadClass;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
-import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
 
 @NotThreadSafe
 class PojoUpsertTarget extends UpsertTarget {
     private final Class<?> typeClass;
-
-    private Object object;
 
     PojoUpsertTarget(Class<?> typeClass, InternalSerializationService serializationService) {
         super(serializationService);
@@ -46,22 +45,26 @@ class PojoUpsertTarget extends UpsertTarget {
     }
 
     @Override
-    public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
-        if (path == null) {
-            if (type.isCustomType()) {
-                UnaryOperator<Object> converter = customTypeConverter(type);
-                return value -> object = converter.apply(value);
-            } else {
-                return FAILING_TOP_LEVEL_INJECTOR;
-            }
-        }
-        Injector<Object> injector = createInjector(typeClass, path, type);
-        return value -> injector.set(object, value);
+    protected Converter<Object> createConverter(Stream<KvMetadataResolver.Field> fields) {
+        return createConverter(typeClass, fields);
     }
 
-    protected Injector<Object> createInjector(Class<?> typeClass, String path, QueryDataType type) {
-        UnaryOperator<Object> converter = type.isCustomType()
-                ? customTypeConverter(type)
+    private Converter<Object> createConverter(Class<?> typeClass, Stream<KvMetadataResolver.Field> fields) {
+        Injector<Object> injector = createRecordInjector(fields,
+                field -> createInjector(typeClass, field.name(), field.type()));
+        return value -> {
+            if (value == null || (!(value instanceof RowValue) && typeClass.isInstance(value))) {
+                return value;
+            }
+            Object object = createObject(typeClass);
+            injector.set(object, value);
+            return object;
+        };
+    }
+
+    private Injector<Object> createInjector(Class<?> typeClass, String path, QueryDataType type) {
+        Converter<Object> converter = type.isCustomType()
+                ? createConverter(loadClass(type.getObjectTypeMetadata()), getFields(type))
                 : ToConverters.getToConverter(type)::convert;
 
         Method method = ReflectionUtils.findPropertySetter(typeClass, path);
@@ -100,38 +103,12 @@ class PojoUpsertTarget extends UpsertTarget {
         };
     }
 
-    protected UnaryOperator<Object> customTypeConverter(QueryDataType type) {
-        Class<?> typeClass = loadClass(type.getObjectTypeMetadata());
-        Injector<Object> injector = createRecordInjector(type,
-                (fieldName, fieldType) -> createInjector(typeClass, fieldName, fieldType));
-        return value -> {
-            if (value == null || typeClass.isInstance(value)) {
-                return value;
-            }
-            Object object = createObject(typeClass);
-            injector.set(object, value);
-            return object;
-        };
-    }
-
-    protected static Object createObject(Class<?> typeClass) {
+    private static Object createObject(Class<?> typeClass) {
         try {
             return newInstance(Thread.currentThread().getContextClassLoader(), typeClass.getName());
         } catch (Exception e) {
             throw QueryException.error("Unable to instantiate class \""
                     + typeClass.getName() + "\" : " + e.getMessage(), e);
         }
-    }
-
-    @Override
-    public void init() {
-        object = createObject(typeClass);
-    }
-
-    @Override
-    public Object conclude() {
-        Object object = this.object;
-        this.object = null;
-        return object;
     }
 }

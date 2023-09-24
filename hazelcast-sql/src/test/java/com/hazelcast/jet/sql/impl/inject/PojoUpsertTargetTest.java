@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,20 +33,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class PojoUpsertTargetTest {
+public class PojoUpsertTargetTest extends UpsertTargetTestSupport {
 
     @Test
     public void test_set() {
         UpsertTarget target = new PojoUpsertTarget(Pojo.class, null);
-        UpsertInjector intFieldInjector = target.createInjector("intField", QueryDataType.INT);
-        UpsertInjector longFieldInjector = target.createInjector("longField", QueryDataType.BIGINT);
-        UpsertInjector stringFieldInjector = target.createInjector("stringField", QueryDataType.VARCHAR);
+        UpsertConverter converter = target.createConverter(List.of(
+                field("intField", QueryDataType.INT),
+                field("longField", QueryDataType.BIGINT),
+                field("stringField", QueryDataType.VARCHAR)
+        ));
 
-        target.init();
-        intFieldInjector.set(1);
-        longFieldInjector.set(2L);
-        stringFieldInjector.set("3");
-        Object pojo = target.conclude();
+        Object pojo = converter.applyRow(1, 2L, "3");
 
         assertThat(pojo).isEqualTo(new Pojo(1, 2L, "3"));
     }
@@ -53,10 +52,11 @@ public class PojoUpsertTargetTest {
     @Test
     public void when_injectNullValueWithPrimitiveField_then_throws() {
         UpsertTarget target = new PojoUpsertTarget(Pojo.class, null);
-        UpsertInjector injector = target.createInjector("intField", QueryDataType.INT);
+        UpsertConverter converter = target.createConverter(List.of(
+                field("intField", QueryDataType.INT)
+        ));
 
-        target.init();
-        assertThatThrownBy(() -> injector.set(null))
+        assertThatThrownBy(() -> converter.applyRow((Integer) null))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot set NULL to a primitive field");
     }
@@ -64,10 +64,11 @@ public class PojoUpsertTargetTest {
     @Test
     public void when_injectNullValueWithPrimitiveSetter_then_throws() {
         UpsertTarget target = new PojoUpsertTarget(Pojo.class, null);
-        UpsertInjector injector = target.createInjector("longField", QueryDataType.BIGINT);
+        UpsertConverter converter = target.createConverter(List.of(
+                field("longField", QueryDataType.BIGINT)
+        ));
 
-        target.init();
-        assertThatThrownBy(() -> injector.set(null))
+        assertThatThrownBy(() -> converter.applyRow((Long) null))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot pass NULL to a method with a primitive argument");
     }
@@ -75,10 +76,11 @@ public class PojoUpsertTargetTest {
     @Test
     public void when_injectNonExistingPropertyValue_then_throws() {
         UpsertTarget target = new PojoUpsertTarget(Object.class, null);
-        UpsertInjector injector = target.createInjector("field", QueryDataType.INT);
+        UpsertConverter converter = target.createConverter(List.of(
+                field("field", QueryDataType.INT)
+        ));
 
-        target.init();
-        assertThatThrownBy(() -> injector.set(1))
+        assertThatThrownBy(() -> converter.applyRow(1))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot set property \"field\" to class java.lang.Object: " +
                         "no set-method or public field available");
@@ -87,24 +89,22 @@ public class PojoUpsertTargetTest {
     @Test
     public void when_injectNonExistingPropertyNullValue_then_succeeds() {
         UpsertTarget target = new PojoUpsertTarget(Object.class, null);
-        UpsertInjector injector = target.createInjector("field", QueryDataType.INT);
+        UpsertConverter converter = target.createConverter(List.of(
+                field("field", QueryDataType.INT)
+        ));
 
-        target.init();
-        injector.set(null);
-        Object pojo = target.conclude();
+        Object pojo = converter.applyRow((Integer) null);
 
         assertThat(pojo).isNotNull();
     }
 
     @SuppressWarnings("unused")
     private static final class Pojo {
-
         public int intField;
         private long longField;
         private String stringField;
 
-        Pojo() {
-        }
+        Pojo() { }
 
         private Pojo(int intField, long longField, String stringField) {
             this.intField = intField;

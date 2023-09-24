@@ -16,20 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
+import com.hazelcast.jet.sql.impl.inject.UpsertConverter;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.schema.TableField;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
@@ -37,95 +39,65 @@ import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 import static com.hazelcast.jet.sql.impl.type.converter.ToConverters.getToConverter;
 
 class Projector {
-
-    private final QueryDataType[] types;
-
-    private final UpsertTarget target;
-
+    private final List<TableField> fields;
     private final List<Expression<?>> projection;
     private final ExpressionEvalContext evalContext;
 
-    private final UpsertInjector[] injectors;
+    private final UpsertConverter converter;
 
     Projector(
-            QueryPath[] paths,
-            QueryDataType[] types,
+            List<TableField> fields,
             UpsertTarget target,
             List<Expression<?>> projection,
             ExpressionEvalContext evalContext
     ) {
-        checkTrue(types.length == projection.size(), "paths.length != projection.length");
-        this.types = types;
-
-        this.target = target;
-
+        checkTrue(fields.size() == projection.size(), "fields.length != projection.length");
+        this.fields = fields;
         this.projection = projection;
         this.evalContext = evalContext;
 
-        this.injectors = createInjectors(paths, types, target);
+        converter = target.createConverter(fields);
     }
 
-    private static UpsertInjector[] createInjectors(
-            QueryPath[] paths,
-            QueryDataType[] types,
-            UpsertTarget target
-    ) {
-        UpsertInjector[] injectors = new UpsertInjector[paths.length];
-        for (int i = 0; i < paths.length; i++) {
-            injectors[i] = target.createInjector(paths[i].getPath(), types[i]);
-        }
-        return injectors;
-    }
-
-    Object project(JetSqlRow values) {
-        Row row = values.getRow();
-        target.init();
-        for (int i = 0; i < injectors.length; i++) {
+    Object project(JetSqlRow jetSqlRow) {
+        Row row = jetSqlRow.getRow();
+        List<Object> values = new ArrayList<>(fields.size());
+        for (int i = 0; i < fields.size(); i++) {
             Object projected = evaluate(projection.get(i), row, evalContext);
-            Object value = getToConverter(types[i]).convert(projected);
-            injectors[i].set(value);
+            values.add(getToConverter(fields.get(i).getType()).convert(projected));
         }
-        return target.conclude();
+        return converter.apply(new RowValue(values));
     }
 
     static Supplier supplier(
-            QueryPath[] paths,
-            QueryDataType[] types,
+            List<TableField> fields,
             UpsertTargetDescriptor descriptor,
             List<Expression<?>> projection
     ) {
-        return new Supplier(paths, types, descriptor, projection);
+        return new Supplier(fields, descriptor, projection);
     }
 
     static final class Supplier implements DataSerializable {
-
-        private QueryPath[] paths;
-        private QueryDataType[] types;
-
+        private List<TableField> fields;
         private UpsertTargetDescriptor descriptor;
-
         private List<Expression<?>> projection;
 
         @SuppressWarnings("unused")
-        private Supplier() {
-        }
+        private Supplier() { }
 
         private Supplier(
-                QueryPath[] paths,
-                QueryDataType[] types,
+                List<TableField> fields,
                 UpsertTargetDescriptor descriptor,
                 List<Expression<?>> projection
         ) {
-            this.paths = paths;
-            this.types = types;
+            this.fields = fields;
             this.descriptor = descriptor;
             this.projection = projection;
         }
 
         Projector get(ExpressionEvalContext evalContext) {
             return new Projector(
-                    paths,
-                    types,
+                    fields,
                     descriptor.create(evalContext.getSerializationService()),
                     projection,
                     evalContext
@@ -134,28 +106,14 @@ class Projector {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(paths.length);
-            for (QueryPath path : paths) {
-                out.writeObject(path);
-            }
-            out.writeInt(types.length);
-            for (QueryDataType type : types) {
-                out.writeObject(type);
-            }
+            SerializationUtil.writeList(fields, out);
             out.writeObject(descriptor);
             out.writeObject(projection);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            paths = new QueryPath[in.readInt()];
-            for (int i = 0; i < paths.length; i++) {
-                paths[i] = in.readObject();
-            }
-            types = new QueryDataType[in.readInt()];
-            for (int i = 0; i < types.length; i++) {
-                types[i] = in.readObject();
-            }
+            fields = SerializationUtil.readList(in);
             descriptor = in.readObject();
             projection = in.readObject();
         }

@@ -18,10 +18,6 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -37,11 +33,6 @@ import org.apache.calcite.sql.validate.SqlValidatorTable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
-import static java.util.function.Function.identity;
 
 public class SqlExtendedInsert extends SqlInsert {
     private final SqlNodeList extendedKeywords;
@@ -121,21 +112,6 @@ public class SqlExtendedInsert extends SqlInsert {
         }
 
         super.validate(validator, scope);
-
-        Map<String, TableField> fieldsMap = table.getTarget().getFields().stream()
-                .collect(Collectors.toMap(TableField::getName, identity()));
-
-        for (SqlNode fieldNode : getTargetColumnList()) {
-            TableField field = fieldsMap.get(((SqlIdentifier) fieldNode).getSimple());
-            if (field instanceof MapTableField) {
-                QueryPath path = ((MapTableField) field).getPath();
-                if (path.getPath() == null
-                        && field.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT
-                        && !field.getType().isCustomType()) {
-                    throw validator.newValidationError(fieldNode, RESOURCE.insertToTopLevelObject());
-                }
-            }
-        }
     }
 
     public enum Keyword {

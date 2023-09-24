@@ -185,8 +185,7 @@ public class KafkaSqlConnector implements SqlConnector {
         Vertex vStart = context.getDag().newUniqueVertex(
                 "Project(" + table + ")",
                 KvProcessors.entryProjector(
-                        table.paths(),
-                        table.types(),
+                        table.getFields(),
                         table.keyUpsertDescriptor(),
                         table.valueUpsertDescriptor(),
                         false

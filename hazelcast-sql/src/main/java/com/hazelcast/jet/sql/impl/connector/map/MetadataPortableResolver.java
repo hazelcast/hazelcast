@@ -97,6 +97,11 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
             InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
+        fieldsByPath.forEach((path, field) -> {
+            if (path.isTopLevel() && !field.type().isCustomType()) {
+                throw QueryException.error("'" + path + "' field must be used with a user-defined type");
+            }
+        });
 
         PortableId portableId = getSchemaId(fieldsByPath, PortableId::new, () -> portableId(options, isKey));
         ClassDefinition classDefinition = serializationService.getPortableContext()
@@ -202,8 +207,8 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
                 default:
                     if (field.type().isCustomType()) {
                         PortableId fieldId = new PortableId(field.type().getObjectTypeMetadata());
-                        return schema.addPortableField(field.name(), resolveClassDefinition(
-                                fieldId, field.type().getObjectFields().stream().map(Field::new), context));
+                        return schema.addPortableField(field.name(),
+                                resolveClassDefinition(fieldId, getFields(field.type()), context));
                     } else {
                         throw QueryException.error("Unsupported type: " + field.type());
                     }

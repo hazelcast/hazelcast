@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.nio.ObjectDataInput;
@@ -30,7 +29,6 @@ import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -132,16 +130,8 @@ public class KvMetadataNullResolver implements KvMetadataResolver {
 
     private static class NullUpsertTarget extends UpsertTarget {
         @Override
-        public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
-            throw new IllegalStateException("NullQueryTarget doesn't support this operation");
-        }
-
-        @Override
-        public void init() { }
-
-        @Override
-        public Object conclude() {
-            return null;
+        protected Converter<Object> createConverter(Stream<Field> fields) {
+            return value -> null;
         }
     }
 }

@@ -32,7 +32,7 @@ import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOpe
  */
 public abstract class AbstractGenericRecord implements InternalGenericRecord {
 
-    protected abstract Object getClassIdentifier();
+    public abstract Object getClassIdentifier();
 
     public boolean equals(Object o) {
         if (this == o) {

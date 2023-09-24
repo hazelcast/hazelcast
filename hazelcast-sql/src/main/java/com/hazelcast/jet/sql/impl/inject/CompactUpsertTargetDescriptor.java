@@ -17,39 +17,43 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Objects;
 
 public class CompactUpsertTargetDescriptor implements UpsertTargetDescriptor {
-
-    private Schema schema;
+    private String typeName;
+    private Map<String, Schema> schemas;
 
     @SuppressWarnings("unused")
-    private CompactUpsertTargetDescriptor() {
-    }
+    private CompactUpsertTargetDescriptor() { }
 
-    public CompactUpsertTargetDescriptor(@Nonnull Schema schema) {
-        this.schema = schema;
+    public CompactUpsertTargetDescriptor(@Nonnull String typeName, @Nonnull Map<String, Schema> schemas) {
+        this.typeName = typeName;
+        this.schemas = schemas;
     }
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new CompactUpsertTarget(schema, serializationService);
+        return new CompactUpsertTarget(typeName, schemas, serializationService);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(schema);
+        out.writeString(typeName);
+        SerializationUtil.writeMap(schemas, out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.schema = in.readObject();
+        typeName = in.readString();
+        schemas = SerializationUtil.readMap(in);
     }
 
     @Override
@@ -61,18 +65,20 @@ public class CompactUpsertTargetDescriptor implements UpsertTargetDescriptor {
             return false;
         }
         CompactUpsertTargetDescriptor that = (CompactUpsertTargetDescriptor) o;
-        return Objects.equals(schema, that.schema);
+        return typeName.equals(that.typeName)
+                && schemas.equals(that.schemas);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(schema);
+        return Objects.hash(typeName, schemas);
     }
 
     @Override
     public String toString() {
         return "CompactUpsertTargetDescriptor{"
-                + "+ schema=" + schema
+                + "typeName=" + typeName
+                + ", schemas=" + schemas
                 + '}';
     }
 }

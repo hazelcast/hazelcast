@@ -17,15 +17,23 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.Field;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.expression.RowValue;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.Util.findIndex;
+import static com.hazelcast.sql.impl.expression.ConstantExpression.UNSET;
 import static java.util.Map.entry;
 import static java.util.stream.Collectors.toList;
 
@@ -40,19 +48,23 @@ public abstract class UpsertTarget {
         this(null);
     }
 
-    private Extractor getExtractor(Object value) {
-        if (value instanceof RowValue) {
-            List<Object> values = ((RowValue) value).getValues();
-            return (i, name) -> values.get(i);
-        } else {
-            return (i, name) -> extractors.extract(value, name, false);
-        }
+    public UpsertConverter createConverter(List<TableField> fields) {
+        Converter<?> converter = createConverter(getFields(fields));
+        int topLevelIndex = findIndex(fields, field -> ((MapTableField) field).getPath().isTopLevel());
+        return row -> {
+            // If the top-level path (__key/this) is set, pass it as the record. Otherwise,
+            // pass the RowValue object as the record by removing the top-level path.
+            Object topLevel = topLevelIndex != -1 ? row.getValues().remove(topLevelIndex) : UNSET;
+            return converter.apply(topLevel != UNSET ? topLevel : row);
+        };
     }
 
-    protected <T> Injector<T> createRecordInjector(QueryDataType type,
-                                                   BiFunction<String, QueryDataType, Injector<T>> createFieldInjector) {
-        List<Entry<String, Injector<T>>> injectors = type.getObjectFields().stream()
-                .map(field -> entry(field.getName(), createFieldInjector.apply(field.getName(), field.getDataType())))
+    protected abstract Converter<?> createConverter(Stream<Field> fields);
+
+    protected <T> Injector<T> createRecordInjector(Stream<Field> fields,
+                                                   Function<Field, Injector<T>> createFieldInjector) {
+        List<Entry<String, Injector<T>>> injectors = fields
+                .map(field -> entry(field.name(), createFieldInjector.apply(field)))
                 .collect(toList());
         return (record, value) -> {
             Extractor extractor = getExtractor(value);
@@ -62,11 +74,37 @@ public abstract class UpsertTarget {
         };
     }
 
-    public abstract UpsertInjector createInjector(@Nullable String path, QueryDataType type);
+    private Extractor getExtractor(Object value) {
+        if (value instanceof RowValue) {
+            List<Object> values = ((RowValue) value).getValues();
+            return (i, name) -> values.get(i);
+        } else if (value instanceof Map) {
+            return (i, name) -> ((Map<?, ?>) value).get(name);
+        } else {
+            return (i, name) -> extractors.extract(value, name, false);
+        }
+    }
 
-    public abstract void init();
+    /** {@link TableField} counterpart of {@link KvMetadataResolver#getFields(Map)}. */
+    private static Stream<Field> getFields(List<TableField> fields) {
+        return flatMap(fields, KvMetadataResolver::getFields, () -> fields.stream()
+                .filter(field -> !((MapTableField) field).getPath().isTopLevel()).map(Field::new));
+    }
 
-    public abstract Object conclude();
+    /** {@link TableField} counterpart of {@link KvMetadataResolver#flatMap}. */
+    private static <T> T flatMap(
+            List<TableField> fields,
+            Function<QueryDataType, T> typeMapper,
+            Supplier<T> orElse
+    ) {
+        if (fields.size() == 1) {
+            MapTableField field = (MapTableField) fields.get(0);
+            if (field.getPath().isTopLevel() && field.getType().isCustomType()) {
+                return typeMapper.apply(field.getType());
+            }
+        }
+        return orElse.get();
+    }
 
     @FunctionalInterface
     private interface Extractor {
@@ -77,4 +115,12 @@ public abstract class UpsertTarget {
     protected interface Injector<T> {
         void set(T record, Object value);
     }
+
+    @FunctionalInterface
+    protected interface InjectorEx<T> {
+        void set(T record, Object value) throws Exception;
+    }
+
+    @FunctionalInterface
+    protected interface Converter<T> extends Function<Object, T> { }
 }

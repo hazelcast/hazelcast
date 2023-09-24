@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.sql.impl.expression.ConstantExpression.UNSET;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -153,15 +154,13 @@ public final class UpdatingEntryProcessor
                     if (updatesByFieldNames.containsKey(field.getName())) {
                         return updatesByFieldNames.get(field.getName());
                     } else if (field.getName().equals(VALUE)) {
-                        // this works because assigning `this = null` is ignored if this is expanded to fields
-                        return ConstantExpression.create(null, field.getType());
+                        return ConstantExpression.create(UNSET, field.getType());
                     } else {
                         return ColumnExpression.create(i, field.getType());
                     }
                 }).collect(toList());
         Projector.Supplier valueProjectorSupplier = Projector.supplier(
-                table.valuePaths(),
-                table.valueTypes(),
+                table.valueFields().collect(toList()),
                 (UpsertTargetDescriptor) table.getValueJetMetadata(),
                 updates
         );

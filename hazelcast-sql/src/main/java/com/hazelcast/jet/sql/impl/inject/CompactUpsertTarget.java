@@ -17,55 +17,63 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.DeserializedSchemaBoundGenericRecordBuilder;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.Field;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Map;
+import java.util.stream.Stream;
 
-import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
 
 @NotThreadSafe
 class CompactUpsertTarget extends UpsertTarget {
-    private final Schema schema;
+    private final String typeName;
+    private final Map<String, Schema> schemas;
 
-    private GenericRecordBuilder record;
-
-    CompactUpsertTarget(Schema schema, InternalSerializationService serializationService) {
+    CompactUpsertTarget(String typeName, Map<String, Schema> schemas, InternalSerializationService serializationService) {
         super(serializationService);
-        this.schema = schema;
+        this.typeName = typeName;
+        this.schemas = schemas;
     }
 
     @Override
-    public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
-        if (path == null) {
-            if (type.isCustomType()) {
-                Injector<GenericRecordBuilder> injector = createRecordInjector(type, this::createInjector0);
-                return value -> {
-                    if (value != null) {
-                        injector.set(record, value);
-                    }
-                };
-            } else {
-                return FAILING_TOP_LEVEL_INJECTOR;
+    protected Converter<GenericRecord> createConverter(Stream<Field> fields) {
+        return createConverter(schemas.get(typeName), fields);
+    }
+
+    private Converter<GenericRecord> createConverter(Schema schema, Stream<Field> fields) {
+        Injector<GenericRecordBuilder> injector = createRecordInjector(fields,
+                field -> createInjector(schema, field.name(), field.type()));
+        return value -> {
+            if (value == null || (value instanceof GenericRecord
+                    && ((AbstractGenericRecord) value).getClassIdentifier().equals(schema.getTypeName()))) {
+                return (GenericRecord) value;
             }
-        }
+            GenericRecordBuilder record = new DeserializedSchemaBoundGenericRecordBuilder(schema);
+            injector.set(record, value);
+            return record.build();
+        };
+    }
+
+    private Injector<GenericRecordBuilder> createInjector(Schema schema, String path, QueryDataType type) {
         if (!schema.hasField(path)) {
-            return value -> {
-                throw QueryException.error("Field \"" + path + "\" doesn't exist in Compact Schema");
+            return (record, value) -> {
+                throw QueryException.error("Field \"" + path + "\" doesn't exist in Compact schema");
             };
         }
-        Injector<GenericRecordBuilder> injector = createInjector0(path, type);
-        return value -> injector.set(record, value);
+        return createInjector0(path, type);
     }
 
     @SuppressWarnings("ReturnCount")
@@ -98,35 +106,16 @@ class CompactUpsertTarget extends UpsertTarget {
             case TIMESTAMP_WITH_TIME_ZONE:
                 return (record, value) -> record.setTimestampWithTimezone(path, (OffsetDateTime) value);
             case OBJECT:
-                Injector<GenericRecordBuilder> injector = createRecordInjector(type, this::createInjector0);
-                return (record, value) -> {
-                    if (value == null) {
-                        record.setGenericRecord(path, null);
-                        return;
-                    }
-                    GenericRecordBuilder nestedRecord = GenericRecordBuilder.compact(type.getObjectTypeMetadata());
-                    injector.set(nestedRecord, value);
-                    record.setGenericRecord(path, nestedRecord.build());
-                };
+                Schema fieldSchema = schemas.get(type.getObjectTypeMetadata());
+                Converter<GenericRecord> converter = createConverter(fieldSchema, getFields(type));
+                return (record, value) -> record.setGenericRecord(path, converter.apply(value));
             case INTERVAL_YEAR_MONTH:
             case INTERVAL_DAY_SECOND:
             case MAP:
             case JSON:
             case ROW:
             default:
-                throw QueryException.error("Unsupported upsert type: " + type);
+                throw QueryException.error("Unsupported type: " + type);
         }
-    }
-
-    @Override
-    public void init() {
-        record = new DeserializedSchemaBoundGenericRecordBuilder(schema);
-    }
-
-    @Override
-    public Object conclude() {
-        GenericRecord record = this.record.build();
-        this.record = null;
-        return record;
     }
 }

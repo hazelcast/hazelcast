@@ -18,8 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
-import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
@@ -30,8 +28,6 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -44,13 +40,12 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder.withDefaults;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_VERSION;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FACTORY_ID;
@@ -60,20 +55,18 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
+import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.portable;
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.time.ZoneOffset.UTC;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
+import static java.util.Map.entry;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 public class SqlPortableTest extends SqlTestSupport {
-
     private static SqlService sqlService;
 
     private static final int PERSON_ID_FACTORY_ID = 1;
@@ -95,12 +88,25 @@ public class SqlPortableTest extends SqlTestSupport {
     private static InternalSerializationService serializationService;
     private static ClassDefinition personIdClassDefinition;
     private static ClassDefinition personClassDefinition;
+    private static ClassDefinition allTypesValueClassDefinition;
     private static ClassDefinition emptyClassDefinition;
+
+    private static SqlMapping portableMapping(String name) {
+        return new SqlMapping(name, IMapSqlConnector.class)
+                .options(OPTION_KEY_FORMAT, PORTABLE_FORMAT,
+                         OPTION_KEY_FACTORY_ID, PERSON_ID_FACTORY_ID,
+                         OPTION_KEY_CLASS_ID, PERSON_ID_CLASS_ID,
+                         OPTION_KEY_CLASS_VERSION, PERSON_ID_CLASS_VERSION,
+                         OPTION_VALUE_FORMAT, PORTABLE_FORMAT,
+                         OPTION_VALUE_FACTORY_ID, PERSON_FACTORY_ID,
+                         OPTION_VALUE_CLASS_ID, PERSON_CLASS_ID,
+                         OPTION_VALUE_CLASS_VERSION, PERSON_CLASS_VERSION);
+    }
 
     @BeforeClass
     // reusing ClassDefinitions as schema does not change
     public static void beforeClass() {
-        initialize(1, null);
+        initialize(1, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
         sqlService = instance().getSql();
 
         serializationService = Util.getSerializationService(instance());
@@ -126,7 +132,7 @@ public class SqlPortableTest extends SqlTestSupport {
                         .build();
         serializationService.getPortableContext().registerClassDefinition(evolvedPersonClassDefinition);
 
-        ClassDefinition allTypesValueClassDefinition =
+        allTypesValueClassDefinition =
                 new ClassDefinitionBuilder(ALL_TYPES_FACTORY_ID, ALL_TYPES_CLASS_ID, ALL_TYPES_CLASS_VERSION)
                         .addCharField("character")
                         .addStringField("string")
@@ -155,53 +161,31 @@ public class SqlPortableTest extends SqlTestSupport {
     @Test
     public void test_nulls() throws IOException {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
-                + ")"
-        );
+        portableMapping(name).create();
 
         sqlService.execute("SINK INTO " + name + " VALUES (1, null)");
 
         Entry<Data, Data> entry = randomEntryFrom(name);
-
-        InternalGenericRecord keyRecord = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyRecord.getInt32("id")).isEqualTo(1);
-
-        InternalGenericRecord valueRecord = serializationService.readAsInternalGenericRecord(entry.getValue());
-        assertThat(valueRecord.getInt32("id")).isEqualTo(0); // default portable value
-        assertThat(valueRecord.getString("name")).isNull();
+        assertEquals(
+                portable(personIdClassDefinition).setInt32("id", 1).build(),
+                serializationService.readAsInternalGenericRecord(entry.getKey()));
+        assertEquals(
+                portable(personClassDefinition)
+                        .setInt32("id", 0)
+                        .setString("name", null)
+                        .build(),
+                serializationService.readAsInternalGenericRecord(entry.getValue()));
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                singletonList(new Row(1, null))
+                List.of(new Row(1, null))
         );
     }
 
     @Test
     public void when_nullIntoPrimitive_then_fails() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
-                + ")"
-        );
+        portableMapping(name).create();
 
         assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (null, 'Alice')"))
                 .hasMessageContaining("Cannot set NULL to a primitive field");
@@ -210,106 +194,63 @@ public class SqlPortableTest extends SqlTestSupport {
     @Test
     public void test_fieldsShadowing() throws IOException {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
-                + ")"
-        );
+        portableMapping(name).create();
 
         sqlService.execute("SINK INTO " + name + " (id, name) VALUES (1, 'Alice')");
 
         Entry<Data, Data> entry = randomEntryFrom(name);
-
-        InternalGenericRecord keyRecord = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyRecord.getInt32("id")).isEqualTo(1);
-
-        InternalGenericRecord valueRecord = serializationService.readAsInternalGenericRecord(entry.getValue());
-        assertThat(valueRecord.getInt32("id")).isEqualTo(0);
-        assertThat(valueRecord.getString("name")).isEqualTo("Alice");
+        assertEquals(
+                portable(personIdClassDefinition).setInt32("id", 1).build(),
+                serializationService.readAsInternalGenericRecord(entry.getKey()));
+        assertEquals(
+                portable(personClassDefinition)
+                        .setInt32("id", 0)
+                        .setString("name", "Alice")
+                        .build(),
+                serializationService.readAsInternalGenericRecord(entry.getValue()));
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                singletonList(new Row(1, "Alice"))
+                List.of(new Row(1, "Alice"))
         );
     }
 
     @Test
     public void test_fieldsMapping() throws IOException {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "key_id INT EXTERNAL NAME \"__key.id\""
-                + ", value_id INT EXTERNAL NAME \"this.id\""
-                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
-                + ")"
-        );
+        portableMapping(name)
+                .fields("key_id INT EXTERNAL NAME \"__key.id\"",
+                        "value_id INT EXTERNAL NAME \"this.id\"")
+                .create();
 
         sqlService.execute("SINK INTO " + name + " (value_id, key_id) VALUES (2, 1)");
 
         Entry<Data, Data> entry = randomEntryFrom(name);
-
-        InternalGenericRecord keyRecord = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyRecord.getInt32("id")).isEqualTo(1);
-
-        InternalGenericRecord valueRecord = serializationService.readAsInternalGenericRecord(entry.getValue());
-        assertThat(valueRecord.getInt32("id")).isEqualTo(2);
+        assertEquals(
+                portable(personIdClassDefinition).setInt32("id", 1).build(),
+                serializationService.readAsInternalGenericRecord(entry.getKey()));
+        assertEquals(
+                withDefaults(personClassDefinition).setInt32("id", 2).build(),
+                serializationService.readAsInternalGenericRecord(entry.getValue()));
 
         assertRowsAnyOrder(
                 "SELECT key_id, value_id FROM " + name,
-                singletonList(new Row(1, 2))
+                List.of(new Row(1, 2))
         );
     }
 
     @Test
     public void test_schemaEvolution() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
-                + ")"
-        );
+        portableMapping(name).create();
 
         // insert initial record
         sqlService.execute("SINK INTO " + name + " VALUES (1, 'Alice')");
 
         // alter schema
-        sqlService.execute("CREATE OR REPLACE MAPPING " + name + ' '
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + (PERSON_CLASS_VERSION + 1) + '\''
-                + ")"
-        );
+        portableMapping(name)
+                .options(OPTION_VALUE_CLASS_VERSION, PERSON_CLASS_VERSION + 1)
+                .createOrReplace();
 
         // insert record against new schema/class definition
         sqlService.execute("SINK INTO " + name + " VALUES (2, 'Bob', 123456789)");
@@ -317,7 +258,7 @@ public class SqlPortableTest extends SqlTestSupport {
         // assert both - initial & evolved - records are correctly read
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                asList(
+                List.of(
                         new Row(1, "Alice", null),
                         new Row(2, "Bob", 123456789L)
                 )
@@ -327,39 +268,18 @@ public class SqlPortableTest extends SqlTestSupport {
     @Test
     public void test_fieldsExtensions() {
         String name = randomName();
-        sqlService.execute("CREATE OR REPLACE MAPPING " + name + ' '
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + (PERSON_CLASS_VERSION + 1) + '\''
-                + ")"
-        );
+        portableMapping(name)
+                .options(OPTION_VALUE_CLASS_VERSION, PERSON_CLASS_VERSION + 1)
+                .create();
 
         // insert initial record
         sqlService.execute("SINK INTO " + name + " VALUES (1, 'Alice', 123456789)");
 
         // alter schema
-        sqlService.execute("CREATE OR REPLACE MAPPING " + name + " ("
-                + "name VARCHAR"
-                + ", ssn BIGINT"
-                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
-                + ")"
-        );
+        portableMapping(name)
+                .fields("name VARCHAR",
+                        "ssn BIGINT")
+                .createOrReplace();
 
         // insert record against new schema/class definition
         sqlService.execute("SINK INTO " + name + " VALUES ('Bob', null)");
@@ -367,7 +287,7 @@ public class SqlPortableTest extends SqlTestSupport {
         // assert both - initial & evolved - records are correctly read
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                asList(
+                List.of(
                         new Row("Alice", 123456789L),
                         new Row("Bob", null)
                 )
@@ -380,48 +300,41 @@ public class SqlPortableTest extends SqlTestSupport {
         TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = randomName();
-        sqlService.execute("CREATE MAPPING " + to + ' '
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + ALL_TYPES_FACTORY_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + ALL_TYPES_CLASS_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + ALL_TYPES_CLASS_VERSION + '\''
-                + ")"
-        );
+        portableMapping(to)
+                .options(OPTION_VALUE_FACTORY_ID, ALL_TYPES_FACTORY_ID,
+                         OPTION_VALUE_CLASS_ID, ALL_TYPES_CLASS_ID,
+                         OPTION_VALUE_CLASS_VERSION, ALL_TYPES_CLASS_VERSION)
+                .create();
 
         sqlService.execute("SINK INTO " + to + " " +
-                "SELECT 13, 'a', string, \"boolean\", byte, short, \"int\", long, \"float\", \"double\", \"decimal\", " +
-                "\"time\", \"date\", \"timestamp\", timestampTz, \"object\" " +
+                "SELECT 13, 'a', string, \"boolean\", byte, short, \"int\", long, \"float\", \"double\", " +
+                        "\"decimal\", \"time\", \"date\", \"timestamp\", timestampTz, \"object\" " +
                 "FROM " + from + " f");
 
-        InternalGenericRecord valueRecord = serializationService
-                .readAsInternalGenericRecord(randomEntryFrom(to).getValue());
-        assertThat(valueRecord.getString("string")).isEqualTo("string");
-        assertThat(valueRecord.getChar("character")).isEqualTo('a');
-        assertThat(valueRecord.getBoolean("boolean")).isTrue();
-        assertThat(valueRecord.getInt8("byte")).isEqualTo((byte) 127);
-        assertThat(valueRecord.getInt16("short")).isEqualTo((short) 32767);
-        assertThat(valueRecord.getInt32("int")).isEqualTo(2147483647);
-        assertThat(valueRecord.getInt64("long")).isEqualTo(9223372036854775807L);
-        assertThat(valueRecord.getFloat32("float")).isEqualTo(1234567890.1F);
-        assertThat(valueRecord.getFloat64("double")).isEqualTo(123451234567890.1D);
-        assertThat(valueRecord.getDecimal("decimal")).isEqualTo(new BigDecimal("9223372036854775.123"));
-        assertThat(valueRecord.getTime("time")).isEqualTo(LocalTime.of(12, 23, 34));
-        assertThat(valueRecord.getDate("date")).isEqualTo(LocalDate.of(2020, 4, 15));
-        assertThat(valueRecord.getTimestamp("timestamp"))
-                .isEqualTo(LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000));
-        assertThat(valueRecord.getTimestampWithTimezone("timestampTz"))
-                .isEqualTo(OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC));
-        assertThat(valueRecord.getGenericRecord("object")).isNull();
+        GenericRecord expected = portable(allTypesValueClassDefinition)
+                .setString("string", "string")
+                .setChar("character", 'a')
+                .setBoolean("boolean", true)
+                .setInt8("byte", (byte) 127)
+                .setInt16("short", (short) 32767)
+                .setInt32("int", 2147483647)
+                .setInt64("long", 9223372036854775807L)
+                .setFloat32("float", 1234567890.1F)
+                .setFloat64("double", 123451234567890.1D)
+                .setDecimal("decimal", new BigDecimal("9223372036854775.123"))
+                .setTime("time", LocalTime.of(12, 23, 34))
+                .setDate("date", LocalDate.of(2020, 4, 15))
+                .setTimestamp("timestamp", LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000))
+                .setTimestampWithTimezone("timestampTz",
+                        OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC))
+                .setGenericRecord("object", null)
+                .build();
+        GenericRecord actual = serializationService.readAsInternalGenericRecord(randomEntryFrom(to).getValue());
+        assertEquals(expected, actual);
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + to,
-                singletonList(new Row(
+                List.of(new Row(
                         13,
                         "a",
                         "string",
@@ -443,83 +356,84 @@ public class SqlPortableTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_writingToTopLevelWhileNestedFieldMapped_explicit() {
-        test_writingToTopLevelWhileNestedFieldMapped(true);
+    public void test_topLevelPathExtraction() {
+        String name = randomName();
+        portableMapping(name).create();
+
+        sqlService.execute("INSERT INTO " + name + " (id, name) VALUES (1, 'Alice')");
+
+        assertRowsAnyOrder(
+                "SELECT __key, this FROM " + name,
+                List.of(new Row(
+                        portable(personIdClassDefinition).setInt32("id", 1).build(),
+                        portable(personClassDefinition)
+                                .setInt32("id", 0)
+                                .setString("name", "Alice")
+                                .build()
+                ))
+        );
     }
 
     @Test
-    public void test_writingToTopLevelWhileNestedFieldMapped_implicit() {
-        test_writingToTopLevelWhileNestedFieldMapped(false);
-    }
-
-    public void test_writingToTopLevelWhileNestedFieldMapped(boolean explicit) {
-        String mapName = randomName();
-        sqlService.execute("CREATE MAPPING " + mapName + "("
-                + "__key INT"
-                + (explicit ? ", this OBJECT" : "")
-                + ", name VARCHAR"
-                + ") TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
-                + "OPTIONS (\n"
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
-                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'\n"
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + "'\n"
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + "'\n"
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + "'\n"
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + "'\n"
-                + ")"
-        );
-
-        if (explicit) {
-            assertThatThrownBy(() ->
-                    sqlService.execute("SINK INTO " + mapName + " VALUES(1, null, 'foo')"))
-                    .isInstanceOf(HazelcastSqlException.class)
-                    .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
-        }
+    public void when_topLevelPathWithoutCustomType_then_fail() {
+        assertThatThrownBy(() ->
+                portableMapping("test")
+                        .fields("__key INT",
+                                "name VARCHAR EXTERNAL NAME \"this.name\"")
+                        .create())
+                .hasMessage("'__key' field must be used with a user-defined type");
 
         assertThatThrownBy(() ->
-                sqlService.execute("SINK INTO " + mapName + "(__key, this) VALUES(1, null)"))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
-
-        sqlService.execute("SINK INTO " + mapName + (explicit ? "(__key, name)" : "") + " VALUES (1, 'foo')");
-
-        Iterator<SqlRow> resultIter = sqlService.execute("SELECT __key, this, name FROM " + mapName).iterator();
-        SqlRow row = resultIter.next();
-        assertEquals(1, (int) row.getObject(0));
-        assertInstanceOf(GenericRecord.class, row.getObject(1));
-        assertEquals("foo", row.getObject(2));
-        assertFalse(resultIter.hasNext());
+                portableMapping("test")
+                        .fields("id INT EXTERNAL NAME \"this.id\"",
+                                "this VARCHAR")
+                        .create())
+                .hasMessage("'this' field must be used with a user-defined type");
     }
 
     @Test
-    public void test_topLevelFieldExtraction() {
+    public void test_explicitTopLevelPath() {
+        new SqlType("PersonId").fields("id INT").create();
+        new SqlType("Person").fields("name VARCHAR").create();
+
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
-                + ")"
+        portableMapping(name)
+                .fields("__key PersonId",
+                        "this Person")
+                .create();
+
+        sqlService.execute("INSERT INTO " + name + " VALUES (?, ?)",
+                portable(personIdClassDefinition).setInt32("id", 1).build(),
+                withDefaults(personClassDefinition).setString("name", "Alice").build());
+
+        assertRowsAnyOrder(
+                "SELECT (__key).id, (this).name FROM " + name,
+                List.of(new Row(1, "Alice"))
         );
-        sqlService.execute("SINK INTO " + name + " (id, name) VALUES (1, 'Alice')");
+    }
 
-        Iterator<SqlRow> rowIterator = sqlService.execute("SELECT __key, this FROM " + name).iterator();
-        SqlRow row = rowIterator.next();
-        assertFalse(rowIterator.hasNext());
+    @Test
+    public void test_writingToImplicitTopLevelPath() {
+        String name = randomName();
+        portableMapping(name)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR")
+                .create();
 
-        assertEquals(new PortableGenericRecordBuilder(personIdClassDefinition)
-                .setInt32("id", 1)
-                .build(), row.getObject(0));
-        assertEquals(new PortableGenericRecordBuilder(personClassDefinition)
-                .setInt32("id", 0)
-                .setString("name", "Alice")
-                .build(), row.getObject(1));
+        sqlService.execute("INSERT INTO " + name + " (__key, name) VALUES (?, ?)",
+                portable(personIdClassDefinition).setInt32("id", 1).build(),
+                "Alice");
+        sqlService.execute("INSERT INTO " + name + " (id, this) VALUES (?, ?)",
+                2,
+                withDefaults(personClassDefinition).setString("name", "Bob").build());
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name,
+                List.of(
+                        new Row(1, "Alice"),
+                        new Row(2, "Bob")
+                )
+        );
     }
 
     @Test
@@ -528,33 +442,25 @@ public class SqlPortableTest extends SqlTestSupport {
         TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = randomName();
-        sqlService.execute("CREATE MAPPING " + to + " ("
-                + "id INT EXTERNAL NAME \"__key.id\""
-                + ", string VARCHAR"
-                + ", \"boolean\" BOOLEAN"
-                + ", byte TINYINT"
-                + ", short SMALLINT"
-                + ", \"int\" INT"
-                + ", long BIGINT"
-                + ", \"float\" REAL"
-                + ", \"double\" DOUBLE"
-                + ", \"decimal\" DECIMAL"
-                + ", \"time\" TIME"
-                + ", \"date\" DATE"
-                + ", \"timestamp\" TIMESTAMP"
-                + ", timestampTz TIMESTAMP WITH TIME ZONE"
-                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + 997 + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + 998 + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + 999 + '\''
-                + ")"
-        );
+        portableMapping(to)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "string VARCHAR",
+                        "\"boolean\" BOOLEAN",
+                        "byte TINYINT",
+                        "short SMALLINT",
+                        "\"int\" INT",
+                        "long BIGINT",
+                        "\"float\" REAL",
+                        "\"double\" DOUBLE",
+                        "\"decimal\" DECIMAL",
+                        "\"time\" TIME",
+                        "\"date\" DATE",
+                        "\"timestamp\" TIMESTAMP",
+                        "timestampTz TIMESTAMP WITH TIME ZONE")
+                .options(OPTION_VALUE_FACTORY_ID, 997,
+                         OPTION_VALUE_CLASS_ID, 998,
+                         OPTION_VALUE_CLASS_VERSION, 999)
+                .create();
 
         sqlService.execute("SINK INTO " + to + " SELECT "
                 + "13"
@@ -574,27 +480,30 @@ public class SqlPortableTest extends SqlTestSupport {
                 + "FROM " + from
         );
 
-        InternalGenericRecord valueRecord = serializationService
-                .readAsInternalGenericRecord(randomEntryFrom(to).getValue());
-        assertThat(valueRecord.getString("string")).isEqualTo("string");
-        assertThat(valueRecord.getBoolean("boolean")).isTrue();
-        assertThat(valueRecord.getInt8("byte")).isEqualTo((byte) 127);
-        assertThat(valueRecord.getInt16("short")).isEqualTo((short) 32767);
-        assertThat(valueRecord.getInt32("int")).isEqualTo(2147483647);
-        assertThat(valueRecord.getInt64("long")).isEqualTo(9223372036854775807L);
-        assertThat(valueRecord.getFloat32("float")).isEqualTo(1234567890.1F);
-        assertThat(valueRecord.getFloat64("double")).isEqualTo(123451234567890.1D);
-        assertThat(valueRecord.getDecimal("decimal")).isEqualTo(new BigDecimal("9223372036854775.123"));
-        assertThat(valueRecord.getTime("time")).isEqualTo(LocalTime.of(12, 23, 34));
-        assertThat(valueRecord.getDate("date")).isEqualTo(LocalDate.of(2020, 4, 15));
-        assertThat(valueRecord.getTimestamp("timestamp"))
-                .isEqualTo(LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000));
-        assertThat(valueRecord.getTimestampWithTimezone("timestampTz"))
-                .isEqualTo(OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC));
+        ClassDefinition derivedClassDefinition = serializationService.getPortableContext()
+                .lookupClassDefinition(997, 998, 999);
+        GenericRecord expected = portable(derivedClassDefinition)
+                .setString("string", "string")
+                .setBoolean("boolean", true)
+                .setInt8("byte", (byte) 127)
+                .setInt16("short", (short) 32767)
+                .setInt32("int", 2147483647)
+                .setInt64("long", 9223372036854775807L)
+                .setFloat32("float", 1234567890.1F)
+                .setFloat64("double", 123451234567890.1D)
+                .setDecimal("decimal", new BigDecimal("9223372036854775.123"))
+                .setTime("time", LocalTime.of(12, 23, 34))
+                .setDate("date", LocalDate.of(2020, 4, 15))
+                .setTimestamp("timestamp", LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000))
+                .setTimestampWithTimezone("timestampTz",
+                        OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC))
+                .build();
+        GenericRecord actual = serializationService.readAsInternalGenericRecord(randomEntryFrom(to).getValue());
+        assertEquals(expected, actual);
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + to,
-                singletonList(new Row(
+                List.of(new Row(
                         13,
                         "string",
                         true,
@@ -616,76 +525,63 @@ public class SqlPortableTest extends SqlTestSupport {
     @Test
     public void when_noFieldsResolved_then_wholeValueMapped() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + EMPTY_TYPES_FACTORY_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_ID + "'='" + EMPTY_TYPES_CLASS_ID + '\''
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + EMPTY_TYPES_CLASS_VERSION + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + EMPTY_TYPES_FACTORY_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + EMPTY_TYPES_CLASS_ID + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + EMPTY_TYPES_CLASS_VERSION + '\''
-                + ")"
-        );
+        portableMapping(name)
+                .options(OPTION_KEY_FACTORY_ID, EMPTY_TYPES_FACTORY_ID,
+                         OPTION_KEY_CLASS_ID, EMPTY_TYPES_CLASS_ID,
+                         OPTION_KEY_CLASS_VERSION, EMPTY_TYPES_CLASS_VERSION,
+                         OPTION_VALUE_FACTORY_ID, EMPTY_TYPES_FACTORY_ID,
+                         OPTION_VALUE_CLASS_ID, EMPTY_TYPES_CLASS_ID,
+                         OPTION_VALUE_CLASS_VERSION, EMPTY_TYPES_CLASS_VERSION)
+                .create();
 
-        GenericRecord record = new PortableGenericRecordBuilder(emptyClassDefinition).build();
+        GenericRecord record = portable(emptyClassDefinition).build();
         instance().getMap(name).put(record, record);
 
-        assertRowsAnyOrder("SELECT __key, this FROM " + name, singletonList(new Row(record, record)));
+        assertRowsAnyOrder("SELECT __key, this FROM " + name, List.of(new Row(record, record)));
     }
 
     @Test
     public void when_unknownClassDef_then_wholeValueMapped() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_KEY_FACTORY_ID + "'='9999'"
-                + ", '" + OPTION_KEY_CLASS_ID + "'='9999'"
-                + ", '" + OPTION_KEY_CLASS_VERSION + "'='9999'"
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='9998'"
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='9998'"
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='9998'"
-                + ")"
-        );
+        portableMapping(name)
+                .options(OPTION_KEY_FACTORY_ID, 9999,
+                        OPTION_KEY_CLASS_ID, 9999,
+                        OPTION_KEY_CLASS_VERSION, 9999,
+                        OPTION_VALUE_FACTORY_ID, 9998,
+                        OPTION_VALUE_CLASS_ID, 9998,
+                        OPTION_VALUE_CLASS_VERSION, 9998)
+                .create();
 
         assertRowsAnyOrder("SELECT __key, this FROM " + name, emptyList());
     }
 
     @Test
     public void test_classDefMappingMismatch() {
-        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING " + randomName() + " ("
-                + "id VARCHAR"
-                + ") TYPE IMap "
-                + "OPTIONS ("
-                + "'keyFormat'='int',"
-                + "'valueFormat'='portable',"
-                + "'valuePortableFactoryId'='" + PERSON_ID_FACTORY_ID + "', "
-                + "'valuePortableClassId'='" + PERSON_ID_CLASS_ID + "', "
-                + "'valuePortableClassVersion'='" + PERSON_ID_CLASS_VERSION + "' "
-                + ")"))
+        assertThatThrownBy(() ->
+                new SqlMapping(randomName(), IMapSqlConnector.class)
+                        .fields("id VARCHAR")
+                        .options(OPTION_KEY_FORMAT, "int",
+                                 OPTION_VALUE_FORMAT, PORTABLE_FORMAT,
+                                 OPTION_VALUE_FACTORY_ID, PERSON_ID_FACTORY_ID,
+                                 OPTION_VALUE_CLASS_ID, PERSON_ID_CLASS_ID,
+                                 OPTION_VALUE_CLASS_VERSION, PERSON_ID_CLASS_VERSION)
+                        .create())
                 .hasMessage("Mismatch between declared and resolved type: id");
 
         String name = randomName();
-        // we map a non-existent field. This works, but will fail at runtime
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "foo INT"
-                + ") TYPE IMap "
-                + "OPTIONS ("
-                + "'keyFormat'='int',"
-                + "'valueFormat'='portable',"
-                + "'valuePortableFactoryId'='" + PERSON_ID_FACTORY_ID + "', "
-                + "'valuePortableClassId'='" + PERSON_ID_CLASS_ID + "', "
-                + "'valuePortableClassVersion'='" + PERSON_ID_CLASS_VERSION + "' "
-                + ")");
+        // We map a non-existent field. This works, but will fail at runtime
+        new SqlMapping(name, IMapSqlConnector.class)
+                .fields("foo INT")
+                .options(OPTION_KEY_FORMAT, "int",
+                        OPTION_VALUE_FORMAT, PORTABLE_FORMAT,
+                        OPTION_VALUE_FACTORY_ID, PERSON_ID_FACTORY_ID,
+                        OPTION_VALUE_CLASS_ID, PERSON_ID_CLASS_ID,
+                        OPTION_VALUE_CLASS_VERSION, PERSON_ID_CLASS_VERSION)
+                .create();
 
         assertThatThrownBy(() ->
                 sqlService.execute("insert into " + name + "(__key, foo) values(1, 1)"))
-                .hasMessage("Field \"foo\" doesn't exist in Portable Class Definition");
+                .hasMessage("Field \"foo\" doesn't exist in Portable class definition");
 
         sqlService.execute("insert into " + name + "(__key, foo) values(1, null)");
         sqlService.execute("insert into " + name + "(__key) values(2)");

@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelDistribution;
 import org.apache.calcite.rel.RelReferentialConstraint;
@@ -34,8 +35,12 @@ import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.rel.type.StructKind;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexUnset;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.impl.AbstractTable;
+import org.apache.calcite.sql2rel.InitializerContext;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import javax.annotation.Nonnull;
@@ -47,6 +52,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 
+import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
+import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -212,6 +219,15 @@ public class HazelcastTable extends AbstractTable {
         return new RelRecordType(StructKind.PEEK_FIELDS, typeFields, false);
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public <C> @org.checkerframework.checker.nullness.qual.Nullable C unwrap(Class<C> aClass) {
+        if (aClass == InitializerExpressionFactory.class) {
+            return (C) HazelcastInitializerExpressionFactory.INSTANCE;
+        }
+        return super.unwrap(aClass);
+    }
+
     /**
      * Statistics that takes into account the row count after the filter is applied.
      */
@@ -251,6 +267,19 @@ public class HazelcastTable extends AbstractTable {
         @Override
         public RelDistribution getDistribution() {
             return statistic.getDistribution();
+        }
+    }
+
+    private static class HazelcastInitializerExpressionFactory extends NullInitializerExpressionFactory {
+        static final InitializerExpressionFactory INSTANCE = new HazelcastInitializerExpressionFactory();
+
+        @Override
+        public RexNode newColumnDefaultValue(RelOptTable table, int columnIndex, InitializerContext context) {
+            RelDataTypeField field = table.getRowType().getFieldList().get(columnIndex);
+            if (field.getName().equals(KEY) || field.getName().equals(VALUE)) {
+                return new RexUnset(field.getType());
+            }
+            return super.newColumnDefaultValue(table, columnIndex, context);
         }
     }
 }

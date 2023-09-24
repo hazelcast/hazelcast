@@ -74,8 +74,7 @@ public class SinkMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
         List<ExpressionValues> values = this.values;
         return evalContext -> {
             KvProjector projector = KvProjector.supplier(
-                    table.paths(),
-                    table.types(),
+                    table.getFields(),
                     (UpsertTargetDescriptor) table.getKeyJetMetadata(),
                     (UpsertTargetDescriptor) table.getValueJetMetadata(),
                     true

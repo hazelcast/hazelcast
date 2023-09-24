@@ -382,6 +382,16 @@ public final class Util {
     }
 
     /**
+     * Finds the index of the first element that satisfies the given predicate.
+     * If there is no such element, returns -1.
+     */
+    public static <T> int findIndex(List<T> list, Predicate<T> predicate) {
+        return IntStream.range(0, list.size())
+                .filter(i -> predicate.test(list.get(i)))
+                .findFirst().orElse(-1);
+    }
+
+    /**
      * Returns a future which is already completed with the supplied exception.
      */
     // replace with CompletableFuture.failedFuture(e) once we depend on java9+

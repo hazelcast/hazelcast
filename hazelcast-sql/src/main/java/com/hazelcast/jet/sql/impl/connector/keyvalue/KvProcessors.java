@@ -26,9 +26,8 @@ import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.schema.TableField;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -38,25 +37,20 @@ import java.util.Collection;
 import java.util.List;
 
 public final class KvProcessors {
-
-    private KvProcessors() {
-    }
+    private KvProcessors() { }
 
     /**
      * Returns a supplier of processors that convert a row represented as
-     * {@link JetSqlRow} to an entry represented as {@code Entry<Object,
-     * Object>}.
+     * {@link JetSqlRow} to an entry represented as {@code Entry<Object, Object>}.
      */
     public static ProcessorSupplier entryProjector(
-            QueryPath[] paths,
-            QueryDataType[] types,
+            List<TableField> fields,
             UpsertTargetDescriptor keyDescriptor,
             UpsertTargetDescriptor valueDescriptor,
             boolean failOnNulls
     ) {
         return new EntryProjectorProcessorSupplier(KvProjector.supplier(
-                paths,
-                types,
+                fields,
                 keyDescriptor,
                 valueDescriptor,
                 failOnNulls
@@ -68,14 +62,12 @@ public final class KvProcessors {
             justification = "the class is never java-serialized"
     )
     private static final class EntryProjectorProcessorSupplier implements ProcessorSupplier, DataSerializable {
-
         private KvProjector.Supplier projectorSupplier;
 
         private transient InternalSerializationService serializationService;
 
         @SuppressWarnings("unused")
-        private EntryProjectorProcessorSupplier() {
-        }
+        private EntryProjectorProcessorSupplier() { }
 
         EntryProjectorProcessorSupplier(KvProjector.Supplier projectorSupplier) {
             this.projectorSupplier = projectorSupplier;

@@ -20,121 +20,110 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hazelcast.function.ConsumerEx;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.Field;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 
 @NotThreadSafe
 class JsonUpsertTarget extends UpsertTarget {
     private static final JsonFactory JSON_FACTORY = new ObjectMapper().getFactory();
 
-    private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    private JsonGenerator generator;
-
     @Override
-    @SuppressWarnings("checkstyle:ReturnCount")
-    public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
-        if (path == null) {
-            return FAILING_TOP_LEVEL_INJECTOR;
-        }
-
-        ConsumerEx<Object> injector = createInjector0(path, type);
+    protected Converter<byte[]> createConverter(Stream<Field> fields) {
+        Injector<JsonGenerator> injector = createRecordInjector(fields,
+                field -> createInjector(field.name(), field.type()));
         return value -> {
-            try {
-                if (value == null) {
-                    generator.writeNullField(path);
-                } else {
-                    injector.accept(value);
-                }
+            if (value == null || value instanceof byte[]) { // Checking the schema is expensive
+                return (byte[]) value;
+            }
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                 JsonGenerator json = JSON_FACTORY.createGenerator(baos)) {
+                json.writeStartObject();
+                injector.set(json, value);
+                json.writeEndObject();
+                json.flush();
+                return baos.toByteArray();
             } catch (IOException e) {
                 throw sneakyThrow(e);
             }
         };
     }
 
+    private Injector<JsonGenerator> createInjector(String path, QueryDataType type) {
+        InjectorEx<JsonGenerator> injector = createInjector0(path, type);
+        return (json, value) -> {
+            try {
+                if (value == null) {
+                    json.writeNullField(path);
+                } else {
+                    injector.set(json, value);
+                }
+            } catch (Exception e) {
+                throw sneakyThrow(e);
+            }
+        };
+    }
+
     @SuppressWarnings("ReturnCount")
-    private ConsumerEx<Object> createInjector0(String path, QueryDataType type) {
+    private InjectorEx<JsonGenerator> createInjector0(String path, QueryDataType type) {
         switch (type.getTypeFamily()) {
             case BOOLEAN:
-                return value -> generator.writeBooleanField(path, (boolean) value);
+                return (json, value) -> json.writeBooleanField(path, (boolean) value);
             case TINYINT:
-                return value -> generator.writeNumberField(path, (byte) value);
+                return (json, value) -> json.writeNumberField(path, (byte) value);
             case SMALLINT:
-                return value -> generator.writeNumberField(path, (short) value);
+                return (json, value) -> json.writeNumberField(path, (short) value);
             case INTEGER:
-                return value -> generator.writeNumberField(path, (int) value);
+                return (json, value) -> json.writeNumberField(path, (int) value);
             case BIGINT:
-                return value -> generator.writeNumberField(path, (long) value);
+                return (json, value) -> json.writeNumberField(path, (long) value);
             case REAL:
-                return value -> generator.writeNumberField(path, (float) value);
+                return (json, value) -> json.writeNumberField(path, (float) value);
             case DOUBLE:
-                return value -> generator.writeNumberField(path, (double) value);
+                return (json, value) -> json.writeNumberField(path, (double) value);
             case DECIMAL:
             case TIME:
             case DATE:
             case TIMESTAMP:
             case TIMESTAMP_WITH_TIME_ZONE:
             case VARCHAR:
-                return value -> generator.writeStringField(path, (String) VARCHAR.convert(value));
+                return (json, value) -> json.writeStringField(path, (String) VARCHAR.convert(value));
             case OBJECT:
-                return value -> {
-                    generator.writeFieldName(path);
+                return (json, value) -> {
+                    json.writeFieldName(path);
                     if (value instanceof TreeNode) {
-                        generator.writeTree((TreeNode) value);
+                        json.writeTree((TreeNode) value);
                     } else if (value instanceof Map) {
-                        generator.writeObject(value);
+                        json.writeObject(value);
                     } else if (value instanceof Boolean) {
-                        generator.writeBoolean((boolean) value);
+                        json.writeBoolean((boolean) value);
                     } else if (value instanceof Byte) {
-                        generator.writeNumber((byte) value);
+                        json.writeNumber((byte) value);
                     } else if (value instanceof Short) {
-                        generator.writeNumber((short) value);
+                        json.writeNumber((short) value);
                     } else if (value instanceof Integer) {
-                        generator.writeNumber((int) value);
+                        json.writeNumber((int) value);
                     } else if (value instanceof Long) {
-                        generator.writeNumber((long) value);
+                        json.writeNumber((long) value);
                     } else if (value instanceof Float) {
-                        generator.writeNumber((float) value);
+                        json.writeNumber((float) value);
                     } else if (value instanceof Double) {
-                        generator.writeNumber((double) value);
+                        json.writeNumber((double) value);
                     } else {
-                        generator.writeString((String) VARCHAR.convert(value));
+                        json.writeString((String) VARCHAR.convert(value));
                     }
                 };
             default:
                 throw QueryException.error("Unsupported type: " + type);
         }
-    }
-
-    @Override
-    public void init() {
-        baos.reset();
-        try {
-            generator = JSON_FACTORY.createGenerator(baos);
-            generator.writeStartObject();
-        } catch (IOException e) {
-            throw sneakyThrow(e);
-        }
-    }
-
-    @Override
-    public Object conclude() {
-        try {
-            generator.writeEndObject();
-            generator.close();
-        } catch (IOException e) {
-            throw sneakyThrow(e);
-        }
-        return baos.toByteArray();
     }
 }

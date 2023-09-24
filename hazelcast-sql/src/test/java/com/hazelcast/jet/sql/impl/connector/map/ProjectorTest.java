@@ -18,15 +18,14 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.Field;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
+import com.hazelcast.jet.sql.impl.inject.UpsertTargetTestSupport;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,24 +33,26 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nullable;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.core.JetTestSupport.TEST_SS;
-import static java.util.Collections.singletonList;
+import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ProjectorTest {
+public class ProjectorTest extends UpsertTargetTestSupport {
 
     @Test
     public void test_project() {
         Projector projector = new Projector(
-                new QueryPath[]{QueryPath.create("this.field")},
-                new QueryDataType[]{QueryDataType.BIGINT},
+                List.of(field(VALUE, BIGINT)),
                 new MultiplyingTarget(),
-                singletonList(CastExpression.create(ColumnExpression.create(0, QueryDataType.INT), QueryDataType.BIGINT)),
+                List.of(CastExpression.create(ColumnExpression.create(0, INT), BIGINT)),
                 mock(ExpressionEvalContext.class)
         );
 
@@ -65,10 +66,9 @@ public class ProjectorTest {
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         Projector.Supplier original = Projector.supplier(
-                new QueryPath[]{QueryPath.create("this.field")},
-                new QueryDataType[]{QueryDataType.INT},
+                List.of(field("field", INT)),
                 PrimitiveUpsertTargetDescriptor.INSTANCE,
-                singletonList(ColumnExpression.create(0, QueryDataType.INT))
+                List.of(ColumnExpression.create(0, INT))
         );
 
         Projector.Supplier serialized = serializationService.toObject(serializationService.toData(original));
@@ -77,21 +77,9 @@ public class ProjectorTest {
     }
 
     private static final class MultiplyingTarget extends UpsertTarget {
-        private Object value = -1;
-
         @Override
-        public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
-            return value -> this.value = value;
-        }
-
-        @Override
-        public void init() {
-            value = null;
-        }
-
-        @Override
-        public Object conclude() {
-            return (long) value * 2;
+        protected Converter<Long> createConverter(Stream<Field> fields) {
+            return value -> (long) value * 2;
         }
     }
 }

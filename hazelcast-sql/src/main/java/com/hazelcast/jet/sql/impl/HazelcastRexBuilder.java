@@ -24,7 +24,9 @@ import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexUnset;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
@@ -76,5 +78,18 @@ public final class HazelcastRexBuilder extends RexBuilder {
         // Generally, Calcite tries to create NULL literal of non-nullable type. /shrug
 
         return super.makeLiteral(value, type, allowCast);
+    }
+
+    /**
+     * @implNote {@link RexBuilder#makeCast} always creates new {@code RexNode}s
+     * without checking whether the cast is necessary. This causes {@link RexUnset}
+     * to be overwritten by a regular {@link RexLiteral}.
+     */
+    @Override
+    public RexNode makeCast(RelDataType type, RexNode exp, boolean matchNullability, boolean safe) {
+        if (exp.getType() == type && (!matchNullability || exp.getType().isNullable() == type.isNullable())) {
+            return exp;
+        }
+        return super.makeCast(type, exp, matchNullability, safe);
     }
 }

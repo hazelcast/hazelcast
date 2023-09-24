@@ -375,8 +375,7 @@ public class IMapSqlConnector implements SqlConnector {
                 new InsertProcessorSupplier(
                         table.getMapName(),
                         KvProjector.supplier(
-                                table.paths(),
-                                table.types(),
+                                table.getFields(),
                                 (UpsertTargetDescriptor) table.getKeyJetMetadata(),
                                 (UpsertTargetDescriptor) table.getValueJetMetadata(),
                                 true
@@ -394,8 +393,7 @@ public class IMapSqlConnector implements SqlConnector {
         Vertex vStart = context.getDag().newUniqueVertex(
                 "Project(" + toString(table) + ")",
                 KvProcessors.entryProjector(
-                        table.paths(),
-                        table.types(),
+                        table.getFields(),
                         (UpsertTargetDescriptor) table.getKeyJetMetadata(),
                         (UpsertTargetDescriptor) table.getValueJetMetadata(),
                         true

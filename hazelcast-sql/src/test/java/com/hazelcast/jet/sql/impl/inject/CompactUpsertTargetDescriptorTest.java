@@ -28,19 +28,20 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactUpsertTargetDescriptorTest {
-
     private static final InternalSerializationService SERIALIZATION_SERVICE =
             new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void test_create() {
-        CompactUpsertTargetDescriptor descriptor =
-                new CompactUpsertTargetDescriptor(new SchemaWriter("test").build());
+        CompactUpsertTargetDescriptor descriptor = new CompactUpsertTargetDescriptor(
+                "test", Map.of("test", new SchemaWriter("test").build()));
 
         // when
         UpsertTarget target = descriptor.create(SERIALIZATION_SERVICE);
@@ -54,7 +55,8 @@ public class CompactUpsertTargetDescriptorTest {
         SchemaWriter schemaWriter = new SchemaWriter("test");
         schemaWriter.addField(new FieldDescriptor("int", FieldKind.INT32));
         schemaWriter.addField(new FieldDescriptor("long", FieldKind.INT64));
-        CompactUpsertTargetDescriptor original = new CompactUpsertTargetDescriptor(schemaWriter.build());
+        CompactUpsertTargetDescriptor original = new CompactUpsertTargetDescriptor(
+                "test", Map.of("test", schemaWriter.build()));
 
         // when
         CompactUpsertTargetDescriptor serialized =

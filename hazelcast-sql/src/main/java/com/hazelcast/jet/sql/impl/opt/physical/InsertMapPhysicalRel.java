@@ -76,8 +76,7 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
         ExpressionValues values = this.values;
         return evalContext -> {
             KvProjector projector = KvProjector.supplier(
-                    table.paths(),
-                    table.types(),
+                    table.getFields(),
                     (UpsertTargetDescriptor) table.getKeyJetMetadata(),
                     (UpsertTargetDescriptor) table.getValueJetMetadata(),
                     true

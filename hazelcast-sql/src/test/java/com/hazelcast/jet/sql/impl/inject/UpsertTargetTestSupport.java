@@ -16,17 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
-@FunctionalInterface
-public interface UpsertInjector {
+public class UpsertTargetTestSupport {
 
-    UpsertInjector FAILING_TOP_LEVEL_INJECTOR =
-            value -> {
-                if (value != null) {
-                    throw QueryException.error("Writing to top-level fields not supported");
-                }
-            };
-
-    void set(Object value);
+    public static TableField field(String name, QueryDataType type) {
+        return new MapTableField(name, type, false, QueryPath.create(name));
+    }
 }

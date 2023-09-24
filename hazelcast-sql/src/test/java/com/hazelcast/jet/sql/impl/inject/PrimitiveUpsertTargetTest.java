@@ -24,20 +24,23 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
+import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class PrimitiveUpsertTargetTest {
+public class PrimitiveUpsertTargetTest extends UpsertTargetTestSupport {
 
     @Test
     public void test_set() {
         UpsertTarget target = new PrimitiveUpsertTarget();
-        UpsertInjector injector = target.createInjector(null, QueryDataType.OBJECT);
+        UpsertConverter converter = target.createConverter(List.of(
+                field(VALUE, QueryDataType.OBJECT)
+        ));
 
-        target.init();
-        injector.set(1);
-        Object object = target.conclude();
+        Object object = converter.applyRow(1);
 
         assertThat(object).isEqualTo(1);
     }

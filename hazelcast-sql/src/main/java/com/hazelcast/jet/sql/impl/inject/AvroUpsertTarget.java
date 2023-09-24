@@ -19,13 +19,13 @@ package com.hazelcast.jet.sql.impl.inject;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.DefaultedMap;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.Field;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData.Record;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
 
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import java.math.BigDecimal;
@@ -35,11 +35,12 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static com.google.common.collect.Sets.toImmutableEnumSet;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.AVRO_TO_SQL;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
-import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static org.apache.avro.Schema.Type.BOOLEAN;
@@ -74,30 +75,28 @@ public class AvroUpsertTarget extends UpsertTarget {
 
     private final Schema schema;
 
-    private GenericRecordBuilder record;
-
     AvroUpsertTarget(Schema schema, InternalSerializationService serializationService) {
         super(serializationService);
         this.schema = schema;
     }
 
     @Override
-    public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
-        if (path == null) {
-            if (type.isCustomType()) {
-                Injector<GenericRecordBuilder> injector = createRecordInjector(type,
-                        (fieldName, fieldType) -> createInjector(schema, fieldName, fieldType));
-                return value -> {
-                    if (value != null) {
-                        injector.set(record, value);
-                    }
-                };
-            } else {
-                return FAILING_TOP_LEVEL_INJECTOR;
+    protected Converter<GenericRecord> createConverter(Stream<Field> fields) {
+        return createConverter(schema, fields);
+    }
+
+    private Converter<GenericRecord> createConverter(Schema schema, Stream<Field> fields) {
+        Injector<GenericRecordBuilder> injector = createRecordInjector(fields,
+                field -> createInjector(schema, field.name(), field.type()));
+        return value -> {
+            if (value == null || (value instanceof GenericRecord
+                    && ((GenericRecord) value).getSchema().equals(schema))) {
+                return (GenericRecord) value;
             }
-        }
-        Injector<GenericRecordBuilder> injector = createInjector(schema, path, type);
-        return value -> injector.set(record, value);
+            GenericRecordBuilder record = new GenericRecordBuilder(schema);
+            injector.set(record, value);
+            return record.build();
+        };
     }
 
     private Injector<GenericRecordBuilder> createInjector(Schema schema, String path, QueryDataType type) {
@@ -120,17 +119,8 @@ public class AvroUpsertTarget extends UpsertTarget {
                     }
                 };
             case RECORD:
-                Injector<GenericRecordBuilder> injector = createRecordInjector(type,
-                        (fieldName, fieldType) -> createInjector(fieldSchema, fieldName, fieldType));
-                return (record, value) -> {
-                    if (value == null) {
-                        record.set(path, null);
-                        return;
-                    }
-                    GenericRecordBuilder nestedRecord = new GenericRecordBuilder(fieldSchema);
-                    injector.set(nestedRecord, value);
-                    record.set(path, nestedRecord.build());
-                };
+                Converter<GenericRecord> converter = createConverter(fieldSchema, getFields(type));
+                return (record, value) -> record.set(path, converter.apply(value));
             case UNION:
                 Predicate<Schema.Type> hasType = fieldSchema.getTypes().stream()
                         .map(Schema::getType).collect(toImmutableEnumSet())::contains;
@@ -161,17 +151,5 @@ public class AvroUpsertTarget extends UpsertTarget {
             default:
                 throw QueryException.error("Schema type " + fieldSchemaType + " is unsupported (field=" + path + ")");
         }
-    }
-
-    @Override
-    public void init() {
-        record = new GenericRecordBuilder(schema);
-    }
-
-    @Override
-    public Object conclude() {
-        Record record = this.record.build();
-        this.record = null;
-        return record;
     }
 }

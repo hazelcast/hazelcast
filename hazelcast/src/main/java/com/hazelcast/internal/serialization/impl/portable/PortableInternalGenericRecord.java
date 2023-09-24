@@ -921,7 +921,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord impleme
     }
 
     @Override
-    protected Object getClassIdentifier() {
+    public Object getClassIdentifier() {
         return cd;
     }
 

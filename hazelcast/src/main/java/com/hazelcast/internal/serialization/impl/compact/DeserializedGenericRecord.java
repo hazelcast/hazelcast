@@ -601,7 +601,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     }
 
     @Override
-    protected Object getClassIdentifier() {
+    public Object getClassIdentifier() {
         return schema.getTypeName();
     }
 

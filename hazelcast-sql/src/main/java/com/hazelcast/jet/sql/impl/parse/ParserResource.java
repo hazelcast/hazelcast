@@ -70,9 +70,6 @@ public interface ParserResource {
     @BaseMessage("Type does not exist: {0}")
     ExInst<SqlValidatorException> droppedTypeDoesNotExist(String typeName);
 
-    @BaseMessage("Writing to top-level fields of type OBJECT not supported")
-    ExInst<SqlValidatorException> insertToTopLevelObject();
-
     @BaseMessage("Unknown option for {0} index: {1}")
     ExInst<SqlValidatorException> unsupportedIndexType(String indexType, String option);
 

@@ -262,7 +262,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    protected Object getClassIdentifier() {
+    public Object getClassIdentifier() {
         return classDefinition;
     }
 

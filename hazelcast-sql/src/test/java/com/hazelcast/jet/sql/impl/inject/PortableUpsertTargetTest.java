@@ -36,15 +36,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static java.time.ZoneOffset.UTC;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(JUnitParamsRunner.class)
-public class PortableUpsertTargetTest {
+public class PortableUpsertTargetTest extends UpsertTargetTestSupport {
 
     @Test
     public void test_set() throws IOException {
@@ -73,42 +75,43 @@ public class PortableUpsertTargetTest {
                         .build();
 
         UpsertTarget target = new PortableUpsertTarget(classDefinition, ss);
-        UpsertInjector nullFieldInjector = target.createInjector("null", QueryDataType.OBJECT);
-        UpsertInjector objectFieldInjector = target.createInjector("object", QueryDataType.OBJECT);
-        UpsertInjector stringFieldInjector = target.createInjector("string", QueryDataType.VARCHAR);
-        UpsertInjector characterFieldInjector = target.createInjector("character", QueryDataType.VARCHAR_CHARACTER);
-        UpsertInjector booleanFieldInjector = target.createInjector("boolean", QueryDataType.BOOLEAN);
-        UpsertInjector byteFieldInjector = target.createInjector("byte", QueryDataType.TINYINT);
-        UpsertInjector shortFieldInjector = target.createInjector("short", QueryDataType.SMALLINT);
-        UpsertInjector intFieldInjector = target.createInjector("int", QueryDataType.INT);
-        UpsertInjector longFieldInjector = target.createInjector("long", QueryDataType.BIGINT);
-        UpsertInjector floatFieldInjector = target.createInjector("float", QueryDataType.REAL);
-        UpsertInjector doubleFieldInjector = target.createInjector("double", QueryDataType.DOUBLE);
-        UpsertInjector decimalFieldInjector = target.createInjector("decimal", QueryDataType.DECIMAL);
-        UpsertInjector timeFieldInjector = target.createInjector("time", QueryDataType.TIME);
-        UpsertInjector dateFieldInjector = target.createInjector("date", QueryDataType.DATE);
-        UpsertInjector timestampFieldInjector = target.createInjector("timestamp", QueryDataType.TIMESTAMP);
-        UpsertInjector timestampTzFieldInjector =
-                target.createInjector("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
+        UpsertConverter converter = target.createConverter(List.of(
+                field("null", QueryDataType.OBJECT),
+                field("object", QueryDataType.OBJECT),
+                field("string", QueryDataType.VARCHAR),
+                field("character", QueryDataType.VARCHAR_CHARACTER),
+                field("boolean", QueryDataType.BOOLEAN),
+                field("byte", QueryDataType.TINYINT),
+                field("short", QueryDataType.SMALLINT),
+                field("int", QueryDataType.INT),
+                field("long", QueryDataType.BIGINT),
+                field("float", QueryDataType.REAL),
+                field("double", QueryDataType.DOUBLE),
+                field("decimal", QueryDataType.DECIMAL),
+                field("time", QueryDataType.TIME),
+                field("date", QueryDataType.DATE),
+                field("timestamp", QueryDataType.TIMESTAMP),
+                field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME)
+        ));
 
-        target.init();
-        nullFieldInjector.set(null);
-        objectFieldInjector.set(new PortableGenericRecordBuilder(innerClassDefinition).build());
-        stringFieldInjector.set("1");
-        characterFieldInjector.set('2');
-        booleanFieldInjector.set(true);
-        byteFieldInjector.set((byte) 3);
-        shortFieldInjector.set((short) 4);
-        intFieldInjector.set(5);
-        longFieldInjector.set(6L);
-        floatFieldInjector.set(7.1F);
-        doubleFieldInjector.set(7.2D);
-        decimalFieldInjector.set(new BigDecimal("8.1"));
-        timeFieldInjector.set(LocalTime.of(12, 23, 34));
-        dateFieldInjector.set(LocalDate.of(2021, 2, 9));
-        timestampFieldInjector.set(LocalDateTime.of(2021, 2, 9, 12, 23, 34, 1_000_000));
-        timestampTzFieldInjector.set(OffsetDateTime.of(2021, 2, 9, 12, 23, 34, 200_000_000, UTC));
-        Object portable = target.conclude();
+        Object portable = converter.applyRow(
+                null,
+                new PortableGenericRecordBuilder(innerClassDefinition).build(),
+                "1",
+                '2',
+                true,
+                (byte) 3,
+                (short) 4,
+                5,
+                6L,
+                7.1F,
+                7.2D,
+                new BigDecimal("8.1"),
+                LocalTime.of(12, 23, 34),
+                LocalDate.of(2021, 2, 9),
+                LocalDateTime.of(2021, 2, 9, 12, 23, 34, 1_000_000),
+                OffsetDateTime.of(2021, 2, 9, 12, 23, 34, 200_000_000, UTC)
+        );
 
         InternalGenericRecord record = ss.readAsInternalGenericRecord(ss.toData(portable));
         assertThat(record.getGenericRecord("null")).isNull();
@@ -171,10 +174,11 @@ public class PortableUpsertTargetTest {
             Function<InternalGenericRecord, Object> valueExtractor
     ) {
         UpsertTarget target = new PortableUpsertTarget(classDefinition, null);
-        UpsertInjector injector = target.createInjector("field", type);
+        UpsertConverter converter = target.createConverter(List.of(
+                field("field", type)
+        ));
 
-        target.init();
-        assertThatThrownBy(() -> injector.set(null))
+        assertThatThrownBy(() -> converter.applyRow((Object) null))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot set NULL to a primitive field");
     }
@@ -190,8 +194,8 @@ public class PortableUpsertTargetTest {
     ) throws IOException {
         UpsertTarget target = new PortableUpsertTarget(classDefinition, null);
 
-        target.init();
-        Object portable = target.conclude();
+        UpsertConverter converter = target.createConverter(emptyList());
+        Object portable = converter.applyRow();
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         InternalGenericRecord record = ss.readAsInternalGenericRecord(ss.toData(portable));
@@ -293,11 +297,11 @@ public class PortableUpsertTargetTest {
             ss.getPortableContext().registerClassDefinition(innerClassDefinition);
         }
         UpsertTarget target = new PortableUpsertTarget(classDefinition, ss);
-        UpsertInjector injector = target.createInjector("object", QueryDataType.OBJECT);
+        UpsertConverter converter = target.createConverter(List.of(
+                field("object", QueryDataType.OBJECT)
+        ));
 
-        target.init();
-        injector.set(value);
-        Object portable = target.conclude();
+        Object portable = converter.applyRow(value);
 
         InternalGenericRecord record = ss.readAsInternalGenericRecord(ss.toData(portable));
         assertThat(valueExtractor.apply(record)).isEqualTo(value);
@@ -313,8 +317,8 @@ public class PortableUpsertTargetTest {
     ) throws IOException {
         UpsertTarget target = new PortableUpsertTarget(classDefinition, null);
 
-        target.init();
-        Object portable = target.conclude();
+        UpsertConverter converter = target.createConverter(emptyList());
+        Object portable = converter.applyRow();
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         InternalGenericRecord record = ss.readAsInternalGenericRecord(ss.toData(portable));
@@ -326,12 +330,13 @@ public class PortableUpsertTargetTest {
         ClassDefinition classDefinition = new ClassDefinitionBuilder(1, 2, 3).build();
 
         UpsertTarget target = new PortableUpsertTarget(classDefinition, null);
-        UpsertInjector injector = target.createInjector("field", QueryDataType.INT);
+        UpsertConverter converter = target.createConverter(List.of(
+                field("field", QueryDataType.INT)
+        ));
 
-        target.init();
-        assertThatThrownBy(() -> injector.set("1"))
+        assertThatThrownBy(() -> converter.applyRow("1"))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Field \"field\" doesn't exist in Portable Class Definition");
+                .hasMessageContaining("Field \"field\" doesn't exist in Portable class definition");
     }
 
     @Test
@@ -339,11 +344,11 @@ public class PortableUpsertTargetTest {
         ClassDefinition classDefinition = new ClassDefinitionBuilder(1, 2, 3).build();
 
         UpsertTarget target = new PortableUpsertTarget(classDefinition, null);
-        UpsertInjector injector = target.createInjector("field", QueryDataType.INT);
+        UpsertConverter converter = target.createConverter(List.of(
+                field("field", QueryDataType.INT)
+        ));
 
-        target.init();
-        injector.set(null);
-        Object portable = target.conclude();
+        Object portable = converter.applyRow((Integer) null);
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         InternalGenericRecord record = ss.readAsInternalGenericRecord(ss.toData(portable));

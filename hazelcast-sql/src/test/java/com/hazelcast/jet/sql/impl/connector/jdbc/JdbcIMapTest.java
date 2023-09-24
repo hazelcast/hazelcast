@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.BeforeClass;
@@ -23,6 +24,10 @@ import org.junit.Test;
 
 import java.util.Map;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_COMPACT_TYPE_NAME;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class JdbcIMapTest extends JdbcSqlTestSupport {
@@ -38,28 +43,21 @@ public class JdbcIMapTest extends JdbcSqlTestSupport {
         createTable(tableName);
         insertItems(tableName, 5);
 
-        execute(
-                "CREATE MAPPING " + tableName + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + TEST_DATABASE_REF
-        );
+        new SqlMapping(tableName, TEST_DATABASE_REF)
+                .fields("id INT",
+                        "name VARCHAR")
+                .create();
 
-        execute(
-                "CREATE MAPPING my_map ( " +
-                        "__key INT, " +
-                        "id INT, " +
-                        "name VARCHAR ) " +
-                        "TYPE IMap " +
-                        "OPTIONS (" +
-                        "    'keyFormat' = 'int'," +
-                        "    'valueFormat' = 'compact',\n" +
-                        "    'valueCompactTypeName' = 'person'" +
-                        ")"
-        );
+        new SqlMapping("my_map", IMapSqlConnector.class)
+                .fields("__key INT",
+                        "id INT",
+                        "name VARCHAR")
+                .options(OPTION_KEY_FORMAT, "int",
+                         OPTION_VALUE_FORMAT, COMPACT_FORMAT,
+                         OPTION_VALUE_COMPACT_TYPE_NAME, "person")
+                .create();
 
-        execute("INSERT INTO my_map SELECT id AS __key,id,name FROM " + tableName);
+        execute("INSERT INTO my_map SELECT id AS __key, id, name FROM " + tableName);
 
         Map<Object, Object> map = instance().getMap("my_map");
         assertThat(map).hasSize(5);

@@ -76,7 +76,6 @@ import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolv
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.optionalField;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.time.ZoneOffset.UTC;
-import static java.util.Arrays.asList;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -120,7 +119,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
     @Parameters(name = "useSchemaRegistry=[{0}]")
     public static Iterable<Object> parameters() {
-        return asList(false, true);
+        return List.of(false, true);
     }
 
     @Parameter
@@ -264,7 +263,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT name, (parent).name, (parent).phone FROM " + name,
-                asList(
+                List.of(
                         new Row("Alice", "Bob", "(111) 111-1111"),
                         new Row("Dave", "Erin", "(999) 999-9999")
                 )
@@ -388,7 +387,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
-                asList(
+                List.of(
                         new Row(1, null),
                         new Row(2, true),
                         new Row(3, true),
@@ -434,7 +433,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 List.of(tuple2(QueryDataTypeFamily.REAL, 1F),
                         tuple2(QueryDataTypeFamily.DOUBLE, 1D)),
                 List.of(tuple2(Schema.Type.STRING, "1.0"))));
-        conversions.addAll(asList(
+        conversions.addAll(List.of(
                 tuple4(QueryDataTypeFamily.TIME, LocalTime.of(12, 23, 34), Schema.Type.STRING, "12:23:34"),
                 tuple4(QueryDataTypeFamily.DATE, LocalDate.of(2020, 4, 15), Schema.Type.STRING, "2020-04-15"),
                 tuple4(QueryDataTypeFamily.TIMESTAMP, LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
@@ -484,7 +483,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 Schema.Type.NULL,
                 Schema.Type.BYTES
         ).forEach(type -> schemaFieldTypes.add(Schema.create(type)));
-        schemaFieldTypes.addAll(asList(
+        schemaFieldTypes.addAll(List.of(
                 OBJECT_SCHEMA, // Schema.Type.UNION
                 SchemaBuilder.array().items(Schema.create(Schema.Type.INT)),
                 SchemaBuilder.map().values(Schema.create(Schema.Type.INT)),
@@ -579,7 +578,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         // assert both - initial & evolved - records are correctly read
         Runnable assertRecords = () -> assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
-                asList(
+                List.of(
                         new Row(13, "Alice", null),
                         new Row(69, "Bob", 123456789L)
                 )
@@ -649,24 +648,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     }
 
     @Test
-    public void test_writingToTopLevel() {
-        String name = randomName();
-        kafkaMapping(name, ID_SCHEMA, NAME_SCHEMA)
-                .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "name VARCHAR")
-                .create();
-
-        assertThatThrownBy(() ->
-                sqlService.execute("INSERT INTO " + name + "(__key, name) VALUES ('{\"id\":1}', null)"))
-                .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
-
-        assertThatThrownBy(() ->
-                sqlService.execute("INSERT INTO " + name + "(id, this) VALUES (1, '{\"name\":\"foo\"}')"))
-                .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
-    }
-
-    @Test
-    public void test_topLevelFieldExtraction() {
+    public void test_topLevelPathExtraction() {
         String name = createRandomTopic();
         kafkaMapping(name, ID_SCHEMA, NAME_SCHEMA)
                 .fields("id INT EXTERNAL NAME \"__key.id\"",
@@ -681,6 +663,65 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                         new GenericRecordBuilder(ID_SCHEMA).set("id", 1).build(),
                         new GenericRecordBuilder(NAME_SCHEMA).set("name", "Alice").build()
                 ))
+        );
+    }
+
+    @Test
+    public void when_topLevelPathWithoutCustomType_then_fail() {
+        assertThatThrownBy(() ->
+                kafkaMapping("kafka", ID_SCHEMA, NAME_SCHEMA)
+                        .fields("__key INT",
+                                "name VARCHAR EXTERNAL NAME \"this.name\"")
+                        .create())
+                .hasMessage("'__key' field must be used with a user-defined type");
+
+        assertThatThrownBy(() ->
+                kafkaMapping("kafka", ID_SCHEMA, NAME_SCHEMA)
+                        .fields("id INT EXTERNAL NAME \"this.id\"",
+                                "this VARCHAR")
+                        .create())
+                .hasMessage("'this' field must be used with a user-defined type");
+    }
+
+    @Test
+    public void test_explicitTopLevelPath() {
+        new SqlType("PersonId").fields("id INT").create();
+        new SqlType("Person").fields("name VARCHAR").create();
+
+        String name = createRandomTopic();
+        kafkaMapping(name, ID_SCHEMA, NAME_SCHEMA)
+                .fields("__key PersonId",
+                        "this Person")
+                .create();
+
+        sqlService.execute("INSERT INTO " + name + " VALUES (?, ?)",
+                createRecord(ID_SCHEMA, 1), createRecord(NAME_SCHEMA, "Alice"));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT (__key).id, (this).name FROM " + name,
+                List.of(new Row(1, "Alice"))
+        );
+    }
+
+    @Test
+    public void test_writingToImplicitTopLevelPath() {
+        String name = createRandomTopic();
+        kafkaMapping(name, ID_SCHEMA, NAME_SCHEMA)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR")
+                .create();
+
+        sqlService.execute("INSERT INTO " + name + " (__key, name) VALUES (?, ?)",
+                createRecord(ID_SCHEMA, 1), "Alice");
+        sqlService.execute("INSERT INTO " + name + " (id, this) VALUES (?, ?)",
+                2, createRecord(NAME_SCHEMA, "Bob"));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name,
+                List.of(
+                        new Row(1, "Alice"),
+                        new Row(2, "Bob")
+                )
         );
     }
 

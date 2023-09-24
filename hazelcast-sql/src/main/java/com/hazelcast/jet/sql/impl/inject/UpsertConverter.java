@@ -16,17 +16,19 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.Field;
+import com.hazelcast.sql.impl.expression.RowValue;
 
-import javax.annotation.concurrent.NotThreadSafe;
-import java.util.function.Function;
-import java.util.stream.Stream;
+import java.util.ArrayList;
 
-@NotThreadSafe
-class PrimitiveUpsertTarget extends UpsertTarget {
+import static java.util.Arrays.asList;
 
-    @Override
-    protected Converter<Object> createConverter(Stream<Field> fields) {
-        return Function.identity()::apply;
+@FunctionalInterface
+public interface UpsertConverter {
+
+    /** @param row must be mutable */
+    Object apply(RowValue row);
+
+    default Object applyRow(Object... values) {
+        return apply(new RowValue(new ArrayList<>(asList(values))));
     }
 }

@@ -26,6 +26,8 @@ import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 
 import java.io.IOException;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -34,6 +36,7 @@ import java.util.Objects;
  * @param <T> Return type.
  */
 public final class ConstantExpression<T> implements Expression<T> {
+    public static final Object UNSET = new Unset();
 
     @SuppressWarnings("unchecked")
     public static final ConstantExpression<Boolean> TRUE = (ConstantExpression<Boolean>) create(true, QueryDataType.BOOLEAN);
@@ -45,9 +48,7 @@ public final class ConstantExpression<T> implements Expression<T> {
     private QueryDataType type;
     private T value;
 
-    public ConstantExpression() {
-        // No-op.
-    }
+    public ConstantExpression() { }
 
     private ConstantExpression(T value, QueryDataType type) {
         this.type = type;
@@ -55,8 +56,8 @@ public final class ConstantExpression<T> implements Expression<T> {
     }
 
     public static ConstantExpression<?> create(Object value, QueryDataType type) {
-        if (value == null) {
-            return new ConstantExpression<>(null, type);
+        if (value == null || value == UNSET) {
+            return new ConstantExpression<>(value, type);
         }
         assert type.getTypeFamily() != QueryDataTypeFamily.NULL;
 
@@ -110,14 +111,12 @@ public final class ConstantExpression<T> implements Expression<T> {
         if (this == o) {
             return true;
         }
-
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         ConstantExpression<?> that = (ConstantExpression<?>) o;
-
-        return Objects.equals(type, that.type) && Objects.equals(value, that.value);
+        return Objects.equals(type, that.type)
+                && Objects.equals(value, that.value);
     }
 
     @Override
@@ -128,5 +127,11 @@ public final class ConstantExpression<T> implements Expression<T> {
     @Override
     public boolean isCooperative() {
         return true;
+    }
+
+    private static class Unset implements Serializable {
+        private Object readResolve() throws ObjectStreamException {
+            return UNSET;
+        }
     }
 }

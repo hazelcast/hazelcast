@@ -49,7 +49,7 @@ import static org.junit.Assert.assertNull;
 public class SqlClientTest extends SqlTestSupport {
 
     @BeforeClass
-    public static void setUpClass() {
+    public static void setup() {
         initializeWithClient(2, null, null);
     }
 
@@ -60,20 +60,22 @@ public class SqlClientTest extends SqlTestSupport {
 
         checkPartitionArgumentIndex("INSERT INTO test_simpleKey (__key, this) VALUES (?, ?)", 0, 1, "value");
         checkPartitionArgumentIndex("INSERT INTO test_simpleKey (this, __key) VALUES (?, ?)", 1, "value", 2);
+        checkPartitionArgumentIndex("INSERT INTO test_complexKey (__key, this) VALUES (?, ?)", 0,
+                new Person(1, "name-1"), "value-1");
+        checkPartitionArgumentIndex("INSERT INTO test_complexKey (this, __key) VALUES (?, ?)", 1,
+                "value-2", new Person(2, "name-2"));
+
         // no dynamic argument
         checkPartitionArgumentIndex("INSERT INTO test_simpleKey (this, __key) VALUES ('value', 3)", null);
         checkPartitionArgumentIndex("INSERT INTO test_simpleKey (this, __key) VALUES ('value', 4), ('value', 5)", null);
+
         // has dynamic argument, but multiple rows
         checkPartitionArgumentIndex("INSERT INTO test_simpleKey (this, __key) VALUES (?, ?), (?, ?)", null,
                 "value", 6, "value", 7);
 
         // partition argument index not supported if `__key` isn't directly assigned to
         checkPartitionArgumentIndex("INSERT INTO test_complexKey (this, id, name) VALUES (?, ?, ?)", null,
-                "value-1", 1, "name-1");
-        // this test case is here just for completeness to show that we cannot support complex keys and partition argument
-        assertThatThrownBy(() -> checkPartitionArgumentIndex("INSERT INTO test_complexKey (this, __key) VALUES (?, ?)", null,
-                "value-1", new Person(2, "name-2")))
-                .hasMessageEndingWith("Writing to top-level fields of type OBJECT not supported");
+                "value-3", 3, "name-3");
     }
 
     @Test

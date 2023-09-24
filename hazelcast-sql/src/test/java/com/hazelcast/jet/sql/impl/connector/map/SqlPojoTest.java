@@ -50,6 +50,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.ZoneId.systemDefault;
 import static java.time.ZoneOffset.UTC;
@@ -62,11 +63,11 @@ public class SqlPojoTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setup() {
-        initialize(1, null);
+        initialize(1, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
         sqlService = instance().getSql();
     }
 
-    private static SqlMapping mapping(String name, Class<?> keyClass, Class<?> valueClass) {
+    private static SqlMapping javaMapping(String name, Class<?> keyClass, Class<?> valueClass) {
         return new SqlMapping(name, IMapSqlConnector.class)
                 .options(OPTION_KEY_FORMAT, JAVA_FORMAT,
                          OPTION_KEY_CLASS, keyClass.getName(),
@@ -77,7 +78,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void test_nulls() {
         String name = randomName();
-        mapping(name, PersonId.class, Person.class).create();
+        javaMapping(name, PersonId.class, Person.class).create();
 
         assertMapEventually(
                 name,
@@ -93,7 +94,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void when_nullIntoPrimitive_then_fails() {
         String name = randomName();
-        mapping(name, PersonId.class, Person.class).create();
+        javaMapping(name, PersonId.class, Person.class).create();
 
         assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (null, 'Alice')"))
                 .hasMessageContaining("Cannot pass NULL to a method with a primitive argument");
@@ -126,7 +127,7 @@ public class SqlPojoTest extends SqlTestSupport {
         String badName = randomName();
         String goodName = randomName();
         createBrokenMapping(badName);
-        mapping(goodName, PersonId.class, Person.class).create();
+        javaMapping(goodName, PersonId.class, Person.class).create();
 
         assertThat(sqlService.execute("SELECT * FROM " + goodName)).hasSize(0);
     }
@@ -135,7 +136,7 @@ public class SqlPojoTest extends SqlTestSupport {
      * Simulates creation of a mapping for class that was later unloaded.
      */
     private static void createBrokenMapping(String name) {
-        mapping(name, PersonId.class, Person.class).create();
+        javaMapping(name, PersonId.class, Person.class).create();
 
         IMap<String, Mapping> catalog = instance().getMap(SQL_CATALOG_MAP_NAME);
         Mapping m = catalog.get(name);
@@ -154,7 +155,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void test_fieldsShadowing() {
         String name = randomName();
-        mapping(name, PersonId.class, Person.class).create();
+        javaMapping(name, PersonId.class, Person.class).create();
 
         assertMapEventually(
                 name,
@@ -170,7 +171,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void test_fieldsMapping() {
         String name = randomName();
-        mapping(name, PersonId.class, Person.class)
+        javaMapping(name, PersonId.class, Person.class)
                 .fields("key_id INT EXTERNAL NAME \"__key.id\"",
                         "value_id INT EXTERNAL NAME \"this.id\"",
                         "name VARCHAR")
@@ -190,13 +191,13 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void test_schemaEvolution() {
         String name = randomName();
-        mapping(name, PersonId.class, Person.class).create();
+        javaMapping(name, PersonId.class, Person.class).create();
 
         // insert initial record
         sqlService.execute("SINK INTO " + name + " VALUES (1, 'Alice')");
 
         // alter schema
-        mapping(name, PersonId.class, InsuredPerson.class).createOrReplace();
+        javaMapping(name, PersonId.class, InsuredPerson.class).createOrReplace();
 
         // insert record against new schema
         sqlService.execute("SINK INTO " + name + " (id, name, ssn) VALUES (2, 'Bob', 123456789)");
@@ -218,7 +219,7 @@ public class SqlPojoTest extends SqlTestSupport {
         Map<PersonId, InsuredPerson> map = instance().getMap(name);
         map.put(new PersonId(1), new InsuredPerson(1, "Alice", 123456789L));
 
-        mapping(name, PersonId.class, Person.class)
+        javaMapping(name, PersonId.class, Person.class)
                 .fields("id INT EXTERNAL NAME \"__key.id\"",
                         "name VARCHAR",
                         "ssn BIGINT" /* defined in the subclass */)
@@ -247,7 +248,7 @@ public class SqlPojoTest extends SqlTestSupport {
         TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = randomName();
-        mapping(to, BigInteger.class, AllTypesValue.class).create();
+        javaMapping(to, BigInteger.class, AllTypesValue.class).create();
 
         assertMapEventually(
                 to,
@@ -354,7 +355,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void when_fieldWithInitialValueUnmapped_then_initialValuePreserved() {
         String mapName = randomName();
-        mapping(mapName, Integer.class, ClassInitialValue.class)
+        javaMapping(mapName, Integer.class, ClassInitialValue.class)
                 .fields("__key INT")
                 .create();
         sqlService.execute("SINK INTO " + mapName + "(__key) VALUES (1)");
@@ -371,7 +372,7 @@ public class SqlPojoTest extends SqlTestSupport {
         // are always overwritten: if they're not present, we'll write null. We don't support DEFAULT values yet, but
         // it behaves as if the DEFAULT was null.
         String mapName = randomName();
-        mapping(mapName, Integer.class, ClassInitialValue.class).create();
+        javaMapping(mapName, Integer.class, ClassInitialValue.class).create();
         sqlService.execute("SINK INTO " + mapName + "(__key) VALUES (1)");
         assertRowsAnyOrder(
                 "SELECT * FROM " + mapName,
@@ -382,7 +383,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void when_fieldWithInitialValueAssignedNull_then_isNull() {
         String mapName = randomName();
-        mapping(mapName, Integer.class, ClassInitialValue.class).create();
+        javaMapping(mapName, Integer.class, ClassInitialValue.class).create();
         sqlService.execute("SINK INTO " + mapName + "(__key, field) VALUES (1, null)");
         assertRowsAnyOrder(
                 "SELECT * FROM " + mapName,
@@ -391,48 +392,57 @@ public class SqlPojoTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_writingToTopLevelWhileNestedFieldMapped_explicit() {
-        test_writingToTopLevel(true);
-    }
-
-    @Test
-    public void test_writingToTopLevelWhileNestedFieldMapped_implicit() {
-        test_writingToTopLevel(false);
-    }
-
-    private void test_writingToTopLevel(boolean explicit) {
-        String mapName = randomName();
-        mapping(mapName, Integer.class, Person.class)
-                .fields("__key INT")
-                .fieldsIf(explicit, "this OBJECT")
-                .fields("name VARCHAR")
-                .create();
-
-        if (explicit) {
-            assertThatThrownBy(() -> sqlService.execute("SINK INTO " + mapName + " VALUES(1, null, 'foo')"))
-                    .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
-        }
-
-        assertThatThrownBy(() -> sqlService.execute("SINK INTO " + mapName + "(__key, this) VALUES(1, null)"))
-                .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
-
-        sqlService.execute("SINK INTO " + mapName + (explicit ? "(__key, name)" : "") + " VALUES (1, 'foo')");
-
-        assertRowsAnyOrder(
-                "SELECT __key, this, name FROM " + mapName,
-                List.of(new Row(1, new Person(null, "foo"), "foo"))
-        );
-    }
-
-    @Test
-    public void test_topLevelFieldExtraction() {
+    public void test_topLevelPathExtraction() {
         String name = randomName();
-        mapping(name, PersonId.class, Person.class).create();
-        sqlService.execute("SINK INTO " + name + " (id, name) VALUES (1, 'Alice')");
+        javaMapping(name, PersonId.class, Person.class).create();
+
+        sqlService.execute("INSERT INTO " + name + " (id, name) VALUES (1, 'Alice')");
 
         assertRowsAnyOrder(
                 "SELECT __key, this FROM " + name,
                 List.of(new Row(new PersonId(1), new Person(null, "Alice")))
+        );
+    }
+
+    @Test
+    public void test_explicitTopLevelPath() {
+        new SqlType("PersonId").fields("id INT").create();
+        new SqlType("Person").fields("name VARCHAR").create();
+
+        String name = randomName();
+        javaMapping(name, PersonId.class, Person.class)
+                .fields("__key PersonId",
+                        "this Person")
+                .create();
+
+        sqlService.execute("INSERT INTO " + name + " VALUES (?, ?)",
+                new PersonId(1), new Person(null, "Alice"));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT (__key).id, (this).name FROM " + name,
+                List.of(new Row(1, "Alice"))
+        );
+    }
+
+    @Test
+    public void test_writingToImplicitTopLevelPath() {
+        String name = randomName();
+        javaMapping(name, PersonId.class, Person.class)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR")
+                .create();
+
+        sqlService.execute("INSERT INTO " + name + " (__key, name) VALUES (?, ?)",
+                new PersonId(1), "Alice");
+        sqlService.execute("INSERT INTO " + name + " (id, this) VALUES (?, ?)",
+                2, new Person(null, "Bob"));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name,
+                List.of(
+                        new Row(1, "Alice"),
+                        new Row(2, "Bob")
+                )
         );
     }
 
@@ -451,7 +461,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void when_noFieldsResolved_then_wholeValueMapped() {
         String name = randomName();
-        mapping(name, Object.class, Object.class).create();
+        javaMapping(name, Object.class, Object.class).create();
 
         Person key = new Person(1, "foo");
         Person value = new Person(2, "bar");
@@ -466,7 +476,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void when_keyHasKeyField_then_fieldIsSkipped() {
         String name = randomName();
-        mapping(name, ClassWithKey.class, Integer.class).create();
+        javaMapping(name, ClassWithKey.class, Integer.class).create();
 
         instance().getMap(name).put(new ClassWithKey(), 0);
 
@@ -485,7 +495,7 @@ public class SqlPojoTest extends SqlTestSupport {
         final String name = randomName();
         final ClassWithMapField obj = new ClassWithMapField(100L, "k", "v");
 
-        mapping(name, Long.class, ClassWithMapField.class).create();
+        javaMapping(name, Long.class, ClassWithMapField.class).create();
 
         instance().getSql().execute("SINK INTO " + name + " VALUES (?, ?, ?)", 1L, obj.id, obj.props);
         assertRowsAnyOrder(
@@ -519,6 +529,7 @@ public class SqlPojoTest extends SqlTestSupport {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class ClassWithMapField implements Serializable {
         private Long id;
         private Map<String, String> props;

@@ -30,13 +30,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.OBJECT_SCHEMA;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(JUnitParamsRunner.class)
-public class AvroUpsertTargetTest {
+public class AvroUpsertTargetTest extends UpsertTargetTestSupport {
 
     @Test
     public void test_set() {
@@ -59,38 +60,39 @@ public class AvroUpsertTargetTest {
                 .endRecord();
 
         UpsertTarget target = new AvroUpsertTarget(schema, null);
-        UpsertInjector nullInjector = target.createInjector("null", QueryDataType.OBJECT);
-        UpsertInjector stringInjector = target.createInjector("string", QueryDataType.VARCHAR);
-        UpsertInjector booleanInjector = target.createInjector("boolean", QueryDataType.BOOLEAN);
-        UpsertInjector byteInjector = target.createInjector("byte", QueryDataType.TINYINT);
-        UpsertInjector shortInjector = target.createInjector("short", QueryDataType.SMALLINT);
-        UpsertInjector intInjector = target.createInjector("int", QueryDataType.INT);
-        UpsertInjector longInjector = target.createInjector("long", QueryDataType.BIGINT);
-        UpsertInjector floatInjector = target.createInjector("float", QueryDataType.REAL);
-        UpsertInjector doubleInjector = target.createInjector("double", QueryDataType.DOUBLE);
-        UpsertInjector decimalInjector = target.createInjector("decimal", QueryDataType.DECIMAL);
-        UpsertInjector timeInjector = target.createInjector("time", QueryDataType.TIME);
-        UpsertInjector dateInjector = target.createInjector("date", QueryDataType.DATE);
-        UpsertInjector timestampInjector = target.createInjector("timestamp", QueryDataType.TIMESTAMP);
-        UpsertInjector timestampTzInjector =
-                target.createInjector("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
+        UpsertConverter converter = target.createConverter(List.of(
+                field("null", QueryDataType.OBJECT),
+                field("string", QueryDataType.VARCHAR),
+                field("boolean", QueryDataType.BOOLEAN),
+                field("byte", QueryDataType.TINYINT),
+                field("short", QueryDataType.SMALLINT),
+                field("int", QueryDataType.INT),
+                field("long", QueryDataType.BIGINT),
+                field("float", QueryDataType.REAL),
+                field("double", QueryDataType.DOUBLE),
+                field("decimal", QueryDataType.DECIMAL),
+                field("time", QueryDataType.TIME),
+                field("date", QueryDataType.DATE),
+                field("timestamp", QueryDataType.TIMESTAMP),
+                field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME)
+        ));
 
-        target.init();
-        nullInjector.set(null);
-        stringInjector.set("string");
-        booleanInjector.set(true);
-        byteInjector.set((byte) 127);
-        shortInjector.set((short) 32767);
-        intInjector.set(2147483647);
-        longInjector.set(9223372036854775807L);
-        floatInjector.set(1234567890.1F);
-        doubleInjector.set(123451234567890.1D);
-        decimalInjector.set(new BigDecimal("9223372036854775.123"));
-        timeInjector.set(LocalTime.of(12, 23, 34));
-        dateInjector.set(LocalDate.of(2020, 9, 9));
-        timestampInjector.set(LocalDateTime.of(2020, 9, 9, 12, 23, 34, 100_000_000));
-        timestampTzInjector.set(OffsetDateTime.of(2020, 9, 9, 12, 23, 34, 200_000_000, UTC));
-        Object record = target.conclude();
+        Object record = converter.applyRow(
+                null,
+                "string",
+                true,
+                (byte) 127,
+                (short) 32767,
+                2147483647,
+                9223372036854775807L,
+                1234567890.1F,
+                123451234567890.1D,
+                new BigDecimal("9223372036854775.123"),
+                LocalTime.of(12, 23, 34),
+                LocalDate.of(2020, 9, 9),
+                LocalDateTime.of(2020, 9, 9, 12, 23, 34, 100_000_000),
+                OffsetDateTime.of(2020, 9, 9, 12, 23, 34, 200_000_000, UTC)
+        );
 
         assertThat(record).isEqualTo(new GenericRecordBuilder(schema)
                 .set("null", null)
@@ -138,11 +140,11 @@ public class AvroUpsertTargetTest {
                 .name("object").type(OBJECT_SCHEMA).withDefault(null)
                 .endRecord();
         UpsertTarget target = new AvroUpsertTarget(schema, null);
-        UpsertInjector injector = target.createInjector("object", QueryDataType.OBJECT);
+        UpsertConverter converter = target.createConverter(List.of(
+                field("object", QueryDataType.OBJECT)
+        ));
 
-        target.init();
-        injector.set(value);
-        Object record = target.conclude();
+        Object record = converter.applyRow(value);
 
         assertThat(record).isEqualTo(new GenericRecordBuilder(schema).set("object", expected).build());
     }

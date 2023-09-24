@@ -60,8 +60,8 @@ final class MetadataJsonResolver implements KvMetadataResolver {
         return extractFields(userFields, isKey).entrySet().stream()
                 .map(entry -> {
                     QueryPath path = entry.getKey();
-                    if (path.getPath() == null) {
-                        throw QueryException.error("Cannot use the '" + path + "' field with JSON serialization");
+                    if (path.isTopLevel()) {
+                        throw QueryException.error("Cannot use '" + path + "' field with JSON serialization");
                     }
                     return entry.getValue();
                 });

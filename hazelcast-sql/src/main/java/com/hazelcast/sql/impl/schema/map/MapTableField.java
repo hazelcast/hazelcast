@@ -16,20 +16,26 @@
 
 package com.hazelcast.sql.impl.schema.map;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+
+import java.io.IOException;
 
 /**
  * Field of IMap or ReplicatedMap.
  */
 public class MapTableField extends TableField {
     /** Path to the field. */
-    private final QueryPath path;
+    private QueryPath path;
+
+    @SuppressWarnings("unused")
+    private MapTableField() { }
 
     public MapTableField(String name, QueryDataType type, boolean hidden, QueryPath path) {
         super(name, type, hidden);
-
         this.path = path;
     }
 
@@ -67,5 +73,17 @@ public class MapTableField extends TableField {
     @Override
     public String toString() {
         return "MapTableField{name=" + name + ", type=" + type + ", path=" + path + ", hidden=" + hidden + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeObject(path);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        path = in.readObject();
     }
 }

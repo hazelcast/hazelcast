@@ -20,131 +20,99 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.Field;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 
 @NotThreadSafe
 class HazelcastJsonUpsertTarget extends UpsertTarget {
-    private JsonObject json;
 
     @Override
-    @SuppressWarnings("checkstyle:ReturnCount")
-    public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
-        if (path == null) {
-            return FAILING_TOP_LEVEL_INJECTOR;
-        }
+    protected Converter<HazelcastJsonValue> createConverter(Stream<Field> fields) {
+        List<String> fieldNames = new ArrayList<>();
+        Injector<JsonObject> injector = createRecordInjector(fields, field -> {
+            fieldNames.add(field.name());
+            return createInjector(field.name(), field.type());
+        });
+        return value -> {
+            if (value == null || value instanceof HazelcastJsonValue) { // Checking the schema is expensive
+                return (HazelcastJsonValue) value;
+            } else if (value instanceof JsonObject && ((JsonObject) value).names().equals(fieldNames)) {
+                return new HazelcastJsonValue(value.toString());
+            }
+            JsonObject json = Json.object();
+            injector.set(json, value);
+            return new HazelcastJsonValue(json.toString());
+        };
+    }
 
+    private Injector<JsonObject> createInjector(String path, QueryDataType type) {
+        Injector<JsonObject> injector = createInjector0(path, type);
+        return (json, value) -> {
+            if (value == null) {
+                json.add(path, (String) null);
+            } else {
+                injector.set(json, value);
+            }
+        };
+    }
+
+    @SuppressWarnings("checkstyle:ReturnCount")
+    private Injector<JsonObject> createInjector0(String path, QueryDataType type) {
         switch (type.getTypeFamily()) {
             case BOOLEAN:
-                return value -> {
-                    if (value == null) {
-                        json.add(path, (String) null);
-                    } else {
-                        json.add(path, (boolean) value);
-                    }
-                };
+                return (json, value) -> json.add(path, (boolean) value);
             case TINYINT:
-                return value -> {
-                    if (value == null) {
-                        json.add(path, (String) null);
-                    } else {
-                        json.add(path, (byte) value);
-                    }
-                };
+                return (json, value) -> json.add(path, (byte) value);
             case SMALLINT:
-                return value -> {
-                    if (value == null) {
-                        json.add(path, (String) null);
-                    } else {
-                        json.add(path, (short) value);
-                    }
-                };
+                return (json, value) -> json.add(path, (short) value);
             case INTEGER:
-                return value -> {
-                    if (value == null) {
-                        json.add(path, (String) null);
-                    } else {
-                        json.add(path, (int) value);
-                    }
-                };
+                return (json, value) -> json.add(path, (int) value);
             case BIGINT:
-                return value -> {
-                    if (value == null) {
-                        json.add(path, (String) null);
-                    } else {
-                        json.add(path, (long) value);
-                    }
-                };
+                return (json, value) -> json.add(path, (long) value);
             case REAL:
-                return value -> {
-                    if (value == null) {
-                        json.add(path, (String) null);
-                    } else {
-                        json.add(path, (float) value);
-                    }
-                };
+                return (json, value) -> json.add(path, (float) value);
             case DOUBLE:
-                return value -> {
-                    if (value == null) {
-                        json.add(path, (String) null);
-                    } else {
-                        json.add(path, (double) value);
-                    }
-                };
+                return (json, value) -> json.add(path, (double) value);
             case DECIMAL:
             case TIME:
             case DATE:
             case TIMESTAMP:
             case TIMESTAMP_WITH_TIME_ZONE:
             case VARCHAR:
-                return value -> json.add(path, (String) QueryDataType.VARCHAR.convert(value));
+                return (json, value) -> json.add(path, (String) VARCHAR.convert(value));
             case OBJECT:
-                return createObjectInjector(path);
+                return (json, value) -> {
+                    if (value instanceof JsonValue) {
+                        json.add(path, (JsonValue) value);
+                    } else if (value instanceof Boolean) {
+                        json.add(path, (boolean) value);
+                    } else if (value instanceof Byte) {
+                        json.add(path, (byte) value);
+                    } else if (value instanceof Short) {
+                        json.add(path, (short) value);
+                    } else if (value instanceof Integer) {
+                        json.add(path, (int) value);
+                    } else if (value instanceof Long) {
+                        json.add(path, (long) value);
+                    } else if (value instanceof Float) {
+                        json.add(path, (float) value);
+                    } else if (value instanceof Double) {
+                        json.add(path, (double) value);
+                    } else {
+                        json.add(path, (String) VARCHAR.convert(value));
+                    }
+                };
             default:
                 throw QueryException.error("Unsupported type: " + type);
         }
-    }
-
-    private UpsertInjector createObjectInjector(String path) {
-        return value -> {
-            if (value == null) {
-                json.add(path, (String) null);
-            } else if (value instanceof JsonValue) {
-                json.add(path, (JsonValue) value);
-            } else if (value instanceof Boolean) {
-                json.add(path, (boolean) value);
-            } else if (value instanceof Byte) {
-                json.add(path, (byte) value);
-            } else if (value instanceof Short) {
-                json.add(path, (short) value);
-            } else if (value instanceof Integer) {
-                json.add(path, (int) value);
-            } else if (value instanceof Long) {
-                json.add(path, (long) value);
-            } else if (value instanceof Float) {
-                json.add(path, (float) value);
-            } else if (value instanceof Double) {
-                json.add(path, (double) value);
-            } else {
-                json.add(path, (String) QueryDataType.VARCHAR.convert(value));
-            }
-        };
-    }
-
-    @Override
-    public void init() {
-        json = Json.object();
-    }
-
-    @Override
-    public Object conclude() {
-        JsonObject json = this.json;
-        this.json = null;
-        return new HazelcastJsonValue(json.toString());
     }
 }

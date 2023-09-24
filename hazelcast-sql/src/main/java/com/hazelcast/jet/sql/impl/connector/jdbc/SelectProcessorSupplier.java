@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.ReadJdbcP;
@@ -53,21 +54,23 @@ public class SelectProcessorSupplier
 
     private String query;
     private int[] parameterPositions;
+    private FunctionEx<Object[], Object[]> rowProjection;
 
     private transient ExpressionEvalContext evalContext;
     private transient volatile BiFunctionEx<ResultSet, Integer, Object>[] valueGetters;
     private String dialectName;
 
     @SuppressWarnings("unused")
-    public SelectProcessorSupplier() {
-    }
+    public SelectProcessorSupplier() { }
 
     public SelectProcessorSupplier(@Nonnull String dataConnectionName,
                                    @Nonnull String query,
                                    @Nonnull int[] parameterPositions,
+                                   @Nonnull FunctionEx<Object[], Object[]> rowProjection,
                                    @Nonnull String dialectName) {
         super(dataConnectionName);
         this.query = requireNonNull(query, "query must not be null");
+        this.rowProjection = rowProjection;
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
         this.dialectName = dialectName;
     }
@@ -88,8 +91,8 @@ public class SelectProcessorSupplier
                 (connection, parallelism, index) -> {
                     PreparedStatement statement = connection.prepareStatement(query);
                     List<Object> arguments = evalContext.getArguments();
-                    for (int j = 0; j < parameterPositions.length; j++) {
-                        statement.setObject(j + 1, arguments.get(parameterPositions[j]));
+                    for (int i = 0; i < parameterPositions.length; i++) {
+                        statement.setObject(i + 1, arguments.get(parameterPositions[i]));
                     }
                     try {
                         ResultSet rs = statement.executeQuery();
@@ -103,12 +106,10 @@ public class SelectProcessorSupplier
                 (rs) -> {
                     int columnCount = rs.getMetaData().getColumnCount();
                     Object[] row = new Object[columnCount];
-                    for (int j = 0; j < columnCount; j++) {
-                        Object value = valueGetters[j].apply(rs, j + 1);
-                        row[j] = value;
+                    for (int i = 0; i < columnCount; i++) {
+                        row[i] = valueGetters[i].apply(rs, i + 1);
                     }
-
-                    return new JetSqlRow(evalContext.getSerializationService(), row);
+                    return new JetSqlRow(evalContext.getSerializationService(), rowProjection.apply(row));
                 }
         );
 
@@ -141,6 +142,7 @@ public class SelectProcessorSupplier
         out.writeString(dataConnectionName);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
+        out.writeObject(rowProjection);
         out.writeString(dialectName);
     }
 
@@ -149,6 +151,7 @@ public class SelectProcessorSupplier
         dataConnectionName = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
+        rowProjection = in.readObject();
         dialectName = in.readString();
     }
 }

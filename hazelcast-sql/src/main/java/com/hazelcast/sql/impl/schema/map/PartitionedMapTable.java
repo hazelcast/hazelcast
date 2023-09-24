@@ -121,14 +121,6 @@ public class PartitionedMapTable extends AbstractMapTable {
         return getFields().stream().map(TableField::getType).toArray(QueryDataType[]::new);
     }
 
-    public QueryPath[] valuePaths() {
-        return valueFields().map(MapTableField::getPath).toArray(QueryPath[]::new);
-    }
-
-    public QueryDataType[] valueTypes() {
-        return valueFields().map(TableField::getType).toArray(QueryDataType[]::new);
-    }
-
     /**
      * Returns list of Partitioning Attribute names if the corresponding map uses AttributePartitioningStrategy,
      * otherwise returns an empty list. Note that attribute names are not the same as column names as key fields

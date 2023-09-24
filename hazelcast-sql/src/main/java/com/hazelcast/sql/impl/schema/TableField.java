@@ -16,17 +16,24 @@
 
 package com.hazelcast.sql.impl.schema;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.type.QueryDataType;
+
+import java.io.IOException;
 
 /**
  * Base class for all table fields. Different backends may have additional
  * metadata associated with the field.
  */
-public class TableField {
+public class TableField implements DataSerializable {
+    protected String name;
+    protected QueryDataType type;
+    protected boolean hidden;
 
-    protected final String name;
-    protected final QueryDataType type;
-    protected final boolean hidden;
+    @SuppressWarnings("unused")
+    protected TableField() { }
 
     public TableField(String name, QueryDataType type, boolean hidden) {
         this.name = name;
@@ -69,5 +76,19 @@ public class TableField {
         result = 31 * result + (hidden ? 1 : 0);
 
         return result;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(name);
+        out.writeObject(type);
+        out.writeBoolean(hidden);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readString();
+        type = in.readObject();
+        hidden = in.readBoolean();
     }
 }

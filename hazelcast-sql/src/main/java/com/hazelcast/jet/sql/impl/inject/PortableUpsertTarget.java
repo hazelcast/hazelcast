@@ -17,8 +17,10 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.Field;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
@@ -26,22 +28,21 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.stream.Stream;
 
-import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 
 @NotThreadSafe
 class PortableUpsertTarget extends UpsertTarget {
     private final PortableContext context;
     private final ClassDefinition classDefinition;
-
-    private PortableGenericRecordBuilder record;
 
     PortableUpsertTarget(ClassDefinition classDefinition, InternalSerializationService serializationService) {
         super(serializationService);
@@ -50,29 +51,34 @@ class PortableUpsertTarget extends UpsertTarget {
     }
 
     @Override
-    public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
-        if (path == null) {
-            if (type.isCustomType()) {
-                Injector<GenericRecordBuilder> injector = createRecordInjector(type,
-                        (fieldName, fieldType) -> createInjector(classDefinition, fieldName, fieldType));
-                return value -> {
-                    if (value != null) {
-                        injector.set(record, value);
-                    }
-                };
-            } else {
-                return FAILING_TOP_LEVEL_INJECTOR;
+    protected Converter<GenericRecord> createConverter(Stream<Field> fields) {
+        return createConverter(classDefinition, fields);
+    }
+
+    private Converter<GenericRecord> createConverter(ClassDefinition classDef, Stream<Field> fields) {
+        Injector<GenericRecordBuilder> injector = createRecordInjector(fields,
+                field -> createInjector(classDef, field.name(), field.type()));
+        return value -> {
+            if (value == null || (value instanceof GenericRecord
+                    && ((AbstractGenericRecord) value).getClassIdentifier().equals(classDef))) {
+                return (GenericRecord) value;
             }
-        }
-        if (!classDefinition.hasField(path)) {
-            return value -> {
+            GenericRecordBuilder record = PortableGenericRecordBuilder.withDefaults(classDef);
+            injector.set(record, value);
+            return record.build();
+        };
+    }
+
+    private Injector<GenericRecordBuilder> createInjector(ClassDefinition classDef, String path, QueryDataType type) {
+        if (!classDef.hasField(path)) {
+            return (record, value) -> {
                 if (value != null) {
-                    throw QueryException.error("Field \"" + path + "\" doesn't exist in Portable Class Definition");
+                    throw QueryException.error("Field \"" + path + "\" doesn't exist in Portable class definition");
                 }
             };
         }
-        Injector<GenericRecordBuilder> injector = createInjector(classDefinition, path, type);
-        return value -> {
+        Injector<GenericRecordBuilder> injector = createInjector0(classDef, path, type);
+        return (record, value) -> {
             try {
                 injector.set(record, value);
             } catch (Exception e) {
@@ -84,7 +90,7 @@ class PortableUpsertTarget extends UpsertTarget {
     }
 
     @SuppressWarnings("ReturnCount")
-    private Injector<GenericRecordBuilder> createInjector(ClassDefinition classDef, String path, QueryDataType type) {
+    private Injector<GenericRecordBuilder> createInjector0(ClassDefinition classDef, String path, QueryDataType type) {
         FieldDefinition classField = classDef.getField(path);
         switch (classField.getType()) {
             case BOOLEAN:
@@ -106,7 +112,7 @@ class PortableUpsertTarget extends UpsertTarget {
             case DECIMAL:
                 return (record, value) -> record.setDecimal(path, (BigDecimal) value);
             case UTF:
-                return (record, value) -> record.setString(path, (String) QueryDataType.VARCHAR.convert(value));
+                return (record, value) -> record.setString(path, (String) VARCHAR.convert(value));
             case TIME:
                 return (record, value) -> record.setTime(path, (LocalTime) value);
             case DATE:
@@ -117,17 +123,8 @@ class PortableUpsertTarget extends UpsertTarget {
                 return (record, value) -> record.setTimestampWithTimezone(path, (OffsetDateTime) value);
             case PORTABLE:
                 ClassDefinition fieldDef = context.lookupClassDefinition(classField.getPortableId());
-                Injector<GenericRecordBuilder> injector = createRecordInjector(type,
-                        (fieldName, fieldType) -> createInjector(fieldDef, fieldName, fieldType));
-                return (record, value) -> {
-                    if (value == null) {
-                        record.setGenericRecord(path, null);
-                        return;
-                    }
-                    GenericRecordBuilder nestedRecord = PortableGenericRecordBuilder.withDefaults(fieldDef);
-                    injector.set(nestedRecord, value);
-                    record.setGenericRecord(path, nestedRecord.build());
-                };
+                Converter<GenericRecord> converter = createConverter(fieldDef, getFields(type));
+                return (record, value) -> record.setGenericRecord(path, converter.apply(value));
             case BOOLEAN_ARRAY:
                 return (record, value) -> record.setArrayOfBoolean(path, (boolean[]) value);
             case BYTE_ARRAY:
@@ -168,17 +165,5 @@ class PortableUpsertTarget extends UpsertTarget {
             throw QueryException.error("Cannot set NULL to a primitive field");
         }
         return value;
-    }
-
-    @Override
-    public void init() {
-        record = PortableGenericRecordBuilder.withDefaults(classDefinition);
-    }
-
-    @Override
-    public Object conclude() {
-        GenericRecord record = this.record.build();
-        this.record = null;
-        return record;
     }
 }

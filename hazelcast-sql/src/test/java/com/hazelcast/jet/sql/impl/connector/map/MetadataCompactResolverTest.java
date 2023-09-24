@@ -201,7 +201,8 @@ public class MetadataCompactResolverTest {
         schemaWriter.addField(new FieldDescriptor("date", FieldKind.DATE));
         schemaWriter.addField(new FieldDescriptor("timestamp", FieldKind.TIMESTAMP));
         schemaWriter.addField(new FieldDescriptor("timestampTz", FieldKind.TIMESTAMP_WITH_TIMEZONE));
-        assertEquals(metadata.getUpsertTargetDescriptor(), new CompactUpsertTargetDescriptor(schemaWriter.build()));
+        assertEquals(metadata.getUpsertTargetDescriptor(), new CompactUpsertTargetDescriptor(
+                "test", Map.of("test", schemaWriter.build())));
     }
 
     private static InternalSerializationService createSerializationService() {

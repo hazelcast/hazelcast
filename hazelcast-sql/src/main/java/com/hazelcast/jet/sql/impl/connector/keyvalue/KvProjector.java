@@ -17,23 +17,27 @@
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
+import com.hazelcast.jet.sql.impl.inject.UpsertConverter;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 
-import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.sql.impl.type.converter.ToConverters.getToConverter;
+import static java.util.stream.Collectors.toList;
 
 /**
  * A utility to convert a row represented as {@link JetSqlRow} to a
@@ -42,63 +46,43 @@ import static com.hazelcast.jet.sql.impl.type.converter.ToConverters.getToConver
  * {@link KvRowProjector} does the reverse.
  */
 public class KvProjector {
-
-    private final QueryDataType[] types;
-
-    private final UpsertTarget keyTarget;
-    private final UpsertTarget valueTarget;
-
-    private final UpsertInjector[] injectors;
-
+    private final List<TableField> fields;
     private final boolean failOnNulls;
 
+    private final UpsertConverter keyConverter;
+    private final UpsertConverter valueConverter;
+
     KvProjector(
-            QueryPath[] paths,
-            QueryDataType[] types,
+            List<TableField> fields,
             UpsertTarget keyTarget,
             UpsertTarget valueTarget,
             boolean failOnNulls
     ) {
-        checkTrue(paths.length == types.length, "paths.length != types.length");
-        this.types = types;
-
-        this.keyTarget = keyTarget;
-        this.valueTarget = valueTarget;
-
-        this.injectors = createInjectors(paths, types, keyTarget, valueTarget);
-
+        this.fields = fields;
         this.failOnNulls = failOnNulls;
-    }
 
-    private static UpsertInjector[] createInjectors(
-            QueryPath[] paths,
-            QueryDataType[] types,
-            UpsertTarget keyTarget,
-            UpsertTarget valueTarget
-    ) {
-        UpsertInjector[] injectors = new UpsertInjector[paths.length];
-        for (int i = 0; i < paths.length; i++) {
-            UpsertTarget target = paths[i].isKey() ? keyTarget : valueTarget;
-            injectors[i] = target.createInjector(paths[i].getPath(), types[i]);
-        }
-        return injectors;
+        keyConverter = keyTarget.createConverter(fields.stream()
+                .filter(field -> ((MapTableField) field).getPath().isKey()).collect(toList()));
+        valueConverter = valueTarget.createConverter(fields.stream()
+                .filter(field -> !((MapTableField) field).getPath().isKey()).collect(toList()));
     }
 
     public Entry<Object, Object> project(JetSqlRow row) {
-        keyTarget.init();
-        valueTarget.init();
+        List<Object> keyFields = new ArrayList<>(fields.size());
+        List<Object> valueFields = new ArrayList<>(fields.size());
         for (int i = 0; i < row.getFieldCount(); i++) {
-            Object value = getToConverter(types[i]).convert(row.get(i));
-            injectors[i].set(value);
+            MapTableField field = (MapTableField) fields.get(i);
+            Object converted = getToConverter(field.getType()).convert(row.get(i));
+            (field.getPath().isKey() ? keyFields : valueFields).add(converted);
         }
 
-        Object key = keyTarget.conclude();
+        Object key = keyConverter.apply(new RowValue(keyFields));
         if (key == null && failOnNulls) {
             throw QueryException.error("Cannot write NULL to '__key' field. " +
                     "Note that NULL is used also if your INSERT/SINK command doesn't write to '__key' at all.");
         }
 
-        Object value = valueTarget.conclude();
+        Object value = valueConverter.apply(new RowValue(valueFields));
         if (value == null && failOnNulls) {
             throw QueryException.error("Cannot write NULL to 'this' field. " +
                     "Note that NULL is used also if your INSERT/SINK command doesn't write to 'this' at all.");
@@ -108,19 +92,16 @@ public class KvProjector {
     }
 
     public static Supplier supplier(
-            QueryPath[] paths,
-            QueryDataType[] types,
+            List<TableField> fields,
             UpsertTargetDescriptor keyDescriptor,
             UpsertTargetDescriptor valueDescriptor,
             boolean failOnNulls
     ) {
-        return new Supplier(paths, types, keyDescriptor, valueDescriptor, failOnNulls);
+        return new Supplier(fields, keyDescriptor, valueDescriptor, failOnNulls);
     }
 
     public static final class Supplier implements DataSerializable {
-
-        private QueryPath[] paths;
-        private QueryDataType[] types;
+        private List<TableField> fields;
 
         private UpsertTargetDescriptor keyDescriptor;
         private UpsertTargetDescriptor valueDescriptor;
@@ -128,18 +109,15 @@ public class KvProjector {
         private boolean failOnNulls;
 
         @SuppressWarnings("unused")
-        private Supplier() {
-        }
+        private Supplier() { }
 
         private Supplier(
-                QueryPath[] paths,
-                QueryDataType[] types,
+                List<TableField> fields,
                 UpsertTargetDescriptor keyDescriptor,
                 UpsertTargetDescriptor valueDescriptor,
                 boolean failOnNulls
         ) {
-            this.paths = paths;
-            this.types = types;
+            this.fields = fields;
             this.keyDescriptor = keyDescriptor;
             this.valueDescriptor = valueDescriptor;
             this.failOnNulls = failOnNulls;
@@ -147,8 +125,7 @@ public class KvProjector {
 
         public KvProjector get(InternalSerializationService serializationService) {
             return new KvProjector(
-                    paths,
-                    types,
+                    fields,
                     keyDescriptor.create(serializationService),
                     valueDescriptor.create(serializationService),
                     failOnNulls
@@ -157,14 +134,7 @@ public class KvProjector {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(paths.length);
-            for (QueryPath path : paths) {
-                out.writeObject(path);
-            }
-            out.writeInt(types.length);
-            for (QueryDataType type : types) {
-                out.writeObject(type);
-            }
+            SerializationUtil.writeList(fields, out);
             out.writeObject(keyDescriptor);
             out.writeObject(valueDescriptor);
             out.writeBoolean(failOnNulls);
@@ -172,14 +142,7 @@ public class KvProjector {
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            paths = new QueryPath[in.readInt()];
-            for (int i = 0; i < paths.length; i++) {
-                paths[i] = in.readObject();
-            }
-            types = new QueryDataType[in.readInt()];
-            for (int i = 0; i < types.length; i++) {
-                types[i] = in.readObject();
-            }
+            fields = SerializationUtil.readList(in);
             keyDescriptor = in.readObject();
             valueDescriptor = in.readObject();
             failOnNulls = in.readBoolean();

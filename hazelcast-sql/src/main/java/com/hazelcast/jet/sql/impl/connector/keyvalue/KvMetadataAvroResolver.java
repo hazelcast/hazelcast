@@ -102,6 +102,11 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
             throw QueryException.error("Column list is required for Avro format");
         }
         Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
+        fieldsByPath.forEach((path, field) -> {
+            if (path.isTopLevel() && !field.type().isCustomType()) {
+                throw QueryException.error("'" + path + "' field must be used with a user-defined type");
+            }
+        });
 
         Schema schema = getSchemaId(fieldsByPath, schemaJson -> {
             // HazelcastKafkaAvro[De]Serializer obtains the schema from mapping options
@@ -167,8 +172,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                     return schema.optionalString(field.name());
                 case OBJECT:
                     Schema fieldSchema = field.type().isCustomType()
-                            ? resolveSchema(field.type().getObjectTypeName(),
-                                    field.type().getObjectFields().stream().map(Field::new))
+                            ? resolveSchema(field.type().getObjectTypeName(), getFields(field.type()))
                             : Schemas.OBJECT_SCHEMA;
                     return optionalField(field.name(), fieldSchema).apply(schema);
                 default:
@@ -213,7 +217,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
             }
 
             if (mappingFieldType.isCustomType()) {
-                validate(fieldSchema, mappingFieldType.getObjectFields().stream().map(Field::new).collect(toList()));
+                validate(fieldSchema, getFields(mappingFieldType).collect(toList()));
             }
         }
     }

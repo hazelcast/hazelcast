@@ -42,6 +42,7 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexUnset;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlDialectFactoryImpl;
 import org.apache.calcite.sql.SqlDialects;
@@ -319,6 +320,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
         RexNode rexPredicate = predicate == null ? null : predicate.unwrap(RexNode.class);
         List<RexNode> rexProjection = Util.toList(projection, n -> n.unwrap(RexNode.class));
+        FunctionEx<Object[], Object[]> rowProjection = RexUnset.createRowProjection(rexProjection);
 
         SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), dialect, rexPredicate, rexProjection);
 
@@ -329,6 +331,7 @@ public class JdbcSqlConnector implements SqlConnector {
                                 table.getDataConnectionName(),
                                 builder.query(),
                                 builder.parameterPositions(),
+                                rowProjection,
                                 dialect.getClass().getSimpleName()
                         ))
         );
@@ -457,22 +460,20 @@ public class JdbcSqlConnector implements SqlConnector {
             context.getDag().edge(Edge.between(v, dmlVertex));
             return dmlVertex;
         } else {
-            Vertex dmlVertex = context.getDag().newUniqueVertex(
+            return context.getDag().newUniqueVertex(
                     statement + "(" + table.getExternalNameList() + ")",
                     processorSupplier
             ).localParallelism(1);
-            return dmlVertex;
         }
     }
 
     private static Vertex dummySourceVertex(DagBuildContext context, String name, Address localAddress) {
-        Vertex v = context.getDag().newUniqueVertex(name,
+        return context.getDag().newUniqueVertex(name,
                 forceTotalParallelismOne(
                         of(() -> new SingleItemSourceP<>(DUMMY_INPUT_ROW)),
                         localAddress
                 )
         );
-        return v;
     }
 
     @Nonnull
