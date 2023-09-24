@@ -248,7 +248,18 @@ public final class CustomTypeFactory {
     }
 
     public static Schema createSchema(String typeName, List<FieldDescriptor> fields) {
-        return new Schema(typeName, fields);
+        String[] metadata = typeName.split("\0", 2);
+        if (metadata.length == 1) {
+            return new Schema(typeName, fields);
+        } else {
+            try {
+                Class<Schema> schemaClass = (Class<Schema>) CustomTypeFactory.class.getClassLoader()
+                        .loadClass(metadata[0]);
+                return schemaClass.getConstructor(String.class).newInstance(metadata[1]);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public static HazelcastJsonValue createHazelcastJsonValue(String value) {

@@ -41,15 +41,14 @@ import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOpe
  */
 public class Schema implements IdentifiedDataSerializable {
 
-    private String typeName;
-    private Map<String, FieldDescriptor> fieldsMap;
+    protected String typeName;
+    protected transient long schemaId;
     private List<FieldDescriptor> fields;
-    private int numberVarSizeFields;
-    private int fixedSizeFieldsLength;
-    private transient long schemaId;
+    private transient Map<String, FieldDescriptor> fieldsMap;
+    private transient int numberVarSizeFields;
+    private transient int fixedSizeFieldsLength;
 
-    public Schema() {
-    }
+    public Schema() { }
 
     public Schema(String typeName, List<FieldDescriptor> fields) {
         this.typeName = typeName;

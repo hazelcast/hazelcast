@@ -96,6 +96,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     //Global serializer may override Java Serialization or not
     private boolean overrideJavaSerialization;
 
+    private final SchemaService schemaService;
     private final ClassLoader classLoader;
     private final int outputBufferSize;
     private volatile boolean active = true;
@@ -123,6 +124,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
                 : SerializationConstants.CONSTANT_SERIALIZERS_LENGTH];
         this.isCompatibility = builder.isCompatibility;
         this.allowOverrideDefaultSerializers = builder.allowOverrideDefaultSerializers;
+        this.schemaService = builder.schemaService;
         CompactSerializationConfig compactSerializationCfg = builder.compactSerializationConfig == null
                 ? new CompactSerializationConfig() : builder.compactSerializationConfig;
         compactStreamSerializer = new CompactStreamSerializer(this, compactSerializationCfg,
@@ -146,6 +148,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.constantTypesMap = new IdentityHashMap<>(prototype.constantTypesMap.size());
         this.constantTypeIds = new SerializerAdapter[prototype.constantTypeIds.length];
         this.allowOverrideDefaultSerializers = prototype.allowOverrideDefaultSerializers;
+        this.schemaService = prototype.schemaService;
         this.compactStreamSerializer = prototype.compactStreamSerializer;
         this.compactWithSchemaSerializerAdapter = prototype.compactWithSchemaSerializerAdapter;
         this.compactSerializerAdapter = prototype.compactSerializerAdapter;
@@ -417,6 +420,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
     @Override
     public BufferObjectDataOutput createObjectDataOutput() {
         return inputOutputFactory.createOutput(outputBufferSize, this);
+    }
+
+    public final SchemaService getSchemaService() {
+        return schemaService;
     }
 
     public final ClassLoader getClassLoader() {

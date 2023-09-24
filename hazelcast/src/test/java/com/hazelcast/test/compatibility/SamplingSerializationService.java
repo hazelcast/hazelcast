@@ -26,6 +26,7 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JobRecord;
@@ -217,6 +218,11 @@ public class SamplingSerializationService implements InternalSerializationServic
     @Override
     public boolean isCompactSerializable(Object object) {
         return delegate.isCompactSerializable(object);
+    }
+
+    @Override
+    public SchemaService getSchemaService() {
+        return delegate.getSchemaService();
     }
 
     @Override

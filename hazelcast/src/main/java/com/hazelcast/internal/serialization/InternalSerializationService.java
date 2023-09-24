@@ -22,6 +22,7 @@ import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.jet.impl.ExplodeSnapshotP;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl;
@@ -156,6 +157,8 @@ public interface InternalSerializationService extends SerializationService, Disp
      * </ul>
      */
     boolean isCompactSerializable(Object object);
+
+    SchemaService getSchemaService();
 
     PortableContext getPortableContext();
 

@@ -18,14 +18,20 @@ package com.hazelcast.jet.avro;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.jet.avro.impl.AvroSchemaStorage;
+import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.compact.SchemaService;
+import com.hazelcast.jet.avro.impl.AvroSchema;
 import com.hazelcast.jet.impl.serialization.SerializerHookConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
@@ -41,16 +47,30 @@ import org.apache.avro.util.Utf8;
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.AVRO_SCHEMA_DS_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.AVRO_SCHEMA_DS_FACTORY_ID;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static org.apache.avro.SchemaNormalization.toParsingForm;
 
 /**
  * Hazelcast serializer hooks for the classes in the {@code com.hazelcast.jet.avro} package.
  */
-public final class AvroSerializerHooks {
-    private AvroSerializerHooks() { }
+public final class AvroSerializerHooks implements DataSerializerHook {
+    public static final int F_ID = FactoryIdHelper.getFactoryId(AVRO_SCHEMA_DS_FACTORY, AVRO_SCHEMA_DS_FACTORY_ID);
+    public static final int SCHEMA = 1;
+
+    @Override
+    public int getFactoryId() {
+        return F_ID;
+    }
+
+    @Override
+    public DataSerializableFactory createFactory() {
+        return typeId -> typeId == SCHEMA ? new AvroSchema() : null;
+    }
 
     public static <T> byte[] serialize(DatumWriter<T> datumWriter, T data) {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -73,7 +93,8 @@ public final class AvroSerializerHooks {
     }
 
     public static class GenericRecordHook implements SerializerHook<GenericRecord>, HazelcastInstanceAware {
-        private AvroSchemaStorage schemas;
+        private final Map<Schema, AvroSchema> replicatedSchemas = new HashMap<>();
+        private SchemaService schemaService;
 
         @Override
         public Class<GenericRecord> getSerializationType() {
@@ -90,8 +111,13 @@ public final class AvroSerializerHooks {
 
                 @Override
                 public void write(@Nonnull ObjectDataOutput out, @Nonnull GenericRecord record) throws IOException {
-                    long schemaId = schemas.put(record.getSchema());
-                    out.writeLong(schemaId);
+                    AvroSchema schema = replicatedSchemas.get(record.getSchema());
+                    if (schema == null) {
+                        schema = new AvroSchema(record.getSchema());
+                        schemaService.put(schema);
+                        replicatedSchemas.put(record.getSchema(), schema);
+                    }
+                    out.writeLong(schema.getSchemaId());
                     out.writeByteArray(record instanceof LazyImmutableRecord
                             ? ((LazyImmutableRecord) record).serializedRecord
                             : serialize(new GenericDatumWriter<>(record.getSchema()), record));
@@ -101,7 +127,7 @@ public final class AvroSerializerHooks {
                 @Override
                 public GenericRecord read(@Nonnull ObjectDataInput in) throws IOException {
                     long schemaId = in.readLong();
-                    Schema schema = schemas.get(schemaId);
+                    Schema schema = ((AvroSchema) schemaService.get(schemaId)).getSchema();
                     return new LazyImmutableRecord(in.readByteArray(), schema);
                 }
             };
@@ -113,42 +139,15 @@ public final class AvroSerializerHooks {
         }
 
         @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            if (hazelcastInstance != null) {
-                schemas = new AvroSchemaStorage(hazelcastInstance);
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            if (instance != null) {
+                instance.getLifecycleService().addLifecycleListener(event -> {
+                    if (event.getState() == STARTED) {
+                        schemaService = ((InternalSerializationService) ((SerializationServiceSupport) instance)
+                                .getSerializationService()).getSchemaService();
+                    }
+                });
             }
-        }
-    }
-
-    public static final class SchemaHook implements SerializerHook<Schema> {
-        @Override
-        public Class<Schema> getSerializationType() {
-            return Schema.class;
-        }
-
-        @Override
-        public Serializer createSerializer() {
-            return new ByteArraySerializer<Schema>() {
-                @Override
-                public int getTypeId() {
-                    return SerializerHookConstants.AVRO_SCHEMA;
-                }
-
-                @Override
-                public byte[] write(Schema schema) {
-                    return toParsingForm(schema).getBytes(StandardCharsets.UTF_8);
-                }
-
-                @Override
-                public Schema read(byte[] buffer) {
-                    return new Schema.Parser().parse(new String(buffer, StandardCharsets.UTF_8));
-                }
-            };
-        }
-
-        @Override
-        public boolean isOverwritable() {
-            return false;
         }
     }
 
