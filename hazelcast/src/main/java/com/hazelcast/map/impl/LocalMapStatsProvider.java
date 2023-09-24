@@ -196,11 +196,7 @@ public class LocalMapStatsProvider {
                                                                             RecordStore recordStore) {
         String mapName = recordStore.getName();
 
-        Object stats = onDemandStats.get(mapName);
-        if (stats == null) {
-            stats = new LocalMapOnDemandCalculatedStats();
-            onDemandStats.put(mapName, stats);
-        }
+        Object stats = onDemandStats.computeIfAbsent(mapName, x -> new LocalMapOnDemandCalculatedStats());
         return ((LocalMapOnDemandCalculatedStats) stats);
     }
 
@@ -408,12 +404,11 @@ public class LocalMapStatsProvider {
 
         for (InternalIndex index : freshIndexes) {
             String indexName = index.getName();
-            OnDemandIndexStats freshIndexStats = freshStats.get(indexName);
-            if (freshIndexStats == null) {
-                freshIndexStats = new OnDemandIndexStats();
-                freshIndexStats.setCreationTime(Long.MAX_VALUE);
-                freshStats.put(indexName, freshIndexStats);
-            }
+            OnDemandIndexStats freshIndexStats = freshStats.computeIfAbsent(indexName, x -> {
+                OnDemandIndexStats onDemandIndexStats = new OnDemandIndexStats();
+                onDemandIndexStats.setCreationTime(Long.MAX_VALUE);
+                return onDemandIndexStats;
+            });
 
             PerIndexStats indexStats = index.getPerIndexStats();
             freshIndexStats.setCreationTime(Math.min(freshIndexStats.getCreationTime(), indexStats.getCreationTime()));

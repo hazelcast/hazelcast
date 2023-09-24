@@ -106,12 +106,10 @@ public class ReplicatedMapEventPublishingService
             }
 
             String mapName = ((EntryEventData) event).getMapName();
-            Boolean statisticsEnabled = statisticsMap.get(mapName);
-            if (statisticsEnabled == null) {
+            Boolean statisticsEnabled = statisticsMap.computeIfAbsent(mapName, x -> {
                 ReplicatedMapConfig mapConfig = config.findReplicatedMapConfig(mapName);
-                statisticsEnabled = mapConfig.isStatisticsEnabled();
-                statisticsMap.put(mapName, statisticsEnabled);
-            }
+                return mapConfig.isStatisticsEnabled();
+            });
             if (statisticsEnabled) {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(entryEventData.getDataKey());
                 ReplicatedRecordStore recordStore = replicatedMapService.getPartitionContainer(partitionId)

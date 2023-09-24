@@ -327,11 +327,7 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
             if (value == NULL) {
                 return recordsWithNullValue.put(entry.getKeyData(), entry);
             } else {
-                Map<Data, QueryableEntry> records = recordMap.get(value);
-                if (records == null) {
-                    records = new ConcurrentHashMap<>(1, LOAD_FACTOR, 1);
-                    recordMap.put(value, records);
-                }
+                Map<Data, QueryableEntry> records = recordMap.computeIfAbsent(value, x -> new ConcurrentHashMap<>(1, LOAD_FACTOR, 1));
                 return records.put(entry.getKeyData(), entry);
             }
         }

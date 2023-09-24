@@ -225,15 +225,13 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
     }
 
     private RaftSessionRegistry getOrInitRegistry(CPGroupId groupId) {
-        RaftSessionRegistry registry = registries.get(groupId);
-        if (registry == null) {
-            registry = new RaftSessionRegistry(groupId);
-            registries.put(groupId, registry);
+        return registries.computeIfAbsent(groupId, x -> {
+            RaftSessionRegistry raftSessionRegistry = new RaftSessionRegistry(groupId);
             if (logger.isFineEnabled()) {
                 logger.fine("Created new session registry for " + groupId);
             }
-        }
-        return registry;
+            return raftSessionRegistry;
+        });
     }
 
     public void heartbeat(CPGroupId groupId, long sessionId) {

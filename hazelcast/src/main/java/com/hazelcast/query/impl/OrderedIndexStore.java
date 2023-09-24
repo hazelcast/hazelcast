@@ -395,11 +395,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             if (value == NULL) {
                 return recordsWithNullValue.put(entry.getKeyData(), entry);
             } else {
-                NavigableMap<Data, QueryableEntry> records = recordMap.get(value);
-                if (records == null) {
-                    records = new ConcurrentSkipListMap<>(DATA_COMPARATOR);
-                    recordMap.put(value, records);
-                }
+                NavigableMap<Data, QueryableEntry> records = recordMap.computeIfAbsent(value, x -> new ConcurrentSkipListMap<>(DATA_COMPARATOR));
                 return records.put(entry.getKeyData(), entry);
             }
         }

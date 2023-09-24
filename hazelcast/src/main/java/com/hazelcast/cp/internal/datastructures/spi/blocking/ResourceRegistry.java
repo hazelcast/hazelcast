@@ -116,11 +116,7 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
 
     protected final R getOrInitResource(String name) {
         checkNotDestroyed(name);
-        R resource = resources.get(name);
-        if (resource == null) {
-            resource = createNewResource(groupId, name);
-            resources.put(name, resource);
-        }
+        R resource = resources.computeIfAbsent(name, x-> createNewResource(groupId, name));
 
         return resource;
     }

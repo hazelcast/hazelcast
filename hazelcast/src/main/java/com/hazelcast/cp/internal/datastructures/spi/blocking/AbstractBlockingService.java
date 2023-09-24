@@ -280,12 +280,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
     protected final RR getOrInitRegistry(CPGroupId groupId) {
         checkNotNull(groupId);
-        RR registry = registries.get(groupId);
-        if (registry == null) {
-            registry = createNewRegistry(groupId);
-            registries.put(groupId, registry);
-        }
-        return registry;
+        return registries.computeIfAbsent(groupId, this::createNewRegistry);
     }
 
     protected final void scheduleTimeout(CPGroupId groupId, String name, UUID invocationUid, long timeoutMs) {

@@ -58,11 +58,7 @@ public class AttributeIndexRegistry {
         String[] components = index.getComponents();
         String attribute = components[0];
 
-        Record record = registry.get(attribute);
-        if (record == null) {
-            record = new Record();
-            registry.put(attribute, record);
-        }
+        Record record = registry.computeIfAbsent(attribute, x -> new Record());
 
         if (index.isOrdered()) {
             if (record.orderedWorseThan(index)) {

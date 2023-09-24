@@ -161,11 +161,7 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         if (destroyedValues.contains(key)) {
             throw new DistributedObjectDestroyedException("AtomicValue[" + name + "] is already destroyed!");
         }
-        V atomicValue = atomicValues.get(key);
-        if (atomicValue == null) {
-            atomicValue = newAtomicValue(groupId, name, null);
-            atomicValues.put(key, atomicValue);
-        }
+        V atomicValue = atomicValues.computeIfAbsent(key, x -> newAtomicValue(groupId, name, null));
         return atomicValue;
     }
 

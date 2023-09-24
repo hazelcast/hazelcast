@@ -89,11 +89,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
 
     public void putTransaction(XATransaction transaction) {
         SerializableXID xid = transaction.getXid();
-        List<XATransaction> list = transactions.get(xid);
-        if (list == null) {
-            list = new CopyOnWriteArrayList<XATransaction>();
-            transactions.put(xid, list);
-        }
+        List<XATransaction> list = transactions.computeIfAbsent(xid, x -> new CopyOnWriteArrayList<XATransaction>());
         list.add(transaction);
     }
 

@@ -69,11 +69,7 @@ public final class CollectionUtil {
      * @return the updated list of values
      */
     public static <K, V> List<V> addToValueList(Map<K, List<V>> map, K key, V value) {
-        List<V> valueList = map.get(key);
-        if (valueList == null) {
-            valueList = new ArrayList<V>();
-            map.put(key, valueList);
-        }
+        List<V> valueList = map.computeIfAbsent(key, x -> new ArrayList<>());
         valueList.add(value);
 
         return valueList;

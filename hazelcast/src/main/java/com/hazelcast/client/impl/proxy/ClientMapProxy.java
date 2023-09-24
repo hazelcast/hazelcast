@@ -1659,11 +1659,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
             Data keyData = toData(entry.getKey());
             int partitionId = partitionService.getPartitionId(keyData);
-            List<Map.Entry<Data, Data>> partition = entryMap.get(partitionId);
-            if (partition == null) {
-                partition = new ArrayList<>();
-                entryMap.put(partitionId, partition);
-            }
+            List<Map.Entry<Data, Data>> partition = entryMap.computeIfAbsent(partitionId, x -> new ArrayList<>());
             partition.add(new AbstractMap.SimpleEntry<>(keyData, toData(entry.getValue())));
         }
         assert entryMap.size() > 0;
