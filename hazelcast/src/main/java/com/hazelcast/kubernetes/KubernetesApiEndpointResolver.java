@@ -27,7 +27,6 @@ import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 import static com.hazelcast.internal.util.HostnameUtil.getLocalHostname;
