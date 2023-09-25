@@ -764,7 +764,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     private <T> T[] getArrayOfNullable(@Nonnull String fieldName, Reader<T> reader,
-                                       Function<Integer, T[]> constructor, FieldKind primitiveKind,
+                                       IntFunction<T[]> constructor, FieldKind primitiveKind,
                                        FieldKind nullableKind) {
         FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
