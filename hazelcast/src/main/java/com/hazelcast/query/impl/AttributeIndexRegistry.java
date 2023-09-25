@@ -235,7 +235,7 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending) {
             throw new UnsupportedOperationException("Should not be called");
         }
 

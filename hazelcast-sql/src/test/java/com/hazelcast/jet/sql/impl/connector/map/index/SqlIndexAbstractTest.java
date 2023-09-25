@@ -23,8 +23,10 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.SortPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
@@ -181,6 +183,24 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 false, //TODO: HZ-3014 c_sorted(),
                 isNotNull()
         );
+    }
+
+    @Test
+    public void testOrderBy() {
+        check0(query("1=1 order by field1"), c_sorted(), v -> true);
+        check0(query("1=1 order by field1 desc"), c_sorted(), v -> true);
+
+        // even though we could get use composite index for ordering on prefix of columns
+        // we do not do this currently
+        check0(query("1=1 order by field1, field2"), c_sorted() && c_composite(), v -> true);
+        check0(query("1=1 order by field1 desc, field2 desc"), c_sorted() && c_composite(), v -> true);
+
+        // different ordering on columns cannot use composite index
+        check0(query("1=1 order by field1 asc, field2 desc"), false, v -> true);
+        check0(query("1=1 order by field1 desc, field2 asc"), false, v -> true);
+
+        check0(query("1=1 order by field2"), false, v -> true);
+        check0(query("1=1 order by field2 desc"), false, v -> true);
     }
 
         // Test helpers
@@ -528,6 +548,10 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         return indexType == IndexType.SORTED;
     }
 
+    private boolean c_composite() {
+        return composite;
+    }
+
     private boolean c_notComposite() {
         return !composite;
     }
@@ -573,10 +597,16 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check0(queryWithOr, false, expectedKeysPredicateWithOr);
 
         // TODO: enable after fixing HZ-3012 and HZ-3013
+        // TODO: remove `or field1 is null` condition after those fixes as well
         // Sorting is so costly that index should be preferred regardless of predicates
         // For hash index sorting does not use index, but scan still can use it.
-//        check0(queryWithOrderBy, expectedUseIndex || c_sorted(), expectedKeysPredicate);
-//        check0(queryWithOrderByDesc, expectedUseIndex || c_sorted(), expectedKeysPredicate);
+        if (!query.sql.toLowerCase(Locale.ROOT).contains("or field1 is null") || !c_sorted()) {
+            check0(queryWithOrderBy, expectedUseIndex || c_sorted(), expectedKeysPredicate);
+            if (!c_sorted()) {
+                // TODO: DESC works correctly only for HASH, will be enabled globally after fixing HZ-3012 and HZ-3013
+                check0(queryWithOrderByDesc, expectedUseIndex || c_sorted(), expectedKeysPredicate);
+            }
+        }
     }
 
     private void check0(Query query, boolean expectedUseIndex, Predicate<ExpressionValue> expectedKeysPredicate) {
@@ -684,7 +714,38 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);
         if (sql.toLowerCase(Locale.ROOT).contains("order by")) {
-            // TODO: assert plan
+            // for ORDER BY queries index:
+            // 1) can be used for filtering only, with separate sort step afterwards
+            // 2) can be used for filtering and sorting if the same column is used for both
+            // 3) can be unused
+
+            if (withIndex) {
+                if (c_sorted()) {
+                    assertPlan(
+                            optimizationResult.getPhysical(),
+                            plan(
+                                    planRow(0, CalcPhysicalRel.class),
+                                    planRow(1, IndexScanMapPhysicalRel.class))
+                    );
+                } else {
+                    // hash index does not use index for sorting, only for filtering
+                    assertPlan(
+                            optimizationResult.getPhysical(),
+                            plan(
+                                    planRow(0, CalcPhysicalRel.class),
+                                    planRow(1, SortPhysicalRel.class),
+                                    planRow(2, IndexScanMapPhysicalRel.class))
+                    );
+                }
+            } else {
+                assertPlan(
+                        optimizationResult.getPhysical(),
+                        plan(
+                                planRow(0, CalcPhysicalRel.class),
+                                planRow(1, SortPhysicalRel.class),
+                                planRow(2, FullScanPhysicalRel.class))
+                );
+            }
         } else {
             assertPlan(
                     optimizationResult.getLogical(),
