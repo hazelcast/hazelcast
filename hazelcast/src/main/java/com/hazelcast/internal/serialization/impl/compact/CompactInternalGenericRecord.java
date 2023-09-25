@@ -37,7 +37,6 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
