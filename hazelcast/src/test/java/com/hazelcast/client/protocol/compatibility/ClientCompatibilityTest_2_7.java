@@ -86,6 +86,10 @@ public class ClientCompatibilityTest_2_7 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertTrue(parameters.isTpcPortsExists);
+        assertTrue(isEqual(aListOfIntegers, parameters.tpcPorts));
+        assertTrue(parameters.isTpcTokenExists);
+        assertTrue(isEqual(aByteArray, parameters.tpcToken));
     }
 
     @Test

@@ -170,8 +170,8 @@ public final class AuthenticationResponse {
                 parameters.partitionCount,
                 parameters.clusterId,
                 parameters.failoverSupported,
-                parameters.,
-                null
+                parameters.tpcPorts,
+                parameters.tpcToken
         );
     }
 
