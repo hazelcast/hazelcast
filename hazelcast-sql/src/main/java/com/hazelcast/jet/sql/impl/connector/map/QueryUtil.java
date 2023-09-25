@@ -116,8 +116,9 @@ public final class QueryUtil {
             boolean descending,
             ExpressionEvalContext evalContext
     ) {
-        ArrayList<IndexIterationPointer> result = new ArrayList<>();
+        List<IndexIterationPointer> result = new ArrayList<>();
         createFromIndexFilterInt(indexFilter, compositeIndex, descending, evalContext, result);
+        result = IndexIterationPointer.normalizePointers(result, descending);
         return result.toArray(new IndexIterationPointer[0]);
     }
 
@@ -173,6 +174,8 @@ public final class QueryUtil {
         } else if (indexFilter instanceof IndexEqualsFilter) {
             IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
             Comparable<?> value = equalsFilter.getComparable(evalContext);
+            // Note: this branch is also used for IS NULL, but null value in IndexEqualsFilter
+            // is mapped to NULL by getComparable, so we can easily use it in the same way as ordinary values.
             result.add(IndexIterationPointer.create(value, true, value, true, descending, null));
         } else if (indexFilter instanceof IndexCompositeFilter) {
             IndexCompositeFilter inFilter = (IndexCompositeFilter) indexFilter;

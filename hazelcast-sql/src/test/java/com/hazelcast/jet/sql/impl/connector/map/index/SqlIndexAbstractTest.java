@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map.index;
 
+import com.google.common.base.Predicates;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.hazelcast.config.IndexConfig;
@@ -43,7 +44,6 @@ import org.assertj.core.api.JUnitSoftAssertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
@@ -148,7 +148,6 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     }
 
     @Test
-    @Ignore("HZ-3013")
     public void testDisjunctionSameValue() {
         // Test for index scans with disjunctions that match the same row.
         // SQL query must not return duplicate rows in such case.
@@ -183,6 +182,19 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 false, //TODO: HZ-3014 c_sorted(),
                 isNotNull()
         );
+    }
+
+    @Test
+    public void testConjunctionOfRanges() {
+        ///// Conjunction of ranges open on the same end
+        check(query("field1>? and field1>?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(), gt(f1.valueTo()));
+        check(query("field1>=? and field1>=?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(), gte(f1.valueTo()));
+        check(query("field1<? and field1<?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(), lt(f1.valueFrom()));
+        check(query("field1<=? and field1<=?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(), lte(f1.valueFrom()));
     }
 
     @Test
@@ -231,6 +243,12 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
         check(query("?=field1 or ?=field1", f1.valueFrom(), f1.valueTo()),
                 c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
+
+        // WHERE f1=? and f1=? - contradictory values
+        check(query("field1=? and field1=?", f1.valueTo(), f1.valueFrom()),
+                c_notHashComposite(), Predicates.alwaysFalse());
+        check(query("?=field1 and ?=field1", f1.valueFrom(), f1.valueTo()),
+                c_notHashComposite(), Predicates.alwaysFalse());
 
         // WHERE f1=? or f1 is null
         check(query("field1=? or field1 is null", f1.valueFrom()),
@@ -325,12 +343,22 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 c_sorted(),
                 and(gt(f1.valueFrom()), lt(f1.valueTo()))
         );
+        check(
+                query("field1>? AND field1<?", f1.valueTo(), f1.valueFrom()),
+                c_sorted(),
+                Predicates.alwaysFalse()
+        );
 
         // WHERE f1>? AND f1<=?
         check(
                 query("field1>? AND field1<=?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
                 and(gt(f1.valueFrom()), lte(f1.valueTo()))
+        );
+        check(
+                query("field1>? AND field1<=?", f1.valueTo(), f1.valueFrom()),
+                c_sorted(),
+                Predicates.alwaysFalse()
         );
 
         // WHERE f1>=? AND f1<?
@@ -339,12 +367,22 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 c_sorted(),
                 and(gte(f1.valueFrom()), lt(f1.valueTo()))
         );
+        check(
+                query("field1>=? AND field1<?", f1.valueTo(), f1.valueFrom()),
+                c_sorted(),
+                Predicates.alwaysFalse()
+        );
 
         // WHERE f1>=? AND f1<=?
         check(
                 query("field1>=? AND field1<=?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
                 and(gte(f1.valueFrom()), lte(f1.valueTo()))
+        );
+        check(
+                query("field1>=? AND field1<=?", f1.valueTo(), f1.valueFrom()),
+                c_sorted(),
+                Predicates.alwaysFalse()
         );
 
         ///// 2 disjoint unlimited ranges
@@ -596,17 +634,10 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         // Run query with OR, no index should be used
         check0(queryWithOr, false, expectedKeysPredicateWithOr);
 
-        // TODO: enable after fixing HZ-3012 and HZ-3013
-        // TODO: remove `or field1 is null` condition after those fixes as well
         // Sorting is so costly that index should be preferred regardless of predicates
         // For hash index sorting does not use index, but scan still can use it.
-        if (!query.sql.toLowerCase(Locale.ROOT).contains("or field1 is null") || !c_sorted()) {
-            check0(queryWithOrderBy, expectedUseIndex || c_sorted(), expectedKeysPredicate);
-            if (!c_sorted()) {
-                // TODO: DESC works correctly only for HASH, will be enabled globally after fixing HZ-3012 and HZ-3013
-                check0(queryWithOrderByDesc, expectedUseIndex || c_sorted(), expectedKeysPredicate);
-            }
-        }
+        check0(queryWithOrderBy, expectedUseIndex || c_sorted(), expectedKeysPredicate);
+        check0(queryWithOrderByDesc, expectedUseIndex || c_sorted(), expectedKeysPredicate);
     }
 
     private void check0(Query query, boolean expectedUseIndex, Predicate<ExpressionValue> expectedKeysPredicate) {
