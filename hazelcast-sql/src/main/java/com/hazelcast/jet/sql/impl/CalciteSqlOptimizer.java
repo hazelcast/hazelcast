@@ -167,6 +167,7 @@ import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.schema;
 import static java.lang.String.format;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -341,8 +342,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         // TODO [sasha] : refactor this.
         SqlNode node = parseResult.getNode();
         boolean analyze = false;
-        Map<String, String> analyzeOptions;
+        Map<String, String> analyzeOptions = emptyMap();
         if (node instanceof SqlAnalyzeStatement) {
+            analyze = true;
             final SqlAnalyzeStatement analyzeStatement = (SqlAnalyzeStatement) node;
             analyzeOptions = analyzeStatement.options();
             node = analyzeStatement.getQuery();
@@ -392,7 +394,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     convertResult.getFieldNames(),
                     context,
                     false,
-                    task.getSql());
+                    task.getSql(),
+                    analyze,
+                    analyzeOptions
+            );
         }
     }
 
@@ -482,7 +487,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 dmlConvertedResult.getFieldNames(),
                 context,
                 true,
-                query);
+                query,
+                false,
+                emptyMap()
+        );
         assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
 
         return new CreateJobPlan(
@@ -586,7 +594,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
     }
 
-    @SuppressWarnings("checkstyle:ReturnCount")
+    @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:ParameterNumber"})
     private SqlPlanImpl toPlan(
             PlanKey planKey,
             QueryParameterMetadata parameterMetadata,
@@ -594,7 +602,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             List<String> fieldNames,
             OptimizerContext context,
             boolean isCreateJob,
-            String query
+            String query,
+            final boolean analyze,
+            final Map<String, String> analyzeOptions
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
 
@@ -745,7 +755,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     rowMetadata,
                     planExecutor,
                     permissions,
-                    partitionStrategyCandidates(physicalRel, parameterMetadata)
+                    partitionStrategyCandidates(physicalRel, parameterMetadata),
+                    analyze,
+                    analyzeOptions
             );
         }
     }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -25,9 +24,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class AnalyzeStatementTest extends SqlTestSupport {
+public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     @BeforeClass
     public static void beforeClass() {
         initialize(1, null);
@@ -36,7 +39,12 @@ public class AnalyzeStatementTest extends SqlTestSupport {
     @Test
     public void test_select() {
         createMapping("test", Long.class, String.class);
-        instance().getSql().execute("INSERT INTO test VALUES (1, 'testVal')");
-        assertRowsAnyOrder("ANALYZE SELECT * FROM test", rows(2, 1L, "testVal"));
+        assertFalse(assertQueryPlan("SELECT * FROM test").isAnalyzed());
+        assertTrue(assertQueryPlan("ANALYZE SELECT * FROM test").isAnalyzed());
+        final SqlPlanImpl.SelectPlan plan = assertQueryPlan("ANALYZE WITH OPTIONS('opt1'='opt1val', 'opt2'='opt2val') "
+                + "SELECT * FROM test");
+        assertTrue(plan.isAnalyzed());
+        assertEquals("opt1val", plan.getAnalyzeOptions().get("opt1"));
+        assertEquals("opt2val", plan.getAnalyzeOptions().get("opt2"));
     }
 }
