@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream;
 
 import com.hazelcast.internal.nio.IOUtil;
@@ -20,10 +36,10 @@ public class JoinIndexScanResultSetIterator<T> implements Iterator<T> {
     private final String sql;
     private final Function<ResultSet, T> rowMapper;
     private final Consumer<PreparedStatement> preparedStatementSetter;
-    boolean hasNext;
+    private boolean hasNext;
     private ResultSet resultSet;
     private PreparedStatement preparedStatement;
-    T nextItem;
+    private T nextItem;
 
     public JoinIndexScanResultSetIterator(Connection connection,
                                           String sql,

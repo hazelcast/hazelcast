@@ -93,8 +93,8 @@ public class JdbcJoinIndexScanProcessorSupplier
         JoinIndexScanResultSetIterator<JetSqlRow> iterator = new JoinIndexScanResultSetIterator<>(
                 dataConnection.getConnection(),
                 unionAllSql,
-                new JoinIndexScanRowMapper(expressionEvalContext,projections,joinInfo,leftRowsList),
-                new PreparedStatementSetter(joinInfo,leftRowsList)
+                new JoinIndexScanRowMapper(expressionEvalContext, projections, joinInfo, leftRowsList),
+                new PreparedStatementSetter(joinInfo, leftRowsList)
         );
         Spliterator<JetSqlRow> spliterator = Spliterators.spliteratorUnknownSize(iterator,
                 Spliterator.IMMUTABLE | Spliterator.ORDERED);
