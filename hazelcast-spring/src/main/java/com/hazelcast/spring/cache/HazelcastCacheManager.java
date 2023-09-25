@@ -111,7 +111,7 @@ public class HazelcastCacheManager implements CacheManager {
     }
 
     private void parseOptions(String options) {
-        if (StringUtil.isNullOrEmpty(options)) {
+        if (StringUtil.isNullOrEmptyAfterTrim(options)) {
             return;
         }
         for (String option : options.split(",")) {
