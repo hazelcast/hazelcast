@@ -112,6 +112,7 @@ public interface MutationObserver<R extends Record> {
      *                         is called during shutdown, otherwise {@code false}
      * @param internal         is only data bound
      *                         to the {@link MapService} being destroyed
+     * @param onSplitBrainHeal
      */
-    void onDestroy(boolean isDuringShutdown, boolean internal);
+    void onDestroy(boolean isDuringShutdown, boolean internal, boolean onSplitBrainHeal);
 }

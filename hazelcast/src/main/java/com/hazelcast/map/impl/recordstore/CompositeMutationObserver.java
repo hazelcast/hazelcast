@@ -172,11 +172,11 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
     }
 
     @Override
-    public void onDestroy(boolean isDuringShutdown, boolean internal) {
+    public void onDestroy(boolean isDuringShutdown, boolean internal, boolean onSplitBrainHeal) {
         Throwable throwable = null;
         for (int i = 0; i < mutationObservers.size(); i++) {
             try {
-                mutationObservers.get(i).onDestroy(isDuringShutdown, internal);
+                mutationObservers.get(i).onDestroy(isDuringShutdown, internal, onSplitBrainHeal);
             } catch (Throwable t) {
                 if (throwable == null) {
                     throwable = t;

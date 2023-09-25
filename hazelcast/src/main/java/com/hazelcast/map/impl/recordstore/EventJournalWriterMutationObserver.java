@@ -74,7 +74,7 @@ public class EventJournalWriterMutationObserver implements MutationObserver {
     }
 
     @Override
-    public void onDestroy(boolean isDuringShutdown, boolean internal) {
+    public void onDestroy(boolean isDuringShutdown, boolean internal, boolean onSplitBrainHeal) {
         if (!internal) {
             eventJournal.destroy(objectNamespace, partitionId);
         }

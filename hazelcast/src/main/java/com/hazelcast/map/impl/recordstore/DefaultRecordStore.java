@@ -1078,8 +1078,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     @SuppressWarnings("unchecked")
     public MapMergeResponse merge(MapMergeTypes<Object, Object> mergingEntry,
-                               SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
-                               CallerProvenance provenance) {
+                                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
+                                  CallerProvenance provenance) {
         checkIfLoaded();
         long now = getNow();
 
@@ -1528,13 +1528,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         if (onShutdown) {
             if (hasPooledMemoryAllocator()) {
-                destroyStorageImmediate(true, true);
+                destroyStorageImmediate(true, true, false);
             } else {
-                destroyStorageAfterClear(true, true);
+                destroyStorageAfterClear(true, true, false);
             }
         } else {
             if (onStorageDestroy) {
-                destroyStorageAfterClear(false, false);
+                destroyStorageAfterClear(false, false, false);
             } else {
                 clearStorage(false);
             }
@@ -1547,8 +1547,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() == POOLED;
     }
 
-    public void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
-        mutationObserver.onDestroy(isDuringShutdown, internal);
+    public void destroyStorageImmediate(boolean isDuringShutdown,
+                                        boolean internal, boolean onSplitBrainHeal) {
+        mutationObserver.onDestroy(isDuringShutdown, internal, onSplitBrainHeal);
         expirySystem.destroy();
         destroyMetadataStore();
         // Destroy storage in the end
@@ -1557,15 +1558,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     /**
      * Calls also {@link #clearStorage(boolean)} to release allocated HD memory
-     * of key+value pairs because {@link #destroyStorageImmediate(boolean, boolean)}
+     * of key+value pairs because
      * only releases internal resources of backing data structure.
      *
      * @param isDuringShutdown {@link Storage#clear(boolean)}
-     * @param internal         see {@link MutationObserver#onDestroy(boolean, boolean)}}
+     * @param internal         see {@link MutationObserver#onDestroy(boolean, boolean, boolean)}}
+     * @param onSplitBrainHeal {@code true} if this method is called on heal of split-brain
      */
-    public void destroyStorageAfterClear(boolean isDuringShutdown, boolean internal) {
+    public void destroyStorageAfterClear(boolean isDuringShutdown, boolean internal, boolean onSplitBrainHeal) {
         clearStorage(isDuringShutdown);
-        destroyStorageImmediate(isDuringShutdown, internal);
+        destroyStorageImmediate(isDuringShutdown, internal, onSplitBrainHeal);
     }
 
     private void clearStorage(boolean isDuringShutdown) {

@@ -92,7 +92,7 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
     }
 
     @Override
-    public void onDestroy(boolean isDuringShutdown, boolean internal) {
+    public void onDestroy(boolean isDuringShutdown, boolean internal, boolean onSplitBrainHeal) {
         metadataStore.clear();
     }
 

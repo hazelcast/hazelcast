@@ -64,9 +64,14 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
     protected void onStoreCollection(RecordStore recordStore) {
         assertRunningOnPartitionThread();
 
-        DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
-        defaultRecordStore.getMapDataStore().reset();
-        defaultRecordStore.getIndexingObserver().onDestroy(false, true);
+        recordStore.beforeOperation();
+        try {
+            DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
+            defaultRecordStore.getMapDataStore().reset();
+            defaultRecordStore.getIndexingObserver().onDestroy(false, true, false);
+        } finally {
+            recordStore.afterOperation();
+        }
 
         // Removal of old mapContainer is required not to leak old
         // state into merged cluster. An example old state that we
@@ -129,10 +134,15 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
                     store.getName(), store.getPartitionId(), store.size()));
         }
 
-        if (store.getMapContainer().getMapConfig().getTieredStoreConfig().isEnabled()) {
-            ((DefaultRecordStore) store).destroyStorageImmediate(false, true);
-        } else {
-            ((DefaultRecordStore) store).destroyStorageAfterClear(false, true);
+        store.beforeOperation();
+        try {
+            if (store.getMapContainer().getMapConfig().getTieredStoreConfig().isEnabled()) {
+                ((DefaultRecordStore) store).destroyStorageImmediate(false, true, true);
+            } else {
+                ((DefaultRecordStore) store).destroyStorageAfterClear(false, true, true);
+            }
+        } finally {
+            store.afterOperation();
         }
     }
 
