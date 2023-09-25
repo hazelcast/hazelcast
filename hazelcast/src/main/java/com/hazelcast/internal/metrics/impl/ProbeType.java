@@ -50,7 +50,7 @@ enum ProbeType {
     /** The type(s) the {@link Probe} could be attached to */
     private final Class<?>[] types;
 
-    private ProbeType(final Class<?> mapsTo, final Class<?>... types) {
+    ProbeType(final Class<?> mapsTo, final Class<?>... types) {
         this.mapsTo = mapsTo;
         this.types = types;
     }
