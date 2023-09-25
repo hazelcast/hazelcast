@@ -83,13 +83,13 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
         }
         return nextItem;
     }
-    private void lazyInit() throws SQLException {
+    void lazyInit() throws SQLException {
         if (preparedStatement == null) {
             preparedStatement = connection.prepareStatement(sql);
             resultSet = preparedStatement.executeQuery();
         }
     }
-    private void close() {
+    void close() {
         LOGGER.info("Close is called");
         IOUtil.closeResource(resultSet);
         resultSet = null;
@@ -98,7 +98,7 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
         IOUtil.closeResource(connection);
         connection = null;
     }
-    private boolean getNextItemFromRowMapper() throws SQLException {
+    boolean getNextItemFromRowMapper() throws SQLException {
         boolean result = false;
         while (resultSet.next()) {
             nextItem = rowMapper.apply(resultSet);
