@@ -42,7 +42,10 @@ public class DagBuildContextImpl implements DagBuildContext {
     private Table table;
     private PhysicalRel rel;
 
-    public DagBuildContextImpl(NodeEngine nodeEngine, DAG dag, QueryParameterMetadata parameterMetadata) {
+    public DagBuildContextImpl(
+            NodeEngine nodeEngine,
+            DAG dag,
+            QueryParameterMetadata parameterMetadata) {
         this.nodeEngine = requireNonNull(nodeEngine);
         this.dag = requireNonNull(dag);
         this.parameterMetadata = parameterMetadata;

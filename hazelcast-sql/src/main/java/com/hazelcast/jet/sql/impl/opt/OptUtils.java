@@ -324,8 +324,7 @@ public final class OptUtils {
 
     public static RexVisitor<Expression<?>> createRexToExpressionVisitor(
             PlanNodeFieldTypeProvider schema,
-            QueryParameterMetadata parameterMetadata
-    ) {
+            QueryParameterMetadata parameterMetadata) {
         return new RexToExpressionVisitor(schema, parameterMetadata);
     }
 

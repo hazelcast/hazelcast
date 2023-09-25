@@ -41,6 +41,7 @@ import javax.annotation.Nullable;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
 import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
 
@@ -254,7 +255,7 @@ public final class MongoSourceBuilder {
          */
         @Nonnull
         public SELF project(@Nonnull Bson projection) {
-            params.addAggregate(Aggregates.project(projection).toBsonDocument());
+            params.setProjection(bsonToDocument(Aggregates.project(projection)));
             return (SELF) this;
         }
 
@@ -273,7 +274,7 @@ public final class MongoSourceBuilder {
          */
         @Nonnull
         public SELF sort(@Nonnull Bson sort) {
-            params.addAggregate(Aggregates.sort(sort).toBsonDocument());
+            params.setSort(bsonToDocument(Aggregates.sort(sort)));
             return (SELF) this;
         }
 
@@ -295,7 +296,7 @@ public final class MongoSourceBuilder {
         @Nonnull
         public SELF filter(@Nonnull Bson filter) {
             checkNotNull(filter, "filter argument cannot be null");
-            params.addAggregate(Aggregates.match(filter).toBsonDocument());
+            params.setFilter(bsonToDocument(Aggregates.match(filter)));
             return (SELF) this;
         }
     }

@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
+import com.hazelcast.jet.mongodb.impl.ReadMongoParams.Aggregates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -45,6 +46,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonDateTimeToLocalDateTime;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonTimestampToLocalDateTime;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
@@ -120,19 +122,19 @@ public class SelectProcessorSupplier extends MongoProcessorSupplier implements D
     @Nonnull
     @Override
     public Collection<? extends Processor> get(int count) {
-        ArrayList<Bson> aggregates = new ArrayList<>();
+        Aggregates aggregates = new Aggregates();
 
         if (this.predicate != null) {
             Bson filterWithParams = PlaceholderReplacer.replacePlaceholders(predicate, evalContext, (Object[]) null,
                     externalNames, false);
-            aggregates.add(match(filterWithParams.toBsonDocument()));
+            aggregates.setFilter(bsonToDocument(match(filterWithParams.toBsonDocument())));
         }
         Bson proj = fields(projection.stream().map(p -> p.projectionExpr).collect(toList()));
         List<String> projectedNames = projection.stream().map(p -> p.externalName).collect(toList());
         if (!projectedNames.contains("_id") && !stream) {
-            aggregates.add(project(fields(excludeId(), proj)));
+            aggregates.setProjection(bsonToDocument(project(fields(excludeId(), proj))));
         } else {
-            aggregates.add(project(proj));
+            aggregates.setProjection(bsonToDocument(project(proj)));
         }
 
         List<Processor> processors = new ArrayList<>();
