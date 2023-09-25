@@ -41,7 +41,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 
 import static com.hazelcast.internal.nio.Bits.BOOLEAN_SIZE_IN_BYTES;

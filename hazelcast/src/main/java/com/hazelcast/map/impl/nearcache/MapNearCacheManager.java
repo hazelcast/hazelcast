@@ -40,7 +40,6 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
