@@ -116,7 +116,7 @@ public final class IndexUtils {
         // Construct final index.
         String name = config.getName();
 
-        if (StringUtil.isNullOrEmpty(name)) {
+        if (StringUtil.isNullOrEmptyAfterTrim(name)) {
             name = null;
         }
 
