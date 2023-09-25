@@ -32,9 +32,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAccumulator;
 import java.util.concurrent.atomic.LongAdder;
 
-/**
- * Utility functions for probes.
- */
 enum ProbeType {
     TYPE_LONG_PRIMITIVE(long.class, byte.class, short.class, int.class, long.class),
     TYPE_LONG_NUMBER(long.class, Byte.class, Integer.class, Short.class, Long.class, AtomicInteger.class, AtomicLong.class,
