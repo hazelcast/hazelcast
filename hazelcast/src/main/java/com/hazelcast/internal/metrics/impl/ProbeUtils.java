@@ -24,7 +24,7 @@ import java.util.Collection;
 class ProbeUtils {
     private ProbeUtils() {
     }
-    
+
     static void flatten(final Class<?> clazz, final Collection<Class<?>> result) {
         result.add(clazz);
 
