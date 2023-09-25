@@ -31,7 +31,8 @@ public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerE
 
     public SqlSTSInnerNonEquiJoinFaultToleranceStressTest() {
         super();
-        this.sinkCount = 200;
+        this.sinkCount = 150;
+        this.eventsToProcess = eventsPerSink * sinkCount;
     }
 
     @Override
@@ -41,7 +42,7 @@ public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerE
         lastItemId = eventsToProcess;
         return "CREATE JOB " + JOB_NAME +
                 " OPTIONS (" +
-                " 'processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '1000') " +
+                " 'processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '500') " +
                 " AS SINK INTO " + sinkTopic +
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s2.__key " +
                 " BETWEEN s1.__key AND s1.__key + 1" +
