@@ -33,9 +33,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -110,38 +107,6 @@ abstract class AbstractJoinProcessorSupplier
         query = in.readString();
         joinInfo = in.readObject();
         projections = in.readObject();
-    }
-
-    protected void createExtendedRowIfNecessary(JetSqlRow leftRow, List<JetSqlRow> jetSqlRows) {
-        if (!joinInfo.isInner()) {
-            // This is not an inner join, so return a null padded JetSqlRow
-            JetSqlRow extendedRow = leftRow.extendedRow(projections.size());
-            jetSqlRows.add(extendedRow);
-        }
-    }
-
-    protected static Object[] createValueArray(ResultSet resultSet) throws SQLException {
-        ResultSetMetaData metaData = resultSet.getMetaData();
-        int columnCount = metaData.getColumnCount();
-        return new Object[columnCount];
-    }
-
-    protected static Object[] createValueArrayExcludingQueryNumber(ResultSet resultSet) throws SQLException {
-        ResultSetMetaData metaData = resultSet.getMetaData();
-        int columnCount = metaData.getColumnCount();
-        return new Object[columnCount - 1];
-    }
-
-    protected static int getQueryNumberColumnIndex(ResultSet resultSet) throws SQLException {
-        ResultSetMetaData metaData = resultSet.getMetaData();
-        return metaData.getColumnCount();
-    }
-
-    protected static void fillValueArray(ResultSet resultSet, Object[] values) throws SQLException {
-        for (int index = 0; index < values.length; index++) {
-            // TODO we need to use mechanism similar (or maybe the same) to valueGetters in SelectProcessorSupplier
-            values[index] = resultSet.getObject(index + 1);
-        }
     }
 
 }

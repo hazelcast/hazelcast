@@ -17,8 +17,11 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream.JoinIndexScanResultSetIterator;
+import com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream.JoinIndexScanRowMapper;
+import com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream.PreparedStatementSetter;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -26,21 +29,14 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.lang.NonNull;
 
 import javax.annotation.Nonnull;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static com.hazelcast.jet.Traversers.traverseIterable;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 /**
  * This class retrieves the right-side data for a Join operation.
@@ -73,9 +69,9 @@ public class JdbcJoinIndexScanProcessorSupplier
         List<JetSqlRow> leftRowsList = convertIterableToArrayList(leftRows);
         String unionAllSql = generateSql(leftRowsList);
 
-        List<JetSqlRow> resultRows = joinUnionAll(leftRowsList, unionAllSql);
+        Stream<JetSqlRow> stream = joinUnionAll(leftRowsList, unionAllSql);
 
-        return traverseIterable(resultRows);
+        return Traversers.traverseStream(stream);
     }
 
     private <T> ArrayList<T> convertIterableToArrayList(Iterable<T> iterable) {
@@ -93,115 +89,15 @@ public class JdbcJoinIndexScanProcessorSupplier
         return sql;
     }
 
-    private List<JetSqlRow> joinUnionAll(List<JetSqlRow> leftRowsList, String unionAllSql) {
-        List<JetSqlRow> resultRows = new ArrayList<>();
-
-        // Index scan : Set the parameters to PreparedStatement and iterate over the ResulSet
-        try (Connection connection = dataConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(unionAllSql)) {
-
-            setObjectsToPreparedStatement(preparedStatement, leftRowsList);
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-
-                Object[] values = createValueArrayExcludingQueryNumber(resultSet);
-                int queryNumberColumnIndex = getQueryNumberColumnIndex(resultSet);
-
-                iterateLeftRows(leftRowsList, resultRows, resultSet, values, queryNumberColumnIndex);
-            }
-        } catch (SQLException e) {
-            rethrow(e);
-        }
-        return resultRows;
+    private Stream<JetSqlRow> joinUnionAll(List<JetSqlRow> leftRowsList, String unionAllSql) {
+        JoinIndexScanResultSetIterator<JetSqlRow> iterator = new JoinIndexScanResultSetIterator<>(
+                dataConnection.getConnection(),
+                unionAllSql,
+                new JoinIndexScanRowMapper(expressionEvalContext,projections,joinInfo,leftRowsList),
+                new PreparedStatementSetter(joinInfo,leftRowsList)
+        );
+        Spliterator<JetSqlRow> spliterator = Spliterators.spliteratorUnknownSize(iterator,
+                Spliterator.IMMUTABLE | Spliterator.ORDERED);
+        return StreamSupport.stream(spliterator, false);
     }
-
-    private void setObjectsToPreparedStatement(PreparedStatement preparedStatement,
-                                               List<JetSqlRow> leftRowsList)
-            throws SQLException {
-        int[] leftEquiJoinIndices = joinInfo.leftEquiJoinIndices();
-
-        // PreparedStatement parameter index starts from 1
-        int parameterIndex = 1;
-
-        // leftRow contains all left table columns used in the select statement
-        // leftEquiJoinIndices contains index of columns used in the JOIN clause
-        for (JetSqlRow leftRow : leftRowsList) {
-            for (int leftEquiJoinIndexValue : leftEquiJoinIndices) {
-                Object value = leftRow.get(leftEquiJoinIndexValue);
-                preparedStatement.setObject(parameterIndex++, value);
-            }
-        }
-    }
-
-    private void iterateLeftRows(
-            List<JetSqlRow> leftRowsList,
-            List<JetSqlRow> resultRows,
-            ResultSet resultSet,
-            Object[] values,
-            int queryNumberColumnIndex) throws SQLException {
-
-        Set<Integer> processedQueryNumbers = new HashSet<>();
-
-        boolean moveResultSetForward = true;
-        boolean hasNext = false;
-        for (int leftRowIndex = 0; leftRowIndex < leftRowsList.size(); leftRowIndex++) {
-            JetSqlRow leftRow = leftRowsList.get(leftRowIndex);
-            if (moveResultSetForward) {
-                hasNext = resultSet.next();
-            }
-            if (!hasNext) {
-                createExtendedRowIfNecessary(leftRow, resultRows);
-                moveResultSetForward = false;
-                continue;
-            }
-            do {
-                fillValueArray(resultSet, values);
-                int queryNumberFromResultSet = resultSet.getInt(queryNumberColumnIndex);
-                // We have arrived to new query result
-                if (leftRowIndex != queryNumberFromResultSet) {
-                    // No need to move the ResultSet forward
-                    moveResultSetForward = false;
-                    processMismatchingQueryNumber(resultRows, processedQueryNumbers, leftRowIndex, leftRow);
-                } else {
-                    moveResultSetForward = true;
-                    processMatchingQueryNumber(resultRows, values,
-                            processedQueryNumbers, leftRowIndex, leftRow);
-                }
-            } while (moveResultSetForward && (hasNext = resultSet.next()));
-        }
-    }
-
-    // Called when leftRowIndex is behind the query number or changing to a new query number
-
-    private void processMismatchingQueryNumber(List<JetSqlRow> resultRows,
-                                               Set<Integer> processedQueryNumbers,
-                                               int leftRowIndex,
-                                               JetSqlRow leftRow) {
-        // Check if we have processed this leftRow before
-        if (!processedQueryNumbers.contains(leftRowIndex)) {
-            createExtendedRowIfNecessary(leftRow, resultRows);
-            processedQueryNumbers.add(leftRowIndex);
-        }
-    }
-
-    private void processMatchingQueryNumber(List<JetSqlRow> resultRows,
-                                            Object[] values,
-                                            Set<Integer> processedQueryNumbers,
-                                            int leftRowIndex,
-                                            JetSqlRow leftRow) {
-        // Join the leftRow with the row from DB
-        JetSqlRow jetSqlRowFromDB = new JetSqlRow(expressionEvalContext.getSerializationService(), values);
-        JetSqlRow joinedRow = ExpressionUtil.join(leftRow, jetSqlRowFromDB, joinInfo.nonEquiCondition(),
-                expressionEvalContext);
-        if (joinedRow != null) {
-            // The DB row evaluated as true
-            resultRows.add(joinedRow);
-        } else {
-            // TODO no check for if (!joinInfo.isInner())?
-            // The DB row evaluated as false
-            createExtendedRowIfNecessary(leftRow, resultRows);
-        }
-        processedQueryNumbers.add(leftRowIndex);
-    }
-
 }
