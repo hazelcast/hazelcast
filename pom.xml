@@ -36,6 +36,7 @@
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
+        <module>hazelcast-rest-spring</module>
     </modules>
 
     <properties>
