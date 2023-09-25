@@ -73,8 +73,10 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     public ExpressionEvalContextImpl clone(HazelcastInstance hz, InternalSerializationService ss) {
         if (contextRef != null) {
             return new ExpressionEvalContextImpl(contextRef, arguments, ss, Util.getNodeEngine(hz));
-        } else {
+        } else if (ssc != null) {
             return new ExpressionEvalContextImpl(arguments, ss, Util.getNodeEngine(hz), ssc);
+        } else {
+            throw new AssertionError("At least one security context must be available");
         }
     }
 
