@@ -307,7 +307,7 @@ public final class ExecutionPlanBuilder {
         List<EdgeDef> list = new ArrayList<>(edges.size());
         for (Edge edge : edges) {
             list.add(new EdgeDef(edge, edge.getConfig() == null ? defaultEdgeConfig : edge.getConfig(),
-                    oppositeVtxId.apply(edge), isJobDistributed));
+                    oppositeVtxId.applyAsInt(edge), isJobDistributed));
         }
         return list;
     }

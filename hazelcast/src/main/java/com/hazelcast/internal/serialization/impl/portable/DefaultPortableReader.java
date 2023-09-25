@@ -390,7 +390,7 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Nullable
-    private <T> T[] readObjectArrayField(@Nonnull String fieldName, FieldType fieldType, IntFunction<Integer> constructor,
+    private <T> T[] readObjectArrayField(@Nonnull String fieldName, FieldType fieldType, IntFunction<T[]> constructor,
                                          Reader<ObjectDataInput, T> reader) throws IOException {
         int currentPos = in.position();
         try {

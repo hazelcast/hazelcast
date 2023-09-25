@@ -549,7 +549,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord impleme
         INTERNAL_GENERIC_RECORD
     }
 
-    private <T> T[] readNestedArray(@Nonnull String fieldName, IntFunction<Integer> constructor,
+    private <T> T[] readNestedArray(@Nonnull String fieldName, IntFunction<T[]> constructor,
                                     PortableReadMethod readMethod) {
         int currentPos = in.position();
         try {

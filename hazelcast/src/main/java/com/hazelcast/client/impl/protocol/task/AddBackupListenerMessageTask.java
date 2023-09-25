@@ -59,7 +59,7 @@ public class AddBackupListenerMessageTask
     }
 
     @Override
-    public void accept(Long backupCorrelationId) {
+    public void accept(long backupCorrelationId) {
         ClientMessage eventMessage = ClientLocalBackupListenerCodec.encodeBackupEvent(backupCorrelationId);
         eventMessage.getStartFrame().flags |= ClientMessage.BACKUP_EVENT_FLAG;
         sendClientMessage(eventMessage);
