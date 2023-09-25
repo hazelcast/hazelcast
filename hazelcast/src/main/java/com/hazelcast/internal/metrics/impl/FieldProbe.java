@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
+import static com.hazelcast.internal.metrics.impl.ProbeType.getType;
 import static java.lang.String.format;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
@@ -38,11 +38,11 @@ abstract class FieldProbe implements ProbeFunction {
 
     final CachedProbe probe;
     final Field field;
-    final ProbeUtils type;
+    final ProbeType type;
     final SourceMetadata sourceMetadata;
     final String probeName;
 
-    FieldProbe(Field field, Probe probe, ProbeUtils type, SourceMetadata sourceMetadata) {
+    FieldProbe(Field field, Probe probe, ProbeType type, SourceMetadata sourceMetadata) {
         this.field = field;
         this.probe = new CachedProbe(probe);
         this.type = type;
@@ -70,7 +70,7 @@ abstract class FieldProbe implements ProbeFunction {
     }
 
     static <S> FieldProbe createFieldProbe(Field field, Probe probe, SourceMetadata sourceMetadata) {
-        ProbeUtils type = getType(field.getType());
+        ProbeType type = getType(field.getType());
         if (type == null) {
             throw new IllegalArgumentException(format("@Probe field '%s' is of an unhandled type", field));
         }
@@ -86,7 +86,7 @@ abstract class FieldProbe implements ProbeFunction {
 
     static class LongFieldProbe<S> extends FieldProbe implements LongProbeFunction<S> {
 
-        LongFieldProbe(Field field, Probe probe, ProbeUtils type, SourceMetadata sourceMetadata) {
+        LongFieldProbe(Field field, Probe probe, ProbeType type, SourceMetadata sourceMetadata) {
             super(field, probe, type, sourceMetadata);
         }
 
@@ -118,7 +118,7 @@ abstract class FieldProbe implements ProbeFunction {
 
     static class DoubleFieldProbe<S> extends FieldProbe implements DoubleProbeFunction<S> {
 
-        DoubleFieldProbe(Field field, Probe probe, ProbeUtils type, SourceMetadata sourceMetadata) {
+        DoubleFieldProbe(Field field, Probe probe, ProbeType type, SourceMetadata sourceMetadata) {
             super(field, probe, type, sourceMetadata);
         }
 

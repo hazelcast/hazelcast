@@ -76,7 +76,6 @@ import javax.cache.processor.EntryProcessorException;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
-import javax.transaction.xa.XAException;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.NotSerializableException;
@@ -226,7 +225,6 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new UTFDataFormatException(randomString())},
                 new Object[]{new UnsupportedOperationException(randomString())},
                 new Object[]{new WrongTargetException(randomString())},
-                new Object[]{new XAException(randomString())},
                 new Object[]{new AccessControlException(randomString())},
                 new Object[]{new LoginException(randomString())},
                 new Object[]{
