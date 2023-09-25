@@ -52,7 +52,7 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
             @Nonnull NodeEngine nodeEngine,
-            @Nullable SqlSecurityContext ssc) {
+            @Nonnull SqlSecurityContext ssc) {
         this.arguments = requireNonNull(arguments);
         this.serializationService = requireNonNull(serializationService);
         this.nodeEngine = requireNonNull(nodeEngine);
