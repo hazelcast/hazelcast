@@ -31,7 +31,7 @@ import static java.util.Collections.sort;
  */
 public class SystemPropertiesPlugin extends DiagnosticsPlugin {
 
-    private static final String JVM_ARGS = "java.vm.args";
+    static final String JVM_ARGS = "java.vm.args";
 
     private final List keys = new ArrayList();
     private String inputArgs;
