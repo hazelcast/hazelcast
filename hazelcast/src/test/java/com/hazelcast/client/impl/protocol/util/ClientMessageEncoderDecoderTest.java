@@ -40,6 +40,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nullable;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -190,9 +191,14 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         members.add(new MemberImpl(address2, MemberVersion.of("3.12"), false, UUID.randomUUID()));
         UUID uuid = UUID.randomUUID();
         UUID clusterId = UUID.randomUUID();
+        List<Integer> tpcPorts = new ArrayList<>();
+        tpcPorts.add(701);
+        tpcPorts.add(702);
+        byte[] tpcToken = new byte[64];
+        new Random().nextBytes(tpcToken);
 
         ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
-                uuid, (byte) 1, "3.12", 271, clusterId, true);
+                uuid, (byte) 1, "3.12", 271, clusterId, true, tpcPorts, tpcToken);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 
@@ -231,6 +237,8 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(271, parameters.partitionCount);
         assertEquals(clusterId, parameters.clusterId);
         assertEquals(true, parameters.failoverSupported);
+        assertEquals(tpcPorts, parameters.tpcPorts);
+        assertEquals(tpcToken, parameters.tpcToken);
     }
 
     class EventHandler extends MapAddEntryListenerCodec.AbstractEventHandler {
