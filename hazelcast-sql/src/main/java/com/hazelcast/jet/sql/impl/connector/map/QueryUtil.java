@@ -42,6 +42,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -203,11 +204,18 @@ public final class QueryUtil {
 
         @Override
         public void setSerializationService(SerializationService serializationService) {
-            this.evalContext = new ExpressionEvalContextImpl(
-                    arguments,
-                    (InternalSerializationService) serializationService,
-                    Util.getNodeEngine(hzInstance));
+            if (evalContext == null) {
+                this.evalContext = new ExpressionEvalContextImpl(
+                        arguments,
+                        (InternalSerializationService) serializationService,
+                        Util.getNodeEngine(hzInstance),
+                        NoOpSqlSecurityContext.INSTANCE);
+            } else {
+                ExpressionEvalContextImpl eeci = (ExpressionEvalContextImpl) evalContext;
+                this.evalContext = eeci.clone(hzInstance, (InternalSerializationService) serializationService);
+            }
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
+
         }
 
         @Override

@@ -21,6 +21,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.bson.Document;
@@ -122,7 +123,11 @@ public class PlaceholderReplacerTest {
     }
 
     private ExpressionEvalContext evalContext(List<Object> arguments) {
-        return new ExpressionEvalContextImpl(arguments, getInternalSerializationService(), mock(NodeEngine.class));
+        return new ExpressionEvalContextImpl(
+                arguments,
+                getInternalSerializationService(),
+                mock(NodeEngine.class),
+                NoOpSqlSecurityContext.INSTANCE);
     }
 
     private static InternalSerializationService getInternalSerializationService() {

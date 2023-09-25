@@ -39,6 +39,7 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -69,21 +70,11 @@ public final class UpdatingEntryProcessor
     private UpdatingEntryProcessor(
             KvRowProjector.Supplier rowProjectorSupplier,
             Projector.Supplier valueProjectorSupplier,
-            List<Object> arguments) {
-        this.rowProjectorSupplier = rowProjectorSupplier;
-        this.valueProjectorSupplier = valueProjectorSupplier;
-        this.arguments = arguments;
-    }
-
-    private UpdatingEntryProcessor(
-            KvRowProjector.Supplier rowProjectorSupplier,
-            Projector.Supplier valueProjectorSupplier,
-            List<Object> arguments,
             ExpressionEvalContext evalContext) {
         this.rowProjectorSupplier = rowProjectorSupplier;
         this.valueProjectorSupplier = valueProjectorSupplier;
-        this.arguments = arguments;
         this.evalContext = evalContext;
+        this.arguments = evalContext.getArguments();
     }
 
     @Override
@@ -107,13 +98,18 @@ public final class UpdatingEntryProcessor
         this.hzInstance = hazelcastInstance;
     }
 
+    @SuppressWarnings("DuplicatedCode")
     @Override
     public void setSerializationService(SerializationService serializationService) {
-        if (this.evalContext == null) {
+        if (evalContext == null) {
             this.evalContext = new ExpressionEvalContextImpl(
                     arguments,
                     (InternalSerializationService) serializationService,
-                    Util.getNodeEngine(hzInstance));
+                    Util.getNodeEngine(hzInstance),
+                    NoOpSqlSecurityContext.INSTANCE);
+        } else {
+            ExpressionEvalContextImpl eeci = (ExpressionEvalContextImpl) evalContext;
+            this.evalContext = eeci.clone(hzInstance, (InternalSerializationService) serializationService);
         }
         this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
@@ -199,12 +195,8 @@ public final class UpdatingEntryProcessor
             this.valueProjectorSupplier = valueProjectorSupplier;
         }
 
-        public EntryProcessor<Object, Object, Long> get(List<Object> arguments) {
-            return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, arguments);
-        }
-
-        public EntryProcessor<Object, Object, Long> get(List<Object> arguments, ExpressionEvalContext eec) {
-            return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, arguments, eec);
+        public EntryProcessor<Object, Object, Long> get(ExpressionEvalContext eec) {
+            return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, eec);
         }
 
         @Override

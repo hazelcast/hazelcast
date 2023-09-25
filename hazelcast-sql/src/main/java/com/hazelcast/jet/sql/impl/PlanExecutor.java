@@ -668,7 +668,7 @@ public class PlanExecutor {
                 ssc);
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Long> future = hazelcastInstance.getMap(plan.mapName())
-                .submitToKey(key, plan.updaterSupplier().get(arguments, evalContext))
+                .submitToKey(key, plan.updaterSupplier().get(evalContext))
                 .toCompletableFuture();
         await(future, timeout);
         directIMapQueriesExecuted.getAndIncrement();

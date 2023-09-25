@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
@@ -67,7 +68,8 @@ public interface ExpressionEvalContext {
             return new ExpressionEvalContextImpl(
                     arguments,
                     new DefaultSerializationServiceBuilder().build(),
-                    Util.getNodeEngine(ctx.hazelcastInstance()));
+                    Util.getNodeEngine(ctx.hazelcastInstance()),
+                    NoOpSqlSecurityContext.INSTANCE);
         }
     }
 
