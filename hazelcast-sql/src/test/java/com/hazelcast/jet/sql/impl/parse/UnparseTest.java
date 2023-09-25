@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.parse;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -106,8 +107,8 @@ public class UnparseTest extends SqlTestSupport {
                 new SqlCatalog(emptyList()),
                 emptyList(),
                 emptyList(),
-                1,
-                name -> null
+                name -> null,
+                NoOpSqlSecurityContext.INSTANCE
         );
     }
 }

@@ -239,33 +239,7 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
-            throw new UnsupportedOperationException("Should not be called");
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
-            throw new UnsupportedOperationException("Should not be called");
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending) {
-            throw new UnsupportedOperationException("Should not be called");
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(
-            Comparable from,
-            boolean fromInclusive,
-            Comparable to,
-            boolean toInclusive,
-            boolean descending
-        ) {
-            throw new UnsupportedOperationException("Should not be called");
-        }
-
-        @Override
-        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending) {
             throw new UnsupportedOperationException("Should not be called");
         }
 

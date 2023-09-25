@@ -21,6 +21,9 @@ import java.sql.SQLException;
 import java.util.Locale;
 
 public enum DatabaseDialect {
+
+    H2,
+
     POSTGRESQL,
 
     MYSQL,
@@ -35,6 +38,9 @@ public enum DatabaseDialect {
                                                      .trim();
 
         switch (databaseProductName) {
+            case "H2":
+                return H2;
+
             case "POSTGRESQL":
                 return POSTGRESQL;
 

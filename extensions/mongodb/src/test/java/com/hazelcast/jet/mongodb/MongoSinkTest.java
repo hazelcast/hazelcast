@@ -51,6 +51,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
+import static com.hazelcast.jet.mongodb.ResourceChecks.NEVER;
 import static com.hazelcast.jet.mongodb.WriteMode.INSERT_ONLY;
 import static com.hazelcast.jet.mongodb.MongoSinks.builder;
 import static com.hazelcast.jet.mongodb.MongoSinks.mongodb;
@@ -157,7 +158,7 @@ public class MongoSinkTest extends AbstractMongoTest {
                 .withIngestionTimestamps()
                 .writeTo(builder(Doc.class, () -> createClient(connectionString))
                         .identifyDocumentBy("key", o -> o.key)
-                        .throwOnNonExisting(false)
+                        .checkResourceExistence(NEVER)
                         .into(i -> defaultDatabase, i -> "col_" + (i.key % 2))
                         .withCustomReplaceOptions(opt -> opt.upsert(true))
                         .writeMode(INSERT_ONLY)

@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -110,35 +110,14 @@ public class StoreWorkerConcurrentUpdateTest extends HazelcastTestSupport {
         }
     }
 
-    private static final class DummyMapInterceptor implements MapInterceptor {
-
-        @Override
-        public Object interceptGet(Object value) {
-            return null;
-        }
-
-        @Override
-        public void afterGet(Object value) {
-        }
+    private static final class DummyMapInterceptor extends MapInterceptorAdaptor {
+        private static final long serialVersionUID = 1L;
 
         @Override
         public Object interceptPut(Object oldValue, Object newValue) {
             /* Return non-null to make sure a plain object (rather than the
                serialized version) will be stored in the write behind queue. */
             return newValue;
-        }
-
-        @Override
-        public void afterPut(Object value) {
-        }
-
-        @Override
-        public Object interceptRemove(Object removedValue) {
-            return null;
-        }
-
-        @Override
-        public void afterRemove(Object oldValue) {
         }
     }
 

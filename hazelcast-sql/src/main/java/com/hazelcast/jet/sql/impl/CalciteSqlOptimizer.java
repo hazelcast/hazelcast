@@ -316,8 +316,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSchema(),
                 task.getSearchPaths(),
                 task.getArguments(),
-                memberCount,
-                iMapResolver);
+                iMapResolver,
+                task.getSecurityContext());
 
         try {
             OptimizerContext.setThreadContext(context);
@@ -964,6 +964,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);
         final Map<String, List<Map<String, RexNode>>> prunabilityMap = query.extractPrunability(root);
 
+        // Note: by the idea, it's safe to use non-secure context here (it is used by ourself).
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
 
         final Map<String, List<Map<String, Expression<?>>>> result = new HashMap<>();

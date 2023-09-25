@@ -58,9 +58,13 @@ public class JdbcDataConnection extends DataConnectionBase {
 
     public static final String OBJECT_TYPE_TABLE = "Table";
 
-    private static final List<String> MYSQL_SYSTEM_SCHEMA_LIST = List.of("SYS");
+    private static final List<String> H2_SYSTEM_SCHEMA_LIST = List.of("INFORMATION_SCHEMA");
+
+    private static final List<String> MYSQL_SYSTEM_CATALOG_LIST = List.of("SYS");
+
     private static final List<String> MSSQL_SYSTEM_SCHEMA_LIST = List.of("sys", "INFORMATION_SCHEMA");
-    private static final List<String> MSSQL_SYSTEM_TABLE_LIST = List.of("spt_", "MSreplication_options");
+    private static final List<String> MSSQL_SYSTEM_TABLE_LIST = List.of("MSreplication_options", "spt_fallback_db",
+            "spt_fallback_dev", "spt_fallback_usg", "spt_monitor", "spt_values");
 
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
     private volatile ConcurrentMemoizingSupplier<HikariDataSource> pooledDataSourceSup;
@@ -129,6 +133,14 @@ public class JdbcDataConnection extends DataConnectionBase {
 
                 ResourceReader reader = new ResourceReader();
                 switch (resolveDialect(databaseMetaData)) {
+                    case H2:
+                        reader.withCatalog(connection.getCatalog())
+                                .exclude(
+                                        (catalog, schema, table) ->
+                                                H2_SYSTEM_SCHEMA_LIST.contains(schema)
+                                );
+                        break;
+
                     case POSTGRESQL:
                         reader.withCatalog(connection.getCatalog());
                         break;
@@ -136,7 +148,7 @@ public class JdbcDataConnection extends DataConnectionBase {
                     case MYSQL:
                         reader.exclude(
                                 (catalog, schema, table) ->
-                                        schema != null && MYSQL_SYSTEM_SCHEMA_LIST.contains(schema.toUpperCase(ROOT))
+                                        catalog != null && MYSQL_SYSTEM_CATALOG_LIST.contains(catalog.toUpperCase(ROOT))
                         );
                         break;
 
@@ -146,7 +158,7 @@ public class JdbcDataConnection extends DataConnectionBase {
                                 .exclude(
                                         (catalog, schema, table) ->
                                                 MSSQL_SYSTEM_SCHEMA_LIST.contains(schema)
-                                                        || MSSQL_SYSTEM_TABLE_LIST.contains(table)
+                                                || MSSQL_SYSTEM_TABLE_LIST.contains(table)
                                 );
                         break;
 

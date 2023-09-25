@@ -81,6 +81,7 @@ import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -99,6 +100,7 @@ import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
@@ -233,12 +235,20 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateIndexPlan plan) {
+        MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
+        if (!mapContainer.isGlobalIndexEnabled()) {
+            // for local indexes checking existence is more complicated
+            // and SQL cannot yet use local indexes
+            throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot create index \"" + plan.indexName()
+                    + "\" on the IMap \"" + plan.mapName() + "\" because it would not be global "
+                    + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
+                    + "\" is set to \"true\")");
+        }
+
         if (!plan.ifNotExists()) {
             // If `IF NOT EXISTS` isn't specified, we do a simple check for the existence of the index. This is not
             // OK if two clients concurrently try to create the index (they could both succeed), but covers the
             // common case. There's no atomic operation to create an index in IMDG, so it's not easy to implement.
-            MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
-
             if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {
                 throw QueryException.error("Can't create index: index '" + plan.indexName() + "' already exists");
             }
@@ -504,7 +514,11 @@ public class PlanExecutor {
         );
     }
 
-    SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
+    SqlResult execute(SelectPlan plan,
+                      QueryId queryId,
+                      List<Object> arguments,
+                      long timeout,
+                      @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
@@ -532,7 +546,8 @@ public class PlanExecutor {
         assert oldValue == null : oldValue;
         try {
             sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-            Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
+            Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig, ssc.subject());
+
             job.getFuture().whenComplete((r, t) -> {
                 // make sure the queryResultProducer is cleaned up after the job completes. This normally
                 // takes effect when the job fails before the QRP is removed by the RootResultConsumerSink
@@ -540,7 +555,8 @@ public class PlanExecutor {
                 if (t != null) {
                     int errorCode = findQueryExceptionCode(t);
                     String errorMessage = findQueryExceptionMessage(t);
-                    queryResultProducer.onError(QueryException.error(errorCode, "The Jet SQL job failed: " + errorMessage, t));
+                    queryResultProducer.onError(
+                            QueryException.error(errorCode, "The Jet SQL job failed: " + errorMessage, t));
                 }
             });
         } catch (Throwable e) {
@@ -556,7 +572,11 @@ public class PlanExecutor {
         );
     }
 
-    SqlResult execute(DmlPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
+    SqlResult execute(DmlPlan plan,
+                      QueryId queryId,
+                      List<Object> arguments,
+                      long timeout,
+                      @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
@@ -564,8 +584,9 @@ public class PlanExecutor {
                 .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows())
                 .setTimeoutMillis(timeout);
 
+        AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-        Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
+        Job job = jet.newLightJob(plan.getDag(), jobConfig, ssc.subject());
         job.join();
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);

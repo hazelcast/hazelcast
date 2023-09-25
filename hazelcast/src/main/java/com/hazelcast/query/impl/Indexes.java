@@ -29,19 +29,18 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterableUtil;
-import com.hazelcast.map.impl.recordstore.StepAwareStorage;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -191,7 +190,7 @@ public class Indexes {
         converterCache.invalidate(index);
 
         InternalIndex[] internalIndexes = indexesByName.values().toArray(EMPTY_INDEXES);
-        /**
+        /*
          * Sort indexes by creation timestamp. Some high-level
          * sub-systems like HD SQL optimizer may need the oldest index that has the most
          * chances to be completely constructed and being usable for queries.
@@ -249,15 +248,10 @@ public class Indexes {
         return indexes;
     }
 
-    public List<StepAwareStorage> getStepAwareStorages() {
-        List<StepAwareStorage> stepAwareStorages = new ArrayList<>();
-        for (InternalIndex index : indexes) {
-            StepAwareStorage saStorage = index.getStepAwareStorage();
-            if (saStorage != null) {
-                stepAwareStorages.add(saStorage);
-            }
+    public void getStepAwareStorages(Consumer<Step> stepCollector) {
+        for (int i = 0; i < indexes.length; i++) {
+            indexes[i].getStepAwareStorage().addAsHeadStep(stepCollector);
         }
-        return stepAwareStorages;
     }
 
     public String getMapName() {

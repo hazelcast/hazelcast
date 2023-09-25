@@ -30,7 +30,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENAB
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class GetDdlTest extends SqlTestSupport {
-    private static String LE = System.lineSeparator();
+    private static final String LE = System.lineSeparator();
 
     @BeforeClass
     public static void beforeClass() throws Exception {

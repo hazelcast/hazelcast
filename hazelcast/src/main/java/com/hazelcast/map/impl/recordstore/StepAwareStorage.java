@@ -18,24 +18,19 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 
-import java.util.List;
+import java.util.function.Consumer;
 
 /**
- * Interface for a storage-backend (e.g. B+tree or a record store)
- * that supports Steps infrastructure and injects Steps on IMap operation.
+ * Interface for a storage-backend (e.g. B+tree or a
+ * record store) that supports Steps infrastructure
+ * and injects a Step to an IMap operation.
  */
 public interface StepAwareStorage {
 
     /**
-     * Appends extra steps to the head of an operation's
-     * existing step chain in the provided order.
-     * <p>
-     * So after append, your 1st step from this new list
-     * will be the first step of the existing step chain,
-     * 2nd will be the 2nd and so on.
-     *
-     * @return list of steps to be appended to head of existing step chain
+     * Appends provided step to the head of step-chain.
+     * @param steps consumer which adds step to the head of step-chain.
      */
-    List<Step> headSteps();
+    void addAsHeadStep(Consumer<Step> steps);
 
 }

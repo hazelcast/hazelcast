@@ -24,6 +24,8 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
@@ -67,7 +69,7 @@ public class MapFetchKeysMessageTask extends AbstractMapPartitionMessageTask<Map
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new MapPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
