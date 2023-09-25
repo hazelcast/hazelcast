@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,4 +91,18 @@ public interface OperationQueue {
      * @return the total number of pending operations.
      */
     int size();
+
+    /**
+     * Polls a single item or null if no items available.
+     *
+     * @return the polled item or null.
+     */
+    Object poll();
+
+    /**
+     * Checks if the queue is empty.
+     *
+     * @return true when empty
+     */
+    boolean isEmpty();
 }

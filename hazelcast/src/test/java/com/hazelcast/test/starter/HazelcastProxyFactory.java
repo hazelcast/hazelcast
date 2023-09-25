@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.test.starter;
 
-import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.test.starter.constructor.EnumConstructor;
 import net.bytebuddy.ByteBuddy;
@@ -48,7 +47,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.nio.ClassLoaderUtil.getAllInterfaces;
-import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 import static com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader.DELEGATION_WHITE_LIST;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.ProxyPolicy.RETURN_SAME;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
@@ -76,12 +74,10 @@ public class HazelcastProxyFactory {
 
     // <Class toProxy, ClassLoader targetClassLoader> -> Class<?> proxy mapping for subclass proxies
     // java.lang.reflect.Proxy already maintains its own cache
-    private static final ConcurrentReferenceHashMap<ProxySource, Class<?>> PROXIES
-            = new ConcurrentReferenceHashMap<ProxySource, Class<?>>(16, STRONG, STRONG);
+    private static final Map<ProxySource, Class<?>> PROXIES = new ConcurrentHashMap<>();
 
     // <Class targetClass, ClassLoader targetClassLoader> -> ConstructorFunction<?>
-    private static final ConcurrentReferenceHashMap<Class<?>, ConstructorFunction<Object, Object>> CONSTRUCTORS
-            = new ConcurrentReferenceHashMap<Class<?>, ConstructorFunction<Object, Object>>(16, STRONG, STRONG);
+    private static final Map<Class<?>, ConstructorFunction<Object, Object>> CONSTRUCTORS = new ConcurrentHashMap<>();
 
     static {
         Map<String, Constructor<ConstructorFunction<Object, Object>>> notProxiedClasses
@@ -277,7 +273,7 @@ public class HazelcastProxyFactory {
 
     private static Object proxyWithSubclass(ClassLoader targetClassLoader, final Object delegate) {
         ProxySource proxySource = ProxySource.of(delegate.getClass(), targetClassLoader);
-        Class<?> targetClass = PROXIES.applyIfAbsent(proxySource,
+        Class<?> targetClass = PROXIES.computeIfAbsent(proxySource,
                 input -> new ByteBuddy().subclass(input.getToProxy(), AllAsPublicConstructorStrategy.INSTANCE)
                         .method(ElementMatchers.isDeclaredBy(input.getToProxy()))
                         .intercept(InvocationHandlerAdapter.of(new ProxyInvocationHandler(delegate)))
@@ -288,7 +284,7 @@ public class HazelcastProxyFactory {
     }
 
     private static Object construct(Class<?> clazz, Object delegate) {
-        ConstructorFunction<Object, Object> constructorFunction = CONSTRUCTORS.applyIfAbsent(clazz, input -> {
+        ConstructorFunction<Object, Object> constructorFunction = CONSTRUCTORS.computeIfAbsent(clazz, input -> {
             String className = input.getName();
             Constructor<ConstructorFunction<Object, Object>> constructor = NO_PROXYING_WHITELIST.get(className);
             if (constructor != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,8 +73,8 @@ public class HazelcastSqlParserTest {
 
         // then
         assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
-        assertThat(node.externalName()).isEqualTo("mapping_name");
-        assertThat(node.type()).isEqualTo("mapping_type");
+        assertThat(node.externalName()).containsExactly("mapping_name");
+        assertThat(node.connectorType()).isEqualTo("mapping_type");
         assertThat(node.columns().findFirst())
                 .isNotEmpty().get()
                 .extracting(column -> new Object[]{column.name(), column.type(), column.externalName()})
@@ -193,7 +193,25 @@ public class HazelcastSqlParserTest {
 
         // then
         assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
-        assertThat(node.externalName()).isEqualTo("external.mapping.name");
+        assertThat(node.externalName()).containsExactly("external.mapping.name");
+    }
+
+    @Test
+    public void test_createMappingWithExternalNameWithSchema() throws SqlParseException {
+        // given
+        String sql = "CREATE MAPPING "
+                + "mapping_name EXTERNAL NAME \"external.schema\".\"external.mapping.name\""
+                + "TYPE mapping_type";
+
+        // when
+        SqlCreateMapping node = (SqlCreateMapping) parse(sql);
+
+        // then
+        assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
+        assertThat(node.externalName()).containsExactly(
+                "external.schema",
+                "external.mapping.name"
+        );
     }
 
     @Test
@@ -208,7 +226,7 @@ public class HazelcastSqlParserTest {
 
         // then
         assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
-        assertThat(node.externalName()).isEqualTo("mapping_name");
+        assertThat(node.externalName()).containsExactly("mapping_name");
     }
 
     @Test

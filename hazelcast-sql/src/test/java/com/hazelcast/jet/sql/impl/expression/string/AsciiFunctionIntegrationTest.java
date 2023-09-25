@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.CharacterVal;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.StringVal;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.string.AsciiFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -91,7 +91,7 @@ public class AsciiFunctionIntegrationTest extends StringFunctionIntegrationTestS
     @Test
     public void testSerialization() {
         AsciiFunction original = AsciiFunction.create(ConstantExpression.create("1", VARCHAR));
-        AsciiFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_ASCII);
+        AsciiFunction restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_ASCII);
 
         checkEquals(original, restored, true);
     }

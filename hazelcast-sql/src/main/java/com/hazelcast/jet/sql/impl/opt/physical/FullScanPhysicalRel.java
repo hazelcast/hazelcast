@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,22 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.WatermarkPolicy;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
+import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -43,53 +48,49 @@ import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
 public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalScan {
 
-    /** See {@link CalciteSqlOptimizer#uniquifyScans}. */
+    /**
+     * See {@link CalciteSqlOptimizer#postOptimizationRewrites(PhysicalRel)}.
+     */
     private final int discriminator;
 
     FullScanPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            @Nullable Expression<?> lagExpression,
             int watermarkedColumnIndex,
             int discriminator
     ) {
-        super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
+        super(cluster, traitSet, table, lagExpression, watermarkedColumnIndex);
         this.discriminator = discriminator;
     }
 
     @Override
-    public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema schema = OptUtils.schema(getTable());
-
-        RexNode filter = getTable().unwrap(HazelcastTable.class).getFilter();
-
-        return filter(schema, filter, parameterMetadata);
+    public RexNode filter() {
+        return getTable().unwrap(HazelcastTable.class).getFilter();
     }
 
     @Override
-    public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema schema = OptUtils.schema(getTable());
-
-        HazelcastTable table = getTable().unwrap(HazelcastTable.class);
-
-        return project(schema, table.getProjects(), parameterMetadata);
+    public List<RexNode> projection() {
+        return getTable().unwrap(HazelcastTable.class).getProjects();
     }
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        List<QueryDataType> fieldTypes = toList(projection(parameterMetadata), Expression::getType);
+        List<QueryDataType> fieldTypes = toList(projection(), rexNode -> HazelcastTypeUtils.toHazelcastType(rexNode.getType()));
         return new PlanNodeSchema(fieldTypes);
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onFullScan(this);
     }
 
@@ -141,27 +142,82 @@ public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalSc
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
+        final HazelcastTable hazelcastTable = OptUtils.extractHazelcastTable(this);
+        final var candidates = OptUtils.metadataQuery(this).extractPrunability(this);
+        final boolean isPrunable = !candidates.isEmpty();
+        String partitioningKey = "";
+        String partitioningKeyValues = "";
+        if (hazelcastTable.getTarget() instanceof PartitionedMapTable && isPrunable) {
+            final PartitionedMapTable target = hazelcastTable.getTarget();
+            final List<Integer> fieldIndexes = target.partitioningAttributes().isEmpty() ?
+                    target.keyFields()
+                            .map(f -> target.getFieldIndex(f.getName()))
+                            .collect(Collectors.toList())
+                    : target.keyFields()
+                            .filter(kf -> target.partitioningAttributes().contains(kf.getPath().getPath()))
+                            .map(TableField::getName)
+                            .map(target::getFieldIndex)
+                            .collect(Collectors.toList());
+
+            partitioningKey = fieldIndexes.stream()
+                    .map(index -> "$" + index)
+                    .collect(Collectors.joining(", "));
+
+            final List<String> fieldNames = fieldIndexes.stream()
+                    .map(fieldIndex -> (TableField) target.getField(fieldIndex))
+                    .map(TableField::getName)
+                    .collect(Collectors.toList());
+
+            partitioningKeyValues = candidates.get(target.getSqlName()).stream()
+                    .map(candidate -> fieldNames.stream()
+                            .map(candidate::get)
+                            .filter(Objects::nonNull)
+                            .map(RexNode::toString)
+                            .collect(Collectors.joining(", ")))
+                    .map(s -> "(" + s + ")")
+                    .collect(Collectors.joining(", "));
+        }
         return super.explainTerms(pw)
-                .item("discriminator", discriminator);
+                .item("discriminator", discriminator)
+                .itemIf("partitioningKey", partitioningKey, isPrunable)
+                .itemIf("partitioningKeyValues", partitioningKeyValues, isPrunable);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
-                watermarkedColumnIndex(), getDiscriminator());
+        return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), lagExpression(),
+                watermarkedColumnIndex(), discriminator());
     }
 
     public RelNode copy(RelTraitSet traitSet, int discriminator) {
-        return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
+        return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), lagExpression(),
                 watermarkedColumnIndex(), discriminator);
     }
 
-    public int getDiscriminator() {
+    public int discriminator() {
         return discriminator;
     }
 
     public List<RexNode> getProjects() {
         HazelcastTable table = getTable().unwrap(HazelcastTable.class);
         return table.getProjects();
+    }
+
+    public BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider(
+            int wmColumnIndex, @Nullable Expression<?> lagExpression, long throttlingFrameSize) {
+        if (lagExpression == null) {
+            return null;
+        }
+        return (context, watermarkKey) -> {
+            long lagMs = WindowUtils.extractMillis(lagExpression, context);
+            return EventTimePolicy.eventTimePolicy(
+                    row -> WindowUtils.extractMillis(row.get(wmColumnIndex)),
+                    (row, timestamp) -> row,
+                    WatermarkPolicy.limitingLag(lagMs),
+                    throttlingFrameSize,
+                    0,
+                    EventTimePolicy.DEFAULT_IDLE_TIMEOUT,
+                    watermarkKey);
+        };
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueServic
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -33,6 +32,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
+import static com.hazelcast.spi.properties.ClusterProperty.METRICS_DATASTRUCTURES;
 
 /**
  * Contains Raft-based atomic long instances, implements snapshotting,
@@ -53,8 +53,10 @@ public class AtomicLongService extends RaftAtomicValueService<Long, AtomicLong, 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         super.init(nodeEngine, properties);
-        MetricsRegistry metricsRegistry = this.nodeEngine.getMetricsRegistry();
-        metricsRegistry.registerDynamicMetricsProvider(this);
+
+        if (nodeEngine.getProperties().getBoolean(METRICS_DATASTRUCTURES)) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     @Override

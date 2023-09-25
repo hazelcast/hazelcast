@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,24 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlNode;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -47,9 +49,16 @@ public class QueryParserTest {
     @Mock
     private SqlNode validatedNode;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
+        openMocks = openMocks(this);
+    }
+
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
     }
 
     @Test

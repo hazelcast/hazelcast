@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public enum Operation {
      * Returns the Debezium operation code as String.
      */
     public String code() {
-        return String.valueOf(id);
+        return id == null ? null : String.valueOf(id);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.CoreQueryUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlRowImpl;
@@ -48,7 +48,7 @@ public class SqlClientResult implements SqlResult {
     private final Function<QueryId, ClientMessage> sqlExecuteMessageSupplier;
     private final boolean selectQuery;
     private volatile QueryId queryId;
-    private Connection connection;
+    private ClientConnection connection;
     private int resubmissionCount;
 
     /** Mutex to synchronize access between operations. */
@@ -77,7 +77,7 @@ public class SqlClientResult implements SqlResult {
 
     public SqlClientResult(
             SqlClientService service,
-            Connection connection,
+            ClientConnection connection,
             QueryId queryId,
             int cursorBufferSize,
             Function<QueryId, ClientMessage> sqlExecuteMessageSupplier,
@@ -350,7 +350,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     private HazelcastSqlException wrap(Throwable error) {
-        throw QueryUtils.toPublicException(error, service.getClientId());
+        throw CoreQueryUtils.toPublicException(error, service.getClientId());
     }
 
     private static final class State {

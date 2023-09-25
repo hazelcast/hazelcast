@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 import static java.util.Collections.emptyList;
@@ -70,7 +73,11 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
             UrgentPartitionRunnable<Collection<Operation>> runnable = new UrgentPartitionRunnable<>(
                     event.getPartitionId(), () -> createReplicationOperations(event, true));
             getNodeEngine().getOperationService().execute(runnable);
-            return runnable.future.joinInternal();
+            try {
+                return runnable.future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw sneakyThrow(peel(e));
+            }
         }
     }
 
@@ -182,7 +189,12 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         UrgentPartitionRunnable<ChunkSupplier> partitionThreadRunnable = new UrgentPartitionRunnable<>(
                 event.getPartitionId(), () -> service.newChunkSupplier(event, singleton(ns)));
         getNodeEngine().getOperationService().execute(partitionThreadRunnable);
-        ChunkSupplier supplier = partitionThreadRunnable.future.joinInternal();
+        ChunkSupplier supplier;
+        try {
+            supplier = partitionThreadRunnable.future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw sneakyThrow(peel(e));
+        }
         return appendNewElement(chunkSuppliers, supplier);
     }
 
@@ -286,7 +298,12 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                 event.getPartitionId(),
                 () -> prepareReplicationOperation(event, ns, service, serviceName));
         getNodeEngine().getOperationService().execute(partitionThreadRunnable);
-        Operation op = partitionThreadRunnable.future.joinInternal();
+        Operation op;
+        try {
+            op = partitionThreadRunnable.future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw sneakyThrow(peel(e));
+        }
         return appendNewElement(operations, op);
     }
 

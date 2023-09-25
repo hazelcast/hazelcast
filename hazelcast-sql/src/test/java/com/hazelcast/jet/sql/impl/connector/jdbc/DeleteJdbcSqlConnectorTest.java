@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
 
 public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
@@ -68,10 +66,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " person_id INT EXTERNAL NAME id, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE person_id = 0");
@@ -89,6 +84,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         assertJdbcRowsAnyOrder(tableName, new Row(1, "name-1"));
     }
+
     @Test
     public void deleteFromTableWhereOnNonPKColumnWithExternalNme() throws Exception {
         createTable(tableName);
@@ -98,10 +94,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE fullName = 'name-0'");
@@ -134,10 +127,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id2 INT, "
                         + " name VARCHAR"
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE id = 0 AND id2 = 1");
@@ -158,10 +148,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " name VARCHAR, "
                         + " id INT "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE id = 0");
@@ -173,15 +160,11 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void deleteFromWithQuotedColumnInWhere() throws Exception {
-        createTable(tableName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(tableName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(tableName, 1);
 
         execute(
-                "CREATE MAPPING " + tableName
-                        + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + " OPTIONS ( "
-                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                "CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE \"person-id\" = 0");

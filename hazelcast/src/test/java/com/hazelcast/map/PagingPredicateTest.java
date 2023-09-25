@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexType;
@@ -23,7 +24,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.listener.NoopMapListener;
+import com.hazelcast.projection.Projections;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.QueryEntry;
@@ -61,6 +65,8 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
     protected static final int size = 50;
     protected static final int pageSize = 5;
+    private static final PagingPredicate<Integer, Integer> PAGING_PREDICATE = Predicates.pagingPredicate(1);
+    private static final PartitionPredicate<Integer, Integer> PREDICATE_INCLUDING_PAGING_PREDICATE = Predicates.partitionPredicate(1, PAGING_PREDICATE);
 
     protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     protected final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
@@ -320,8 +326,9 @@ public class PagingPredicateTest extends HazelcastTestSupport {
             map.set(i, i);
         }
 
-        int resultSize = map.entrySet(new PagingPredicateImpl<Integer, Integer>(Predicates.equal("this", size), pageSize) {
+        int resultSize = map.entrySet(new PagingPredicateImpl<>(Predicates.equal("this", size), pageSize) {
             @Override
+            @SuppressWarnings("rawtypes")
             public boolean apply(Map.Entry mapEntry) {
                 fail("full scan is not expected");
                 return false;
@@ -416,7 +423,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
         map.addIndex(IndexType.SORTED, "id");
 
-        Predicate innerPredicate = Predicates.lessThan("id", 2);
+        var innerPredicate = Predicates.lessThan("id", 2);
         PagingPredicate<Integer, Employee> predicate = Predicates.pagingPredicate(innerPredicate, 2);
 
         Collection<Employee> values;
@@ -534,6 +541,108 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         }
     }
 
+    // Paging predicate validation tests
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddLocalEntryListenerThrowsWithPagingPredicate() {
+        map.addLocalEntryListener(new NoopMapListener<>(), PAGING_PREDICATE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddLocalEntryListenerThrowsWithPredicateIncludingPagingPredicate() {
+        map.addLocalEntryListener(new NoopMapListener<>(), PREDICATE_INCLUDING_PAGING_PREDICATE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddLocalEntryListenerWithKeyThrowsWithPagingPredicate() {
+        map.addLocalEntryListener(new NoopMapListener<>(), PAGING_PREDICATE, 2, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddLocalEntryListenerWithKeyThrowsWithPredicateIncludingPagingPredicate() {
+        map.addLocalEntryListener(new NoopMapListener<>(), PREDICATE_INCLUDING_PAGING_PREDICATE, 2,
+                true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddEntryListenerThrowsWithPagingPredicate() {
+        map.addEntryListener(new NoopMapListener<>(), PAGING_PREDICATE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddEntryListenerThrowsWithPredicateIncludingPagingPredicate() {
+        map.addEntryListener(new NoopMapListener<>(), PREDICATE_INCLUDING_PAGING_PREDICATE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddEntryListenerWithKeyThrowsWithPagingPredicate() {
+        map.addEntryListener(new NoopMapListener<>(), PAGING_PREDICATE, 2, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddEntryListenerWithKeyThrowsWithPredicateIncludingPagingPredicate() {
+        map.addEntryListener(new NoopMapListener<>(), PREDICATE_INCLUDING_PAGING_PREDICATE, 2, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAggregateThrowsWithPagingPredicate() {
+        map.aggregate(Aggregators.count(), PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAggregateThrowsWithPredicateIncludingPagingPredicate() {
+        map.aggregate(Aggregators.count(), PREDICATE_INCLUDING_PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testProjectThrowsWithPagingPredicate() {
+        map.project(Projections.identity(), PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testProjectThrowsWithPredicateIncludingPagingPredicate() {
+        map.project(Projections.identity(), PREDICATE_INCLUDING_PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetQueryCacheThrowsWithPagingPredicate() {
+        map.getQueryCache("name", PAGING_PREDICATE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetQueryCacheThrowsWithPredicateIncludingPagingPredicate() {
+        map.getQueryCache("name", PREDICATE_INCLUDING_PAGING_PREDICATE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetQueryCacheWithListenerThrowsWithPagingPredicate() {
+        map.getQueryCache("name", new NoopMapListener<>(), PAGING_PREDICATE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetQueryCacheWithListenerThrowsWithPredicateIncludingPagingPredicate() {
+        map.getQueryCache("name", new NoopMapListener<>(), PREDICATE_INCLUDING_PAGING_PREDICATE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRemoveAllThrowsWithPagingPredicate() {
+        map.removeAll(PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRemoveAllThrowsWithPredicateIncludingPagingPredicate() {
+        map.removeAll(PREDICATE_INCLUDING_PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testExecuteOnEntriesThrowsWithPagingPredicate() {
+        map.executeOnEntries(entry -> 1, PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testExecuteOnEntriesThrowsWithPredicateIncludingPagingPredicate() {
+        map.executeOnEntries(entry -> 1, PREDICATE_INCLUDING_PAGING_PREDICATE);
+    }
+
     private IMap<Integer, Employee> makeEmployeeMap(int maxEmployees) {
         final IMap<Integer, Employee> map = remote.getMap(randomString());
         for (int i = 0; i < maxEmployees; i++) {
@@ -584,6 +693,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
     }
 
+    @SuppressWarnings("unused")
     private static class BaseEmployee implements Serializable {
 
         public static final int MAX_AGE = 75;

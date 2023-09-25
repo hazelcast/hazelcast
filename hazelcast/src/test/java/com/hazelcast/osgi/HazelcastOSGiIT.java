@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package com.hazelcast.osgi;
 
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnJre;
+import org.junit.jupiter.api.condition.JRE;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.Configuration;
 import org.ops4j.pax.exam.junit.ExamReactorStrategy;
@@ -36,15 +38,15 @@ import org.osgi.framework.ServiceReference;
 
 import javax.inject.Inject;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
 
-@RunWith(PaxExamTestRunner.class)
+
 @Category(QuickTest.class)
 @ExamReactorStrategy(AllConfinedStagedReactorFactory.class)
-public class HazelcastOSGiIT {
+class HazelcastOSGiIT {
 
     @Inject
     private BundleContext bundleContext;
@@ -59,7 +61,8 @@ public class HazelcastOSGiIT {
         oldMavenRepoProperty = System.getProperty(MAVEN_REPOSITORIES_PROP);
         System.setProperty(MAVEN_REPOSITORIES_PROP, MAVEN_REPOSITORIES);
 
-        String url = "reference:file:" + PathUtils.getBaseDir() + "/target/classes";
+        String url = "reference:file:" + PathUtils.getBaseDir() + "/target/"
+                + "hazelcast-" + BuildInfoProvider.getBuildInfo().getVersion() + ".jar";
         // modify url for Windows environment
         url = url.replace("\\", "/");
         UrlProvisionOption hzBundle = bundle(url);
@@ -67,7 +70,7 @@ public class HazelcastOSGiIT {
         return options(hzBundle, junitBundles);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         for (Bundle bundle : bundleContext.getBundles()) {
             if ("com.hazelcast".equals(bundle.getSymbolicName())) {
@@ -86,9 +89,12 @@ public class HazelcastOSGiIT {
      * Is this test failing in your IDE?
      * Some versions of Intellij IDEA use a wrong working directory in multi-module Maven projects.
      * See this for a fix: https://youtrack.jetbrains.com/issue/IDEA-60965
+     * <p>
+     * An outdated PaxRunner used by the OSGi test prevents executing on Java 9+.
      */
+    @EnabledOnJre({JRE.JAVA_8})
     @Test
-    public void serviceRetrievedSuccessfully() {
+    void serviceRetrievedSuccessfully() {
         HazelcastOSGiService service = getService();
         assertNotNull(service);
     }

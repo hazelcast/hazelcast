@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,35 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.defaultserializers.ArrayStreamSerializer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
+import com.hazelcast.nio.serialization.compatibility.CustomByteArraySerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -100,6 +104,16 @@ public class SerializationUtilTest {
         byte[] bytes = new byte[1];
         bytes[0] = 55;
         deserialize(bytes);
+    }
+
+    @Test
+    public void testCreateSerializerAdapter() {
+        // ArrayStreamSerializer is instance of StreamSerializer, hence using it as parameter
+        SerializerAdapter streamSerializerAdapter = SerializationUtil.createSerializerAdapter(new ArrayStreamSerializer());
+        assertEquals(streamSerializerAdapter.getClass(), StreamSerializerAdapter.class);
+        // CustomByteArraySerializer is instance of ByteArraySerializer, hence using it as parameter
+        SerializerAdapter byteArraySerializerAdapter = SerializationUtil.createSerializerAdapter(new CustomByteArraySerializer());
+        assertEquals(byteArraySerializerAdapter.getClass(), ByteArraySerializerAdapter.class);
     }
 
     private byte[] serialize(Boolean b) throws IOException {

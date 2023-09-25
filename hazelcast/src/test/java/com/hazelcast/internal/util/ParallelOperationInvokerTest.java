@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,21 +36,28 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterParallel;
+import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterParallelExcludeLocal;
 import static com.hazelcast.spi.properties.ClusterProperty.INVOCATION_RETRY_PAUSE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -58,7 +65,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
 public class ParallelOperationInvokerTest extends HazelcastTestSupport {
-
+    @Rule
+    public TestName testNameRule = new TestName();
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     private Config config;
@@ -81,6 +89,11 @@ public class ParallelOperationInvokerTest extends HazelcastTestSupport {
         factory.terminateAll();
     }
 
+    @AfterClass
+    public static void afterClass() throws Exception {
+        InvokedMemberRecordingOperation.TEST_NAME_TO_INVOKED_MEMBER_UUIDS.clear();
+    }
+
     @Test
     public void testInvoke() {
         Node node = getNode(instance1);
@@ -92,6 +105,47 @@ public class ParallelOperationInvokerTest extends HazelcastTestSupport {
 
         Collection<UUID> expectedUuids = getUuidsOfInstances(instance1, instance2, instance3);
         assertThat(uuids)
+                .containsExactlyInAnyOrderElementsOf(expectedUuids);
+    }
+
+    @Test
+    public void testInvokeWithFilter() {
+        String testName = testNameRule.getMethodName();
+
+        Node node = getNode(instance1);
+        Collection<UUID> uuids = invokeOnStableClusterParallel(
+                node.getNodeEngine(),
+                () -> new InvokedMemberRecordingOperation(testName),
+                0,
+                member -> member.getUuid().equals(instance2.getLocalEndpoint().getUuid())
+        ).join();
+
+        Collection<UUID> expectedUuids = getUuidsOfInstances(instance1, instance2, instance3);
+        assertThat(uuids)
+                .containsExactlyInAnyOrderElementsOf(expectedUuids);
+
+        expectedUuids = getUuidsOfInstances(instance2);
+        assertThat(InvokedMemberRecordingOperation.TEST_NAME_TO_INVOKED_MEMBER_UUIDS.get(testName))
+                .containsExactlyInAnyOrderElementsOf(expectedUuids);
+    }
+
+    @Test
+    public void testInvokeWithExcludeLocalFilter() {
+        String testName = testNameRule.getMethodName();
+
+        Node node = getNode(instance1);
+        Collection<UUID> uuids = invokeOnStableClusterParallelExcludeLocal(
+                node.getNodeEngine(),
+                () -> new InvokedMemberRecordingOperation(testName),
+                0
+        ).join();
+
+        Collection<UUID> expectedUuids = getUuidsOfInstances(instance1, instance2, instance3);
+        assertThat(uuids)
+                .containsExactlyInAnyOrderElementsOf(expectedUuids);
+
+        expectedUuids = getUuidsOfInstances(instance2, instance3);
+        assertThat(InvokedMemberRecordingOperation.TEST_NAME_TO_INVOKED_MEMBER_UUIDS.get(testName))
                 .containsExactlyInAnyOrderElementsOf(expectedUuids);
     }
 
@@ -297,6 +351,38 @@ public class ParallelOperationInvokerTest extends HazelcastTestSupport {
         protected void readInternal(ObjectDataInput in) throws IOException {
             super.readInternal(in);
             expectedMemberCount = in.readInt();
+        }
+    }
+
+    private static class InvokedMemberRecordingOperation extends Operation {
+        private static final Map<String, Collection<UUID>> TEST_NAME_TO_INVOKED_MEMBER_UUIDS = new ConcurrentHashMap<>();
+        private String testName;
+
+        InvokedMemberRecordingOperation() {
+        }
+
+        InvokedMemberRecordingOperation(String testName) {
+            this.testName = testName;
+        }
+
+        @Override
+        public void run() throws Exception {
+            TEST_NAME_TO_INVOKED_MEMBER_UUIDS
+                    .computeIfAbsent(testName, k -> Collections.newSetFromMap(new ConcurrentHashMap<>()))
+                    .add(getNodeEngine().getLocalMember().getUuid());
+            super.run();
+        }
+
+        @Override
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
+            super.writeInternal(out);
+            out.writeString(testName);
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            super.readInternal(in);
+            testName = in.readString();
         }
     }
 }

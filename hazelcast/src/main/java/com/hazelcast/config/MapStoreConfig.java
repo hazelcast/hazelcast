@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.nio.ObjectDataInput;
@@ -438,10 +437,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable, Versioned {
         out.writeObject(factoryImplementation);
         out.writeObject(properties);
         out.writeString(initialLoadMode.name());
-
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_2)) {
-            out.writeBoolean(offload);
-        }
+        out.writeBoolean(offload);
     }
 
     @Override
@@ -456,10 +452,6 @@ public class MapStoreConfig implements IdentifiedDataSerializable, Versioned {
         factoryImplementation = in.readObject();
         properties = in.readObject();
         initialLoadMode = InitialLoadMode.valueOf(in.readString());
-
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_2)) {
-            offload = in.readBoolean();
-        }
-
+        offload = in.readBoolean();
     }
 }

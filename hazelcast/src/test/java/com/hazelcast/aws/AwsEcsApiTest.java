@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,25 @@
 package com.hazelcast.aws;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.aws.AwsEcsApi.Task;
+import com.hazelcast.internal.json.JsonArray;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.util.StringUtil;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -37,14 +44,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static java.util.Arrays.asList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AwsEcsApiTest {
@@ -52,10 +57,10 @@ public class AwsEcsApiTest {
     private static final String AUTHORIZATION_HEADER = "authorization-header";
     private static final String TOKEN = "IQoJb3JpZ2luX2VjEFIaDGV1LWNlbnRyYWwtMSJGM==";
     private static final AwsCredentials CREDENTIALS = AwsCredentials.builder()
-        .setAccessKey("AKIDEXAMPLE")
-        .setSecretKey("wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY")
-        .setToken(TOKEN)
-        .build();
+            .setAccessKey("AKIDEXAMPLE")
+            .setSecretKey("wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY")
+            .setToken(TOKEN)
+            .build();
 
     @Mock
     private AwsRequestSigner requestSigner;
@@ -80,39 +85,17 @@ public class AwsEcsApiTest {
     public void listTasks() {
         // given
         String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
-
-        //language=JSON
-        String requestBody = "{\n"
-            + "  \"cluster\": \"arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster\"\n"
-            + "}";
-
-        //language=JSON
-        String response = "{\n"
-            + "  \"taskArns\": [\n"
-            + "    \"arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
-            + "    \"arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\"\n"
-            + "  ]\n"
-            + "}";
-
-        stubFor(post("/")
-            .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
-            .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
-            .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerServiceV20141113.ListTasks"))
-            .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
-            .withHeader("Accept-Encoding", equalTo("identity"))
-            .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
-            .withRequestBody(equalToJson(requestBody))
-            .willReturn(aResponse().withStatus(200).withBody(response)));
+        stubListTasks(cluster, null);
+        Map<String, String> tasksArnToIp = ImmutableMap.of(
+                "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
+                "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219");
+        stubDescribeTasks(tasksArnToIp, cluster);
 
         // when
-        List<String> tasks = awsEcsApi.listTasks(cluster, CREDENTIALS);
+        List<String> tasksPrivateIps = awsEcsApi.listTaskPrivateAddresses(cluster, CREDENTIALS);
 
         // then
-        assertThat(tasks, hasItems(
-            "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a",
-            "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207"
-            )
-        );
+        assertThat(tasksPrivateIps).containsExactlyInAnyOrder("10.0.1.16", "10.0.1.219");
     }
 
     @Test
@@ -120,115 +103,63 @@ public class AwsEcsApiTest {
         // given
         String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
         AwsConfig awsConfig = AwsConfig.builder()
-            .setFamily("family-name")
-            .build();
+                                       .setFamily("family-name")
+                                       .build();
         AwsEcsApi awsEcsApi = new AwsEcsApi(endpoint, awsConfig, requestSigner, CLOCK);
 
-        //language=JSON
-        String requestBody = "{\n"
-            + "  \"cluster\": \"arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster\",\n"
-            + "  \"family\": \"family-name\"\n"
-            + "}";
-
-        //language=JSON
-        String response = "{\n"
-            + "  \"taskArns\": [\n"
-            + "    \"arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
-            + "    \"arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\"\n"
-            + "  ]\n"
-            + "}";
-
-        stubFor(post("/")
-            .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
-            .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
-            .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerServiceV20141113.ListTasks"))
-            .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
-            .withHeader("Accept-Encoding", equalTo("identity"))
-            .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
-            .withRequestBody(equalToJson(requestBody))
-            .willReturn(aResponse().withStatus(200).withBody(response)));
+        stubListTasks("arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster", "family-name");
+        stubDescribeTasks(ImmutableMap.of(
+                        "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
+                        "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219"),
+                cluster);
 
         // when
-        List<String> tasks = awsEcsApi.listTasks(cluster, CREDENTIALS);
+        List<String> ips = awsEcsApi.listTaskPrivateAddresses(cluster, CREDENTIALS);
 
         // then
-        assertThat(tasks, hasItems(
-            "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a",
-            "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207"
-            )
-        );
+        assertThat(ips).containsExactlyInAnyOrder("10.0.1.16", "10.0.1.219");
+    }
+
+    @Test
+    public void listTasksFilteredByTags() {
+        // given
+        String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
+        AwsConfig awsConfig = AwsConfig.builder()
+                .setTagKey("tag-key")
+                .setTagValue("51a01bdf-d00e-487e-ab14-7645330b6207")
+                .build();
+        AwsEcsApi awsEcsApi = new AwsEcsApi(endpoint, awsConfig, requestSigner, CLOCK);
+
+        stubListTasks("arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster", null);
+        stubDescribeTasks(ImmutableMap.of(
+                        "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
+                        "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219"),
+                cluster);
+
+        // when
+        List<String> ips = awsEcsApi.listTaskPrivateAddresses(cluster, CREDENTIALS);
+
+        // then
+        assertEquals(1, ips.size());
+        assertThat(ips).contains("10.0.1.219");
     }
 
     @Test
     public void describeTasks() {
         // given
         String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
-        List<String> tasks = asList(
-            "arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a",
-            "arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207"
-        );
-
-        //language=JSON
-        String requestBody = "{\n"
-            + "  \"cluster\" : \"arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster\",\n"
-            + "  \"tasks\": [\n"
-            + "    \"arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
-            + "    \"arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\"\n"
-            + "  ]\n"
-            + "}";
-
-        //language=JSON
-        String response = "{\n"
-            + "  \"tasks\": [\n"
-            + "    {\n"
-            + "      \"taskArn\": \"arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
-            + "      \"availabilityZone\": \"eu-central-1a\",\n"
-            + "      \"containers\": [\n"
-            + "        {\n"
-            + "          \"taskArn\": \"arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
-            + "          \"networkInterfaces\": [\n"
-            + "            {\n"
-            + "              \"privateIpv4Address\": \"10.0.1.16\"\n"
-            + "            }\n"
-            + "          ]\n"
-            + "        }\n"
-            + "      ]\n"
-            + "    },\n"
-            + "    {\n"
-            + "      \"taskArn\": \"arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\",\n"
-            + "      \"availabilityZone\": \"eu-central-1a\",\n"
-            + "      \"containers\": [\n"
-            + "        {\n"
-            + "          \"taskArn\": \"arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\",\n"
-            + "          \"networkInterfaces\": [\n"
-            + "            {\n"
-            + "              \"privateIpv4Address\": \"10.0.1.219\"\n"
-            + "            }\n"
-            + "          ]\n"
-            + "        }\n"
-            + "      ]\n"
-            + "    }\n"
-            + "  ]\n"
-            + "}";
-
-        stubFor(post("/")
-            .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
-            .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
-            .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerServiceV20141113.DescribeTasks"))
-            .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
-            .withHeader("Accept-Encoding", equalTo("identity"))
-            .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
-            .withRequestBody(equalToJson(requestBody))
-            .willReturn(aResponse().withStatus(200).withBody(response)));
+        Map<String, String> tasks = ImmutableMap.of(
+                "arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a", "10.0.1.16",
+                "arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207", "10.0.1.219");
+        stubDescribeTasks(tasks, cluster);
 
         // when
-        List<Task> result = awsEcsApi.describeTasks(cluster, tasks, CREDENTIALS);
+        List<Task> result = awsEcsApi.describeTasks(cluster, new ArrayList<>(tasks.keySet()), CREDENTIALS);
 
         // then
-        assertEquals("10.0.1.16", result.get(0).getPrivateAddress());
-        assertEquals("eu-central-1a", result.get(0).getAvailabilityZone());
-        assertEquals("10.0.1.219", result.get(1).getPrivateAddress());
-        assertEquals("eu-central-1a", result.get(1).getAvailabilityZone());
+        assertEquals(2, result.size());
+        assertThat(result.stream().map(Task::getPrivateAddress).collect(Collectors.toList())).containsExactlyInAnyOrder("10.0.1.16", "10.0.1.219");
+        assertThat(result.stream().map(Task::getAvailabilityZone).collect(Collectors.toList())).containsExactlyInAnyOrder("eu-central-1a", "eu-central-1a");
     }
 
     @Test
@@ -237,13 +168,76 @@ public class AwsEcsApiTest {
         int errorCode = 401;
         String errorMessage = "Error message retrieved from AWS";
         stubFor(post(urlMatching("/.*"))
-            .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));
+                .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));
 
         // when
-        Exception exception = assertThrows(Exception.class, () -> awsEcsApi.listTasks("cluster-arn", CREDENTIALS));
+        Exception exception = assertThrows(
+                Exception.class, () -> awsEcsApi.listTaskPrivateAddresses("cluster-arn", CREDENTIALS));
 
         // then
         assertTrue(exception.getMessage().contains(Integer.toString(errorCode)));
         assertTrue(exception.getMessage().contains(errorMessage));
+    }
+
+    private void stubDescribeTasks(Map<String, String> taskArnToIp, String cluster) {
+        JsonArray tasksJson = new JsonArray();
+        taskArnToIp.keySet().forEach(tasksJson::add);
+        String requestBody = new JsonObject()
+                .add("tasks", tasksJson)
+                .add("include", new JsonArray().add("TAGS"))
+                .add("cluster", cluster)
+                .toString();
+
+        JsonArray responseTasks = new JsonArray();
+        for (Map.Entry<String, String> task : taskArnToIp.entrySet()) {
+            responseTasks.add(new JsonObject()
+                    .add("taskArn", task.getKey())
+                    .add("availabilityZone", "eu-central-1a")
+                    .add("containers", new JsonArray().add(new JsonObject()
+                            .add("taskArn", task.getKey())
+                            .add("networkInterfaces", new JsonArray().add(new JsonObject()
+                                    .add("privateIpv4Address", task.getValue())))))
+                    .add("tags", new JsonArray().add(new JsonObject()
+                            .add("key", "tag-key")
+                            .add("value", task.getKey().substring(task.getKey().lastIndexOf("/") + 1))))
+            );
+        }
+        String responseBody = new JsonObject()
+                .add("tasks", responseTasks)
+                .toString();
+
+        stubFor(post("/")
+                .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
+                .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
+                .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerServiceV20141113.DescribeTasks"))
+                .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
+                .withHeader("Accept-Encoding", equalTo("identity"))
+                .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
+                .withRequestBody(equalToJson(requestBody))
+                .willReturn(aResponse().withStatus(200).withBody(responseBody)));
+    }
+
+    private void stubListTasks(String cluster, String familyName) {
+        JsonObject requestBody = new JsonObject();
+        requestBody.add("cluster", cluster);
+        if (!StringUtil.isNullOrEmptyAfterTrim(familyName)) {
+            requestBody.add("family", familyName);
+        }
+
+        String response = new JsonObject()
+                .add("taskArns", new JsonArray()
+                        .add("arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a")
+                        .add("arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207"))
+                .toString();
+
+        stubFor(post("/")
+                .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
+                .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
+                .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerServiceV20141113.ListTasks"))
+                .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
+                .withHeader("Accept-Encoding", equalTo("identity"))
+                .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
+                .withRequestBody(equalToJson(requestBody.toString()))
+                .willReturn(aResponse().withStatus(200).withBody(response)));
     }
 }

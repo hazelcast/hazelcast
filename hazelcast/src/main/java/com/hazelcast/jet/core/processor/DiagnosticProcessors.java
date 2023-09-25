@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ public final class DiagnosticProcessors {
     /**
      * Returns a meta-supplier of processors for a sink vertex that logs all
      * the data items it receives. The log category is {@code
-     * com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     * com.hazelcast.jet.impl.connector.WriteLoggerP.<vertexName>#<processorIndex>}
      * and the level is INFO. {@link Watermark} items are always logged, but at
      * FINE level; they are <em>not</em> passed to {@code toStringFn}.
      * <p>

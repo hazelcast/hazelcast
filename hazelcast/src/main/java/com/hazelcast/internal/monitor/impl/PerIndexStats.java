@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,6 +100,16 @@ public interface PerIndexStats {
         @Override
         public long getMemoryCost() {
             return 0;
+        }
+
+        @Override
+        public void updateMemoryCost(long delta) {
+            // do nothing
+        }
+
+        @Override
+        public void onDispose() {
+            // do nothing
         }
 
         @Override
@@ -244,6 +254,17 @@ public interface PerIndexStats {
      * on-heap memory usage of the index.
      */
     long getMemoryCost();
+
+    /**
+     * Updates the memory cost of the index in bytes.
+     * @param delta the value to be added to the memory cost
+     */
+    void updateMemoryCost(long delta);
+
+    /**
+     * Invoked on index dispose.
+     */
+    void onDispose();
 
     /**
      * Invoked by the associated index after every insert operation.

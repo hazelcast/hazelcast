@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -414,6 +414,10 @@ hazelcast:
         disk-tier:
           enabled: true
           device-name: default-tiered-store-device
+      partition-strategy: "com.example.Strategy"
+      partition-attributes:
+        - name: "attributeName1"
+        - name: "attributeName2"
 
   multimap:
     default:
@@ -772,6 +776,7 @@ hazelcast:
         property: value
     client-permissions:
       on-join-operation: SEND
+      priority-grant: true
       all:
         principal: admin
         endpoints:
@@ -805,6 +810,7 @@ hazelcast:
             - all
       transaction:
         principal: deployer
+        deny: true
       pn-counter:
         - name: "*"
           actions:
@@ -1015,9 +1021,13 @@ hazelcast:
   sql:
     statement-timeout-millis: 0
 
-  external-data-store:
+  data-connection:
     mysql-database:
-      class-name: com.hazelcast.datastore.JdbcDataStoreFactory
+      type: jdbc
       properties:
         jdbcUrl: jdbc:mysql://dummy:3306
       shared: false
+
+  tpc:
+    enabled: true
+    eventloop-count: 12

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
+import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -60,6 +61,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_DISCRIMINATOR_SERVICE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_EVENTS_PROCESSED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_EVENT_QUEUE_SIZE;
@@ -179,6 +181,8 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     private final InternalSerializationService serializationService;
     private final int eventSyncFrequency;
 
+    private final ConcurrentMap<UUID, Object> listenerCache = new ConcurrentHashMap<>();
+
     public EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
@@ -266,8 +270,6 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         return registerListener0(serviceName, topic, filter, listener, true);
     }
 
-    /**
-     *
      /**
      * Registers the listener for events matching the service name, topic and filter on local member.
      *
@@ -287,6 +289,8 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         UUID id = UuidUtil.newUnsecureUUID();
         final Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, isLocal);
         if (!segment.addRegistration(topic, reg)) {
+            // This can only happen if Registration#equals ignores the ID and in the current implementation,
+            // it only compares IDs. That's why we don't specify @Nonnull/@Nullable for the return value.
             return null;
         }
 
@@ -353,12 +357,11 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
                 .thenApplyAsync(result -> reg, CALLER_RUNS);
     }
 
-    public boolean handleRegistration(Registration reg) {
-        if (nodeEngine.getThisAddress().equals(reg.getSubscriber())) {
-            return false;
-        }
-        EventServiceSegment segment = getSegment(reg.getServiceName(), true);
-        return segment.addRegistration(reg.getTopic(), reg);
+    private CompletableFuture<EventRegistration> invokeOnSubscriber(Registration reg, Supplier<Operation> operationSupplier) {
+        return nodeEngine.getOperationService().createInvocationBuilder(
+                        reg.getServiceName(), operationSupplier.get(), reg.getSubscriber())
+                .setTryCount(MAX_RETRIES).invoke()
+                .thenApplyAsync(result -> reg, CALLER_RUNS);
     }
 
     @Override
@@ -396,11 +399,71 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     @Override
-    public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic) {
+    public void deregisterAllLocalListeners(@Nonnull String serviceName, @Nonnull String topic) {
         EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             segment.removeRegistrations(topic);
         }
+    }
+
+    @Override
+    public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic, int orderKey) {
+        EventServiceSegment segment = getSegment(serviceName, false);
+        Collection<Registration> registrations = segment == null ? null : segment.removeRegistrations(topic);
+        ClusterService clusterService = nodeEngine.getClusterService();
+
+        if (clusterService.getClusterVersion().isGreaterOrEqual(V5_3)) {
+            Supplier<Operation> op = new DeregistrationOperationSupplier(serviceName, topic, orderKey, clusterService);
+            invokeOnStableClusterSerial(nodeEngine, op, MAX_RETRIES);
+        } else if (registrations != null) {
+            for (Registration reg : registrations) {
+                if (!reg.isLocalOnly()) {
+                    Supplier<Operation> op = new DeregistrationOperationSupplier(reg, clusterService);
+                    invokeOnStableClusterSerial(nodeEngine, op, MAX_RETRIES);
+                }
+            }
+        }
+    }
+
+    public void cacheListener(Registration registration) {
+        listenerCache.put(registration.getId(), registration.getListener());
+    }
+
+    /**
+     * Adds a {@link Registration} to the corresponding {@link EventServiceSegment} by
+     * avoiding duplicate local registrations.
+     * @implNote There are three code paths for this method: <ol>
+     * <li> {@link #registerListener0} → invokeOnAllMembers({@link RegistrationOperation}).
+     *      In this case, the local registration is already done in {@code registerListener0}
+     *      and thus need to be ignored.
+     * <li> {@code JobProxy.addStatusListener} → {@code AddJobStatusListenerOperation} →
+     *      {@code MasterContext} → {@link #handleAllRegistrations} →
+     *      invokeOnAllMembers({@link RegistrationOperation}). In this case, the local
+     *      registration is new and thus need to be performed.
+     * <li> {@link OnJoinRegistrationOperation}. In this case, no local registration is
+     *      expected. </ol>
+     * The distinction between cases 1 and 2 is made by checking the {@link #listenerCache}
+     * and the local registration is made only if there is an entry in the cache. This,
+     * however, makes it impossible to diagnose {@linkplain #cacheListener caching} failures.
+     */
+    public void handleRegistration(Registration registration) {
+        if (isLocal(registration)) {
+            Object listener = listenerCache.remove(registration.getId());
+            if (listener == null) {
+                return;
+            }
+            registration.setListener(listener);
+        }
+        EventServiceSegment segment = getSegment(registration.getServiceName(), true);
+        segment.addRegistration(registration.getTopic(), registration);
+    }
+
+    public EventRegistration handleAllRegistrations(Registration registration, int orderKey) {
+        ClusterService clusterService = nodeEngine.getClusterService();
+        Supplier<Operation> op = new RegistrationOperationSupplier(registration, orderKey, clusterService);
+        return getValue(registration.isLocalOnly()
+                ? invokeOnSubscriber(registration, op)
+                : invokeOnAllMembers(registration, op));
     }
 
     public StripedExecutor getEventExecutor() {
@@ -676,17 +739,19 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     @Override
-    public Operation getPreJoinOperation() {
-        // pre-join operations are only sent by master member
+    public OnJoinRegistrationOperation getPreJoinOperation() {
+        // EventService's pre-join operations are only sent by master member
+        // also EventService's pre-join op is sent from joining member to master in JoinRequest
         return getOnJoinRegistrationOperation();
     }
 
     @Override
     public Operation getPostJoinOperation() {
-        ClusterService clusterService = nodeEngine.getClusterService();
-        // Send post join registration operation only if this is the newly joining member.
-        // Master will send registrations with pre-join operation.
-        return clusterService.isMaster() ? null : getOnJoinRegistrationOperation();
+        // The post join operation can reach another member with some delay.
+        // This could lead to an issue (for example, the proxy creation on a secondary member) if it was used for the
+        // event registration (see https://github.com/hazelcast/hazelcast/issues/18381#issuecomment-952843577)
+
+        return null;
     }
 
     /**

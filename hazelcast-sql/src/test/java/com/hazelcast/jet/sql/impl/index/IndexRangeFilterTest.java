@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.index;
 
-import com.hazelcast.query.impl.AbstractIndex;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,8 +26,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -56,12 +52,12 @@ public class IndexRangeFilterTest extends IndexFilterTestSupport {
         checkEquals(filter, new IndexRangeFilter(intValue(1, true), true, intValue(2, true), true), true);
 
         checkEquals(filter, new IndexRangeFilter(intValue(2, true), true, intValue(2, true), true), false);
-        checkEquals(filter, new IndexRangeFilter(null, true, intValue(2, true), true), false);
+        checkEquals(filter, new IndexRangeFilter(null, false, intValue(2, true), true), false);
 
         checkEquals(filter, new IndexRangeFilter(intValue(1, true), false, intValue(2, true), true), false);
 
         checkEquals(filter, new IndexRangeFilter(intValue(1, true), true, intValue(3, true), true), false);
-        checkEquals(filter, new IndexRangeFilter(intValue(1, true), true, null, true), false);
+        checkEquals(filter, new IndexRangeFilter(intValue(1, true), true, null, false), false);
 
         checkEquals(filter, new IndexRangeFilter(intValue(1, true), true, intValue(2, true), false), false);
     }
@@ -69,41 +65,8 @@ public class IndexRangeFilterTest extends IndexFilterTestSupport {
     @Test
     public void testSerialization() {
         IndexRangeFilter original = new IndexRangeFilter(intValue(1, true), true, intValue(2, true), true);
-        IndexRangeFilter restored = serializeAndCheck(original, SqlDataSerializerHook.INDEX_FILTER_RANGE);
+        IndexRangeFilter restored = serializeAndCheck(original, JetSqlSerializerHook.INDEX_FILTER_RANGE);
 
         checkEquals(original, restored, true);
-    }
-
-    @Test
-    public void testComparable() {
-        ExpressionEvalContext evalContext = createExpressionEvalContext();
-
-        assertEquals(
-            1,
-            new IndexRangeFilter(intValue(1, true), true, intValue(2, true), true).getComparable(evalContext)
-        );
-
-        assertEquals(
-            AbstractIndex.NULL,
-            new IndexRangeFilter(intValue(null, true), true, intValue(2, true), true).getComparable(evalContext)
-        );
-
-        assertNull(
-            new IndexRangeFilter(intValue(null, false), true, intValue(2, true), true).getComparable(evalContext)
-        );
-
-        assertEquals(
-            2,
-            new IndexRangeFilter(null, true, intValue(2, true), true).getComparable(evalContext)
-        );
-
-        assertEquals(
-            AbstractIndex.NULL,
-            new IndexRangeFilter(null, true, intValue(null, true), true).getComparable(evalContext)
-        );
-
-        assertNull(
-            new IndexRangeFilter(null, true, intValue(null, false), true).getComparable(evalContext)
-        );
     }
 }

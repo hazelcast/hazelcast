@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
@@ -36,15 +37,24 @@ import java.util.Map;
  */
 public interface Storage<K, R> {
 
+    /**
+     * @return true if current configuration of this {@link Storage}
+     * supports executions as a chain of {@link Step} , false otherwise.
+     */
+    default boolean supportsSteppedRun() {
+        return false;
+    }
+
     void put(K key, R record);
 
     /**
      * Updates record's value. Performs an update in-place if the record can accommodate the
      * new value (applicable for the inlined records only). Otherwise, creates a new record
      * with the new value.
-     * @param key the entry's key
+     *
+     * @param key    the entry's key
      * @param record the record
-     * @param value the new value
+     * @param value  the new value
      * @return the record that contains new value.
      */
     R updateRecordValue(K key, R record, Object value);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSizePerNode;
-import static com.hazelcast.map.impl.MapMigrationAwareService.lesserBackupMapsThen;
+import static com.hazelcast.map.impl.MapMigrationAwareService.lesserBackupMapsThenWithContainer;
 
 public class PartitionContainer {
 
@@ -104,9 +104,10 @@ public class PartitionContainer {
         keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getEvictionConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
+        int partitionId = getPartitionId();
 
         if (!mapContainer.isGlobalIndexEnabled()) {
-            Indexes indexesForMap = mapContainer.createIndexes(false);
+            Indexes indexesForMap = mapContainer.createIndexes(false, partitionId);
             indexes.putIfAbsent(name, indexesForMap);
         }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
@@ -176,10 +177,13 @@ public class PartitionContainer {
         mapContainer.onBeforeDestroy();
 
         String name = mapContainer.getName();
-        RecordStore recordStore = maps.remove(name);
+        RecordStore recordStore = maps.get(name);
         if (recordStore != null) {
             // this call also clears and disposes Indexes for that partition
             recordStore.destroy();
+            // Remove record store from the maps after destroy since it could be accessed by
+            // mutation observers.
+            maps.remove(name);
         } else {
             // It can be that, map is used only for locking,
             // because of that RecordStore is not created.
@@ -250,11 +254,11 @@ public class PartitionContainer {
      *                     cleanup is necessary or not
      */
     final void cleanUpOnMigration(int replicaIndex) {
-        mapService.getMapServiceContext().getMapContainers().keySet()
+        mapService.getMapServiceContext().getMapContainers().entrySet()
                 .stream()
-                .filter(mapName -> replicaIndex == -1
-                        || lesserBackupMapsThen(replicaIndex).test(getRecordStore(mapName)))
-                .forEach(this::cleanUpMap);
+                .filter(entry -> replicaIndex == -1
+                        || lesserBackupMapsThenWithContainer(replicaIndex).test(entry.getValue()))
+                .forEach(entry -> cleanUpMap(entry.getKey()));
     }
 
     protected void cleanUpMap(String mapName) {
@@ -274,8 +278,9 @@ public class PartitionContainer {
             if (mapContainer.isGlobalIndexEnabled()) {
                 throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
             }
+            int partitionId = getPartitionId();
 
-            Indexes indexesForMap = mapContainer.createIndexes(false);
+            Indexes indexesForMap = mapContainer.createIndexes(false, partitionId);
             ixs = indexes.putIfAbsent(name, indexesForMap);
             if (ixs == null) {
                 ixs = indexesForMap;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public final class InstantiationUtils {
      * @return a new instance of a given class
      * @throws AmbiguousInstantiationException when multiple constructors matching the parameters
      */
-    public static <T> T newInstanceOrNull(Class<? extends T> clazz, Object...params)  {
+    public static <T> T newInstanceOrNull(Class<? extends T> clazz, Object... params)  {
         Constructor<T> constructor = selectMatchingConstructor(clazz, params);
         if (constructor == null) {
             return null;
@@ -79,10 +79,10 @@ public final class InstantiationUtils {
     }
 
     private static boolean isParamsMatching(Constructor<?> constructor, Object[] params) {
-        Class<?>[] constructorParamTypes = constructor.getParameterTypes();
-        if (constructorParamTypes.length != params.length) {
+        if (constructor.getParameterCount() != params.length) {
             return false;
         }
+        Class<?>[] constructorParamTypes = constructor.getParameterTypes();
         for (int i = 0; i < constructorParamTypes.length; i++) {
             Class<?> constructorParamType = constructorParamTypes[i];
             Object param = params[i];

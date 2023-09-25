@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
@@ -43,6 +45,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,8 +59,8 @@ import java.io.Writer;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -149,8 +152,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testConfigurationWithFileName() throws Exception {
-        assumeThatNotZingJDK6(); // https://github.com/hazelcast/hazelcast/issues/9044
-
         File file = createTempFile("foo", "bar");
         file.deleteOnExit();
 
@@ -3350,7 +3351,22 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         int readIOThreadCount = 16;
         int writeIOThreadCount = 1;
 
-        String xml = HAZELCAST_START_TAG
+        String xml = HAZELCAST_START_TAG + HAZELCAST_END_TAG;
+        Config config = new InMemoryXmlConfig(xml);
+
+        // default device
+        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        System.out.println(localDeviceConfig);
+        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
+        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), localDeviceConfig.getBaseDir());
+        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
+        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
+        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
+
+
+
+        xml = HAZELCAST_START_TAG
                 + "<local-device name=\"my-device\">"
                 + "    <base-dir>" + baseDir + "</base-dir>"
                 + "    <block-size>" + blockSize + "</block-size>"
@@ -3360,8 +3376,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "</local-device>\n"
                 + HAZELCAST_END_TAG;
 
-        Config config = new InMemoryXmlConfig(xml);
-        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig("my-device");
+        config = new InMemoryXmlConfig(xml);
+        localDeviceConfig = config.getDeviceConfig("my-device");
 
         assertNotNull(localDeviceConfig);
         assertEquals("my-device", localDeviceConfig.getName());
@@ -3388,7 +3404,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         config = new InMemoryXmlConfig(xml);
-        assertEquals(3, config.getDeviceConfigs().size());
+        // default device removed
+        assertEquals(2, config.getDeviceConfigs().size());
+        assertNull(config.getDeviceConfig(DEFAULT_DEVICE_NAME));
 
         localDeviceConfig = config.getDeviceConfig("device0");
         assertEquals(blockSize * device0Multiplier, localDeviceConfig.getBlockSize());
@@ -3400,15 +3418,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(blockSize * device1Multiplier, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device1Multiplier, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device1Multiplier, localDeviceConfig.getWriteIOThreadCount());
-
-        // default device
-        localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
-        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
-        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), localDeviceConfig.getBaseDir());
-        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
-        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
-        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
 
         // override the default device config
         String newBaseDir = "/some/random/base/dir/for/tiered/store";
@@ -3743,23 +3752,25 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         PermissionConfig expected = new PermissionConfig(CACHE, "/hz/cachemanager1/cache1", "dev");
         expected.addAction("create").addAction("destroy").addAction("add").addAction("remove");
         assertPermissionConfig(expected, config);
+        assertFalse(config.getSecurityConfig().isPermissionPriorityGrant());
     }
 
     @Override
     @Test
     public void testConfigPermission() {
         String xml = HAZELCAST_START_TAG + SECURITY_START_TAG
-                + "  <client-permissions>"
-                + "    <config-permission principal=\"dev\">"
+                + "  <client-permissions priority-grant='true'>"
+                + "    <config-permission principal=\"dev\" deny='true'>"
                 + "       <endpoints><endpoint>127.0.0.1</endpoint></endpoints>"
                 + "    </config-permission>\n"
                 + "  </client-permissions>"
                 + SECURITY_END_TAG + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        PermissionConfig expected = new PermissionConfig(CONFIG, null, "dev");
+        PermissionConfig expected = new PermissionConfig(CONFIG, null, "dev").setDeny(true);
         expected.getEndpoints().add("127.0.0.1");
         assertPermissionConfig(expected, config);
+        assertTrue(config.getSecurityConfig().isPermissionPriorityGrant());
     }
 
     @Override
@@ -4060,6 +4071,48 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepIdleSeconds() {
+        // -1 fails XSD validation
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", -1);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid1));
+        // 0 fails XSD validation
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 0);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid2));
+        // 32768 fails range check in EndpointConfig
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 32768);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepIntervalSeconds() {
+        // -1 fails XSD validation
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", -1);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid1));
+        // 0 fails XSD validation
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 0);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid2));
+        // 32768 fails range check in EndpointConfig
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 32768);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepCount() {
+        // -1 fails XSD validation
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-count", -1);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid1));
+        // 0 fails XSD validation
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-count", 0);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid2));
+        // 128 fails range check in EndpointConfig
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-count", 128);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
     public void testAmbiguousNetworkConfig_throwsException() {
         String xml = HAZELCAST_START_TAG
                 + "  <advanced-network enabled=\"true\">\n"
@@ -4343,6 +4396,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      <send-buffer-size-kb>34</send-buffer-size-kb>\n"
                 + "      <receive-buffer-size-kb>67</receive-buffer-size-kb>\n"
                 + "      <linger-seconds>11</linger-seconds>\n"
+                + "      <keep-count>12</keep-count>\n"
+                + "      <keep-interval-seconds>13</keep-interval-seconds>\n"
+                + "      <keep-idle-seconds>14</keep-idle-seconds>\n"
                 + "    </socket-options>\n"
                 + "    <symmetric-encryption enabled=\"true\">\n"
                 + "      <algorithm>Algorithm</algorithm>\n"
@@ -4492,11 +4548,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "<sql>\n"
                 + "  <statement-timeout-millis>30</statement-timeout-millis>\n"
+                + "  <catalog-persistence-enabled>true</catalog-persistence-enabled>\n"
                 + "</sql>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+        assertTrue(sqlConfig.isCatalogPersistenceEnabled());
     }
 
     @Override
@@ -4513,35 +4571,153 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testExternalDataStoreConfigs() {
+    public void testDataConnectionConfigs() {
         String xml = HAZELCAST_START_TAG
-                + "    <external-data-store name=\"mysql-database\">\n"
-                + "        <class-name>com.hazelcast.datastore.JdbcDataStore</class-name>\n"
+                + "    <data-connection name=\"mysql-database\">\n"
+                + "        <type>jdbc</type>\n"
                 + "        <properties>\n"
                 + "            <property name=\"jdbcUrl\">jdbc:mysql://dummy:3306</property>\n"
                 + "            <property name=\"some.property\">dummy-value</property>\n"
                 + "        </properties>\n"
                 + "      <shared>true</shared>\n"
-                + "    </external-data-store>"
-                + "    <external-data-store name=\"other-database\">\n"
-                + "        <class-name>com.hazelcast.datastore.OtherDataStore</class-name>\n"
-                + "    </external-data-store>"
+                + "    </data-connection>"
+                + "    <data-connection name=\"other-database\">\n"
+                + "        <type>other</type>\n"
+                + "    </data-connection>"
                 + HAZELCAST_END_TAG;
 
-        Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = buildConfig(xml).getExternalDataStoreConfigs();
+        Map<String, DataConnectionConfig> dataConnectionConfigs = buildConfig(xml).getDataConnectionConfigs();
 
-        assertThat(externalDataStoreConfigs).hasSize(2);
-        assertThat(externalDataStoreConfigs).containsKey("mysql-database");
-        ExternalDataStoreConfig mysqlDataStoreConfig = externalDataStoreConfigs.get("mysql-database");
-        assertThat(mysqlDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.JdbcDataStore");
-        assertThat(mysqlDataStoreConfig.getName()).isEqualTo("mysql-database");
-        assertThat(mysqlDataStoreConfig.isShared()).isTrue();
-        assertThat(mysqlDataStoreConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
-        assertThat(mysqlDataStoreConfig.getProperty("some.property")).isEqualTo("dummy-value");
+        assertThat(dataConnectionConfigs).hasSize(2);
+        assertThat(dataConnectionConfigs).containsKey("mysql-database");
+        DataConnectionConfig mysqlDataConnectionConfig = dataConnectionConfigs.get("mysql-database");
+        assertThat(mysqlDataConnectionConfig.getType()).isEqualTo("jdbc");
+        assertThat(mysqlDataConnectionConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataConnectionConfig.isShared()).isTrue();
+        assertThat(mysqlDataConnectionConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataConnectionConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
-        assertThat(externalDataStoreConfigs).containsKey("other-database");
-        ExternalDataStoreConfig otherDataStoreConfig = externalDataStoreConfigs.get("other-database");
-        assertThat(otherDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.OtherDataStore");
+        assertThat(dataConnectionConfigs).containsKey("other-database");
+        DataConnectionConfig otherDataConnectionConfig = dataConnectionConfigs.get("other-database");
+        assertThat(otherDataConnectionConfig.getType()).isEqualTo("other");
+    }
+
+    @Override
+    @Test
+    public void testTpcConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <tpc enabled=\"true\">\n"
+                + "        <eventloop-count>12</eventloop-count>\n"
+                + "    </tpc>"
+                + HAZELCAST_END_TAG;
+
+        TpcConfig tpcConfig = buildConfig(xml).getTpcConfig();
+
+        assertThat(tpcConfig.isEnabled()).isTrue();
+        assertThat(tpcConfig.getEventloopCount()).isEqualTo(12);
+    }
+
+    @Override
+    @Test
+    public void testTpcSocketConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <network>"
+                + "        <tpc-socket>\n"
+                + "            <port-range>14000-16000</port-range>\n"
+                + "            <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "            <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "        </tpc-socket>\n"
+                + "    </network>"
+                + HAZELCAST_END_TAG;
+
+        TpcSocketConfig tpcSocketConfig = buildConfig(xml).getNetworkConfig().getTpcSocketConfig();
+
+        assertThat(tpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+        assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+        assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+    }
+
+    @Test
+    public void testTpcSocketConfigAdvanced() {
+        String xml = HAZELCAST_START_TAG
+                + "    <advanced-network enabled=\"true\">\n"
+                + "        <member-server-socket-endpoint-config>\n"
+                + "            <tpc-socket>\n"
+                + "                <port-range>14000-16000</port-range>\n"
+                + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "            </tpc-socket>\n"
+                + "        </member-server-socket-endpoint-config>\n"
+                + "        <client-server-socket-endpoint-config>\n"
+                + "            <tpc-socket>\n"
+                + "                <port-range>14000-16000</port-range>\n"
+                + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "            </tpc-socket>\n"
+                + "        </client-server-socket-endpoint-config>\n"
+                + "        <memcache-server-socket-endpoint-config>\n"
+                + "            <tpc-socket>\n"
+                + "                <port-range>14000-16000</port-range>\n"
+                + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "            </tpc-socket>\n"
+                + "        </memcache-server-socket-endpoint-config>\n"
+                + "        <rest-server-socket-endpoint-config>\n"
+                + "            <tpc-socket>\n"
+                + "                <port-range>14000-16000</port-range>\n"
+                + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "            </tpc-socket>\n"
+                + "        </rest-server-socket-endpoint-config>\n"
+                + "        <wan-endpoint-config name=\"tokyo\">\n"
+                + "            <tpc-socket>\n"
+                + "                <port-range>14000-16000</port-range>\n"
+                + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "            </tpc-socket>\n"
+                + "        </wan-endpoint-config>\n"
+                + "        <wan-server-socket-endpoint-config name=\"london\">\n"
+                + "            <tpc-socket>\n"
+                + "                <port-range>14000-16000</port-range>\n"
+                + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
+                + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
+                + "            </tpc-socket>\n"
+                + "        </wan-server-socket-endpoint-config>\n"
+                + "    </advanced-network>"
+                + HAZELCAST_END_TAG;
+
+        Map<EndpointQualifier, EndpointConfig> endpointConfigs = buildConfig(xml)
+                .getAdvancedNetworkConfig()
+                .getEndpointConfigs();
+
+        assertThat(endpointConfigs).hasSize(6);
+
+        endpointConfigs.forEach((endpointQualifier, endpointConfig) -> {
+            TpcSocketConfig tpcSocketConfig = endpointConfig.getTpcSocketConfig();
+
+            assertThat(tpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+            assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+            assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+        });
+    }
+
+    @Override
+    @Test
+    public void testPartitioningAttributeConfigs() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"test\">"
+                + "     <partition-attributes>"
+                + "         <attribute>attr1</attribute>"
+                + "         <attribute>attr2</attribute>"
+                + "     </partition-attributes>"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        final MapConfig mapConfig = buildConfig(xml).getMapConfig("test");
+        assertThat(mapConfig.getPartitioningAttributeConfigs()).containsExactly(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
     }
 
     @Override
@@ -4563,4 +4739,16 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         return new InMemoryXmlConfig(xml);
     }
 
+    public String getAdvancedNetworkConfigWithSocketOption(String socketOption, int value) {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <member-server-socket-endpoint-config name=\"member-server-socket\">\n"
+                + "    <socket-options>"
+                + "      <" + socketOption + ">" + value + "</" + socketOption + ">"
+                + "    </socket-options>"
+                + "  </member-server-socket-endpoint-config>\n"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+        return xml;
+    }
 }

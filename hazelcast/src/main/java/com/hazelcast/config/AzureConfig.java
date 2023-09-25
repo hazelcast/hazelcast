@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 
+import java.util.Map;
+
 /**
  * Configuration for the Azure Discovery Strategy.
  */
@@ -29,6 +31,10 @@ public class AzureConfig
 
     public AzureConfig(AzureConfig azureConfig) {
         super(azureConfig);
+    }
+
+    public AzureConfig(String tag, boolean enabled, boolean usePublicIp, Map<String, String> properties) {
+        super(tag, enabled, usePublicIp, properties);
     }
 
     @Override

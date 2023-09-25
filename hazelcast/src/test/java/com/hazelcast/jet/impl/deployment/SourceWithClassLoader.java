@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,6 @@ public class SourceWithClassLoader {
     public static StreamSource<String> streamSource(String name) {
         StreamSource<String> source = Sources.streamFromProcessor(name, ProcessorMetaSupplier.of(
                 () -> new TestProcessor(TestProcessor.ResourceReader::new)
-        ));
-        return source;
-    }
-
-    public static BatchSource<String> sourceMetaSupplier(String name) {
-        BatchSource<String> source = Sources.batchFromProcessor(name, new ProcessorMetaSupplierUsingClassloader(
-                TestProcessor.ResourceReader::new
         ));
         return source;
     }

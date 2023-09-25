@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
@@ -30,7 +29,7 @@ import org.apache.calcite.sql.SqlJsonConstructorNullClause;
 
 import java.io.IOException;
 
-public class JsonObjectFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
+public class JsonObjectFunction extends VariExpression<HazelcastJsonValue> {
     private SqlJsonConstructorNullClause nullClause;
 
     public JsonObjectFunction() { }
@@ -45,11 +44,6 @@ public class JsonObjectFunction extends VariExpression<HazelcastJsonValue> imple
             final SqlJsonConstructorNullClause nullClause
     ) {
         return new JsonObjectFunction(fields, nullClause);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
     }
 
     @Override

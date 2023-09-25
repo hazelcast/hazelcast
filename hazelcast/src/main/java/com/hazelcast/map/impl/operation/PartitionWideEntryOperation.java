@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.operation.steps.PartitionWideOpSteps;
+import com.hazelcast.map.impl.operation.steps.PartitionWideEntryOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.recordstore.StaticParams;
@@ -95,7 +95,7 @@ public class PartitionWideEntryOperation extends MapOperation
 
     @Override
     public Step getStartingStep() {
-        return PartitionWideOpSteps.PROCESS;
+        return PartitionWideEntryOpSteps.PROCESS;
     }
 
     @Override
@@ -111,17 +111,31 @@ public class PartitionWideEntryOperation extends MapOperation
 
     @Override
     protected void runInternal() {
-        if (mapContainer.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE) {
+        if (isHDMap()) {
             runForNative();
         } else {
             runWithPartitionScan();
         }
     }
 
+    public boolean isTieredStoreMap() {
+        return mapContainer.getMapConfig()
+                .getTieredStoreConfig().isEnabled();
+    }
+
+    private boolean isHDMap() {
+        return mapContainer.getMapConfig()
+                .getInMemoryFormat() == InMemoryFormat.NATIVE;
+    }
+
     private void runForNative() {
-        if (runWithIndex()) {
+        // try run with partitioned index
+        if (!isTieredStoreMap()
+                && runWithPartitionedIndex()) {
             return;
         }
+
+        // as a fallback scan whole partition
         runWithPartitionScanForNative();
     }
 
@@ -129,7 +143,7 @@ public class PartitionWideEntryOperation extends MapOperation
      * @return {@code true} if index has been used and the EP
      * has been executed on its keys, {@code false} otherwise
      */
-    private boolean runWithIndex() {
+    private boolean runWithPartitionedIndex() {
         // here we try to query the partitioned-index
         Predicate predicate = getPredicate();
         if (predicate == null) {
@@ -195,6 +209,9 @@ public class PartitionWideEntryOperation extends MapOperation
                 outComes.add(eventType);
                 outComes.add(operator.getEntry().getNewTtl());
                 outComes.add(operator.getEntry().isChangeExpiryOnUpdate());
+            } else {
+                // when event type is null, it means that there was no modification
+                operator.doPostOperateOps();
             }
         }, false);
 

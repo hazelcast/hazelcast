@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 public class AllCanonicalTypesValueDeserializer implements Deserializer<AllCanonicalTypesValue> {
 

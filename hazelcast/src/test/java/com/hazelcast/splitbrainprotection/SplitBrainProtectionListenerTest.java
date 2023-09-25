@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,7 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -162,7 +161,7 @@ public class SplitBrainProtectionListenerTest extends HazelcastTestSupport {
         assertNotNull(eventMembersRef.get());
 
         Collection<Member> members = eventMembersRef.get();
-        assertThat(members, Matchers.contains(hz1.getCluster().getLocalMember(), hz2.getCluster().getLocalMember()));
+        assertThat(members).containsExactlyInAnyOrder(hz1.getCluster().getLocalMember(), hz2.getCluster().getLocalMember());
     }
 
     private Config configWithSplitBrainProtection(String name, SplitBrainProtectionListener listener) {

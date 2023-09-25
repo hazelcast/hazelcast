@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static com.hazelcast.map.impl.record.Record.UNSET;
 
@@ -60,7 +62,6 @@ public class State {
     private long ttl = UNSET;
     private long maxIdle = UNSET;
     private long version;
-    private long expiryTime;
     private long now = Clock.currentTimeMillis();
     private Data key;
     private Address callerAddress;
@@ -77,7 +78,8 @@ public class State {
     private volatile boolean disableWanReplicationEvent;
     private volatile boolean triggerMapLoader;
     private volatile boolean shouldLoad;
-    private volatile boolean changeExpiryOnUpdate;
+    private volatile boolean changeExpiryOnUpdate = true;
+    private volatile boolean entryProcessorOffloadable;
     private volatile Object oldValue;
     private volatile Object newValue;
     private volatile Object result;
@@ -86,7 +88,6 @@ public class State {
     private volatile Collection<Data> keys;
     private volatile ArrayList<Record> records;
     private volatile EntryProcessor entryProcessor;
-    private volatile boolean entryProcessorOffload;
     private volatile EntryOperator operator;
     private volatile List<State> toStore;
     private volatile List<State> toRemove;
@@ -101,6 +102,7 @@ public class State {
     private volatile Queue<InternalIndex> notMarkedIndexes;
     private volatile Set keysFromIndex;
     private volatile Throwable throwable;
+    private volatile Consumer backupOpAfterRun;
 
     public State(RecordStore recordStore, MapOperation operation) {
         this.recordStore = recordStore;
@@ -115,7 +117,6 @@ public class State {
                 .setMaxIdle(state.getMaxIdle())
                 .setChangeExpiryOnUpdate(state.isChangeExpiryOnUpdate())
                 .setVersion(state.getVersion())
-                .setExpiryTime(state.getExpiryTime())
                 .setNow(state.getNow())
                 .setStaticPutParams(state.getStaticParams())
                 .setOwnerUuid(state.getOwnerUuid())
@@ -174,11 +175,6 @@ public class State {
         return this;
     }
 
-    public State ownerUuid(UUID ownerUuid) {
-        this.ownerUuid = ownerUuid;
-        return this;
-    }
-
     public State setTtl(long ttl) {
         this.ttl = ttl;
         return this;
@@ -186,11 +182,6 @@ public class State {
 
     public State setMaxIdle(long maxIdle) {
         this.maxIdle = maxIdle;
-        return this;
-    }
-
-    public State setExpiryTime(long expiryTime) {
-        this.expiryTime = expiryTime;
         return this;
     }
 
@@ -214,12 +205,12 @@ public class State {
         return this;
     }
 
-    public boolean isEntryProcessorOffload() {
-        return entryProcessorOffload;
+    public boolean isEntryProcessorOffloadable() {
+        return entryProcessorOffloadable;
     }
 
-    public State setEntryProcessorOffload(boolean entryProcessorOffload) {
-        this.entryProcessorOffload = entryProcessorOffload;
+    public State setEntryProcessorOffloadable(boolean entryProcessorOffloadable) {
+        this.entryProcessorOffloadable = entryProcessorOffloadable;
         return this;
     }
 
@@ -258,10 +249,6 @@ public class State {
 
     public long getVersion() {
         return version;
-    }
-
-    public long getExpiryTime() {
-        return expiryTime;
     }
 
     public long getNow() {
@@ -515,5 +502,15 @@ public class State {
 
     public boolean isChangeExpiryOnUpdate() {
         return changeExpiryOnUpdate;
+    }
+
+    public State setBackupOpAfterRun(Consumer backupOpAfterRun) {
+        this.backupOpAfterRun = backupOpAfterRun;
+        return this;
+    }
+
+    @Nullable
+    public Consumer getBackupOpAfterRun() {
+        return backupOpAfterRun;
     }
 }

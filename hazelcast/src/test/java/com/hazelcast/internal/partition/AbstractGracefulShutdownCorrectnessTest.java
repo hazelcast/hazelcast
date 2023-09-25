@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,10 +38,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionCorrectnessTestSupport {
@@ -117,7 +116,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
     public void testPartitionData_whenNodesStartedShutdown_whileOperationsOngoing() throws InterruptedException {
         final Config config = getConfig(true, false);
 
-        Future future = spawn(() -> {
+        Future<?> future = spawn(() -> {
             LinkedList<HazelcastInstance> instances
                     = new LinkedList<>(Arrays.asList(factory.newInstances(config, nodeCount)));
             try {
@@ -161,13 +160,13 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
         Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
         List<HazelcastInstance> instanceList = instances instanceof List
                 ? (List<HazelcastInstance>) instances
-                : new LinkedList<HazelcastInstance>(instances);
+                : new LinkedList<>(instances);
 
         return shutdownNodes(instanceList, count);
     }
 
     private Collection<Address> shutdownNodes(List<HazelcastInstance> instances, int count) throws InterruptedException {
-        assertThat(instances.size(), greaterThanOrEqualTo(count));
+        assertThat(instances.size()).isGreaterThanOrEqualTo(count);
 
         if (count == 1) {
             HazelcastInstance hz = instances.remove(0);

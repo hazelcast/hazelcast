@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import org.apache.calcite.rex.RexVisitor;
 import java.util.List;
 
 /**
- * Visitor that converts REX nodes to Hazelcast expressions.
+ * Visitor that converts a {@link RexNode} to Hazelcast's {@link Expression}.
  */
 public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
 
@@ -50,7 +50,9 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
     private final PlanNodeFieldTypeProvider fieldTypeProvider;
     private final QueryParameterMetadata parameterMetadata;
 
-    public RexToExpressionVisitor(PlanNodeFieldTypeProvider fieldTypeProvider, QueryParameterMetadata parameterMetadata) {
+    public RexToExpressionVisitor(
+            PlanNodeFieldTypeProvider fieldTypeProvider,
+            QueryParameterMetadata parameterMetadata) {
         this.fieldTypeProvider = fieldTypeProvider;
         this.parameterMetadata = parameterMetadata;
     }

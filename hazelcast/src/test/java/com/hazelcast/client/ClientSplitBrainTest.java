@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -220,8 +220,7 @@ public class ClientSplitBrainTest extends ClientTestSupport {
 
     @Test
     public void testMemberList_afterConnectingToOtherHalf() {
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setEnabled(false);
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
 
         // Client now has the cluster view listener registered to instance1
@@ -239,12 +238,9 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         blockCommunicationBetween(instance2, instance4);
 
         // make sure that each member quickly drops the other from their member list
-        suspectMember(instance1, instance2);
-        suspectMember(instance2, instance1);
-        suspectMember(instance3, instance2);
-        suspectMember(instance2, instance3);
-        suspectMember(instance4, instance2);
-        suspectMember(instance2, instance4);
+        closeConnectionBetween(instance1, instance2);
+        closeConnectionBetween(instance3, instance2);
+        closeConnectionBetween(instance4, instance2);
 
         assertClusterSizeEventually(3, instance1, instance3, instance4);
         assertClusterSizeEventually(1, instance2);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,7 @@ public class KeyedWatermarkCoalescer {
         for (WatermarkCoalescer c : coalescers.values()) {
             c.observeEvent(queueIndex);
         }
+        idleQueues[queueIndex] = false;
     }
 
     public List<Watermark> observeWm(int queueIndex, Watermark watermark) {
@@ -92,8 +93,10 @@ public class KeyedWatermarkCoalescer {
             idleQueues[queueIndex] = true;
             boolean allIdle = true;
             // we need to track idle queues for the case when there's no coalescer yet
-            for (boolean idleQueue : idleQueues) {
-                allIdle &= idleQueue;
+            for (int i = 0; i < idleQueues.length; i++) {
+                if (!doneQueues.contains(i)) {
+                    allIdle &= idleQueues[i];
+                }
             }
 
             List<Watermark> watermarks = new ArrayList<>();

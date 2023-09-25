@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.jet.core.test.JetAssert.assertEquals;
 import static com.hazelcast.jet.core.test.JetAssert.assertFalse;
 import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -183,6 +183,13 @@ public final class TestSupport {
                 return expectedMap.equals(actualMap);
             };
 
+    /**
+     * A context various methods can probe to find context information about the
+     * current test. For example, the {@link #outputChecker(BiPredicate) output
+     * checker} can check differently in various modes.
+     */
+    public static final ThreadLocal<TestContext> TEST_CONTEXT = new ThreadLocal<>();
+
     private static final Address LOCAL_ADDRESS;
 
     // 1ms should be enough for a cooperative call. We warn, when it's more than 5ms and
@@ -214,7 +221,8 @@ public final class TestSupport {
     private int outputOrdinalCount;
     private boolean outputMustOccurOnTime;
     private final List<ItemWithOrdinal> accumulatedExpectedOutput = new ArrayList<>();
-    private Runnable beforeEachRun = () -> { };
+    private Runnable beforeEachRun = () -> {
+    };
 
     private int localProcessorIndex;
     private int globalProcessorIndex;
@@ -278,9 +286,9 @@ public final class TestSupport {
      * item0 from input0, item0 from input1, item1 from input0 etc.
      * <p>
      * See also:<ul>
-     *     <li>{@link #input(List)} - if you have just one input ordinal
-     *     <li>{@link #inputs(List, int[])} - if you want to specify input
-     *     priorities
+     * <li>{@link #input(List)} - if you have just one input ordinal
+     * <li>{@link #inputs(List, int[])} - if you want to specify input
+     * priorities
      * </ul>
      *
      * @param inputs one list of input items for each input edge
@@ -297,8 +305,8 @@ public final class TestSupport {
      * round-robin fashion.
      * <p>
      * See also:<ul>
-     *     <li>{@link #input(List)} - if you have just one input ordinal
-     *     <li>{@link #inputs(List)} - if all inputs are of equal priority
+     * <li>{@link #input(List)} - if you have just one input ordinal
+     * <li>{@link #inputs(List)} - if all inputs are of equal priority
      * </ul>
      *
      * @param inputs one list of input items for each input edge
@@ -412,7 +420,7 @@ public final class TestSupport {
      * can be used in the assertion message.
      *
      * @param outputOrdinalCount how many output ordinals should be created
-     * @param assertFn an assertion function which takes the current mode and the collected output
+     * @param assertFn           an assertion function which takes the current mode and the collected output
      */
     public void assertOutput(int outputOrdinalCount, BiConsumer<TestMode, List<List<Object>>> assertFn) {
         this.assertOutputFn = assertFn;
@@ -449,9 +457,9 @@ public final class TestSupport {
      * Has no effect if calling {@code complete()} is {@linkplain
      * #disableCompleteCall() disabled}.
      *
-     * @param timeoutMillis maximum time to wait for the output to match
+     * @param timeoutMillis   maximum time to wait for the output to match
      * @param extraTimeMillis for how long to call {@code complete()}
-     *                       after the output matches
+     *                        after the output matches
      * @return {@code this} instance for fluent API
      */
     public TestSupport runUntilOutputMatches(long timeoutMillis, long extraTimeMillis) {
@@ -645,8 +653,17 @@ public final class TestSupport {
         }
     }
 
-    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private void runTest(TestMode testMode) throws Exception {
+        try {
+            TEST_CONTEXT.set(new TestContext(testMode));
+            runTest0(testMode);
+        } finally {
+            TEST_CONTEXT.remove();
+        }
+    }
+
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+    private void runTest0(TestMode testMode) throws Exception {
         beforeEachRun.run();
         accumulatedExpectedOutput.clear();
 
@@ -963,8 +980,8 @@ public final class TestSupport {
         if (isCooperative) {
             if (cooperativeTimeout > 0) {
                 assertTrue(String.format("call to %s() took %.1fms, it should be <%dms", methodName,
-                                toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_FAIL),
-                        elapsed < MILLISECONDS.toNanos(COOPERATIVE_TIME_LIMIT_MS_FAIL));
+                                toMillis(elapsed), cooperativeTimeout),
+                        elapsed < MILLISECONDS.toNanos(cooperativeTimeout));
             }
             // print warning
             if (elapsed > MILLISECONDS.toNanos(COOPERATIVE_TIME_LIMIT_MS_WARN)) {
@@ -1076,13 +1093,13 @@ public final class TestSupport {
      */
     private static String listToString(List<?> list) {
         return list.stream()
-                   .map(obj -> {
-                       if (obj instanceof Object[]) {
-                           return Arrays.toString((Object[]) obj);
-                       }
-                       return String.valueOf(obj);
-                   })
-                   .collect(Collectors.joining("\n"));
+                .map(obj -> {
+                    if (obj instanceof Object[]) {
+                        return Arrays.toString((Object[]) obj);
+                    }
+                    return String.valueOf(obj);
+                })
+                .collect(Collectors.joining("\n"));
     }
 
     public interface TestEvent {
@@ -1092,7 +1109,9 @@ public final class TestSupport {
     // super-interface, but we did it this way because we don't want them to be a public API.
     private interface TestEventInt extends TestEvent {
         boolean isInput();
+
         boolean isOutput();
+
         boolean isProcessorAssertion();
     }
 
@@ -1279,6 +1298,18 @@ public final class TestSupport {
                 throw new IllegalArgumentException("Unknown mode, doSnapshots=" + doSnapshots + ", restoreInterval="
                         + restoreInterval + ", inboxLimit=" + inboxLimit);
             }
+        }
+    }
+
+    public static final class TestContext {
+        private final TestMode testMode;
+
+        private TestContext(TestMode testMode) {
+            this.testMode = testMode;
+        }
+
+        public TestMode getTestMode() {
+            return testMode;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +32,17 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.NoTransactionException;
 import org.springframework.transaction.TransactionSuspensionNotSupportedException;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.hazelcast.spring.transaction.ServiceBeanWithTransactionalContext.TIMEOUT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.springframework.test.annotation.DirtiesContext.MethodMode.AFTER_METHOD;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"transaction-applicationContext-hazelcast.xml"})
@@ -70,6 +74,9 @@ public class TestSpringManagedHazelcastTransaction {
     @Autowired
     HazelcastInstance instance;
 
+    @Autowired
+    HazelcastTransactionManager transactionManager;
+
     /**
      * Tests that transactionalContext cannot be accessed when there is no transaction.
      */
@@ -93,6 +100,63 @@ public class TestSpringManagedHazelcastTransaction {
 
         // then
         assertNotNull(magic);
+    }
+
+    /**
+     * Tests that slow transaction will commit when no timeout value is set
+     * neither for the transaction nor in the transaction manager
+     */
+    @Test
+    public void noExceptionWithoutTimeoutValue() {
+        // when
+        service.putWithDelay(new DummyObject(1L, "magic"), TIMEOUT + 1);
+
+        // then
+        assertEquals(1L, instance.getMap("dummyObjectMap").size());
+    }
+
+    /**
+     * Tests that transaction times out when its duration exceeds the value configured for the transaction
+     */
+    @Test
+    public void transactionTimedOutExceptionWhenTimeoutValueIsSetForTransaction() {
+        // given
+        expectedException.expect(TransactionSystemException.class);
+        expectedException.expectMessage("Transaction is timed-out!");
+
+        // when
+        service.putWithDelay_transactionTimeoutValue(new DummyObject(1L, "magic"), TIMEOUT + 1);
+    }
+
+    /**
+     * Tests that transaction times out when its duration exceeds the default value
+     * configured in the transaction manager AND no value is configured for the transaction
+     */
+    @Test
+    @DirtiesContext(methodMode = AFTER_METHOD)
+    public void transactionTimedOutExceptionWhenTimeoutValueIsSetInTransactionManager() {
+        // given
+        transactionManager.setDefaultTimeout(TIMEOUT);
+        expectedException.expect(TransactionSystemException.class);
+        expectedException.expectMessage("Transaction is timed-out!");
+
+        // when
+        service.putWithDelay(new DummyObject(1L, "magic"), TIMEOUT + 1);
+    }
+
+    /**
+     * Tests that timeout value of the transaction takes precedence over the default value in the transaction manager
+     */
+    @Test
+    @DirtiesContext(methodMode = AFTER_METHOD)
+    public void transactionTimeoutTakesPrecedenceOverTransactionManagerDefaultTimeout() {
+        // given
+        transactionManager.setDefaultTimeout(TIMEOUT + 2);
+        expectedException.expect(TransactionSystemException.class);
+        expectedException.expectMessage("Transaction is timed-out!");
+
+        // when
+        service.putWithDelay_transactionTimeoutValue(new DummyObject(1L, "magic"), TIMEOUT + 1);
     }
 
     /**

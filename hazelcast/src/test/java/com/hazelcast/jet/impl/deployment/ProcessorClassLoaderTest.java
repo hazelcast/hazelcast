@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -97,11 +98,11 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
     @AfterClass
     public static void afterClass() throws Exception {
         if (jarFile != null) {
-            jarFile.delete();
+            Files.delete(jarFile.toPath());
             jarFile = null;
         }
         if (resourcesJarFile != null) {
-            resourcesJarFile.delete();
+            Files.delete(resourcesJarFile.toPath());
             resourcesJarFile = null;
         }
     }
@@ -131,16 +132,17 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
 
         // Create a member in a separate classloader without the test classes loaded
         URL classesUrl = new File("target/classes/").toURI().toURL();
+        URL tpcClassesUrl = new File("../hazelcast-tpc-engine/target/classes/").toURI().toURL();
+        ClassLoader classLoader = getClass().getClassLoader();
         HazelcastAPIDelegatingClassloader classloader = new HazelcastAPIDelegatingClassloader(
-                new URL[]{classesUrl},
-                // Need to delegate to system classloader, which has maven dependencies like Jackson
-                ClassLoader.getSystemClassLoader()
+                new URL[]{classesUrl, tpcClassesUrl},
+                classLoader
         );
         return HazelcastStarter.newHazelcastInstance(config, classloader);
     }
 
     @Test
-    public void testClassLoaderForBatchSource() throws Exception {
+    public void testClassLoaderForBatchSource() {
         Pipeline p = Pipeline.create();
         BatchSource<String> source = SourceWithClassLoader.batchSource(SOURCE_NAME);
 
@@ -162,7 +164,7 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
     }
 
     @Test
-    public void testClassLoaderForStreamSource() throws Exception {
+    public void testClassLoaderForStreamSource() {
         Pipeline p = Pipeline.create();
         StreamSource<String> source = SourceWithClassLoader.streamSource(SOURCE_NAME);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -365,6 +365,17 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.removeAsync(i);
+        }
+        final LocalMapStats localMapStats = getMapStats();
+        assertTrueEventually(() -> assertEquals(100, localMapStats.getRemoveOperationCount()));
+    }
+
+    @Test
+    public void testDeleteAsync() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+            map.deleteAsync(i);
         }
         final LocalMapStats localMapStats = getMapStats();
         assertTrueEventually(() -> assertEquals(100, localMapStats.getRemoveOperationCount()));

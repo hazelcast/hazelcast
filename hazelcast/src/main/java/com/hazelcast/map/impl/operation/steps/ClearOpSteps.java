@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-public enum ClearOpSteps implements Step<State> {
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+
+public enum ClearOpSteps implements IMapOpStep {
 
     CLEAR_MEMORY() {
         @Override
@@ -43,13 +45,13 @@ public enum ClearOpSteps implements Step<State> {
             ArrayList<Data> keys = new ArrayList<>();
             ArrayList<Record> records = new ArrayList<>();
             // we don't remove locked keys. These are clearable records.
-            recordStore.forEach(new BiConsumer<Data, Record>() {
+            recordStore.forEach(new BiConsumer<>() {
                 final Set<Data> lockedKeySet = recordStore.getLockStore().getLockedKeys();
 
                 @Override
                 public void accept(Data dataKey, Record record) {
                     if (lockedKeySet != null && !lockedKeySet.contains(dataKey)) {
-                        keys.add(dataKey);
+                        keys.add(recordStore.isTieredStorageEnabled() ? toHeapData(dataKey) : dataKey);
                         records.add(record);
                     }
 
@@ -63,13 +65,13 @@ public enum ClearOpSteps implements Step<State> {
         @Override
         public Step nextStep(State state) {
             return state.getRecordStore() == null
-                    ? UtilSteps.SEND_RESPONSE : ClearOpSteps.CLEAR_MAP_STORE;
+                    ? UtilSteps.FINAL_STEP : ClearOpSteps.CLEAR_MAP_STORE;
         }
     },
 
     CLEAR_MAP_STORE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
@@ -78,6 +80,7 @@ public enum ClearOpSteps implements Step<State> {
             DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
             Collection<Data> keys = state.getKeys();
             recordStore.getMapDataStore().removeAll(keys);
+            recordStore.getMapDataStore().reset();
         }
 
         @Override
@@ -99,7 +102,7 @@ public enum ClearOpSteps implements Step<State> {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

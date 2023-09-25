@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -109,7 +110,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         } else if (clientSerializationVersion != serializationService.getVersion()) {
             return SERIALIZATION_VERSION_MISMATCH;
         } else if (credentials == null) {
-            logger.severe("Could not retrieve Credentials object!");
+            logger.warning("Could not retrieve Credentials object!");
             return CREDENTIALS_FAILED;
         } else if (clientEngine.getSecurityContext() != null) {
             // security is enabled, let's do full JAAS authentication
@@ -118,7 +119,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
             // security is disabled let's verify that the username and password are null and the cluster names match
             return verifyEmptyCredentialsAndClusterName((PasswordCredentials) credentials);
         } else {
-            logger.severe("Hazelcast security is disabled.\n"
+            logger.warning("Hazelcast security is disabled.\n"
                     + "Null username and password values are expected.\n"
                     + "Only the cluster name is verified in this case!\n"
                     + "Current credentials type is: " + credentials.getClass().getName());
@@ -141,7 +142,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
             passed = Boolean.TRUE;
             return AUTHENTICATED;
         } catch (LoginException e) {
-            logger.warning(e);
+            logger.fine(e);
             return CREDENTIALS_FAILED;
         } finally {
             nodeEngine.getNode().getNodeExtension().getAuditlogService()
@@ -156,7 +157,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     private AuthenticationStatus verifyEmptyCredentialsAndClusterName(PasswordCredentials passwordCredentials) {
         if (passwordCredentials.getName() != null || passwordCredentials.getPassword() != null) {
-            logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid
+            logger.fine("Received auth from " + connection + " with clientUuid " + clientUuid
                     + " and clientName " + clientName + ", authentication rejected because security"
                     + " is disabled on the member, and client sends not-null username or password.");
             return CREDENTIALS_FAILED;
@@ -167,31 +168,33 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     }
 
     private ClientMessage prepareUnauthenticatedClientMessage() {
-        boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
+        boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         Connection connection = endpoint.getConnection();
-        logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid
-                + " and clientName " + clientName + ", authentication failed");
+        if (logger.isFineEnabled()) {
+            logger.fine("Received auth from " + connection + " with clientUuid " + clientUuid + " and clientName " + clientName
+                    + ", authentication failed");
+        }
         byte status = CREDENTIALS_FAILED.getId();
-        return encodeAuth(status, null, null, (byte) -1, -1, null, clientFailoverSupported, false);
+        return encodeAuth(status, null, null, (byte) -1, "", -1, null, failoverSupported, null, null);
     }
 
     private ClientMessage prepareNotAllowedInCluster() {
-        boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
+        boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         byte status = NOT_ALLOWED_IN_CLUSTER.getId();
-        return encodeAuth(status, null, null, (byte) -1, -1, null, clientFailoverSupported, false);
+        return encodeAuth(status, null, null, (byte) -1, "", -1, null, failoverSupported, null, null);
     }
 
     private ClientMessage prepareSerializationVersionMismatchClientMessage() {
-        boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
-        return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null, (byte) -1, -1, null, clientFailoverSupported,
-                false);
+        boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
+        return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null, (byte) -1, "",
+                -1, null, failoverSupported, null, null);
     }
 
     private ClientMessage prepareAuthenticatedClientMessage() {
         ServerConnection connection = endpoint.getConnection();
         setConnectionType();
-        endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(),
-                clientName, labels);
+        setTpcTokenToEndpoint();
+        endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(), clientName, labels);
         validateNodeStart();
         final UUID clusterId = clientEngine.getClusterService().getClusterId();
         // additional check: cluster id may be null when member has not started yet;
@@ -208,24 +211,56 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         final Address thisAddress = clientEngine.getThisAddress();
         UUID uuid = clientEngine.getClusterService().getLocalMember().getUuid();
         byte status = AUTHENTICATED.getId();
-        boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
-        return encodeAuth(status, thisAddress, uuid, serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clusterId, clientFailoverSupported, true);
+        boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
+        String serverVersion = getMemberBuildInfo().getVersion();
+        byte[] tpcToken = endpoint.getTpcToken() != null ? endpoint.getTpcToken().getContent() : null;
+        return encodeAuth(status, thisAddress, uuid, serializationService.getVersion(), serverVersion,
+                clientEngine.getPartitionService().getPartitionCount(), clusterId, failoverSupported,
+                nodeEngine.getTpcServerBootstrap().getClientPorts(), tpcToken);
     }
 
     private void setConnectionType() {
         connection.setConnectionType(getClientType());
     }
 
+    protected void setTpcTokenToEndpoint() {
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,
-                                                byte serializationVersion,
+                                                byte serializationVersion, String serverVersion,
                                                 int partitionCount, UUID clusterId, boolean failoverSupported,
-                                                boolean isAuthenticated);
+                                                List<Integer> tpcPorts, byte[] tpcToken);
 
     protected abstract String getClientType();
 
     @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return (ClientMessage) response;
+    }
+
+    @Override
     public Permission getRequiredPermission() {
+        return null;
+    }
+
+    @Override
+    public String getServiceName() {
+        return null;
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return null;
+    }
+
+    @Override
+    public Object[] getParameters() {
         return null;
     }
 }

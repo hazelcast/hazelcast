@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,5 +81,15 @@ public class LateItemsDropP extends AbstractProcessor {
             currentWm = watermark.timestamp();
         }
         return super.tryProcessWatermark(watermark);
+    }
+
+    @Override
+    public boolean isCooperative() {
+        return timestampExpression.isCooperative();
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,9 +45,7 @@ import java.util.UUID;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
 import static com.hazelcast.test.Accessors.getNode;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -115,7 +112,7 @@ public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
         assertNotNull(registeredAddressesOfInitiatorMember);
         assertContains(registeredAddressesOfInitiatorMember.getAllAddresses(), INITIATOR_MEMBER_ADDRESS);
         ServerConnection removedConnection = closeRandomConnection(new ArrayList<>(connectionManager.getConnections()));
-        assertTrueEventually(() -> assertThat(connectionManager.getConnections(), not(hasItem(removedConnection))),
+        assertTrueEventually(() -> assertThat(connectionManager.getConnections()).doesNotContain(removedConnection),
                 timeoutSecs);
 
         LinkedAddresses registeredAddressesAfterConnectionClose = serverNode

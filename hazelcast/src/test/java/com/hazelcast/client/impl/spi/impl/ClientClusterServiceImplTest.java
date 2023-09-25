@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -499,5 +500,32 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
         clusterService.handleMembersViewEvent(1, asList(masterMember, liteMember("127.0.0.2"),
                 member("127.0.0.3")), UUID.randomUUID());
         clusterService.waitInitialMemberListFetched();
+    }
+
+    @Test
+    public void testGetEffectiveMemberList() {
+        ClientClusterServiceImpl clusterService = new ClientClusterServiceImpl(mock(ILogger.class));
+
+        // Returns an empty list on startup, till the members view event
+        assertCollection(Collections.emptyList(), clusterService.getEffectiveMemberList());
+
+        MemberInfo member = member("127.0.0.1");
+        List<MemberInfo> members = Collections.singletonList(member);
+
+        for (int i = 0; i < 3; i++) {
+            clusterService.handleMembersViewEvent(i, members, UUID.randomUUID());
+
+            // Returns the member list after the members view event
+            assertCollection(
+                    members.stream()
+                            .map(MemberInfo::toMember)
+                            .collect(Collectors.toList()),
+                    clusterService.getEffectiveMemberList());
+
+            clusterService.onTryToConnectNextCluster();
+
+            // Returns an empty list after reset
+            assertCollection(Collections.emptyList(), clusterService.getEffectiveMemberList());
+        }
     }
 }

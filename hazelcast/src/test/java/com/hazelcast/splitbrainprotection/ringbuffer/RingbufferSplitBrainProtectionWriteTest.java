@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -40,8 +38,10 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ_WRITE;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.WRITE;
 import static java.util.Arrays.asList;
-import static org.hamcrest.core.Is.isA;
+import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings("unchecked")
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -54,9 +54,6 @@ public class RingbufferSplitBrainProtectionWriteTest extends AbstractSplitBrainP
 
     @Parameter
     public static SplitBrainProtectionOn splitBrainProtectionOn;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void setUp() {
@@ -80,13 +77,13 @@ public class RingbufferSplitBrainProtectionWriteTest extends AbstractSplitBrainP
 
     @Test
     public void addAllAsync_splitBrainProtection() throws Exception {
-        ring(0).addAllAsync(asList("123"), OverflowPolicy.OVERWRITE).toCompletableFuture().get();
+        ring(0).addAllAsync(singletonList("123"), OverflowPolicy.OVERWRITE).toCompletableFuture().get();
     }
 
     @Test
-    public void addAllAsync_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        ring(3).addAllAsync(asList("123"), OverflowPolicy.OVERWRITE).toCompletableFuture().get();
+    public void addAllAsync_noSplitBrainProtection() {
+        assertThatThrownBy(() -> ring(3).addAllAsync(singletonList("123"), OverflowPolicy.OVERWRITE).toCompletableFuture().get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -95,9 +92,11 @@ public class RingbufferSplitBrainProtectionWriteTest extends AbstractSplitBrainP
     }
 
     @Test
-    public void addAsync_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        ring(3).addAsync("123", OverflowPolicy.OVERWRITE).toCompletableFuture().get();
+    public void addAsync_noSplitBrainProtection() {
+        assertThatThrownBy(() ->
+                ring(3).addAsync("123", OverflowPolicy.OVERWRITE).toCompletableFuture().get()
+        )
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     protected Ringbuffer ring(int index) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.spring.cache;
 
 import com.hazelcast.map.IMap;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -137,7 +137,8 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
         assertTrue(time >= 300L);
     }
 
-    public static class DelayIMapGetInterceptor implements MapInterceptor {
+    public static class DelayIMapGetInterceptor extends MapInterceptorAdaptor {
+        private static final long serialVersionUID = 1L;
 
         private final int delay;
 
@@ -148,32 +149,7 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
         @Override
         public Object interceptGet(Object value) {
             sleepMillis(delay);
-            return null;
-        }
-
-        @Override
-        public void afterGet(Object value) {
-
-        }
-
-        @Override
-        public Object interceptPut(Object oldValue, Object newValue) {
-            return null;
-        }
-
-        @Override
-        public void afterPut(Object value) {
-
-        }
-
-        @Override
-        public Object interceptRemove(Object removedValue) {
-            return null;
-        }
-
-        @Override
-        public void afterRemove(Object value) {
-
+            return super.interceptGet(value);
         }
     }
 

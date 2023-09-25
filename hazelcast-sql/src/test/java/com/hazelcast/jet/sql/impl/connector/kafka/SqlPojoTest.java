@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.AllCanonicalTypesValue;
@@ -26,6 +27,7 @@ import com.hazelcast.jet.sql.impl.connector.kafka.model.JavaSerializer;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.Person;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
@@ -35,6 +37,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -62,7 +65,9 @@ public class SqlPojoTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() throws IOException {
-        initialize(1, null);
+        Config config = smallInstanceConfig();
+        config.setProperty(ClusterProperty.SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+        initialize(1, config);
         sqlService = instance().getSql();
 
         kafkaTestSupport = KafkaTestSupport.create();
@@ -323,6 +328,30 @@ public class SqlPojoTest extends SqlTestSupport {
                 "SELECT __key, this FROM " + name,
                 singletonList(new Row(new PersonId(1), new Person(null, "Alice")))
         );
+    }
+
+    @Test
+    public void test_customType() {
+        sqlService.execute("CREATE TYPE person_type OPTIONS ('format'='java', 'javaClass'='" + Person.class.getName() + "')");
+        sqlService.execute("CREATE MAPPING m (outerField INT, person person_type) TYPE " + KafkaSqlConnector.TYPE_NAME + " OPTIONS ("
+                + "'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + "',"
+                + "'auto.offset.reset'='earliest',"
+                + "'valueFormat'='java',"
+                + "'valueJavaClass'='" + ClzWithPerson.class.getName() + "',"
+                + "'value.serializer'='" + JavaSerializer.class.getName() + "',"
+                + "'value.deserializer'='" + JavaDeserializer.class.getName() + "'"
+                + ")"
+        );
+
+        sqlService.execute("insert into m values (1, (2, 'foo'))");
+
+        assertRowsEventuallyInAnyOrder("select outerField, (person).id, (person).name from m",
+            rows(3, 1, 2, "foo"));
+    }
+
+    public static class ClzWithPerson implements Serializable {
+        public int outerField;
+        public Person person;
     }
 
     private static String createRandomTopic() {

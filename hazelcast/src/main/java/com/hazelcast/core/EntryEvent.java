@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,10 +85,7 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
      * @throws IllegalArgumentException if source is {@code null}
      */
     public EntryEvent(Object source, Member member, int eventType, K key, V oldValue, V value, V mergingValue) {
-        super(source, member, eventType);
-        this.key = key;
-        this.oldValue = oldValue;
-        this.value = value;
+        this(source, member, eventType, key, oldValue, value);
         this.mergingValue = mergingValue;
     }
 
@@ -107,7 +104,7 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
      * @return the old value of the entry event
      */
     public V getOldValue() {
-        return this.oldValue;
+        return oldValue;
     }
 
     /**

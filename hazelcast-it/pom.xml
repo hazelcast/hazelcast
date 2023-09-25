@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021 Hazelcast Inc.
+  ~ Copyright 2023 Hazelcast Inc.
   ~
   ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.2.0-SNAPSHOT</version>
+        <version>5.4.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>hazelcast-it</artifactId>
@@ -69,7 +69,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <version>${maven.surefire.plugin.version}</version>
                 <configuration>
                     <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
                     <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
@@ -78,7 +78,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <version>${maven.failsafe.plugin.version}</version>
                 <configuration>
                     <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
                     <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
@@ -37,9 +38,9 @@ import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureDummyDataStore;
-import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureJdbcDataStore;
-import static com.hazelcast.jet.pipeline.ExternalDataStoreRef.externalDataStoreRef;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureDummyDataConnection;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureJdbcDataConnection;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
 import static java.util.stream.Collectors.toList;
@@ -49,8 +50,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class ReadJdbcPTest extends SimpleTestInClusterSupport {
 
     private static final int ITEM_COUNT = 100;
-    private static final String JDBC_DATA_STORE = "jdbc-data-store";
-    private static final String DUMMY_DATA_STORE = "dummy-data-store";
+    private static final String JDBC_DATA_CONNECTION = "jdbc-data-connection";
+    private static final String DUMMY_DATA_CONNECTION = "dummy-data-connection";
 
     private static String dbConnectionUrl;
     private static List<Entry<Integer, String>> tableContents;
@@ -60,8 +61,8 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
         dbConnectionUrl = "jdbc:h2:mem:" + ReadJdbcPTest.class.getSimpleName() + ";DB_CLOSE_DELAY=-1";
 
         Config config = smallInstanceConfig();
-        configureJdbcDataStore(JDBC_DATA_STORE, dbConnectionUrl, config);
-        configureDummyDataStore(DUMMY_DATA_STORE, config);
+        configureJdbcDataConnection(JDBC_DATA_CONNECTION, dbConnectionUrl, config);
+        configureDummyDataConnection(DUMMY_DATA_CONNECTION, config);
         initialize(2, config);
         // create and fill a table
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
@@ -100,10 +101,10 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void should_work_with_externalDatastore() {
+    public void should_work_with_dataConnection() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jdbc(
-                        externalDataStoreRef(JDBC_DATA_STORE),
+                        dataConnectionRef(JDBC_DATA_CONNECTION),
                         (con, parallelism, index) -> {
                             PreparedStatement statement = con.prepareStatement("select * from items where mod(id,?)=?");
                             statement.setInt(1, parallelism);
@@ -117,11 +118,11 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void should_fail_with_non_existing_externalDatastore() {
+    public void should_fail_with_non_existing_dataConnection() {
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jdbc(
-                        externalDataStoreRef("non-existing-data-store"),
+                        dataConnectionRef("non-existing-data-connection"),
                         (con, parallelism, index) -> {
                             PreparedStatement statement = con.prepareStatement("select * from items where mod(id,?)=?");
                             statement.setInt(1, parallelism);
@@ -132,14 +133,14 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 .writeTo(assertAnyOrder(tableContents));
 
         assertThatThrownBy(() -> instance().getJet().newJob(p).join())
-                .hasMessageContaining("External data store factory 'non-existing-data-store' not found");
+                .hasMessageContaining("Data connection 'non-existing-data-connection' not found");
     }
 
     @Test
-    public void should_fail_with_non_jdbc_externalDatastore() {
+    public void should_fail_with_non_jdbc_dataConnection() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jdbc(
-                        externalDataStoreRef(DUMMY_DATA_STORE),
+                        dataConnectionRef(DUMMY_DATA_CONNECTION),
                         (con, parallelism, index) -> {
                             PreparedStatement statement = con.prepareStatement("select * from items where mod(id,?)=?");
                             statement.setInt(1, parallelism);
@@ -150,7 +151,8 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 .writeTo(assertAnyOrder(tableContents));
 
         assertThatThrownBy(() -> instance().getJet().newJob(p).join())
-                .hasMessageContaining("Data store factory '" + DUMMY_DATA_STORE + "' must be an instance of JdbcDataStoreFactory");
+                .hasMessageContaining("Data connection '" + DUMMY_DATA_CONNECTION
+                        + "' must be an instance of class " + JdbcDataConnection.class.getName());
     }
 
     @Test

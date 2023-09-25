@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,6 +138,8 @@ public final class ClientConfigXmlGenerator {
         metrics(gen, clientConfig.getMetricsConfig());
         instanceTrackingConfig(gen, clientConfig.getInstanceTrackingConfig());
         sql(gen, clientConfig.getSqlConfig());
+        // TPC
+        tpc(gen, clientConfig.getTpcConfig());
 
         //close HazelcastClient
         gen.close();
@@ -155,6 +157,7 @@ public final class ClientConfigXmlGenerator {
         socketOptions(gen, network.getSocketOptions());
         socketInterceptor(gen, network.getSocketInterceptorConfig());
         ssl(gen, network.getSSLConfig());
+        cloud(gen, network.getCloudConfig());
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(network));
         autoDetection(gen, network.getAutoDetectionConfig());
         discovery(gen, network.getDiscoveryConfig());
@@ -518,6 +521,12 @@ public final class ClientConfigXmlGenerator {
                 .close();
     }
 
+    private static void cloud(XmlGenerator gen, ClientCloudConfig cloudConfig) {
+        gen.open("hazelcast-cloud", "enabled", cloudConfig.isEnabled())
+                .node("discovery-token", cloudConfig.getDiscoveryToken())
+                .close();
+    }
+
     private static void ssl(XmlGenerator gen, SSLConfig ssl) {
         if (ssl == null) {
             return;
@@ -660,4 +669,7 @@ public final class ClientConfigXmlGenerator {
            .close();
     }
 
+    private static void tpc(XmlGenerator gen, ClientTpcConfig tpcConfig) {
+        gen.open("tpc", "enabled", tpcConfig.isEnabled()).close();
+    }
 }

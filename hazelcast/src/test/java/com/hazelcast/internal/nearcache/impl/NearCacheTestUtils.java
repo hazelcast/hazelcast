@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
-import com.hazelcast.internal.adapter.MethodAvailableMatcher;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -45,6 +44,7 @@ import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.assertj.core.api.Assumptions;
 
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -55,6 +55,7 @@ import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
+import static com.hazelcast.internal.adapter.MethodAvailableMatcher.methodAvailable;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.internal.nearcache.impl.AbstractNearCacheBasicTest.DEFAULT_NEAR_CACHE_NAME;
 import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
@@ -68,7 +69,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
-import static org.junit.Assume.assumeThat;
 import static org.junit.Assume.assumeTrue;
 
 /**
@@ -99,9 +99,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static <T> T getFuture(CompletionStage<T> future, String message) {
         try {
             return future.toCompletableFuture().get();
-        } catch (InterruptedException e) {
-            throw new AssertionError(message + " " + e.getMessage());
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             throw new AssertionError(message + " " + e.getMessage());
         }
     }
@@ -237,7 +235,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @param method  {@link DataStructureAdapterMethod} to search for
      */
     public static boolean isMethodAvailable(DataStructureAdapter adapter, DataStructureAdapterMethod method) {
-        return new MethodAvailableMatcher(method).matchesSafely(adapter.getClass());
+        return methodAvailable(method).matches(adapter.getClass());
     }
 
     /**
@@ -268,7 +266,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      */
     public static void assumeThatMethodIsAvailable(Class<? extends DataStructureAdapter> adapterClass,
                                                    DataStructureAdapterMethod method) {
-        assumeThat(adapterClass, new MethodAvailableMatcher(method));
+        Assumptions.assumeThat(adapterClass).is(methodAvailable(method));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
@@ -45,6 +46,9 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.metadataQuery;
 import static com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRule.Config.DEFAULT;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.hasSameTypeFamily;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNumericIntegerType;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isTemporalType;
 
 @Value.Enclosing
 public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config> {
@@ -79,6 +83,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
     @Override
     public void onMatch(RelOptRuleCall call) {
         JoinLogicalRel join = call.rel(0);
+        RelNode leftInput = call.rel(1);
+        RelNode rightInput = call.rel(2);
 
         JoinRelType joinType = join.getJoinType();
         if (joinType != JoinRelType.INNER && joinType != JoinRelType.LEFT && joinType != JoinRelType.RIGHT) {
@@ -86,12 +92,21 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                     fail(join, "Stream to stream JOIN supports INNER and LEFT/RIGHT OUTER JOIN types"));
         }
 
-        RelNode left = RelRule.convert(join.getLeft(), join.getLeft().getTraitSet().replace(PHYSICAL));
-        RelNode right = RelRule.convert(join.getRight(), join.getRight().getTraitSet().replace(PHYSICAL));
+        RelNode left = RelRule.convert(leftInput, leftInput.getTraitSet().replace(PHYSICAL));
+        RelNode right = RelRule.convert(rightInput, rightInput.getTraitSet().replace(PHYSICAL));
 
-        WatermarkedFields wmFields = watermarkedFields(join,
-                metadataQuery(left).extractWatermarkedFields(left),
-                metadataQuery(right).extractWatermarkedFields(right));
+        WatermarkedFields leftFields = metadataQuery(left).extractWatermarkedFields(left);
+        WatermarkedFields rightFields = metadataQuery(right).extractWatermarkedFields(right);
+
+        if (leftFields == null || rightFields == null) {
+            // If we pass initial isUnbounded checks for left & right input with rule config,
+            // it means, we cannot execute such a query, we must abort it.
+            String message = "For stream-to-stream join, both joined sides must have an order imposed";
+            call.transformTo(fail(join, message));
+            return;
+        }
+
+        WatermarkedFields wmFields = watermarkedFields(join, leftFields, rightFields);
 
         // a postponeTimeMap just like the one described in the TDD, but we don't use WM keys, but field indexes here
         Map<Integer, Map<Integer, Long>> postponeTimeMap = new HashMap<>();
@@ -126,9 +141,21 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
 
         if (!foundLeft || !foundRight) {
+            List<String> leftWatermarkedColumnNames = leftFields.getFieldIndexes().stream()
+                    .map(left.getRowType().getFieldNames()::get)
+                    .collect(Collectors.toList());
+            List<String> rightWatermarkedColumnNames = rightFields.getFieldIndexes().stream()
+                    .map(right.getRowType().getFieldNames()::get)
+                    .collect(Collectors.toList());
+
             call.transformTo(
-                    fail(join, "A stream-to-stream join must have a join condition constraining the maximum " +
-                            "difference between time values of the joined tables in both directions"));
+                    fail(join, String.format(
+                            "A stream-to-stream join must have a join condition constraining the maximum " +
+                                    "difference between time values of the joined tables in both directions. " +
+                                    "Time columns on the left side: %s, time columns on the right side: %s",
+                            // note that the join can be transposed and sides may not match original query
+                            leftWatermarkedColumnNames, rightWatermarkedColumnNames)));
+            return;
         }
 
         call.transformTo(
@@ -279,6 +306,18 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             }
             field[0] = ((RexInputRef) expr).getIndex();
             return true;
+        }
+
+        if (expr instanceof RexCall) {
+            RexCall call = (RexCall) expr;
+            if (call.isA(SqlKind.CAST)) {
+                RexNode inputRef = call.getOperands().get(0);
+                RelDataType type = inputRef.getType();
+                // Only integer and temporal types are supported for watermarking for S2S JOIN.
+                if (hasSameTypeFamily(type, call.getType()) && (isNumericIntegerType(type) || isTemporalType(type))) {
+                    return addAddends(inputRef, positiveField, negativeField, constantsSum, inverse);
+                }
+            }
         }
 
         if (expr.getKind() == SqlKind.PLUS || expr.getKind() == SqlKind.MINUS) {

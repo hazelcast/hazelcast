@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of key-value mappings in this map. If the map contains more than Integer.MAX_VALUE elements,
  * returns Integer.MAX_VALUE.
  */
-@Generated("ca5d2416d8c81cc869fffa1175e29523")
+@Generated("73130551602b9e3c544c6fe3f2ee90f9")
 public final class ReplicatedMapSizeCodec {
     //hex: 0x0D0200
     public static final int REQUEST_MESSAGE_TYPE = 852480;

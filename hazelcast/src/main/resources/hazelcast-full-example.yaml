@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -99,7 +99,13 @@ hazelcast:
   # Set to true to allow Management Center access to contents of Hazelcast data structures (for instance map entries), false to disallow.
   # Management Center can't access the data if at least one member has the data access disabled.
   # Default value is true.
-
+  # * trusted-interfaces:
+  # Includes allowed IP addresses for Management Center connections.
+  # It configures addresses from which clients are allowed to run cluster management tasks over the Hazelcast client protocol.
+  # You can give an IP addresses range using the wildcards (*) or intervals in the IPv4 address
+  # (e.g. 192.168.1.* or 192.168.1.100-110).
+  # Default value is empty, meaning all Management Center connections can execute management tasks.
+  #
   # Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
   # in your cluster. To use it for more members, you need to have either a Management Center,
   # Hazelcast Enterprise or Hazelcast Enterprise HD license.
@@ -108,6 +114,9 @@ hazelcast:
     scripting-enabled: false
     console-enabled: false
     data-access-enabled: true
+    trusted-interfaces:
+      - 10.10.1.*
+      - 10.10.2.*
   #
   # The "properties" mapping lets you add properties to some of the Hazelcast elements used to configure some of
   # the Hazelcast modules.
@@ -611,6 +620,14 @@ hazelcast:
   #       all Hazelcast cluster members would be within one network switch/router therefore
   #       default of 0 is usually sufficient.
   #
+  # - "tpc-socket":
+  #   Socket configuration for TPC. In TPC, each eventloop has its own socket.
+  #   - "port-range":
+  #       Configures the port range available for TPC sockets.
+  #   - "receive-buffer-size-kb":
+  #       Configures SO_RCVBUF socket option for TPC sockets.
+  #   - "send-buffer-size-kb":
+  #       Configures SO_SNDBUF socket option for TPC sockets.
   network:
     public-address: 11.22.33.44:5555
     port:
@@ -700,8 +717,7 @@ hazelcast:
     ssl:
       enabled: false
       properties:
-        protocol: TLS
-
+        protocol: TLSv1.3
         mutualAuthentication: REQUIRED
         keyStore: /opt/hazelcast.keystore
         keyStorePassword: secret.97531
@@ -709,6 +725,7 @@ hazelcast:
         trustStore: /opt/hazelcast.truststore
         trustStorePassword: changeit
         trustStoreType: PKCS12
+        keyMaterialDuration: PT10M
     socket-interceptor:
       enabled: false
     member-address-provider:
@@ -773,6 +790,12 @@ hazelcast:
     #
     memcache-protocol:
       enabled: false
+
+    tpc-socket:
+      port-range: 14000-16000
+      receive-buffer-size-kb: 256
+      send-buffer-size-kb: 256
+
   #
   # ===== PARTITION GROUPING CONFIGURATION =====
   #
@@ -1477,6 +1500,11 @@ hazelcast:
           indexes:
             - attributes:
               - "name"
+      # In an actual config, only one of {partition-strategy, partition-attributes} should be present
+      partition-strategy: "com.example.Strategy"
+      partition-attributes:
+        - name: "attributeName1"
+        - name: "attributeName2"
   #
   # ===== HAZELCAST MULTIMAP CONFIGURATION =====
   #
@@ -2423,8 +2451,10 @@ hazelcast:
         property: value
     client-permissions:
       on-join-operation: RECEIVE
+      priority-grant: false
       all:
         principal: admin
+        deny: true
         endpoints:
           - 127.0.0.1
       config:
@@ -3089,6 +3119,24 @@ hazelcast:
   #              Specifies the size of the receive buffer. The default value is 128KB.
   #          * "linger-seconds":
   #              Specifies the TCP linger seconds. The default value is 0.
+  #          * "keep-count":
+  #              When keep-alive is true and supported by the platform, sets the number of unacknowledged TCP keep-alive probes
+  #              to be sent before declaring a connection dead.
+  #          * "keep-idle-seconds":
+  #              When keep-alive is true and supported by the platform, sets the number of seconds to wait after the last
+  #              packet was sent before sending a keep-alive probe.
+  #          * "keep-interval-seconds":
+  #              When keep-alive is true and supported by the platform, sets the number of seconds to wait between keep-alive
+  #              probes.
+  #
+  #      - "tpc-socket":
+  #        Socket configuration for TPC. In TPC, each eventloop has its own socket.
+  #        - "port-range":
+  #            Configures the port range available for TPC sockets.
+  #        - "receive-buffer-size-kb":
+  #            Configures SO_RCVBUF socket option for TPC sockets.
+  #        - "send-buffer-size-kb":
+  #            Configures SO_SNDBUF socket option for TPC sockets.
   #
   #  * "rest-server-socket-endpoint-config":
   #      Controls access to Hazelcast HTTP REST API.
@@ -3253,6 +3301,9 @@ hazelcast:
         send-buffer-size-kb: 25
         receive-buffer-size-kb: 33
         linger-seconds: 99
+        keep-idle-seconds: 600
+        keep-count: 10
+        keep-interval-seconds: 15
       port:
         port-count: 100
         auto-increment: true
@@ -3260,6 +3311,10 @@ hazelcast:
       public-address: dummy
       # If the address should be reused. See NetworkConfig.setReuseAddress for more information.
       reuse-address: true
+      tpc-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
     client-server-socket-endpoint-config:
       outbound-ports:
         - 38000,38500-38600
@@ -3283,12 +3338,20 @@ hazelcast:
         port: 9999
       public-address: 10.10.0.10
       reuse-address: true
+      tpc-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
     rest-server-socket-endpoint-config:
       name: internal-server-socket
       interfaces:
         enabled: false
         interfaces:
           - 10.10.1.*
+      tpc-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
       port:
         auto-increment: false
         port: 8080
@@ -3310,6 +3373,10 @@ hazelcast:
           factory-class-name: com.hazelcast.examples.MySSLContextFactory
           properties:
             foo: bar
+        tpc-socket:
+          port-range: 14000-16000
+          receive-buffer-size-kb: 256
+          send-buffer-size-kb: 256
       endpoint-london:
         symmetric-encryption:
           enabled: true
@@ -3324,12 +3391,20 @@ hazelcast:
           interfaces:
             - 192.168.8.101
             - 10.20.10.100
+        tpc-socket:
+          port-range: 14000-16000
+          receive-buffer-size-kb: 256
+          send-buffer-size-kb: 256
     memcache-server-socket-endpoint-config:
       name: memcache
       port:
         auto-increment: false
         port-count: 10
         port: 6000
+      tpc-socket:
+        port-range: 14000-16000
+        receive-buffer-size-kb: 256
+        send-buffer-size-kb: 256
 
   #
   # ===== HAZELCAST CP SUBSYSTEM CONFIGURATION =====
@@ -3640,9 +3715,19 @@ hazelcast:
   # It has the following sub-elements:
   #     * "statement-timeout-millis":
   #         Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
+  #     * "catalog-persistence-enabled":
+  #         Sets whether SQL Catalog persistence is enabled for the node.
+  #         With SQL Catalog persistence enabled you can restart the whole cluster without
+  #         losing schema definition objects (such as MAPPINGs, TYPEs, VIEWs and DATA CONNECTIONs).
+  #         The feature is implemented on top of the Hot Restart feature of Hazelcast
+  #         which persists the data to disk. If enabled, you have to also configure
+  #         Hot Restart. Feature is disabled by default. If you enable this option in
+  #         open-source, the member will fail to start, you need Enterprise to run it
+  #         and obtain a license from Hazelcast.
   #
   sql:
     statement-timeout-millis: 0
+    catalog-persistence-enabled: false
 
   #  ===== HAZELCAST JET CONFIGURATION =====
   #
@@ -3803,15 +3888,24 @@ hazelcast:
   # Integrity Checker is disabled by default.
   integrity-checker:
     enabled: false
-  #      ===== HAZELCAST EXTERNAL DATA STORE CONFIGURATION =====
+  #      ===== HAZELCAST DATA CONNECTION CONFIGURATION =====
   #
-  #      Configuration element's name is <external-data-store>. Contains configuration of external data stores
+  #      Configuration element's name is <data-connection>. Contains configuration of data connections
   #      used by map stores and jdbc sinks and sources.
-  external-data-store:
+  data-connection:
     mysql-database:
-      class-name: com.hazelcast.datastore.JdbcDataStoreFactory
+      type: jdbc
       properties:
         jdbcUrl: jdbc:mysql://dummy:3306
       shared: false
     other-database:
-      class-name: com.hazelcast.datastore.OtherDataStore
+      type: other
+
+  #    ===== HAZELCAST TPC CONFIGURATION =====
+  #
+  #    Hazelcast TPC is the next generation of Hazelcast built with thread per core architecture.
+  #    It's still being developed and everything is subject to change. TPC is disabled by default.
+  tpc:
+    enabled: true
+    # Configures the number of eventloops. It's equal to available processor count by default.
+    eventloop-count: 12

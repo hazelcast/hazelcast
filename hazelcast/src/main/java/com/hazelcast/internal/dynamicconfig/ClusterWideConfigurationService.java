@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
@@ -38,6 +38,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
@@ -53,7 +54,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -72,6 +72,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.cluster.Versions.V4_0;
 import static com.hazelcast.internal.cluster.Versions.V5_2;
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.FutureUtil.waitForever;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -81,7 +82,7 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ClusterWideConfigurationService implements
-        PreJoinAwareService,
+        PreJoinAwareService<DynamicConfigPreJoinOperation>,
         CoreService,
         ClusterVersionListener,
         ManagedService,
@@ -118,7 +119,8 @@ public class ClusterWideConfigurationService implements
     private final ConcurrentMap<String, ReliableTopicConfig> reliableTopicConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CacheSimpleConfig> cacheSimpleConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ExternalDataStoreConfig> externalDataStoreConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, DataConnectionConfig> dataConnectionConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
 
@@ -140,7 +142,8 @@ public class ClusterWideConfigurationService implements
             cacheSimpleConfigs,
             flakeIdGeneratorConfigs,
             pnCounterConfigs,
-            externalDataStoreConfigs,
+            dataConnectionConfigs,
+            wanReplicationConfigs,
     };
 
     private volatile Version version;
@@ -160,7 +163,7 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public DynamicConfigPreJoinOperation getPreJoinOperation() {
         IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
         if (noConfigurationExist(allConfigurations)) {
             // there is no dynamic configuration -> no need to send an empty operation
@@ -329,9 +332,18 @@ public class ClusterWideConfigurationService implements
         } else if (newConfig instanceof PNCounterConfig) {
             PNCounterConfig config = (PNCounterConfig) newConfig;
             currentConfig = pnCounterConfigs.putIfAbsent(config.getName(), config);
-        } else if (newConfig instanceof ExternalDataStoreConfig) {
-            ExternalDataStoreConfig config = (ExternalDataStoreConfig) newConfig;
-            currentConfig = externalDataStoreConfigs.putIfAbsent(config.getName(), config);
+        } else if (newConfig instanceof DataConnectionConfig) {
+            DataConnectionConfig config = (DataConnectionConfig) newConfig;
+            currentConfig = dataConnectionConfigs.putIfAbsent(config.getName(), config);
+            if (currentConfig == null) {
+                nodeEngine.getDataConnectionService().createConfigDataConnection(config);
+            }
+        } else if (newConfig instanceof WanReplicationConfig) {
+            WanReplicationConfig config = (WanReplicationConfig) newConfig;
+            currentConfig = wanReplicationConfigs.putIfAbsent(config.getName(), config);
+            if (currentConfig == null) {
+                nodeEngine.getWanReplicationService().addWanReplicationConfig(config);
+            }
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
@@ -534,13 +546,23 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public ExternalDataStoreConfig findExternalDataStoreConfig(String baseName) {
-        return lookupByPattern(configPatternMatcher, externalDataStoreConfigs, baseName);
+    public DataConnectionConfig findDataConnectionConfig(String baseName) {
+        return lookupByPattern(configPatternMatcher, dataConnectionConfigs, baseName);
     }
 
     @Override
-    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
-        return externalDataStoreConfigs;
+    public Map<String, DataConnectionConfig> getDataConnectionConfigs() {
+        return dataConnectionConfigs;
+    }
+
+    @Override
+    public WanReplicationConfig findWanReplicationConfig(String name) {
+        return lookupByPattern(configPatternMatcher, wanReplicationConfigs, name);
+    }
+
+    @Override
+    public Map<String, WanReplicationConfig> getWanReplicationConfigs() {
+        return wanReplicationConfigs;
     }
 
     @Override
@@ -554,10 +576,6 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public void updateTcpIpConfigMemberList(List<String> memberList) {
-        if (version.isLessThan(V5_2)) {
-            throw new UnsupportedOperationException("TCP-IP member list update is not supported"
-                    + " for the cluster version less than 5.2");
-        }
         invokeOnStableClusterSerial(
                 nodeEngine,
                 () -> new UpdateTcpIpMemberListOperation(memberList), CONFIG_PUBLISH_MAX_ATTEMPT_COUNT
@@ -611,7 +629,8 @@ public class ClusterWideConfigurationService implements
         configToVersion.put(FlakeIdGeneratorConfig.class, V4_0);
         configToVersion.put(PNCounterConfig.class, V4_0);
         configToVersion.put(MerkleTreeConfig.class, V4_0);
-        configToVersion.put(ExternalDataStoreConfig.class, V5_2);
+        configToVersion.put(DataConnectionConfig.class, V5_2);
+        configToVersion.put(WanReplicationConfig.class, V5_4);
 
         return Collections.unmodifiableMap(configToVersion);
     }

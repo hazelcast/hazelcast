@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -164,7 +164,7 @@ public abstract class AbstractProcessor implements Processor {
      * @param ordinal ordinal of the edge that delivered the item
      * @param item    item to be processed
      * @return {@code true} if this item has now been processed,
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         throw new UnsupportedOperationException("Missing implementation in " + getClass());
@@ -179,9 +179,9 @@ public abstract class AbstractProcessor implements Processor {
      * The default implementation delegates to {@link #tryProcess(int, Object)
      * tryProcess(0, item)}.
      *
-     * @param item    item to be processed
+     * @param item item to be processed
      * @return {@code true} if this item has now been processed,
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     protected boolean tryProcess0(@Nonnull Object item) throws Exception {
         return tryProcess(0, item);
@@ -196,9 +196,9 @@ public abstract class AbstractProcessor implements Processor {
      * The default implementation delegates to {@link #tryProcess(int, Object)
      * tryProcess(1, item)}.
      *
-     * @param item    item to be processed
+     * @param item item to be processed
      * @return {@code true} if this item has now been processed,
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     protected boolean tryProcess1(@Nonnull Object item) throws Exception {
         return tryProcess(1, item);
@@ -213,9 +213,9 @@ public abstract class AbstractProcessor implements Processor {
      * The default implementation delegates to {@link #tryProcess(int, Object)
      * tryProcess(2, item)}.
      *
-     * @param item    item to be processed
+     * @param item item to be processed
      * @return {@code true} if this item has now been processed,
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     protected boolean tryProcess2(@Nonnull Object item) throws Exception {
         return tryProcess(2, item);
@@ -230,9 +230,9 @@ public abstract class AbstractProcessor implements Processor {
      * The default implementation delegates to {@link #tryProcess(int, Object)
      * tryProcess(3, item)}.
      *
-     * @param item    item to be processed
+     * @param item item to be processed
      * @return {@code true} if this item has now been processed,
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     protected boolean tryProcess3(@Nonnull Object item) throws Exception {
         return tryProcess(3, item);
@@ -247,9 +247,9 @@ public abstract class AbstractProcessor implements Processor {
      * The default implementation delegates to {@link #tryProcess(int, Object)
      * tryProcess(4, item)}.
      *
-     * @param item    item to be processed
+     * @param item item to be processed
      * @return {@code true} if this item has now been processed,
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     @SuppressWarnings("checkstyle:magicnumber")
     protected boolean tryProcess4(@Nonnull Object item) throws Exception {
@@ -264,8 +264,8 @@ public abstract class AbstractProcessor implements Processor {
      * UnsupportedOperationException}, but it will not be called unless you
      * override {@link #saveToSnapshot()}.
      *
-     * @param key      key of the entry from the snapshot
-     * @param value    value of the entry from the snapshot
+     * @param key   key of the entry from the snapshot
+     * @param value value of the entry from the snapshot
      */
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         throw new UnsupportedOperationException("Missing implementation in " + getClass());
@@ -355,7 +355,7 @@ public abstract class AbstractProcessor implements Processor {
      * For simplified usage from {@link #tryProcess(int, Object)
      * tryProcess(ordinal, item)} methods, see {@link FlatMapper}.
      *
-     * @param ordinals ordinals of the target bucket
+     * @param ordinals  ordinals of the target bucket
      * @param traverser traverser over items to emit
      * @return whether the traverser has been exhausted
      */
@@ -392,7 +392,7 @@ public abstract class AbstractProcessor implements Processor {
      * For simplified usage in {@link #tryProcess(int, Object)
      * tryProcess(ordinal, item)} methods, see {@link FlatMapper}.
      *
-     * @param ordinal ordinal of the target bucket
+     * @param ordinal   ordinal of the target bucket
      * @param traverser traverser over items to emit
      * @return whether the traverser has been exhausted
      */
@@ -489,7 +489,7 @@ public abstract class AbstractProcessor implements Processor {
     protected final <T, R> FlatMapper<T, R> flatMapper(
             int ordinal, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {
-        return ordinal != -1 ? flatMapper(new int[] {ordinal}, mapper) : flatMapper(mapper);
+        return ordinal != -1 ? flatMapper(new int[]{ordinal}, mapper) : flatMapper(mapper);
     }
 
     /**

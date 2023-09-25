@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.security.Permission;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
@@ -65,7 +66,7 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
             } else {
                 handleProcessingFailure(throwable);
             }
-        });
+        }, CALLER_RUNS);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,7 +175,7 @@ public final class ReflectionUtils {
     private static Method findPropertyAccessor(
             @Nonnull Class<?> clazz,
             @Nonnull String propertyName,
-            @Nonnull String ...prefixes
+            @Nonnull String... prefixes
     ) {
         final Set<String> accessorNames = stream(prefixes)
                 .map(prefix -> prefix + toUpperCase(propertyName.charAt(0)) + propertyName.substring(1))

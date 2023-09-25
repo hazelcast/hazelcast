@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -158,10 +158,21 @@ public interface IPartitionService extends CoreService {
      * Queries and returns if this member in a safe state or not.
      * <p>
      * This method just checks for a safe state, it doesn't force this member to be in a safe state.
+     * <p>
+     * This method performs the same checks as {@link #isPartitionTableSafe()}, and in addition also
+     * checks whether replica sync is required.
      *
      * @return {@code true} if this member in a safe state, otherwise {@code false}
      */
     boolean isMemberStateSafe();
+
+    /**
+     * Queries and returns if the partition table is safe, meaning partition replicas are assigned to owners,
+     * no migrations are ongoing and there is no need to fetch partition table from other members.
+     *
+     * @return {@code] true} is partition table is safe, otherwise {@code false}
+     */
+    boolean isPartitionTableSafe();
 
     /**
      * Returns maximum allowed backup count according to current
@@ -231,4 +242,10 @@ public interface IPartitionService extends CoreService {
         keysData.forEach(o -> partitionIds.add(getPartitionId(o)));
         return partitionIds;
     }
+
+    /**
+     * @return  {@code true} if initial partition assignment ("first arrangement")
+     *          is done, otherwise {@code false}.
+     */
+    boolean isPartitionAssignmentDone();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.List;
@@ -65,11 +66,6 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
     }
 
     @Override
-    public boolean initIsCooperative() {
-        return wrapped.initIsCooperative();
-    }
-
-    @Override
     public void init(@Nonnull Context context) throws Exception {
         wrapped.init(context);
     }
@@ -81,18 +77,28 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
     }
 
     @Override
-    public boolean closeIsCooperative() {
-        return wrapped.closeIsCooperative();
-    }
-
-    @Override
-    public void close(Throwable error) throws Exception {
+    public void close(@Nullable Throwable error) throws Exception {
         wrapped.close(error);
     }
 
     @Override
     public Permission getRequiredPermission() {
         return wrapped.getRequiredPermission();
+    }
+
+    @Override
+    public boolean isReusable() {
+        return wrapped.isReusable();
+    }
+
+    @Override
+    public boolean initIsCooperative() {
+        return wrapped.initIsCooperative();
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return wrapped.closeIsCooperative();
     }
 
     @Override

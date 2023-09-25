@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,8 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -104,7 +105,7 @@ public final class TestProcessors {
     /**
      * Asserts that no errors were raised in processor's init and close methods.
      * Such errors normally are being "eaten" by the framework, so won't cause typical assertion error.
-     *
+     * <p>
      * It checks also how many times init and close was called.
      */
     public static void assertNoErrorsInProcessors() {
@@ -195,9 +196,9 @@ public final class TestProcessors {
         static AtomicReference<Throwable> receivedCloseError = new AtomicReference<>();
         static Semaphore blockingSemaphore = new Semaphore(0, true);
 
-        private Throwable initError;
-        private Throwable getError;
-        private Throwable closeError;
+        private SupplierEx<Throwable> initError;
+        private SupplierEx<Throwable> getError;
+        private SupplierEx<Throwable> closeError;
         private volatile boolean initBlocks;
         private volatile boolean closeBlocks;
 
@@ -207,17 +208,17 @@ public final class TestProcessors {
             this.supplierFn = supplierFn;
         }
 
-        public MockPMS setInitError(Throwable initError) {
+        public MockPMS setInitError(SupplierEx<Throwable> initError) {
             this.initError = initError;
             return this;
         }
 
-        public MockPMS setGetError(Throwable getError) {
+        public MockPMS setGetError(SupplierEx<Throwable> getError) {
             this.getError = getError;
             return this;
         }
 
-        public MockPMS setCloseError(Throwable closeError) {
+        public MockPMS setCloseError(SupplierEx<Throwable> closeError) {
             this.closeError = closeError;
             return this;
         }
@@ -231,6 +232,11 @@ public final class TestProcessors {
             return this;
         }
 
+        public static void waitBlockingSemaphore() {
+            while (blockingSemaphore.getQueueLength() > 0) {
+                sleepMillis(1);
+            }
+        }
         public static void unblock() {
             blockingSemaphore.release();
         }
@@ -244,20 +250,21 @@ public final class TestProcessors {
         public void init(@Nonnull Context context) throws InterruptedException {
             LOGGER.info("MockPMS.init called on " + Thread.currentThread().getName());
             initCount.incrementAndGet();
-            if (initError != null) {
-                throw sneakyThrow(initError);
-            }
 
             if (initBlocks) {
                 blockingSemaphore.acquire();
                 Thread.sleep(RANDOM.nextInt(500));
+            }
+
+            if (initError != null) {
+                throw sneakyThrow(initError.get());
             }
         }
 
         @Nonnull @Override
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             if (getError != null) {
-                throw sneakyThrow(getError);
+                throw sneakyThrow(getError.get());
             }
             return a -> supplierFn.get();
         }
@@ -281,7 +288,7 @@ public final class TestProcessors {
             );
 
             if (closeError != null) {
-                throw sneakyThrow(closeError);
+                throw sneakyThrow(closeError.get());
             }
         }
 
@@ -309,9 +316,9 @@ public final class TestProcessors {
         static List<Throwable> receivedCloseErrors = new CopyOnWriteArrayList<>();
         static Semaphore blockingSemaphore = new Semaphore(0, true);
 
-        private Throwable initError;
-        private Throwable getError;
-        private Throwable closeError;
+        private SupplierEx<Throwable> initError;
+        private SupplierEx<Throwable> getError;
+        private SupplierEx<Throwable> closeError;
 
         private volatile boolean initBlocks;
         private volatile boolean closeBlocks;
@@ -324,17 +331,17 @@ public final class TestProcessors {
             MockPS.nodeCount = nodeCount;
         }
 
-        public MockPS setInitError(Throwable initError) {
+        public MockPS setInitError(SupplierEx<Throwable> initError) {
             this.initError = initError;
             return this;
         }
 
-        public MockPS setGetError(Throwable getError) {
+        public MockPS setGetError(SupplierEx<Throwable> getError) {
             this.getError = getError;
             return this;
         }
 
-        public MockPS setCloseError(Throwable closeError) {
+        public MockPS setCloseError(SupplierEx<Throwable> closeError) {
             this.closeError = closeError;
             return this;
         }
@@ -347,6 +354,12 @@ public final class TestProcessors {
         public MockPS closeBlocks() {
             this.closeBlocks = true;
             return this;
+        }
+
+        public static void waitBlockingSemaphore() {
+            while (blockingSemaphore.getQueueLength() > 0) {
+                sleepMillis(1);
+            }
         }
 
         public static void unblock() {
@@ -364,20 +377,22 @@ public final class TestProcessors {
             initCalled = true;
             initCount.incrementAndGet();
 
-            if (initError != null) {
-                throw sneakyThrow(initError);
-            }
 
             if (initBlocks) {
                 blockingSemaphore.acquire();
                 Thread.sleep(RANDOM.nextInt(500));
             }
+
+            if (initError != null) {
+                throw sneakyThrow(initError.get());
+            }
+
         }
 
         @Nonnull @Override
         public List<Processor> get(int count) {
             if (getError != null) {
-                throw sneakyThrow(getError);
+                throw sneakyThrow(getError.get());
             }
             return Stream.generate(supplier).limit(count).collect(toList());
         }
@@ -404,7 +419,7 @@ public final class TestProcessors {
             assertTrueInProcessor("PS#close called without calling PS#init()", initCalled);
 
             if (closeError != null) {
-                throw sneakyThrow(closeError);
+                throw sneakyThrow(closeError.get());
             }
         }
 
@@ -427,12 +442,12 @@ public final class TestProcessors {
         static volatile boolean saveToSnapshotCalled;
         static Semaphore blockingSemaphore = new Semaphore(0, true);
 
-        private Throwable initError;
-        private Throwable processError;
-        private Throwable completeError;
-        private Throwable closeError;
-        private Throwable onSnapshotCompleteError;
-        private Throwable saveToSnapshotError;
+        private SupplierEx<Throwable> initError;
+        private SupplierEx<Throwable> processError;
+        private SupplierEx<Throwable> completeError;
+        private SupplierEx<Throwable> closeError;
+        private SupplierEx<Throwable> onSnapshotCompleteError;
+        private SupplierEx<Throwable> saveToSnapshotError;
         private boolean initBlocks;
 
         private boolean isCooperative;
@@ -443,32 +458,32 @@ public final class TestProcessors {
             return isCooperative;
         }
 
-        public MockP setInitError(Throwable initError) {
+        public MockP setInitError(SupplierEx<Throwable> initError) {
             this.initError = initError;
             return this;
         }
 
-        public MockP setProcessError(Throwable processError) {
+        public MockP setProcessError(SupplierEx<Throwable> processError) {
             this.processError = processError;
             return this;
         }
 
-        public MockP setCompleteError(Throwable completeError) {
+        public MockP setCompleteError(SupplierEx<Throwable> completeError) {
             this.completeError = completeError;
             return this;
         }
 
-        public MockP setOnSnapshotCompleteError(Throwable e) {
+        public MockP setOnSnapshotCompleteError(SupplierEx<Throwable> e) {
             this.onSnapshotCompleteError = e;
             return this;
         }
 
-        public MockP setSaveToSnapshotError(Throwable e) {
+        public MockP setSaveToSnapshotError(SupplierEx<Throwable> e) {
             this.saveToSnapshotError = e;
             return this;
         }
 
-        public MockP setCloseError(Throwable closeError) {
+        public MockP setCloseError(SupplierEx<Throwable> closeError) {
             this.closeError = closeError;
             return this;
         }
@@ -496,20 +511,22 @@ public final class TestProcessors {
         protected void init(@Nonnull Context context) throws InterruptedException {
             LOGGER.info("MockP.init called on " + Thread.currentThread().getName());
             initCount.incrementAndGet();
-            if (initError != null) {
-                throw sneakyThrow(initError);
-            }
 
+            // Block first to allow to control when the exception is thrown
             if (initBlocks) {
                 blockingSemaphore.acquire();
                 Thread.sleep(RANDOM.nextInt(500));
+            }
+
+            if (initError != null) {
+                throw sneakyThrow(initError.get());
             }
         }
 
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             if (processError != null) {
-                throw sneakyThrow(processError);
+                throw sneakyThrow(processError.get());
             }
             return tryEmit(item);
         }
@@ -517,7 +534,7 @@ public final class TestProcessors {
         @Override
         public boolean complete() {
             if (completeError != null) {
-                throw sneakyThrow(completeError);
+                throw sneakyThrow(completeError.get());
             }
             return !streaming;
         }
@@ -526,7 +543,7 @@ public final class TestProcessors {
         public boolean saveToSnapshot() {
             saveToSnapshotCalled = true;
             if (saveToSnapshotError != null) {
-                throw sneakyThrow(saveToSnapshotError);
+                throw sneakyThrow(saveToSnapshotError.get());
             }
             return true;
         }
@@ -535,7 +552,7 @@ public final class TestProcessors {
         public boolean snapshotCommitFinish(boolean success) {
             onSnapshotCompletedCalled = true;
             if (onSnapshotCompleteError != null) {
-                throw sneakyThrow(onSnapshotCompleteError);
+                throw sneakyThrow(onSnapshotCompleteError.get());
             }
             return true;
         }
@@ -545,7 +562,7 @@ public final class TestProcessors {
             LOGGER.info("MockP.close called on " + Thread.currentThread().getName());
             closeCount.incrementAndGet();
             if (closeError != null) {
-                throw sneakyThrow(closeError);
+                throw sneakyThrow(closeError.get());
             }
         }
     }
@@ -696,11 +713,11 @@ public final class TestProcessors {
         static List<Address> members;
         static List<List<Object>> lists;
 
-        List<Object> getListAt(int i) {
+        public List<Object> getListAt(int i) {
             return lists.get(i);
         }
 
-        List<List<Object>> getLists() {
+        public List<List<Object>> getLists() {
             return lists;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.partition.PartitionAwareService;
-import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 
-import java.util.Collection;
+import java.util.Set;
 
 /**
  * Defines partition-aware operations' behavior of map service.
@@ -36,12 +35,12 @@ class MapPartitionAwareService implements PartitionAwareService {
 
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
-    private final ProxyService proxyService;
+    private final EventServiceImpl eventService;
 
     MapPartitionAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
-        this.proxyService = this.nodeEngine.getProxyService();
+        this.eventService = (EventServiceImpl) this.nodeEngine.getEventService();
     }
 
     @Override
@@ -49,13 +48,15 @@ class MapPartitionAwareService implements PartitionAwareService {
         final Address thisAddress = nodeEngine.getThisAddress();
         final int partitionId = partitionLostEvent.getPartitionId();
 
-        Collection<DistributedObject> result = proxyService.getDistributedObjects(MapService.SERVICE_NAME);
+        EventServiceSegment eventServiceSegment = eventService.getSegment(MapService.SERVICE_NAME, false);
+        if (eventServiceSegment == null) {
+            return;
+        }
+        Set<String> maps = eventServiceSegment.getRegistrations().keySet();
 
-        for (DistributedObject object : result) {
-            final MapProxyImpl mapProxy = (MapProxyImpl) object;
-            final String mapName = mapProxy.getName();
-
-            if (mapProxy.getTotalBackupCount() <= partitionLostEvent.getLostReplicaIndex()) {
+        for (String mapName : maps) {
+            int totalBackupCount = nodeEngine.getConfig().getMapConfig(mapName).getTotalBackupCount();
+            if (totalBackupCount <= partitionLostEvent.getLostReplicaIndex()) {
                 mapServiceContext.getMapEventPublisher().publishMapPartitionLostEvent(thisAddress, mapName, partitionId);
             }
         }

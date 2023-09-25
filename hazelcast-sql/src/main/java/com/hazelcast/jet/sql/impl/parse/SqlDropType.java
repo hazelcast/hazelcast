@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,17 +31,19 @@ import org.apache.calcite.util.ImmutableNullableList;
 import javax.annotation.Nonnull;
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 import static java.util.Objects.requireNonNull;
 
 public class SqlDropType extends SqlDrop {
     private static final SqlSpecialOperator DROP_TYPE =
             new SqlSpecialOperator("DROP TYPE", SqlKind.DROP_TYPE);
 
-    private final SqlIdentifier typeName;
+    private final SqlIdentifier name;
 
     public SqlDropType(SqlIdentifier name, boolean ifExists, SqlParserPos pos) {
         super(DROP_TYPE, pos, ifExists);
-        this.typeName = requireNonNull(name, "Type name should not be null");
+        this.name = requireNonNull(name, "Type name should not be null");
     }
 
     public boolean ifExists() {
@@ -49,7 +51,7 @@ public class SqlDropType extends SqlDrop {
     }
 
     public String typeName() {
-        return typeName.toString();
+        return name.names.get(name.names.size() - 1);
     }
 
     @Nonnull @Override
@@ -59,11 +61,14 @@ public class SqlDropType extends SqlDrop {
 
     @Nonnull @Override
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(typeName);
+        return ImmutableNullableList.of(name);
     }
 
     @Override
     public void validate(final SqlValidator validator, final SqlValidatorScope scope) {
+        if (!isCatalogObjectNameValid(name)) {
+            throw validator.newValidationError(name, RESOURCE.droppedTypeDoesNotExist(name.toString()));
+        }
     }
 
     @Override
@@ -72,6 +77,6 @@ public class SqlDropType extends SqlDrop {
         if (ifExists) {
             writer.keyword("IF EXISTS");
         }
-        typeName.unparse(writer, leftPrec, rightPrec);
+        name.unparse(writer, leftPrec, rightPrec);
     }
 }

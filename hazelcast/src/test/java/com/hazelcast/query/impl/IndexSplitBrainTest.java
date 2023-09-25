@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,8 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collection;
 
-import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -94,10 +93,10 @@ public class IndexSplitBrainTest extends SplitBrainTestSupport {
             public void run() {
                 Predicate predicate = Predicates.equal("id", value.getId());
                 Collection<ValueObject> values = map1.values(predicate);
-                assertThat(values, empty());
+                assertThat(values).isEmpty();
 
                 values = map2.values(predicate);
-                assertThat(values, empty());
+                assertThat(values).isEmpty();
             }
         }, 5);
     }

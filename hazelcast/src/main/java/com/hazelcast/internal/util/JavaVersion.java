@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,17 @@ package com.hazelcast.internal.util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.lang.reflect.Method;
+import java.util.Arrays;
 
 /**
  * Utility for checking runtime Java version.
  * <p>
- * This class relies on the {@code java.lang.Runtime.Version.major()} method
- * available since Java 9, therefore it's accessed via reflection. If
- * {@code java.lang.Runtime.Version} is not present, we treat the runtime
- * environment as Java 8. Also, if there is any exception thrown during the
- * reflective access, we fall back to Java 8.
- * <p>
- * Since we rely on a public Java API returning the major Java version
+ * Since we rely on a public Java API returning the major Java version,
  * version comparisons can be done safely even with versions that didn't
  * exist at the time the given Hazelcast version was released.
- * See {@link FutureJavaVersion).
+ *
+ * @see UnknownVersion
+ * @see FutureJavaVersion
  */
 public enum JavaVersion implements JavaMajorVersion {
     JAVA_8(8),
@@ -45,104 +41,120 @@ public enum JavaVersion implements JavaMajorVersion {
     JAVA_14(14),
     JAVA_15(15),
     JAVA_16(16),
-    JAVA_17(17)
+    JAVA_17(17),
+    JAVA_18(18),
+    JAVA_19(19),
+    JAVA_20(20)
     ;
 
+    public static final JavaMajorVersion UNKNOWN_VERSION = new UnknownVersion();
     public static final JavaMajorVersion CURRENT_VERSION = detectCurrentVersion();
 
-    private int majorVersion;
+    private final int majorVersion;
 
     JavaVersion(int majorVersion) {
         this.majorVersion = majorVersion;
     }
 
     @Override
-    public int getMajorVersion() {
+    public Integer getMajorVersion() {
         return majorVersion;
     }
 
     /**
-     * Check if the current runtime version is at least the given version.
-     *
-     * @param version version to be compared against the current runtime version
-     * @return Return true if current runtime version of Java is the same or greater than given version.
+     * Check if the current runtime version is greater than or equal to the given version.
+     * Returns false if the given version is UNKNOWN.
      */
     public static boolean isAtLeast(JavaVersion version) {
         return isAtLeast(CURRENT_VERSION, version);
     }
 
     /**
-     * Check if the current runtime version is at most the given version.
-     *
-     * @param version version to be compared against the current runtime version
-     * @return Return true if current runtime version of Java is the same or less than given version.
+     * Check if the current runtime version is less than or equal to the given version.
+     * Returns false if the given version is UNKNOWN.
      */
     public static boolean isAtMost(JavaVersion version) {
-        return isAtMost(CURRENT_VERSION, version);
+        return CURRENT_VERSION != UNKNOWN_VERSION && version != UNKNOWN_VERSION
+               && CURRENT_VERSION.getMajorVersion() <= version.getMajorVersion();
     }
 
     static boolean isAtLeast(JavaMajorVersion currentVersion, JavaMajorVersion minVersion) {
-        return currentVersion.getMajorVersion() >= minVersion.getMajorVersion();
+        return currentVersion != UNKNOWN_VERSION && minVersion != UNKNOWN_VERSION
+                && currentVersion.getMajorVersion() >= minVersion.getMajorVersion();
     }
 
-    static boolean isAtMost(JavaMajorVersion currentVersion, JavaMajorVersion maxVersion) {
-        return currentVersion.getMajorVersion() <= maxVersion.getMajorVersion();
-    }
+    /**
+     * <pre>
+     * <= JDK 8
+     *     VNUM  := 1\.[1-9]\.[0-9](_[0-9]{2})?         Version number
+     *     PRE   := [a-zA-Z0-9]+                        Pre-release identifier
+     *     java.version
+     *           := $VNUM(-$PRE)*
+     * >= JDK 9
+     *     VNUM  := [1-9][0-9]*(\.(0|[1-9][0-9]*))*     Version number
+     *     PRE   := [a-zA-Z0-9]+                        Pre-release identifier
+     *     BUILD := 0|[1-9][0-9]*                       Build number
+     *     OPT   := [-a-zA-Z0-9\.]+                     Build information
+     *     java.version
+     *           := $VNUM(-$PRE)?\+$BUILD(-$OPT)?
+     *            | $VNUM-$PRE(-$OPT)?
+     *            | $VNUM(+-$OPT)?
+     * </pre>
+     * @see <a href="https://www.oracle.com/java/technologies/javase/versioning-naming.html">
+     *      J2SE SDK/JRE Version String Naming Convention (<= JDK 8)
+     * @see <a href="https://openjdk.org/jeps/223">
+     *      JEP 223: New Version-String Scheme (>= JDK 9)
+     */
+    static JavaMajorVersion detectCurrentVersion() {
+        ILogger logger = Logger.getLogger(JavaVersion.class);
 
-    private static JavaVersion valueOf(int majorVersion) {
-        for (JavaVersion version : values()) {
-            if (version.majorVersion == majorVersion) {
-                return version;
-            }
+        String version = System.getProperty("java.version");
+        if (version == null) {
+            warn(logger, "java.version property is not set");
+            return UNKNOWN_VERSION;
         }
 
-        return null;
-    }
-
-    private static JavaMajorVersion detectCurrentVersion() {
-        final ILogger logger = Logger.getLogger(JavaVersion.class);
-        final Class runtimeClass = Runtime.class;
-        final Class versionClass;
-
+        int major;
         try {
-            versionClass = Class.forName("java.lang.Runtime$Version");
-        } catch (ClassNotFoundException e) {
-            // if Runtime is present but Runtime.Version doesn't, it's Java8 for sure
-            if (logger.isFineEnabled()) {
-                logger.fine("Detected runtime version: Java 8");
-            }
-            return JAVA_8;
+            String[] components = version.split("[-+.]");
+            major = Integer.parseInt(components[components[0].equals("1") ? 1 : 0]);
+        } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
+            warn(logger, "java.version property is in unknown format: " + version);
+            return UNKNOWN_VERSION;
         }
 
-        try {
-            Method versionMethod = runtimeClass.getDeclaredMethod("version");
-            Object versionObj = versionMethod.invoke(Runtime.getRuntime());
-            Method majorMethod = versionClass.getDeclaredMethod("major");
-            int majorVersion = (int) majorMethod.invoke(versionObj);
+        if (logger.isFineEnabled()) {
+            logger.fine("Detected runtime version: Java " + major);
+        }
 
-            if (logger.isFineEnabled()) {
-                logger.fine("Detected runtime version: Java " + majorVersion);
-            }
+        return Arrays.<JavaMajorVersion>stream(values())
+                .filter(v -> v.getMajorVersion() == major).findFirst()
+                .orElseGet(() -> new FutureJavaVersion(major));
+    }
 
-            JavaVersion foundVersion = valueOf(majorVersion);
-            if (foundVersion != null) {
-                return foundVersion;
-            }
+    private static void warn(ILogger logger, String message) {
+        logger.warning(message + ". You can specify argument -Djava.version=<version> "
+                + "to set the Java version when starting JVM.");
+    }
 
-            return new FutureJavaVersion(majorVersion);
-        } catch (Exception e) {
-            logger.warning("Unable to detect Java version, falling back to Java 8", e);
-            return JAVA_8;
+    /**
+     * Represents an unknown Java version, which could not be parsed from system property
+     * {@code java.version}. Comparisons involving unknown versions always return false.
+     * This usually simplifies comparisons, but does not satisfy property:
+     * {@code isAtLeast(v1, v2) == !isAtMost(v2, v1)}
+     */
+    static class UnknownVersion implements JavaMajorVersion {
+        @Override
+        public Integer getMajorVersion() {
+            return null;
         }
     }
 
     /**
-     * Represents a future Java version that has not yet added to the
-     * {@link JavaVersion} enum. This class allows comparison of known
-     * versions against future, not yet listed (in the enum) Java versions,
-     * making {@link JavaVersion#isAtLeast(JavaVersion)} and
-     * {@link JavaVersion#isAtMost(JavaVersion)} methods usable in this
-     * case too.
+     * Represents a future Java version that has not yet added to the {@link JavaVersion}
+     * enum. This class allows comparison of known versions against future, not yet
+     * listed (in the enum) Java versions, making {@link #isAtLeast(JavaVersion)} and
+     * {@link #isAtMost(JavaVersion)} methods usable in this case too.
      */
     static class FutureJavaVersion implements JavaMajorVersion {
         private final int majorVersion;
@@ -152,7 +164,7 @@ public enum JavaVersion implements JavaMajorVersion {
         }
 
         @Override
-        public int getMajorVersion() {
+        public Integer getMajorVersion() {
             return majorVersion;
         }
     }

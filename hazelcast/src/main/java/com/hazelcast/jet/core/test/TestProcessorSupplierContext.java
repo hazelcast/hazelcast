@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package com.hazelcast.jet.core.test;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -37,7 +39,7 @@ import java.util.Map;
  */
 public class TestProcessorSupplierContext
         extends TestProcessorMetaSupplierContext
-        implements ProcessorSupplier.Context {
+        implements ProcessorSupplier.Context, Contexts.InternalProcSupplierCtx {
 
     private int memberIndex;
     private ManagedContext managedContext = object -> object;
@@ -155,5 +157,14 @@ public class TestProcessorSupplierContext
     @Override
     protected String loggerName() {
         return vertexName() + "#PS";
+    }
+
+    /**
+     * @since 5.4
+     */
+    @Nonnull
+    @Override
+    public InternalSerializationService serializationService() {
+        return (InternalSerializationService) getNodeEngine().getSerializationService();
     }
 }

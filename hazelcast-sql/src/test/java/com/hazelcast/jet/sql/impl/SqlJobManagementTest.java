@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
@@ -82,7 +84,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
     @Test
     public void when_createJobUnknownOption_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('badOption'='value') AS "
-                        + "INSERT INTO t1 VALUES(1)"))
+                + "INSERT INTO t1 VALUES(1)"))
                 .hasMessage("From line 1, column 25 to line 1, column 35: Unknown job option: badOption");
     }
 
@@ -96,26 +98,55 @@ public class SqlJobManagementTest extends SqlTestSupport {
     @Test
     public void when_snapshotIntervalNotNumber_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('snapshotIntervalMillis'='foo') AS "
-                        + "INSERT INTO t1 VALUES(1)"))
-               .hasMessage("From line 1, column 50 to line 1, column 54: Invalid number for snapshotIntervalMillis: foo");
+                + "INSERT INTO t1 VALUES(1)"))
+                .hasMessage("From line 1, column 50 to line 1, column 54: Invalid number for snapshotIntervalMillis: foo");
     }
 
     @Test
     public void when_badProcessingGuarantee_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('processingGuarantee'='foo') AS "
-                        + "INSERT INTO t1 VALUES(1)"))
-               .hasMessage("From line 1, column 47 to line 1, column 51: Unsupported value for processingGuarantee: foo");
+                + "INSERT INTO t1 VALUES(1)"))
+                .hasMessage("From line 1, column 47 to line 1, column 51: Unsupported value for processingGuarantee: foo");
     }
 
     @Test
-    public void testJobSubmitAndCancel() {
+    public void when_wrongProcessingGuaranteeForBatchJob_then_fail() {
+        createMapping("t1", Long.class, Long.class);
+        assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('processingGuarantee'='exactlyOnce') "
+                + "AS INSERT INTO t1 VALUES(1, 1)"))
+                .hasMessage("Only NONE guarantee is allowed for batch job");
+    }
+
+    @Test
+    public void when_jobSubmitted_then_exists() {
+        // given
+        createMapping("dest", Long.class, Long.class);
+
+        // when
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
+
+        // then
+        Job testJob = instance().getJet().getJob("testJob");
+        assertNotNull("job doesn't exist", testJob);
+
+        // cleanup
+        sqlService.execute("DROP JOB testJob");
+    }
+
+    @Test
+    public void when_jobDropped_then_markedAsUserCancelled() {
+        // given
         createMapping("dest", Long.class, Long.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
-        assertNotNull("job doesn't exist", instance().getJet().getJob("testJob"));
-
+        // when
         sqlService.execute("DROP JOB testJob");
+
+        // then
+        Job testJob = instance().getJet().getJob("testJob");
+        assertNotNull("job doesn't exist", testJob);
+        assertTrue("job not user cancelled", testJob.isUserCancelled());
     }
 
     @Test
@@ -348,6 +379,14 @@ public class SqlJobManagementTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("ALTER JOB j SUSPEND", "param"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("ALTER JOB does not support dynamic parameters");
+    }
+
+    @Test
+    public void when_alterJobWithUnsupportedOptions_then_fail() {
+        Stream.of("processingGuarantee", "initialSnapshotName").forEach(option ->
+                assertThatThrownBy(() -> sqlService.execute("ALTER JOB j OPTIONS ('" + option + "'='value')"))
+                        .isInstanceOf(HazelcastSqlException.class)
+                        .hasMessageContaining(option + " is not supported for ALTER JOB"));
     }
 
     @Test

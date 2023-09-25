@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,10 +52,10 @@ public class QueryBounceTest {
 
     @Rule
     public BounceMemberRule bounceMemberRule =
-            BounceMemberRule.with(getConfig())
+            BounceMemberRule.with(this::getConfig)
                     .clusterSize(4)
                     .driverCount(4)
-                    .driverType(BounceTestConfiguration.DriverType.MEMBER)
+                    .driverType(getDriverType())
                     .useTerminate(useTerminate())
                     .build();
 
@@ -80,6 +80,10 @@ public class QueryBounceTest {
     // nice with rules: parameters are injected after rules instantiation.
     protected boolean useTerminate() {
         return false;
+    }
+
+    protected BounceTestConfiguration.DriverType getDriverType() {
+        return BounceTestConfiguration.DriverType.MEMBER;
     }
 
     private void prepareAndRunQueryTasks(boolean withIndexes) {

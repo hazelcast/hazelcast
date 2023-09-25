@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -38,7 +39,7 @@ import org.junit.runner.RunWith;
 import javax.cache.CacheManager;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
-import static org.hamcrest.CoreMatchers.containsString;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests the integration of the {@link MergePolicyValidator}
@@ -83,8 +84,7 @@ public class MergePolicyValidatorCachingProviderIntegrationTest
 
     @Test
     public void testCache_withHyperLogLogMergePolicy() {
-        expectCardinalityEstimatorException();
-        getCache("cardinalityEstimator", hyperLogLogMergePolicy);
+        expectCardinalityEstimatorException(() -> getCache("cardinalityEstimator", hyperLogLogMergePolicy));
     }
 
     @Test
@@ -94,8 +94,7 @@ public class MergePolicyValidatorCachingProviderIntegrationTest
 
     @Test
     public void testCache_withInvalidMergePolicy() {
-        expectedInvalidMergePolicyException();
-        getCache("invalid", invalidMergePolicyConfig);
+        expectedInvalidMergePolicyException(() -> getCache("invalid", invalidMergePolicyConfig));
     }
 
     @Test
@@ -113,10 +112,10 @@ public class MergePolicyValidatorCachingProviderIntegrationTest
      */
     @Test
     public void testCache_withComplexCustomMergePolicy() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(containsString(complexCustomMergePolicy.getPolicy()));
-        expectedException.expectMessage(containsString(MergingCosts.class.getName()));
-        getCache("complexCustom", complexCustomMergePolicy);
+        assertThatThrownBy(() -> getCache("complexCustom", complexCustomMergePolicy))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(complexCustomMergePolicy.getPolicy())
+                .hasMessageContaining(MergingCosts.class.getName());
     }
 
     /**
@@ -128,10 +127,10 @@ public class MergePolicyValidatorCachingProviderIntegrationTest
      */
     @Test
     public void testCache_withCustomMapMergePolicyNoTypeVariable() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(containsString(customMapMergePolicyNoTypeVariable.getPolicy()));
-        expectedException.expectMessage(containsString(MapMergeTypes.class.getName()));
-        getCache("customMapNoTypeVariable", customMapMergePolicyNoTypeVariable);
+        assertThatThrownBy(() -> getCache("customMapNoTypeVariable", customMapMergePolicyNoTypeVariable))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(customMapMergePolicyNoTypeVariable.getPolicy())
+                .hasMessageContaining(MapMergeTypes.class.getName());
     }
 
     /**
@@ -143,10 +142,10 @@ public class MergePolicyValidatorCachingProviderIntegrationTest
      */
     @Test
     public void testCache_withCustomMapMergePolicy() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(containsString(customMapMergePolicy.getPolicy()));
-        expectedException.expectMessage(containsString(MapMergeTypes.class.getName()));
-        getCache("customMap", customMapMergePolicy);
+        assertThatThrownBy(() -> getCache("customMap", customMapMergePolicy))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(customMapMergePolicy.getPolicy())
+                .hasMessageContaining(MapMergeTypes.class.getName());
     }
 
     @Test
@@ -158,14 +157,16 @@ public class MergePolicyValidatorCachingProviderIntegrationTest
     }
 
     @Override
-    void expectCardinalityEstimatorException() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(containsString("CardinalityEstimator"));
+    void expectCardinalityEstimatorException(ThrowingCallable toRun) {
+        assertThatThrownBy(toRun)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("CardinalityEstimator");
     }
 
     @Override
-    void expectedInvalidMergePolicyException() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(containsString(invalidMergePolicyConfig.getPolicy()));
+    void expectedInvalidMergePolicyException(ThrowingCallable toRun) {
+        assertThatThrownBy(toRun)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(invalidMergePolicyConfig.getPolicy());
     }
 }

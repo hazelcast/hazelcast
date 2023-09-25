@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.transaction.TransactionContext;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import java.util.Set;
@@ -129,4 +131,17 @@ public interface ClientEndpoint extends Client, DynamicMetricsProvider {
      * Used when handling unauthenticated requests.
      */
     String toSecureString();
+
+    /**
+     * Sets the TPC token associated with this endpoint.
+     */
+    void setTpcToken(@Nonnull TpcToken tpcToken);
+
+    /**
+     * Returns the TPC token associated with this endpoint,
+     * if TPC is enabled on the server-side and the client
+     * is TPC-aware. If not, {@code null} is returned.
+     */
+    @Nullable
+    TpcToken getTpcToken();
 }

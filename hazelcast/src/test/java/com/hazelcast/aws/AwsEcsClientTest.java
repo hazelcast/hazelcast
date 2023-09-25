@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,29 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.aws.AwsEcsApi.Task;
-import com.hazelcast.aws.AwsMetadataApi.EcsMetadata;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class AwsEcsClientTest {
-    private static final String TASK_ARN = "task-arn";
     private static final String CLUSTER = "cluster-arn";
     private static final AwsCredentials CREDENTIALS = AwsCredentials.builder()
         .setAccessKey("access-key")
@@ -62,42 +62,20 @@ public class AwsEcsClientTest {
 
     @Before
     public void setUp() {
-        EcsMetadata ecsMetadata = mock(EcsMetadata.class);
-        given(ecsMetadata.getTaskArn()).willReturn(TASK_ARN);
-        given(ecsMetadata.getClusterArn()).willReturn(CLUSTER);
-        given(awsMetadataApi.metadataEcs()).willReturn(ecsMetadata);
+        given(awsMetadataApi.clusterEcs()).willReturn(CLUSTER);
+        AwsConfig awsConfig = AwsConfig.builder()
+                .setDiscoveryMode(DiscoveryMode.Member)
+                .build();
         given(awsCredentialsProvider.credentials()).willReturn(CREDENTIALS);
-
-        awsEcsClient = new AwsEcsClient(CLUSTER, awsEcsApi, awsEc2Api, awsMetadataApi, awsCredentialsProvider);
-    }
-
-    @Test
-    public void getAddresses() {
-        // given
-        List<String> taskArns = singletonList("task-arn");
-        List<String> privateIps = singletonList("123.12.1.0");
-        List<Task> tasks = singletonList(new Task("123.12.1.0", null));
-        Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
-        given(awsEcsApi.listTasks(CLUSTER, CREDENTIALS)).willReturn(taskArns);
-        given(awsEcsApi.describeTasks(CLUSTER, taskArns, CREDENTIALS)).willReturn(tasks);
-        given(awsEc2Api.describeNetworkInterfaces(privateIps, CREDENTIALS)).willReturn(expectedResult);
-
-        // when
-        Map<String, String> result = awsEcsClient.getAddresses();
-
-        // then
-        assertEquals(expectedResult, result);
+        awsEcsClient = new AwsEcsClient(CLUSTER, awsConfig, awsEcsApi, awsEc2Api, awsMetadataApi, awsCredentialsProvider);
     }
 
     @Test
     public void getAddressesWithAwsConfig() {
         // given
-        List<String> taskArns = singletonList("task-arn");
         List<String> privateIps = singletonList("123.12.1.0");
-        List<Task> tasks = singletonList(new Task("123.12.1.0", null));
         Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
-        given(awsEcsApi.listTasks(CLUSTER, CREDENTIALS)).willReturn(taskArns);
-        given(awsEcsApi.describeTasks(CLUSTER, taskArns, CREDENTIALS)).willReturn(tasks);
+        given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(privateIps);
         given(awsEc2Api.describeNetworkInterfaces(privateIps, CREDENTIALS)).willReturn(expectedResult);
 
         // when
@@ -110,12 +88,10 @@ public class AwsEcsClientTest {
     @Test
     public void getAddressesNoPublicAddresses() {
         // given
-        List<String> taskArns = singletonList("task-arn");
         List<String> privateIps = singletonList("123.12.1.0");
-        List<Task> tasks = singletonList(new Task("123.12.1.0", null));
-        given(awsEcsApi.listTasks(CLUSTER, CREDENTIALS)).willReturn(taskArns);
-        given(awsEcsApi.describeTasks(CLUSTER, taskArns, CREDENTIALS)).willReturn(tasks);
-        given(awsEc2Api.describeNetworkInterfaces(privateIps, CREDENTIALS)).willThrow(new RuntimeException());
+        Map<String, String> privateToPublicIps = singletonMap("123.12.1.0", null);
+        given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(privateIps);
+        given(awsEc2Api.describeNetworkInterfaces(privateIps, CREDENTIALS)).willReturn(privateToPublicIps);
 
         // when
         Map<String, String> result = awsEcsClient.getAddresses();
@@ -127,8 +103,7 @@ public class AwsEcsClientTest {
     @Test
     public void getAddressesNoTasks() {
         // given
-        List<String> tasks = emptyList();
-        given(awsEcsApi.listTasks(CLUSTER, CREDENTIALS)).willReturn(tasks);
+        given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(emptyList());
 
         // when
         Map<String, String> result = awsEcsClient.getAddresses();
@@ -140,27 +115,14 @@ public class AwsEcsClientTest {
     @Test
     public void getAvailabilityZone() {
         // given
-        String availabilityZone = "us-east-1";
-        given(awsEcsApi.describeTasks(CLUSTER, singletonList(TASK_ARN), CREDENTIALS))
-            .willReturn(singletonList(new Task(null, availabilityZone)));
+        String expectedResult = "us-east-1a";
+        given(awsMetadataApi.availabilityZoneEcs()).willReturn(expectedResult);
 
         // when
         String result = awsEcsClient.getAvailabilityZone();
 
         // then
-        assertEquals(availabilityZone, result);
-    }
-
-    @Test
-    public void getAvailabilityZoneUnknown() {
-        // given
-        given(awsEcsApi.describeTasks(CLUSTER, singletonList(TASK_ARN), CREDENTIALS)).willReturn(emptyList());
-
-        // when
-        String result = awsEcsClient.getAvailabilityZone();
-
-        // then
-        assertEquals("unknown", result);
+        assertEquals(expectedResult, result);
     }
 
     @Test
@@ -173,5 +135,73 @@ public class AwsEcsClientTest {
         // Placement aware is not supported for ECS
         assertEquals(Optional.empty(), placementGroup);
         assertEquals(Optional.empty(), placementPartitionNumber);
+    }
+
+    @Test
+    public void doNotGetAddressesForEC2Member() {
+        // given
+        Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
+        given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(emptyList());
+        given(awsEc2Api.describeInstances(CREDENTIALS)).willReturn(expectedResult);
+
+        // when
+        Map<String, String> result = awsEcsClient.getAddresses();
+
+        // then
+        then(awsEc2Api).should(never()).describeInstances(CREDENTIALS);
+        assertEquals(emptyMap(), result);
+    }
+
+    @Test
+    public void getAddressesForEC2Client() {
+        // given
+        AwsConfig awsConfig = AwsConfig.builder().setDiscoveryMode(DiscoveryMode.Client).build();
+        awsEcsClient = new AwsEcsClient(CLUSTER, awsConfig, awsEcsApi, awsEc2Api, awsMetadataApi, awsCredentialsProvider);
+        Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
+        given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(emptyList());
+        given(awsEc2Api.describeInstances(CREDENTIALS)).willReturn(expectedResult);
+
+        // when
+        Map<String, String> result = awsEcsClient.getAddresses();
+
+        // then
+        assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void doNotGetEc2AddressesIfEcsConfigured() {
+        // given
+        AwsConfig awsConfig = AwsConfig.builder()
+                .setCluster(CLUSTER)
+                .setDiscoveryMode(DiscoveryMode.Client)
+                .build();
+        awsEcsClient = new AwsEcsClient(CLUSTER, awsConfig, awsEcsApi, awsEc2Api, awsMetadataApi, awsCredentialsProvider);
+        given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(emptyList());
+
+        // when
+        Map<String, String> result = awsEcsClient.getAddresses();
+
+        // then
+        then(awsEc2Api).should(never()).describeInstances(CREDENTIALS);
+        assertEquals(emptyMap(), result);
+    }
+
+    @Test
+    public void doNotGetEcsAddressesIfEc2Configured() {
+        // given
+        AwsConfig awsConfig = AwsConfig.builder()
+                .setSecurityGroupName("my-security-group")
+                .setDiscoveryMode(DiscoveryMode.Client)
+                .build();
+        awsEcsClient = new AwsEcsClient(CLUSTER, awsConfig, awsEcsApi, awsEc2Api, awsMetadataApi, awsCredentialsProvider);
+        Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
+        given(awsEc2Api.describeInstances(CREDENTIALS)).willReturn(expectedResult);
+
+        // when
+        Map<String, String> result = awsEcsClient.getAddresses();
+
+        // then
+        then(awsEcsApi).should(never()).listTaskPrivateAddresses(CLUSTER, CREDENTIALS);
+        assertEquals(expectedResult, result);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,11 @@ import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.logging.ILogger;
 
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.io.EOFException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -38,9 +41,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
-
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
@@ -58,6 +58,8 @@ import static com.hazelcast.internal.nio.ConnectionType.NONE;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnection implements ServerConnection {
+
+    private volatile AsyncSocket[] sockets;
 
     private final Channel channel;
     private final ConcurrentMap attributeMap;
@@ -109,6 +111,14 @@ public class TcpServerConnection implements ServerConnection {
         this.acceptorSide = acceptorSide;
         this.attributeMap = channel.attributeMap();
         attributeMap.put(ServerConnection.class, this);
+    }
+
+    public AsyncSocket[] getSockets() {
+        return sockets;
+    }
+
+    public void setSockets(AsyncSocket[] sockets) {
+        this.sockets = sockets;
     }
 
     @Override

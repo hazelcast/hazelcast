@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -187,11 +187,15 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
         this.operationExecutor = new OperationExecutorImpl(
                 properties, node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
-                node.getNodeExtension(), hzName, configClassLoader);
+                node.getNodeExtension(), hzName, configClassLoader, nodeEngine.getTpcServerBootstrap());
 
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),
                 properties, hzName);
+    }
+
+    public Set<Operation> getAsyncOperations() {
+        return asyncOperations;
     }
 
     public ConcurrentMap<Class, LatencyDistribution> getOpLatencyDistributions() {
@@ -289,7 +293,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
         checkNotNegative(partitionId, "Partition ID cannot be negative!");
-        return new InvocationBuilderImpl(invocationContext, serviceName, op, partitionId)
+        return InvocationBuilderImpl.createForPartition(invocationContext, serviceName, op, partitionId)
                 .setTryCount(invocationMaxRetryCount)
                 .setTryPauseMillis(invocationRetryPauseMillis)
                 .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState);
@@ -298,7 +302,14 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
         checkNotNull(target, "Target cannot be null!");
-        return new InvocationBuilderImpl(invocationContext, serviceName, op, target)
+        return InvocationBuilderImpl.createForTarget(invocationContext, serviceName, op, target)
+                .setTryCount(invocationMaxRetryCount)
+                .setTryPauseMillis(invocationRetryPauseMillis);
+    }
+
+    @Override
+    public InvocationBuilder createMasterInvocationBuilder(String serviceName, Operation op) {
+        return InvocationBuilderImpl.createForMaster(invocationContext, serviceName, op)
                 .setTryCount(invocationMaxRetryCount)
                 .setTryPauseMillis(invocationRetryPauseMillis);
     }
@@ -363,6 +374,23 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
         return new TargetInvocation(invocationContext, op, target, invocationMaxRetryCount, invocationRetryPauseMillis,
                 DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <E> InvocationFuture<E> invokeOnTargetAsync(String serviceName, Operation op, Address target) {
+        op.setServiceName(serviceName);
+
+        return new TargetInvocation(invocationContext, op, target, invocationMaxRetryCount, invocationRetryPauseMillis,
+                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
+    }
+
+    @Override
+    public <E> InvocationFuture<E> invokeOnMaster(String serviceName, Operation op) {
+        op.setServiceName(serviceName);
+
+        return new MasterInvocation(invocationContext, op, invocationMaxRetryCount,
+                invocationRetryPauseMillis, DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
     @Override

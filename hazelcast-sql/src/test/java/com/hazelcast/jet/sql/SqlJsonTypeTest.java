@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.sql.HazelcastSqlException;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
-@Category(SlowTest.class)
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 public class SqlJsonTypeTest extends SqlJsonTestSupport {
     @BeforeClass
     public static void beforeClass() {
@@ -118,11 +118,100 @@ public class SqlJsonTypeTest extends SqlJsonTestSupport {
                 ));
     }
 
-    public void execute(final String sql, final Object ...arguments) {
+
+    @Test
+    // test for https://github.com/hazelcast/hazelcast/issues/22671
+    public void test_jsonEqualComparedAsVarchar() {
+        // for the `=` operator, we convert JSON operands to VARCHAR
+        assertRowsAnyOrder("SELECT " +
+                        // json-json not equal
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) = CAST('{\"f2\":43, \"f1\":42}' AS JSON)," +
+                        // json-json equal
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) = CAST('{\"f1\":42, \"f2\":43}' AS JSON)," +
+                        // json-varchar not equal
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) = '{\"f2\":43, \"f1\":42}'," +
+                        "'{\"f1\":42, \"f2\":43}' = CAST('{\"f2\":43, \"f1\":42}' AS JSON)," +
+                        // json-varchar equal
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) = '{\"f1\":42, \"f2\":43}'," +
+                        "'{\"f1\":42, \"f2\":43}' = CAST('{\"f1\":42, \"f2\":43}' AS JSON)",
+                rows(6, false, true, false, false, true, true));
+    }
+
+    @Test
+    // test for https://github.com/hazelcast/hazelcast/issues/22671
+    public void test_jsonNotEqualComparedAsVarchar() {
+        // for the `!=` operator, we convert JSON operands to VARCHAR
+        assertRowsAnyOrder("SELECT " +
+                        // json-json not equal
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) != CAST('{\"f2\":43, \"f1\":42}' AS JSON)," +
+                        // json-json equal
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) != CAST('{\"f1\":42, \"f2\":43}' AS JSON)," +
+                        // json-varchar not equal
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) != '{\"f2\":43, \"f1\":42}'," +
+                        "'{\"f1\":42, \"f2\":43}' != CAST('{\"f2\":43, \"f1\":42}' AS JSON)," +
+                        // json-varchar equal
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) != '{\"f1\":42, \"f2\":43}'," +
+                        "'{\"f1\":42, \"f2\":43}' != CAST('{\"f1\":42, \"f2\":43}' AS JSON)",
+                rows(6, true, false, true, true, false, false));
+    }
+
+    @Test
+    // test for https://github.com/hazelcast/hazelcast/issues/22671
+    public void test_jsonLessComparedAsVarchar() {
+        // for the `<` operator, we convert JSON operands to VARCHAR
+        // other relative comparison operators should behave the same
+        assertRowsAnyOrder("SELECT " +
+                        // json-json not equal
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) < CAST('{\"f2\":43, \"f1\":42}' AS JSON)," +
+                        // json-json equal
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) < CAST('{\"f1\":42, \"f2\":43}' AS JSON)," +
+                        // json-varchar not equal
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) < '{\"f2\":43, \"f1\":42}'," +
+                        "'{\"f1\":42, \"f2\":43}' < CAST('{\"f2\":43, \"f1\":42}' AS JSON)," +
+                        // json-varchar equal
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) < '{\"f1\":42, \"f2\":43}'," +
+                        "'{\"f1\":42, \"f2\":43}' < CAST('{\"f1\":42, \"f2\":43}' AS JSON)",
+                rows(6, true, false, true, true, false, false));
+    }
+
+    @Test
+    public void test_jsonLengthNotSupported() {
+        assertThatThrownBy(() -> execute("SELECT " +
+                        "LENGTH(CAST('{\"f1\":42, \"f2\":43}' AS JSON))"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageEndingWith("Cannot apply 'LENGTH' function to [JSON] (consider adding an explicit CAST)");
+    }
+
+    @Test
+    public void test_jsonSubstringNotSupported() {
+        assertThatThrownBy(() -> execute("SELECT " +
+                "SUBSTRING(CAST('{\"f1\":42, \"f2\":43}' AS JSON) FROM 1 FOR 5)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageEndingWith("Cannot apply 'SUBSTRING' function to [JSON, INTEGER, INTEGER] (consider adding an explicit CAST)");
+    }
+
+    @Test
+    public void test_jsonConcat() {
+        // concat has more permissive conversions than other functions
+        assertRowsAnyOrder("SELECT " +
+                "CAST('{\"f1\":42, \"f2\":43}' AS JSON) || CAST('suffix' AS VARCHAR)",
+                rows(1, "{\"f1\":42, \"f2\":43}suffix"));
+
+        assertRowsAnyOrder("SELECT " +
+                        "CAST('{\"f1\":42, \"f2\":43}' AS VARCHAR) || CAST('suffix' AS JSON)",
+                rows(1, "{\"f1\":42, \"f2\":43}suffix"));
+
+        assertRowsAnyOrder("SELECT " +
+                        "CAST('{\"f1\":42, \"f2\":43}' AS JSON) || CAST('suffix' AS JSON)",
+                rows(1, "{\"f1\":42, \"f2\":43}suffix"));
+
+    }
+
+    public void execute(final String sql, final Object... arguments) {
         instance().getSql().execute(sql, arguments);
     }
 
-    public void executeClient(final String sql, final Object ...arguments) {
+    public void executeClient(final String sql, final Object... arguments) {
         client().getSql().execute(sql, arguments);
     }
 }

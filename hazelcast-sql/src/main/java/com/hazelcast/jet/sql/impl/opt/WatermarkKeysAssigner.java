@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.internal.util.MutableByte;
+import com.hazelcast.jet.impl.processor.SlidingWindowP;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
@@ -60,6 +62,27 @@ public class WatermarkKeysAssigner {
 
     public void assignWatermarkKeys() {
         visitor.go(root);
+    }
+
+    /**
+     *  Special method to extract input's watermark key for {@link SlidingWindowAggregatePhysicalRel}.
+     *  We need it, because {@link SlidingWindowP} operates on input watermark key, which may not be
+     *  calculated in {@link WatermarkKeysAssigner} due to nature of its algorithm : it calculates how
+     *  watermarks are propagated from scans to root relations. Sometimes  {@link SlidingWindowAggregatePhysicalRel}
+     *  may break watermark key propagation chain, but we still need a watermark key for {@link SlidingWindowP}.
+     */
+    public MutableByte getInputWatermarkKey(SlidingWindowAggregatePhysicalRel swaRel) {
+        Map<Integer, MutableByte> inputWmMap = visitor.getRelToWmKeyMapping().get(swaRel.getInput());
+        assert !inputWmMap.isEmpty() : "Input rel for SlidingWindowAggregate must contain watermarked field";
+
+        HazelcastRelMetadataQuery query = OptUtils.metadataQuery(swaRel.getInput());
+        WatermarkedFields watermarkedFields = query.extractWatermarkedFields(swaRel.getInput());
+        Integer watermarkedIndex = watermarkedFields.findFirst(swaRel.getGroupSet());
+        if (watermarkedIndex == null) {
+            return inputWmMap.values().iterator().next();
+        } else {
+            return inputWmMap.get(watermarkedIndex);
+        }
     }
 
     public Map<Integer, MutableByte> getWatermarkedFieldsKey(RelNode node) {
@@ -160,6 +183,8 @@ public class WatermarkKeysAssigner {
 
                 relToWmKeyMapping.put(union, intersection);
             } else if (node instanceof StreamToStreamJoinPhysicalRel) {
+                // Stream to Stream JOIN forwards watermarks
+                // from both inputs and offsets right input indices.
                 StreamToStreamJoinPhysicalRel join = (StreamToStreamJoinPhysicalRel) node;
                 Map<Integer, MutableByte> leftWmKeyMapping = relToWmKeyMapping.get(join.getLeft());
                 if (leftWmKeyMapping == null) {
@@ -189,11 +214,13 @@ public class WatermarkKeysAssigner {
                 relToWmKeyMapping.put(node, refByteMap);
 
             } else if (node instanceof SlidingWindowAggregatePhysicalRel) {
+                // SlidingWindowAggregatePhysicalRel propagates watermarks for `window_end` field only.
                 SlidingWindowAggregatePhysicalRel swAgg = (SlidingWindowAggregatePhysicalRel) node;
                 Map<Integer, MutableByte> inputWmKeys = relToWmKeyMapping.get(swAgg.getInput());
                 if (inputWmKeys == null) {
                     return;
                 }
+
                 MutableByte inputTimestampKey = inputWmKeys.get(swAgg.timestampFieldIndex());
                 if (inputTimestampKey == null) {
                     return;

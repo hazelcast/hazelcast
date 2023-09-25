@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -67,10 +68,10 @@ public class LogExceptionSqlTest extends SimpleTestInClusterSupport {
         }
 
         // result is closed before the job is cleaned on member side, so wait here
-        assertNoJobsLeftEventually(instance());
+        assertNoLightJobsLeftEventually(instance());
 
         // then
-        List<Throwable> exceptions = recorder.exceptionsOfTypes(ResultLimitReachedException.class);
+        List<Throwable> exceptions = recorder.exceptionsOfTypes(ResultLimitReachedException.class, JetException.class);
         assertThat(exceptions).isEmpty();
     }
 }

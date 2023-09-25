@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("56ec2bc81aa8adf45d58ed177ac4f1bc")
+@Generated("e1e763ab3c72ca63eede2138ab1a43b1")
 public final class DynamicConfigAddMapConfigCodec {
     //hex: 0x1B0C00
     public static final int REQUEST_MESSAGE_TYPE = 1772544;
@@ -223,6 +223,11 @@ public final class DynamicConfigAddMapConfigCodec {
         public com.hazelcast.config.TieredStoreConfig tieredStoreConfig;
 
         /**
+         * List of attributes used for creating AttributePartitioningStrategy.
+         */
+        public @Nullable java.util.List<com.hazelcast.config.PartitioningAttributeConfig> partitioningAttributeConfigs;
+
+        /**
          * True if the perEntryStatsEnabled is received from the client, false otherwise.
          * If this is false, perEntryStatsEnabled has the default value for its type.
          */
@@ -239,9 +244,15 @@ public final class DynamicConfigAddMapConfigCodec {
          * If this is false, tieredStoreConfig has the default value for its type.
          */
         public boolean isTieredStoreConfigExists;
+
+        /**
+         * True if the partitioningAttributeConfigs is received from the client, false otherwise.
+         * If this is false, partitioningAttributeConfigs has the default value for its type.
+         */
+        public boolean isPartitioningAttributeConfigsExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig, boolean readBackupData, java.lang.String cacheDeserializedValues, java.lang.String mergePolicy, int mergeBatchSize, java.lang.String inMemoryFormat, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder mapStoreConfig, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder nearCacheConfig, @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef, @Nullable java.util.Collection<com.hazelcast.config.IndexConfig> indexConfigs, @Nullable java.util.Collection<com.hazelcast.config.AttributeConfig> attributeConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder> queryCacheConfigs, @Nullable java.lang.String partitioningStrategyClassName, @Nullable com.hazelcast.internal.serialization.Data partitioningStrategyImplementation, @Nullable com.hazelcast.config.HotRestartConfig hotRestartConfig, @Nullable com.hazelcast.config.EventJournalConfig eventJournalConfig, @Nullable com.hazelcast.config.MerkleTreeConfig merkleTreeConfig, int metadataPolicy, boolean perEntryStatsEnabled, com.hazelcast.config.DataPersistenceConfig dataPersistenceConfig, com.hazelcast.config.TieredStoreConfig tieredStoreConfig) {
+    public static ClientMessage encodeRequest(java.lang.String name, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig, boolean readBackupData, java.lang.String cacheDeserializedValues, java.lang.String mergePolicy, int mergeBatchSize, java.lang.String inMemoryFormat, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder mapStoreConfig, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder nearCacheConfig, @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef, @Nullable java.util.Collection<com.hazelcast.config.IndexConfig> indexConfigs, @Nullable java.util.Collection<com.hazelcast.config.AttributeConfig> attributeConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder> queryCacheConfigs, @Nullable java.lang.String partitioningStrategyClassName, @Nullable com.hazelcast.internal.serialization.Data partitioningStrategyImplementation, @Nullable com.hazelcast.config.HotRestartConfig hotRestartConfig, @Nullable com.hazelcast.config.EventJournalConfig eventJournalConfig, @Nullable com.hazelcast.config.MerkleTreeConfig merkleTreeConfig, int metadataPolicy, boolean perEntryStatsEnabled, com.hazelcast.config.DataPersistenceConfig dataPersistenceConfig, com.hazelcast.config.TieredStoreConfig tieredStoreConfig, @Nullable java.util.Collection<com.hazelcast.config.PartitioningAttributeConfig> partitioningAttributeConfigs) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
@@ -280,6 +291,7 @@ public final class DynamicConfigAddMapConfigCodec {
         CodecUtil.encodeNullable(clientMessage, merkleTreeConfig, MerkleTreeConfigCodec::encode);
         DataPersistenceConfigCodec.encode(clientMessage, dataPersistenceConfig);
         TieredStoreConfigCodec.encode(clientMessage, tieredStoreConfig);
+        ListMultiFrameCodec.encodeNullable(clientMessage, partitioningAttributeConfigs, PartitioningAttributeConfigCodec::encode);
         return clientMessage;
     }
 
@@ -331,6 +343,12 @@ public final class DynamicConfigAddMapConfigCodec {
             request.isTieredStoreConfigExists = true;
         } else {
             request.isTieredStoreConfigExists = false;
+        }
+        if (iterator.hasNext()) {
+            request.partitioningAttributeConfigs = ListMultiFrameCodec.decodeNullable(iterator, PartitioningAttributeConfigCodec::decode);
+            request.isPartitioningAttributeConfigsExists = true;
+        } else {
+            request.isPartitioningAttributeConfigsExists = false;
         }
         return request;
     }

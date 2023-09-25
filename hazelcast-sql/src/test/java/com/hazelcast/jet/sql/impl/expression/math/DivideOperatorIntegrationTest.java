@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.expression.math;
 
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -409,7 +409,7 @@ public class DivideOperatorIntegrationTest extends ArithmeticOperatorIntegration
     public void testSerialization() {
         DivideFunction<?> original =
                 DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
-        DivideFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_DIVIDE);
+        DivideFunction<?> restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_DIVIDE);
 
         checkEquals(original, restored, true);
     }

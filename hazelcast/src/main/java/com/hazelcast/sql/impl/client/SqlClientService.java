@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -40,9 +39,9 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.CoreQueryUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QueryUtils;
 
 import javax.annotation.Nonnull;
 import java.security.AccessControlException;
@@ -55,6 +54,8 @@ import java.util.function.Function;
 
 import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
 import static com.hazelcast.client.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.client.properties.ClientProperty.PARTITION_ARGUMENT_CACHE_SIZE;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
@@ -69,6 +70,9 @@ import static com.hazelcast.sql.impl.SqlErrorCode.TOPOLOGY_CHANGE;
 public class SqlClientService implements SqlService {
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
 
+    @SuppressWarnings("checkstyle:VisibilityModifier")
+    public final ReadOptimizedLruCache<String, Integer> partitionArgumentIndexCache;
+
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
 
@@ -80,6 +84,7 @@ public class SqlClientService implements SqlService {
     private final boolean skipUpdateStatistics;
     private final long resubmissionTimeoutNano;
     private final long resubmissionRetryPauseMillis;
+    private final boolean isSmartRouting;
 
     public SqlClientService(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -88,12 +93,23 @@ public class SqlClientService implements SqlService {
         long resubmissionTimeoutMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS);
         this.resubmissionTimeoutNano = TimeUnit.MILLISECONDS.toNanos(resubmissionTimeoutMillis);
         this.resubmissionRetryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
+
+        this.isSmartRouting = !client.getConnectionManager().isUnisocketClient();
+        final int partitionArgCacheSize = client.getProperties().getInteger(PARTITION_ARGUMENT_CACHE_SIZE);
+        final int partitionArgCacheThreshold = partitionArgCacheSize + Math.min(partitionArgCacheSize / 10, 50);
+        this.partitionArgumentIndexCache = new ReadOptimizedLruCache<>(partitionArgCacheSize, partitionArgCacheThreshold);
     }
 
     @Nonnull
     @Override
     public SqlResult execute(@Nonnull SqlStatement statement) {
-        ClientConnection connection = getQueryConnection();
+        Integer argIndex = statement.getPartitionArgumentIndex() != -1
+                ? statement.getPartitionArgumentIndex()
+                : partitionArgumentIndexCache.getOrDefault(statement.getSql(), -1);
+        Integer partitionId = extractPartitionId(statement, argIndex);
+        ClientConnection connection = partitionId != null
+                ? getQueryConnection(partitionId)
+                : getQueryConnection();
         QueryId id = QueryId.create(connection.getRemoteUuid());
 
         List<Object> params = statement.getParameters();
@@ -126,7 +142,7 @@ public class SqlClientService implements SqlService {
 
         try {
             ClientMessage message = invoke(requestMessage, connection);
-            handleExecuteResponse(res, message);
+            handleExecuteResponse(statement, argIndex, res, message);
             return res;
         } catch (Exception e) {
             RuntimeException error = rethrow(e, connection);
@@ -259,7 +275,7 @@ public class SqlClientService implements SqlService {
         return connectionType.equals(ConnectionType.MC_JAVA_CLIENT);
     }
 
-    private SqlResubmissionResult createResubmissionResult(ClientMessage message, Connection connection) {
+    private SqlResubmissionResult createResubmissionResult(ClientMessage message, ClientConnection connection) {
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
         SqlError sqlError = response.error;
         if (sqlError != null) {
@@ -270,7 +286,12 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    private void handleExecuteResponse(SqlClientResult res, ClientMessage message) {
+    private void handleExecuteResponse(
+            SqlStatement statement,
+            int originalPartitionArgumentIndex,
+            SqlClientResult res,
+            ClientMessage message
+    ) {
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
         SqlError sqlError = response.error;
         if (sqlError != null) {
@@ -282,6 +303,19 @@ public class SqlClientService implements SqlService {
                     sqlError.getSuggestion()
             );
         } else {
+            if (isSmartRouting && response.partitionArgumentIndex != originalPartitionArgumentIndex) {
+                if (response.partitionArgumentIndex != -1) {
+                    partitionArgumentIndexCache.put(statement.getSql(), response.partitionArgumentIndex);
+                    // We're writing to a non-volatile field from multiple threads. But it's safe because all
+                    // writers write the same value, so it should be idempotent. Also, another thread might
+                    // not observe the written value, but that's not an issue either, the thread will fall
+                    // back to using query the partitionArgumentIndexCache, unless there's a change
+                    // from one argument to another, which can happen only if there's concurrent DDL.
+                    statement.setPartitionArgumentIndex(response.partitionArgumentIndex);
+                } else {
+                    partitionArgumentIndexCache.remove(statement.getSql());
+                }
+            }
             res.onExecuteResponse(
                     response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
                     response.rowPage,
@@ -291,16 +325,16 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    public void fetchAsync(Connection connection, QueryId queryId, int cursorBufferSize, SqlClientResult res) {
+    public void fetchAsync(ClientConnection connection, QueryId queryId, int cursorBufferSize, SqlClientResult res) {
         ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
 
         ClientInvocationFuture future = invokeAsync(requestMessage, connection);
 
-        future.whenComplete(withTryCatch(logger,
-                (message, error) -> handleFetchResponse(connection, res, message, error)));
+        future.whenCompleteAsync(withTryCatch(logger,
+                (message, error) -> handleFetchResponse(connection, res, message, error)), CALLER_RUNS);
     }
 
-    private void handleFetchResponse(Connection connection, SqlClientResult res, ClientMessage message, Throwable error) {
+    private void handleFetchResponse(ClientConnection connection, SqlClientResult res, ClientMessage message, Throwable error) {
         if (error != null) {
             res.onFetchFinished(null, rethrow(error, connection));
 
@@ -328,7 +362,7 @@ public class SqlClientService implements SqlService {
      * @param connection Connection.
      * @param queryId    Query ID.
      */
-    void close(Connection connection, QueryId queryId) {
+    void close(ClientConnection connection, QueryId queryId) {
         try {
             ClientMessage requestMessage = SqlCloseCodec.encodeRequest(queryId);
 
@@ -353,10 +387,29 @@ public class SqlClientService implements SqlService {
         }
     }
 
+    public ClientConnection getQueryConnection(int partitionId) {
+        try {
+            final UUID nodeId = client.getClientPartitionService().getPartitionOwner(partitionId);
+            if (nodeId == null) {
+                return getQueryConnection();
+            }
+
+            ClientConnection connection = client.getConnectionManager().getConnection(nodeId);
+
+            if (connection == null) {
+                return getQueryConnection();
+            }
+
+            return connection;
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
     /**
      * For testing only.
      */
-    public ClientMessage invokeOnConnection(Connection connection, ClientMessage request) {
+    public ClientMessage invokeOnConnection(ClientConnection connection, ClientMessage request) {
         try {
             return invoke(request, connection);
         } catch (Exception e) {
@@ -382,16 +435,37 @@ public class SqlClientService implements SqlService {
         return client.getSerializationService();
     }
 
-    private ClientInvocationFuture invokeAsync(ClientMessage request, Connection connection) {
+    private ClientInvocationFuture invokeAsync(ClientMessage request, ClientConnection connection) {
         ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
 
         return invocation.invoke();
     }
 
-    private ClientMessage invoke(ClientMessage request, Connection connection) throws Exception {
+    private ClientMessage invoke(ClientMessage request, ClientConnection connection) throws Exception {
         ClientInvocationFuture fut = invokeAsync(request, connection);
 
         return fut.get();
+    }
+
+    private Integer extractPartitionId(SqlStatement statement, int argIndex) {
+        if (!isSmartRouting) {
+            return null;
+        }
+
+        if (statement.getParameters().size() == 0) {
+            return null;
+        }
+
+        if (argIndex >= statement.getParameters().size() || argIndex < 0) {
+            return null;
+        }
+
+        final Object key = statement.getParameters().get(argIndex);
+        if (key == null) {
+            return null;
+        }
+
+        return client.getClientPartitionService().getPartitionId(key);
     }
 
     private static HazelcastSqlException handleResponseError(SqlError error) {
@@ -408,9 +482,9 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    private RuntimeException rethrow(Throwable cause, Connection connection) {
+    private RuntimeException rethrow(Throwable cause, ClientConnection connection) {
         if (!connection.isAlive()) {
-            return QueryUtils.toPublicException(
+            return CoreQueryUtils.toPublicException(
                     QueryException.memberConnection(connection.getRemoteAddress()),
                     getClientId()
             );
@@ -425,7 +499,7 @@ public class SqlClientService implements SqlService {
             return (AccessControlException) cause.getCause();
         }
 
-        return QueryUtils.toPublicException(cause, getClientId());
+        return CoreQueryUtils.toPublicException(cause, getClientId());
     }
 
     /**

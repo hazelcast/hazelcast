@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.Job;
@@ -35,8 +37,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -45,7 +50,9 @@ import java.util.stream.Stream;
 import static com.hazelcast.function.Functions.entryValue;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.mapPutEvents;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
+import static java.nio.file.Files.readAllBytes;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -55,19 +62,46 @@ import static org.junit.Assert.assertNotNull;
 
 @Category(SlowTest.class)
 public class Sources_withEventJournalTest extends PipelineTestSupport {
+    // The instance for remote cluster
     private static HazelcastInstance remoteHz;
-    private static ClientConfig clientConfig;
+    // The configuration for connecting to remote cluster
+    private static ClientConfig remoteHzClientConfig;
+
+    private static final String HZ_CLIENT_EXTERNAL_REF = "hzclientexternalref";
 
     @BeforeClass
-    public static void setUp() {
-        Config config = new Config();
-        config.setClusterName(randomName());
-        config.addCacheConfig(new CacheSimpleConfig().setName("*"));
-        config.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
-        config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
+    public static void setUp() throws IOException {
 
-        remoteHz = createRemoteCluster(config, 2).get(0);
-        clientConfig = getClientConfigForRemoteCluster(remoteHz);
+        // Create remote cluster
+        String clusterName = randomName();
+
+        Config remoteClusterConfig = new Config();
+        remoteClusterConfig.setClusterName(clusterName);
+        remoteClusterConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
+        remoteClusterConfig.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
+        remoteClusterConfig.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
+
+        remoteHz = createRemoteCluster(remoteClusterConfig, 2).get(0);
+        remoteHzClientConfig = getClientConfigForRemoteCluster(remoteHz);
+
+        // Create local cluster
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig(HZ_CLIENT_EXTERNAL_REF);
+        dataConnectionConfig.setType("HZ");
+
+        // Read XML and set as DataConnectionConfig
+        String xmlString = readLocalClusterConfig("hazelcast-client-test-external.xml", clusterName);
+        dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlString);
+
+        for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
+            Config hazelcastInstanceConfig = hazelcastInstance.getConfig();
+            hazelcastInstanceConfig.addDataConnectionConfig(dataConnectionConfig);
+        }
+    }
+
+    private static String readLocalClusterConfig(String file, String clusterName) throws IOException {
+        byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", file));
+        return new String(bytes, StandardCharsets.UTF_8)
+                .replace("$CLUSTER_NAME$", clusterName);
     }
 
     @AfterClass
@@ -101,6 +135,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         testMapJournal(map, source);
     }
 
+    // Test with ClientConfig
     @Test
     public void remoteMapJournal() {
         // Given
@@ -109,7 +144,52 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When
         StreamSource<Entry<String, Integer>> source = Sources.remoteMapJournal(
-                mapName, clientConfig, START_FROM_OLDEST);
+                mapName, remoteHzClientConfig, START_FROM_OLDEST);
+
+        // Then
+        testMapJournal(map, source);
+    }
+
+    // Test remoteMapJournal() using default parameters with DataConnectionRef
+    @Test
+    public void remoteMapJournal_withExternalConfig() {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomName();
+        IMap<String, Integer> map = remoteHz.getMap(mapName);
+
+        // When
+        StreamSource<Entry<String, Integer>> source = Sources.remoteMapJournal(
+                mapName, dataConnectionRef(HZ_CLIENT_EXTERNAL_REF), START_FROM_OLDEST);
+
+        // Then
+        testMapJournal(map, source);
+    }
+
+    @Test
+    public void remoteMapJournal_withExternalConfigYaml() throws IOException {
+
+        final String HZ_CLIENT_YAML_EXTERNAL_REF = "hzclientyamlexternalref";
+
+        for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
+            Config config = hazelcastInstance.getConfig();
+
+            DataConnectionConfig dataConnectionConfig = new DataConnectionConfig(HZ_CLIENT_YAML_EXTERNAL_REF);
+            dataConnectionConfig.setType("HZ");
+
+            // Read YAML and set as DataConnectionConfig
+            String yamlString = readLocalClusterConfig("hazelcast-client-test-external.yaml", remoteHzClientConfig.getClusterName());
+            dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_YML, yamlString);
+
+            Config hazelcastInstanceConfig = hazelcastInstance.getConfig();
+            hazelcastInstanceConfig.addDataConnectionConfig(dataConnectionConfig);
+        }
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomName();
+        IMap<String, Integer> map = remoteHz.getMap(mapName);
+
+        // When
+        StreamSource<Entry<String, Integer>> source = Sources.remoteMapJournal(
+                mapName, dataConnectionRef(HZ_CLIENT_YAML_EXTERNAL_REF), START_FROM_OLDEST);
 
         // Then
         testMapJournal(map, source);
@@ -123,9 +203,9 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When we start the job...
         p.readFrom(source)
-         .withoutTimestamps()
-         .map(entryValue())
-         .writeTo(sink);
+                .withoutTimestamps()
+                .map(entryValue())
+                .writeTo(sink);
         hz().getJet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
@@ -147,7 +227,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // The values we got are exactly all the original values
         // and all the updated values.
         List<Integer> expected = Stream.concat(input.stream().map(i -> Integer.MIN_VALUE + i), input.stream())
-                                       .collect(toList());
+                .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
 
@@ -281,6 +361,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         testMapJournal_withPredicateAndProjection(map, source);
     }
 
+    // Test with ClientConfig
     @Test
     public void remoteMapJournal_withPredicateAndProjectionFn() {
         // Given
@@ -290,7 +371,23 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When
         StreamSource<Integer> source = Sources.remoteMapJournal(
-                mapName, clientConfig, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, p);
+                mapName, remoteHzClientConfig, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, p);
+
+        // Then
+        testMapJournal_withPredicateAndProjection(map, source);
+    }
+
+    // Test remoteMapJournal() using all  parameters with DataConnectionRef
+    @Test
+    public void remoteMapJournal_withExternalConfigPredicateAndProjectionFn() {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomName();
+        IMap<String, Integer> map = remoteHz.getMap(mapName);
+        PredicateEx<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
+
+        // When
+        StreamSource<Integer> source = Sources.remoteMapJournal(
+                mapName, dataConnectionRef(HZ_CLIENT_EXTERNAL_REF), START_FROM_OLDEST, EventJournalMapEvent::getNewValue, p);
 
         // Then
         testMapJournal_withPredicateAndProjection(map, source);
@@ -330,27 +427,64 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void remoteMapJournal_withUnknownValueClass() throws Exception {
         // Given
         URL jarResource = Thread.currentThread().getContextClassLoader()
-                                .getResource("deployment/sample-pojo-1.0-car.jar");
+                .getResource("deployment/sample-pojo-1.0-car.jar");
         assertNotNull("jar not found", jarResource);
-        ClassLoader cl = new URLClassLoader(new URL[]{jarResource});
-        Class<?> carClz = cl.loadClass("com.sample.pojo.car.Car");
-        Object car = carClz.getConstructor(String.class, String.class)
-                                 .newInstance("make", "model");
-        IMap<String, Object> map = remoteHz.getMap(srcName);
-        // the class of the value is unknown to the remote IMDG member, it will be only known to Jet
-        map.put("key", car);
+        try (URLClassLoader cl = new URLClassLoader(new URL[]{jarResource})) {
+            Class<?> carClz = cl.loadClass("com.sample.pojo.car.Car");
+            Object car = carClz.getConstructor(String.class, String.class)
+                    .newInstance("make", "model");
+            IMap<String, Object> map = remoteHz.getMap(srcName);
+            // the class of the value is unknown to the remote IMDG member, it will be only known to Jet
+            map.put("key", car);
+
+            // When
+            StreamSource<Entry<Object, Object>> source = Sources.remoteMapJournal(srcName, remoteHzClientConfig,
+                    START_FROM_OLDEST);
+
+            // Then
+            p.readFrom(source).withoutTimestamps().map(en -> en.getValue().toString()).writeTo(sink);
+            JobConfig jobConfig = new JobConfig();
+            jobConfig.addJar(jarResource);
+            Job job = hz().getJet().newJob(p, jobConfig);
+            List<Object> expected = singletonList(car.toString());
+            assertTrueEventually(() -> assertEquals(expected, new ArrayList<>(sinkList)), 10);
+            job.cancel();
+        }
+    }
+
+    @Test
+    public void remoteMapJournal_withExternalConfigMoreJobsWithSharedDataConnection() {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomName();
+        IMap<String, Integer> map = remoteHz.getMap(mapName);
+        String sinkName2 = randomName();
+        IList<Object> sinkList2 = hz().getList(sinkName2);
+
+        range(0, itemCount).forEach(i -> map.put(String.valueOf(i), i));
 
         // When
-        StreamSource<Entry<Object, Object>> source = Sources.remoteMapJournal(srcName, clientConfig, START_FROM_OLDEST);
+        Job jobToCancel = startJobForExternalConfigMoreJobsWithSharedDataConnection(mapName, sinkName);
+        Job job = startJobForExternalConfigMoreJobsWithSharedDataConnection(mapName, sinkName2);
 
         // Then
-        p.readFrom(source).withoutTimestamps().map(en -> en.getValue().toString()).writeTo(sink);
-        JobConfig jobConfig = new JobConfig();
-        jobConfig.addJar(jarResource);
-        Job job = hz().getJet().newJob(p, jobConfig);
-        List<Object> expected = singletonList(car.toString());
-        assertTrueEventually(() -> assertEquals(expected, new ArrayList<>(sinkList)), 10);
+        assertSizeEventually(itemCount, sinkList);
+        assertSizeEventually(itemCount, sinkList2);
+
+        jobToCancel.cancel();
+
+        range(itemCount, 2 * itemCount).forEach(i -> map.put(String.valueOf(i), i));
+        assertSizeEventually(2 * itemCount, sinkList2);
         job.cancel();
+    }
+
+    private Job startJobForExternalConfigMoreJobsWithSharedDataConnection(String sourceMapName,
+                                                                          String sinkName) {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(Sources.remoteMapJournal(sourceMapName, dataConnectionRef(HZ_CLIENT_EXTERNAL_REF), START_FROM_OLDEST))
+                .withoutTimestamps()
+                .map(entryValue())
+                .writeTo(Sinks.list(sinkName));
+        return hz().getJet().newJob(pipeline);
     }
 
     @Test
@@ -374,7 +508,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When
         StreamSource<Entry<String, Integer>> source =
-                Sources.remoteCacheJournal(cacheName, clientConfig, START_FROM_OLDEST);
+                Sources.remoteCacheJournal(cacheName, remoteHzClientConfig, START_FROM_OLDEST);
 
         // Then
         testCacheJournal(cache, source);
@@ -388,9 +522,9 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When we start the job...
         p.readFrom(source)
-         .withoutTimestamps()
-         .map(entryValue())
-         .writeTo(sink);
+                .withoutTimestamps()
+                .map(entryValue())
+                .writeTo(sink);
         hz().getJet().newJob(p);
 
         // Then eventually we get all the cache values in the sink.
@@ -412,7 +546,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // The values we got are exactly all the original values
         // and all the updated values.
         List<Integer> expected = Stream.concat(input.stream().map(i -> Integer.MIN_VALUE + i), input.stream())
-                                       .collect(toList());
+                .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
 
@@ -440,7 +574,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When
         StreamSource<Integer> source = Sources.remoteCacheJournal(
-                cacheName, clientConfig, START_FROM_OLDEST, EventJournalCacheEvent::getNewValue, p);
+                cacheName, remoteHzClientConfig, START_FROM_OLDEST, EventJournalCacheEvent::getNewValue, p);
 
         // Then
         testCacheJournal_withPredicateAndProjection(cache, source);
@@ -456,8 +590,8 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When we start the job...
         p.readFrom(source)
-         .withoutTimestamps()
-         .writeTo(sink);
+                .withoutTimestamps()
+                .writeTo(sink);
         hz().getJet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
@@ -484,28 +618,29 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void remoteCacheJournal_withUnknownValueClass() throws Exception {
         // Given
         URL jarResource = Thread.currentThread().getContextClassLoader()
-                                .getResource("deployment/sample-pojo-1.0-car.jar");
+                .getResource("deployment/sample-pojo-1.0-car.jar");
         assertNotNull("jar not found", jarResource);
-        ClassLoader cl = new URLClassLoader(new URL[]{jarResource});
-        Class<?> carClz = cl.loadClass("com.sample.pojo.car.Car");
-        Object car = carClz.getConstructor(String.class, String.class)
-                                 .newInstance("make", "model");
-        String cacheName = JOURNALED_CACHE_PREFIX + randomName();
-        ICache<String, Object> cache = remoteHz.getCacheManager().getCache(cacheName);
-        // the class of the value is unknown to the remote IMDG member, it will be only known to Jet
-        cache.put("key", car);
+        try (URLClassLoader cl = new URLClassLoader(new URL[]{jarResource})) {
+            Class<?> carClz = cl.loadClass("com.sample.pojo.car.Car");
+            Object car = carClz.getConstructor(String.class, String.class)
+                    .newInstance("make", "model");
+            String cacheName = JOURNALED_CACHE_PREFIX + randomName();
+            ICache<String, Object> cache = remoteHz.getCacheManager().getCache(cacheName);
+            // the class of the value is unknown to the remote IMDG member, it will be only known to Jet
+            cache.put("key", car);
 
-        // When
-        StreamSource<Entry<Object, Object>> source =
-                Sources.remoteCacheJournal(cacheName, clientConfig, START_FROM_OLDEST);
+            // When
+            StreamSource<Entry<Object, Object>> source =
+                    Sources.remoteCacheJournal(cacheName, remoteHzClientConfig, START_FROM_OLDEST);
 
-        // Then
-        p.readFrom(source).withoutTimestamps().map(en -> en.getValue().toString()).writeTo(sink);
-        JobConfig jobConfig = new JobConfig();
-        jobConfig.addJar(jarResource);
-        Job job = hz().getJet().newJob(p, jobConfig);
-        List<Object> expected = singletonList(car.toString());
-        assertTrueEventually(() -> assertEquals(expected, new ArrayList<>(sinkList)), 10);
-        job.cancel();
+            // Then
+            p.readFrom(source).withoutTimestamps().map(en -> en.getValue().toString()).writeTo(sink);
+            JobConfig jobConfig = new JobConfig();
+            jobConfig.addJar(jarResource);
+            Job job = hz().getJet().newJob(p, jobConfig);
+            List<Object> expected = singletonList(car.toString());
+            assertTrueEventually(() -> assertEquals(expected, new ArrayList<>(sinkList)), 10);
+            job.cancel();
+        }
     }
 }

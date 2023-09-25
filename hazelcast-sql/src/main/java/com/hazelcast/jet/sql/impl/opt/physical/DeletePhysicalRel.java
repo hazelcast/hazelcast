@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,92 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.prepare.Prepare.CatalogReader;
+import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlKind;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.List;
 
-import static org.apache.calcite.rel.core.TableModify.Operation.DELETE;
+public class DeletePhysicalRel extends AbstractRelNode implements PhysicalRel {
 
-public class DeletePhysicalRel extends TableModify implements PhysicalRel {
+    private final RelOptTable table;
+    private final CatalogReader catalogReader;
+    private RelNode input;
+    private final boolean flattened;
+    private final RexNode predicate;
 
     DeletePhysicalRel(
-            RelOptCluster cluster,
-            RelTraitSet traitSet,
-            RelOptTable table,
-            Prepare.CatalogReader catalogReader,
-            RelNode input,
-            boolean flattened
+            @Nonnull RelOptCluster cluster,
+            @Nonnull RelTraitSet traitSet,
+            @Nonnull RelOptTable table,
+            @Nonnull Prepare.CatalogReader catalogReader,
+            @Nullable RelNode input,
+            boolean flattened,
+            @Nullable RexNode predicate
     ) {
-        super(cluster, traitSet, table, catalogReader, input, DELETE, null, null, flattened);
+        super(cluster, traitSet);
+        this.table = table;
+        this.catalogReader = catalogReader;
+        this.input = input;
+        this.flattened = flattened;
+        this.predicate = predicate;
+    }
+
+    @Nonnull
+    @Override
+    public RelOptTable getTable() {
+        return table;
+    }
+
+    @Nonnull
+    public CatalogReader getCatalogReader() {
+        return catalogReader;
+    }
+
+    @Nullable
+    public RelNode getInput() {
+        return input;
+    }
+
+    @Override
+    public List<RelNode> getInputs() {
+        return input != null ? Collections.singletonList(input) : Collections.emptyList();
+    }
+
+    @Override
+    public void replaceInput(int ordinalInParent, RelNode rel) {
+        assert input != null;
+        assert ordinalInParent == 0;
+        this.input = rel;
+        recomputeDigest();
+    }
+
+    public boolean isFlattened() {
+        return flattened;
+    }
+
+    @Nullable
+    public RexNode getPredicate() {
+        return predicate;
+    }
+
+    @Override
+    public RelDataType deriveRowType() {
+        return RelOptUtil.createDmlRowType(SqlKind.DELETE, getCluster().getTypeFactory());
     }
 
     @Override
@@ -49,12 +110,26 @@ public class DeletePhysicalRel extends TableModify implements PhysicalRel {
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onDelete(this);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DeletePhysicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
+        return new DeletePhysicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened(),
+                predicate);
+    }
+
+    @Override
+    public RelWriter explainTerms(RelWriter pw) {
+        RelWriter w = super.explainTerms(pw);
+        if (input != null) {
+            w.input("input", getInput());
+        }
+        return w
+                .item("table", table.getQualifiedName())
+                .item("flattened", flattened)
+                .itemIf("predicate", predicate, predicate != null);
+
     }
 }

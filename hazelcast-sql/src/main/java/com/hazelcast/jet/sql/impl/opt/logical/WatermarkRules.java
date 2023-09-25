@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,13 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.google.common.collect.Iterables;
-import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
@@ -71,7 +65,7 @@ final class WatermarkRules {
                     scan.getCluster(),
                     OptUtils.toLogicalConvention(scan.getTraitSet()),
                     Iterables.getOnlyElement(Util.toList(scan.getInputs(), OptUtils::toLogicalInput)),
-                    toEventTimePolicyProvider(scan),
+                    lagExpression(scan),
                     wmIndex);
 
             if (wmIndex < 0) {
@@ -93,25 +87,6 @@ final class WatermarkRules {
                     watermarkedField
             );
             call.transformTo(dropLateItemsRel);
-        }
-
-        private BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> toEventTimePolicyProvider(
-                LogicalTableFunctionScan function
-        ) {
-            int orderingColumnFieldIndex = orderingColumnFieldIndex(function);
-            Expression<?> lagExpression = lagExpression(function);
-            return (context, watermarkKey) -> {
-                // todo [viliam] move this to CreateDagVisitor
-                long lagMs = WindowUtils.extractMillis(lagExpression, context);
-                return EventTimePolicy.eventTimePolicy(
-                        row -> WindowUtils.extractMillis(row.get(orderingColumnFieldIndex)),
-                        (row, timestamp) -> row,
-                        WatermarkPolicy.limitingLag(lagMs),
-                        lagMs,
-                        0,
-                        EventTimePolicy.DEFAULT_IDLE_TIMEOUT,
-                        watermarkKey);
-            };
         }
 
         private int orderingColumnFieldIndex(LogicalTableFunctionScan function) {
@@ -142,7 +117,7 @@ final class WatermarkRules {
                     logicalWatermark.getCluster(),
                     logicalWatermark.getTraitSet(),
                     logicalScan.getTable(),
-                    logicalWatermark.eventTimePolicyProvider(),
+                    logicalWatermark.lagExpression(),
                     logicalWatermark.watermarkedColumnIndex()
             );
             call.transformTo(scan);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -158,15 +157,12 @@ public class PartitionServiceSafetyCheckTest extends PartitionCorrectnessTestSup
 
         fillData(hz);
 
-        assertTrueFiveSeconds(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertFalse(isAllInSafeState(instances));
+        assertTrueFiveSeconds(() -> {
+            assertFalse(isAllInSafeState(instances));
 
-                for (HazelcastInstance instance : instances) {
-                    PartitionService ps = instance.getPartitionService();
-                    assertFalse(ps.isClusterSafe());
-                }
+            for (HazelcastInstance instance : instances) {
+                PartitionService ps = instance.getPartitionService();
+                assertFalse(ps.isClusterSafe());
             }
         });
     }

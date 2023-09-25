@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.test;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -27,6 +26,7 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -114,52 +114,54 @@ public class TestAllTypesSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
     @Override
-    public boolean isStream() {
-        return false;
+    public String defaultObjectType() {
+        return "Dummy";
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
-    ) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
         return FIELD_LIST;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> resolvedFields) {
         return new TestAllTypesTable(this, schemaName, mappingName);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering function are not supported for " + TYPE_NAME + " mappings");
         }
+        Expression<Boolean> convertedPredicate = context.convertFilter(predicate);
+        List<Expression<?>> convertedProjection = context.convertProjection(projection);
 
         BatchSource<JetSqlRow> source = SourceBuilder
                 .batch("batch", ExpressionEvalContext::from)
                 .<JetSqlRow>fillBufferFn((ctx, buf) -> {
-                    JetSqlRow row = ExpressionUtil.evaluate(predicate, projection, VALUES, ctx);
+                    JetSqlRow row = ExpressionUtil.evaluate(convertedPredicate, convertedProjection, VALUES, ctx);
                     if (row != null) {
                         buf.add(row);
                     }
@@ -167,7 +169,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
                 })
                 .build();
         ProcessorMetaSupplier pms = ((BatchSourceTransform<JetSqlRow>) source).metaSupplier;
-        return dag.newUniqueVertex(table.toString(), pms);
+        return context.getDag().newUniqueVertex(context.getTable().toString(), pms);
     }
 
     private static final class TestAllTypesTable extends JetTable {
@@ -177,7 +179,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
                 @Nonnull String schemaName,
                 @Nonnull String name
         ) {
-            super(sqlConnector, FIELD_LIST2, schemaName, name, new ConstantTableStatistics(1));
+            super(sqlConnector, FIELD_LIST2, schemaName, name, new ConstantTableStatistics(1), null, false);
         }
 
         @Override

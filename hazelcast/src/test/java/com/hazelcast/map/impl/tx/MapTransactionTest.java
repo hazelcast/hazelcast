@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,6 @@ import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
-import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
-import com.hazelcast.map.impl.operation.MapOperation;
-import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.Predicate;
@@ -75,7 +72,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -1291,7 +1288,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     public void testGetForUpdate_LoadsKeyFromMapLoader_whenKeyDoesNotExistsInDb() {
         final String mapName = randomMapName();
         final MapStoreAdapter mock = mock(MapStoreAdapter.class);
-        when(mock.load(anyObject())).thenReturn(null);
+        when(mock.load(any())).thenReturn(null);
         Config config = new Config();
         MapStoreConfig storeConfig = new MapStoreConfig();
         storeConfig.setEnabled(true).setImplementation(mock);
@@ -1303,7 +1300,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 TransactionalMap<Object, Object> map = context.getMap(mapName);
                 Object value = map.getForUpdate(1);
                 assertNull("value should be null", value);
-                verify(mock, times(1)).load(anyObject());
+                verify(mock, times(1)).load(any());
                 return null;
             }
         });
@@ -1314,7 +1311,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final String mapName = randomMapName();
         final String valueFromDB = randomString();
         final MapStoreAdapter mock = mock(MapStoreAdapter.class);
-        when(mock.load(anyObject())).thenReturn(valueFromDB);
+        when(mock.load(any())).thenReturn(valueFromDB);
         Config config = new Config();
         MapStoreConfig storeConfig = new MapStoreConfig();
         storeConfig.setEnabled(true).setImplementation(mock);
@@ -1326,7 +1323,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 TransactionalMap<Object, Object> map = context.getMap(mapName);
                 Object value = map.getForUpdate(1);
                 assertEquals(valueFromDB, value);
-                verify(mock, times(1)).load(anyObject());
+                verify(mock, times(1)).load(any());
                 return null;
             }
         });
@@ -1337,7 +1334,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final String mapName = randomMapName();
         final String valueFromDB = randomString();
         final MapStoreAdapter mock = mock(MapStoreAdapter.class);
-        when(mock.load(anyObject())).thenReturn(valueFromDB);
+        when(mock.load(any())).thenReturn(valueFromDB);
         Config config = getConfig();
         MapStoreConfig storeConfig = new MapStoreConfig();
         storeConfig.setEnabled(true).setImplementation(mock);
@@ -1349,7 +1346,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 TransactionalMap<Object, Object> map = context.getMap(mapName);
                 Object value = map.get(1);
                 assertEquals(valueFromDB, value);
-                verify(mock, times(1)).load(anyObject());
+                verify(mock, times(1)).load(any());
                 return null;
             }
         });
@@ -1359,7 +1356,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     public void testGet_LoadsKeyFromMapLoader_whenKeyDoesNotExistsInDb() {
         final String mapName = randomMapName();
         final MapStoreAdapter mock = mock(MapStoreAdapter.class);
-        when(mock.load(anyObject())).thenReturn(null);
+        when(mock.load(any())).thenReturn(null);
         Config config = getConfig();
         MapStoreConfig storeConfig = new MapStoreConfig();
         storeConfig.setEnabled(true).setImplementation(mock);
@@ -1371,25 +1368,9 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 TransactionalMap<Object, Object> map = context.getMap(mapName);
                 Object value = map.get(1);
                 assertNull("value should be null", value);
-                verify(mock, times(1)).load(anyObject());
+                verify(mock, times(1)).load(any());
                 return null;
             }
         });
-    }
-
-    private static class WaitTimeoutSetterMapOperationProvider extends DefaultMapOperationProvider {
-
-        private final MapOperationProvider operationProvider;
-
-        WaitTimeoutSetterMapOperationProvider(MapOperationProvider operationProvider) {
-            this.operationProvider = operationProvider;
-        }
-
-        @Override
-        public MapOperation createContainsKeyOperation(String name, Data dataKey) {
-            MapOperation containsKeyOperation = operationProvider.createContainsKeyOperation(name, dataKey);
-            containsKeyOperation.setWaitTimeout(TimeUnit.SECONDS.toMillis(3));
-            return containsKeyOperation;
-        }
     }
 }

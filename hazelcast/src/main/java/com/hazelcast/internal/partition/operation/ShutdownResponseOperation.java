@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -61,8 +60,7 @@ public class ShutdownResponseOperation
                 logger.finest("Received shutdown response from " + caller);
             }
 
-            if (isClusterVersionLessThanV52()
-                    || nodeEngine.getLocalMember().getUuid().equals(uuid)) {
+            if (nodeEngine.getLocalMember().getUuid().equals(uuid)) {
                 partitionService.onShutdownResponse();
             } else {
                 logger.warning("Ignoring shutdown response for " + uuid + " since it's not the expected member");
@@ -70,12 +68,6 @@ public class ShutdownResponseOperation
         } else {
             logger.warning("Received shutdown response from " + caller + " but it's not the known master");
         }
-    }
-
-    // RU_COMPAT 5.1
-    private boolean isClusterVersionLessThanV52() {
-        return getNodeEngine().getClusterService()
-                .getClusterVersion().isLessThan(Versions.V5_2);
     }
 
     @Override
@@ -96,20 +88,12 @@ public class ShutdownResponseOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-
-        // RU_COMPAT 5.1
-        if (out.getVersion().isGreaterThan(Versions.V5_1)) {
-            UUIDSerializationUtil.writeUUID(out, uuid);
-        }
+        UUIDSerializationUtil.writeUUID(out, uuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
-        // RU_COMPAT 5.1
-        if (in.getVersion().isGreaterThan(Versions.V5_1)) {
-            uuid = UUIDSerializationUtil.readUUID(in);
-        }
+        uuid = UUIDSerializationUtil.readUUID(in);
     }
 }

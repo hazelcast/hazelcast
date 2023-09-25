@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,34 +53,30 @@ public class SPIAwareMemberGroupFactory extends BackupSafeMemberGroupFactory imp
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers) {
         Set<MemberGroup> memberGroups = createHashSet(allMembers.size());
 
-        for (Member member : allMembers) {
-            try {
-                if (member.localMember()) {
-                    DefaultDiscoveryService defaultDiscoveryService = (DefaultDiscoveryService) discoveryService;
-                    // If no discovery strategy is found fail-fast
-                    if (!defaultDiscoveryService.getDiscoveryStrategies().iterator().hasNext()) {
-                        throw new RuntimeException("Could not load any Discovery Strategy, please "
-                                + "check service definitions under META_INF.services folder. ");
-                    } else {
-                        for (DiscoveryStrategy discoveryStrategy : defaultDiscoveryService.getDiscoveryStrategies()) {
-                            PartitionGroupStrategy groupStrategy = discoveryStrategy.getPartitionGroupStrategy(allMembers);
-                            if (groupStrategy == null) {
-                                groupStrategy = discoveryStrategy.getPartitionGroupStrategy();
-                            }
-                            checkNotNull(groupStrategy);
-                            for (MemberGroup group : groupStrategy.getMemberGroups()) {
-                                memberGroups.add(group);
-                            }
-                            return memberGroups;
-                        }
+        try {
+            DefaultDiscoveryService defaultDiscoveryService = (DefaultDiscoveryService) discoveryService;
+            // If no discovery strategy is found fail-fast
+            if (!defaultDiscoveryService.getDiscoveryStrategies().iterator().hasNext()) {
+                throw new RuntimeException("Could not load any Discovery Strategy, please "
+                        + "check service definitions under META_INF.services folder. ");
+            } else {
+                for (DiscoveryStrategy discoveryStrategy : defaultDiscoveryService.getDiscoveryStrategies()) {
+                    PartitionGroupStrategy groupStrategy = discoveryStrategy.getPartitionGroupStrategy(allMembers);
+                    if (groupStrategy == null) {
+                        groupStrategy = discoveryStrategy.getPartitionGroupStrategy();
                     }
+                    checkNotNull(groupStrategy);
+                    for (MemberGroup group : groupStrategy.getMemberGroups()) {
+                        memberGroups.add(group);
+                    }
+                    return memberGroups;
                 }
-            } catch (Exception e) {
-                if (e instanceof ValidationException) {
-                    throw new InvalidConfigurationException("Invalid configuration", e);
-                } else {
-                    throw new RuntimeException("Failed to configure discovery strategies", e);
-                }
+            }
+        } catch (Exception e) {
+            if (e instanceof ValidationException) {
+                throw new InvalidConfigurationException("Invalid configuration", e);
+            } else {
+                throw new RuntimeException("Failed to configure discovery strategies", e);
             }
         }
 

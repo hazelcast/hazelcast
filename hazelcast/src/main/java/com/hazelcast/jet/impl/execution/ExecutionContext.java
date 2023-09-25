@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TIME;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
@@ -229,6 +229,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 if (cl == null) {
                     cl = nodeEngine.getConfigClassLoader();
                 }
+                startTime.set(System.currentTimeMillis());
                 executionFuture = taskletExecService
                         .beginExecute(tasklets, cancellationFuture, cl)
                         .whenComplete(withTryCatch(logger, (r, t) -> setCompletionTime()))
@@ -241,7 +242,6 @@ public class ExecutionContext implements DynamicMetricsProvider {
                             }
                             return res;
                         });
-                startTime.set(System.currentTimeMillis());
             }
             return executionFuture;
         }
@@ -420,6 +420,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
             return;
         }
         descriptor = descriptor.withTag(MetricTags.JOB, idToString(jobId))
+                               .withTag(MetricTags.JOB_NAME, jobName)
                                .withTag(MetricTags.EXECUTION, idToString(executionId));
 
         context.collect(descriptor, EXECUTION_START_TIME, ProbeLevel.INFO, ProbeUnit.MS, startTime.get());

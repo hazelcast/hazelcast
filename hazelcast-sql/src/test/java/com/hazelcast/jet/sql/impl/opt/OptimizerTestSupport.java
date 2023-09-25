@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.opt;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
+import com.hazelcast.jet.sql.impl.connector.generator.StreamSqlConnector;
+import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
@@ -33,11 +35,15 @@ import com.hazelcast.jet.sql.impl.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
@@ -51,7 +57,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.sql.impl.schema.TableResolverImpl.SCHEMA_NAME_PUBLIC;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
@@ -110,7 +116,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         LogicalRel logicalRel = optimizeLogicalInternal(sql, context);
         PhysicalRel physicalRel = (PhysicalRel) context
                 .optimize(logicalRel, PhysicalRules.getRuleSet(), OptUtils.toPhysicalConvention(logicalRel.getTraitSet()));
-        physicalRel = CalciteSqlOptimizer.uniquifyScans(physicalRel);
+        physicalRel = CalciteSqlOptimizer.postOptimizationRewrites(physicalRel);
         return new Result(logicalRel, physicalRel);
     }
 
@@ -123,8 +129,8 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 HazelcastSchemaUtils.createCatalog(schema),
                 QueryUtils.prepareSearchPaths(null, null),
                 emptyList(),
-                1,
-                name -> null
+                name -> null,
+                NoOpSqlSecurityContext.INSTANCE
         );
 
         ParameterConverter[] parameterConverters = IntStream.range(0, parameterTypes.length)
@@ -146,19 +152,32 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             List<MapTableIndex> indexes,
             long rowCount
     ) {
+        return partitionedTable(name, fields, indexes, rowCount, emptyList(), false);
+    }
+
+    // TODO: migrate this code to builder
+    protected static HazelcastTable partitionedTable(
+            String name,
+            List<TableField> fields,
+            List<MapTableIndex> indexes,
+            long rowCount,
+            List<String> partitioningAttributes,
+            boolean supportsPartitionPruning
+    ) {
         PartitionedMapTable table = new PartitionedMapTable(
                 SCHEMA_NAME_PUBLIC,
                 name,
                 name,
                 fields,
                 new ConstantTableStatistics(rowCount),
-                null,
-                null,
-                null,
-                null,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                PrimitiveUpsertTargetDescriptor.INSTANCE,
+                PrimitiveUpsertTargetDescriptor.INSTANCE,
                 indexes,
-                false
-        );
+                false,
+                partitioningAttributes,
+                supportsPartitionPruning);
         return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
     }
 
@@ -166,8 +185,18 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
     }
 
+    protected static HazelcastTable streamGeneratorTable(String name, int rowCount) {
+        return new HazelcastTable(
+                StreamSqlConnector.createTable(SCHEMA_NAME_PUBLIC, name, emptyList()),
+                new HazelcastTableStatistic(rowCount));
+    }
+
     protected static TableField field(String name, QueryDataType type) {
         return new Field(name, type, false);
+    }
+
+    protected static MapTableField mapField(String name, QueryDataType type, QueryPath queryPath) {
+        return new MapTableField(name, type, false, queryPath);
     }
 
     protected static void assertPlan(RelNode rel, PlanRows expected) {

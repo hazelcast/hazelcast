@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.mapstore.MapDataStores;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
@@ -28,7 +27,9 @@ import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.StaticParams;
 
-public enum PutOpSteps implements Step<State> {
+import static com.hazelcast.map.impl.record.Record.UNSET;
+
+public enum PutOpSteps implements IMapOpStep {
 
     READ() {
         @Override
@@ -38,6 +39,10 @@ public enum PutOpSteps implements Step<State> {
 
         @Override
         public Step nextStep(State state) {
+            if (!state.getStaticParams().isLoad()) {
+                return PutOpSteps.PROCESS;
+            }
+
             return state.getOldValue() == null
                     ? PutOpSteps.LOAD : PutOpSteps.PROCESS;
         }
@@ -45,16 +50,12 @@ public enum PutOpSteps implements Step<State> {
 
     LOAD() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isLoadStep() {
             return true;
         }
 
         @Override
         public void runStep(State state) {
-            if (state.getRecordStore().getMapDataStore() == MapDataStores.EMPTY_MAP_DATA_STORE) {
-                return;
-            }
-
             StaticParams staticParams = state.getStaticParams();
             if (staticParams.isPutVanilla()) {
                 state.setOldValue(((DefaultRecordStore) state.getRecordStore())
@@ -71,6 +72,7 @@ public enum PutOpSteps implements Step<State> {
     },
 
     PROCESS() {
+        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         @Override
         public void runStep(State state) {
             StaticParams staticParams = state.getStaticParams();
@@ -81,45 +83,47 @@ public enum PutOpSteps implements Step<State> {
             MapContainer mapContainer = recordStore.getMapContainer();
             MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
 
-            if (staticParams.isPutIfAbsent()) {
-                Record record = recordStore.getRecord(state.getKey());
-                if (record == null && state.getOldValue() != null) {
-                    record = ((DefaultRecordStore) recordStore).onLoadRecord(state.getKey(),
-                            state.getOldValue(), false, state.getCallerAddress());
-                }
+            if (!staticParams.isPutVanilla()) {
+                if (staticParams.isPutIfAbsent()) {
+                    Record record = recordStore.getRecord(state.getKey());
+                    if (record == null && state.getOldValue() != null) {
+                        record = ((DefaultRecordStore) recordStore).onLoadRecord(state.getKey(),
+                                state.getOldValue(), false, state.getCallerAddress());
+                    }
 
-                if (record != null) {
+                    if (record != null) {
+                        state.setOldValue(record.getValue());
+                        state.setStopExecution(true);
+                        return;
+                    }
+                } else if (staticParams.isPutIfExists()) {
+                    Record record = recordStore.getRecord(state.getKey());
+                    if (record == null && state.getOldValue() != null) {
+                        record = ((DefaultRecordStore) recordStore).onLoadRecord(state.getKey(),
+                                state.getOldValue(), false, state.getCallerAddress());
+                    }
+
+                    if (record == null) {
+                        state.setOldValue(null);
+                        state.setStopExecution(true);
+                        state.setResult(false);
+                        return;
+                    }
+
+                    newValue = staticParams.isSetTtl() ? record.getValue() : newValue;
+                    state.setNewValue(newValue);
                     state.setOldValue(record.getValue());
-                    state.setStopExecution(true);
-                    return;
-                }
-            } else if (staticParams.isPutIfExists()) {
-                Record record = recordStore.getRecord(state.getKey());
-                if (record == null && state.getOldValue() != null) {
-                    record = ((DefaultRecordStore) recordStore).onLoadRecord(state.getKey(),
-                            state.getOldValue(), false, state.getCallerAddress());
-                }
 
-                if (record == null) {
-                    state.setOldValue(null);
-                    state.setStopExecution(true);
-                    state.setResult(false);
-                    return;
+                    if (staticParams.isPutIfEqual()
+                            && !((DefaultRecordStore) recordStore).getValueComparator()
+                            .isEqual(state.getExpect(), state.getOldValue(),
+                                    mapServiceContext.getNodeEngine().getSerializationService())) {
+                        state.setResult(false);
+                        state.setStopExecution(true);
+                        state.setOldValue(null);
+                        return;
+                    }
                 }
-
-                newValue = staticParams.isSetTtl() ? record.getValue() : newValue;
-                state.setNewValue(newValue);
-                state.setOldValue(record.getValue());
-            }
-
-            if (staticParams.isPutIfEqual()
-                    && !((DefaultRecordStore) recordStore).getValueComparator()
-                    .isEqual(state.getExpect(), state.getOldValue(),
-                            mapServiceContext.getNodeEngine().getSerializationService())) {
-                state.setResult(false);
-                state.setStopExecution(true);
-                state.setOldValue(null);
-                return;
             }
 
             // Intercept put on owner partition.
@@ -131,7 +135,7 @@ public enum PutOpSteps implements Step<State> {
         @Override
         public Step nextStep(State state) {
             if (state.isStopExecution()) {
-                return UtilSteps.SEND_RESPONSE;
+                return UtilSteps.FINAL_STEP;
             }
             return state.getStaticParams().isTransient() ? ON_STORE : STORE;
         }
@@ -139,12 +143,14 @@ public enum PutOpSteps implements Step<State> {
 
     STORE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
         @Override
         public void runStep(State state) {
+            assertWBStoreRunsOnPartitionThread(state);
+
             Object newValue = ((DefaultRecordStore) state.getRecordStore()).putIntoMapStore0(state.getKey(),
                     state.getNewValue(), state.getTtl(), state.getMaxIdle(), state.getNow(), state.getTxnId());
             state.setNewValue(newValue);
@@ -167,7 +173,7 @@ public enum PutOpSteps implements Step<State> {
             if (record == null) {
                 record = recordStore.createRecord(state.getKey(), state.getNewValue(), state.getNow());
                 recordStore.putMemory(record, state.getKey(), state.getOldValue(),
-                        state.getTtl(), state.getMaxIdle(), state.getExpiryTime(),
+                        state.getTtl(), state.getMaxIdle(), UNSET,
                         state.getNow(), EntryEventType.ADDED, state.getStaticParams().isBackup());
             } else {
                 // To heap copy and state object update are
@@ -175,9 +181,10 @@ public enum PutOpSteps implements Step<State> {
                 state.setOldValue(recordStore.getInMemoryFormat() == InMemoryFormat.OBJECT
                         ? record.getValue() : mapServiceContext.toData(record.getValue()));
                 recordStore.updateRecord0(record, state.getNow(), state.getStaticParams().isCountAsAccess());
-                recordStore.updateMemory(record, state.getKey(), state.getOldValue(), state.getNewValue(),
-                        state.isChangeExpiryOnUpdate(), state.getTtl(), state.getMaxIdle(), state.getExpiryTime(),
+                Object oldValue = recordStore.updateMemory(record, state.getKey(), state.getOldValue(), state.getNewValue(),
+                        state.isChangeExpiryOnUpdate(), state.getTtl(), state.getMaxIdle(), UNSET,
                         state.getNow(), state.getStaticParams().isBackup());
+                state.setOldValue(oldValue);
             }
 
             state.setRecord(record);
@@ -189,7 +196,7 @@ public enum PutOpSteps implements Step<State> {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

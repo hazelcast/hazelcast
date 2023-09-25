@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,8 @@ public class SqlOption extends SqlCall {
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
         key.unparse(writer, leftPrec, rightPrec);
+        writer.setNeedWhitespace(false);
+        writer.print("=");
         value.unparse(writer, leftPrec, rightPrec);
     }
 }

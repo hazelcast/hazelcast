@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,6 +165,16 @@ public class SqlUpdateTest extends SqlTestSupport {
 
         checkUpdateCount("UPDATE test_map SET field3 = CAST(3 + keyField AS VARCHAR), field2 = 2 + 1, field1 = 1 WHERE keyField = 1", 0);
         assertThat(map).containsExactly(entry(new Key(1), new Value(1, 3L, "4")));
+    }
+
+    @Test
+    public void update_complexKeySimpleValue() {
+        createMapping("test_map", Key.class, String.class);
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(new Key(1), "300");
+
+        checkUpdateCount("UPDATE test_map SET this = CAST(3 + keyField AS VARCHAR)", 0);
+        assertThat(map).containsExactly(entry(new Key(1), "4"));
     }
 
     @Test

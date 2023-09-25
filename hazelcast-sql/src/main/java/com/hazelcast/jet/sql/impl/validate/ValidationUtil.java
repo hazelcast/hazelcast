@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 
-import static com.hazelcast.jet.sql.impl.schema.TableResolverImpl.SCHEMA_NAME_PUBLIC;
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
 import static org.apache.calcite.sql.SqlKind.ARGUMENT_ASSIGNMENT;
 import static org.apache.calcite.sql.SqlKind.AS;
 

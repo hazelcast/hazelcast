@@ -6,5 +6,5 @@
     - java/polynomial-redos
     - java/path-injection
     - java/ssrf
-
+    - java/zipslip
 

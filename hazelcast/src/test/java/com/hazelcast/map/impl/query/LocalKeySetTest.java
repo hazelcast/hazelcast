@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.test.Accessors.getSerializationService;
-import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -95,7 +94,7 @@ public class LocalKeySetTest extends HazelcastTestSupport {
 
         Set<String> result = map.localKeySet();
 
-        assertEquals(setOf(localKey1, localKey2), result);
+        assertEquals(Set.of(localKey1, localKey2), result);
     }
 
     @Test
@@ -106,7 +105,7 @@ public class LocalKeySetTest extends HazelcastTestSupport {
 
         Set<String> result = map.localKeySet(Predicates.alwaysTrue());
 
-        assertEquals(setOf(localKey1, localKey2), result);
+        assertEquals(Set.of(localKey1, localKey2), result);
     }
 
     @Test
@@ -120,7 +119,7 @@ public class LocalKeySetTest extends HazelcastTestSupport {
 
         Set<String> result = map.localKeySet(new GoodPredicate());
 
-        assertEquals(setOf(localKey1, localKey3), result);
+        assertEquals(Set.of(localKey1, localKey3), result);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.TestDeserialized;
@@ -40,8 +41,8 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests if safe-serialization property works in {@link MulticastDiscoveryStrategy}.
@@ -77,7 +78,9 @@ public class MulticastDiscoveryStrategyDeserializationTest {
             }
             datadgramsThread = null;
         }
-        assertNull(datagramsThreadException);
+        if (datagramsThreadException != null) {
+            fail(ExceptionUtil.toString(datagramsThreadException));
+        }
         HazelcastInstanceFactory.terminateAll();
         TestDeserialized.isDeserialized = false;
 

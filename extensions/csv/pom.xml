@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021 Hazelcast Inc.
+  ~ Copyright 2023 Hazelcast Inc.
   ~
   ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-extensions</artifactId>
-        <version>5.2.0-SNAPSHOT</version>
+        <version>5.4.0-SNAPSHOT</version>
     </parent>
 
     <build>
@@ -70,15 +70,15 @@
                     <relocations>
                         <relocation>
                             <pattern>com.fasterxml.jackson.core</pattern>
-                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.core</shadedPattern>
+                            <shadedPattern>${relocation.root}.com.fasterxml.jackson.core</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>com.fasterxml.jackson.databind</pattern>
-                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.databind</shadedPattern>
+                            <shadedPattern>${relocation.root}.com.fasterxml.jackson.databind</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>com.fasterxml.jackson.dataformat</pattern>
-                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.dataformat</shadedPattern>
+                            <shadedPattern>${relocation.root}.com.fasterxml.jackson.dataformat</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>
@@ -90,7 +90,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-csv</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>

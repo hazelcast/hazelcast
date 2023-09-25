@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ public class TxnSetOperation extends BasePutOperation
     @Override
     protected void runInternal() {
         recordStore.unlock(dataKey, ownerUuid, threadId, getCallId());
-        Record record = recordStore.getRecordOrNull(dataKey);
+        Record record = recordStore.getRecordOrNull(dataKey, false);
         if (record == null || version == record.getVersion()) {
             EventService eventService = getNodeEngine().getEventService();
             if (eventService.hasEventRegistration(MapService.SERVICE_NAME, getName())) {

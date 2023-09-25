@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.logging.ILogger;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -62,7 +63,8 @@ final class ServerSocketHelper {
      * @param bindAny               when {@code true} bind any local address otherwise bind given {@code bindAddress}
      * @return actual port number that created {@code ServerSocketChannel} is bound to
      */
-    static ServerSocketChannel createServerSocketChannel(ILogger logger, EndpointConfig endpointConfig, InetAddress bindAddress,
+    static ServerSocketChannel createServerSocketChannel(ILogger logger, @Nonnull EndpointConfig endpointConfig,
+                                                         InetAddress bindAddress,
                                                          int port, int portCount, boolean isPortAutoIncrement,
                                                          boolean isReuseAddress, boolean bindAny) {
         logger.finest("inet reuseAddress:" + isReuseAddress);
@@ -85,7 +87,8 @@ final class ServerSocketHelper {
         }
     }
 
-    private static ServerSocketChannel tryOpenServerSocketChannel(EndpointConfig endpointConfig, InetAddress bindAddress,
+    private static ServerSocketChannel tryOpenServerSocketChannel(@Nonnull EndpointConfig endpointConfig,
+                                                                  InetAddress bindAddress,
                                                           int initialPort, boolean isReuseAddress,  int portTrialCount,
                                                           boolean bindAny, ILogger logger)
             throws IOException {
@@ -109,8 +112,9 @@ final class ServerSocketHelper {
         throw error;
     }
 
-    private static ServerSocketChannel openServerSocketChannel(EndpointConfig endpointConfig, InetSocketAddress socketBindAddress,
-                                                        boolean reuseAddress, ILogger logger)
+    private static ServerSocketChannel openServerSocketChannel(@Nonnull EndpointConfig endpointConfig,
+                                                               InetSocketAddress socketBindAddress,
+                                                               boolean reuseAddress, ILogger logger)
             throws IOException {
 
         ServerSocket serverSocket = null;
@@ -128,9 +132,10 @@ final class ServerSocketHelper {
             serverSocket.setReuseAddress(reuseAddress);
             serverSocket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
 
-            if (endpointConfig != null) {
-                serverSocket.setReceiveBufferSize(endpointConfig.getSocketRcvBufferSizeKb() * KILO_BYTE);
+            if (endpointConfig.isSocketKeepAlive()) {
+                IOUtil.setKeepAliveOptionsIfNotDefault(serverSocketChannel, endpointConfig, logger);
             }
+            serverSocket.setReceiveBufferSize(endpointConfig.getSocketRcvBufferSizeKb() * KILO_BYTE);
 
             logger.fine("Trying to bind inet socket address: " + socketBindAddress);
             serverSocket.bind(socketBindAddress, SOCKET_BACKLOG_LENGTH);
@@ -144,6 +149,4 @@ final class ServerSocketHelper {
             throw e;
         }
     }
-
-
 }

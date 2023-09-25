@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -190,10 +191,25 @@ public class JobRepository {
 
         jobRecords = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RECORDS_MAP_NAME));
         jobResults = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RESULTS_MAP_NAME));
-        jobExecutionRecords = memoizeConcurrent(() -> instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME));
+        jobExecutionRecords = memoizeConcurrent(() -> safeImap(instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME)));
         jobMetrics = memoizeConcurrent(() -> instance.getMap(JOB_METRICS_MAP_NAME));
         exportedSnapshotDetailsCache = memoizeConcurrent(() -> instance.getMap(EXPORTED_SNAPSHOTS_DETAIL_CACHE));
         idGenerator = memoizeConcurrent(() -> instance.getFlakeIdGenerator(RANDOM_ID_GENERATOR_NAME));
+    }
+
+    /**
+     * Configures given IMap to fail on indeterminate operation state.
+     *
+     * @param map map to configure
+     * @return the same map with applied configuration
+     */
+    public static <K, V> IMap<K, V> safeImap(IMap<K, V> map) {
+        // On client side there is no setFailOnIndeterminateOperationState method.
+        // Client should only read Jet maps.
+        if (map instanceof MapProxyImpl) {
+            ((MapProxyImpl<K, V>) map).setFailOnIndeterminateOperationState(true);
+        }
+        return map;
     }
 
     // for tests
@@ -338,6 +354,13 @@ public class JobRepository {
     }
 
     /**
+     * Updates the job record of {@linkplain JobRecord#getJobId the corresponding job}.
+     */
+    void updateJobRecord(JobRecord jobRecord) {
+        jobRecords.get().set(jobRecord.getJobId(), jobRecord);
+    }
+
+    /**
      * Updates the job quorum size of all jobs so that it is at least {@code
      * newQuorumSize}.
      */
@@ -368,13 +391,13 @@ public class JobRepository {
             @Nonnull MasterContext masterContext,
             @Nullable List<RawJobMetrics> terminalMetrics,
             @Nullable Throwable error,
-            long completionTime
-    ) {
+            long completionTime,
+            boolean userCancelled) {
         long jobId = masterContext.jobId();
 
         JobConfig config = masterContext.jobRecord().getConfig();
         long creationTime = masterContext.jobRecord().getCreationTime();
-        JobResult jobResult = new JobResult(jobId, config, creationTime, completionTime, toErrorMsg(error));
+        JobResult jobResult = new JobResult(jobId, config, creationTime, completionTime, toErrorMsg(error), userCancelled);
 
         if (terminalMetrics != null) {
             try {
@@ -408,8 +431,7 @@ public class JobRepository {
     }
 
     /**
-     * Performs cleanup after job completion. Deletes job record and job resources but keeps the job id
-     * so that it will not be used again for a new job submission.
+     * Performs cleanup after job completion.
      */
     void deleteJob(long jobId) {
         // delete the job record and related records
@@ -428,6 +450,18 @@ public class JobRepository {
      * Cleans up stale maps related to jobs
      */
     void cleanup(NodeEngine nodeEngine) {
+        if (!jobRecordsMapExists()) {
+            // It is possible that master node does not see IMap when other members
+            // are going through after-hot-restart tasks. To avoid possible snapshot
+            // deletion we cannot perform cleanup in such case.
+            //
+            // The only drawback is that after job records IMap is somehow deleted,
+            // old snapshots and resources will not be cleared until new a job is submitted.
+            // But that should usually not happen.
+            logger.fine("Skipping job cleanup because job records IMap does not exist");
+            return;
+        }
+
         long start = System.nanoTime();
 
         cleanupMaps(nodeEngine);
@@ -554,9 +588,12 @@ public class JobRepository {
         return jobRecordsMap().values();
     }
 
+    public boolean jobRecordsMapExists() {
+        return ((AbstractJetInstance) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME);
+    }
+
     private Map<Long, JobRecord> jobRecordsMap() {
-        if (jobRecords.remembered() != null ||
-                ((AbstractJetInstance) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME)) {
+        if (jobRecords.remembered() != null || jobRecordsMapExists()) {
             return jobRecords.get();
         }
         return Collections.emptyMap();
@@ -613,20 +650,33 @@ public class JobRepository {
      * than the timestamp of the stored record. See {@link
      * UpdateJobExecutionRecordEntryProcessor#process}. It will also be ignored
      * if the key doesn't exist in the IMap.
+     *
+     * @return true if the record was written or ignored because canCreate=false
+     *         and there is no record in IMap to update.
      */
-    void writeJobExecutionRecord(long jobId, JobExecutionRecord record, boolean canCreate) {
+    boolean writeJobExecutionRecord(long jobId, JobExecutionRecord record, boolean canCreate) {
         record.updateTimestamp();
         String message = (String) jobExecutionRecords.get().executeOnKey(jobId,
                 new UpdateJobExecutionRecordEntryProcessor(jobId, record, canCreate));
         if (message != null) {
             logger.fine(message);
+            if (message.endsWith("oldValue == null")) {
+                // canCreate=false but there is no record in IMap to update.
+                // There is no point in repeating.
+                return true;
+            }
         }
+        return message == null;
     }
 
     /**
      * Returns map name in the form {@code "_jet.snapshot.<jobId>.<dataMapIndex>"}.
      */
     public static String snapshotDataMapName(long jobId, int dataMapIndex) {
+        if (dataMapIndex < 0) {
+            throw new IllegalStateException("Negative dataMapIndex - no successful snapshot");
+        }
+
         return SNAPSHOT_DATA_MAP_PREFIX + idToString(jobId) + '.' + dataMapIndex;
     }
 
@@ -652,7 +702,8 @@ public class JobRepository {
     }
 
     /**
-     * Returns map name in the form {@code "_jet.exportedSnapshot.<jobId>.<dataMapIndex>"}.
+     * Returns the map name in which an exported snapshot with the given `name`
+     * is stored. It's {@code "_jet.exportedSnapshot.<name>"}.
      */
     public static String exportedSnapshotMapName(String name) {
         return JobRepository.EXPORTED_SNAPSHOTS_PREFIX + name;

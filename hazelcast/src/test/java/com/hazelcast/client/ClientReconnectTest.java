@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,7 +134,7 @@ public class ClientReconnectTest extends ClientTestSupport {
     public void testCallbackAfterServerShutdown() {
         final HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(5000);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap<Object, Object> test = client.getMap("test");

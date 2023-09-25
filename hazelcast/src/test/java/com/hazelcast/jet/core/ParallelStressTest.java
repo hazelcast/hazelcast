@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,8 +59,12 @@ public class ParallelStressTest extends JetTestSupport {
         for (int i = 0; i < 100; i++) {
             futures.add(executor.submit(() -> instance.getJet().newJob(dag)));
         }
-        for (Future<Job> future : futures) {
-            future.get().join();
+        try {
+            for (Future<Job> future : futures) {
+                future.get().join();
+            }
+        } finally {
+            executor.shutdownNow();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -38,10 +37,8 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SerializationSamplesExcluded;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
@@ -55,6 +52,7 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.PROMOTE_LITE_MEMBER;
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getOperationService;
@@ -64,20 +62,17 @@ import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class, SerializationSamplesExcluded.class})
 public class PromoteLiteMemberTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void liteMaster_promoted() {
@@ -118,8 +113,8 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
         factory.newHazelcastInstance(new Config());
 
-        exception.expect(IllegalStateException.class);
-        hz1.getCluster().promoteLocalLiteMember();
+        assertThatThrownBy(() -> hz1.getCluster().promoteLocalLiteMember())
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -135,9 +130,9 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         InternalCompletableFuture<MembersView> future =
                 getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz3));
-        exception.expect(CompletionException.class);
-        exception.expect(new RootCauseMatcher(IllegalStateException.class));
-        future.join();
+        assertThatThrownBy(future::join)
+                .isInstanceOf(CompletionException.class)
+                .has(rootCause(IllegalStateException.class));
     }
 
     @Test
@@ -167,9 +162,9 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         InternalCompletableFuture<MembersView> future =
                 getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz1));
-        exception.expect(CompletionException.class);
-        exception.expect(new RootCauseMatcher(IllegalStateException.class));
-        future.join();
+        assertThatThrownBy(future::join)
+                .isInstanceOf(CompletionException.class)
+                .has(rootCause(IllegalStateException.class));
     }
 
     @Test
@@ -254,8 +249,8 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         warmUpPartitions(hz1, hz2, hz3);
         changeClusterStateEventually(hz2, state);
 
-        exception.expect(IllegalStateException.class);
-        hz2.getCluster().promoteLocalLiteMember();
+        assertThatThrownBy(() -> hz2.getCluster().promoteLocalLiteMember())
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -270,8 +265,8 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         clusterService.getClusterJoinManager().setMastershipClaimInProgress();
 
         Cluster cluster = hz2.getCluster();
-        exception.expect(IllegalStateException.class);
-        cluster.promoteLocalLiteMember();
+        assertThatThrownBy(cluster::promoteLocalLiteMember)
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -445,7 +440,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
                 k++;
             }
         }
-        assertThat(k, greaterThan(0));
+        assertThat(k).isGreaterThan(0);
     }
 
     private static void assertNoPartitionsAssigned(HazelcastInstance instance) {

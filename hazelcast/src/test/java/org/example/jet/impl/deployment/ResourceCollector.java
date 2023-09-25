@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import java.util.List;
 
 /**
  * Used collect results of reading resource from the classpath during tests.
- * It is intentionally put into org.example package to avoid any filtering done by various classloaders.
+ * It is intentionally put into {@code org.example} package to avoid any filtering done by various classloaders.
  */
 public class ResourceCollector {
 
-    private static List<String> items = Collections.synchronizedList(new ArrayList<>());
+    private static final List<String> items = Collections.synchronizedList(new ArrayList<>());
 
     public static void add(String resource) {
         items.add(resource);

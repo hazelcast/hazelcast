@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,5 +50,10 @@ public class ExpectNothingP extends AbstractProcessor {
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         // State might be broadcast to all instances including colleagues of
         // another type - ignore it in the expect-nothing instances
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 }

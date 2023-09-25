@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.http.NoHttpResponseException;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -44,7 +43,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.SocketException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -254,10 +252,8 @@ public class RestClusterTest {
         String clusterName = config.getClusterName();
         try {
             assertJsonContains(communicator.shutdownMember(clusterName, getPassword()).response, "status", "success");
-        } catch (SocketException ignored) {
-            // if the node shuts down before response is received, a `SocketException` (or instance of its subclass) is expected
-        } catch (NoHttpResponseException ignored) {
-            // `NoHttpResponseException` is also a possible outcome when a node shut down before it has a chance
+        } catch (IOException ignored) {
+            // exception is also a possible outcome when a node shut down before it has a chance
             // to send a response back to a client.
         }
 
@@ -336,13 +332,13 @@ public class RestClusterTest {
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         ConnectionResponse response = communicator.headRequestToClusterHealthURI();
         assertEquals(HttpURLConnection.HTTP_OK, response.responseCode);
-        assertEquals(response.responseHeaders.get("Hazelcast-NodeState").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-NodeState").size());
         assertContains(response.responseHeaders.get("Hazelcast-NodeState"), "ACTIVE");
-        assertEquals(response.responseHeaders.get("Hazelcast-ClusterState").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-ClusterState").size());
         assertContains(response.responseHeaders.get("Hazelcast-ClusterState"), "ACTIVE");
-        assertEquals(response.responseHeaders.get("Hazelcast-ClusterSize").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-ClusterSize").size());
         assertContains(response.responseHeaders.get("Hazelcast-ClusterSize"), "2");
-        assertEquals(response.responseHeaders.get("Hazelcast-MigrationQueueSize").size(), 1);
+        assertEquals(1, response.responseHeaders.get("Hazelcast-MigrationQueueSize").size());
         assertContains(response.responseHeaders.get("Hazelcast-MigrationQueueSize"), "0");
     }
 

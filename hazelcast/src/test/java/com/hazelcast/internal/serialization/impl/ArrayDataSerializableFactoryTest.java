@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,22 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.VersionAwareConstructorFunction;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.VersionAwareConstructorFunction;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -51,7 +50,7 @@ public class ArrayDataSerializableFactoryTest {
 
         assertNull(factory.create(-1));
         assertNull(factory.create(1));
-        assertThat(factory.create(0), instanceOf(SampleIdentifiedDataSerializable.class));
+        assertThat(factory.create(0)).isInstanceOf(SampleIdentifiedDataSerializable.class);
     }
 
     @Test

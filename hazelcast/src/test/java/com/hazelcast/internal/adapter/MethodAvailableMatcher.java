@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,7 @@ package com.hazelcast.internal.adapter;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
+import org.assertj.core.api.Condition;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -29,7 +28,7 @@ import static java.lang.String.format;
 /**
  * Checks if the given {@link DataStructureAdapter} class implements a specified method.
  */
-public final class MethodAvailableMatcher extends TypeSafeMatcher<Class<? extends DataStructureAdapter>> {
+public final class MethodAvailableMatcher {
 
     private static final ILogger LOGGER = Logger.getLogger(MethodAvailableMatcher.class);
 
@@ -37,7 +36,12 @@ public final class MethodAvailableMatcher extends TypeSafeMatcher<Class<? extend
     private final String methodName;
     private final String parameterTypeString;
 
-    public MethodAvailableMatcher(DataStructureAdapterMethod method) {
+    public static Condition<Class<?>> methodAvailable(DataStructureAdapterMethod method) {
+        MethodAvailableMatcher matcher = new MethodAvailableMatcher(method);
+        return new Condition<>(matcher::matchesSafely, matcher.describe());
+    }
+
+    private MethodAvailableMatcher(DataStructureAdapterMethod method) {
         this.adapterMethod = method;
         this.methodName = method.getMethodName();
         this.parameterTypeString = method.getParameterTypeString();
@@ -49,8 +53,7 @@ public final class MethodAvailableMatcher extends TypeSafeMatcher<Class<? extend
      * @param dataStructureAdapterClass the {@link DataStructureAdapter} class to test
      * @return {@code true} if the method is found and is not annotated with {@link MethodNotAvailable}
      */
-    @Override
-    public boolean matchesSafely(Class<? extends DataStructureAdapter> dataStructureAdapterClass) {
+    boolean matchesSafely(Class<?> dataStructureAdapterClass) {
         try {
             Method method = dataStructureAdapterClass.getMethod(methodName, adapterMethod.getParameterTypes());
             boolean isAvailable = !method.isAnnotationPresent(MethodNotAvailable.class);
@@ -58,20 +61,16 @@ public final class MethodAvailableMatcher extends TypeSafeMatcher<Class<? extend
                     parameterTypeString, isAvailable, Arrays.toString(method.getAnnotations())));
             return isAvailable;
         } catch (Throwable t) {
+            if (dataStructureAdapterClass == null) {
+                throw new AssertionError(describe());
+            }
             throw new AssertionError(format("Could not find method %s.%s(%s): %s", dataStructureAdapterClass.getSimpleName(),
                     methodName, parameterTypeString, t.getMessage()));
         }
     }
 
-    @Override
-    public void describeTo(Description description) {
-        description.appendText(format("%s(%s) to be available", methodName, parameterTypeString));
+    private String describe() {
+        return format("%s(%s) to be available", methodName, parameterTypeString);
     }
 
-    @Override
-    protected void describeMismatchSafely(Class<? extends DataStructureAdapter> dataStructureAdapterClass,
-                                          Description mismatchDescription) {
-        mismatchDescription.appendText(format("%s.%s(%s) is annotated with @%s", dataStructureAdapterClass.getSimpleName(),
-                methodName, parameterTypeString, MethodNotAvailable.class.getSimpleName()));
-    }
 }

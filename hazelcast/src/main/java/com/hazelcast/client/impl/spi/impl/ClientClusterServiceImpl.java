@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EventListener;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -106,6 +107,17 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     @Override
     public Collection<Member> getMemberList() {
         return memberListSnapshot.get().members.values();
+    }
+
+    @Nonnull
+    @Override
+    public Collection<Member> getEffectiveMemberList() {
+        MemberListSnapshot snapshot = memberListSnapshot.get();
+        if (snapshot.version == INITIAL_MEMBER_LIST_VERSION) {
+            return Collections.emptyList();
+        }
+
+        return snapshot.members.values();
     }
 
     @Override

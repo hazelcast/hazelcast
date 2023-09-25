@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.impl.spi.impl.TranslateToPublicAddressProvider;
 import com.hazelcast.client.impl.spi.impl.discovery.HazelcastCloudDiscovery;
 import com.hazelcast.client.impl.spi.impl.discovery.RemoteAddressProvider;
+import com.hazelcast.client.impl.spi.impl.discovery.ViridianAddressProvider;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.DiscoveryConfig;
@@ -144,10 +145,10 @@ class ClusterDiscoveryServiceBuilder {
             String cloudUrlBase = properties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
             String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
             int connectionTimeoutMillis = getConnectionTimeoutMillis(networkConfig);
-            HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis);
-            //We use the usePublic parameter as true always because on the cloud context hazelcast members and clients
-            // are never in the same network even-tough they can be in the same group/zone etc.
-            return new RemoteAddressProvider(cloudDiscovery::discoverNodes, true);
+            boolean tpcEnabled = clientConfig.getTpcConfig().isEnabled();
+            HazelcastCloudDiscovery cloudDiscovery
+                    = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis, tpcEnabled);
+            return new ViridianAddressProvider(cloudDiscovery);
         } else if (networkConfig.getAddresses().isEmpty() && discoveryService != null) {
             return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
         }
@@ -265,7 +266,6 @@ class ClusterDiscoveryServiceBuilder {
         if (isAutoDetectionEnabled && isEmptyDiscoveryStrategies(discoveryService)) {
             return null;
         }
-        discoveryService.start();
         return discoveryService;
     }
 

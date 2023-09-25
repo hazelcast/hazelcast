@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,7 +153,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
 
         hazelcastInstance.shutdown();
 
-        List<Future> futures = new ArrayList<Future>(numThreads);
+        List<Future<?>> futures = new ArrayList<>(numThreads);
         for (int i = 0; i < numThreads; i++) {
             futures.add(executor.submit(new Runnable() {
                 @Override

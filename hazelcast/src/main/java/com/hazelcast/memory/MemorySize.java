@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ package com.hazelcast.memory;
  *
  * @deprecated  Since 5.1, {@link Capacity} should be used instead.
  */
+@Deprecated
 public final class MemorySize extends Capacity {
 
     public MemorySize(long value) {
@@ -51,6 +52,7 @@ public final class MemorySize extends Capacity {
      *
      * @deprecated since 5.1, use {@link Capacity#parse(String)} instead.
      */
+    @Deprecated
     public static MemorySize parse(String value) {
         return parse(value, MemoryUnit.BYTES);
     }
@@ -71,6 +73,7 @@ public final class MemorySize extends Capacity {
      *
      * @deprecated since 5.1, use {@link Capacity#parse(String, MemoryUnit)} instead
      */
+    @Deprecated
     public static MemorySize parse(String value, MemoryUnit defaultUnit) {
         if (value == null || value.length() == 0) {
             return new MemorySize(0, MemoryUnit.BYTES);

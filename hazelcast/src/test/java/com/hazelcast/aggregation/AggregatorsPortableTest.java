@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,9 +42,7 @@ import java.util.Map;
 
 import static com.hazelcast.spi.properties.ClusterProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -66,8 +64,8 @@ public class AggregatorsPortableTest extends HazelcastTestSupport {
         List<String> accumulated = map.aggregate(new TestAggregator("wheels[any]"));
 
         // THEN
-        assertThat(accumulated, containsInAnyOrder(null, "1"));
-        assertThat(accumulated, hasSize(2));
+        assertThat(accumulated).containsExactlyInAnyOrder((String) null, "1");
+        assertThat(accumulated).hasSize(2);
     }
 
     @Test
@@ -81,8 +79,8 @@ public class AggregatorsPortableTest extends HazelcastTestSupport {
         List<String> accumulated = map.aggregate(new TestAggregator("wheels[any]"));
 
         // THEN
-        assertThat(accumulated, containsInAnyOrder("1", null, "2", null));
-        assertThat(accumulated, hasSize(4));
+        assertThat(accumulated).containsExactlyInAnyOrder("1", null, "2", null);
+        assertThat(accumulated).hasSize(4);
     }
 
     @Test
@@ -96,8 +94,8 @@ public class AggregatorsPortableTest extends HazelcastTestSupport {
         List<String> accumulated = map.aggregate(new TestAggregator("wheels[any]"));
 
         // THEN
-        assertThat(accumulated, containsInAnyOrder("1", "2"));
-        assertThat(accumulated, hasSize(2));
+        assertThat(accumulated).containsExactlyInAnyOrder("1", "2");
+        assertThat(accumulated).hasSize(2);
     }
 
     @Test
@@ -111,7 +109,7 @@ public class AggregatorsPortableTest extends HazelcastTestSupport {
         List<String> accumulated = map.aggregate(new TestAggregator("wheels[any]"));
 
         // THEN
-        assertThat(accumulated, hasSize(0));
+        assertThat(accumulated).hasSize(0);
     }
 
     @Test
@@ -127,7 +125,7 @@ public class AggregatorsPortableTest extends HazelcastTestSupport {
 
 
         // THEN
-        assertThat(accumulated, hasSize(0));
+        assertThat(accumulated).hasSize(0);
     }
 
     private Car getCornerCaseCar(String... values) {

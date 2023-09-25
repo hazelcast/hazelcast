@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,8 +43,13 @@ public class CardinalityEstimatorStressTest extends HazelcastTestSupport {
         // timeout helps to make sure the encoding engine used is the correct one.
         long expected = 10 * 1000 * 1000;
 
-        float tolerancePct = .3f;
-        long acceptableDelta = (long) ((tolerancePct / 100) * expected);
+        float sigma = 0.008125f;
+
+        // This test is deterministic, actual value never changes.
+        // So we can pick 0.003 for big endian and ~0.012 for little endian.
+        // I picked two times sigma arbitrarily.
+        // Also see https://en.wikipedia.org/wiki/Chebyshev's_inequality
+        long acceptableDelta = (long) (2 * sigma * expected);
 
         int loggingFrequency = 100 * 1000;
         for (int i = 0; i < expected; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -402,17 +403,16 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_PASSIVE() throws Exception {
+    public void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_PASSIVE() {
         pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState.PASSIVE);
     }
 
     @Test
-    public void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_FROZEN() throws Exception {
+    public void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_FROZEN() {
         pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState.FROZEN);
     }
 
-    private void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState state)
-            throws Exception {
+    private void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState state) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
@@ -424,8 +424,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         changeClusterStateEventually(hz2, state);
         hz1.shutdown();
 
-        expectedException.expect(MemberLeftException.class);
-        future.get();
+        Assert.assertThrows(MemberLeftException.class, future::get);
     }
 
     @Test

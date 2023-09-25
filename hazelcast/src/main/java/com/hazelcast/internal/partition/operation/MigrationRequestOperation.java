@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -353,7 +353,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
         Map<ServiceNamespace, long[]> versions = new HashMap<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
-            long[] v = versionManager.getPartitionReplicaVersions(getPartitionId(), namespace);
+            long[] v = versionManager.getPartitionReplicaVersionsForSync(getPartitionId(), namespace);
             versions.put(namespace, v);
         }
 

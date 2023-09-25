@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,9 @@ public final class CostUtils {
 
     /** CPU multiplier applied to index scan (hash). */
     public static final double INDEX_SCAN_CPU_MULTIPLIER_HASH = 1.1d;
+
+    /** CPU multiplier applied to sorted index scan when ordering is required. */
+    public static final double INDEX_SCAN_CPU_MULTIPLIER_SORTED_ORDER_REQUIRED = 0.1d;
 
     /** Multiplier for the CPU part of the cost. Assumes 1ns per item. */
     public static final double CPU_COST_MULTIPLIER = 1.0d;

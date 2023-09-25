@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package com.hazelcast.internal.services;
 
 import com.hazelcast.config.WanAcknowledgeType;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.wan.impl.InternalWanEvent;
+
+import java.util.Collection;
+import java.util.concurrent.CompletionStage;
 
 /**
  * An interface that can be implemented by internal services to give them the
@@ -37,12 +39,21 @@ public interface WanSupportingService {
     void onReplicationEvent(InternalWanEvent event, WanAcknowledgeType acknowledgeType);
 
     /**
-     * Processes a WAN sync event.
+     * Processes a WAN sync batch asynchronously.
      *
-     * @param event the event
-     * @param futures the array to save invocations
-     * @param offset place in the array where new invocation should be saved
-     * @return
+     * @param batch           collection of events, which represents a batch
+     * @param acknowledgeType determines should this method wait for the event to be processed fully
+     *                        or should it return after the event has been dispatched to the
+     *                        appropriate member
+     * @return the CompletionStage to indicate processing of all entries in the batch
      */
-    int onSyncEvent(InternalWanEvent event, InternalCompletableFuture<Boolean>[] futures, int offset);
+    CompletionStage<Void> onSyncBatch(Collection<InternalWanEvent> batch, WanAcknowledgeType acknowledgeType);
+
+    /**
+     * Updates the related state when wan configuration is updated. For
+     * example if a wan configuration is added and if there is an existing
+     * maps referring to newly added wan configuration, some fields must be
+     * updated in {@link com.hazelcast.map.impl.MapContainer}.
+     */
+    void onWanConfigChange();
 }

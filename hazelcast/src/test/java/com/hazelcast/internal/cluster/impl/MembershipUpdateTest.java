@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
+import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.StaticMemberNodeContext;
@@ -29,10 +30,15 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.server.FirewallingServer;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -60,6 +66,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
@@ -661,6 +668,59 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void shouldNotProcessStaleJoinRequest_afterSplitBrainMerges() {
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        HazelcastInstance hz3 = factory.newHazelcastInstance();
+        assertClusterSizeEventually(3, hz1, hz2, hz3);
+
+        JoinRequest staleJoinReq = getNode(hz3).createJoinRequest(getNode(hz1).address);
+
+        closeConnectionBetween(hz1, hz3);
+        closeConnectionBetween(hz2, hz3);
+        assertClusterSizeEventually(2, hz1, hz2);
+        assertClusterSizeEventually(1, hz3);
+
+        getNode(hz3).getClusterService().merge(getAddress(hz1));
+
+        FirewallingServer server = (FirewallingServer) getNode(hz1).getServer();
+        ServerConnection serverConnection = server.delegate.getConnectionManager(MEMBER).get(getAddress(hz3));
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz1);
+
+        clusterService.getClusterJoinManager().handleJoinRequest(staleJoinReq, serverConnection);
+
+        assertClusterSizeEventually(3, hz1, hz2, hz3);
+    }
+
+    @Test
+    public void shouldNotProcessStaleJoinRequest_afterSplitBrainMerges_whenMasterChanges() {
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        HazelcastInstance hz3 = factory.newHazelcastInstance();
+        assertClusterSizeEventually(3, hz1, hz2, hz3);
+
+        JoinRequest staleJoinReq = getNode(hz3).createJoinRequest(getNode(hz1).address);
+
+        closeConnectionBetween(hz1, hz3);
+        closeConnectionBetween(hz2, hz3);
+        assertClusterSizeEventually(2, hz1, hz2);
+        assertClusterSizeEventually(1, hz3);
+
+        getNode(hz3).getClusterService().merge(getAddress(hz1));
+
+        hz1.shutdown();
+
+        FirewallingServer server = (FirewallingServer) getNode(hz2).getServer();
+        ServerConnection serverConnection = server.delegate.getConnectionManager(MEMBER).get(getAddress(hz3));
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz2);
+
+        clusterService.getClusterJoinManager().handleJoinRequest(staleJoinReq, serverConnection);
+
+        assertClusterSizeEventually(2, hz2, hz3);
+    }
+
+
+    @Test
     public void memberJoinsEventually_whenMemberRestartedWithSameUuid_butMasterDoesNotNoticeItsLeave() throws Exception {
         ruleStaleJoinPreventionDuration.setOrClearProperty("5");
 
@@ -732,6 +792,31 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSize(2, instance2);
         assertFalse(service.otherOpExecutedBeforePreJoin.get());
         assertTrue(service.preJoinOpExecutionCompleted.get());
+    }
+
+    @Test
+    public void testListenerRegistrationWhileANewMemberJoining() {
+        CountDownLatch latch = new CountDownLatch(1);
+        Config config = getConfigWithService(new PostJoinAwareServiceImpl(latch), PostJoinAwareServiceImpl.SERVICE_NAME);
+
+        EntryListenerConfig listenerConfig = new EntryListenerConfig();
+        CountDownLatch entryAddedLatch = new CountDownLatch(2);
+        listenerConfig.setImplementation((EntryAddedListener) event -> entryAddedLatch.countDown());
+        config.getMapConfig("test").addEntryListenerConfig(listenerConfig);
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(2, hz1, hz2);
+
+        IMap<Object, Object> map = hz1.getMap("test");
+        // explicitly obtaining map proxy to ensure of ListenerAdapter registration
+        hz2.getMap("test");
+        map.put(1, 1);
+
+        //Let post join continue only after put happened
+        latch.countDown();
+        assertOpenEventually(entryAddedLatch);
     }
 
     @Test
@@ -864,7 +949,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         }
     }
 
-    private static class PreJoinAwareServiceImpl implements PreJoinAwareService {
+    private static class PreJoinAwareServiceImpl implements PreJoinAwareService<TimeConsumingPreJoinOperation> {
         static final String SERVICE_NAME = "pre-join-service";
 
         final CountDownLatch latch;
@@ -876,12 +961,12 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Operation getPreJoinOperation() {
+        public TimeConsumingPreJoinOperation getPreJoinOperation() {
             return new TimeConsumingPreJoinOperation();
         }
     }
 
-    private static class TimeConsumingPreJoinOperation extends Operation {
+    private static class TimeConsumingPreJoinOperation extends Operation implements AllowedDuringPassiveState {
         @Override
         public void run() throws Exception {
             PreJoinAwareServiceImpl service = getService();
@@ -917,11 +1002,11 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         }
     }
 
-    private static class FailingPreJoinOpService implements PreJoinAwareService {
+    private static class FailingPreJoinOpService implements PreJoinAwareService<FailsDeserializationOperation> {
         static final String SERVICE_NAME = "failing-pre-join-service";
 
         @Override
-        public Operation getPreJoinOperation() {
+        public FailsDeserializationOperation getPreJoinOperation() {
             return new FailsDeserializationOperation();
         }
     }
@@ -935,7 +1020,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         }
     }
 
-    public static class FailsDeserializationOperation extends Operation {
+    public static class FailsDeserializationOperation extends Operation implements AllowedDuringPassiveState {
 
         @Override
         public void run() throws Exception {

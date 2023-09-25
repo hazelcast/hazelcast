@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -40,9 +41,6 @@ import static java.util.Collections.unmodifiableSet;
 
 public class JoinRequest extends JoinMessage {
 
-    // RU_COMPAT 5.1
-    private static final String VERSION_5_2_0 = "5.2.0";
-
     private Credentials credentials;
     private int tryCount;
     private Map<String, String> attributes;
@@ -50,6 +48,7 @@ public class JoinRequest extends JoinMessage {
     // see Member.getAddressMap
     private Map<EndpointQualifier, Address> addresses;
     private UUID cpMemberUUID;
+    private OnJoinOp preJoinOperation;
 
     public JoinRequest() {
     }
@@ -57,7 +56,8 @@ public class JoinRequest extends JoinMessage {
     @SuppressWarnings("checkstyle:parameternumber")
     public JoinRequest(byte packetVersion, int buildNumber, MemberVersion version, Address address, UUID uuid,
                        boolean liteMember, ConfigCheck config, Credentials credentials, Map<String, String> attributes,
-                       Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses, UUID cpMemberUUID) {
+                       Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses, UUID cpMemberUUID,
+                       OnJoinOp preJoinOperation) {
         super(packetVersion, buildNumber, version, address, uuid, liteMember, config);
         this.credentials = credentials;
         this.attributes = attributes;
@@ -66,6 +66,7 @@ public class JoinRequest extends JoinMessage {
         }
         this.addresses = addresses;
         this.cpMemberUUID = cpMemberUUID;
+        this.preJoinOperation = preJoinOperation;
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
@@ -73,7 +74,7 @@ public class JoinRequest extends JoinMessage {
                        boolean liteMember, ConfigCheck config, Credentials credentials, Map<String, String> attributes,
                        Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses) {
         this(packetVersion, buildNumber, version, address, uuid, liteMember, config, credentials, attributes,
-                excludedMemberUuids, addresses, null);
+                excludedMemberUuids, addresses, null, null);
     }
 
     public Credentials getCredentials() {
@@ -94,6 +95,10 @@ public class JoinRequest extends JoinMessage {
 
     public Set<UUID> getExcludedMemberUuids() {
         return excludedMemberUuids;
+    }
+
+    public OnJoinOp getPreJoinOperation() {
+        return preJoinOperation;
     }
 
     public MemberInfo toMemberInfo() {
@@ -120,12 +125,8 @@ public class JoinRequest extends JoinMessage {
 
         this.excludedMemberUuids = unmodifiableSet(excludedMemberUuids);
         this.addresses = readMap(in);
-        // RU_COMPAT 5.1
-        MemberVersion current = MemberVersion.of(VERSION_5_2_0);
-        if (MemberVersion.MAJOR_MINOR_VERSION_COMPARATOR.compare(this.memberVersion, current) >= 0) {
-            // member is at least 5.2, we expect cpMemberUuid exists in the incoming packet
-            cpMemberUUID = UUIDSerializationUtil.readUUID(in);
-        }
+        cpMemberUUID = UUIDSerializationUtil.readUUID(in);
+        preJoinOperation = in.readObject();
     }
 
     @Override
@@ -144,6 +145,7 @@ public class JoinRequest extends JoinMessage {
         }
         writeMap(addresses, out);
         UUIDSerializationUtil.writeUUID(out, cpMemberUUID);
+        out.writeObject(preJoinOperation);
     }
 
     @Override

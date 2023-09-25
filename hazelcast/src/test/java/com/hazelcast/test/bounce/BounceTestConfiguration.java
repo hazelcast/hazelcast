@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.test.bounce;
 
 import com.hazelcast.config.Config;
 
+import java.util.function.Supplier;
+
 /**
  * Configuration for a member bounce test.
  */
@@ -25,7 +27,7 @@ public class BounceTestConfiguration {
 
     private final int clusterSize;
     private final DriverType driverType;
-    private final Config memberConfig;
+    private final Supplier<Config> memberConfigSupplier;
     private final int driverCount;
     private final DriverFactory driverFactory;
     private final boolean useTerminate;
@@ -51,11 +53,12 @@ public class BounceTestConfiguration {
     }
 
     BounceTestConfiguration(int clusterSize, DriverType driverType,
-                            Config memberConfig, int driverCount, DriverFactory driverFactory, boolean useTerminate,
+                            Supplier<Config> memberConfigSupplier, int driverCount,
+                            DriverFactory driverFactory, boolean useTerminate,
                             int bouncingIntervalSeconds, long maximumStaleSeconds) {
         this.clusterSize = clusterSize;
         this.driverType = driverType;
-        this.memberConfig = memberConfig;
+        this.memberConfigSupplier = memberConfigSupplier;
         this.driverCount = driverCount;
         this.driverFactory = driverFactory;
         this.useTerminate = useTerminate;
@@ -71,8 +74,8 @@ public class BounceTestConfiguration {
         return driverType;
     }
 
-    public Config getMemberConfig() {
-        return memberConfig;
+    public Supplier<Config> getMemberConfigSupplier() {
+        return memberConfigSupplier;
     }
 
     public int getDriverCount() {

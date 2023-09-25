@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.schema.TablesStorage;
+import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 
@@ -90,8 +90,8 @@ public class KvMetadataResolvers {
             NodeEngine nodeEngine
     ) {
         final InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        final TablesStorage tablesStorage = ((CalciteSqlOptimizer) nodeEngine.getSqlService().getOptimizer())
-                .tablesStorage();
+        final RelationsStorage relationsStorage = ((SqlServiceImpl) nodeEngine.getSqlService()).getOptimizer()
+                .relationsStorage();
         // normalize and validate the names and external names
         for (MappingField field : userFields) {
             String name = field.name();
@@ -126,13 +126,13 @@ public class KvMetadataResolvers {
         final TypeKind keyKind = TypesUtils.formatToTypeKind(getFormat(options, true));
         if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(keyKind)) {
             keyFields = keyFields
-                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(keyKind, mappingField, tablesStorage));
+                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(keyKind, mappingField, relationsStorage));
         }
 
         final TypeKind valueKind = TypesUtils.formatToTypeKind(getFormat(options, false));
         if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(valueKind)) {
             valueFields = valueFields
-                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(valueKind, mappingField, tablesStorage));
+                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(valueKind, mappingField, relationsStorage));
         }
 
         Map<String, MappingField> fields = concat(keyFields, valueFields)

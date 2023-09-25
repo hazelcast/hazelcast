@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,6 +30,7 @@ import javax.annotation.Nonnull;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompatibilitySerializationServiceTest {
 
-    private final SerializationService serializationService = new DefaultSerializationServiceBuilder()
+    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
             .setVersion(InternalSerializationService.VERSION_1)
             .setNotActiveExceptionSupplier(HazelcastInstanceNotActiveException::new)
             .isCompatibility(true)
@@ -91,9 +91,12 @@ public class CompatibilitySerializationServiceTest {
 
     @Nonnull
     private HeapData readObjectData() throws IOException {
-        try (InputStream is = new FileInputStream("src/test/resources/testHz3Object")) {
+        boolean useBigEndian = serializationService.getByteOrder().equals(ByteOrder.BIG_ENDIAN);
+        try (InputStream is = new FileInputStream(useBigEndian
+                ? "src/test/resources/testHz3Object"
+                : "src/test/resources/testHz3ObjectLittleEndian")) {
             byte[] payload = IOUtils.toByteArray(is);
-            return  new HeapData(payload);
+            return new HeapData(payload);
         }
     }
 }

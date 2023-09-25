@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,20 +43,18 @@ public interface LocalRecordStoreStats {
      */
     long getLastUpdateTime();
 
+    long getEvictionCount();
+
+    long getExpirationCount();
+
+    void increaseEvictions();
+
+    void increaseExpirations();
+
     /**
      * Increases the number of hits of the locally owned entries of this partition.
      */
     void increaseHits();
-
-    /**
-     * Increases the number of hits of the locally owned entries of this partition.
-     */
-    void increaseHits(long hits);
-
-    /**
-     * Decreases the number of hits of the locally owned entries of this partition.
-     */
-    void decreaseHits(long hits);
 
     /**
      * Sets the last access (read) time of the locally owned entries of this partition.

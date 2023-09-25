@@ -1,0 +1,30 @@
+{
+  "instance": {
+    "hazelcast": {
+      "tpc": {
+        "eventloop-count": "12"
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/TpcConfig",
+    "pointerToViolation": "#/hazelcast/tpc",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/TpcConfig",
+        "pointerToViolation": "#/hazelcast/tpc",
+        "causingExceptions": [],
+        "keyword": "required",
+        "message": "required key [enabled] not found"
+      },
+      {
+        "schemaLocation": "#/definitions/TpcConfig/properties/eventloop-count",
+        "pointerToViolation": "#/hazelcast/tpc/eventloop-count",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      }
+    ],
+    "message": "2 schema violations found"
+  }
+}

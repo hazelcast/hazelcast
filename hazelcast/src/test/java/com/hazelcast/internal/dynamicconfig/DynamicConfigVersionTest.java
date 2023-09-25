@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class DynamicConfigVersionTest {
         for (Method method : allConfigMethods) {
             String methodName = method.getName();
             if (methodName.startsWith("add") && methodName.endsWith("Config")) {
-                assert method.getParameterTypes().length == 1;
+                assert method.getParameterCount() == 1;
                 Class klass = method.getParameterTypes()[0];
                 boolean isMappedToVersion = CONFIG_TO_VERSION.get(klass) != null
                         || NON_DYNAMIC_CONFIG_CLASSES.contains(klass);

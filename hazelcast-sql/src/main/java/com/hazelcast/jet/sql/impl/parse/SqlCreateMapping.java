@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.sql.impl.schema.Mapping;
-import com.hazelcast.sql.impl.schema.MappingField;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -42,7 +40,14 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.identifier;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.nodeList;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.printIndent;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.reconstructOptions;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.unparseOptions;
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
+import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
 import static java.util.Objects.requireNonNull;
 
 public class SqlCreateMapping extends SqlCreate {
@@ -53,14 +58,18 @@ public class SqlCreateMapping extends SqlCreate {
     private final SqlIdentifier name;
     private final SqlIdentifier externalName;
     private final SqlNodeList columns;
-    private final SqlIdentifier type;
+    private final SqlIdentifier dataConnection;
+    private final SqlIdentifier connectorType;
+    private final SqlIdentifier objectType;
     private final SqlNodeList options;
 
     public SqlCreateMapping(
             SqlIdentifier name,
             SqlIdentifier externalName,
             SqlNodeList columns,
-            SqlIdentifier type,
+            SqlIdentifier dataConnection,
+            SqlIdentifier connectorType,
+            SqlIdentifier objectType,
             SqlNodeList options,
             boolean replace,
             boolean ifNotExists,
@@ -71,29 +80,39 @@ public class SqlCreateMapping extends SqlCreate {
         this.name = requireNonNull(name, "Name should not be null");
         this.externalName = externalName;
         this.columns = requireNonNull(columns, "Columns should not be null");
-        this.type = requireNonNull(type, "Type should not be null");
+        this.dataConnection = dataConnection;
+        this.connectorType = connectorType;
+        this.objectType = objectType;
         this.options = requireNonNull(options, "Options should not be null");
 
-        Preconditions.checkTrue(
-                externalName == null || externalName.isSimple(),
-                externalName == null ? null : externalName.toString()
-        );
+        assert dataConnection == null || connectorType == null; // the syntax doesn't allow this
     }
 
     public String nameWithoutSchema() {
         return name.names.get(name.names.size() - 1);
     }
 
-    public String externalName() {
-        return externalName == null ? nameWithoutSchema() : externalName.getSimple();
+    public String[] externalName() {
+        return externalName == null ? new String[]{nameWithoutSchema()} : externalName.names.toArray(new String[0]);
     }
 
     public Stream<SqlMappingColumn> columns() {
         return columns.getList().stream().map(node -> (SqlMappingColumn) node);
     }
 
-    public String type() {
-        return type.toString();
+    public String dataConnectionNameWithoutSchema() {
+        if (dataConnection == null) {
+            return null;
+        }
+        return dataConnection.names.get(dataConnection.names.size() - 1);
+    }
+
+    public String connectorType() {
+        return connectorType != null ? connectorType.toString() : null;
+    }
+
+    public String objectType() {
+        return objectType != null ? objectType.toString() : null;
     }
 
     public Map<String, String> options() {
@@ -119,7 +138,7 @@ public class SqlCreateMapping extends SqlCreate {
     @Nonnull
     @Override
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name, columns, type, options);
+        return ImmutableNullableList.of(name, columns, dataConnection, connectorType, objectType, options);
     }
 
     @Override
@@ -152,78 +171,46 @@ public class SqlCreateMapping extends SqlCreate {
             writer.endList(frame);
         }
 
-        writer.newlineAndIndent();
-        writer.keyword("TYPE");
-        type.unparse(writer, leftPrec, rightPrec);
-
-        if (options.size() > 0) {
+        if (dataConnection != null) {
             writer.newlineAndIndent();
-            writer.keyword("OPTIONS");
-            SqlWriter.Frame withFrame = writer.startList("(", ")");
-            for (SqlNode property : options) {
-                printIndent(writer);
-                property.unparse(writer, leftPrec, rightPrec);
-            }
+            writer.keyword("DATA CONNECTION");
+            dataConnection.unparse(writer, leftPrec, rightPrec);
+        } else {
+            assert connectorType != null;
             writer.newlineAndIndent();
-            writer.endList(withFrame);
+            writer.keyword("TYPE");
+            connectorType.unparse(writer, leftPrec, rightPrec);
         }
+
+        if (objectType != null) {
+            writer.newlineAndIndent();
+            writer.keyword("OBJECT TYPE");
+            objectType.unparse(writer, leftPrec, rightPrec);
+        }
+
+        unparseOptions(writer, options);
     }
 
     public static String unparse(Mapping mapping) {
         SqlPrettyWriter writer = new SqlPrettyWriter(SqlPrettyWriter.config());
 
-        writer.keyword("CREATE MAPPING");
-        writer.identifier(mapping.name(), true);
+        SqlCreateMapping m = new SqlCreateMapping(
+                identifier(CATALOG, SCHEMA_NAME_PUBLIC, mapping.name()),
+                identifier(mapping.externalName()),
+                nodeList(mapping.fields(), f -> new SqlMappingColumn(
+                        identifier(f.name()),
+                        new SqlDataType(f.type(), SqlParserPos.ZERO),
+                        identifier(f.externalName()),
+                        SqlParserPos.ZERO)),
+                identifier(mapping.dataConnection()),
+                identifier(mapping.connectorType()),
+                identifier(mapping.objectType()),
+                reconstructOptions(mapping.options()),
+                true, false, SqlParserPos.ZERO
+        );
 
-        // external name defaults to mapping name - omit it if it's equal
-        if (mapping.externalName() != null && !mapping.externalName().equals(mapping.name())) {
-            writer.keyword("EXTERNAL NAME");
-            writer.identifier(mapping.externalName(), true);
-        }
-
-        List<MappingField> fields = mapping.fields();
-        if (fields.size() > 0) {
-            SqlWriter.Frame frame = writer.startList("(", ")");
-            for (MappingField field : fields) {
-                printIndent(writer);
-                writer.identifier(field.name(), true);
-                writer.print(field.type().getTypeFamily().toString());
-                if (field.externalName() != null) {
-                    writer.print(" ");
-                    writer.keyword("EXTERNAL NAME");
-                    writer.identifier(field.externalName(), true);
-                }
-            }
-            writer.newlineAndIndent();
-            writer.endList(frame);
-        }
-
-        writer.newlineAndIndent();
-        writer.keyword("TYPE");
-        writer.print(mapping.type());
-
-        Map<String, String> options = mapping.options();
-        if (options.size() > 0) {
-            writer.newlineAndIndent();
-            writer.keyword("OPTIONS");
-            SqlWriter.Frame withFrame = writer.startList("(", ")");
-            for (Map.Entry<String, String> option : options.entrySet()) {
-                printIndent(writer);
-                writer.literal(writer.getDialect().quoteStringLiteral(option.getKey()));
-                writer.print("= ");
-                writer.literal(writer.getDialect().quoteStringLiteral(option.getValue()));
-            }
-            writer.newlineAndIndent();
-            writer.endList(withFrame);
-        }
-
+        m.unparse(writer, 0, 0);
         return writer.toString();
-    }
-
-    private static void printIndent(SqlWriter writer) {
-        writer.sep(",", false);
-        writer.newlineAndIndent();
-        writer.print("  ");
     }
 
     @Override
@@ -234,6 +221,10 @@ public class SqlCreateMapping extends SqlCreate {
 
         if (!isCatalogObjectNameValid(name)) {
             throw validator.newValidationError(name, RESOURCE.mappingIncorrectSchema());
+        }
+
+        if (dataConnection != null && !isCatalogObjectNameValid(dataConnection)) {
+            throw validator.newValidationError(name, RESOURCE.dataConnectionIncorrectSchemaUse());
         }
 
         Set<String> columnNames = new HashSet<>();

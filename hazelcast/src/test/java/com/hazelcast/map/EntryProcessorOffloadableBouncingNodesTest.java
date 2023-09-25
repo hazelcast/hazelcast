@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,12 +60,15 @@ public class EntryProcessorOffloadableBouncingNodesTest extends HazelcastTestSup
     }
 
     public static final String MAP_NAME = "EntryProcessorOffloadableTest";
-    public static final int COUNT_ENTRIES = 1000;
-    private static final int CONCURRENCY = RuntimeAvailableProcessors.get();
+    public static final int COUNT_ENTRIES = 1_000;
+    private static final int CONCURRENCY = RuntimeAvailableProcessors.get() - 1;
 
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getBouncingTestConfig())
-            .driverType(BounceTestConfiguration.DriverType.MEMBER).build();
+    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(() -> getBouncingTestConfig())
+            .driverType(BounceTestConfiguration.DriverType.MEMBER)
+            .clusterSize(2)
+            .driverCount(2)
+            .build();
 
     private void populateMap(IMap<Integer, SimpleValue> map) {
         for (int i = 0; i < COUNT_ENTRIES; i++) {

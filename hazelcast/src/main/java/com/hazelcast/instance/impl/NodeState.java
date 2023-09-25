@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,11 @@ public enum NodeState {
      * <li>
      * When the cluster state moves to {@link ClusterState#PASSIVE} via
      * {@link Cluster#changeClusterState(ClusterState)}
+     * </li>
+     * <li>
+     * During recovery from persistence while running under a managed context (e.g. Hazelcast member
+     * is running in Kubernetes) and not doing a cluster-wide start. For example, when a single pod
+     * is deleted, the rescheduled member will perform recovery in {@code PASSIVE} node state.
      * </li>
      * </ul>
      */

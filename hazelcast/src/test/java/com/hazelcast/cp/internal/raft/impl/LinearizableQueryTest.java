@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,10 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getCommitIndex;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderQueryRound;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -178,7 +177,7 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
-        assertTrueEventually(() -> assertThat(getCommitIndex(leader), greaterThanOrEqualTo(1L)));
+        assertTrueEventually(() -> assertThat(getCommitIndex(leader)).isGreaterThanOrEqualTo(1L));
 
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
         group.dropMessagesToMember(leader.getLocalMember(), followers[0].getLocalMember(), AppendRequest.class);

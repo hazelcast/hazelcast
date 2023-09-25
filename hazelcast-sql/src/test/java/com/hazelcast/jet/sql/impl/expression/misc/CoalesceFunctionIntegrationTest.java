@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.expression.misc;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -114,7 +114,7 @@ public class CoalesceFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization() {
         CaseExpression<?> original = CaseExpression.coalesce(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT));
-        CaseExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CASE);
+        CaseExpression<?> restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_CASE);
 
         checkEquals(original, restored, true);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,16 +34,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
@@ -62,7 +63,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -85,10 +88,12 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     @Mock
     private Path dockerPath;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void initialise()
             throws IOException {
-        MockitoAnnotations.initMocks(this);
+        openMocks = openMocks(this);
         HazelcastInstance hz = createHazelcastInstance();
         node = getNode(hz);
 
@@ -96,12 +101,17 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         when(kubernetesTokenPath.toRealPath()).thenReturn(Paths.get(System.getProperty("user.dir")));
 
         int port = wireMockRule.port();
-        cloudInfoCollector = new CloudInfoCollector("http://localhost:" + port + "/latest/meta-data",
+        cloudInfoCollector = spy(new CloudInfoCollector("http://localhost:" + port + "/latest/meta-data",
                 "http://localhost:" + port + "/metadata/instance/compute?api-version=2018-02-01",
-                "http://localhost:" + port + "/metadata.google.internal", kubernetesTokenPath, dockerPath);
+                "http://localhost:" + port + "/metadata.google.internal", kubernetesTokenPath, dockerPath));
 
         phoneHome = new PhoneHome(node, "http://localhost:" + port + "/ping", cloudInfoCollector);
         stubUrls("200", "4XX", "4XX", "4XX");
+    }
+
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
     }
 
     public void stubUrls(String phoneHomeStatus, String awsStatus, String azureStatus, String gcpStatus) {
@@ -313,6 +323,16 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         PhoneHomeParameterCreator parameterCreator2 = new PhoneHomeParameterCreator();
         cloudInfoCollector.forEachMetric(node,
                 (type, value) -> parameterCreator2.addParam(type.getRequestParameterName(), value));
+    }
 
+    @Test
+    public void testForViridian() {
+        when(cloudInfoCollector.getCloudEnvironment()).thenReturn("SERVERLESS");
+
+        stubUrls("200", "200", "4XX", "4XX");
+        phoneHome.phoneHome(false);
+
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("vrd", "SERVERLESS")));
     }
 }

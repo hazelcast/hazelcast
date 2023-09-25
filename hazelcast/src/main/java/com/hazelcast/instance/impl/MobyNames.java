@@ -1,6 +1,6 @@
 /*
  * Original work Copyright 2019 The Moby Project.
- * Modified work Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Modified work Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ import java.util.Collections;
 /**
  * Java port of the Moby Project random name generator (https://github.com/moby/moby).
  */
-final class MobyNames {
+public final class MobyNames {
+    public static final String MOBY_NAMING_PREFIX = "hazelcast.internal.member.naming.moby.prefix";
 
     private static final String NAME_FORMAT = "%s_%s";
 
@@ -1047,18 +1048,23 @@ final class MobyNames {
     }
 
     /**
-     * Returns a name from the list of names formatted as "adjective_surname",
-     * for example 'focused_turing'. The list is randomized on class
+     * Returns a name from the list of names formatted as "prefix_adjective_surname" (or "adjective_surname" is prefix is null),
+     * for example 'foo_focused_turing' (or 'focused_turing' if prefix is null). The list is randomized on class
      * initialization, but the answers from repeated calls with the same number
      * are stable.
      *
      * @param number index into the sequence of names
      * @return a Moby name
      */
-    static String getRandomName(int number) {
+    public static String getRandomName(int number) {
         int combinationIdx = number % (LEFT.length * RIGHT.length);
         int rightIdx = combinationIdx / LEFT.length;
         int leftIdx = combinationIdx % LEFT.length;
-        return String.format(NAME_FORMAT, LEFT[leftIdx], RIGHT[rightIdx]);
+        String name = String.format(NAME_FORMAT, LEFT[leftIdx], RIGHT[rightIdx]);
+        String prefix = System.getProperty(MOBY_NAMING_PREFIX);
+        if (prefix != null) {
+            name = prefix + "_" + name;
+        }
+        return name;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,8 +130,7 @@ public final class ClassLoaderUtil {
         isNotNull(className, "className");
         final Class primitiveClass = tryPrimitiveClass(className);
         if (primitiveClass != null) {
-            // Note: this will always throw java.lang.InstantiationException
-            return (T) primitiveClass.newInstance();
+            return (T) primitiveClass.getDeclaredConstructor().newInstance();
         }
 
         // Note: Class.getClassLoader() and Thread.getContextClassLoader() are

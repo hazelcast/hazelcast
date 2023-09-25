@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -117,6 +118,7 @@ public class ClientConfig {
     private ClientMetricsConfig metricsConfig = new ClientMetricsConfig();
     private InstanceTrackingConfig instanceTrackingConfig = new InstanceTrackingConfig();
     private ClientSqlConfig sqlConfig = new ClientSqlConfig();
+    private ClientTpcConfig tpcConfig = new ClientTpcConfig();
 
     public ClientConfig() {
         listenerConfigs = new LinkedList<>();
@@ -182,6 +184,7 @@ public class ClientConfig {
         metricsConfig = new ClientMetricsConfig(config.metricsConfig);
         instanceTrackingConfig = new InstanceTrackingConfig(config.instanceTrackingConfig);
         sqlConfig = new ClientSqlConfig(config.sqlConfig);
+        tpcConfig = new ClientTpcConfig(config.tpcConfig);
     }
 
     /**
@@ -1005,13 +1008,40 @@ public class ClientConfig {
         return this;
     }
 
+    /**
+     * Returns the ClientTpcConfig
+     *
+     * @return the ClientTpcConfig
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public ClientTpcConfig getTpcConfig() {
+        return tpcConfig;
+    }
+
+    /**
+     * Sets the TpcConfig
+     *
+     * @param tpcConfig TpcConfig to set
+     * @return configured {@link ClientConfig} for chaining
+     * @throws IllegalArgumentException if the {@code tpcConfig} is {@code null}
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public ClientConfig setTpcConfig(@Nonnull ClientTpcConfig tpcConfig) {
+        this.tpcConfig = isNotNull(tpcConfig, "tpcConfig");
+        return this;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(backupAckToClientEnabled, classLoader, clusterName, configPatternMatcher, connectionStrategyConfig,
                 flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer, loadBalancerClassName,
                 managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
                 proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
-                userCodeDeploymentConfig, userContext, instanceTrackingConfig, sqlConfig);
+                userCodeDeploymentConfig, userContext, instanceTrackingConfig, sqlConfig, tpcConfig);
     }
 
     @Override
@@ -1047,7 +1077,8 @@ public class ClientConfig {
                 && Objects.equals(userCodeDeploymentConfig, other.userCodeDeploymentConfig)
                 && Objects.equals(userContext, other.userContext)
                 && Objects.equals(instanceTrackingConfig, other.instanceTrackingConfig)
-                && Objects.equals(sqlConfig, other.sqlConfig);
+                && Objects.equals(sqlConfig, other.sqlConfig)
+                && Objects.equals(tpcConfig, other.tpcConfig);
     }
 
     @Override
@@ -1076,6 +1107,7 @@ public class ClientConfig {
                 + ", metricsConfig=" + metricsConfig
                 + ", instanceTrackingConfig=" + instanceTrackingConfig
                 + ", sqlConfig=" + sqlConfig
+                + ", tpcConfig=" + tpcConfig
                 + '}';
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -486,7 +486,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                         command.send500();
                         textCommandService.sendResponse(command);
                     }
-                });
+                }, internalAsyncExecutor);
     }
 
     private void handleRemoveCPMember(final HttpPostCommand command) {
@@ -509,7 +509,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
                         textCommandService.sendResponse(command);
                     }
-                });
+                }, internalAsyncExecutor);
     }
 
     private void handleCPGroup(HttpPostCommand command) throws UnsupportedEncodingException {
@@ -551,7 +551,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                         command.send500();
                         textCommandService.sendResponse(command);
                     }
-                });
+                }, internalAsyncExecutor);
     }
 
     private void handleForceDestroyCPGroup(final HttpPostCommand command) {
@@ -579,7 +579,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                         }
                         textCommandService.sendResponse(command);
                     }
-                });
+                }, internalAsyncExecutor);
     }
 
     private void handleResetCPSubsystem(final HttpPostCommand command) throws UnsupportedEncodingException {
@@ -596,7 +596,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                         command.send500();
                         textCommandService.sendResponse(command);
                     }
-                });
+                }, internalAsyncExecutor);
     }
 
     private CPSubsystemManagementService getCpSubsystemManagementService() {

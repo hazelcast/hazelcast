@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,26 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.Protocols;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
+import com.hazelcast.internal.server.tcp.TcpServer;
+import com.hazelcast.internal.server.tcp.TcpServerConnection;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,19 +45,23 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.channels.ServerSocketChannel;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.hazelcast.config.tpc.TpcConfigAccessors.getClientPorts;
+import static com.hazelcast.config.tpc.TpcConfigAccessors.getClientSocketConfig;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
 public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkIntegrationTest {
 
     @Rule
@@ -77,6 +91,52 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
+    @Category(QuickTest.class)
+    public void testTPCPortsWithAdvancedNetwork() {
+        Config config = smallInstanceConfig();
+        config.getTpcConfig().setEnabled(true).setEventloopCount(4);
+        ServerSocketEndpointConfig clientSSConfig = new ServerSocketEndpointConfig();
+        clientSSConfig.getTpcSocketConfig()
+                .setReceiveBufferSizeKB(1024)
+                .setSendBufferSizeKB(512)
+                .setPortRange("15000-16000");
+        config.getAdvancedNetworkConfig().setEnabled(true).setClientEndpointConfig(clientSSConfig);
+
+        HazelcastInstance[] hz = new HazelcastInstance[3];
+        for (int i = 0; i < 3; i++) {
+            hz[i] = newHazelcastInstance(config);
+        }
+
+        for (int i = 0; i < 3; i++) {
+            assertEquals(1024, getClientSocketConfig(hz[i]).getReceiveBufferSizeKB());
+            assertEquals(512, getClientSocketConfig(hz[i]).getSendBufferSizeKB());
+            assertEquals(4, getClientPorts(hz[i]).size());
+        }
+    }
+
+    @Test
+    @Category(QuickTest.class)
+    public void testTpcWithAdvancedNetworkAndWithoutClientSocketConfigThrows() {
+        Config config = smallInstanceConfig();
+        config.getTpcConfig().setEnabled(true);
+        config.getAdvancedNetworkConfig().setEnabled(true);
+        assertThrows(InvalidConfigurationException.class, () -> newHazelcastInstance(config));
+    }
+
+    @Test
+    @Category(QuickTest.class)
+    public void testTpcWithAdvancedNetworkAndWithNonClientTpcSocketConfigurationThrows() {
+        Config config = smallInstanceConfig();
+        config.getTpcConfig().setEnabled(true);
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+        advancedNetworkConfig.setEnabled(true);
+        advancedNetworkConfig.setClientEndpointConfig(new ServerSocketEndpointConfig());
+        advancedNetworkConfig.getEndpointConfigs().get(EndpointQualifier.MEMBER).getTpcSocketConfig().setPortRange("12000-16000");
+        assertThrows(InvalidConfigurationException.class, () -> newHazelcastInstance(config));
+    }
+
+    @Test
+    @Category(SlowTest.class)
     public void testMembersReportAllAddresses() {
         Config config = createCompleteMultiSocketConfig();
         for (int i = 0; i < 3; i++) {
@@ -92,12 +152,67 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         }
     }
 
+    @Test
+    @Category(QuickTest.class)
+    public void testKeepAliveSocketOptions() throws Throwable {
+        assumeKeepAlivePerSocketOptionsSupported();
+        Config config = createCompleteMultiSocketConfig();
+        config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.MEMBER)
+                .setSocketKeepAlive(true)
+                .setSocketKeepIdleSeconds(5)
+                .setSocketKeepCount(2)
+                .setSocketKeepIntervalSeconds(1);
+
+        HazelcastInstance hz = newHazelcastInstance(config);
+        newHazelcastInstance(config);
+
+        assertClusterSizeEventually(2, hz);
+
+        TcpServer tcpServer = (TcpServer) Accessors.getNode(hz).getServer();
+        ServerSocketRegistry registry = tcpServer.getRegistry();
+        for (ServerSocketRegistry.Pair pair : registry) {
+            if (EndpointQualifier.MEMBER.equals(pair.getQualifier())) {
+                assertEquals(2, (int) pair.getChannel().getOption(IOUtil.JDK_NET_TCP_KEEPCOUNT));
+                assertEquals(1, (int) pair.getChannel().getOption(IOUtil.JDK_NET_TCP_KEEPINTERVAL));
+                assertEquals(5, (int) pair.getChannel().getOption(IOUtil.JDK_NET_TCP_KEEPIDLE));
+            }
+        }
+
+        for (ServerConnection c : tcpServer.getConnectionManager(EndpointQualifier.MEMBER).getConnections()) {
+            TcpServerConnection cxn = (TcpServerConnection) c;
+            AbstractChannel ch = (AbstractChannel) cxn.getChannel();
+            assertEquals(2, (int) ch.socketChannel().getOption(IOUtil.JDK_NET_TCP_KEEPCOUNT));
+            assertEquals(1, (int) ch.socketChannel().getOption(IOUtil.JDK_NET_TCP_KEEPINTERVAL));
+            assertEquals(5, (int) ch.socketChannel().getOption(IOUtil.JDK_NET_TCP_KEEPIDLE));
+        }
+    }
+
+    @Test
+    @Category(QuickTest.class)
+    public void testKeepAliveSocketOptions_whenNotSupported() throws Throwable {
+        assumeKeepAlivePerSocketOptionsNotSupported();
+        // ensure that even though options are configured and setting them fails, no exceptions are thrown
+        Config config = createCompleteMultiSocketConfig();
+        config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.MEMBER)
+                .setSocketKeepAlive(true)
+                .setSocketKeepIdleSeconds(5)
+                .setSocketKeepCount(2)
+                .setSocketKeepIntervalSeconds(1);
+
+        HazelcastInstance hz = newHazelcastInstance(config);
+        newHazelcastInstance(config);
+
+        assertClusterSizeEventually(2, hz);
+    }
+
     @Test(expected = AssertionError.class)
+    @Category(QuickTest.class)
     public void testLocalPortAssertionWorks() {
         assertLocalPortsOpen(MEMBER_PORT);
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testConnectionToWrongPort() {
         Tuple2<Config, Config> cfgTuple = prepareConfigs();
 
@@ -118,6 +233,7 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testConnectionToWrongPortWithRequiredMember() {
         Tuple2<Config, Config> cfgTuple = prepareConfigs();
 
@@ -138,6 +254,7 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
+    @Category(SlowTest.class)
     public void doNotShutdownIfSomeMembersCanBeConnected() {
         Tuple2<Config, Config> cfgTuple = prepareConfigs();
 
@@ -156,6 +273,7 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     }
 
     @Test
+    @Category(SlowTest.class)
     public void doShutdownIfSomeMembersCanBeConnectedWithRequiredMember() {
         Tuple2<Config, Config> cfgTuple = prepareConfigs();
 
@@ -229,5 +347,27 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         other.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "1");
 
         return Tuple2.tuple2(config, other);
+    }
+
+    private void assumeKeepAlivePerSocketOptionsNotSupported() throws Throwable {
+        Assume.assumeFalse(socketSupportsKeepAliveOptions());
+    }
+
+    private void assumeKeepAlivePerSocketOptionsSupported() throws Throwable {
+        Assume.assumeTrue(socketSupportsKeepAliveOptions());
+    }
+
+    private boolean socketSupportsKeepAliveOptions() throws Throwable {
+        try (ServerSocketChannel serverSocketChannel = buildServerSocket()) {
+            return IOUtil.supportsKeepAliveOptions(serverSocketChannel);
+        }
+    }
+
+    private static ServerSocketChannel buildServerSocket() throws IOException {
+        InetSocketAddress socketAddress = new InetSocketAddress("127.0.0.1", 0);
+        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+        ServerSocket server = serverSocketChannel.socket();
+        server.bind(socketAddress);
+        return serverSocketChannel;
     }
 }

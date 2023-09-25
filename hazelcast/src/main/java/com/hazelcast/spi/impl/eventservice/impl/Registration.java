@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -29,14 +30,16 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.UUID;
 
-public class Registration implements EventRegistration {
+import static com.hazelcast.internal.cluster.Versions.V5_3;
+
+public class Registration implements EventRegistration, Versioned {
 
     private UUID id;
     private String serviceName;
     private String topic;
     private EventFilter filter;
     private Address subscriber;
-    private transient boolean localOnly;
+    private boolean localOnly;
     private transient Object listener;
 
     public Registration() {
@@ -85,6 +88,10 @@ public class Registration implements EventRegistration {
         return listener;
     }
 
+    public void setListener(Object listener) {
+        this.listener = listener;
+    }
+
     // Registration equals() and hashCode() relies on the ID field only,
     // because the registration ID is unique in the cluster
     @Override
@@ -111,6 +118,9 @@ public class Registration implements EventRegistration {
         out.writeString(topic);
         out.writeObject(subscriber);
         out.writeObject(filter);
+        if (out.getVersion().isGreaterOrEqual(V5_3)) {
+            out.writeBoolean(localOnly);
+        }
     }
 
     @Override
@@ -120,6 +130,9 @@ public class Registration implements EventRegistration {
         topic = in.readString();
         subscriber = in.readObject();
         filter = in.readObject();
+        if (in.getVersion().isGreaterOrEqual(V5_3)) {
+            localOnly = in.readBoolean();
+        }
     }
 
     @Override
@@ -130,6 +143,7 @@ public class Registration implements EventRegistration {
                 + ", serviceName='" + serviceName + '\''
                 + ", subscriber=" + subscriber
                 + ", listener=" + listener
+                + ", localOnly=" + localOnly
                 + '}';
     }
 

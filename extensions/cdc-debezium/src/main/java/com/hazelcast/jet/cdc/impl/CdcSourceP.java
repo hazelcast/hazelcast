@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import io.debezium.relational.history.AbstractDatabaseHistory;
 import io.debezium.relational.history.DatabaseHistoryException;
 import io.debezium.relational.history.HistoryRecord;
 import org.apache.kafka.connect.connector.ConnectorContext;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -78,6 +79,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
 
     private static final BroadcastKey<String> SNAPSHOT_KEY = broadcastKey("snap");
     private static final ThreadLocal<List<byte[]>> THREAD_LOCAL_HISTORY = new ThreadLocal<>();
+    private static final String TIMESTAMP_MS_FIELD_NAME = "ts_ms";
 
     @Nonnull
     private final Properties properties;
@@ -412,11 +414,20 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         }
     }
 
-    private static long extractTimestamp(SourceRecord record) {
-        if (record.valueSchema().field("ts_ms") == null) {
+    private static long extractTimestamp(SourceRecord sourceRecord) {
+        Schema valueSchema = sourceRecord.valueSchema();
+        boolean noValueTsMs = valueSchema.field(TIMESTAMP_MS_FIELD_NAME) == null;
+        boolean noSourceTsMs = valueSchema.field("source").schema().field(TIMESTAMP_MS_FIELD_NAME) == null;
+        if (noValueTsMs && noSourceTsMs) {
             return NO_NATIVE_TIME;
         }
-        Long timestamp = ((Struct) record.value()).getInt64("ts_ms");
+        Long timestamp;
+        Struct valueStruct = (Struct) sourceRecord.value();
+        if (noValueTsMs) {
+            timestamp = valueStruct.getStruct("source").getInt64("ts_ms");
+        } else {
+            timestamp = valueStruct.getInt64("ts_ms");
+        }
         return timestamp == null ? NO_NATIVE_TIME : timestamp;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,18 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.security.jsm.HazelcastRuntimePermission;
+import com.hazelcast.config.tpc.TpcSocketConfig;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.security.jsm.HazelcastRuntimePermission;
+import com.hazelcast.spi.annotation.Beta;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains configuration for Network.
@@ -69,6 +75,8 @@ public class NetworkConfig {
     private RestApiConfig restApiConfig = new RestApiConfig();
 
     private MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
+
+    private TpcSocketConfig tpcSocketConfig = new TpcSocketConfig();
 
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
@@ -402,6 +410,35 @@ public class NetworkConfig {
         return this;
     }
 
+    /**
+     * Gets the TpcSocketConfig.
+     *
+     * @return the TpcSocketConfig
+     * @see TpcConfig
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public TpcSocketConfig getTpcSocketConfig() {
+        return tpcSocketConfig;
+    }
+
+    /**
+     * Sets the TpcSocketConfig
+     *
+     * @param tpcSocketConfig the TpcSocketConfig to set
+     * @return this network config
+     * @throws IllegalArgumentException if tpcSocketConfig is null
+     * @see TpcConfig
+     * @since 5.3
+     */
+    @Beta
+    @Nonnull
+    public NetworkConfig setTpcSocketConfig(@Nonnull TpcSocketConfig tpcSocketConfig) {
+        this.tpcSocketConfig = checkNotNull(tpcSocketConfig);
+        return this;
+    }
+
     @Override
     public String toString() {
         return "NetworkConfig{"
@@ -417,6 +454,7 @@ public class NetworkConfig {
                 + ", icmpFailureDetectorConfig=" + icmpFailureDetectorConfig
                 + ", restApiConfig=" + restApiConfig
                 + ", memcacheProtocolConfig=" + memcacheProtocolConfig
+                + ", tpcSocketConfig=" + tpcSocketConfig
                 + '}';
     }
 
@@ -441,7 +479,8 @@ public class NetworkConfig {
                 && Objects.equals(memberAddressProviderConfig, that.memberAddressProviderConfig)
                 && Objects.equals(icmpFailureDetectorConfig, that.icmpFailureDetectorConfig)
                 && Objects.equals(restApiConfig, that.restApiConfig)
-                && Objects.equals(memcacheProtocolConfig, that.memcacheProtocolConfig);
+                && Objects.equals(memcacheProtocolConfig, that.memcacheProtocolConfig)
+                && Objects.equals(tpcSocketConfig, that.tpcSocketConfig);
     }
 
     @Override
@@ -450,6 +489,6 @@ public class NetworkConfig {
                 .hash(port, portCount, portAutoIncrement, reuseAddress, publicAddress, outboundPortDefinitions, outboundPorts,
                         interfaces, join, symmetricEncryptionConfig, socketInterceptorConfig, sslConfig,
                         memberAddressProviderConfig,
-                        icmpFailureDetectorConfig, restApiConfig, memcacheProtocolConfig);
+                        icmpFailureDetectorConfig, restApiConfig, memcacheProtocolConfig, tpcSocketConfig);
     }
 }

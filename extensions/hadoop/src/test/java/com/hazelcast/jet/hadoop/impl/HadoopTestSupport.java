@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,10 @@ public abstract class HadoopTestSupport extends SimpleTestInClusterSupport {
             // line and follow instructions here: https://stackoverflow.com/a/35652866/952135
             assumeThatNoWindowsOS();
 
-            // Tests will fail on IBM JDK17 with error:
+            // Tests might fail on some IBM JDKs with error:
             // No LoginModule found for com.ibm.security.auth.module.JAASLoginModule
             // see https://github.com/hazelcast/hazelcast/issues/20754
-            assumeThatNotIBMJDK17();
+            assumeHadoopSupportsIbmPlatform();
         }
     }
 

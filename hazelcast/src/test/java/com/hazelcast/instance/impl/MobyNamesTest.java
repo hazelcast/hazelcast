@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -37,10 +39,24 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class MobyNamesTest extends HazelcastTestSupport {
 
+
+    @After
+    public void tearDown() throws Exception {
+        System.clearProperty(MobyNames.MOBY_NAMING_PREFIX);
+    }
+
     @Test
     public void getRandomNameNotEmpty() {
         String randomName = MobyNames.getRandomName(0);
         assertFalse(isNullOrEmptyAfterTrim(randomName));
+    }
+
+    @Test
+    public void getRandomNameWithPrefix() {
+        System.setProperty(MobyNames.MOBY_NAMING_PREFIX, "foo");
+        String randomName = MobyNames.getRandomName(0);
+        assertFalse(isNullOrEmptyAfterTrim(randomName));
+        assertThat(randomName).startsWith("foo_");
     }
 
     @Test
@@ -51,7 +67,7 @@ public class MobyNamesTest extends HazelcastTestSupport {
             String randomName = MobyNames.getRandomName(i);
             namesCounts.computeIfAbsent(randomName, (key) -> new AtomicInteger()).incrementAndGet();
         }
-        assertEquals(namesCounts.size(), totalCombinations);
+        assertEquals(totalCombinations, namesCounts.size());
         assertTrue(namesCounts.keySet().stream().noneMatch(StringUtil::isNullOrEmptyAfterTrim));
         for (Map.Entry<String, AtomicInteger> entry : namesCounts.entrySet()) {
             assertEquals(entry.getKey(), 2, entry.getValue().get());

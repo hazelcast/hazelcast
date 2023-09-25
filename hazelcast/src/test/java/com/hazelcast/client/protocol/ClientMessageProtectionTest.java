@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 
+import org.assertj.core.api.Condition;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.EOFException;
@@ -50,14 +49,14 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Collections.emptyList;
-import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -70,9 +69,6 @@ import static org.junit.Assert.assertTrue;
 public class ClientMessageProtectionTest {
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @After
     public void after() {
@@ -131,8 +127,8 @@ public class ClientMessageProtectionTest {
                 List<ClientMessage> subFrames = ClientMessageSplitter.getFragments(50, clientMessage);
                 assertTrue(subFrames.size() > 1);
                 ClientTestUtil.writeClientMessage(os, subFrames.get(0));
-                expected.expect(connectionClosedException());
-                ClientTestUtil.readResponse(is);
+
+                assertThatThrownBy(() -> ClientTestUtil.readResponse(is)).is(connectionClosedException());
             }
         }
     }
@@ -150,9 +146,13 @@ public class ClientMessageProtectionTest {
             socket.setSoTimeout(5000);
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
                 os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
-                ClientTestUtil.writeClientMessage(os, clientMessage);
-                expected.expect(connectionClosedException());
-                ClientTestUtil.readResponse(is);
+                // The socket might be closed after we write the large string
+                // frame and before the frames next to that. So, even the
+                // write message call below could throw.
+                assertThatThrownBy(() -> {
+                    ClientTestUtil.writeClientMessage(os, clientMessage);
+                    ClientTestUtil.readResponse(is);
+                }).is(connectionClosedException());
             }
         }
     }
@@ -176,8 +176,7 @@ public class ClientMessageProtectionTest {
                 buffer.put(frame.content);
                 os.write(TestUtil.byteBufferToBytes(buffer));
                 os.flush();
-                expected.expect(connectionClosedException());
-                ClientTestUtil.readResponse(is);
+                assertThatThrownBy(() -> ClientTestUtil.readResponse(is)).is(connectionClosedException());
             }
         }
     }
@@ -209,8 +208,7 @@ public class ClientMessageProtectionTest {
                 buffer.putShort((short) frame.flags);
                 os.write(TestUtil.byteBufferToBytes(buffer));
                 os.flush();
-                expected.expect(connectionClosedException());
-                ClientTestUtil.readResponse(is);
+                assertThatThrownBy(() -> ClientTestUtil.readResponse(is)).is(connectionClosedException());
             }
         }
     }
@@ -220,7 +218,8 @@ public class ClientMessageProtectionTest {
                 (byte) 1, clientName, "xxx", emptyList());
     }
 
-    private <T> org.hamcrest.Matcher<T> connectionClosedException() {
-        return anyOf(instanceOf(SocketException.class), instanceOf(EOFException.class));
+    private <T> Condition<T> connectionClosedException() {
+        Predicate<T> predicate = e -> e instanceof SocketException || e instanceof EOFException;
+        return new Condition<>(predicate, "is connection closed exception");
     }
 }

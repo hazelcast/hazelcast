@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import static com.tngtech.archunit.core.importer.ImportOption.Predefined.ONLY_IN
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class ArchUnitRulesTest {
+public class ArchUnitRulesTest extends ArchUnitTestSupport {
+
     @Test
     public void should_fail_with_non_compliant_class() {
         JavaClasses classes = new ClassFileImporter()
@@ -45,5 +46,27 @@ public class ArchUnitRulesTest {
         assertThat(classes).isNotEmpty();
 
         ArchUnitRules.SERIALIZABLE_SHOULD_HAVE_VALID_SERIAL_VERSION_UID.check(classes);
+    }
+
+    @Test
+    public void should_fail_with_mixed_annotation_test_class() {
+        JavaClasses classes = new ClassFileImporter()
+                .withImportOption(ONLY_INCLUDE_TESTS)
+                .importPackages("com.example.broken");
+        assertThat(classes).isNotEmpty();
+
+        assertThatThrownBy(() -> ArchUnitRules.NO_JUNIT_MIXING.check(classes))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining("was violated (1 times)");
+    }
+
+    @Test
+    public void should_not_fail_with_normal_test_class() {
+        JavaClasses classes = new ClassFileImporter()
+                .withImportOption(ONLY_INCLUDE_TESTS)
+                .importPackages("com.example.valid");
+        assertThat(classes).isNotEmpty();
+
+        ArchUnitRules.NO_JUNIT_MIXING.check(classes);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,12 +153,17 @@ public class MapBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implem
             if (recordStore == null) {
                 return null;
             }
-            Data keyData = serializationService.toData(key);
-            Object o = recordStore.get(keyData, true, null);
-            if (o == null) {
-                return null;
+            recordStore.beforeOperation();
+            try {
+                Data keyData = serializationService.toData(key);
+                Object o = recordStore.get(keyData, true, null);
+                if (o == null) {
+                    return null;
+                }
+                return serializationService.toObject(o);
+            } finally {
+                recordStore.afterOperation();
             }
-            return serializationService.toObject(o);
         }
     }
 

@@ -63,7 +63,7 @@ become possible.
 We addressed this race by moving the received packet buffer to
 `ExecutionContext`. The `ExecutionContext` is created if one is not
 found when data arrives. When later the `init` operation arrives, we
-create the processors and they will process the accumulated data.
+create the processors, and they will process the accumulated data.
 
 ### Job receives data, but is never initialized
 
@@ -135,7 +135,7 @@ jobs they coordinate.
 ## Graceful Shutdown
 
 When a Jet member is shut down, it first gracefully terminates all
-executions. That means, fault tolerant jobs will save a snapshot and
+executions. That means, fault-tolerant jobs will save a snapshot and
 process no data after it, so even sinks with at-least-once guarantee
 don't produce duplicates.
 
@@ -147,7 +147,7 @@ down.
 
 ## Java Serialization of Processors
 
-After the job roundtrip got to microsecond scale, the serialization time
+After the job round-trip got to microsecond scale, the serialization time
 for Jet processors became non-negligible, though not major. It might be
 worthwhile to convert the common processors to use
 `IdentifiedDataSerializable`.

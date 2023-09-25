@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.expression.datetime;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractField;
@@ -428,17 +428,17 @@ public class ExtractFunctionIntegrationTest {
         @Test
         public void test_serialization() {
             ExtractFunction f = createFunction(ExtractField.MONTH, LOCAL_DATE_TIME_VAL, QueryDataType.TIMESTAMP);
-            ExtractFunction deserialized = serializeAndCheck(f, SqlDataSerializerHook.EXPRESSION_EXTRACT);
+            ExtractFunction deserialized = serializeAndCheck(f, JetSqlSerializerHook.EXPRESSION_EXTRACT);
 
             checkEquals(f, deserialized, true);
 
             ExtractFunction f2 = createFunction(ExtractField.CENTURY, LOCAL_DATE_TIME_VAL, QueryDataType.TIMESTAMP);
-            deserialized = serializeAndCheck(f2, SqlDataSerializerHook.EXPRESSION_EXTRACT);
+            deserialized = serializeAndCheck(f2, JetSqlSerializerHook.EXPRESSION_EXTRACT);
 
             checkEquals(f, deserialized, false);
 
             ExtractFunction f3 = createFunction(ExtractField.MONTH, LOCAL_DATE_TIME_VAL.plusDays(1), QueryDataType.TIMESTAMP);
-            deserialized = serializeAndCheck(f3, SqlDataSerializerHook.EXPRESSION_EXTRACT);
+            deserialized = serializeAndCheck(f3, JetSqlSerializerHook.EXPRESSION_EXTRACT);
 
             checkEquals(f, deserialized, false);
         }

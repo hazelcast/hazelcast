@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.config.replacer;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AssumptionViolatedException;
 import org.junit.Test;
@@ -30,17 +29,15 @@ import java.util.Properties;
 
 import static com.hazelcast.config.replacer.AbstractPbeReplacer.DEFAULT_CIPHER_ALGORITHM;
 import static com.hazelcast.config.replacer.AbstractPbeReplacer.DEFAULT_SECRET_KEY_FACTORY_ALGORITHM;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * Unit tests for {@link AbstractPbeReplacer}.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ QuickTest.class, ParallelJVMTest.class })
+@Category(QuickTest.class)
 public class AbstractPbeReplacerTest {
 
     @Test
@@ -125,9 +122,9 @@ public class AbstractPbeReplacerTest {
 
     protected void assertReplacerWorks(AbstractPbeReplacer replacer) throws Exception {
         String encryptedStr = replacer.encrypt("aTestString", 77);
-        assertThat("Iteration count should be present in the encrypted string", encryptedStr, containsString("77"));
-        assertThat("Sensitive string has not to be part of the encrypted string", encryptedStr,
-                not(containsString("aTestString")));
+        assertThat(encryptedStr).as("Iteration count should be present in the encrypted string").contains("77");
+        assertThat(encryptedStr).as("Sensitive string has not to be part of the encrypted string")
+                                .doesNotContain("aTestString");
         assertEquals("aTestString", replacer.getReplacement(encryptedStr));
     }
 

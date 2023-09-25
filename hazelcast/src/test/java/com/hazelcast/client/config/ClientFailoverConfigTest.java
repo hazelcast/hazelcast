@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,7 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -44,11 +41,11 @@ public class ClientFailoverConfigTest {
     @Test
     public void testAddClientConfig_WithOffReconnectMode_ShouldThrowInvalidConfigException() {
         ClientFailoverConfig failoverConfig = new ClientFailoverConfig();
-        assertThat(failoverConfig.getClientConfigs(), is(empty()));
+        assertThat(failoverConfig.getClientConfigs()).isEmpty();
 
         ClientConfig clientConfig1 = new ClientConfig();
         failoverConfig.addClientConfig(clientConfig1);
-        assertThat(failoverConfig.getClientConfigs(), hasSize(1));
+        assertThat(failoverConfig.getClientConfigs()).hasSize(1);
 
         ClientConfig clientConfig2 = new ClientConfig()
                 .setConnectionStrategyConfig(new ClientConnectionStrategyConfig().setReconnectMode(OFF));

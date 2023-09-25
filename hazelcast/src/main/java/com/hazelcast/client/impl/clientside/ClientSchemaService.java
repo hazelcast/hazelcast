@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class ClientSchemaService implements SchemaService {
         ClientMessage message = invocation.invoke().joinInternal();
         schema = ClientFetchSchemaCodec.decodeResponse(message);
         if (schema != null) {
-            schemas.put(schemaId, schema);
+            schemas.putIfAbsent(schemaId, schema);
         }
         return schema;
     }

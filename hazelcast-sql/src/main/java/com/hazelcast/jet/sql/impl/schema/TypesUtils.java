@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,8 @@ public final class TypesUtils {
     private TypesUtils() {
     }
 
-    public static QueryDataType convertTypeToQueryDataType(final Type rootType, final TablesStorage tablesStorage) {
-        return convertTypeToQueryDataTypeInt(rootType.getName(), rootType, tablesStorage, new HashMap<>());
+    public static QueryDataType convertTypeToQueryDataType(final Type rootType, final RelationsStorage relationsStorage) {
+        return convertTypeToQueryDataTypeInt(rootType.name(), rootType, relationsStorage, new HashMap<>());
     }
 
     public static Type convertPortableClassToType(
@@ -131,11 +131,11 @@ public final class TypesUtils {
         final QueryDataType queryDataType;
         switch (type.getKind()) {
             case JAVA:
-                queryDataType = new QueryDataType(type.getName(), QueryDataType.OBJECT_TYPE_KIND_JAVA);
+                queryDataType = new QueryDataType(type.name(), QueryDataType.OBJECT_TYPE_KIND_JAVA);
                 queryDataType.setObjectTypeMetadata(type.getJavaClassName());
                 return queryDataType;
             case PORTABLE:
-                queryDataType = new QueryDataType(type.getName(), QueryDataType.OBJECT_TYPE_KIND_PORTABLE);
+                queryDataType = new QueryDataType(type.name(), QueryDataType.OBJECT_TYPE_KIND_PORTABLE);
                 queryDataType.setObjectTypeMetadata(encodePortableId(
                         type.getPortableFactoryId(),
                         type.getPortableClassId(),
@@ -143,7 +143,7 @@ public final class TypesUtils {
                 ));
                 return queryDataType;
             case COMPACT:
-                queryDataType = new QueryDataType(type.getName(), QueryDataType.OBJECT_TYPE_KIND_COMPACT);
+                queryDataType = new QueryDataType(type.name(), QueryDataType.OBJECT_TYPE_KIND_COMPACT);
                 queryDataType.setObjectTypeMetadata(type.getCompactTypeName());
                 return queryDataType;
             default:
@@ -204,23 +204,23 @@ public final class TypesUtils {
     public static void enrichMappingFieldType(
             final TypeKind mappingTypeKind,
             final MappingField field,
-            final TablesStorage tablesStorage
+            final RelationsStorage relationsStorage
     ) {
         if (!field.type().isCustomType()) {
             return;
         }
-        final Type type = tablesStorage.getType(field.type().getObjectTypeName());
+        final Type type = relationsStorage.getType(field.type().getObjectTypeName());
         if (type == null) {
             throw QueryException.error("Non existing type found in the mapping: "
                     + field.type().getObjectTypeName());
         }
 
         if (!mappingTypeKind.equals(type.getKind())) {
-            throw QueryException.error("Can not use Type " + type.getName() + "["
+            throw QueryException.error("Can not use Type " + type.name() + "["
                     + type.getKind() + "] with " + mappingTypeKind + " mapping.");
         }
 
-        final QueryDataType resolved = convertTypeToQueryDataType(type, tablesStorage);
+        final QueryDataType resolved = convertTypeToQueryDataType(type, relationsStorage);
         field.setType(resolved);
     }
 
@@ -247,7 +247,7 @@ public final class TypesUtils {
     private static QueryDataType convertTypeToQueryDataTypeInt(
             @Nonnull final String typeName,
             @Nullable Type type,
-            @Nonnull final TablesStorage tablesStorage,
+            @Nonnull final RelationsStorage relationsStorage,
             @Nonnull final Map<String, QueryDataType> seen
     ) {
         QueryDataType convertedType = seen.get(typeName);
@@ -256,7 +256,7 @@ public final class TypesUtils {
         }
 
         if (type == null) {
-            type = tablesStorage.getType(typeName);
+            type = relationsStorage.getType(typeName);
         }
 
         if (type == null) {
@@ -266,13 +266,13 @@ public final class TypesUtils {
         // At this point the `convertedType` lacks fields. We put it to the `seen` map for the purpose of resolving
         // cyclic references, we'll add the fields later below.
         convertedType = toQueryDataTypeRef(type);
-        seen.putIfAbsent(type.getName(), convertedType);
+        seen.putIfAbsent(type.name(), convertedType);
 
         for (Type.TypeField field : type.getFields()) {
             QueryDataType queryDataType;
             if (field.getQueryDataType().isCustomType()) {
                 queryDataType = convertTypeToQueryDataTypeInt(field.getQueryDataType().getObjectTypeName(),
-                        null, tablesStorage, seen);
+                        null, relationsStorage, seen);
             } else {
                 queryDataType = field.getQueryDataType();
             }

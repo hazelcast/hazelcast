@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -144,6 +145,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     private final CoalescingDelayedTrigger masterTrigger;
 
     private final AtomicReference<CountDownLatch> shutdownLatchRef = new AtomicReference<>();
+    private final Executor internalAsyncExecutor;
 
     private volatile Address latestMaster;
 
@@ -156,7 +158,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.logger = node.getLogger(InternalPartitionService.class);
-
+        this.internalAsyncExecutor = nodeEngine.getExecutionService()
+                .getExecutor(ExecutionService.ASYNC_EXECUTOR);
         partitionStateManager = new PartitionStateManager(node, this);
         migrationManager = new MigrationManager(node, this, partitionServiceLock);
         replicaManager = new PartitionReplicaManager(node, this);
@@ -262,6 +265,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         }
     }
 
+    @Override
+    public boolean isPartitionAssignmentDone() {
+        return partitionStateManager.isInitialized();
+    }
+
     /** Sends a {@link AssignPartitions} to the master to assign partitions. */
     private void triggerMasterToAssignPartitions() {
         if (!shouldTriggerMasterToAssignPartitions()) {
@@ -286,17 +294,17 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             InvocationFuture<PartitionRuntimeState> future =
                     operationService.invokeOnTarget(SERVICE_NAME, new AssignPartitions(), masterAddress);
             future.whenCompleteAsync((partitionState, throwable) -> {
-                                if (throwable == null) {
-                                    resetMasterTriggeredFlag();
-                                    if (partitionState != null) {
-                                        partitionState.setMaster(masterAddress);
-                                        processPartitionRuntimeState(partitionState);
-                                    }
-                                } else {
-                                    resetMasterTriggeredFlag();
-                                    logger.severe(throwable);
-                                }
-                            });
+                if (throwable == null) {
+                    resetMasterTriggeredFlag();
+                    if (partitionState != null) {
+                        partitionState.setMaster(masterAddress);
+                        processPartitionRuntimeState(partitionState);
+                    }
+                } else {
+                    resetMasterTriggeredFlag();
+                    logger.severe(throwable);
+                }
+            }, internalAsyncExecutor);
 
             masterTrigger.executeWithDelay();
         }
@@ -396,6 +404,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     // no partitions were assigned to it (member left with graceful shutdown)
                     if (!partitionStateManager.isAbsentInPartitionTable(member)) {
                         partitionStateManager.storeSnapshot(member.getUuid());
+                    } else {
+                        // member is removed due to graceful shutdown
+                        // cleanup any leftover snapshots
+                        partitionStateManager.removeSnapshot(member.getUuid());
                     }
                 }
             }
@@ -601,7 +613,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                         logger.fine("Failure while checking partition state on " + member, throwable);
                         sendPartitionRuntimeState(member.getAddress());
                     }
-                });
+                }, internalAsyncExecutor);
             }
         }
     }
@@ -964,6 +976,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     @Override
     public boolean isMemberStateSafe() {
         return partitionReplicaStateChecker.getPartitionServiceState() == PartitionServiceState.SAFE;
+    }
+
+    @Override
+    public boolean isPartitionTableSafe() {
+        return partitionReplicaStateChecker.getPartitionTableState() == PartitionServiceState.SAFE;
     }
 
     @Override

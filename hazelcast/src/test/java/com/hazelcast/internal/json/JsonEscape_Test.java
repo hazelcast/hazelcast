@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,6 @@ public class JsonEscape_Test {
     @Test
     public void escapesLastChar() {
         String x = string('x', '\\');
-        System.out.println(x);
         JsonEscape.writeEscaped(stringBuilder, x);
 
         assertEquals("\"x\\\\\"", stringBuilder.toString());

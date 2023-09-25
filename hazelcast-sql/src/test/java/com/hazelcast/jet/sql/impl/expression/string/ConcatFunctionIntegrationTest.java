@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.string.ConcatFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -134,7 +134,7 @@ public class ConcatFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization() {
         ConcatFunction original = ConcatFunction.create(ConstantExpression.create("1", VARCHAR), ConstantExpression.create("2", VARCHAR));
-        ConcatFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CONCAT);
+        ConcatFunction restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_CONCAT);
 
         checkEquals(original, restored, true);
     }

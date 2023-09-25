@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,23 +24,29 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.Collections.singleton;
 
@@ -57,10 +63,12 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
         this.config = config;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JetConfig getConfig() {
         return config;
     }
+
 
     @Override
     public Address getMasterId() {
@@ -70,21 +78,24 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     @Override
     public Map<Address, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
         Map<Address, CompletableFuture<GetJobIdsResult>> futures = new HashMap<>();
-        Address masterAddress = null;
         // if onlyName != null, only send the operation to master. Light jobs cannot have a name
         Collection<Member> targetMembers = onlyName == null
                 ? nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR)
                 : singleton(nodeEngine.getClusterService().getMembers().iterator().next());
+
+        GetJobIdsOperation masterOperation = new GetJobIdsOperation(onlyName, onlyJobId);
+
+        CompletableFuture<GetJobIdsResult> masterFuture = nodeEngine
+                .getOperationService()
+                .createMasterInvocationBuilder(JetServiceBackend.SERVICE_NAME, masterOperation)
+                .invoke();
+
         for (Member member : targetMembers) {
-            if (masterAddress == null) {
-                masterAddress = member.getAddress();
-            }
             GetJobIdsOperation operation = new GetJobIdsOperation(onlyName, onlyJobId);
-            InvocationFuture<GetJobIdsResult> future = nodeEngine
+            futures.put(member.getAddress(), nodeEngine
                     .getOperationService()
                     .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, member.getAddress())
-                    .invoke();
-            futures.put(member.getAddress(), future);
+                    .invoke());
         }
 
         Map<Address, GetJobIdsResult> res = new HashMap<>(futures.size());
@@ -96,11 +107,10 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
                 Thread.currentThread().interrupt();
                 result = GetJobIdsResult.EMPTY;
             } catch (ExecutionException e) {
-                // Don't ignore exceptions from master. If we don't get a response from a non-master member, it
-                // can contain only light jobs - we ignore that member's failure, because these jobs are not as
-                // important. If we don't get response from the master, we report it to the user.
-                if (!en.getKey().equals(masterAddress)
-                        && (e.getCause() instanceof TargetNotMemberException || e.getCause() instanceof MemberLeftException)) {
+                // If we don't get a response from a non-master member, it can contain only light jobs - we ignore that
+                // member's failure, because these jobs are not as important. If we don't get response from the master,
+                // we report it to the user.
+                if (isOrHasCause(e, MemberLeftException.class) || isOrHasCause(e, TargetNotMemberException.class)) {
                     result = GetJobIdsResult.EMPTY;
                 } else {
                     throw new RuntimeException("Error when getting job IDs: " + e, e);
@@ -110,7 +120,30 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
             res.put(en.getKey(), result);
         }
 
+        res.put(null, filterNonLightJobs(masterFuture));
         return res;
+    }
+
+    private GetJobIdsResult filterNonLightJobs(CompletableFuture<GetJobIdsResult> masterFuture) {
+        GetJobIdsResult result;
+        try {
+            result = masterFuture.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return GetJobIdsResult.EMPTY;
+        } catch (Exception e) {
+            // We do not ignore any exception from master.
+            throw rethrow(e);
+        }
+        List<Tuple2<Long, Boolean>> nonLightJobs = new ArrayList<>();
+        for (int i = 0; i < result.getJobIds().length; i++) {
+            long jobId = result.getJobIds()[i];
+            if (result.getIsLightJobs()[i]) {
+                continue;
+            }
+            nonLightJobs.add(tuple2(jobId, false));
+        }
+        return new GetJobIdsResult(nonLightJobs);
     }
 
     @Override
@@ -151,8 +184,12 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     }
 
     @Override
-    public Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
-        return new JobProxy(nodeEngine, jobId, isLightJob, jobDefinition, config);
+    public Job newJobProxy(long jobId,
+                           boolean isLightJob,
+                           @Nonnull Object jobDefinition,
+                           @Nonnull JobConfig config,
+                           @Nullable Subject subject) {
+        return new JobProxy(nodeEngine, jobId, isLightJob, jobDefinition, config, subject);
     }
 
     @Override

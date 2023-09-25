@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,13 @@
 
 package com.hazelcast.jet.datamodel;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * An immutable 2-tuple (pair) of statically typed fields. Also implements
@@ -29,7 +33,9 @@ import java.util.Objects;
  *
  * @since Jet 3.0
  */
-public final class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
+public final class Tuple2<E0, E1> implements Map.Entry<E0, E1>, Serializable {
+
+    private static final long serialVersionUID = 1L;
     private final E0 f0;
     private final E1 f1;
 
@@ -80,6 +86,22 @@ public final class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
     @Override
     public E1 setValue(@Nullable E1 value) {
         throw new UnsupportedOperationException("Tuple2 is immutable");
+    }
+
+    /**
+     * Returns the value of the f0, throwing if it's null.
+     */
+    @Nonnull
+    public E0 requiredF0() {
+        return requireNonNull(f0, "f0 must not be null");
+    }
+
+    /**
+     * Returns the value of the f1, throwing if it's null..
+     */
+    @Nonnull
+    public E1 requiredF1() {
+        return requireNonNull(f1, "f1 must not be null");
     }
 
     @Override

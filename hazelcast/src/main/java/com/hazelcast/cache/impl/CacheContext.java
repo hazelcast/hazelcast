@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,8 @@ public class CacheContext {
     }
 
     public void decreaseCacheEntryListenerCount() {
-        cacheEntryListenerCount.decrementAndGet();
+        int newCount = cacheEntryListenerCount.decrementAndGet();
+        assert newCount >= 0 : "CacheEntryListenerCount decremented to a value below zero! New value: " + newCount;
     }
 
     public void resetCacheEntryListenerCount() {

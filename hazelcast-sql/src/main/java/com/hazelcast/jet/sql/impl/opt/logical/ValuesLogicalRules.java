@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,20 +72,19 @@ final class ValuesLogicalRules {
                 public void onMatch(RelOptRuleCall call) {
                     CalcLogicalRel calc = call.rel(0);
                     ValuesLogicalRel values = call.rel(1);
-
                     RexProgram rexProgram = calc.getProgram();
-
                     RexNode filter = null;
                     if (rexProgram.getCondition() != null) {
                         filter = rexProgram.expandLocalRef(rexProgram.getCondition());
                     }
 
+                    HazelcastRelOptCluster cluster = (HazelcastRelOptCluster) calc.getCluster();
                     ExpressionValues expressionValues = new TransformedExpressionValues(
                             filter,
                             rexProgram.expandList(rexProgram.getProjectList()),
                             values.getRowType(),
                             values.values(),
-                            ((HazelcastRelOptCluster) calc.getCluster()).getParameterMetadata()
+                            cluster.getParameterMetadata()
                     );
                     RelNode rel = new ValuesLogicalRel(
                             calc.getCluster(),

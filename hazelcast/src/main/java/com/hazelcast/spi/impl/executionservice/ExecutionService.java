@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,12 @@ public interface ExecutionService {
      * {@link  com.hazelcast.map.MapStore} operations.
      */
     String MAP_STORE_OFFLOADABLE_EXECUTOR = "hz:map-store-offloadable";
+
+    /**
+     * Name of the offloadable executor for offloaded
+     * tiered store compaction executions.
+     */
+    String MAP_TIERED_STORE_COMPACTION_OFFLOADABLE_EXECUTOR = "hz:map-tiered-store-compaction-offloadable";
 
     /**
      * Name of the map-loader executor that loads the entry values

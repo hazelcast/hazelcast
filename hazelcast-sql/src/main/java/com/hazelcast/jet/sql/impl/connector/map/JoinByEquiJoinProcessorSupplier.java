@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -264,6 +264,16 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
                         rightRowProjectorSupplier
                 );
             }
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
         }
 
         @Override

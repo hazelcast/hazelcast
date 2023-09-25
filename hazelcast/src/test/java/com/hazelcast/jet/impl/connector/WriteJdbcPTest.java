@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,12 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.QuickTest;
+import com.zaxxer.hikari.HikariDataSource;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -44,6 +46,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.sql.Statement;
@@ -51,56 +54,101 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureDummyDataConnection;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureJdbcDataConnection;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureDummyDataStore;
-import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureJdbcDataStore;
-import static com.hazelcast.jet.pipeline.ExternalDataStoreRef.externalDataStoreRef;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-@Category({SlowTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
+@Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
-    private static final String JDBC_DATA_STORE = "jdbc-data-store";
-    private static final String DUMMY_DATA_STORE = "dummy-data-store";
+    private static final String JDBC_DATA_CONNECTION = "jdbc-data-connection";
+    private static final String DUMMY_DATA_CONNECTION = "dummy-data-connection";
 
-    @ClassRule
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "resource"})
     public static PostgreSQLContainer container = new PostgreSQLContainer<>("postgres:12.1")
-            .withCommand("postgres -c max_prepared_transactions=10");
+            .withCommand("postgres -c max_prepared_transactions=10 -c max_connections=500");
 
     private static final int PERSON_COUNT = 10;
 
-    private static AtomicInteger tableCounter = new AtomicInteger();
+    private static final AtomicInteger TABLE_COUNTER = new AtomicInteger();
+
     private String tableName;
 
     @BeforeClass
-    public static void beforeClassCheckDocker() {
+    public static void setupClass() {
         assumeDockerEnabled();
+        container.start();
+
+        Config config = smallInstanceConfig();
+        configureJdbcDataConnection(JDBC_DATA_CONNECTION, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
+        configureDummyDataConnection(DUMMY_DATA_CONNECTION, config);
+        initialize(2, config);
     }
 
-    @BeforeClass
-    public static void setupClass() throws SQLException {
-        Config config = smallInstanceConfig();
-        configureJdbcDataStore(JDBC_DATA_STORE, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
-        configureDummyDataStore(DUMMY_DATA_STORE, config);
-        initialize(2, config);
+    @AfterClass
+    public static void afterAll() {
+        if (container != null) {
+            container.stop();
+        }
     }
 
     @Before
     public void setup() throws SQLException {
-        tableName = "T" + tableCounter.incrementAndGet();
+        tableName = "T" + TABLE_COUNTER.incrementAndGet();
         logger.info("Will use table: " + tableName);
+        /* language=SQL */
+        executeSql("CREATE TABLE " + tableName + "(id int, name varchar(255))");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        listRemainingConnections();
+    }
+
+    private static void executeSql(String sql) throws SQLException {
         try (Connection connection = ((DataSource) createDataSource(false)).getConnection()) {
-            connection.createStatement()
-                    .execute("CREATE TABLE " + tableName + "(id int, name varchar(255))");
+            connection.createStatement().execute(sql);
+        }
+    }
+    private void listRemainingConnections() throws SQLException {
+        try (
+                Connection connection = ((DataSource) createDataSource(false)).getConnection();
+                ResultSet resultSet = connection.createStatement().executeQuery(
+                        "SELECT * FROM pg_stat_activity WHERE datname = current_database() and pid <> pg_backend_pid()")
+        ) {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            List<String> rows = new ArrayList<>();
+            StringBuilder row = new StringBuilder();
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                row.append(metaData.getColumnName(i)).append("\t|");
+            }
+            rows.add(row.toString());
+
+            while (resultSet.next()) {
+                row = new StringBuilder();
+                for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                    row.append(resultSet.getObject(i)).append("\t|\t");
+                }
+                rows.add(row.toString());
+
+            }
+
+            if (!rows.isEmpty()) {
+                logger.warning("Remaining connections: \n" + String.join("\n", rows));
+            }
         }
     }
 
@@ -122,13 +170,44 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_external_datastore_config() throws SQLException {
+    public void test_supplied_closeable_datasource_is_closed() throws SQLException {
+        Pipeline p = Pipeline.create();
+
+        CopyOnWriteArrayList<HikariDataSource> hikariDataSourceList = new CopyOnWriteArrayList<>();
+
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+                .map(item -> entry(item, item.toString()))
+                .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                        () -> createHikariDataSource(hikariDataSourceList),
+                        (stmt, item) -> {
+                            stmt.setInt(1, item.getKey());
+                            stmt.setString(2, item.getValue());
+                        }
+                ));
+        instance().getJet().newJob(p).join();
+        assertEquals(PERSON_COUNT, rowCount());
+        assertTrueEventually(() -> assertTrue(hikariDataSourceList.stream().allMatch(HikariDataSource::isClosed)));
+    }
+
+    private static DataSource createHikariDataSource(CopyOnWriteArrayList<HikariDataSource> hikariDataSourceList) {
+        HikariDataSource hikariDataSource = new HikariDataSource();
+        hikariDataSourceList.add(hikariDataSource);
+        assertThat(hikariDataSource).isInstanceOf(AutoCloseable.class);
+
+        hikariDataSource.setJdbcUrl(container.getJdbcUrl());
+        hikariDataSource.setUsername(container.getUsername());
+        hikariDataSource.setPassword(container.getPassword());
+        return hikariDataSource;
+    }
+
+    @Test
+    public void test_data_connection_config() throws SQLException {
         assertEquals(0, rowCount());
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
                 .map(item -> entry(item, item.toString()))
                 .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                        externalDataStoreRef(JDBC_DATA_STORE),
+                        dataConnectionRef(JDBC_DATA_CONNECTION),
                         (stmt, item) -> {
                             stmt.setInt(1, item.getKey());
                             stmt.setString(2, item.getValue());
@@ -332,20 +411,21 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
              PreparedStatement stmt = conn.prepareStatement("select id from " + tableName)
         ) {
             SinkStressTestUtil.test_withRestarts(instance(), logger, sink, graceful, exactlyOnce, () -> {
-                ResultSet resultSet = stmt.executeQuery();
-                List<Integer> actualRows = new ArrayList<>();
-                while (resultSet.next()) {
-                    actualRows.add(resultSet.getInt(1));
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    List<Integer> actualRows = new ArrayList<>();
+                    while (resultSet.next()) {
+                        actualRows.add(resultSet.getInt(1));
+                    }
+                    return actualRows;
                 }
-                return actualRows;
             });
         }
     }
 
     private int rowCount() throws SQLException {
         try (Connection connection = ((DataSource) createDataSource(false)).getConnection();
-             Statement statement = connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM " + tableName);
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM " + tableName)) {
             if (!resultSet.next()) {
                 return 0;
             }
@@ -364,7 +444,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     private static SupplierEx<DataSource> failTwiceDataSourceSupplier() {
-        return new SupplierEx<DataSource>() {
+        return new SupplierEx<>() {
             int remainingFailures = 2;
 
             @Override
@@ -383,7 +463,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     private static BiConsumerEx<PreparedStatement, Entry<Integer, String>> failOnceBindFn() {
-        return new BiConsumerEx<PreparedStatement, Entry<Integer, String>>() {
+        return new BiConsumerEx<>() {
             int remainingFailures = 1;
 
             @Override

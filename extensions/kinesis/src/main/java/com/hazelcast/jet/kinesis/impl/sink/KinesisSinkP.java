@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,6 +125,11 @@ public class KinesisSinkP<T> implements Processor {
     }
 
     @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
+    @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         logger = context.logger();
         sinkCount = context.totalParallelism();
@@ -165,10 +170,7 @@ public class KinesisSinkP<T> implements Processor {
 
     @Override
     public boolean saveToSnapshot() {
-        if (sendResult != null) {
-            checkIfSendingFinished();
-        }
-        return sendResult == null;
+        return complete();
     }
 
     private void updateThroughputLimitations() {

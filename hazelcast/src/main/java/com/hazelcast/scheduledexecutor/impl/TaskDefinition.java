@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -27,7 +28,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 public class TaskDefinition<V>
-        implements IdentifiedDataSerializable {
+        implements IdentifiedDataSerializable, Versioned {
 
     public enum Type {
 
@@ -131,7 +132,8 @@ public class TaskDefinition<V>
         out.writeLong(initialDelay);
         out.writeLong(period);
         out.writeString(unit.name());
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
             out.writeBoolean(autoDisposable);
         }
     }
@@ -145,7 +147,8 @@ public class TaskDefinition<V>
         initialDelay = in.readLong();
         period = in.readLong();
         unit = TimeUnit.valueOf(in.readString());
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+        // RU_COMPAT_5_3
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
             autoDisposable = in.readBoolean();
         }
     }

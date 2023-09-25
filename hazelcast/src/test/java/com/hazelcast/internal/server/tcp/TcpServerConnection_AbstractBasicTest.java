@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,10 +193,10 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
 
         assertEquals(connAB, connAB);
         assertEquals(connAC, connAC);
-        assertNotEquals(connAB, null);
+        assertNotEquals(null, connAB);
         assertNotEquals(connAB, connAC);
         assertNotEquals(connAC, connAB);
-        assertNotEquals(connAB, "foo");
+        assertNotEquals("foo", connAB);
 
         //don't mock if you don't need to
         TcpServerConnectionManager cm = connAB.getConnectionManager();

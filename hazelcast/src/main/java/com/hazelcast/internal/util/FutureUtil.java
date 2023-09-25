@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.transaction.TransactionTimedOutException;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -422,8 +423,8 @@ public final class FutureUtil {
      * @param futures the list of futures
      * @return {@code true} if all futures are done
      */
-    public static boolean allDone(Collection<Future> futures) {
-        for (Future f : futures) {
+    public static boolean allDone(Collection<Future<?>> futures) {
+        for (Future<?> f : futures) {
             if (!f.isDone()) {
                 return false;
             }
@@ -437,8 +438,8 @@ public final class FutureUtil {
      * @param futures
      * @throws Exception
      */
-    public static void checkAllDone(Collection<Future> futures) throws Exception {
-        for (Future f : futures) {
+    public static void checkAllDone(Collection<Future<?>> futures) throws Exception {
+        for (Future<?> f : futures) {
             if (f.isDone()) {
                 f.get();
             }
@@ -448,12 +449,13 @@ public final class FutureUtil {
     /**
      * Get all futures that are done
      *
-     * @param futures
+     * @param futures collection of futures which we will check for done futures.
      * @return list of completed futures
      */
-    public static List<Future> getAllDone(Collection<Future> futures) {
-        List<Future> doneFutures = new ArrayList<Future>();
-        for (Future f : futures) {
+    @Nonnull
+    public static List<Future<?>> getAllDone(Collection<Future<?>> futures) {
+        List<Future<?>> doneFutures = new ArrayList<>();
+        for (Future<?> f : futures) {
             if (f.isDone()) {
                 doneFutures.add(f);
             }

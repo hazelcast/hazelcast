@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 
 package com.hazelcast.instance.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,6 +37,7 @@ import org.junit.runner.RunWith;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -55,6 +57,9 @@ public class DelegatingAddressPickerTest {
     private ILogger logger;
 
     private DelegatingAddressPicker picker;
+
+    private final EndpointQualifier wanEndpointQualifier = EndpointQualifier.resolve(ProtocolType.WAN, "wan1");
+
 
     @Before
     public void setup() throws Exception {
@@ -87,12 +92,12 @@ public class DelegatingAddressPickerTest {
         assertEquals(memberBindAddress, picker.getBindAddress(EndpointQualifier.MEMBER));
         assertEquals(clientBindAddress, picker.getBindAddress(EndpointQualifier.CLIENT));
         assertEquals(textBindAddress, picker.getBindAddress(EndpointQualifier.REST));
-        assertEquals(wan1BindAddress, picker.getBindAddress(EndpointQualifier.resolve(ProtocolType.WAN, "wan1")));
+        assertEquals(wan1BindAddress, picker.getBindAddress(wanEndpointQualifier));
 
         assertEquals(memberPublicAddress, picker.getPublicAddress(EndpointQualifier.MEMBER));
         assertEquals(clientPublicAddress, picker.getPublicAddress(EndpointQualifier.CLIENT));
         assertEquals(textPublicAddress, picker.getPublicAddress(EndpointQualifier.REST));
-        assertEquals(wan1PublicAddress, picker.getPublicAddress(EndpointQualifier.resolve(ProtocolType.WAN, "wan1")));
+        assertEquals(wan1PublicAddress, picker.getPublicAddress(wanEndpointQualifier));
     }
 
     @Test
@@ -100,17 +105,22 @@ public class DelegatingAddressPickerTest {
         Config config = createNetworkingConfig();
         picker = new DelegatingAddressPicker(new AnAddressProvider(), config, logger);
 
+        //This will assign a bindAddress and a publicAddress
+        //The bindAddress is incrementally retried until an available port is found
+        //The publicAddress is used as it is
         picker.pickAddress();
 
-        assertEquals(memberBindAddress, picker.getBindAddress(EndpointQualifier.MEMBER));
-        assertEquals(memberBindAddress, picker.getBindAddress(EndpointQualifier.CLIENT));
-        assertEquals(memberBindAddress, picker.getBindAddress(EndpointQualifier.REST));
-        assertEquals(memberBindAddress, picker.getBindAddress(EndpointQualifier.resolve(ProtocolType.WAN, "wan1")));
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        //All the picker.getBindAddress(X) calls return the same bind address
+        assertAddressBetweenPorts(memberBindAddress, picker.getBindAddress(EndpointQualifier.MEMBER), networkConfig);
+        assertAddressBetweenPorts(memberBindAddress, picker.getBindAddress(EndpointQualifier.CLIENT), networkConfig);
+        assertAddressBetweenPorts(memberBindAddress, picker.getBindAddress(EndpointQualifier.REST), networkConfig);
+        assertAddressBetweenPorts(memberBindAddress, picker.getBindAddress(wanEndpointQualifier), networkConfig);
 
         assertEquals(memberPublicAddress, picker.getPublicAddress(EndpointQualifier.MEMBER));
         assertEquals(memberPublicAddress, picker.getPublicAddress(EndpointQualifier.CLIENT));
         assertEquals(memberPublicAddress, picker.getPublicAddress(EndpointQualifier.REST));
-        assertEquals(memberPublicAddress, picker.getPublicAddress(EndpointQualifier.resolve(ProtocolType.WAN, "wan1")));
+        assertEquals(memberPublicAddress, picker.getPublicAddress(wanEndpointQualifier));
     }
 
     public static class AnAddressProvider implements MemberAddressProvider {
@@ -186,5 +196,22 @@ public class DelegatingAddressPickerTest {
         config.getNetworkConfig()
               .getMemberAddressProviderConfig().setEnabled(true).setImplementation(new AnAddressProvider());
         return config;
+    }
+
+    static void assertAddressBetweenPorts(Address expected, Address actual, NetworkConfig networkConfig) {
+        assertAddressBetweenPorts(expected, actual, networkConfig.isPortAutoIncrement(), networkConfig.getPortCount());
+    }
+
+    static void assertAddressBetweenPorts(Address expected, Address actual, boolean isPortAutoIncrement, int portCount) {
+        int beginPort = expected.getPort();
+        int endPort = beginPort;
+
+        if (isPortAutoIncrement) {
+            endPort += portCount;
+        }
+        assertEquals(expected.getHost(), actual.getHost());
+        assertThat(actual.getPort())
+                .as("Expected Address %s , Actual Address %s", expected, actual)
+                .isBetween(beginPort, endPort);
     }
 }

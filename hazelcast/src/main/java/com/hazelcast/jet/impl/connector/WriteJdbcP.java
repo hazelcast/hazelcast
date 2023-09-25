@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
@@ -76,6 +77,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
     private ILogger logger;
     private XAConnection xaConnection;
     private Connection connection;
+    private Context context;
     private PreparedStatement statement;
     private int idleCount;
     private boolean supportsBatch;
@@ -127,6 +129,11 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         checkSerializable(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
 
+        // In some cases we don't know the JDBC URL yet (jdbcUrl is null),
+        // so only the 'jdbc:' prefix is used as ConnectorPermission name.
+        // Additional permission check with the correct URL retrieved from
+        // the JDBC connection metadata is performed in the
+        // #connectAndPrepareStatement() instance method.
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE),
                 new ProcessorSupplier() {
@@ -137,11 +144,19 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                         dataSource = dataSourceSupplier.apply(context);
                     }
 
-                    @Nonnull @Override
+                    @Override
+                    public void close(Throwable error) throws Exception {
+                        if (dataSource instanceof AutoCloseable) {
+                            ((AutoCloseable) dataSource).close();
+                        }
+                    }
+
+                    @Nonnull
+                    @Override
                     public Collection<? extends Processor> get(int count) {
                         return IntStream.range(0, count)
                                         .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
-                                                               exactlyOnce, batchLimit))
+                                                exactlyOnce, batchLimit))
                                         .collect(Collectors.toList());
                     }
 
@@ -152,12 +167,32 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                 });
     }
 
+    /**
+     * Use {@link SinkProcessors#writeJdbcP}.
+     */
+    public static <T> ProcessorMetaSupplier metaSupplier(
+            @Nullable String jdbcUrl,
+            @Nonnull String updateQuery,
+            @Nonnull String dataConnectionName,
+            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
+            boolean exactlyOnce,
+            int batchLimit
+    ) {
+        checkSerializable(bindFn, "bindFn");
+        checkPositive(batchLimit, "batchLimit");
+
+        return ProcessorMetaSupplier.preferLocalParallelismOne(
+                ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE),
+                new WriteJdbcSupplier(dataConnectionName, updateQuery, bindFn, exactlyOnce, batchLimit, jdbcUrl));
+    }
+
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
         super.init(outbox, context);
         // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
         DriverManager.getDrivers();
         logger = context.logger();
+        this.context = context;
         connectAndPrepareStatement();
     }
 
@@ -189,6 +224,12 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             idleCount = 0;
             inbox.clear();
         } catch (SQLException e) {
+            // Commit failed, we need to execute rollback
+            try {
+                connection.rollback();
+            } catch (SQLException sqlException) {
+                logger.severe("Exception during rollback", sqlException);
+            }
             if (isNonTransientPredicate.test(e) || snapshotUtility.usesTransactionLifecycle()) {
                 throw ExceptionUtil.rethrow(e);
             } else {
@@ -235,8 +276,16 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                 throw new JetException("The dataSource implements neither " + DataSource.class.getName() + " nor "
                         + XADataSource.class.getName());
             }
-            connection.setAutoCommit(false);
+
+            String url = connection.getMetaData().getURL();
+            context.checkPermission(ConnectorPermission.jdbc(url, ACTION_WRITE));
+
             supportsBatch = connection.getMetaData().supportsBatchUpdates();
+
+            // Call setAutoCommit(false) after getting the metadata. Otherwise, Hikari thinks that connection is dirty
+            // See the issue "Connection.getMetaData() causes Hikari to return dirty connections"
+            // https://github.com/brettwooldridge/HikariCP/issues/866
+            connection.setAutoCommit(false);
             statement = connection.prepareStatement(updateQuery);
         } catch (SQLException e) {
             if (isNonTransientPredicate.test(e) || snapshotUtility.usesTransactionLifecycle()) {
@@ -310,4 +359,55 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                 || (next != null && e != next && isNonTransientException(next));
     }
 
+    static class WriteJdbcSupplier<T> implements ProcessorSupplier {
+
+        private static final long serialVersionUID = 1L;
+
+        private final String dataConnectionName;
+        private final String updateQuery;
+        private final BiConsumerEx<? super PreparedStatement, ? super T> bindFn;
+        private final boolean exactlyOnce;
+        private final int batchLimit;
+        private final String jdbcUrl;
+        private transient JdbcDataConnection dataConnection;
+        private transient CommonDataSource dataSource;
+
+        WriteJdbcSupplier(String dataConnectionName, String updateQuery, BiConsumerEx<?
+                super PreparedStatement, ? super T> bindFn, boolean exactlyOnce, int batchLimit, String jdbcUrl) {
+            this.dataConnectionName = dataConnectionName;
+            this.updateQuery = updateQuery;
+            this.bindFn = bindFn;
+            this.exactlyOnce = exactlyOnce;
+            this.batchLimit = batchLimit;
+            this.jdbcUrl = jdbcUrl;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+            dataConnection = context
+                    .dataConnectionService()
+                    .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);
+            dataSource = new DataSourceFromConnectionSupplier(dataConnection::getConnection);
+        }
+
+        @Override
+        public void close(Throwable error) throws Exception {
+            if (dataConnection != null) {
+                dataConnection.release();
+            }
+        }
+
+        @Nonnull @Override
+        public Collection<? extends Processor> get(int count) {
+            return IntStream.range(0, count)
+                            .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
+                                    exactlyOnce, batchLimit))
+                            .collect(Collectors.toList());
+        }
+
+        @Override
+        public List<Permission> permissions() {
+            return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
+        }
+    }
 }

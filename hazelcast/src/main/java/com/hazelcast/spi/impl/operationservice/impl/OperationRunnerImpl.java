@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.metrics.ExcludedMetricTargets;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -46,6 +47,7 @@ import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -104,13 +106,14 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
 
     static final int AD_HOC_PARTITION_ID = -2;
 
+    final OperationServiceImpl operationService;
+    @Probe(name = OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT, level = DEBUG)
+    final Counter executedOperationsCounter;
+
     private final ILogger logger;
-    private final OperationServiceImpl operationService;
     private final Node node;
     private final NodeEngineImpl nodeEngine;
 
-    @Probe(name = OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT, level = DEBUG)
-    private final Counter executedOperationsCounter;
     private final Address thisAddress;
     private final boolean staleReadOnMigrationEnabled;
 
@@ -199,22 +202,18 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
                 currentTask = null;
             }
 
-            if (opLatencyDistributions != null) {
-                Class c = task.getClass();
-                LatencyDistribution distribution = opLatencyDistributions.computeIfAbsent(c, k -> new LatencyDistribution());
-                distribution.done(startNanos);
-            }
+            record(task, startNanos);
         }
     }
 
-    private boolean publishCurrentTask() {
+    boolean publishCurrentTask() {
         boolean isClientRunnable = currentTask instanceof MessageTask;
         return getPartitionId() != AD_HOC_PARTITION_ID && (currentTask == null || isClientRunnable);
     }
 
     @Override
-    public boolean run(Operation op) {
-        return run(op, System.nanoTime());
+    public void run(Operation op) {
+         run(op, System.nanoTime());
     }
 
     public boolean metWithPreconditions(Operation op) {
@@ -228,6 +227,18 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
     }
 
     /**
+     * Like {@link #metWithPreconditions} but without timeout checks.
+     * <p>
+     * Includes checks related to node and cluster health
+     * before execution of an operation.
+     */
+    public void ensureNodeAndClusterHealth(Operation op) {
+        checkNodeState(op);
+        ensureNoPartitionProblems(op);
+        ensureNoSplitBrain(op);
+    }
+
+    /**
      * Runs the provided operation.
      *
      * @param op         the operation to execute
@@ -237,7 +248,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
      * {@code false} if the operation should not be retried, either because it
      * timed out or has run successfully
      */
-    private boolean run(Operation op, long startNanos) {
+    protected void run(Operation op, long startNanos) {
         executedOperationsCounter.inc();
 
         boolean publishCurrentTask = publishCurrentTask();
@@ -247,16 +258,11 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
 
         try {
             if (!metWithPreconditions(op)) {
-                return false;
+                return;
             }
 
-            if (op.isTenantAvailable()) {
-                op.pushThreadContext();
-                op.beforeRun();
-                call(op);
-            } else {
-                return true;
-            }
+            op.beforeRun();
+            call(op);
         } catch (Throwable e) {
             handleOperationError(op, e);
         } finally {
@@ -264,20 +270,27 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
             if (publishCurrentTask) {
                 currentTask = null;
             }
-            op.popThreadContext();
-            if (opLatencyDistributions != null) {
-                Class c = op.getClass();
-                if (op instanceof PartitionIteratingOperation) {
-                    c = ((PartitionIteratingOperation) op).getOperationFactory().getClass();
-                }
-                LatencyDistribution distribution = opLatencyDistributions.computeIfAbsent(c, k -> new LatencyDistribution());
-                distribution.recordNanos(System.nanoTime() - startNanos);
-            }
+            record(op, startNanos);
         }
-        return false;
     }
 
-    private void call(Operation op) throws Exception {
+    protected void record(Object op, long startNanos) {
+        if (opLatencyDistributions != null) {
+            Class c = op.getClass();
+            if (op instanceof PartitionIteratingOperation) {
+                c = ((PartitionIteratingOperation) op).getOperationFactory().getClass();
+            }
+
+            LatencyDistribution distribution = opLatencyDistributions.get(c);
+            // Note: we want to prevent lock here, if collision happened.
+            if (distribution == null) {
+                distribution = opLatencyDistributions.computeIfAbsent(c, k -> new LatencyDistribution());
+            }
+            distribution.recordNanos(System.nanoTime() - startNanos);
+        }
+    }
+
+    void call(Operation op) throws Exception {
         CallStatus callStatus = op.call();
 
         switch (callStatus.ordinal()) {
@@ -331,6 +344,11 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         if (nodeEngine.getClusterService().getClusterState() == ClusterState.PASSIVE) {
             throw new IllegalStateException("Cluster is in " + ClusterState.PASSIVE + " state! Operation: " + op);
         }
+
+        InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
+        if (hotRestartService.isEnabled() && !hotRestartService.isStartCompleted()) {
+            throw new RetryableHazelcastException("Recovery from persistence is still in progress. Operation: " + op);
+        }
     }
 
     /**
@@ -347,7 +365,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         splitBrainProtectionService.ensureNoSplitBrain(op);
     }
 
-    private boolean timeout(Operation op) {
+    public boolean timeout(Operation op) {
         if (!operationService.isCallTimedOut(op)) {
             return false;
         }
@@ -405,7 +423,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         return (op instanceof ReadonlyOperation && staleReadOnMigrationEnabled) || isMigrationOperation(op);
     }
 
-    private void handleOperationError(Operation operation, Throwable e) {
+    public void handleOperationError(Operation operation, Throwable e) {
         if (e instanceof OutOfMemoryError) {
             OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
         }
@@ -448,7 +466,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
     }
 
     @Override
-    public boolean run(Packet packet) throws Exception {
+    public void run(Packet packet) throws Exception {
         long startNanos = System.nanoTime();
         boolean publishCurrentTask = publishCurrentTask();
 
@@ -470,13 +488,13 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
             setOperationResponseHandler(op);
 
             if (!ensureValidMember(op)) {
-                return false;
+                return;
             }
 
             if (publishCurrentTask) {
                 currentTask = null;
             }
-            return run(op, startNanos);
+            run(op, startNanos);
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
             long callId = extractOperationCallId(packet);

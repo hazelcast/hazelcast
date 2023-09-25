@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,11 +62,11 @@ public class ExplodeSnapshotP extends AbstractProcessor {
         BufferObjectDataInput in = serializationService.createObjectDataInput(data);
 
         return () -> uncheckCall(() -> {
-            Object key = in.readObject();
+            Object key = serializationService.readObject(in, true);
             if (key == SnapshotDataValueTerminator.INSTANCE) {
                 return null;
             }
-            Object value = in.readObject();
+            Object value = serializationService.readObject(in, true);
             return key instanceof BroadcastKey
                     ? new BroadcastEntry(key, value)
                     : entry(key, value);
@@ -97,5 +97,10 @@ public class ExplodeSnapshotP extends AbstractProcessor {
             return true;
         }
         return flatMapper.tryProcess(castItem.getValue());
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 }

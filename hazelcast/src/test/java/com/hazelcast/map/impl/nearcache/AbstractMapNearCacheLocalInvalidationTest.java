@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,6 +163,33 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
             assertNull(oldValue);
             assertEquals(value, value1);
             assertEquals(value, removedValue);
+            assertNull(value2);
+        }
+    }
+
+    @Test
+    public void testDeleteAsync() {
+        IMap<String, String> map = hz.getMap(getMapName());
+        for (int i = 0; i < NUM_ITERATIONS; i++) {
+            String key = "deleteasync_" + String.valueOf(i);
+            String value = "merhaba-" + key;
+
+            String oldValue = map.put(key, value);
+            // this brings the value into the Near Cache
+            String value1 = map.get(key);
+            Future<Boolean> future = map.deleteAsync(key).toCompletableFuture();
+            Boolean returnValue = null;
+            try {
+                returnValue = future.get();
+            } catch (Exception e) {
+                fail("Exception in future.get(): " + e.getMessage());
+            }
+            // here we _might_ still see the value
+            String value2 = map.get(key);
+
+            assertNull(oldValue);
+            assertEquals(value, value1);
+            assertTrue(returnValue);
             assertNull(value2);
         }
     }

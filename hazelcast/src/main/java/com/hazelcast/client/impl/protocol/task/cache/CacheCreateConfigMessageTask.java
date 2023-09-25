@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ConfigPermission;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
@@ -33,6 +34,7 @@ import java.security.Permission;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  * Creates the given CacheConfig on all members of the cluster.
@@ -58,7 +60,7 @@ public class CacheCreateConfigMessageTask
 
         InternalCompletableFuture future =
                 cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
-        future.whenCompleteAsync(this);
+        future.whenCompleteAsync(this, CALLER_RUNS);
     }
 
     @Override
@@ -79,7 +81,7 @@ public class CacheCreateConfigMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new ConfigPermission();
     }
 
     @Override

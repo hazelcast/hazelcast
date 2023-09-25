@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import com.hazelcast.jet.retry.IntervalFunction;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -58,18 +59,17 @@ class KinesisTestHelper {
 
     static final RetryStrategy RETRY_STRATEGY = RetryStrategies.custom()
             .maxAttempts(30)
-            .intervalFunction(IntervalFunction.exponentialBackoffWithCap(250L, 2.0, 1000L))
+            .intervalFunction(IntervalFunction.exponentialBackoffWithCap(250L, 2.0, 2000L))
             .build();
 
     private final AmazonKinesisAsync kinesis;
     private final String stream;
 
-    private final ILogger logger;
+    private final ILogger logger = Logger.getLogger(KinesisIntegrationTest.class);
 
-    KinesisTestHelper(AmazonKinesisAsync kinesis, String stream, ILogger logger) {
+    KinesisTestHelper(AmazonKinesisAsync kinesis, String stream) {
         this.kinesis = kinesis;
         this.stream = stream;
-        this.logger = logger;
     }
 
     public boolean streamExists() {

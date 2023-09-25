@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,8 +55,7 @@ public class MergePolicyValidatorReplicatedMapIntegrationTest extends AbstractMe
     public void testReplicatedMap_withHyperLogLogMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("cardinalityEstimator", hyperLogLogMergePolicy);
 
-        expectCardinalityEstimatorException();
-        hz.getReplicatedMap("cardinalityEstimator");
+        expectCardinalityEstimatorException(() -> hz.getReplicatedMap("cardinalityEstimator"));
     }
 
     @Test
@@ -70,8 +69,7 @@ public class MergePolicyValidatorReplicatedMapIntegrationTest extends AbstractMe
     public void testReplicatedMap_withInvalidMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("invalid", invalidMergePolicyConfig);
 
-        expectedInvalidMergePolicyException();
-        hz.getReplicatedMap("invalid");
+        expectedInvalidMergePolicyException(() -> hz.getReplicatedMap("invalid"));
     }
 
     @Test

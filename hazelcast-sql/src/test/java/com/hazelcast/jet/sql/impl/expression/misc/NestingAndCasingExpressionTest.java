@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,8 +78,8 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     "JSON_ARRAYAGG_NULL_ON_NULL",
                     "JSON_OBJECTAGG_ABSENT_ON_NULL",
                     "JSON_OBJECTAGG_NULL_ON_NULL",
-                    "TO_ROW",
-                    "DOT"
+                    "DOT",
+                    "GET_DDL"
             )
     );
 
@@ -514,6 +514,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     @Test
     public void test_TO_EPOCH_MILLIS() {
         check(sql("TO_EPOCH_MILLIS(?) || TO_EPOCH_MILLIS(?)"), OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
+    }
+
+    @Test
+    public void test_TO_CHAR() {
+        check(sql("TO_CHAR(?, ?) || TO_CHAR(?, ?)"), LOCAL_DATE_VAL, "YYYY-MM-DD", 1, "9");
     }
 
     @Test

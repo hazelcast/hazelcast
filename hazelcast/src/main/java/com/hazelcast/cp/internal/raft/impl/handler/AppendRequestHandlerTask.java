@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -204,7 +204,8 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
         raftNode.updateLastAppendEntriesTimestamp();
 
         try {
-            AppendSuccessResponse resp = new AppendSuccessResponse(localMember(), state.term(), lastLogIndex, req.queryRound());
+            AppendSuccessResponse resp = new AppendSuccessResponse(localMember(), state.term(), lastLogIndex,
+                    req.queryRound(), req.flowControlSequenceNumber());
             raftNode.send(resp, req.leader());
         } finally {
             if (state.commitIndex() > oldCommitIndex) {
@@ -261,6 +262,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
     }
 
     private AppendFailureResponse createFailureResponse(int term) {
-        return new AppendFailureResponse(localMember(), term, req.prevLogIndex() + 1);
+        return new AppendFailureResponse(localMember(), term, req.prevLogIndex() + 1,
+                req.flowControlSequenceNumber());
     }
 }

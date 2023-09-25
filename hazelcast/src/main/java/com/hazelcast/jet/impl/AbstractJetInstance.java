@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.List;
@@ -132,6 +133,14 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     }
 
     private Job newJobInt(long jobId, @Nonnull Object jobDefinition, @Nonnull JobConfig config, boolean isLightJob) {
+        return newJobInt(jobId, jobDefinition, config, null, isLightJob);
+    }
+
+    private Job newJobInt(long jobId,
+                          @Nonnull Object jobDefinition,
+                          @Nonnull JobConfig config,
+                          @Nullable Subject subject,
+                          boolean isLightJob) {
         if (isLightJob) {
             validateConfigForLightJobs(config);
         }
@@ -141,7 +150,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
         if (!config.getResourceConfigs().isEmpty()) {
             uploadResources(jobId, config);
         }
-        return newJobProxy(jobId, isLightJob, jobDefinition, config);
+        return newJobProxy(jobId, isLightJob, jobDefinition, config, subject);
     }
 
     protected static void validateConfigForLightJobs(JobConfig config) {
@@ -198,9 +207,22 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
         return newJobInt(newJobId(), dag, config, true);
     }
 
+    /**
+     * Submits a job defined in the Core API with attached {@link Subject}.
+     */
+    @Nonnull
+    public Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config, @Nullable Subject subject) {
+        return newJobInt(newJobId(), dag, config, subject, true);
+    }
+
     @Nonnull
     public Job newLightJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config) {
         return newJobInt(jobId, dag, config, true);
+    }
+
+    @Nonnull
+    public Job newLightJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config, @Nullable Subject subject) {
+        return newJobInt(jobId, dag, config, subject, true);
     }
 
     @Nonnull @Override
@@ -363,9 +385,13 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     public abstract Job newJobProxy(long jobId, M lightJobCoordinator);
 
     /**
-     * Submit a new job and return the job proxy.
+     * Submit a new job with attached {@link Subject} and return the job proxy.
      */
-    public abstract Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config);
+    public abstract Job newJobProxy(long jobId,
+                                    boolean isLightJob,
+                                    @Nonnull Object jobDefinition,
+                                    @Nonnull JobConfig config,
+                                    @Nullable Subject subject);
 
     public abstract Map<M, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId);
 

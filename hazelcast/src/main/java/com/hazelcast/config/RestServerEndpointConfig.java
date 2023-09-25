@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.spi.annotation.Beta;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -226,6 +229,14 @@ public class RestServerEndpointConfig
         return this;
     }
 
+    @Beta
+    @Nonnull
+    @Override
+    public RestServerEndpointConfig setTpcSocketConfig(@Nonnull TpcSocketConfig tpcSocketConfig) {
+        super.setTpcSocketConfig(tpcSocketConfig);
+        return this;
+    }
+
     @Override
     public RestServerEndpointConfig setSymmetricEncryptionConfig(SymmetricEncryptionConfig symmetricEncryptionConfig) {
         super.setSymmetricEncryptionConfig(symmetricEncryptionConfig);
@@ -241,6 +252,24 @@ public class RestServerEndpointConfig
     @Override
     public RestServerEndpointConfig addOutboundPort(int port) {
         super.addOutboundPort(port);
+        return this;
+    }
+
+    @Override
+    public RestServerEndpointConfig setSocketKeepIdleSeconds(int socketKeepIdleSeconds) {
+        super.setSocketKeepIdleSeconds(socketKeepIdleSeconds);
+        return this;
+    }
+
+    @Override
+    public RestServerEndpointConfig setSocketKeepIntervalSeconds(int socketKeepIntervalSeconds) {
+        super.setSocketKeepIntervalSeconds(socketKeepIntervalSeconds);
+        return this;
+    }
+
+    @Override
+    public RestServerEndpointConfig setSocketKeepCount(int socketKeepCount) {
+        super.setSocketKeepCount(socketKeepCount);
         return this;
     }
 

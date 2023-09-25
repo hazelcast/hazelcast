@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
   the directory where you start your Hazelcast client.
 
   To learn how to configure Hazelcast, please see the schema at
-  https://hazelcast.com/schema/client-config/hazelcast-client-config-5.2.xsd
+  https://hazelcast.com/schema/client-config/hazelcast-client-config-5.3.xsd
   or the Reference Manual at https://docs.hazelcast.com/
 -->
 
@@ -31,7 +31,7 @@
 <hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.2.xsd">
+                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.3.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
@@ -289,11 +289,13 @@
 
         <ssl enabled="false">
             <properties>
-                <property name="protocol">TLS</property>
+                <property name="protocol">TLSv1.3</property>
 
                 <property name="trustStore">/opt/hazelcast-client.truststore</property>
                 <property name="trustStorePassword">secret.123456</property>
                 <property name="trustStoreType">PKCS12</property>
+
+                <property name="keyMaterialDuration">PT10M</property>
 
                 <!-- Following properties are only needed when the mutual authentication is used. -->
                 <property name="keyStore">/opt/hazelcast-client.keystore</property>
@@ -1019,4 +1021,19 @@
     <sql>
         <resubmission-mode>RETRY_SELECTS</resubmission-mode>
     </sql>
+
+    <!--
+    ===== HAZELCAST TPC CONFIGURATION =====
+
+    Configures the client for TPC, which is the next generation Hazelcast that
+    uses thread-per-core model. TPC-aware clients will maintain connections to
+    all cores of all cluster members. The client will route partition-specific
+    invocations to the correct core of the correct member in the best effort
+    basis. Configuration element's name is <tpc>.
+
+    It has the following attributes:
+      - enabled:
+          Enables or disables the TPC-aware mode.
+    -->
+    <tpc enabled="true"/>
 </hazelcast-client>

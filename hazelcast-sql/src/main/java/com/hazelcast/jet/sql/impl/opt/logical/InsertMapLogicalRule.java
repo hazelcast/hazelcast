@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-
-import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import org.apache.calcite.plan.RelRule;
+import org.immutables.value.Value;
 
 /**
  * Planner rule that matches single row, VALUES-based {@link PartitionedMapTable}
@@ -32,19 +32,30 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
  * Such INSERT is translated to optimized, direct key {@code IMap} operation
  * which does not involve starting any job.
  */
-public final class InsertMapLogicalRule extends RelOptRule {
+@Value.Enclosing
+public final class InsertMapLogicalRule extends RelRule<RelRule.Config> {
 
-    static final RelOptRule INSTANCE = new InsertMapLogicalRule();
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        InsertMapLogicalRule.Config DEFAULT = ImmutableInsertMapLogicalRule.Config.builder()
+                .description(InsertMapLogicalRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0.operand(InsertLogicalRel.class)
+                        .predicate(insert -> !OptUtils.requiresJob(insert)
+                                && OptUtils.hasTableType(insert, PartitionedMapTable.class))
+                        .inputs(b1 -> b1.operand(ValuesLogicalRel.class)
+                                .noInputs())
+                ).build();
 
-    private InsertMapLogicalRule() {
-        super(
-                operandJ(
-                        InsertLogicalRel.class, LOGICAL, insert -> !OptUtils.requiresJob(insert)
-                                && OptUtils.hasTableType(insert, PartitionedMapTable.class),
-                        operand(ValuesLogicalRel.class, none())
-                ),
-                InsertMapLogicalRule.class.getSimpleName()
-        );
+        @Override
+        default RelOptRule toRule() {
+            return new InsertMapLogicalRule(this);
+        }
+    }
+
+    static final RelOptRule INSTANCE = new InsertMapLogicalRule(Config.DEFAULT);
+
+    public InsertMapLogicalRule(Config config) {
+        super(config);
     }
 
     @Override

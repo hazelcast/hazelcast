@@ -74,24 +74,9 @@ public class TestUtil {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  public static <T> T serializeAndDeserialize(T instance) throws Exception {
-    return (T)deserialize(serialize(instance));
-  }
-
-  public static byte[] serialize(Object object) throws IOException {
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    new ObjectOutputStream(outputStream).writeObject(object);
-    return outputStream.toByteArray();
-  }
-
-  public static Object deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
-    return new ObjectInputStream(inputStream).readObject();
-  }
-
   private static RunnableEx adapt(final Runnable runnable) {
     return new RunnableEx() {
+      @Override
       public void run() {
         runnable.run();
       }

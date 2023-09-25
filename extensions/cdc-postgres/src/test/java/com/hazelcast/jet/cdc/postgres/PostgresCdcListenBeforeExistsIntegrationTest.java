@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
 
     @Test
     public void listenBeforeSchemaExists() throws Exception {
-        List<String> expectedRecords = Arrays.asList(
+        List<String> expectedRecords = List.of(
                 "1001/0:(SYNC|INSERT):TableRow \\{id=1001, value1=someValue1, value2=someValue2, value3=null\\}"
         );
 
@@ -234,8 +234,9 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
                         "select * from pg_replication_slots where slot_name = ? and database = ?");
                 preparedStatement.setString(1, REPLICATION_SLOT_NAME);
                 preparedStatement.setString(2, DATABASE_NAME);
-                ResultSet resultSet = preparedStatement.executeQuery();
-                assertTrue(resultSet.next() && resultSet.getBoolean("active"));
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    assertTrue(resultSet.next() && resultSet.getBoolean("active"));
+                }
             }
         });
     }

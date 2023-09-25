@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.immutables.value.Value;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
 /**
- * See {@link CalciteSqlOptimizer#uniquifyScans(PhysicalRel)}.
+ * See {@link CalciteSqlOptimizer#postOptimizationRewrites(PhysicalRel)}.
  */
 @Value.Enclosing
 public final class AssignDiscriminatorToScansRule extends RelRule<RelRule.Config> {
@@ -41,7 +41,7 @@ public final class AssignDiscriminatorToScansRule extends RelRule<RelRule.Config
                                 .trait(PHYSICAL)
                                 .predicate(scan -> OptUtils.isUnbounded(scan)
                                         && scan.watermarkedColumnIndex() >= 0
-                                        && scan.getDiscriminator() == 0)
+                                        && scan.discriminator() == 0)
                                 .noInputs())
                 .build();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public enum GetAllOpSteps implements Step<State> {
+public enum GetAllOpSteps implements IMapOpStep {
 
     READ() {
         @Override
@@ -51,7 +51,7 @@ public enum GetAllOpSteps implements Step<State> {
 
     LOAD_ALL() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isLoadStep() {
             return true;
         }
 
@@ -82,7 +82,7 @@ public enum GetAllOpSteps implements Step<State> {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,6 +75,26 @@ public final class TestContextSupport {
         @Override
         public void init(@Nonnull Context context) throws Exception {
             delegate.init(context);
+        }
+
+        @Override
+        public void close(@Nullable Throwable error) throws Exception {
+            delegate.close(error);
+        }
+
+        @Override
+        public boolean isReusable() {
+            return delegate.isReusable();
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return delegate.initIsCooperative();
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return delegate.closeIsCooperative();
         }
     }
 

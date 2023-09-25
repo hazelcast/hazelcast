@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ interface MetricsCollector {
 
     int TIMEOUT = 2000;
     int RESPONSE_OK = 200;
+    int RESPONSE_UNAUTHORIZED = 401;
     int A_INTERVAL = 5;
     int B_INTERVAL = 10;
     int C_INTERVAL = 20;
@@ -77,7 +78,7 @@ interface MetricsCollector {
         return letter;
     }
 
-    static boolean fetchWebService(String urlStr) {
+    static boolean fetchWebService(String urlStr, int responseCode) {
         HttpURLConnection conn = null;
         boolean response;
         try {
@@ -86,7 +87,7 @@ interface MetricsCollector {
             conn.setConnectTimeout(TIMEOUT);
             conn.setReadTimeout(TIMEOUT);
             conn.connect();
-            response = conn.getResponseCode() == RESPONSE_OK;
+            response = conn.getResponseCode() == responseCode;
         } catch (Exception ignored) {
             ignore(ignored);
             return false;
@@ -96,5 +97,9 @@ interface MetricsCollector {
             }
         }
         return response;
+    }
+
+    static boolean fetchWebService(String url) {
+        return fetchWebService(url, RESPONSE_OK);
     }
 }

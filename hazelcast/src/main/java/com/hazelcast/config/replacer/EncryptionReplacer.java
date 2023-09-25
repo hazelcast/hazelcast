@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.config.replacer;
 
-import com.hazelcast.internal.nio.IOUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -103,11 +102,8 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             if (passwordFile != null) {
-                FileInputStream fis = new FileInputStream(passwordFile);
-                try {
-                    baos.write(IOUtil.toByteArray(fis));
-                } finally {
-                    IOUtil.closeResource(fis);
+                try (FileInputStream fis = new FileInputStream(passwordFile)) {
+                    fis.transferTo(baos);
                 }
             }
             if (passwordUserProperties) {

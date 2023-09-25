@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -23,12 +23,13 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>5.2.0-SNAPSHOT</version>
+    <version>5.4.0-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
 
     <modules>
+        <module>hazelcast-tpc-engine</module>
         <module>hazelcast</module>
         <module>hazelcast-archunit-rules</module>
         <module>hazelcast-spring</module>
@@ -40,8 +41,9 @@
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <hazelcast.module.name>com.hazelcast.core</hazelcast.module.name>
 
-        <jdk.version>8</jdk.version>
+        <jdk.version>11</jdk.version>
         <target.dir>target</target.dir>
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -49,11 +51,12 @@
         <hazelcast.distribution>Hazelcast</hazelcast.distribution>
         <hazelcast.serialization.version>1</hazelcast.serialization.version>
         <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
+        <hazelcast.previous.version>5.3.0</hazelcast.previous.version>
 
-        <maven.compiler.plugin.version>3.10.0</maven.compiler.plugin.version>
-        <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
-        <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
-        <maven.javadoc.plugin.version>3.3.2</maven.javadoc.plugin.version>
+        <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
+        <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
+        <maven.source.plugin.version>3.3.0</maven.source.plugin.version>
+        <maven.javadoc.plugin.version>3.5.0</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
             *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:
             com.hazelcast.aws.security:*.handlermigration:*.client.connection.nio:
@@ -61,120 +64,157 @@
             *.concurrent:*.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:
             *.transaction.client:*.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
         </maven.javadoc.plugin.excludePackageNames>
-        <maven.antrun.plugin.version>3.0.0</maven.antrun.plugin.version>
-        <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
-        <maven.assembly.plugin.version>3.4.2</maven.assembly.plugin.version>
+        <maven.antrun.plugin.version>3.1.0</maven.antrun.plugin.version>
+        <maven.gpg.plugin.version>3.1.0</maven.gpg.plugin.version>
+        <maven.assembly.plugin.version>3.6.0</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
-        <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
-        <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
-        <maven.dependency.plugin.version>3.2.0</maven.dependency.plugin.version>
-        <maven.animal.sniffer.plugin.version>1.21</maven.animal.sniffer.plugin.version>
+        <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
+        <maven.shade.plugin.version>3.5.0</maven.shade.plugin.version>
+        <maven.dependency.plugin.version>3.6.0</maven.dependency.plugin.version>
+        <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
+        <maven.deploy.plugin.version>3.1.1</maven.deploy.plugin.version>
 
-        <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
-        <maven.checkstyle.plugin.version>3.2.0</maven.checkstyle.plugin.version>
-        <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
-        <maven.jacoco.plugin.version>0.8.7</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
+        <maven.surefire.plugin.version>3.1.2</maven.surefire.plugin.version>
+        <maven.checkstyle.plugin.version>3.3.0</maven.checkstyle.plugin.version>
+        <maven.jacoco.plugin.version>0.8.10</maven.jacoco.plugin.version>
+        <maven.failsafe.plugin.version>3.1.2</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
-        <maven.enforcer.plugin.version>3.0.0-M3</maven.enforcer.plugin.version>
-        <maven.os.plugin.version>1.7.0</maven.os.plugin.version>
+        <maven.enforcer.plugin.version>3.4.1</maven.enforcer.plugin.version>
+        <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
-        <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
-        <owasp.dependency-check.version>7.2.1</owasp.dependency-check.version>
-        <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
-        <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
-
-        <!-- Version of the client used in Hazelcast 3 connector -->
-        <hazelcast-3.version>3.12.12</hazelcast-3.version>
+        <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
+        <owasp.dependency-check.version>8.4.0</owasp.dependency-check.version>
+        <codehause.license.plugin.version>2.2.0</codehause.license.plugin.version>
 
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
-        <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.276</aws.sdk.version>
-        <classgraph.version>4.8.149</classgraph.version>
-        <debezium.version>1.9.5.Final</debezium.version>
-        <grpc.version>1.48.0</grpc.version>
-        <guava.version>30.1.1-jre</guava.version>
-        <hadoop.version>3.3.4</hadoop.version>
-        <h2.version>2.1.214</h2.version>
-        <jackson.version>2.13.3</jackson.version>
+        <avro.version>1.11.2</avro.version>
+        <aws.sdk.version>1.12.550</aws.sdk.version>
+        <calcite.version>1.35.0</calcite.version>
+        <classgraph.version>4.8.162</classgraph.version>
+        <debezium.version>1.9.7.Final</debezium.version>
+        <grpc.version>1.58.0</grpc.version>
+        <guava.version>32.1.2-jre</guava.version>
+        <hadoop.version>3.3.6</hadoop.version>
+        <h2.version>2.2.222</h2.version>
+        <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
+        <jackson.version>2.14.2</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
-        <jline.version>3.21.0</jline.version>
-        <jms.api.version>2.0.1</jms.api.version>
+        <jaxb.version>2.3.1</jaxb.version>
+        <jline.version>3.23.0</jline.version>
+        <jms.api.version>3.1.0</jms.api.version>
         <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
-        <kafka.version>2.8.2</kafka.version>
-        <kotlin.version>1.7.10</kotlin.version>
-        <log4j.version>1.2.17.redhat-00008</log4j.version>
-        <log4j2.version>2.18.0</log4j2.version>
-        <mysql.connector.version>8.0.30</mysql.connector.version>
-        <netty.version>4.1.79.Final</netty.version>
-        <objenesis.version>3.2</objenesis.version>
+        <kafka.version>3.4.1</kafka.version>
+        <kotlin.version>1.9.10</kotlin.version>
+        <reload4j.version>1.2.25</reload4j.version>
+        <log4j2.version>2.20.0</log4j2.version>
+        <mssql.version>12.4.1.jre11</mssql.version>
+        <mysql.connector.version>8.1.0</mysql.connector.version>
+        <netty.version>4.1.97.Final</netty.version>
+        <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
-        <parquet.version>1.12.3</parquet.version>
-        <picocli.version>4.6.3</picocli.version>
-        <postgresql.version>42.4.2</postgresql.version>
-        <prometheus.version>0.17.1</prometheus.version>
-        <protobuf.version>3.19.4</protobuf.version>
+        <parquet.version>1.13.1</parquet.version>
+        <picocli.version>4.7.4</picocli.version>
+        <postgresql.version>42.6.0</postgresql.version>
+        <prometheus.version>0.20.0</prometheus.version>
+
+        <!--
+        Protobuf libraries for each language have own major version, but share minor and patch
+        See https://developers.google.com/protocol-buffers/docs/news/2022-05-06
+        -->
+        <protobuf.version>23.2</protobuf.version>
+        <java.protobuf.version>3.${protobuf.version}</java.protobuf.version>
+        <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
+
         <scala.version>2.13</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
-        <snakeyaml.version>1.32</snakeyaml.version>
-        <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
+        <snakeyaml.engine.version>2.7</snakeyaml.engine.version>
+        <mongodb.version>4.10.2</mongodb.version>
 
         <!-- test dependencies -->
-        <activemq-artemis.version>2.11.0</activemq-artemis.version>
+        <activemq-artemis.version>2.30.0</activemq-artemis.version>
         <activemq.version>5.15.11</activemq.version>
-        <assertj.version>3.15.0</assertj.version>
+        <assertj.version>3.24.2</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
-        <bytebuddy.version>1.12.12</bytebuddy.version>
-        <commons-codec.version>1.15</commons-codec.version>
-        <commons-io.version>2.11.0</commons-io.version>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <bytebuddy.version>1.14.7</bytebuddy.version>
+        <commons-codec.version>1.16.0</commons-codec.version>
+        <commons-io.version>2.13.0</commons-io.version>
+        <commons-lang3.version>3.13.0</commons-lang3.version>
+        <confluent.version>7.4.0</confluent.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
-        <hamcrest.version>1.3</hamcrest.version>
-        <http.components.version>4.3.6</http.components.version>
+        <http.core.version>4.4.16</http.core.version>
+        <http.client.version>4.5.14</http.client.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <junit.version>4.13.2</junit.version>
-        <mockito.version>3.6.0</mockito.version>
-        <powermock.version>2.0.9</powermock.version>
+        <junit-jupiter.version>5.10.0</junit-jupiter.version>
+        <mockito.version>5.4.0</mockito.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.17.3</testcontainers.version>
-        <archunit.version>0.22.0</archunit.version>
-        <errorprone.version>2.15.0</errorprone.version>
-        <awaitility.version>4.1.1</awaitility.version>
+        <testcontainers.version>1.19.0</testcontainers.version>
+        <jna.version>5.13.0</jna.version>
+        <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
+        <archunit.version>1.1.0</archunit.version>
+        <errorprone.version>2.21.1</errorprone.version>
+        <awaitility.version>4.2.0</awaitility.version>
+        <kubernetes-server-mock.version>6.8.1</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
-
-        <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
-        <!--<sonar.phase>post-integration-test</sonar.phase>-->
-        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-        <sonar.language>java</sonar.language>
-        <sonar.verbose>true</sonar.verbose>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
         <!-- The path to relocated external dependencies. -->
-        <relocation.root>com.hazelcast</relocation.root>
+        <relocation.root>com.hazelcast.shaded</relocation.root>
 
         <!-- Additional JVM system arguments -->
         <extraVmArgs/>
         <vmHeapSettings>-Xms512m -Xmx2G</vmHeapSettings>
         <!-- Java 9+ module system args to be appended during surefire/failsafe executions. -->
         <hazelcast.module.name>ALL-UNNAMED</hazelcast.module.name>
-        <javaModuleArgs/>
 
         <!-- needed for CheckStyle -->
-        <checkstyle.version>8.38</checkstyle.version>
+        <checkstyle.version>10.12.2</checkstyle.version>
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
-        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
+        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
 
         <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
+
+        <!--
+        License plugin is not thread-safe, leads to flaky failures when checking licenses, so it is skipped by default.
+        to run the build with license plugin run with `-T1 -Dlicense.skipAddThirdParty=false`.
+        The `-T1` parameter disables the parallel build.
+        -->
+        <license.skipAddThirdParty>true</license.skipAddThirdParty>
+
+        <!--
+        Allow access to Operating system metrics:
+           open jdk.management/com.sun.management.internal
+           export jdk.management/com.ibm.lang.management.internal
+
+        Avoid warnings caused by reflection in
+        SelectorOptimizer:
+           open java.base/sun.nio.ch
+        FilteringClassLoader:
+           open java.base/java.lang
+        TimedMemberStateFactoryHelper:
+           open java.management/sun.management
+
+        NOTE: There is a slightly different setting for IBM OpenJ9, see the specific profile
+        -->
+        <javaModuleArgs>
+            --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
+            --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
+            --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
+            --add-opens java.base/java.lang=${hazelcast.module.name}
+            --add-opens java.management/sun.management=${hazelcast.module.name}
+            --illegal-access=deny
+        </javaModuleArgs>
     </properties>
     <licenses>
         <license>
@@ -190,14 +230,11 @@
     </scm>
     <developers>
         <developer>
-            <id>oztalip</id>
-            <name>talip ozturk</name>
-            <email>talip@hazelcast.com</email>
-        </developer>
-        <developer>
-            <id>fuad</id>
-            <name>fuad malikov</name>
-            <email>fuad@hazelcast.com</email>
+            <id>hazelcast-team</id>
+            <name>Hazelcast team</name>
+            <email>info@hazelcast.com</email>
+            <organization>Hazelcast, Inc.</organization>
+            <organizationUrl>https://hazelcast.com</organizationUrl>
         </developer>
     </developers>
 
@@ -237,6 +274,7 @@
                     <include>**/*.xml</include>
                     <include>**/*.yaml</include>
                     <include>**/*.xsd</include>
+                    <include>**/*.txt</include>
                     <include>**/hazelcast-config-*.json</include>
                     <include>**/*.handlers</include>
                     <include>**/*.schemas</include>
@@ -282,7 +320,6 @@
                     <configLocation>${checkstyle.configLocation}</configLocation>
                     <suppressionsLocation>${checkstyle.supressionsLocation}</suppressionsLocation>
                     <headerLocation>${checkstyle.headerLocation}</headerLocation>
-                    <enableRSS>false</enableRSS>
                     <linkXRef>false</linkXRef>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
@@ -292,13 +329,6 @@
                     <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
                     <excludes>**/module-info.java</excludes>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.puppycrawl.tools</groupId>
-                        <artifactId>checkstyle</artifactId>
-                        <version>${checkstyle.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
 
             <plugin>
@@ -306,8 +336,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
+                    <release>${jdk.version}</release>
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <!--
                     Workaround for compilation failure on Windows in hazelcast-sql module:
@@ -374,6 +403,8 @@
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
+                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                 </configuration>
             </plugin>
 
@@ -398,6 +429,8 @@
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
+                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                 </configuration>
                 <executions>
                     <execution>
@@ -413,6 +446,25 @@
                 <version>${maven.enforcer.plugin.version}</version>
                 <executions>
                     <execution>
+                        <id>enforce-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                    <dependencyConvergence>
+                                        <excludedScopes>
+                                            <scope>compile</scope>
+                                            <scope>runtime</scope>
+                                        </excludedScopes>
+                                        <includes>
+                                            <include>junit</include>
+                                        </includes>
+                                    </dependencyConvergence>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>enforce-tools</id>
                         <goals>
                             <goal>enforce</goal>
@@ -420,13 +472,46 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <!-- JDK 1.8+ is required for compilation. -->
-                                    <version>[1.8.0,)</version>
+                                    <!-- JDK 11+ is required for compilation. -->
+                                    <version>[11,)</version>
                                 </requireJavaVersion>
+                                <enforceBytecodeVersion>
+                                    <maxJdkVersion>11</maxJdkVersion>
+                                    <excludes>
+                                        <!--
+                                        The archunit library containse several classes to process JDK9 modules.
+                                        It is a test dependency and can be ignored.
+                                        -->
+                                        <exclude>com.tngtech.archunit:archunit</exclude>
+                                    </excludes>
+                                    <ignoreClasses>
+                                        <!--
+                                        Some dependencies contain JDK9 specific classes with JDK9 in the name
+                                        e.g. wiremock.org.eclipse.jetty.alpn.java.server.JDK9ServerALPNProcessor
+                                        -->
+                                        <ignoreClass>*JDK9*</ignoreClass>
+                                        <!--
+                                        Classes from org:mongodb:bson-record-codec to map record to bson.
+                                        Ignoring whole package, because we shade the module into hazelcast-jet-mongodb.
+                                        -->
+                                        <ignoreClass>org.bson.codecs.record.*</ignoreClass>
+                                    </ignoreClasses>
+                                </enforceBytecodeVersion>
                             </rules>
                         </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>extra-enforcer-rules</artifactId>
+                        <!--
+                        Version 1.6.1 produces harmless, but noisy warning about missing dependencies.
+                        See https://github.com/mojohaus/extra-enforcer-rules/issues/225
+                        -->
+                        <version>1.7.0</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -473,46 +558,109 @@
                             <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
                             <failOnBlacklist>true</failOnBlacklist>
                             <failOnMissing>true</failOnMissing>
-                            <fileTemplate>${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl</fileTemplate>
+                            <fileTemplate>
+                                ${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl
+                            </fileTemplate>
                             <includedLicenses>
-                                <includedLicense>CC0</includedLicense>
-                                <includedLicense>Apache License, Version 2.0</includedLicense>
-                                <includedLicense>MIT License</includedLicense>
+                                <!-- 
+                                  Always use SPDX license identifiers listed in https://spdx.org/licenses (when available)
+                                  note: GPL licenses are excluded in https://github.com/hazelcast/hazelcast/blob/master/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl
+                                -->
+                                <includedLicense>Apache-2.0</includedLicense>
+                                <includedLicense>MIT</includedLicense>
+                                <includedLicense>MIT-0</includedLicense>
+                                <includedLicense>BSD-2-Clause</includedLicense>
+                                <includedLicense>BSD-3-Clause</includedLicense>
+                                <includedLicense>CC0-1.0</includedLicense>
+                                <includedLicense>CDDL</includedLicense>
+                                <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
+                                <includedLicense>EPL-1.0</includedLicense>
+                                <includedLicense>EPL-2.0</includedLicense>
+                                <includedLicense>JSON</includedLicense>
                                 <includedLicense>Public Domain</includedLicense>
-                                <includedLicense>EPL 2.0</includedLicense>
-                                <includedLicense>BSD 3-Clause License</includedLicense>
-                                <includedLicense>BSD 2-Clause License</includedLicense>
-                                <includedLicense>The JSON License</includedLicense>
                             </includedLicenses>
                             <licenseMerges>
+                                <!-- 
+                                  Only merge new 3rd Party dependency license if you get a license build failure
+                                -->
                                 <licenseMerge>
-                                    Apache License, Version 2.0|Apache License v2.0|
-                                    Apache Software License 2.0|The Apache Software License, Version 2.0|
-                                    Apache License, version 2.0|The Apache Software License, version 2.0|
-                                    Apache 2|Apache 2.0|Apache-2.0|Apache License 2.0|The Apache License, Version 2.0|
-                                    Apache Software License - Version 2.0|Apache License Version 2.0
+                                    Apache-2.0 |
+                                    Apache License v2.0 |
+                                    Apache Software License 2.0 |
+                                    The Apache Software License, Version 2.0 |
+                                    The Apache Software License, version 2.0 |
+                                    Apache License, Version 2.0 |
+                                    Apache 2 |
+                                    Apache 2.0 |
+                                    The Apache License, Version 2.0 |
+                                    Apache Software License - Version 2.0 |
+                                    Apache License Version 2.0 |
+                                    Apache License 2.0
                                 </licenseMerge>
-                                <licenseMerge>MIT License|MIT|The MIT License|MIT license|The MIT License (MIT)</licenseMerge>
                                 <licenseMerge>
-                                    BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD License|
-                                    New BSD License|New BSD license|The New BSD License|Revised BSD|BSD New license|
-                                    BSD-3-Clause|BSD 3-clause
-                                </licenseMerge>
-                                <licenseMerge>BSD 2-Clause License|BSD-2-Clause|BSD 2-Clause license</licenseMerge>
-                                <licenseMerge>CC0|Public Domain, per Creative Commons CC0</licenseMerge>
-                                <licenseMerge>
-                                    CDDL|CDDL + GPLv2 with classpath exception|CDDL License|CDDL/GPLv2+CE
+                                    MIT |
+                                    The MIT License |
+                                    MIT License |
+                                    MIT license |
+                                    The MIT License (MIT)
                                 </licenseMerge>
                                 <licenseMerge>
-                                    Eclipse Distribution License - v 1.0|EDL 1.0
+                                    BSD-2-Clause |
+                                    BSD 2-Clause License |
+                                    BSD 2-Clause license
+                                </licenseMerge>
+                                <licenseMerge>
+                                    BSD-3-Clause |
+                                    BSD 3-Clause License |
+                                    BSD |
+                                    BSD licence |
+                                    The BSD License |
+                                    3-Clause BSD License |
+                                    New BSD license |
+                                    New BSD License |
+                                    Modified BSD License |
+                                    The New BSD License |
+                                    Revised BSD |
+                                    BSD New license |
+                                    BSD 3-clause
+                                </licenseMerge>
+                                <licenseMerge>
+                                    CC0-1.0 |
+                                    CC0 |
+                                    Public Domain, per Creative Commons CC0
+                                </licenseMerge>
+                                <licenseMerge>
+                                    CDDL |
+                                    CDDL + GPLv2 with classpath exception |
+                                    CDDL License |
+                                    CDDL/GPLv2+CE
+                                </licenseMerge>
+                                <licenseMerge>
+                                    Eclipse Distribution License - v 1.0 |
+                                    EDL 1.0
+                                </licenseMerge>
+                                <licenseMerge>
+                                    EPL-1.0 |
+                                    EPL 1.0 |
+                                    Eclipse Public License - Version 1.0
+                                </licenseMerge>
+                                <licenseMerge>
+                                    EPL-2.0 |
+                                    EPL 2.0 |
+                                    Eclipse Public License - Version 2.0 |
+                                    Eclipse Public License, Version 2.0
+                                </licenseMerge>
+                                <licenseMerge>
+                                    JSON |
+                                    The JSON License
                                 </licenseMerge>
                             </licenseMerges>
                         </configuration>
                     </execution>
                 </executions>
                 <configuration>
-                        <excludedGroups>com.hazelcast</excludedGroups>
-                        <excludedScopes>test,provided</excludedScopes>
+                    <excludedGroups>com.hazelcast</excludedGroups>
+                    <excludedScopes>test,provided</excludedScopes>
                 </configuration>
             </plugin>
             <plugin>
@@ -538,7 +686,21 @@
                         </goals>
                         <phase>generate-test-resources</phase>
                         <configuration>
-                            <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.1</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.1:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.2</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.2:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.3</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.3:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:${hazelcast.previous.version}</artifact>
+                            <artifact>com.hazelcast:hazelcast:${hazelcast.previous.version}:jar:tests</artifact>
+
                         </configuration>
                     </execution>
                 </executions>
@@ -570,31 +732,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <configuration>
-                    <checkTestClasses>true</checkTestClasses>
-                    <signature>
-                        <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java18</artifactId>
-                        <version>1.0</version>
-                    </signature>
-                    <ignores>
-                        <ignore>java.lang.invoke.MethodHandle</ignore>
-                        <ignore>sun.misc.Unsafe</ignore>
-                    </ignores>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>source-java8-check</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -603,14 +740,23 @@
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${maven.shade.plugin.version}</version>
                     <configuration>
-                        <filters>
+                        <filters combine.children="append">
                             <filter>
                                 <artifact>*:*</artifact>
                                 <excludes>
                                     <exclude>module-info.class</exclude>
+                                    <exclude>META-INF/versions/9/module-info.class</exclude>
+                                    <exclude>THIRD-PARTY.txt</exclude>
+                                    <exclude>LICENSE</exclude>
+                                    <exclude>NOTICE</exclude>
                                     <exclude>META-INF/*.SF</exclude>
                                     <exclude>META-INF/*.DSA</exclude>
                                     <exclude>META-INF/*.RSA</exclude>
+                                    <exclude>META-INF/LICENSE</exclude>
+                                    <exclude>META-INF/MANIFEST.MF</exclude>
+                                    <exclude>META-INF/THIRD-PARTY.txt</exclude>
+                                    <exclude>META-INF/DEPENDENCIES</exclude>
+                                    <exclude>overview.html</exclude>
                                 </excludes>
                             </filter>
                         </filters>
@@ -621,6 +767,13 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${maven.javadoc.plugin.version}</version>
                     <configuration>
+                        <!--
+                         JavaDoc generation fails on JDK 11 with very strange errors, e.g. that classes
+                         cannot be compiled (while compile works).
+                         Please see https://github.com/hazelcast/hazelcast/pull/24621
+                         -->
+                        <source>8</source>
+                        <detectJavaApiLink>false</detectJavaApiLink>
                         <maxmemory>1024</maxmemory>
                         <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
                         <doclint>-missing</doclint>
@@ -665,28 +818,29 @@
                     <version>1.2.1</version>
                     <configuration>
                         <exclusionPatterns>
-                        <!--
-                          Exclude false positives from the attribution.txt files. Some lines matching the `copyrightPattern`
-                          are actually not the copyright lines. Let's exclude them here.
+                            <!--
+                              Exclude false positives from the attribution.txt files. Some lines matching the `copyrightPattern`
+                              are actually not the copyright lines. Let's exclude them here.
 
-                          Example:
-                          com.fasterxml.jackson.core:jackson-databind:2.12.1
-                             (c) per-property override (from annotation on specific property or
-                         -->
+                              Example:
+                              com.fasterxml.jackson.core:jackson-databind:2.12.1
+                                 (c) per-property override (from annotation on specific property or
+                             -->
                             <exclusionPattern>^Copyright Laws of the United States.</exclusionPattern>
                             <exclusionPattern>per-property override</exclusionPattern>
                             <exclusionPattern>^copyright notice</exclusionPattern>
                             <exclusionPattern>FAILED_PRECONDITION</exclusionPattern>
-                            <exclusionPattern>The ASF licenses this file to you under the Apache License</exclusionPattern>
+                            <exclusionPattern>The ASF licenses this file to you under the Apache License
+                            </exclusionPattern>
                             <exclusionPattern>Substitute for l, l</exclusionPattern>
                             <exclusionPattern>inside edge crossings that are between</exclusionPattern>
                         </exclusionPatterns>
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>animal-sniffer-maven-plugin</artifactId>
-                    <version>${maven.animal.sniffer.plugin.version}</version>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${maven.deploy.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -904,6 +1058,9 @@
             <properties>
                 <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
             </properties>
+            <modules>
+                <module>hazelcast-coverage-report</module>
+            </modules>
             <build>
                 <plugins>
                     <plugin>
@@ -963,6 +1120,9 @@
 
         <profile>
             <id>test-coverage</id>
+            <modules>
+                <module>hazelcast-coverage-report</module>
+            </modules>
             <properties>
                 <argLine>
                     ${vmHeapSettings}
@@ -997,12 +1157,6 @@
                                 <id>prepare-agent</id>
                                 <goals>
                                     <goal>prepare-agent</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>report</id>
-                                <goals>
-                                    <goal>report</goal>
                                 </goals>
                             </execution>
                         </executions>
@@ -1058,12 +1212,6 @@
                             </execution>
                         </executions>
                     </plugin>
-
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>sonar-maven-plugin</artifactId>
-                        <version>${maven.sonar.plugin.version}</version>
-                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -1104,7 +1252,8 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.8</version>
+                        <!-- do not update to 1.6.10, it blocks release process -->
+                        <version>1.6.10</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>release-repository</serverId>
@@ -1284,47 +1433,17 @@
         </profile>
 
         <profile>
-            <id>jdk-9</id>
-            <activation>
-                <jdk>[9,)</jdk>
-            </activation>
-            <properties>
-                <!--
-                Allow access to Operating system metrics:
-                   open jdk.management/com.sun.management.internal
-                   export jdk.management/com.ibm.lang.management.internal
-
-                Avoid warnings caused by reflection in
-                SelectorOptimizer:
-                   open java.base/sun.nio.ch
-                FilteringClassLoader:
-                   open java.base/java.lang
-                TimedMemberStateFactoryHelper:
-                   open java.management/sun.management
-
-                Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
-                   export java.xml/jdk.xml.internal
-                -->
-                <javaModuleArgs>
-                    --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
-                    --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
-                    --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
-                    --add-opens java.base/java.lang=${hazelcast.module.name}
-                    --add-opens java.management/sun.management=${hazelcast.module.name}
-                    --add-exports java.xml/jdk.xml.internal=${hazelcast.module.name}
-                    --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
-                    --illegal-access=deny
-                </javaModuleArgs>
-            </properties>
-        </profile>
-
-        <profile>
+            <!--
+            Profile which allows to skip the modulepath-tests module.
+            The module runs by default, but can be skipped by adding -Dskip-modulepath-tests property.
+            This is used in PR builder when we run only `mvn test-compile` which is not possible due
+            to an automatic module name not being created in the hazelcast jar (no jar is built at all).
+            -->
             <id>modulepath-tests</id>
             <activation>
                 <property>
-                    <name>!quick</name>
+                    <name>!skip-modulepath-tests</name>
                 </property>
-                <jdk>[9,)</jdk>
             </activation>
             <modules>
                 <module>modulepath-tests</module>
@@ -1411,6 +1530,26 @@
                 <skipTests>true</skipTests>
                 <maven.javadoc.skip>true</maven.javadoc.skip>
                 <maven.source.skip>true</maven.source.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>IBM</id>
+            <activation>
+                <property>
+                    <name>java.vendor</name>
+                    <value>IBM Corporation</value>
+                </property>
+            </activation>
+            <properties>
+                <javaModuleArgs>
+                    --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
+                    --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
+                    --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
+                    --add-opens java.base/java.lang=${hazelcast.module.name}
+                    --add-opens java.management/sun.management=${hazelcast.module.name}
+                    --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
+                    --illegal-access=deny
+                </javaModuleArgs>
             </properties>
         </profile>
     </profiles>
@@ -1521,7 +1660,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
-                <version>9.4.49.v20220914</version>
+                <version>9.4.51.v20230217</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -1535,7 +1674,7 @@
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-bom</artifactId>
-                <version>${protobuf.version}</version>
+                <version>${java.protobuf.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -1549,14 +1688,14 @@
             <dependency>
                 <groupId>com.google.auth</groupId>
                 <artifactId>google-auth-library-bom</artifactId>
-                <version>0.21.1</version>
+                <version>1.19.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-bom</artifactId>
-                <version>1.41.4</version>
+                <version>1.43.2</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -1652,6 +1791,21 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-avro</artifactId>
+                <version>${parquet.version}</version>
+                <exclusions>
+                    <!--
+                    The following library is not required, it only contains annotations and doclets
+                    It also requires JDK11 since version 0.14
+                    -->
+                    <exclusion>
+                        <groupId>org.apache.yetus</groupId>
+                        <artifactId>audience-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
 
             <dependency>
                 <groupId>org.yaml</groupId>
@@ -1691,26 +1845,36 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.21</version>
+                <version>1.24.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-math3</artifactId>
+                <version>3.6.1</version>
             </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.11.0</version>
+                <version>2.12.5</version>
             </dependency>
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
-                <version>1.1.8.4</version>
+                <version>1.1.10.1</version>
             </dependency>
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
                 <artifactId>proto-google-common-protos</artifactId>
-                <version>1.18.1</version>
+                <version>2.24.0</version>
             </dependency>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.microsoft.sqlserver</groupId>
+                <artifactId>mssql-jdbc</artifactId>
+                <version>${mssql.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql.connector.version}</version>
             </dependency>
             <dependency>
@@ -1722,22 +1886,27 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
-                <version>4.4.15</version>
+                <version>${http.core.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>4.5.13</version>
+                <version>${http.client.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.auto.value</groupId>
                 <artifactId>auto-value-annotations</artifactId>
-                <version>1.7.4</version>
+                <version>1.10.4</version>
             </dependency>
             <dependency>
                 <groupId>com.nimbusds</groupId>
                 <artifactId>nimbus-jose-jwt</artifactId>
-                <version>7.9</version>
+                <version>9.31</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>6.5.1</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.woodstox</groupId>
@@ -1747,7 +1916,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.9.1</version>
+                <version>2.10.1</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
@@ -1762,12 +1931,12 @@
             <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
-                <version>3.2</version>
+                <version>3.3</version>
             </dependency>
             <dependency>
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.4.5-12</version>
+                <version>1.5.5-5</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -1787,7 +1956,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.24.0</version>
+                <version>3.37.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -1805,9 +1974,9 @@
                 <version>${jackson.mapper.asl.version}</version>
             </dependency>
             <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${log4j.version}</version>
+                <groupId>ch.qos.reload4j</groupId>
+                <artifactId>reload4j</artifactId>
+                <version>${reload4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.lz4</groupId>
@@ -1817,27 +1986,34 @@
             <dependency>
                 <groupId>net.minidev</groupId>
                 <artifactId>json-smart</artifactId>
-                <version>2.4.7</version>
+                <version>2.5.0</version>
             </dependency>
             <dependency>
-              <groupId>org.wildfly.openssl</groupId>
-              <artifactId>wildfly-openssl</artifactId>
-              <version>1.1.3.Final</version>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl</artifactId>
+                <version>1.1.3.Final</version>
             </dependency>
             <dependency>
-              <groupId>io.netty</groupId>
-              <artifactId>netty-tcnative-classes</artifactId>
-              <version>2.0.48.Final</version>
+                <groupId>com.google.api-client</groupId>
+                <artifactId>google-api-client</artifactId>
+                <version>1.32.2</version>
             </dependency>
             <dependency>
-              <groupId>com.google.api-client</groupId>
-              <artifactId>google-api-client</artifactId>
-              <version>1.32.2</version>
+                <groupId>com.google.api.grpc</groupId>
+                <artifactId>proto-google-iam-v1</artifactId>
+                <version>1.18.0</version>
+            </dependency>
+            <!-- Force higher version, compatible with M1 -->
+            <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${jna.version}</version>
             </dependency>
             <dependency>
-              <groupId>com.google.api.grpc</groupId>
-              <artifactId>proto-google-iam-v1</artifactId>
-              <version>1.1.7</version>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${jaxb.version}</version>
             </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.
@@ -1859,24 +2035,20 @@
                 <version>3.29.2-GA</version>
             </dependency>
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit-jupiter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit-jupiter.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <!--
-                parquet-avro depends on this transitively, but it has an invalid pom, generating warnings during build.
-                This is newer fixed version.
-                -->
-                <groupId>org.apache.yetus</groupId>
-                <artifactId>audience-annotations</artifactId>
-                <version>0.12.0</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>
@@ -1913,6 +2085,11 @@
                 <artifactId>awaitility</artifactId>
                 <version>${awaitility.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-server-mock</artifactId>
+                <version>${kubernetes-server-mock.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1932,15 +2109,13 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
-            <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-library</artifactId>
-            <version>${hamcrest.version}</version>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -1952,18 +2127,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-            <version>${powermock.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
-            <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -2014,7 +2177,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>10.0.23</version>
+            <version>10.1.12</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

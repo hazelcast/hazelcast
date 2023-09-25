@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB;
@@ -588,7 +589,7 @@ public class MigrationManager {
     /**
      * Clears the migration queue and triggers the control task. Called on the master node.
      */
-    void triggerControlTask() {
+    public void triggerControlTask() {
         migrationQueue.clear();
         migrationThread.abortMigrationTask();
         if (stats.getRemainingMigrations() > 0) {
@@ -1164,11 +1165,11 @@ public class MigrationManager {
 
                 try {
                     CompletionStage<Boolean> f = new AsyncMigrationTask(migration).run();
-                    f.thenRun(() -> {
+                    f.thenRunAsync(() -> {
                         logger.fine("AsyncMigrationTask completed: " + migration);
                         boolean offered = completed.offer(migration);
                         assert offered : "Failed to offer completed migration: " + migration;
-                    });
+                    }, CALLER_RUNS);
                 } catch (Throwable e) {
                     logger.warning("AsyncMigrationTask failed: " + migration, e);
                     boolean offered = completed.offer(migration);
@@ -1446,7 +1447,7 @@ public class MigrationManager {
             }
 
             return future.handleAsync((done, t) -> {
-                stats.recordMigrationOperationTime(Timer.nanosElapsed(start));
+                stats.recordMigrationOperationTime();
                 logger.fine("Migration operation response received -> " + migration + ", success: " + done + ", failure: " + t);
 
                 if (t != null) {
@@ -1475,12 +1476,10 @@ public class MigrationManager {
                     return CompletableFuture.completedFuture(false);
                 }
             }, asyncExecutor).handleAsync((result, t) -> {
-                long elapsed = Timer.nanosElapsed(start);
-                stats.recordMigrationTaskTime(elapsed);
+                stats.recordMigrationTaskTime();
 
-                PartitionEventManager partitionEventManager = partitionService.getPartitionEventManager();
-                partitionEventManager.sendMigrationEvent(stats.toMigrationState(), migration,
-                        TimeUnit.NANOSECONDS.toMillis(elapsed));
+                partitionService.getPartitionEventManager().sendMigrationEvent(stats.toMigrationState(), migration,
+                        TimeUnit.NANOSECONDS.toMillis(Timer.nanosElapsed(start)));
 
                 if (t != null) {
                     Level level = nodeEngine.isRunning() ? Level.WARNING : Level.FINE;
@@ -1570,11 +1569,10 @@ public class MigrationManager {
          */
         private CompletionStage<Boolean> migrationOperationSucceeded() {
             migrationInterceptor.onMigrationComplete(MigrationParticipant.MASTER, migration, true);
-            long start = System.nanoTime();
 
             CompletionStage<Boolean> f = commitMigrationToDestinationAsync(migration);
             f = f.thenApplyAsync(commitSuccessful -> {
-                stats.recordDestinationCommitTime(System.nanoTime() - start);
+                stats.recordDestinationCommitTime();
 
                 partitionServiceLock.lock();
                 try {

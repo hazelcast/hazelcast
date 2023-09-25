@@ -1,7 +1,7 @@
 <!--
 Contributing to Hazelcast and looking for a challenge? Why don't you check out our open positions?
 
-https://hazelcast.bamboohr.com/jobs
+https://hazelcast.pinpointhq.com/
 -->
 
 INSERT_PR_DESCRIPTION_HERE

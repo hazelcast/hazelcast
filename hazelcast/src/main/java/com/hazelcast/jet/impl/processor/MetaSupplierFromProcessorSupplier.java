@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,16 +58,6 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
     }
 
     @Override
-    public boolean initIsCooperative() {
-        return true;
-    }
-
-    @Override
-    public boolean closeIsCooperative() {
-        return true;
-    }
-
-    @Override
     public int preferredLocalParallelism() {
         return preferredLocalParallelism;
     }
@@ -75,6 +65,26 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
     @Nonnull @Override
     public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
         return address -> processorSupplier;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return permission;
+    }
+
+    @Override
+    public boolean isReusable() {
+        return true;
+    }
+
+    @Override
+    public boolean initIsCooperative() {
+        return true;
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 
     @Override
@@ -89,10 +99,5 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
         preferredLocalParallelism = in.readInt();
         processorSupplier = in.readObject();
         permission = in.readObject();
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return permission;
     }
 }

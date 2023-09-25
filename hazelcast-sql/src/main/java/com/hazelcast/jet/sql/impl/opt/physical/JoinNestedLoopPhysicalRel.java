@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,28 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.core.Vertex;
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
-import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
+import org.apache.calcite.rel.core.JoinInfo;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexShuttle;
-import org.apache.calcite.rex.RexUtil;
+import org.apache.calcite.util.ImmutableIntList;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
-import static java.util.Arrays.asList;
-
 public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
+    private JoinInfo modifiedJoinInfo;
 
     JoinNestedLoopPhysicalRel(
             RelOptCluster cluster,
@@ -54,17 +50,25 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
         super(cluster, traitSet, left, right, condition, joinType);
     }
 
-    public Expression<Boolean> rightFilter(QueryParameterMetadata parameterMetadata) {
-        return ((HazelcastPhysicalScan) getRight()).filter(parameterMetadata);
+    public RexNode rightFilter() {
+        return ((HazelcastPhysicalScan) getRight()).filter();
     }
 
-    public List<Expression<?>> rightProjection(QueryParameterMetadata parameterMetadata) {
-        return ((HazelcastPhysicalScan) getRight()).projection(parameterMetadata);
+    public List<RexNode> rightProjection() {
+        return ((HazelcastPhysicalScan) getRight()).projection();
     }
 
-    public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
-        List<Integer> leftKeys = analyzeCondition().leftKeys.toIntegerList();
-        List<Integer> rightKeys = analyzeCondition().rightKeys.toIntegerList();
+    @Override
+    public JoinInfo analyzeCondition() {
+        if (modifiedJoinInfo != null) {
+            return modifiedJoinInfo;
+        }
+        JoinInfo joinInfo = super.analyzeCondition();
+        if (getRight().getTable() == null) {
+            return joinInfo;
+        }
+        List<Integer> leftKeys = joinInfo.leftKeys.toIntegerList();
+        List<Integer> rightKeys = joinInfo.rightKeys.toIntegerList();
         HazelcastTable table = OptUtils.extractHazelcastTable(getRight());
         RexBuilder rexBuilder = getCluster().getRexBuilder();
 
@@ -75,14 +79,12 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
             if (rightExpr instanceof RexInputRef) {
                 rightKeys.set(i, ((RexInputRef) rightExpr).getIndex());
             } else {
-                // offset the indices in rightExp by the width of left row
+                // Offset the indices in rightExp by the width of the left row
                 rightExpr = rightExpr.accept(new RexShuttle() {
                     @Override
                     public RexNode visitInputRef(RexInputRef inputRef) {
-                        return rexBuilder.makeInputRef(
-                                inputRef.getType(),
-                                inputRef.getIndex() + getLeft().getRowType().getFieldCount()
-                        );
+                        return rexBuilder.makeInputRef(inputRef.getType(),
+                                inputRef.getIndex() + getLeft().getRowType().getFieldCount());
                     }
                 });
                 additionalNonEquiConditions.add(rexBuilder.makeCall(HazelcastSqlOperatorTable.EQUALS,
@@ -94,20 +96,16 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
             }
         }
 
-        Expression<Boolean> nonEquiCondition = filter(
-                schema(parameterMetadata),
-                RexUtil.composeConjunction(rexBuilder, asList(
-                        analyzeCondition().getRemaining(rexBuilder),
-                        RexUtil.composeConjunction(rexBuilder, additionalNonEquiConditions))),
-                parameterMetadata);
-
-        Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
-
-        return new JetJoinInfo(getJoinType(), toIntArray(leftKeys), toIntArray(rightKeys), nonEquiCondition, condition);
+        modifiedJoinInfo = new ModifiedJoinInfo(ImmutableIntList.copyOf(leftKeys),
+                ImmutableIntList.copyOf(rightKeys),
+                ImmutableList.<RexNode>builder()
+                        .addAll(joinInfo.nonEquiConditions)
+                        .addAll(additionalNonEquiConditions).build());
+        return modifiedJoinInfo;
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onNestedLoopJoin(this);
     }
 
@@ -121,5 +119,12 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
             boolean semiJoinDone
     ) {
         return new JoinNestedLoopPhysicalRel(getCluster(), traitSet, left, right, getCondition(), joinType);
+    }
+
+    protected static class ModifiedJoinInfo extends JoinInfo {
+        protected ModifiedJoinInfo(ImmutableIntList leftKeys, ImmutableIntList rightKeys,
+                                   ImmutableList<RexNode> nonEquiConditions) {
+            super(leftKeys, rightKeys, nonEquiConditions);
+        }
     }
 }

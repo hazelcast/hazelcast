@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ public final class SerializationUtil {
         if (!(object instanceof Serializable)) {
             throw new IllegalArgumentException('"' + objectName + "\" must implement Serializable");
         }
-        try (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
+        try (ObjectOutputStream os = new ObjectOutputStream(OutputStream.nullOutputStream())) {
             os.writeObject(object);
         } catch (NotSerializableException | InvalidClassException e) {
             throw new IllegalArgumentException("\"" + objectName + "\" must be serializable", e);
@@ -87,7 +87,7 @@ public final class SerializationUtil {
         }
     }
 
-    static boolean isNullData(Data data) {
+    public static boolean isNullData(Data data) {
         return data.dataSize() == 0 && data.getType() == SerializationConstants.CONSTANT_TYPE_NULL;
     }
 
@@ -458,13 +458,6 @@ public final class SerializationUtil {
                 return Boolean.TRUE;
             default:
                 throw new IllegalStateException("Unexpected value " + b + " while reading nullable boolean.");
-        }
-    }
-
-    private static class NullOutputStream extends OutputStream {
-        @Override
-        public void write(int b) {
-            // do nothing
         }
     }
 }

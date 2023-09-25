@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -64,8 +65,10 @@ public class TestStreamSqlConnector extends TestAbstractSqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
     @Override
-    public boolean isStream() {
-        return true;
+    public String defaultObjectType() {
+        return "stream";
     }
+
 }

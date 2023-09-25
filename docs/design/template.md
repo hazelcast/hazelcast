@@ -74,6 +74,8 @@ Provide functional design details that are pertinent to this specific design spe
 - What parts of the design do you expect to resolve through the design process before this gets merged?
 - What parts of the design do you expect to resolve through the implementation of this feature before stabilization?
 - What related issues do you consider out of scope for this document that could be addressed in the future independently of the solution that comes out of this change?
+- How does this functionality impact/augment our Viridian Cloud offering? 
+- What changes, if any, are needed in Viridian to explose this functionality? 
 
 Use the ⚠️ or ❓icon to indicate an outstanding issue or question, and use the ✅ or ℹ️ icon to indicate a resolved issue or question.
 
@@ -90,6 +92,7 @@ Consider the following writing prompts:
 - Are there new error messages introduced? Can you provide examples?
 - Are there new deprecation warnings? Can you provide examples?
 - How are clusters affected that were created before this change? Are there migrations to consider?
+- How can this be leveraged in Viridian Cloud? 
 
 #### Client Related Changes
 Please identify if any client code change is required. If so, please provide a list of client code changes.
@@ -109,7 +112,9 @@ Some of these prompts may not be relevant to your design document; in which case
 - Questions about the change:
   - What components in Hazelcast need to change? How do they change? This section outlines the implementation strategy: for each component affected, outline how it is changed.
   - Are there new abstractions introduced by the change? New concepts? If yes, provide definitions and examples.
-  - How does this work in a on-prem deployment? How about on AWS and Kubernetes?
+  - How does this work in a on-prem deployment? 
+  - How about on AWS and Kubernetes, platform operator?
+  - How does this work in Cloud Viridan clusters? 
   - How does the change behave in mixed-version deployments? During a version upgrade? Which migrations are needed?
   - What are the possible interactions with other features or sub-systems inside Hazelcast? How does the behavior of other code change implicitly as a result of the changes outlined in the design document? (Provide examples if relevant.)
   - Is there other ongoing or recent work that is related? (Cross-reference the relevant design documents.)
@@ -129,9 +134,16 @@ Some of these prompts may not be relevant to your design document; in which case
   - Can the new functionality affect clusters which are not explicitly using it?
   - What testing and safe guards are being put in place to protect against unexpected problems?
 
-- Security questions:
-  - Does the change concern authentication or authorization logic? If so, mention this explicitly tag the relevant security-minded reviewer as reviewer to the design document.
-  - Does the change create a new way to communicate data over the network?  What rules are in place to ensure that this cannot be used by a malicious user to extract confidential data?
+- Security questions (also go through [OWASP TOP 10](https://owasp.org/Top10/) and [CWE Top 25](https://cwe.mitre.org/top25/) lists):
+  - Is the functionality accessible through the client protocol (including SQL commands)? What permissions (types/names/actions) will be used to protect the access?
+  - Is the input validation/cleanup in place? Proper character-escaping used? Protection against SQL injection? 
+  - Does the new functionality communicate over the network? Will it support TLS? If not, why?
+  - Does it write to a filesystem? Are the data written protected by encryption? If not, why?
+  - Does it introduce a new deserialization method? Is there a protection against resource exhaustion (OOM, handling cycles in object graphs, ...)?
+  - Which event types will be added to the auditlog?
+  - Does it read/write from/to a filesystem or an external system? Is the access guarded by additional permission checks?
+  - Does the change concern authentication or authorization logic? If so, mention this explicitly and tag the relevant security-minded reviewer as a reviewer of the design document.
+  - Does the change create a new way to communicate data over the network? What rules are in place to ensure that this cannot be used by a malicious user to extract confidential data?
   - Is there telemetry or crash reporting? What mechanisms are used to ensure no sensitive data is accidentally exposed?
 
 - Observability and usage questions:
@@ -151,7 +163,7 @@ Some of these prompts may not be relevant to your design document; in which case
     - Which principles did you apply to ensure the user experience (UX) is consistent with other related features? (Cross-reference other features that have related UX, for comparison.)
     - Which other engineers or teams have you polled for input on the proposed UX changes? Which engineers or team may have relevant experience to provide feedback on UX?
   - Is usage of the new feature observable in telemetry? If so, mention where in the code telemetry counters or metrics would be added.
-  - What might be the valuable metrics that could be shown for this feature in Management Center?
+  - What might be the valuable metrics that could be shown for this feature in Management Center and/or Viridan Control Plane?
   - Should this feature be configured, enabled/disabled or managed from the Management Center? How do you think your change affects Management Center?
   - Does the feature require or allow runtime changes to the member configuration (XML/YAML/programmatic)?
   - Are usage statistics for this feature reported in Phone Home? If not, why?
@@ -165,7 +177,7 @@ Describe testing approach to developed functionality
 - Security related tests?
 - Negative tests?
 - Stress tests?
-- Tests related to deployment on AWS or Kubernetes? See [Hazelcast Guides](https://guides.hazelcast.org/home/) for examples on deployments, [Connect To Hazelcast Running on Kubernetes from Outside](https://guides.hazelcast.org/kubernetes-external-client/) and [GH workflow](https://github.com/hazelcast-guides/kubernetes-external-client/blob/main/.github/workflows/integrational-tests.yml) for example of automated tests and [Create automated tests in Kubernetes/OpenShift for enterprise features](https://hazelcast.atlassian.net/browse/CN-150) for JIRA task on automated testing of EE features. For more information about testing in kubernetes please see [here](https://guides.hazelcast.org/kubernetes/) and [here](https://docs.hazelcast.com/hazelcast/5.0/deploy/deploying-in-kubernetes), for testing in AWS, GCP and Azure please see [here](https://guides.hazelcast.org/terraform-quickstarts/).
+- Tests related to deployment on AWS or Kubernetes? See [Hazelcast Guides](https://guides.hazelcast.org/home/) for examples on deployments, [Connect To Hazelcast Running on Kubernetes from Outside](https://guides.hazelcast.org/kubernetes-external-client/) and [GH workflow](https://github.com/hazelcast-guides/kubernetes-external-client/blob/main/.github/workflows/integrational-tests.yml) for example of automated tests and [Create automated tests in Kubernetes/OpenShift for enterprise features](https://hazelcast.atlassian.net/browse/CN-150) for JIRA task on automated testing of EE features. For more information about testing in kubernetes please see [here](https://guides.hazelcast.org/kubernetes/) and [here](https://docs.hazelcast.com/hazelcast/latest/deploy/deploying-in-kubernetes), for testing in AWS, GCP and Azure please see [here](https://guides.hazelcast.org/terraform-quickstarts/).
 
 Provide references to Testlink or Testing artifacts.
 

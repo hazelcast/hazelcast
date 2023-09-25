@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -55,6 +56,9 @@ import static org.junit.Assert.fail;
 public class RepartitioningStressTest extends HazelcastTestSupport {
 
     private static final int DUPLICATE_OPS_TOLERANCE = 10;
+
+    // The event listeners are not guaranteed to run during shutdown, tolerate 10 % loss
+    private static final double LOST_EVENTS_TOLERANCE = 0.9;
 
     private static final int INITIAL_MEMBER_COUNT = 5;
     private static final int THREAD_COUNT = 10;
@@ -180,10 +184,13 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     }
 
     private void assertEqualsWithDuplicatesTolerance(String msg, long expected, long actual) {
-        if (actual < expected || actual > expected + DUPLICATE_OPS_TOLERANCE) {
-            fail(String.format("%s, expected: %d, actual %d, tolerance for duplicates: %d", msg, expected,
-                    actual, DUPLICATE_OPS_TOLERANCE));
-        }
+        assertThat(actual)
+                .as(msg + ": number of actual events lost is outside of tolerance")
+                .isGreaterThan((long) (expected * LOST_EVENTS_TOLERANCE));
+
+        assertThat(actual)
+                .as(msg + ": number of actual events duplicated is outside of tolerance")
+                .isLessThan(expected + DUPLICATE_OPS_TOLERANCE);
     }
 
     private abstract class TestThread extends Thread {

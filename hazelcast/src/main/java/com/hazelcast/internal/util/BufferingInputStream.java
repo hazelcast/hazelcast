@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -23,6 +24,8 @@ import static java.lang.System.arraycopy;
 
 /**
  * {@link InputStream} implementation with a configurable buffer.
+ * Unlike {@link BufferedInputStream} this class has un-synchronized methods and performs better when used
+ * by a single thread.
  */
 public class BufferingInputStream extends InputStream {
 

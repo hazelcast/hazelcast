@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,11 +96,13 @@ public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
         if (evictionCandidate == null) {
             return false;
         }
-        if (remove(evictionCandidate.getAccessor()) == null) {
+        V removedRecord = remove(evictionCandidate.getAccessor());
+        if (removedRecord == null || removedRecord.getReservationId() != NearCacheRecord.READ_PERMITTED) {
+            // no record was removed or the record was a placeholder marked for update
             return false;
         }
         if (evictionListener != null) {
-            evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable(), false);
+            evictionListener.onEvict(evictionCandidate.getAccessor(), removedRecord, false);
         }
         return true;
     }

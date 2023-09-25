@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ConcurrentInitialSetCache;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -44,7 +43,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class JsonValueFunction<T> extends VariExpressionWithType<T> implements IdentifiedDataSerializable {
+public class JsonValueFunction<T> extends VariExpressionWithType<T> {
     private static final ILogger LOGGER = Logger.getLogger(JsonValueFunction.class);
     private static final int DEFAULT_ON_EMPTY_OPERAND_INDEX = 2;
     private static final int DEFAULT_ON_ERROR_OPERAND_INDEX = 3;
@@ -87,11 +86,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
                 defaultValueOnError
         };
         return new JsonValueFunction<>(operands, resultType, onEmpty, onError);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
     }
 
     @Override

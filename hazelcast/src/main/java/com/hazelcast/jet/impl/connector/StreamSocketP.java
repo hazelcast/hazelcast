@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.nio.charset.CharsetDecoder;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.internal.util.JVMUtil.upcast;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 

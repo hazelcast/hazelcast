@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package com.hazelcast.spi.discovery.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -50,7 +52,21 @@ public class PredefinedDiscoveryService implements DiscoveryService {
     }
 
     @Override
+    public void markEndpointAsUnhealthy(Address address) {
+        strategy.markEndpointAsUnhealthy(address);
+    }
+
+    @Override
+    public Set<Address> getUnhealthyEndpoints() {
+        return strategy.getUnhealthyEndpoints();
+    }
+
+    @Override
     public void destroy() {
         strategy.destroy();
+    }
+
+    public DiscoveryStrategy getStrategy() {
+        return strategy;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 package com.hazelcast.map.impl.operation.steps.engine;
 
+import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+
+import java.util.function.Consumer;
+
 /**
  * Contract to create a chain of steps from an operation
  *
@@ -29,14 +33,29 @@ public interface StepAwareOperation<S> {
     S createState();
 
     /**
-     * @param state state to be applied to operation
+     * @param state state to be applied to
+     * operation after execution of all step chain
      */
-    void applyState(S state);
+    default void applyState(S state) {
+        // No need to implement, if there
+        // is no state to apply after run.
+    }
 
     /**
      * @return starting {@link Step} for this operation
      */
     default Step getStartingStep() {
         return null;
+    }
+
+    /**
+     * This method is used to inject {@link Backup#afterRun()} to {@link Step} engine.
+     * <p>
+     * Its goal is to call it on completion of offloaded backup operation.
+     *
+     * @param backupOpAfterRun {@link Backup#afterRun()}
+     */
+    default void setBackupOpAfterRun(Consumer backupOpAfterRun) {
+
     }
 }

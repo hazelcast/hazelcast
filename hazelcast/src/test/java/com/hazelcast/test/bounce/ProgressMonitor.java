@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public class ProgressMonitor {
             if (lastProgressLoggedNanos > 0) {
                 sb.append("Maximum latency: ")
                         .append(TimeUnit.NANOSECONDS.toMillis(maxLatencyNanos))
-                        .append(" ms.");
+                        .append(" ms. ");
 
                 long timeInNanos = now - lastProgressLoggedNanos;
                 double timeInSeconds = (double) timeInNanos / 1000000000;

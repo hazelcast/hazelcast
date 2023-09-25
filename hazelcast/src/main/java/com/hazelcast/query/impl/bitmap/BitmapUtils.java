@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,6 @@ package com.hazelcast.query.impl.bitmap;
  */
 final class BitmapUtils {
 
-    private static final int SHORT_TO_INT_MASK = 0xFFFF;
-    private static final long SHORT_TO_LONG_MASK = 0xFFFFL;
-    private static final long INT_TO_LONG_MASK = 0xFFFFFFFFL;
-
     private static final int INT_ARRAY_MIN_CAPACITY = 2;
     private static final int SHORT_ARRAY_MIN_CAPACITY = 4;
 
@@ -39,25 +35,19 @@ final class BitmapUtils {
     private BitmapUtils() {
     }
 
-    /**
-     * Does exactly the same thing as Java 8 Short.toUnsignedInt.
-     */
+    /** @see Short#toUnsignedInt(short) */
     public static int toUnsignedInt(short value) {
-        return ((int) value) & SHORT_TO_INT_MASK;
+        return Short.toUnsignedInt(value);
     }
 
-    /**
-     * Does exactly the same thing as Java 8 Short.toUnsignedLong.
-     */
+    /** @see Short#toUnsignedLong(short) */
     public static long toUnsignedLong(short value) {
-        return ((long) value) & SHORT_TO_LONG_MASK;
+        return Short.toUnsignedLong(value);
     }
 
-    /**
-     * Does exactly the same thing as Java 8 Integer.toUnsignedLong.
-     */
+    /** @see Integer#toUnsignedLong(short) */
     public static long toUnsignedLong(int value) {
-        return ((long) value) & INT_TO_LONG_MASK;
+        return Integer.toUnsignedLong(value);
     }
 
     /**

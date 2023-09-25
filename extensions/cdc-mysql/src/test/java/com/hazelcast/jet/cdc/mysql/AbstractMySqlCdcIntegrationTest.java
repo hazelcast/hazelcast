@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Assume;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,7 +39,7 @@ import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
-    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:1.9.5.Final")
+    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:2.3.0.Final")
             .asCompatibleSubstituteFor("mysql");
 
     @Rule
@@ -50,8 +50,8 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
                     .withPassword("mysqlpw")
     );
 
-    @Before
-    public void ignoreOnJdk15OrHigher() {
+    @BeforeClass
+    public static void ignoreOnJdk15OrHigher() {
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
                         "https://github.com/hazelcast/hazelcast/issues/18800",
                 System.getProperty("java.version").matches("^1[56].*"));
@@ -59,7 +59,7 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
 
     protected MySqlCdcSources.Builder sourceBuilder(String name) {
         return MySqlCdcSources.mysql(name)
-                .setDatabaseAddress(mysql.getContainerIpAddress())
+                .setDatabaseAddress(mysql.getHost())
                 .setDatabasePort(mysql.getMappedPort(MYSQL_PORT))
                 .setDatabaseUser("debezium")
                 .setDatabasePassword("dbz")

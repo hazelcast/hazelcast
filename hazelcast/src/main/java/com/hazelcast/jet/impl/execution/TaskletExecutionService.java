@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,8 +61,8 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
@@ -112,7 +112,7 @@ public class TaskletExecutionService {
         );
 
         Arrays.setAll(cooperativeWorkers, i -> new CooperativeWorker());
-        Arrays.setAll(cooperativeThreadPool, i -> new Thread(cooperativeWorkers[i],
+        Arrays.setAll(cooperativeThreadPool, i -> new CooperativeWorkerThread(cooperativeWorkers[i],
                 String.format("hz.%s.jet.cooperative.thread-%d", hzInstanceName, i)));
         Arrays.stream(cooperativeThreadPool).forEach(Thread::start);
 
@@ -227,11 +227,13 @@ public class TaskletExecutionService {
             }
         }
         if (firstFailure != null) {
-            throw new JetException(String.format(
+            String message = String.format(
                     "%,d of %,d tasklets failed to initialize." +
                             " One of the failures is attached as the cause and its summary is %s",
                     failureCount, futures.size(), firstFailure
-            ), firstFailure);
+            );
+            TaskletExecutionException silencingException = new TaskletExecutionException(message, firstFailure);
+            throw new JetException(message, silencingException);
         }
     }
 
@@ -283,7 +285,9 @@ public class TaskletExecutionService {
             t.executionTracker.exception(e);
         } else {
             logger.info("Exception in " + t.tasklet, e);
-            t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
+            String message = "Exception in " + t.tasklet + ": " + e;
+            Exception silencingException = new TaskletExecutionException(message, e);
+            t.executionTracker.exception(new JetException(message, silencingException));
         }
     }
 
@@ -502,6 +506,12 @@ public class TaskletExecutionService {
 
         boolean executionCompletedExceptionally() {
             return executionException.get() != null;
+        }
+    }
+
+    private static final class CooperativeWorkerThread extends Thread implements CooperativeThread {
+        CooperativeWorkerThread(Runnable target, String name) {
+            super(target, name);
         }
     }
 }

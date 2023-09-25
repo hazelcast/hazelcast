@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.properties;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
@@ -206,6 +207,63 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty SOCKET_KEEP_ALIVE
             = new HazelcastProperty("hazelcast.socket.keep.alive", true);
+
+    /**
+     * Keep-Alive idle time: the number of seconds of idle time before keep-alive initiates a probe.
+     * <p/>
+     * Caveats:
+     * <ul>
+     *     <li>This option is only applicable to member-side sockets when {@link #SOCKET_KEEP_ALIVE keep alive is true}.</li>
+     *     <li>When using {@link AdvancedNetworkConfig}, set the respective socket option in {@link EndpointConfig}.</li>
+     *     <li>Requires a recent JDK 8, JDK 11 or greater version that includes the required
+     *     <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.</li>
+     * </ul>
+     *
+     * @since 5.3.0
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPIDLE">
+     *     jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE</a>
+     */
+    public static final HazelcastProperty SOCKET_KEEP_IDLE
+            = new HazelcastProperty("hazelcast.socket.keep.idle", 7200);
+
+    /**
+     * Keep-Alive interval: the number of seconds between keep-alive probes.
+     * <p/>
+     * Caveats:
+     * <ul>
+     *     <li>This option is only applicable to member-side sockets when {@link #SOCKET_KEEP_ALIVE keep alive is true}.</li>
+     *     <li>When using {@link AdvancedNetworkConfig}, set the respective socket option in {@link EndpointConfig}.</li>
+     *     <li>Requires a recent JDK 8, JDK 11 or greater version that includes the required
+     *     <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.</li>
+     * </ul>
+     *
+     * @since 5.3.0
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/
+     ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
+     *     jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
+     */
+    public static final HazelcastProperty SOCKET_KEEP_INTERVAL
+            = new HazelcastProperty("hazelcast.socket.keep.interval", 75);
+
+    /**
+     * Keep-Alive count: the maximum number of TCP keep-alive probes to send before giving up and closing the connection if no
+     * response is obtained from the other side.
+     * <p/>
+     * Caveats:
+     * <ul>
+     *     <li>This option is only applicable to member-side sockets when {@link #SOCKET_KEEP_ALIVE keep alive is true}.</li>
+     *     <li>When using {@link AdvancedNetworkConfig}, set the respective socket option in {@link EndpointConfig}.</li>
+     *     <li>Requires a recent JDK 8, JDK 11 or greater version that includes the required
+     *     <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.</li>
+     * </ul>
+     *
+     * @return the configured value of Keep-Alive probe count.
+     * @since 5.3.0
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPCOUNT">
+     *     jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT</a>
+     */
+    public static final HazelcastProperty SOCKET_KEEP_COUNT
+            = new HazelcastProperty("hazelcast.socket.keep.count", 8);
 
     /**
      * Socket set TCP no delay.
@@ -485,7 +543,7 @@ public final class ClusterProperty {
      * This parameter defines time that the master node will wait since the last
      * received join request (a pre-join window) before it starts processing the
      * join requests and forming a cluster.
-     * Alternatively, if the pre-join phase has laster for over
+     * Alternatively, if the pre-join phase has lasted for over
      * {@link #MAX_WAIT_SECONDS_BEFORE_JOIN} seconds, the master node will proceed
      * with processing the join requests and forming the cluster, regardless of the
      * time elapsed since the last join request.
@@ -679,7 +737,8 @@ public final class ClusterProperty {
 
     /**
      * Class name implementing {@link com.hazelcast.partition.PartitioningStrategy}, which
-     * defines key to partition mapping.
+     * defines key to partition mapping. Member-side equivalent of client property
+     * {@link com.hazelcast.client.properties.ClientProperty#PARTITIONING_STRATEGY_CLASS}.
      */
     public static final HazelcastProperty PARTITIONING_STRATEGY_CLASS
             = new HazelcastProperty("hazelcast.partitioning.strategy.class", "");
@@ -1570,8 +1629,10 @@ public final class ClusterProperty {
     /**
      * Hazelcast IMDG Enterprise license key.
      */
-    public static final HazelcastProperty ENTERPRISE_LICENSE_KEY
-            = new HazelcastProperty("hazelcast.enterprise.license.key");
+    public static final HazelcastProperty ENTERPRISE_LICENSE_KEY = new HazelcastProperty("hazelcast.enterprise.license.key")
+            // Print a warning when British spelling of "License" is used
+            // https://github.com/hazelcast/hazelcast/issues/13161
+            .setDeprecatedName("hazelcast.enterprise.licence.key");
 
     /**
      * Hazelcast serialization version. This is single byte value between 1 and
@@ -1790,6 +1851,79 @@ public final class ClusterProperty {
     @Beta
     public static final HazelcastProperty SQL_CUSTOM_TYPES_ENABLED = new HazelcastProperty(
             "hazelcast.sql.experimental.custom.types.enabled", false);
+
+    /**
+     * When {@code true}, enables monitoring of the runtime environment to detect the intent of shutdown
+     * and automate cluster state management decisions.
+     * Supported when persistence is enabled and Hazelcast is executed in a Kubernetes
+     * <a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">StatefulSet</a>.
+     * <p/>
+     * The default value is {@code true}.
+     *
+     * @since 5.2
+     */
+    public static final HazelcastProperty PERSISTENCE_AUTO_CLUSTER_STATE = new HazelcastProperty(
+            "hazelcast.persistence.auto.cluster.state", true);
+
+    /**
+     * Select which cluster state to use when dealing with missing members in a managed runtime environment.
+     * Used when {@link #PERSISTENCE_AUTO_CLUSTER_STATE} and persistence are both enabled.
+     * Valid values are {@code FROZEN} or {@code NO_MIGRATION}.
+     *
+     * @since 5.2
+     */
+    public static final HazelcastProperty PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY = new HazelcastProperty(
+            "hazelcast.persistence.auto.cluster.state.strategy", ClusterState.NO_MIGRATION);
+
+    /**
+     * The directory path to be used for jar uploading. The path must exist and must have
+     * read + write + execute permissions for the Hazelcast process
+     * <p>
+     * A different path can be specified for each member
+     * <p>
+     * The path can be absolute or relative to current working directory of Hazelcast process
+     * @since 5.3
+     */
+    public static final HazelcastProperty JAR_UPLOAD_DIR_PATH
+            = new HazelcastProperty("hazelcast.cluster.jarupload.dirpath");
+
+    /**
+     * Defines whether WAN replication events should be fired when values are evicted
+     * from {@link IMap} objects.
+     * <p>
+     * The default value is {@code false}.
+     * <p>
+     * NOTE: The expected use-case for this property to be enabled is very specific, namely where
+     * an exact copy of a source is wanted on a target with no evictions enabled; however in this
+     * scenario, the target cluster would need to have evictions enabled if it were to become the
+     * active cluster - failing to do so could lead to Out Of Memory or data inconsistency issues.
+     * The reverse would also be necessary if returning back to the original cluster. Ensure you
+     * have a plan for handling these scenarios (such as using Management Centre to configure
+     * evictions manually) before enabling this property and changing between active clusters.
+     *
+     * @since 5.4
+     */
+    public static final HazelcastProperty WAN_REPLICATE_IMAP_EVICTIONS
+            = new HazelcastProperty("hazelcast.wan.replicate.imap.evictions", false);
+
+    /**
+     * Defines whether WAN replication events should be fired when values are evicted
+     * from {@link com.hazelcast.cache.ICache} objects.
+     * <p>
+     * The default value is {@code false}.
+     * <p>
+     * NOTE: The expected use-case for this property to be enabled is very specific, namely where
+     * an exact copy of a source is wanted on a target with no evictions enabled; however in this
+     * scenario, the target cluster would need to have evictions enabled if it were to become the
+     * active cluster - failing to do so could lead to Out Of Memory or data inconsistency issues.
+     * The reverse would also be necessary if returning back to the original cluster. Ensure you
+     * have a plan for handling these scenarios (such as using Management Centre to configure
+     * evictions manually) before enabling this property and changing between active clusters.
+     *
+     * @since 5.4
+     */
+    public static final HazelcastProperty WAN_REPLICATE_ICACHE_EVICTIONS
+            = new HazelcastProperty("hazelcast.wan.replicate.icache.evictions", false);
 
     private ClusterProperty() {
     }

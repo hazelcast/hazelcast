@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -375,7 +375,14 @@ public final class HazelcastTypeUtils {
             return true;
         }
 
+        QueryDataType queryFrom = toHazelcastType(sourceType);
+        QueryDataType queryTo = toHazelcastType(targetType);
+
         if (isStruct(sourceType) || isStruct(targetType)) {
+            if (queryFrom.isCustomType() && queryTo.getTypeFamily().equals(QueryDataTypeFamily.JSON)) {
+                return true;
+            }
+
             // if one of them isn't a struct
             if (!isStruct(sourceType) || !isStruct(targetType)) {
                 return false;
@@ -402,9 +409,6 @@ public final class HazelcastTypeUtils {
             return true;
         }
 
-        QueryDataType queryFrom = toHazelcastType(sourceType);
-        QueryDataType queryTo = toHazelcastType(targetType);
-
         return queryFrom.getConverter().canConvertTo(queryTo.getTypeFamily());
     }
 
@@ -414,5 +418,9 @@ public final class HazelcastTypeUtils {
 
     public static boolean hasParameters(SqlCallBinding binding) {
         return binding.operands().stream().anyMatch((operand) -> operand.getKind() == SqlKind.DYNAMIC_PARAM);
+    }
+
+    public static boolean hasSameTypeFamily(RelDataType sourceType, RelDataType targetType) {
+        return sourceType.getFamily().equals(targetType.getFamily());
     }
 }

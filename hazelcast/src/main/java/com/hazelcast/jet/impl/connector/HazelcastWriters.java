@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,6 +173,7 @@ public final class HazelcastWriters {
                 new WriteListPSupplier<>(clientXml, name));
     }
 
+    @SuppressWarnings("AnonInnerLength")
     public static ProcessorMetaSupplier writeObservableSupplier(@Nonnull String name) {
         return new ProcessorMetaSupplier() {
             @Nonnull
@@ -194,6 +195,21 @@ public final class HazelcastWriters {
             @Override
             public Permission getRequiredPermission() {
                 return new RingBufferPermission(name, ACTION_CREATE, ACTION_PUT);
+            }
+
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public boolean initIsCooperative() {
+                return true;
+            }
+
+            @Override
+            public boolean closeIsCooperative() {
+                return true;
             }
         };
     }

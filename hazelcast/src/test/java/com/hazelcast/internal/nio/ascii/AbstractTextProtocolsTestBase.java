@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package com.hazelcast.internal.nio.ascii;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -45,11 +44,6 @@ public abstract class AbstractTextProtocolsTestBase {
     }
 
     protected AssertTask createResponseAssertTask(final String message, final TextProtocolClient client, final String expectedSubstring) {
-        return new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertThat(message, client.getReceivedString(), containsString(expectedSubstring));
-            }
-        };
+        return () -> assertThat(client.getReceivedString()).as(message).contains(expectedSubstring);
     }
 }

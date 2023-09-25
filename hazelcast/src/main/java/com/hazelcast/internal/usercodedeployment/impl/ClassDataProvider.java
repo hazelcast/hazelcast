@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.internal.usercodedeployment.impl;
 
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.nio.IOUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
@@ -153,18 +151,12 @@ public final class ClassDataProvider {
 
     private byte[] loadBytecodeFromParent(String className) {
         String resource = className.replace('.', '/').concat(".class");
-        InputStream is = null;
-        try {
-            is = parent.getResourceAsStream(resource);
+        try (InputStream is = parent.getResourceAsStream(resource)) {
             if (is != null) {
-                try {
-                    return toByteArray(is);
-                } catch (IOException e) {
-                    logger.severe(e);
-                }
+                return is.readAllBytes();
             }
-        } finally {
-            IOUtil.closeResource(is);
+        } catch (IOException e) {
+            logger.severe(e);
         }
         return null;
     }

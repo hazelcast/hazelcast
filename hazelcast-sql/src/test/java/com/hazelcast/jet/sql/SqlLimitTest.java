@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,6 +125,23 @@ public class SqlLimitTest extends SqlTestSupport {
         );
     }
 
+    @Test
+    public void multipleLimitClauses() {
+        String tableName = createTable(
+                new String[]{"Alice", "1"},
+                new String[]{"Bob", "2"},
+                new String[]{"Joey", "3"}
+        );
+
+        assertThatThrownBy(() ->
+                sqlService.execute(
+                        " (SELECT distance FROM " + tableName + " LIMIT 2) " +
+                                " UNION " +
+                                " (SELECT distance FROM " + tableName + " LIMIT 2)"
+                )).hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
+    }
+
+
     private static String createTable(String[]... values) {
         String name = randomName();
         TestBatchSqlConnector.create(
@@ -147,21 +164,21 @@ public class SqlLimitTest extends SqlTestSupport {
         assertRowsOrdered(
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT 2",
                 asList(new Row(0L),
-                new Row(1L))
+                        new Row(1L))
         );
 
         assertRowsOrdered(
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT 10",
                 asList(new Row(0L),
-                new Row(1L),
-                new Row(2L),
-                new Row(3L),
-                new Row(4L),
-                new Row(5L),
-                new Row(6L),
-                new Row(7L),
-                new Row(8L),
-                new Row(9L))
+                        new Row(1L),
+                        new Row(2L),
+                        new Row(3L),
+                        new Row(4L),
+                        new Row(5L),
+                        new Row(6L),
+                        new Row(7L),
+                        new Row(8L),
+                        new Row(9L))
         );
     }
 
@@ -205,6 +222,19 @@ public class SqlLimitTest extends SqlTestSupport {
                 + "LIMIT 5";
         assertRowsOrdered(sql, rows(10L, 9L, 8L, 7L, 6L));
     }
+
+    @Test
+    public void limitWithFilter() {
+        String tableName = createTable(
+                new String[]{"Alice", "1"},
+                new String[]{"Bob", "2"},
+                new String[]{"Joey", "3"}
+        );
+
+        final String sql = "SELECT name FROM " + tableName + " WHERE distance = 2 LIMIT 3";
+        assertRowsOrdered(sql, singletonList(new Row("Bob")));
+    }
+
 
     @Test
     public void limitAndOffsetWithProjection() {
@@ -252,7 +282,7 @@ public class SqlLimitTest extends SqlTestSupport {
         assertThat(actualRows).hasSize(subsetSize).containsAnyOf(expectedRows.toArray(new Row[subsetSize]));
     }
 
-    private static List<Row> rows(Long ...rows) {
+    private static List<Row> rows(Long... rows) {
         return Stream.of(rows)
                 .map(Row::new)
                 .collect(Collectors.toList());

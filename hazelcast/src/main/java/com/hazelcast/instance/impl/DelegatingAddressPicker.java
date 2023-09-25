@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.MemberAddressProvider;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -35,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.instance.impl.DefaultAddressPicker.endpointConfigFromProperties;
 import static com.hazelcast.instance.impl.ServerSocketHelper.createServerSocketChannel;
 
 /**
@@ -54,6 +56,7 @@ final class DelegatingAddressPicker
     private final Config config;
     private final ILogger logger;
     private final boolean usesAdvancedNetworkConfig;
+    private final HazelcastProperties properties;
 
     DelegatingAddressPicker(MemberAddressProvider memberAddressProvider, Config config, ILogger logger) {
         super();
@@ -61,6 +64,7 @@ final class DelegatingAddressPicker
         this.config = config;
         this.memberAddressProvider = memberAddressProvider;
         this.usesAdvancedNetworkConfig = config.getAdvancedNetworkConfig().isEnabled();
+        this.properties = new HazelcastProperties(config);
     }
 
     @Override
@@ -101,7 +105,8 @@ final class DelegatingAddressPicker
         publicAddress = memberAddressProvider.getPublicAddress();
         validatePublicAddress(publicAddress);
 
-        serverSocketChannel = createServerSocketChannel(logger, null, bindAddress.getAddress(),
+        serverSocketChannel = createServerSocketChannel(logger,
+                endpointConfigFromProperties(properties), bindAddress.getAddress(),
                 bindAddress.getPort() == 0 ? networkConfig.getPort() : bindAddress.getPort(), networkConfig.getPortCount(),
                 networkConfig.isPortAutoIncrement(), networkConfig.isReuseAddress(), false);
 

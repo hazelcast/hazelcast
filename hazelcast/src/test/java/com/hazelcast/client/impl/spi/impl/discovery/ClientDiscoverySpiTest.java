@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.client.impl.spi.impl.discovery;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientClasspathXmlConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
@@ -30,7 +30,6 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -48,9 +47,8 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -81,19 +79,21 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientDiscoverySpiTest.class);
 
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     @After
     public void cleanup() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Test
@@ -111,7 +111,6 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(QuickTest.class)
     public void testParsing() {
         String xmlFileName = "hazelcast-client-discovery-spi-test.xml";
         InputStream xmlResource = ClientDiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
@@ -143,7 +142,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         interfaces.setEnabled(true);
         interfaces.addInterface("127.0.0.1");
 
-        List<DiscoveryNode> discoveryNodes = new CopyOnWriteArrayList<DiscoveryNode>();
+        List<DiscoveryNode> discoveryNodes = new CopyOnWriteArrayList<>();
         DiscoveryStrategyFactory factory = new CollectingDiscoveryStrategyFactory(discoveryNodes);
 
         JoinConfig join = config.getNetworkConfig().getJoin();
@@ -154,31 +153,26 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.emptyMap());
         discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
 
-        final HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance hazelcastInstance2 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance hazelcastInstance3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hazelcastInstance1 = hazelcastFactory.newHazelcastInstance(config);
+        final HazelcastInstance hazelcastInstance2 = hazelcastFactory.newHazelcastInstance(config);
+        final HazelcastInstance hazelcastInstance3 = hazelcastFactory.newHazelcastInstance(config);
 
-        try {
-            ClientConfig clientConfig = new ClientConfig();
-            clientConfig.setProperty("hazelcast.discovery.enabled", "true");
-            discoveryConfig = clientConfig.getNetworkConfig().getDiscoveryConfig();
-            discoveryConfig.getDiscoveryStrategyConfigs().clear();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty("hazelcast.discovery.enabled", "true");
+        discoveryConfig = clientConfig.getNetworkConfig().getDiscoveryConfig();
+        discoveryConfig.getDiscoveryStrategyConfigs().clear();
 
-            strategyConfig = new DiscoveryStrategyConfig(factory, Collections.emptyMap());
-            discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
+        strategyConfig = new DiscoveryStrategyConfig(factory, Collections.emptyMap());
+        discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
 
-            final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
-            assertNotNull(hazelcastInstance1);
-            assertNotNull(hazelcastInstance2);
-            assertNotNull(hazelcastInstance3);
-            assertNotNull(client);
+        assertNotNull(hazelcastInstance1);
+        assertNotNull(hazelcastInstance2);
+        assertNotNull(hazelcastInstance3);
+        assertNotNull(client);
 
-            assertClusterSizeEventually(3, hazelcastInstance1, hazelcastInstance2, hazelcastInstance3, client);
-        } finally {
-            HazelcastClient.shutdownAll();
-            Hazelcast.shutdownAll();
-        }
+        assertClusterSizeEventually(3, hazelcastInstance1, hazelcastInstance2, hazelcastInstance3, client);
     }
 
     @Test
@@ -209,7 +203,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.emptyMap());
         discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
 
-        final HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty("hazelcast.discovery.enabled", "true");
         discoveryConfig = clientConfig.getNetworkConfig().getDiscoveryConfig();
@@ -218,14 +212,13 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         strategyConfig = new DiscoveryStrategyConfig(factory, Collections.emptyMap());
         discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
 
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         assertNotNull(hazelcastInstance);
         assertNotNull(client);
 
         //When
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        hazelcastFactory.terminateAll();
 
         //Then
         assertOpenEventually(startLatch);
@@ -237,7 +230,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getNetworkConfig().setPort(50001);
 
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(config);
         Address address = instance.getCluster().getLocalMember().getAddress();
         ClientConfig clientConfig = new ClientConfig();
 
@@ -247,7 +240,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.emptyMap());
         discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
 
-        HazelcastClient.newHazelcastClient(clientConfig);
+        hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
     @Test
@@ -292,7 +285,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
 
         try {
-            HazelcastClient.newHazelcastClient(config);
+            hazelcastFactory.newHazelcastClient(config);
         } catch (IllegalStateException expected) {
             // no server available
         }
@@ -312,7 +305,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         networkConfig.getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
 
         try {
-            HazelcastClient.newHazelcastClient(config);
+            hazelcastFactory.newHazelcastClient(config);
             fail("Client cannot start, discovery nodes is null!");
         } catch (NullPointerException expected) {
             // discovered nodes is null
@@ -334,7 +327,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         networkConfig.getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
 
         try {
-            HazelcastClient.newHazelcastClient(config);
+            hazelcastFactory.newHazelcastClient(config);
         } catch (IllegalStateException expected) {
             // no server available
         }
@@ -343,7 +336,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalStateException.class)
     public void testDiscoveryEnabledNoLocalhost() {
-        Hazelcast.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
@@ -353,25 +346,43 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         networkConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(
                 new DiscoveryStrategyConfig(new NoMemberDiscoveryStrategyFactory(), Collections.emptyMap()));
 
-        HazelcastClient.newHazelcastClient(clientConfig);
+        hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
     @Test
     public void testDiscoveryDisabledLocalhost() {
-        Hazelcast.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
 
         // should not throw any exception, localhost is added into the list of addresses
-        HazelcastClient.newHazelcastClient();
+        hazelcastFactory.newHazelcastClient();
     }
 
     @Test(expected = IllegalStateException.class)
     public void testMulticastDiscoveryEnabledNoLocalhost() {
-        Hazelcast.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
 
         ClientClasspathXmlConfig clientConfig = new ClientClasspathXmlConfig(
                 "hazelcast-client-dummy-multicast-discovery-test.xml");
 
-        HazelcastClient.newHazelcastClient(clientConfig);
+        hazelcastFactory.newHazelcastClient(clientConfig);
+    }
+
+    @Test
+    public void testCustomDiscovery_startCalledOnce() {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig config = new ClientConfig();
+        config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+
+        final DiscoveryService discoveryService = mock(DiscoveryService.class);
+        when(discoveryService.discoverNodes()).thenReturn(Collections.singletonList(new SimpleDiscoveryNode(instance.getCluster().getLocalMember().getAddress())));
+        DiscoveryServiceProvider discoveryServiceProvider = arg0 -> discoveryService;
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
+
+        hazelcastFactory.newHazelcastClient(config);
+
+        verify(discoveryService, times(1)).start();
     }
 
     private DiscoveryServiceSettings buildDiscoveryServiceSettings(DiscoveryConfig config) {
@@ -428,7 +439,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         private final Collection<PropertyDefinition> propertyDefinitions;
 
         public TestDiscoveryStrategyFactory() {
-            List<PropertyDefinition> propertyDefinitions = new ArrayList<PropertyDefinition>();
+            List<PropertyDefinition> propertyDefinitions = new ArrayList<>();
             propertyDefinitions.add(new SimplePropertyDefinition("key-string", PropertyTypeConverter.STRING));
             propertyDefinitions.add(new SimplePropertyDefinition("key-int", PropertyTypeConverter.INTEGER));
             propertyDefinitions.add(new SimplePropertyDefinition("key-boolean", PropertyTypeConverter.BOOLEAN));

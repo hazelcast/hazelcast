@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,17 +86,23 @@ public class HibernateIT extends HazelcastTestSupport {
         tx.commit();
         session.close();
 
-        for (int i = 0; i < 10; i++) {
-            session = sessionFactory.openSession();
-            AnnotatedEntity retrieved = session.get(AnnotatedEntity.class, (long) 1);
-            assertThat(retrieved.getTitle()).isEqualTo("some-title");
-            session.close();
-        }
 
         Statistics stats = sessionFactory.getStatistics();
         assertThat(stats.getEntityInsertCount()).isEqualTo(1);
         assertThat(stats.getSecondLevelCachePutCount()).isEqualTo(1);
-        assertThat(stats.getSecondLevelCacheHitCount()).isEqualTo(10);
+
+        // The assertion below can fail the first time on macOS docker-desktop due to small (1-2ms) clock drifts on VM.
+        // See https://github.com/docker/for-mac/issues/2076
+        assertTrueEventually(() -> {
+            stats.clear();
+            for (int i = 0; i < 10; i++) {
+                Session session2 = sessionFactory.openSession();
+                AnnotatedEntity retrieved = session2.get(AnnotatedEntity.class, (long) 1);
+                assertThat(retrieved.getTitle()).isEqualTo("some-title");
+                session2.close();
+            }
+            assertThat(stats.getSecondLevelCacheHitCount()).isEqualTo(10);
+        });
     }
 
     private SessionFactory createSessionFactory(Properties props) {

@@ -1,0 +1,3 @@
+Placeholder file for THIRD-PARTY.txt
+
+This file avoids failure by the assembly plugin when license-maven-plugin is skipped.

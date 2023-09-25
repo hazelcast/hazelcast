@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -36,7 +37,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.util.StringUtil.LOCALE_INTERNAL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -47,7 +47,7 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
     private static final String[] CITIES = {"NEW YORK", "ISTANBUL", "TOKYO", "LONDON", "PARIS", "CAIRO", "HONG KONG"};
 
     private final String mapName = "testMapInterceptor";
-    private final Map<HazelcastInstance, SimpleInterceptor> interceptorMap = new HashMap<HazelcastInstance, SimpleInterceptor>();
+    private final Map<HazelcastInstance, SimpleInterceptor> interceptorMap = new HashMap<>();
 
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance hz1;
@@ -75,7 +75,7 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
 
         key = generateKeyOwnedBy(hz1);
         value = randomString();
-        expectedValueAfterPut = value.toUpperCase(LOCALE_INTERNAL);
+        expectedValueAfterPut = StringUtil.upperCaseInternal(value);
         expectedValueAfterGet = expectedValueAfterPut + "-foo";
     }
 
@@ -189,7 +189,7 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
     @Test
     public void testReplaceInterceptedValuePropagatesToBackupCorrectly() {
         final String oldValue = "oldValue";
-        final String oldValueAfterPut = oldValue.toUpperCase(LOCALE_INTERNAL);
+        final String oldValueAfterPut = StringUtil.upperCaseInternal(oldValue);
         final String oldValueAfterGet = oldValueAfterPut + "-foo";
 
         map1.put(key, oldValue);
@@ -216,7 +216,7 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
     @Test
     public void testReplaceIfSameInterceptedValuePropagatesToBackupCorrectly() {
         final String oldValue = "oldValue";
-        final String oldValueAfterPut = oldValue.toUpperCase(LOCALE_INTERNAL);
+        final String oldValueAfterPut = StringUtil.upperCaseInternal(oldValue);
         final String oldValueAfterGet = oldValueAfterPut + "-foo";
 
         map1.put(key, oldValue);
@@ -335,7 +335,7 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         public Object interceptPut(Object oldValue, Object newValue) {
             putOldValue = oldValue;
             putNewValue = newValue;
-            return newValue.toString().toUpperCase(LOCALE_INTERNAL);
+            return StringUtil.upperCaseInternal(newValue.toString());
         }
 
         @Override

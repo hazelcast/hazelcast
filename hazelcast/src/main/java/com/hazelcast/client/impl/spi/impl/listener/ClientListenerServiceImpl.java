@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -65,7 +64,8 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PR
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public class ClientListenerServiceImpl implements ClientListenerService, StaticMetricsProvider, ConnectionListener {
+public class ClientListenerServiceImpl
+        implements ClientListenerService, StaticMetricsProvider, ConnectionListener<ClientConnection> {
 
     private final HazelcastClientInstanceImpl client;
     private final Map<UUID, ClientListenerRegistration> registrations = new ConcurrentHashMap<>();
@@ -73,11 +73,10 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
     private final ILogger logger;
     private final ExecutorService registrationExecutor;
     private final StripedExecutor eventExecutor;
-    private final boolean isSmart;
+    private final boolean isUnisocket;
 
     public ClientListenerServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
-        this.isSmart = client.getClientConfig().getNetworkConfig().isSmartRouting();
         this.logger = client.getLoggingService().getLogger(ClientListenerService.class);
         String name = client.getName();
         HazelcastProperties properties = client.getProperties();
@@ -88,6 +87,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         ThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, name + ".eventRegistration-");
         this.registrationExecutor = Executors.newSingleThreadExecutor(threadFactory);
         this.clientConnectionManager = client.getConnectionManager();
+        this.isUnisocket = clientConnectionManager.isUnisocketClient();
     }
 
     @Nonnull
@@ -102,8 +102,8 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
             ClientListenerRegistration registration = new ClientListenerRegistration(handler, codec);
             registrations.put(userRegistrationId, registration);
-            Collection<Connection> connections = clientConnectionManager.getActiveConnections();
-            for (Connection connection : connections) {
+            Collection<ClientConnection> connections = clientConnectionManager.getActiveConnections();
+            for (ClientConnection connection : connections) {
                 try {
                     invoke(registration, connection);
                 } catch (Exception e) {
@@ -190,7 +190,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         eventHandler.handle(clientMessage);
     }
 
-    protected void invoke(ClientListenerRegistration listenerRegistration, Connection connection) throws Exception {
+    protected void invoke(ClientListenerRegistration listenerRegistration, ClientConnection connection) throws Exception {
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
 
@@ -230,7 +230,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
     }
 
     @Override
-    public void connectionAdded(final Connection connection) {
+    public void connectionAdded(final ClientConnection connection) {
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
@@ -252,7 +252,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
     }
 
     @Override
-    public void connectionRemoved(final Connection connection) {
+    public void connectionRemoved(final ClientConnection connection) {
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
@@ -269,11 +269,11 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
     }
 
     //For Testing
-    public Map<Connection, ClientConnectionRegistration> getActiveRegistrations(final UUID uuid) {
+    public Map<ClientConnection, ClientConnectionRegistration> getActiveRegistrations(final UUID uuid) {
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
-        Future<Map<Connection, ClientConnectionRegistration>> future = registrationExecutor.submit(() -> {
+        Future<Map<ClientConnection, ClientConnectionRegistration>> future = registrationExecutor.submit(() -> {
             ClientListenerRegistration listenerRegistration = registrations.get(uuid);
             if (listenerRegistration == null) {
                 return Collections.emptyMap();
@@ -292,7 +292,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         return Collections.unmodifiableMap(registrations);
     }
 
-    private void invokeFromInternalThread(ClientListenerRegistration registrationKey, Connection connection) {
+    private void invokeFromInternalThread(ClientListenerRegistration registrationKey, ClientConnection connection) {
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
 
@@ -305,7 +305,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
     }
 
     private boolean registersLocalOnly() {
-        return isSmart;
+        return !isUnisocket;
     }
 
     private Boolean deregisterListenerInternal(@Nullable UUID userRegistrationId) {
@@ -317,12 +317,12 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
             return false;
         }
 
-        Map<Connection, ClientConnectionRegistration> registrations = listenerRegistration.getConnectionRegistrations();
+        Map<ClientConnection, ClientConnectionRegistration> registrations = listenerRegistration.getConnectionRegistrations();
         CompletableFuture[] futures = new CompletableFuture[registrations.size()];
         int i = 0;
-        for (Map.Entry<Connection, ClientConnectionRegistration> entry : registrations.entrySet()) {
+        for (Map.Entry<ClientConnection, ClientConnectionRegistration> entry : registrations.entrySet()) {
             ClientConnectionRegistration registration = entry.getValue();
-            ClientConnection subscriber = (ClientConnection) entry.getKey();
+            ClientConnection subscriber = entry.getKey();
             //remove local handler
             subscriber.removeEventHandler(registration.getCallId());
             //the rest is for deleting remote registration
@@ -347,6 +347,22 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         }
         CompletableFuture.allOf(futures).join();
         return true;
+    }
+
+    public boolean removeListener(UUID userRegistrationId) {
+        try {
+            return registrationExecutor.submit(() -> {
+                ClientListenerRegistration listenerRegistration = registrations.remove(userRegistrationId);
+                if (listenerRegistration == null) {
+                    return false;
+                }
+                listenerRegistration.getConnectionRegistrations().forEach((connection, registration) ->
+                        connection.removeEventHandler(registration.getCallId()));
+                return true;
+            }).get();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     private final class ClientEventProcessor implements StripedRunnable {

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@
     <!-- Suppress strict duplicate code checking -->
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
+    <suppress checks="IllegalImport" files="com[\\/]hazelcast[\\/]internal[\\/]tpcengine[\\/]"/>
+
     <!-- Suppress checking of copyright notice -->
     <suppress checks="Header" files="classloading[\\/]ThreadLocalLeakTestUtils"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]buildutils[\\/]ElementParser"/>
@@ -32,6 +34,11 @@
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]concurrent[\\/]package-info"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]cluster[\\/]fd[\\/]PhiAccrualFailureDetector"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]instance[\\/]impl[\\/]MobyNames"/>
+
+    <!--  Suppress checking of copyright notice, adapted from the MicroRaft project  -->
+    <suppress checks="Header" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]raft[\\/]impl[\\/]state[\\/]FollowerState"/>
+    <suppress checks="Header" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]raft[\\/]impl[\\/]state[\\/]FollowerStateTest"/>
+    <suppress checks="Header" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]raft[\\/]impl[\\/]SlowFollowerBackoffTest"/>
 
     <!--  Suppress checking of copyright notice, adapted from Agrona project  -->
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]HashUtil"/>
@@ -164,6 +171,7 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]connection[\\/]nio[\\/]ClientConnection"/>
     <suppress checks="MethodCount|ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]ClientEngineImpl"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]ClientEndpointImpl"/>
     <suppress checks="CyclomaticComplexity" files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]YamlClientDomConfigProcessor"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]MemberImpl"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount"
@@ -204,6 +212,9 @@
 
     <!-- Transaction -->
     <suppress checks="Javadoc(Method|Type)" files="com[\\/]hazelcast[\\/]transaction[\\/]"/>
+
+    <!-- SQL -->
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]sql[\\/]impl[\\/]SqlPlanImpl"/>
 
     <!-- Security -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]security[\\/]"/>
@@ -397,7 +408,7 @@
             checks="TypeName|MemberName|ConstantName|LocalVariableName|LocalFinalVariableName|MethodName"
             files="[\\/]src[\\/]test[\\/]"/>
     <suppress
-            checks="FinalClass|HideUtilityClassConstructor|InnerAssignment|EmptyBlock|DeclarationOrder|VisibilityModifier"
+            checks="HideUtilityClassConstructor|InnerAssignment|EmptyBlock|DeclarationOrder|VisibilityModifier"
             files="[\\/]src[\\/]test[\\/]"/>
     <suppress
             checks="ExplicitInitialization|EqualsHashCode|MissingSwitchDefault|TrailingComment"
@@ -421,7 +432,8 @@
     <suppress checks="" files="[\\/]module-info"/>
 
     <suppress checks="FileLength" files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]aggregate[\\/]AggregateOperations"/>
-    <suppress checks="CyclomaticComplexity" files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]config[\\/]JobConfig"/>
+    <suppress checks="FileLength|CyclomaticComplexity" files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]config[\\/]JobConfig"/>
+    <suppress checks="FileLength" files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]impl[\\/]JobCoordinationService"/>
 
     <suppress checks="InnerAssignment|JavadocType|TrailingComment|MethodCount|OperatorWrap|ClassDataAbstractionCoupling|ClassFanOutComplexity|CyclomaticComplexity|NPathComplexity" files="[\\/]src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]"/>
     <suppress checks="InnerAssignment|JavadocType|TrailingComment|MethodCount|OperatorWrap|ClassDataAbstractionCoupling|ClassFanOutComplexity|CyclomaticComplexity|NPathComplexity" files="[\\/]src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]"/>

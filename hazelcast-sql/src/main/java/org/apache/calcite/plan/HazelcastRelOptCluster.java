@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.apache.calcite.plan;
 
-import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
@@ -32,14 +32,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Located in the Calcite package because the required super constructor is package-private.
  */
 public final class HazelcastRelOptCluster extends RelOptCluster {
-    /** Distribution trait definition that is used during query execution. */
-    private final DistributionTraitDef distributionTraitDef;
 
-    /** Metadata about parameters. */
+    /**
+     * Metadata about parameters.
+     */
     private QueryParameterMetadata parameterMetadata;
 
-    /** Whether 'CREATE JOB' is used */
+    /**
+     * Whether 'CREATE JOB' is used
+     */
     private boolean requiresJob;
+
+    /** SQL security context */
+    private final SqlSecurityContext securityContext;
 
     private HazelcastRelOptCluster(
             RelOptPlanner planner,
@@ -47,30 +52,21 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
             RexBuilder rexBuilder,
             AtomicInteger nextCorrel,
             Map<String, RelNode> mapCorrelToRel,
-            DistributionTraitDef distributionTraitDef
+            SqlSecurityContext securityContext
     ) {
         super(planner, typeFactory, rexBuilder, nextCorrel, mapCorrelToRel);
-
-        this.distributionTraitDef = distributionTraitDef;
+        this.securityContext = securityContext;
     }
 
-    public static HazelcastRelOptCluster create(
-            RelOptPlanner planner,
-            RexBuilder rexBuilder,
-            DistributionTraitDef distributionTraitDef
-    ) {
+    public static HazelcastRelOptCluster create(RelOptPlanner planner, RexBuilder rexBuilder, SqlSecurityContext ssc) {
         return new HazelcastRelOptCluster(
                 planner,
                 rexBuilder.getTypeFactory(),
                 rexBuilder,
                 new AtomicInteger(),
                 new HashMap<>(),
-                distributionTraitDef
+                ssc
         );
-    }
-
-    public DistributionTraitDef getDistributionTraitDef() {
-        return distributionTraitDef;
     }
 
     public QueryParameterMetadata getParameterMetadata() {
@@ -89,8 +85,7 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
         this.requiresJob = requiresJob;
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{distributionTraitDef=" + distributionTraitDef + '}';
+    public SqlSecurityContext getSecurityContext() {
+        return securityContext;
     }
 }

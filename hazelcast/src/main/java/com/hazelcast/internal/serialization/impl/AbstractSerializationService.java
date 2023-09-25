@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -339,9 +339,14 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     @Override
-    public final <T> T readObject(final ObjectDataInput in) {
+    public final <T> T readObject(final ObjectDataInput in, boolean useBigEndianForReadingTypeId) {
         try {
-            final int typeId = in.readInt();
+            final int typeId;
+            if (useBigEndianForReadingTypeId && in instanceof BufferObjectDataInput) {
+                typeId = ((BufferObjectDataInput) in).readInt(BIG_ENDIAN);
+            } else {
+                typeId = in.readInt();
+            }
             final SerializerAdapter serializer = serializerFor(typeId);
             if (serializer == null) {
                 if (active) {
@@ -695,12 +700,18 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     /**
      * Makes sure that the classes registered as Compact serializable are not
-     * overriding the default serializers.
+     * overriding the default serializers if the user did not explicitly set
+     * {@link com.hazelcast.config.SerializationConfig#setAllowOverrideDefaultSerializers(boolean)} to
+     * true.
      * <p>
      * Must be called in the constructor of the child classes after they
      * complete registering default serializers.
      */
     protected void verifyDefaultSerializersNotOverriddenWithCompact() {
+        if (allowOverrideDefaultSerializers) {
+            return;
+        }
+
         for (Class clazz : compactStreamSerializer.getCompactSerializableClasses()) {
             if (!constantTypesMap.containsKey(clazz)) {
                 continue;

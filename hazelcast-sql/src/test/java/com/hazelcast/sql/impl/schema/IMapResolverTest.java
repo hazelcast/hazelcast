@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,10 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.model.Person;
 import com.hazelcast.sql.impl.client.SqlClientService;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,46 +31,81 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IMapResolverTest extends SqlTestSupport {
-    private static final String LE = System.lineSeparator();
 
     @BeforeClass
     public static void beforeClass() {
         initializeWithClient(1, null, null);
     }
 
+    @Before
+    public void setup() {
+        warmUpPartitions(instances());
+        // ensure that client knows owners of all partitions before sending message.
+        // if the partition owner is not known, message would not be sent.
+        warmUpPartitions(client());
+    }
+
     @Test
     public void smokeTest() throws Exception {
-        instance().getMap("m1").put(42, new BigDecimal((43)));
-
         Member member = instance().getCluster().getLocalMember();
+
+        instance().getMap("m1").put(42, new BigDecimal((43)));
         String mappingDdl1 = ((SqlClientService) client().getSql()).mappingDdl(member, "m1").get();
-        assertEquals("CREATE MAPPING \"m1\"" + LE
-                        + "TYPE IMap" + LE
-                        + "OPTIONS (" + LE
-                        + "  'keyFormat' = 'java'," + LE
-                        + "  'keyJavaClass' = 'java.lang.Integer'," + LE
-                        + "  'valueFormat' = 'java'," + LE
-                        + "  'valueJavaClass' = 'java.math.BigDecimal'" + LE
-                        + ")",
-                mappingDdl1);
+        assertThat(mappingDdl1).isEqualToNormalizingNewlines(
+                "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"m1\" EXTERNAL NAME \"m1\"\n"
+                        + "TYPE \"IMap\"\n"
+                        + "OPTIONS (\n"
+                        + "  'keyFormat'='java',\n"
+                        + "  'keyJavaClass'='java.lang.Integer',\n"
+                        + "  'valueFormat'='java',\n"
+                        + "  'valueJavaClass'='java.math.BigDecimal'\n"
+                        + ")");
         instance().getSql().execute(mappingDdl1); // we check that it doesn't fail
 
         instance().getMap("m2").put("foo", new Person("person name"));
         String mappingDdl2 = ((SqlClientService) client().getSql()).mappingDdl(member, "m2").get();
-        assertEquals("CREATE MAPPING \"m2\"" + LE
-                        + "TYPE IMap" + LE
-                        + "OPTIONS (" + LE
-                        + "  'keyFormat' = 'java'," + LE
-                        + "  'keyJavaClass' = 'java.lang.String'," + LE
-                        + "  'valueFormat' = 'java'," + LE
-                        + "  'valueJavaClass' = 'com.hazelcast.jet.sql.impl.schema.model.Person'" + LE
-                        + ")",
-                mappingDdl2);
+        assertThat(mappingDdl2).isEqualToNormalizingNewlines(
+                "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"m2\" EXTERNAL NAME \"m2\"\n"
+                        + "TYPE \"IMap\"\n"
+                        + "OPTIONS (\n"
+                        + "  'keyFormat'='java',\n"
+                        + "  'keyJavaClass'='java.lang.String',\n"
+                        + "  'valueFormat'='java',\n"
+                        + "  'valueJavaClass'='com.hazelcast.jet.sql.impl.schema.model.Person'\n"
+                        + ")");
         instance().getSql().execute(mappingDdl2);
+    }
+
+    @Test
+    public void testCompactSerialization() throws Exception {
+        Member member = instance().getCluster().getLocalMember();
+
+        instance().getMap("m3").put("foo", new CompactClass(1));
+        String mappingDdl = ((SqlClientService) client().getSql()).mappingDdl(member, "m3").get();
+        assertThat(mappingDdl).isEqualToNormalizingNewlines(
+                "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"m3\" EXTERNAL NAME \"m3\" (\n"
+                        + "  \"field\" INTEGER EXTERNAL NAME \"this.field\"\n"
+                        + ")\n"
+                        + "TYPE \"IMap\"\n"
+                        + "OPTIONS (\n"
+                        + "  'keyFormat'='java',\n"
+                        + "  'keyJavaClass'='java.lang.String',\n"
+                        + "  'valueFormat'='compact',\n"
+                        + "  'valueCompactTypeName'='com.hazelcast.sql.impl.schema.IMapResolverTest$CompactClass'\n"
+                        + ")");
+        instance().getSql().execute(mappingDdl);
+    }
+
+    private static class CompactClass {
+        private Integer field;
+
+        CompactClass(Integer field) {
+            this.field = field;
+        }
     }
 }

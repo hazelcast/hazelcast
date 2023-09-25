@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.cp.internal.exception.CannotRemoveCPMemberException;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.Matcher;
-import org.hamcrest.core.IsNull;
+import org.assertj.core.api.Condition;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -41,11 +39,15 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -65,70 +67,70 @@ public class ClientInvocation_ExceptionTest extends HazelcastTestSupport {
                 //// joinInternal()
                 // RuntimeException with a constructor accepting a Throwable cause
                 new Object[]{JOIN_INTERNAL, new IllegalStateException("message"), IllegalStateException.class,
-                        IsNull.nullValue(Throwable.class)},
+                        nullValue(Throwable.class)},
                 // RuntimeException with no constructor accepting a Throwable cause
                 new Object[]{JOIN_INTERNAL, new IllegalThreadStateException("message"), IllegalThreadStateException.class,
-                        IsNull.nullValue(Throwable.class)},
+                        nullValue(Throwable.class)},
                 new Object[]{JOIN_INTERNAL, new CannotRemoveCPMemberException("message"), CannotRemoveCPMemberException.class,
-                        IsNull.nullValue(Throwable.class)},
+                        nullValue(Throwable.class)},
                 // OperationTimeoutException: OperationTimeoutException is only expected to be
                 // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
                 new Object[]{JOIN_INTERNAL, new OperationTimeoutException("message"), OperationTimeoutException.class,
-                        IsNull.nullValue(Throwable.class)},
+                        nullValue(Throwable.class)},
                 // CancellationException: CancellationException is only expected to be
                 // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
                 new Object[]{JOIN_INTERNAL, new CancellationException("message"), CancellationException.class,
-                        IsNull.nullValue(Throwable.class)},
+                        nullValue(Throwable.class)},
                 // Checked exception is wrapped in HazelcastException
                 new Object[]{JOIN_INTERNAL, new ClassNotFoundException("message"), HazelcastException.class,
-                        new RootCauseMatcher(ClassNotFoundException.class, "message")},
+                        rootCause(ClassNotFoundException.class, "message")},
                 // Error subclass rethrown as same type
                 new Object[]{JOIN_INTERNAL, new OutOfMemoryError("message"), OutOfMemoryError.class,
-                        IsNull.nullValue(Throwable.class)},
+                        nullValue(Throwable.class)},
 
                 //// join()
                 // RuntimeException with a constructor accepting a Throwable cause
                 new Object[]{JOIN, new IllegalStateException("message"), CompletionException.class,
-                        new RootCauseMatcher(IllegalStateException.class, "message")},
+                        rootCause(IllegalStateException.class, "message")},
                 // RuntimeException with no constructor accepting a Throwable cause
                 new Object[]{JOIN, new IllegalThreadStateException("message"), CompletionException.class,
-                        new RootCauseMatcher(IllegalThreadStateException.class, "message")},
+                        rootCause(IllegalThreadStateException.class, "message")},
                 new Object[]{JOIN, new CannotRemoveCPMemberException("message"), CompletionException.class,
-                        new RootCauseMatcher(CannotRemoveCPMemberException.class, "message")},
+                        rootCause(CannotRemoveCPMemberException.class, "message")},
                 // OperationTimeoutException is wrapped in CompletionException
                 new Object[]{JOIN, new OperationTimeoutException("message"), CompletionException.class,
-                        new RootCauseMatcher(OperationTimeoutException.class, "message")},
+                        rootCause(OperationTimeoutException.class, "message")},
                 // CancellationException is expected to be thrown from join() unwrapped
                 new Object[]{JOIN, new CancellationException("message"), CancellationException.class,
-                        IsNull.nullValue(Throwable.class)},
+                        nullValue(Throwable.class)},
                 // Checked exception is wrapped in CompletionException
                 new Object[]{JOIN, new ClassNotFoundException("message"), CompletionException.class,
-                        new RootCauseMatcher(ClassNotFoundException.class, "message")},
+                        rootCause(ClassNotFoundException.class, "message")},
                 // Error subclass is wrapped in CompletionException
                 new Object[]{JOIN, new OutOfMemoryError("message"), CompletionException.class,
-                        new RootCauseMatcher(OutOfMemoryError.class, "message")},
+                        rootCause(OutOfMemoryError.class, "message")},
 
                 //// get()
                 // RuntimeException with a constructor accepting a Throwable cause
                 new Object[]{GET, new IllegalStateException("message"), ExecutionException.class,
-                        new RootCauseMatcher(IllegalStateException.class, "message")},
+                        rootCause(IllegalStateException.class, "message")},
                 // RuntimeException with no constructor accepting a Throwable cause
                 new Object[]{GET, new IllegalThreadStateException("message"), ExecutionException.class,
-                        new RootCauseMatcher(IllegalThreadStateException.class, "message")},
+                        rootCause(IllegalThreadStateException.class, "message")},
                 new Object[]{GET, new CannotRemoveCPMemberException("message"), ExecutionException.class,
-                        new RootCauseMatcher(CannotRemoveCPMemberException.class, "message")},
+                        rootCause(CannotRemoveCPMemberException.class, "message")},
                 // OperationTimeoutException is wrapped in ExecutionException
                 new Object[]{GET, new OperationTimeoutException("message"), ExecutionException.class,
-                        new RootCauseMatcher(OperationTimeoutException.class, "message")},
+                        rootCause(OperationTimeoutException.class, "message")},
                 // CancellationException is expected to be thrown from get() unwrapped
                 new Object[]{GET, new CancellationException("message"), CancellationException.class,
-                        IsNull.nullValue(Throwable.class)},
+                        nullValue(Throwable.class)},
                 // Checked exception is wrapped in HazelcastException
                 new Object[]{GET, new ClassNotFoundException("message"), ExecutionException.class,
-                        new RootCauseMatcher(ClassNotFoundException.class, "message")},
+                        rootCause(ClassNotFoundException.class, "message")},
                 // Error subclass is wrapped in ExecutionException
                 new Object[]{GET, new OutOfMemoryError("message"), ExecutionException.class,
-                        new RootCauseMatcher(OutOfMemoryError.class, null)},
+                        rootCause(OutOfMemoryError.class, null)},
 
         };
     }
@@ -143,7 +145,7 @@ public class ClientInvocation_ExceptionTest extends HazelcastTestSupport {
     public Class<? extends Throwable> expectedExceptionClass;
 
     @Parameterized.Parameter(3)
-    public Matcher<? extends Throwable> exceptionCauseMatcher;
+    public Condition<? super Throwable> exceptionCauseCondition;
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
@@ -169,9 +171,9 @@ public class ClientInvocation_ExceptionTest extends HazelcastTestSupport {
         InternalCompletableFuture f = (InternalCompletableFuture) executorService.submit(new ExceptionThrowingCallable(exception));
         assertCompletesEventually(f);
 
-        expected.expect(expectedExceptionClass);
-        expected.expectCause(exceptionCauseMatcher);
-        waitForFuture(f, futureSyncMethod);
+        assertThatThrownBy(() -> waitForFuture(f, futureSyncMethod))
+                .isInstanceOf(expectedExceptionClass)
+                .satisfies(t ->  assertThat(t.getCause()).is(exceptionCauseCondition));
     }
 
     private void waitForFuture(InternalCompletableFuture f, int synchronizationType) throws Exception {
@@ -209,5 +211,9 @@ public class ClientInvocation_ExceptionTest extends HazelcastTestSupport {
             }
             throw new AssertionError("Unknown exception type " + t);
         }
+    }
+
+    private static <T> Condition<T> nullValue(Class<T> type) {
+        return new Condition<>(Objects::isNull, "must be null");
     }
 }

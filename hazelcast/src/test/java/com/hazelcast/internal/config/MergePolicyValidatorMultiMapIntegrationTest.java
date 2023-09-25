@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,8 +54,7 @@ public class MergePolicyValidatorMultiMapIntegrationTest extends AbstractMergePo
     public void testMultiMap_withHyperLogLogMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("cardinalityEstimator", hyperLogLogMergePolicy);
 
-        expectCardinalityEstimatorException();
-        hz.getMultiMap("cardinalityEstimator");
+        expectCardinalityEstimatorException(() -> hz.getMultiMap("cardinalityEstimator"));
     }
 
     @Test
@@ -69,7 +68,6 @@ public class MergePolicyValidatorMultiMapIntegrationTest extends AbstractMergePo
     public void testMultiMap_withInvalidMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("invalid", invalidMergePolicyConfig);
 
-        expectedInvalidMergePolicyException();
-        hz.getMultiMap("invalid");
+        expectedInvalidMergePolicyException(() -> hz.getMultiMap("invalid"));
     }
 }

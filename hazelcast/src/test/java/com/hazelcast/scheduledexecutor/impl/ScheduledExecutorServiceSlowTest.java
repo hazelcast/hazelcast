@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -70,16 +71,20 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
 
         assertOpenEventually(initCountLatch);
 
-        int sleepPeriod = 10000;
-        long start = System.currentTimeMillis();
+        long sleepPeriod = 10;
+        long sleepPeriodInMillis = SECONDS.toMillis(sleepPeriod);
+        long sleepPeriodInNanos = SECONDS.toNanos(sleepPeriod);
+
+        long start = System.nanoTime();
         new Thread(() -> {
-            sleepAtLeastMillis(sleepPeriod);
+
+            sleepAtLeastMillis(sleepPeriodInMillis);
             waitCountLatch.countDown();
         }).start();
 
         double result = future.get();
 
-        assertTrue(System.currentTimeMillis() - start > sleepPeriod);
+        assertTrue(System.nanoTime() - start > sleepPeriodInNanos);
         assertTrue(doneCountLatch.await(0, SECONDS));
         assertEquals(expectedResult, result, 0);
         assertTrue(future.isDone());
@@ -426,7 +431,8 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         long counter = 0;
         long limit = 2000000;
 
-        Executors.newSingleThreadExecutor().submit(new Runnable() {
+        ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+        singleThreadExecutor.submit(new Runnable() {
             @Override
             public void run() {
                 while (running.get()) {
@@ -461,5 +467,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
 
         // wait for running tasks to finish, keeping log clean of PassiveMode exceptions
         sleepSeconds(5);
+        singleThreadExecutor.shutdownNow();
+        executorService.shutdown();
     }
 }

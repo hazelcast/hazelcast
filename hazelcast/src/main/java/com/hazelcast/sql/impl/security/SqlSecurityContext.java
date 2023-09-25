@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.security;
 
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.security.Permission;
 
 /**
@@ -35,4 +37,10 @@ public interface SqlSecurityContext {
      * @param permission permission to be checked
      */
     void checkPermission(Permission permission);
+
+    /**
+     * @return subject associated with the current query
+     */
+    @Nullable
+    Subject subject();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.jet.core.test;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.JetInstance;
@@ -32,6 +33,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
+import java.security.AccessControlException;
+import java.security.Permission;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,12 +71,14 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     }});
     private ClassLoader classLoader;
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public HazelcastInstance hazelcastInstance() {
         return instance;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     @Deprecated
     public JetInstance jetInstance() {
         return (JetInstance) instance.getJet();
@@ -88,7 +93,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         if (this.instance instanceof HazelcastInstanceProxy || this.instance instanceof HazelcastInstanceImpl) {
             NodeEngineImpl nodeEngine = Util.getNodeEngine(this.instance);
             this.partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine,
-                    Util.getMembersView(nodeEngine).getMembers())
+                            Util.getMembersView(nodeEngine).getMembers(), false, null, null, null)
                     .entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
         }
         return this;
@@ -120,7 +125,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return this;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JobConfig jobConfig() {
         return jobConfig;
     }
@@ -161,7 +167,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return this;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public ILogger logger() {
         if (logger == null) {
             logger = Logger.getLogger(loggerName());
@@ -182,7 +189,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return totalParallelism() / localParallelism();
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public String vertexName() {
         return vertexName;
     }
@@ -256,9 +264,22 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return classLoader;
     }
 
+    @Override
+    public DataConnectionService dataConnectionService() {
+        return Util.getNodeEngine(instance).getDataConnectionService();
+    }
+
+    public NodeEngineImpl getNodeEngine() {
+        return Util.getNodeEngine(hazelcastInstance());
+    }
+
     @Nonnull
     public TestProcessorMetaSupplierContext setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
         return this;
+    }
+
+    @Override
+    public void checkPermission(Permission permission) throws AccessControlException {
     }
 }

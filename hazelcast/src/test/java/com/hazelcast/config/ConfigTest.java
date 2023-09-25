@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,12 +38,14 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Properties;
 
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
 import static com.hazelcast.instance.ProtocolType.WAN;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("checkstyle:Indentation")
 @RunWith(HazelcastParallelClassRunner.class)
@@ -72,12 +74,20 @@ public class ConfigTest extends HazelcastTestSupport {
         assertNotEquals("Expected that the default in-memory format is not OBJECT",
           MapConfig.DEFAULT_IN_MEMORY_FORMAT, InMemoryFormat.OBJECT);
 
-        config.getMapConfig("myBinaryMap")
-          .setBackupCount(3);
-        config.getMapConfig("default")
-          .setInMemoryFormat(InMemoryFormat.OBJECT);
+        MapConfig binaryMapConf = config.getMapConfig("myBinaryMap");
+        binaryMapConf.setBackupCount(3);
+        binaryMapConf.getDataPersistenceConfig().setEnabled(true);
+        binaryMapConf.getDataPersistenceConfig().setFsync(true);
+        binaryMapConf.getHotRestartConfig().setEnabled(true);
+        binaryMapConf.getHotRestartConfig().setFsync(false);
+
+        MapConfig defaultConf = config.getMapConfig("default");
+        defaultConf.setInMemoryFormat(InMemoryFormat.OBJECT);
+        defaultConf.getDataPersistenceConfig().setEnabled(true);
+        defaultConf.getHotRestartConfig().setEnabled(false);
+
         config.getMapConfig("myObjectMap")
-          .setBackupCount(5);
+            .setBackupCount(5);
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
@@ -85,11 +95,16 @@ public class ConfigTest extends HazelcastTestSupport {
         assertEqualsStringFormat("Expected %d sync backups, but found %d", 3, binaryMapConfig.getBackupCount());
         assertEqualsStringFormat("Expected %s in-memory format, but found %s",
           MapConfig.DEFAULT_IN_MEMORY_FORMAT, binaryMapConfig.getInMemoryFormat());
+        assertEquals("myBinaryMap", binaryMapConfig.getName());
+        assertTrue(binaryMapConfig.getHotRestartConfig().isFsync());
 
         MapConfig objectMapConfig = hz.getConfig().findMapConfig("myObjectMap");
         assertEqualsStringFormat("Expected %d sync backups, but found %d", 5, objectMapConfig.getBackupCount());
         assertEqualsStringFormat("Expected %s in-memory format, but found %s",
           InMemoryFormat.OBJECT, objectMapConfig.getInMemoryFormat());
+        assertEquals("myObjectMap", objectMapConfig.getName());
+        assertTrue(objectMapConfig.getDataPersistenceConfig().isEnabled());
+        assertTrue(objectMapConfig.getHotRestartConfig().isEnabled());
     }
 
     @Test
@@ -327,7 +342,22 @@ public class ConfigTest extends HazelcastTestSupport {
         assertThrows(ClassCastException.class, () -> config.getDeviceConfig(LocalDeviceConfig.class, deviceName));
     }
 
-    private static String getSimpleXmlConfigStr(String ...tagAndVal) {
+    @Test
+    public void testDefaultDeviceRemovedWhenDeviceConfigured() {
+        String deviceName = randomName();
+        DeviceConfig deviceConfig = new LocalDeviceConfig().setName(deviceName);
+        assertNotNull(DEFAULT_DEVICE_NAME);
+
+        config.addDeviceConfig(deviceConfig);
+
+        assertNull(config.getDeviceConfig(randomName()));
+        assertEquals(deviceConfig, config.getDeviceConfig(deviceName));
+        assertEquals(deviceConfig, config.getDeviceConfig(LocalDeviceConfig.class, deviceName));
+
+        assertNull(config.getDeviceConfig(DEFAULT_DEVICE_NAME));
+    }
+
+    private static String getSimpleXmlConfigStr(String... tagAndVal) {
         if (tagAndVal.length % 2 != 0) {
             throw new IllegalArgumentException("The number of tags and values parameters is odd."
                     + " Please provide these tags and values as pairs.");
@@ -342,7 +372,7 @@ public class ConfigTest extends HazelcastTestSupport {
         return sb.toString();
     }
 
-    private static String getSimpleYamlConfigStr(String ...tagAndVal) {
+    private static String getSimpleYamlConfigStr(String... tagAndVal) {
         if (tagAndVal.length % 2 != 0) {
             throw new IllegalArgumentException("The number of tags and values parameters is odd."
                     + " Please provide these tags and values as pairs.");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query (as of 4.2).
  */
-@Generated("9f40e52be313b1c09e1cbe449b0b5574")
+@Generated("fe3a24977926f1fc710a003147019847")
 public final class SqlExecuteCodec {
     //hex: 0x210400
     public static final int REQUEST_MESSAGE_TYPE = 2163712;
@@ -49,7 +49,8 @@ public final class SqlExecuteCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SKIP_UPDATE_STATISTICS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_UPDATE_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_IS_INFINITE_ROWS_FIELD_OFFSET = RESPONSE_UPDATE_COUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_IS_INFINITE_ROWS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_PARTITION_ARGUMENT_INDEX_FIELD_OFFSET = RESPONSE_IS_INFINITE_ROWS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_PARTITION_ARGUMENT_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private SqlExecuteCodec() {
     }
@@ -176,18 +177,30 @@ public final class SqlExecuteCodec {
         public boolean isInfiniteRows;
 
         /**
+         * Index of the partition-determining argument, -1 if not applicable.
+         */
+        public int partitionArgumentIndex;
+
+        /**
          * True if the isInfiniteRows is received from the member, false otherwise.
          * If this is false, isInfiniteRows has the default value for its type.
          */
         public boolean isIsInfiniteRowsExists;
+
+        /**
+         * True if the partitionArgumentIndex is received from the member, false otherwise.
+         * If this is false, partitionArgumentIndex has the default value for its type.
+         */
+        public boolean isPartitionArgumentIndexExists;
     }
 
-    public static ClientMessage encodeResponse(@Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, long updateCount, @Nullable com.hazelcast.sql.impl.client.SqlError error, boolean isInfiniteRows) {
+    public static ClientMessage encodeResponse(@Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, long updateCount, @Nullable com.hazelcast.sql.impl.client.SqlError error, boolean isInfiniteRows, int partitionArgumentIndex) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         encodeLong(initialFrame.content, RESPONSE_UPDATE_COUNT_FIELD_OFFSET, updateCount);
         encodeBoolean(initialFrame.content, RESPONSE_IS_INFINITE_ROWS_FIELD_OFFSET, isInfiniteRows);
+        encodeInt(initialFrame.content, RESPONSE_PARTITION_ARGUMENT_INDEX_FIELD_OFFSET, partitionArgumentIndex);
         clientMessage.add(initialFrame);
 
         ListMultiFrameCodec.encodeNullable(clientMessage, rowMetadata, SqlColumnMetadataCodec::encode);
@@ -206,6 +219,12 @@ public final class SqlExecuteCodec {
             response.isIsInfiniteRowsExists = true;
         } else {
             response.isIsInfiniteRowsExists = false;
+        }
+        if (initialFrame.content.length >= RESPONSE_PARTITION_ARGUMENT_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES) {
+            response.partitionArgumentIndex = decodeInt(initialFrame.content, RESPONSE_PARTITION_ARGUMENT_INDEX_FIELD_OFFSET);
+            response.isPartitionArgumentIndexExists = true;
+        } else {
+            response.isPartitionArgumentIndexExists = false;
         }
         response.rowMetadata = ListMultiFrameCodec.decodeNullable(iterator, SqlColumnMetadataCodec::decode);
         response.rowPage = CodecUtil.decodeNullable(iterator, SqlPageCodec::decode);

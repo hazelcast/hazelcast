@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.journal.EventJournalDataStructureAdapter;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalTestContext;
@@ -28,12 +29,17 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.MapUtil;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
 
@@ -44,6 +50,8 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
     private static final String NON_EXPIRING_MAP = "mappy";
     private static final String EXPIRING_MAP = "expiring";
 
+    public final AtomicBoolean isPredicateContextInjected = new AtomicBoolean(false);
+    public final AtomicBoolean isProjectionContextInjected = new AtomicBoolean(false);
     @Override
     protected Config getConfig() {
         Config config = super.getConfig();
@@ -58,7 +66,15 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
 
         config.getMapConfig(EXPIRING_MAP).setTimeToLiveSeconds(1)
               .setInMemoryFormat(getInMemoryFormat());
-
+        config.setManagedContext(obj -> {
+            if (obj instanceof PredicateWithContext) {
+                setPredicate(true);
+            }
+            if (obj instanceof ProjectionWithContext) {
+                setProjection(true);
+            }
+            return obj;
+        });
         return config;
     }
 
@@ -73,6 +89,31 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
                 new EventJournalMapDataStructureAdapter<K, V>(getRandomInstance().<K, V>getMap(EXPIRING_MAP)),
                 new EventJournalMapEventAdapter<K, V>()
         );
+    }
+
+    @Test
+    public void testPredicateAndProjectionContextInjection() {
+        final EventJournalTestContext<K, V, EventJournalMapEvent<K, V>> context = createContext();
+        readFromEventJournal((EventJournalDataStructureAdapter) context.dataAdapter, 0,
+                1, 1, new PredicateWithContext(), new ProjectionWithContext());
+        assertAtomicEventually("Predicate Must be injected with ManagedContext", true, getPredicate(), 30);
+        assertAtomicEventually("Projection must injected with ManagedContext", true, getProjection(), 30);
+    }
+
+    public void setPredicate(boolean value) {
+        this.isPredicateContextInjected.set(value);
+    }
+
+    public void setProjection(boolean value) {
+        this.isProjectionContextInjected.set(value);
+    }
+
+    public AtomicBoolean getProjection() {
+        return this.isProjectionContextInjected;
+    }
+
+    public AtomicBoolean getPredicate() {
+        return this.isPredicateContextInjected;
     }
 
     public static class CustomMapStore implements MapStore<Object, Object> {
@@ -114,6 +155,18 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
         @Override
         public Iterable<Object> loadAllKeys() {
             return Collections.emptySet();
+        }
+    }
+    public static class PredicateWithContext implements Predicate, Serializable {
+        @Override
+        public boolean test(Object o) {
+            return true;
+        }
+    }
+    public static class ProjectionWithContext implements Function , Serializable {
+        @Override
+        public Object apply(Object o) {
+            return null;
         }
     }
 }

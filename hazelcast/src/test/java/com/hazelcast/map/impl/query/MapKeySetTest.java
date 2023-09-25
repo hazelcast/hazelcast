@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ import java.util.Set;
 
 import static com.hazelcast.query.Predicates.partitionPredicate;
 import static com.hazelcast.test.Accessors.getSerializationService;
-import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -86,7 +85,7 @@ public class MapKeySetTest extends HazelcastTestSupport {
 
         Set<String> result = map.keySet();
 
-        assertEquals(setOf("1", "2", "3"), result);
+        assertEquals(Set.of("1", "2", "3"), result);
     }
 
     @Test
@@ -97,7 +96,7 @@ public class MapKeySetTest extends HazelcastTestSupport {
 
         Set<String> result = map.keySet(Predicates.alwaysTrue());
 
-        assertEquals(setOf("1", "2", "3"), result);
+        assertEquals(Set.of("1", "2", "3"), result);
     }
 
     @Test
@@ -108,7 +107,7 @@ public class MapKeySetTest extends HazelcastTestSupport {
 
         Set<String> result = map.keySet(new GoodPredicate());
 
-        assertEquals(setOf("1", "3"), result);
+        assertEquals(Set.of("1", "3"), result);
     }
 
     @Test

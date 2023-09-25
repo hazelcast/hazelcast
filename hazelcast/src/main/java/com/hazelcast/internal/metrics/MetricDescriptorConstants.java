@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,6 +210,8 @@ public final class MetricDescriptorConstants {
     public static final String MAP_METRIC_PUT_COUNT = "putCount";
     public static final String MAP_METRIC_SET_COUNT = "setCount";
     public static final String MAP_METRIC_REMOVE_COUNT = "removeCount";
+    public static final String MAP_METRIC_EVICTION_COUNT = "evictionCount";
+    public static final String MAP_METRIC_EXPIRATION_COUNT = "expirationCount";
     public static final String MAP_METRIC_CREATION_TIME = "creationTime";
     public static final String MAP_METRIC_OWNED_ENTRY_COUNT = "ownedEntryCount";
     public static final String MAP_METRIC_BACKUP_ENTRY_COUNT = "backupEntryCount";
@@ -252,6 +254,7 @@ public final class MetricDescriptorConstants {
             = "map.store.offloaded.operations";
     public static final String MAP_METRIC_MAP_STORE_WAITING_TO_BE_PROCESSED_COUNT
             = "waitingToBeProcessedCount";
+    public static final String MAP_TAG_HYBRID_LOG_ID = "hybridlogid";
     // ===[/MAP]========================================================
 
     // ===[MEMORY]======================================================
@@ -401,9 +404,9 @@ public final class MetricDescriptorConstants {
     public static final String OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_BROADCAST_PERIOD_MILLIS =
             "heartbeatBroadcastPeriodMillis";
     public static final String OPERATION_METRIC_INVOCATION_MONITOR_INVOCATION_SCAN_PERIOD_MILLIS = "invocationScanPeriodMillis";
-    public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_USED_PERCENTAGE = "invocations.usedPercentage";
-    public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_LAST_CALL_ID = "invocations.lastCallId";
-    public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_PENDING = "invocations.pending";
+    public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_USED_PERCENTAGE = "usedPercentage";
+    public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_LAST_CALL_ID = "lastCallId";
+    public static final String OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_PENDING = "pending";
     public static final String OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT = "executedOperationsCount";
     public static final String OPERATION_METRIC_OPERATION_SERVICE_ASYNC_OPERATIONS = "asyncOperations";
     public static final String OPERATION_METRIC_OPERATION_SERVICE_TIMEOUT_COUNT = "operationTimeoutCount";
@@ -448,6 +451,7 @@ public final class MetricDescriptorConstants {
     public static final String PERSISTENCE_METRIC_TOMB_GARBAGE = "tombGarbage";
     public static final String PERSISTENCE_METRIC_GC_LIVE_VALUES = "liveValues";
     public static final String PERSISTENCE_METRIC_GC_LIVE_TOMBSTONES = "liveTombstones";
+    public static final String PERSISTENCE_DISCRIMINATOR_STORE_NAME = "storeName";
     // ===[/PERSISTENCE]================================================
 
     // ===[PN COUNTER]==================================================
@@ -616,6 +620,45 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_AVG = "tstore.hlog.paging.frequency.avg";
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_MIN = "tstore.hlog.paging.frequency.min";
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_MAX = "tstore.hlog.paging.frequency.max";
+
+    public static final String TSTORE_HLOG_COMPACTION_PREFIX = "tstore.hlog.compaction.";
+
+    public static final String TSTORE_INDEX_HLOG_COMPACTION_PREFIX = "tstore.hlog.compaction.index.";
+    public static final String TSTORE_HLOG_COMPACTION_DUMMY_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX
+            + "dummyRecords.count";
+    public static final String TSTORE_HLOG_COMPACTION_DUMMY_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
+            + "dummyRecords.size";
+    public static final String TSTORE_HLOG_COMPACTION_NON_DUMMY_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX
+            + "nonDummyRecords.count";
+    public static final String TSTORE_HLOG_COMPACTION_NON_DUMMY_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
+            + "nonDummyRecords.size";
+    public static final String TSTORE_HLOG_COMPACTION_ALIVE_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX
+            + "aliveRecords.count";
+    public static final String TSTORE_HLOG_COMPACTION_ALIVE_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
+            + "aliveRecords.size";
+    public static final String TSTORE_HLOG_COMPACTION_DEAD_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX
+            + "deadRecords.count";
+    public static final String TSTORE_HLOG_COMPACTION_DEAD_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
+            + "deadRecords.size";
+    public static final String TSTORE_HLOG_COMPACTION_VISITED_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX
+            + "visitedRecords.count";
+    public static final String TSTORE_HLOG_COMPACTION_VISITED_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
+            + "visitedRecords.size";
+    public static final String TSTORE_HLOG_COMPACTION_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "count";
+    public static final String TSTORE_HLOG_COMPACTION_QUEUE_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "queue.count";
+    public static final String TSTORE_HLOG_COMPACTION_FAILED_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "failed.count";
+    public static final String TSTORE_HLOG_COMPACTION_IN_PROGRESS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "inProgress.count";
+    public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_TOTAL = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.total";
+    public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_MIN = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.min";
+    public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_MAX = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.max";
+    public static final String TSTORE_HLOG_COMPACTION_QUEUE_TIME_AVG = TSTORE_HLOG_COMPACTION_PREFIX + "queueTime.avg";
+
+    public static final String TSTORE_HLOG_COMPACTION_TIME_TOTAL = TSTORE_HLOG_COMPACTION_PREFIX + "time.total";
+    public static final String TSTORE_HLOG_COMPACTION_TIME_MIN = TSTORE_HLOG_COMPACTION_PREFIX + "time.min";
+    public static final String TSTORE_HLOG_COMPACTION_TIME_MAX = TSTORE_HLOG_COMPACTION_PREFIX + "time.max";
+    public static final String TSTORE_HLOG_COMPACTION_TIME_AVG = TSTORE_HLOG_COMPACTION_PREFIX + "time.avg";
+    public static final String TSTORE_HLOG_COMPACTION_IO_TIME_TOTAL = TSTORE_HLOG_COMPACTION_PREFIX + "ioTime.total";
+
     // ===[/TSTORE]=====================================================
 
     // ===[WAN]=========================================================
@@ -658,8 +701,18 @@ public final class MetricDescriptorConstants {
     public static final String WAN_METRIC_ACK_DELAY_CURRENT_MILLIS = "ackDelayCurrentMillis";
     public static final String WAN_METRIC_ACK_DELAY_LAST_START = "ackDelayLastStart";
     public static final String WAN_METRIC_ACK_DELAY_LAST_END = "ackDelayLastEnd";
+    public static final String WAN_METRIC_CONNECTION_HEALTH = "connectionHealth";
+    public static final String WAN_DISCRIMINATOR_CONNECTION_ADDRESS = "address";
+    public static final String WAN_TAG_DISCOVERY_STRATEGY = "discoveryStrategy";
     public static final String WAN_QUEUE_FILL_PERCENT = "queueFillPercent";
     // ===[/WAN]========================================================
+
+    // ===[KAFKA-CONNECT]=======================================================
+    public static final String KAFKA_CONNECT_PREFIX = "kafka.connect";
+    public static final String KAFKA_CONNECT_CREATION_TIME = "creationTime";
+    public static final String KAFKA_CONNECT_SOURCE_RECORD_POLL_TOTAL = "sourceRecordPollTotal";
+    public static final String KAFKA_CONNECT_SOURCE_RECORD_POLL_AVG_TIME = "sourceRecordPollTotalAvgTime";
+    // ===[/KAFKA-CONNECT]=======================================================
 
     public static final String GENERAL_DISCRIMINATOR_NAME = "name";
 

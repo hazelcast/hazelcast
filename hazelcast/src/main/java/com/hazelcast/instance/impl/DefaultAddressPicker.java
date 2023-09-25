@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.io.File;
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -140,9 +140,11 @@ class DefaultAddressPicker
         boolean bindAny = hazelcastProperties.getBoolean(ClusterProperty.SOCKET_SERVER_BIND_ANY);
         AddressDefinition bindAddressDef = pickAddressDef();
 
+        // if advanced network config is enabled, pick the appropriate EndpointConfig to pass server socket options
+        // otherwise, construct an EndpointConfig and populate it with socket options from relevant properties.
         EndpointConfig endpoint = config.getAdvancedNetworkConfig().isEnabled()
                 ? config.getAdvancedNetworkConfig().getEndpointConfigs().get(endpointQualifier)
-                : null;
+                : endpointConfigFromProperties(hazelcastProperties);
 
         serverSocketChannel = createServerSocketChannel(logger, endpoint, bindAddressDef.inetAddress,
                 bindAddressDef.port == 0 ? port : bindAddressDef.port, portCount, isPortAutoIncrement, isReuseAddress, bindAny);
@@ -156,6 +158,17 @@ class DefaultAddressPicker
         }
 
         return getPublicAddress(port);
+    }
+
+    static EndpointConfig endpointConfigFromProperties(HazelcastProperties properties) {
+        EndpointConfig endpointConfig = new EndpointConfig();
+        endpointConfig.setSocketKeepAlive(properties.getBoolean(ClusterProperty.SOCKET_KEEP_ALIVE));
+        endpointConfig.setSocketKeepIdleSeconds(properties.getInteger(ClusterProperty.SOCKET_KEEP_IDLE));
+        endpointConfig.setSocketKeepIntervalSeconds(properties.getInteger(ClusterProperty.SOCKET_KEEP_INTERVAL));
+        endpointConfig.setSocketKeepCount(properties.getInteger(ClusterProperty.SOCKET_KEEP_COUNT));
+        endpointConfig.setSocketRcvBufferSizeKb(properties.getInteger(ClusterProperty.SOCKET_RECEIVE_BUFFER_SIZE));
+
+        return endpointConfig;
     }
 
     private static Address createAddress(AddressDefinition addressDef, int port) {
@@ -201,8 +214,7 @@ class DefaultAddressPicker
         }
 
         if (interfacesConfig.isEnabled()) {
-            String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
-                    + "Interface matching must be either disabled or updated in the hazelcast.xml config file.";
+            String msg = errorMsgForNoMatchingInterface();
             logger.severe(msg);
             throw new RuntimeException(msg);
         }
@@ -210,6 +222,15 @@ class DefaultAddressPicker
             logger.warning("Could not find a matching address to start with! Picking one of non-loopback addresses.");
         }
         return pickMatchingAddress(null);
+    }
+
+    private String errorMsgForNoMatchingInterface() {
+        File file = config.getConfigurationFile();
+        String configSource = file != null && file.exists() && file.isFile()
+                ? "the " + file.getName() + " config file." : "the member configuration.";
+        String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
+                + "Interface matching must be either disabled or updated in " + configSource;
+        return msg;
     }
 
     private List<InterfaceDefinition> getInterfaces() {
@@ -310,7 +331,10 @@ class DefaultAddressPicker
         }
         if (address != null) {
             address = address.trim();
-            if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
+            if (address.isEmpty()) {
+                throw new IllegalArgumentException("Public address cannot be blank. Configure it to a"
+                        + " non-blank value or remove it from configuration.");
+            } else if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
                 return pickLoopbackAddress(address, port);
             } else {
                 // allow port to be defined in same string in the form of <host>:<port>, e.g. 10.0.0.0:1234
@@ -356,30 +380,52 @@ class DefaultAddressPicker
                 if (address == null) {
                     continue;
                 }
-                matchingAddress = address;
-
-                if (preferIPv6Addresses) {
-                    // IPv6 address is preferred, return if address is IPv6.
-                    if (inetAddress instanceof Inet6Address) {
-                        return matchingAddress;
-                    }
-                } else if (inetAddress instanceof Inet4Address) {
-                    // No IPv6 address preference, return if address is IPv4.
-                    return matchingAddress;
+                if (getPriority(address, preferIPv6Addresses) > getPriority(matchingAddress, preferIPv6Addresses)) {
+                    matchingAddress = address;
                 }
             }
         }
-        // nothing matched to IP version preference, return what we have.
         return matchingAddress;
+    }
+
+    /**
+     * The priority in desc-order:
+     * <ol>
+     * <li>IPv6-preference
+     * <li>global address
+     * <li>site-local address
+     * <li>link-local address
+     * <li>loopback address
+     * </ol>
+     */
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private int getPriority(AddressDefinition address, boolean preferIPv6Addresses) {
+        if (address == null) {
+            return 0;
+        }
+        InetAddress ia = address.inetAddress;
+        boolean isIpv6 = ia instanceof Inet6Address;
+        int priority;
+        if (ia.isLoopbackAddress()) {
+            priority = 1;
+        } else if (ia.isLinkLocalAddress()) {
+            priority = 2;
+        } else if (ia.isSiteLocalAddress()) {
+            priority = 3;
+        } else {
+            priority = 5;
+        }
+        if (isIpv6 ^ !preferIPv6Addresses) {
+            priority += 10;
+        }
+        return priority;
     }
 
     private AddressDefinition getMatchingAddress(Collection<InterfaceDefinition> interfaces, InetAddress inetAddress) {
         if (isNotEmpty(interfaces)) {
             return match(inetAddress, interfaces);
-        } else if (!inetAddress.isLoopbackAddress()) {
-            return new AddressDefinition(inetAddress);
         }
-        return null;
+        return new AddressDefinition(inetAddress);
     }
 
     /**

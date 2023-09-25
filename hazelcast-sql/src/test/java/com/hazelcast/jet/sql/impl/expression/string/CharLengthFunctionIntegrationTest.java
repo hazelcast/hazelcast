@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.CharacterVal;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.StringVal;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.string.CharLengthFunction;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -100,7 +100,7 @@ public class CharLengthFunctionIntegrationTest extends StringFunctionIntegration
     @Test
     public void testSerialization() {
         CharLengthFunction original = CharLengthFunction.create(ConstantExpression.create("1", VARCHAR));
-        CharLengthFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CHAR_LENGTH);
+        CharLengthFunction restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_CHAR_LENGTH);
 
         checkEquals(original, restored, true);
     }

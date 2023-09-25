@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.function.ThrowingRunnable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -145,14 +146,14 @@ public class SqlClientResultTest extends SqlTestSupport {
         }
     }
 
-    private void checkSqlException(Runnable task, int expectedCode, String expectedMessage) {
+    private void checkSqlException(ThrowingRunnable task, int expectedCode, String expectedMessage) {
         HazelcastSqlException err = assertThrows(HazelcastSqlException.class, task);
 
         assertEquals(expectedCode, err.getCode());
         assertTrue(err.getMessage(), err.getMessage().contains(expectedMessage));
     }
 
-    private void checkIllegalStateException(Runnable task, String expectedMessage) {
+    private void checkIllegalStateException(ThrowingRunnable task, String expectedMessage) {
         IllegalStateException err = assertThrows(IllegalStateException.class, task);
 
         assertEquals(expectedMessage, err.getMessage());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -382,7 +382,7 @@ public final class StringUtil {
         if (arr1.length == 0 || arr2.length == 0) {
             return new String[0];
         }
-        List<String> list = new ArrayList<String>(Arrays.asList(arr1));
+        List<String> list = new ArrayList<>(Arrays.asList(arr1));
         list.retainAll(Arrays.asList(arr2));
         return list.toArray(new String[0]);
     }
@@ -398,7 +398,7 @@ public final class StringUtil {
         if (arr1 == null || arr1.length == 0 || arr2 == null || arr2.length == 0) {
             return arr1;
         }
-        List<String> list = new ArrayList<String>(Arrays.asList(arr1));
+        List<String> list = new ArrayList<>(Arrays.asList(arr1));
         list.removeAll(Arrays.asList(arr2));
         return list.toArray(new String[0]);
     }
@@ -548,5 +548,9 @@ public final class StringUtil {
             }
         }
         return new String(chars, 0, pos);
+    }
+
+    public static boolean isBoolean(String value) {
+        return value.equalsIgnoreCase("false") || value.equalsIgnoreCase("true");
     }
 }

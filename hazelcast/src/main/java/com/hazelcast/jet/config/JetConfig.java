@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -241,7 +241,11 @@ public class JetConfig {
      * </li><li>
      *     number of distinct keys accumulated by aggregation operations
      * </li><li>
+     *     number of keys in all incomplete frames in window aggregation
+     * </li><li>
      *     number of entries in the hash-join lookup tables
+     * </li><li>
+     *     number of buffered rows in the stream-to-stream SQL join
      * </li><li>
      *     number of entries in stateful transforms
      * </li><li>
@@ -377,5 +381,20 @@ public class JetConfig {
         result = 31 * result + (enabled ? 1 : 0);
         result = 31 * result + (resourceUploadEnabled ? 1 : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "JetConfig{"
+                + "defaultEdgeConfig=" + defaultEdgeConfig
+                + ", enabled=" + enabled
+                + ", resourceUploadEnabled=" + resourceUploadEnabled
+                + ", cooperativeThreadCount=" + cooperativeThreadCount
+                + ", flowControlPeriodMs=" + flowControlPeriodMs
+                + ", backupCount=" + backupCount
+                + ", scaleUpDelayMillis=" + scaleUpDelayMillis
+                + ", losslessRestartEnabled=" + losslessRestartEnabled
+                + ", maxProcessorAccumulatedRecords=" + maxProcessorAccumulatedRecords
+                + '}';
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,8 +100,8 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     static JsonObject getOperationStats(HazelcastInstance instance) {
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(instance));
         LocalOperationStats operationStats = timedMemberStateFactory.createTimedMemberState()
-                                                                    .getMemberState()
-                                                                    .getOperationStats();
+                .getMemberState()
+                .getOperationStats();
         return ((JsonSerializable) operationStats).toJson();
     }
 

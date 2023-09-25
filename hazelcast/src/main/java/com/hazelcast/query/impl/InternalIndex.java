@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.map.impl.recordstore.StepAwareStorage;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
 /**
@@ -112,4 +113,13 @@ public interface InternalIndex extends Index {
      * @return {@code true} if the stamp is still valid, {@code false} otherwise
      */
     boolean validatePartitionStamp(long stamp);
+
+    /**
+     * @return Step-aware storage that backs the Index.
+     * By default returns {@code null} that indicates there is no
+     * Step-aware backed storage.
+     */
+    default StepAwareStorage getStepAwareStorage() {
+        return null;
+    }
 }

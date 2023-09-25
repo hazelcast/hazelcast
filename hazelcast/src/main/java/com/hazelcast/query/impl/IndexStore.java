@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.query.Predicate;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -40,7 +41,7 @@ public interface IndexStore {
      * The main difference comparing to {@link BaseIndexStore#canonicalizeScalarForStorage}
      * is that this method is specifically designed to support the
      * canonicalization of transient non-persistent values (think of query
-     * arguments), so a more efficient representation may chosen.
+     * arguments), so a more efficient representation may be chosen.
      *
      * @param value the value to canonicalize.
      * @return the canonicalized value.
@@ -147,7 +148,7 @@ public interface IndexStore {
      * @param value value
      * @return iterator over index entries that are equal to the given value
      */
-    Iterator<QueryableEntry> getSqlRecordIterator(Comparable value);
+    Iterator<QueryableEntry> getSqlRecordIterator(@Nonnull Comparable value);
 
     /**
      * @param comparison comparison type
@@ -155,7 +156,7 @@ public interface IndexStore {
      * @param descending whether the entries should come in the descending order.
      *                   {@code true} means a descending order,
      *                   {@code false} means an ascending order.
-     * @return iterator over index entries that are matching the given comparions type and value
+     * @return iterator over index entries that are matching the given comparisons type and value
      */
     Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending);
 
@@ -173,12 +174,18 @@ public interface IndexStore {
                                                   Comparable to, boolean toInclusive, boolean descending);
 
     /**
-     * @param value value
+     * Get records for given value. Value can be {@link AbstractIndex#NULL}.
+     * @param value         value
+     * @param descending    whether the entries should come in the descending order.
+     *                      {@code true} means a descending order,
+     *                      {@code false} means an ascending order.
      * @return iterator over index entries that are equal to the given value
      */
-    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value);
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(@Nonnull Comparable value, boolean descending);
 
     /**
+     * Scan all records, including NULL.
+     *
      * @param descending whether the entries should come in the descending order.
      *                   {@code true} means a descending order,
      *                   {@code false} means an ascending order.
@@ -187,16 +194,50 @@ public interface IndexStore {
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending);
 
     /**
+     * Returns records matching comparison with special handling of NULL records.
+     * <p>
+     * This method uses similar convention of ordering of special values as {@link CompositeValue}
+     * as it can be used with composite and non-composite values. The following ordering is assumed:
+     * {@code -Inf < NULL < non-null values}. {@code +Inf} should not be passed to this method.
+     * <p>
+     * With that definition in mind:
+     * <ol>
+     *     <li>There are no records {@code < NULL}</li>
+     *     <li>Trying to get records {@code <= NULL} is invalid</li>
+     *     <li>It is possible to get records {@code > NULL} (all non-null records) or {@code >= NULL} (all records).
+     *     <li>{@code < non-null value} or {@code <= non-null value} invocation will not return NULLs.</li>
+     * </ol>
+     * <p>
+     * Note that the ordering of NULLs may not always fit SQL query requirements defined by {@code NULLS FIRST}
+     * or {@code NULLS LAST}. In such case 2 scans have to be used.
+     *
      * @param comparison comparison type
      * @param value value
      * @param descending whether the entries should come in the descending order.
      *                   {@code true} means a descending order,
      *                   {@code false} means an ascending order.
-     * @return iterator over index entries that are matching the given comparions type and value
+     * @return iterator over index entries that are matching the given comparisons type and value
      */
-    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending);
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(@Nonnull Comparison comparison,
+                                                        @Nonnull Comparable value,
+                                                        boolean descending);
 
     /**
+     * Returns records in given range. Both bounds must be given, however they may be {@link AbstractIndex#NULL}.
+     * <p>
+     * This method uses the same convention for special values comparing as
+     * {@link #getSqlRecordIteratorBatch(Comparison, Comparable, boolean)}.
+     * Ranges like the following are allowed, some combinations may lead to empty results:
+     * <ol>
+     *     <li>{@code non-null..non-null value}</li>
+     *     <li>{@code NULL..NULL} - makes sense only when both ends are inclusive but it is better to use
+     *         {@link #getSqlRecordIteratorBatch(Comparable, boolean)} in this case</li>
+     *     <li>{@code NULL..non-null value} - makes sense only for ascending scan.
+     *         Inclusive NULL end will return also NULL values.</li>
+     *     <li>{@code non-null value..NULL} - makes sense only for descending scan.
+     *         Inclusive NULL end will return also NULL values.</li>
+     * </ol>
+     *
      * @param from lower bound
      * @param fromInclusive lower bound inclusive flag
      * @param to upper bound
@@ -207,9 +248,9 @@ public interface IndexStore {
      * @return iterator over index entries matching the given range
      */
     Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
-            Comparable from,
+            @Nonnull Comparable from,
             boolean fromInclusive,
-            Comparable to,
+            @Nonnull Comparable to,
             boolean toInclusive,
             boolean descending
     );

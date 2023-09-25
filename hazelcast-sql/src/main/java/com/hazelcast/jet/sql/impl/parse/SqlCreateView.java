@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,14 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCreateViewOperator;
+import com.hazelcast.sql.impl.schema.view.View;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.pretty.SqlPrettyWriter;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 
@@ -31,6 +33,8 @@ import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
+import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
 
 /**
  * AST node representing a CREATE VIEW statement.
@@ -50,7 +54,7 @@ public class SqlCreateView extends SqlCreate {
     }
 
     public String name() {
-        return name.toString();
+        return name.names.get(name.names.size() - 1);
     }
 
     public SqlNode getQuery() {
@@ -98,5 +102,22 @@ public class SqlCreateView extends SqlCreate {
         }
 
         query = validator.validate(query);
+    }
+
+    public static String unparse(View view) {
+        // We don't reuse the other unparse method, as `View` contains the query as a string, and we would have
+        // to parse it only in order to unparse it again.
+        SqlPrettyWriter writer = new SqlPrettyWriter(SqlPrettyWriter.config());
+        writer.keyword("CREATE OR REPLACE VIEW");
+        writer.identifier(CATALOG, true);
+        writer.keyword(".");
+        writer.identifier(SCHEMA_NAME_PUBLIC, true);
+        writer.keyword(".");
+        writer.identifier(view.name(), true);
+        writer.keyword("AS");
+        writer.newlineAndIndent();
+        writer.print(view.query());
+
+        return writer.toString();
     }
 }

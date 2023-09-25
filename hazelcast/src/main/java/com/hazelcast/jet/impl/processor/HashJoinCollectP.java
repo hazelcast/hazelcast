@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,6 +83,11 @@ public class HashJoinCollectP<K, T, V> extends AbstractProcessor {
     @Override
     public boolean complete() {
         return tryEmit(lookupTable);
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 
     // We need a custom ArrayList subclass because the user's V type could be

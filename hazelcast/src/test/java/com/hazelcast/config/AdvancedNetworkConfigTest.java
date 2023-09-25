@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.util.IdentityHashMap;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static java.lang.Integer.parseInt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -57,10 +58,16 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
         assertEquals(ServerSocketEndpointConfig.DEFAULT_PORT, defaultEndpointConfig.getPort());
         assertEquals(ServerSocketEndpointConfig.PORT_AUTO_INCREMENT, defaultEndpointConfig.getPortCount());
         assertTrue(defaultEndpointConfig.isPortAutoIncrement());
-        assertEquals(Integer.parseInt(ClusterProperty.SOCKET_RECEIVE_BUFFER_SIZE.getDefaultValue()),
+        assertEquals(parseInt(ClusterProperty.SOCKET_RECEIVE_BUFFER_SIZE.getDefaultValue()),
                 defaultEndpointConfig.getSocketRcvBufferSizeKb());
-        assertEquals(Integer.parseInt(ClusterProperty.SOCKET_SEND_BUFFER_SIZE.getDefaultValue()),
+        assertEquals(parseInt(ClusterProperty.SOCKET_SEND_BUFFER_SIZE.getDefaultValue()),
                 defaultEndpointConfig.getSocketSendBufferSizeKb());
+        assertEquals(parseInt(ClusterProperty.SOCKET_KEEP_IDLE.getDefaultValue()),
+                defaultEndpointConfig.getSocketKeepIdleSeconds());
+        assertEquals(parseInt(ClusterProperty.SOCKET_KEEP_COUNT.getDefaultValue()),
+                defaultEndpointConfig.getSocketKeepCount());
+        assertEquals(parseInt(ClusterProperty.SOCKET_KEEP_INTERVAL.getDefaultValue()),
+                defaultEndpointConfig.getSocketKeepIntervalSeconds());
     }
 
     @Test

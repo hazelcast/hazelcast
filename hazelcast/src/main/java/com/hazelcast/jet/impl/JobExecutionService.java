@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,8 +79,8 @@ import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
@@ -110,6 +110,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     private static final long UNINITIALIZED_CONTEXT_MAX_AGE_NS = MINUTES.toNanos(5);
 
     private static final long FAILED_EXECUTION_EXPIRY_NS = SECONDS.toNanos(5);
+    private static final CompletableFuture<?>[] EMPTY_COMPLETABLE_FUTURE_ARRAY = new CompletableFuture[0];
 
     private final Object mutex = new Object();
 
@@ -240,16 +241,18 @@ public class JobExecutionService implements DynamicMetricsProvider {
      */
     @SuppressWarnings("rawtypes")
     public void cancelAllExecutions(String reason) {
+        // The ConcurrentHashMap.values() is a projection of underlying data in the map. If other thread mutates the map the
+        // collection returned by values() mutates as well. That's the reason why we use ArrayList here instead of an array, the
+        // count of items may change.
         Collection<ExecutionContext> contexts = executionContexts.values();
-        CompletableFuture[] futures = new CompletableFuture[contexts.size()];
-        int index = 0;
+        List<CompletableFuture> futures = new ArrayList<>(contexts.size());
+
         for (ExecutionContext exeCtx : contexts) {
-            LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s",
-                    exeCtx.jobNameAndExecutionId(), reason);
-            futures[index++] = terminateExecution0(exeCtx, null, new CancellationException());
+            LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s", exeCtx.jobNameAndExecutionId(), reason);
+            futures.add(terminateExecution0(exeCtx, null, new CancellationException()));
         }
 
-        CompletableFuture.allOf(futures).join();
+        CompletableFuture.allOf(futures.toArray(EMPTY_COMPLETABLE_FUTURE_ARRAY)).join();
     }
 
     /**
@@ -566,10 +569,11 @@ public class JobExecutionService implements DynamicMetricsProvider {
                       .thenApply(r -> {
                           RawJobMetrics terminalMetrics;
                           if (collectMetrics) {
-                              JobMetricsCollector metricsRenderer =
-                                      new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger);
-                              nodeEngine.getMetricsRegistry().collect(metricsRenderer);
-                              terminalMetrics = metricsRenderer.getMetrics();
+                              try (JobMetricsCollector metricsRenderer =
+                                      new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger)) {
+                                  nodeEngine.getMetricsRegistry().collect(metricsRenderer);
+                                  terminalMetrics = metricsRenderer.getMetrics();
+                              }
                           } else {
                               terminalMetrics = null;
                           }
@@ -640,7 +644,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
             }
 
             if (!terminateFutures.isEmpty()) {
-                CompletableFuture.allOf(terminateFutures.toArray(new CompletableFuture[0])).join();
+                CompletableFuture.allOf(terminateFutures.toArray(EMPTY_COMPLETABLE_FUTURE_ARRAY)).join();
             }
 
             // submit the query to the coordinator
@@ -737,7 +741,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
     }
 
-    private static class JobMetricsCollector implements MetricsCollector {
+    private static class JobMetricsCollector implements MetricsCollector, AutoCloseable {
 
         private final Long executionId;
         private final MetricsCompressor compressor;
@@ -755,10 +759,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         @Override
         public void collectLong(MetricDescriptor descriptor, long value) {
-            System.out.println("bbb: " + descriptor + ", v=" + value);
             Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
             if (this.executionId.equals(executionId)) {
-                System.out.println("taken");
                 compressor.addLong(addPrefixFn.apply(descriptor), value);
             }
         }
@@ -784,7 +786,12 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         @Nonnull
         public RawJobMetrics getMetrics() {
-            return RawJobMetrics.of(compressor.getBlobAndReset());
+            return RawJobMetrics.of(compressor.getBlobAndClose());
+        }
+
+        @Override
+        public void close() {
+            compressor.close();
         }
     }
 }

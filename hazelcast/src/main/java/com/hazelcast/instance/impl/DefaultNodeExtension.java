@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,6 +96,7 @@ import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobEventService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -114,6 +115,7 @@ import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -141,7 +143,7 @@ public class DefaultNodeExtension implements NodeExtension {
             + "\t+ +   + +  |    |  /     \\   /    |      |     \\       /     \\       |    |   \n"
             + "\t+       +  o    o o       o o---o o----o o----o o---o o       o o----o    o   ";
 
-    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.";
+    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.";
 
     protected final Node node;
     protected final ILogger logger;
@@ -164,6 +166,7 @@ public class DefaultNodeExtension implements NodeExtension {
         checkLosslessRestartAllowed();
         createAndSetPhoneHome();
         checkDynamicConfigurationPersistenceAllowed();
+        checkSqlCatalogPersistenceAllowed();
 
         if (node.getConfig().getJetConfig().isEnabled()) {
             jetServiceBackend = createService(JetServiceBackend.class);
@@ -231,6 +234,15 @@ public class DefaultNodeExtension implements NodeExtension {
                         "Dynamic Configuration Persistence is enabled but config file couldn't be found."
                                 + " This is probably because declarative configuration isn't used."
                 );
+            }
+        }
+    }
+
+    protected void checkSqlCatalogPersistenceAllowed() {
+        Config config = node.getConfig();
+        if (config.getSqlConfig().isCatalogPersistenceEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("SQL Catalog Persistence requires Hazelcast Enterprise Edition");
             }
         }
     }
@@ -318,6 +330,11 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public boolean isStartCompleted() {
+        return node.getClusterService().isJoined();
+    }
+
+    @Override
+    public boolean isReady() {
         return node.getClusterService().isJoined();
     }
 
@@ -430,7 +447,10 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public Map<String, Object> createExtensionServices() {
         if (jetServiceBackend != null) {
-            return Collections.singletonMap(JetServiceBackend.SERVICE_NAME, jetServiceBackend);
+            Map<String, Object> services = new HashMap<>();
+            services.put(JetServiceBackend.SERVICE_NAME, jetServiceBackend);
+            services.put(JobEventService.SERVICE_NAME, new JobEventService(node.getNodeEngine()));
+            return services;
         }
         return Collections.emptyMap();
     }
@@ -533,6 +553,7 @@ public class DefaultNodeExtension implements NodeExtension {
         if (service != null) {
             service.onMemberListChange();
         }
+        node.clusterTopologyIntentTracker.onMembershipChange();
     }
 
     @Override

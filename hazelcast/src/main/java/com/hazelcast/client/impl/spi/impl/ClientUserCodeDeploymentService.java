@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 public class ClientUserCodeDeploymentService {
@@ -68,18 +67,14 @@ public class ClientUserCodeDeploymentService {
     private void loadClasses() throws ClassNotFoundException {
         for (String className : clientUserCodeDeploymentConfig.getClassNames()) {
             String resource = className.replace('.', '/').concat(".class");
-            InputStream is = null;
-            try {
-                is = configClassLoader.getResourceAsStream(resource);
+            try (InputStream is = configClassLoader.getResourceAsStream(resource)) {
                 if (is == null) {
                     throw new ClassNotFoundException(resource);
                 }
-                byte[] bytes = toByteArray(is);
+                byte[] bytes = is.readAllBytes();
                 classDefinitionList.add(new AbstractMap.SimpleEntry<>(className, bytes));
             } catch (IOException e) {
                 ignore(e);
-            } finally {
-                closeResource(is);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,13 @@ public final class MetricTags {
      * details.
      */
     public static final String JOB = "job";
+
+    /**
+     * Job name, or {@linkplain #JOB job ID} if no name is specified.
+     *
+     * @since 5.3
+     */
+    public static final String JOB_NAME = "jobName";
 
     /**
      * Unique ID of a particular execution of a job (sourcing the metric),

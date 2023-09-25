@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -37,7 +38,6 @@ import java.io.IOException;
 import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 
 /**
  * A utility to convert a key-value entry represented as {@code
@@ -108,15 +108,7 @@ public class KvRowProjector implements Row {
         keyTarget.setTarget(key, keyData);
         valueTarget.setTarget(value, valueData);
 
-        if (!Boolean.TRUE.equals(evaluate(predicate, this, evalContext))) {
-            return null;
-        }
-
-        Object[] row = new Object[projections.size()];
-        for (int i = 0; i < projections.size(); i++) {
-            row[i] = evaluate(projections.get(i), this, evalContext);
-        }
-        return new JetSqlRow(evalContext.getSerializationService(), row);
+        return ExpressionUtil.projection(predicate, projections, this, evalContext);
     }
 
     @Override
@@ -126,8 +118,23 @@ public class KvRowProjector implements Row {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public <T> T get(int index, boolean useLazyDeserialization) {
+        return (T) extractors[index].get(useLazyDeserialization);
+    }
+
+    @Override
     public int getColumnCount() {
         return projections.size();
+    }
+
+    public boolean isCooperative() {
+        for (Expression<?> e : projections) {
+            if (!e.isCooperative()) {
+                return false;
+            }
+        }
+        return predicate.isCooperative();
     }
 
     public static Supplier supplier(

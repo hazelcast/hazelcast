@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -94,59 +93,59 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertNull(parameters.get("oem"));
         assertNull(parameters.get("l"));
         assertNull(parameters.get("hdgb"));
-        assertEquals(parameters.get(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID.getRequestParameterName()), "source");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLUSTER_SIZE.getRequestParameterName()), "A");
-        assertEquals(parameters.get(PhoneHomeMetrics.EXACT_CLUSTER_SIZE.getRequestParameterName()), "1");
-        assertEquals(parameters.get(PhoneHomeMetrics.PARTITION_COUNT.getRequestParameterName()), "271");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLIENT_ENDPOINT_COUNT.getRequestParameterName()), "A");
+        assertEquals("source", parameters.get(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID.getRequestParameterName()));
+        assertEquals("A", parameters.get(PhoneHomeMetrics.CLUSTER_SIZE.getRequestParameterName()));
+        assertEquals("1", parameters.get(PhoneHomeMetrics.EXACT_CLUSTER_SIZE.getRequestParameterName()));
+        assertEquals("271", parameters.get(PhoneHomeMetrics.PARTITION_COUNT.getRequestParameterName()));
+        assertEquals("A", parameters.get(PhoneHomeMetrics.CLIENT_ENDPOINT_COUNT.getRequestParameterName()));
 
-        assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_CPP_CLIENTS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_CSHARP_CLIENTS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_JAVA_CLIENTS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_NODEJS_CLIENTS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_PYTHON_CLIENTS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_GO_CLIENTS_COUNT.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.ACTIVE_CPP_CLIENTS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.ACTIVE_CSHARP_CLIENTS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.ACTIVE_JAVA_CLIENTS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.ACTIVE_NODEJS_CLIENTS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.ACTIVE_PYTHON_CLIENTS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.ACTIVE_GO_CLIENTS_COUNT.getRequestParameterName()));
 
-        assertEquals(parameters.get(PhoneHomeMetrics.OPENED_CPP_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.OPENED_CSHARP_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.OPENED_JAVA_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.OPENED_NODEJS_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.OPENED_PYTHON_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.OPENED_GO_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.OPENED_CPP_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.OPENED_CSHARP_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.OPENED_JAVA_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.OPENED_NODEJS_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.OPENED_PYTHON_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.OPENED_GO_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()));
 
-        assertEquals(parameters.get(PhoneHomeMetrics.CLOSED_CPP_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLOSED_CSHARP_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLOSED_JAVA_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLOSED_NODEJS_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLOSED_PYTHON_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLOSED_GO_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.CLOSED_CPP_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.CLOSED_CSHARP_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.CLOSED_JAVA_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.CLOSED_NODEJS_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.CLOSED_PYTHON_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.CLOSED_GO_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()));
 
-        assertEquals(parameters.get(PhoneHomeMetrics.TOTAL_CPP_CLIENT_CONNECTION_DURATION.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.TOTAL_CSHARP_CLIENT_CONNECTION_DURATION.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.TOTAL_JAVA_CLIENT_CONNECTION_DURATION.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.TOTAL_NODEJS_CLIENT_CONNECTION_DURATION.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.TOTAL_PYTHON_CLIENT_CONNECTION_DURATION.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.TOTAL_GO_CLIENT_CONNECTION_DURATION.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.TOTAL_CPP_CLIENT_CONNECTION_DURATION.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.TOTAL_CSHARP_CLIENT_CONNECTION_DURATION.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.TOTAL_JAVA_CLIENT_CONNECTION_DURATION.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.TOTAL_NODEJS_CLIENT_CONNECTION_DURATION.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.TOTAL_PYTHON_CLIENT_CONNECTION_DURATION.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.TOTAL_GO_CLIENT_CONNECTION_DURATION.getRequestParameterName()));
 
-        assertEquals(parameters.get(PhoneHomeMetrics.CPP_CLIENT_VERSIONS.getRequestParameterName()), "");
-        assertEquals(parameters.get(PhoneHomeMetrics.CSHARP_CLIENT_VERSIONS.getRequestParameterName()), "");
-        assertEquals(parameters.get(PhoneHomeMetrics.JAVA_CLIENT_VERSIONS.getRequestParameterName()), "");
-        assertEquals(parameters.get(PhoneHomeMetrics.NODEJS_CLIENT_VERSIONS.getRequestParameterName()), "");
-        assertEquals(parameters.get(PhoneHomeMetrics.PYTHON_CLIENT_VERSIONS.getRequestParameterName()), "");
-        assertEquals(parameters.get(PhoneHomeMetrics.GO_CLIENT_VERSIONS.getRequestParameterName()), "");
+        assertEquals("", parameters.get(PhoneHomeMetrics.CPP_CLIENT_VERSIONS.getRequestParameterName()));
+        assertEquals("", parameters.get(PhoneHomeMetrics.CSHARP_CLIENT_VERSIONS.getRequestParameterName()));
+        assertEquals("", parameters.get(PhoneHomeMetrics.JAVA_CLIENT_VERSIONS.getRequestParameterName()));
+        assertEquals("", parameters.get(PhoneHomeMetrics.NODEJS_CLIENT_VERSIONS.getRequestParameterName()));
+        assertEquals("", parameters.get(PhoneHomeMetrics.PYTHON_CLIENT_VERSIONS.getRequestParameterName()));
+        assertEquals("", parameters.get(PhoneHomeMetrics.GO_CLIENT_VERSIONS.getRequestParameterName()));
 
         assertFalse(Integer.parseInt(parameters.get(PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP.getRequestParameterName())) < 0);
-        assertNotEquals(parameters.get(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN.getRequestParameterName()), "0");
+        assertNotEquals("0", parameters.get(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN.getRequestParameterName()));
         assertNotEquals(parameters.get(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN.getRequestParameterName()), parameters.get(PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP.getRequestParameterName()));
         assertEquals(parameters.get(PhoneHomeMetrics.OPERATING_SYSTEM_NAME.getRequestParameterName()), osMxBean.getName());
         assertEquals(parameters.get(PhoneHomeMetrics.OPERATING_SYSTEM_ARCH.getRequestParameterName()), osMxBean.getArch());
         assertEquals(parameters.get(PhoneHomeMetrics.OPERATING_SYSTEM_VERSION.getRequestParameterName()), osMxBean.getVersion());
         assertEquals(parameters.get(PhoneHomeMetrics.RUNTIME_MXBEAN_VM_NAME.getRequestParameterName()), runtimeMxBean.getVmName());
-        assertEquals(parameters.get(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM.getRequestParameterName()), System.getProperty("java.version"));
-        assertEquals(parameters.get(PhoneHomeMetrics.JET_ENABLED.getRequestParameterName()), "true");
-        assertEquals(parameters.get(PhoneHomeMetrics.JET_RESOURCE_UPLOAD_ENABLED.getRequestParameterName()), "false");
-        assertEquals(parameters.get(PhoneHomeMetrics.CP_SUBSYSTEM_ENABLED.getRequestParameterName()), "false");
-        assertEquals(parameters.get(PhoneHomeMetrics.DYNAMIC_CONFIG_PERSISTENCE_ENABLED.getRequestParameterName()), "false");
+        assertEquals(System.getProperty("java.version"), parameters.get(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM.getRequestParameterName()));
+        assertEquals("true", parameters.get(PhoneHomeMetrics.JET_ENABLED.getRequestParameterName()));
+        assertEquals("false", parameters.get(PhoneHomeMetrics.JET_RESOURCE_UPLOAD_ENABLED.getRequestParameterName()));
+        assertEquals("false", parameters.get(PhoneHomeMetrics.CP_SUBSYSTEM_ENABLED.getRequestParameterName()));
+        assertEquals("false", parameters.get(PhoneHomeMetrics.DYNAMIC_CONFIG_PERSISTENCE_ENABLED.getRequestParameterName()));
     }
 
     @Test
@@ -174,15 +173,15 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     public void testMapCountWithBackupReadEnabled() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED.getRequestParameterName()));
 
         Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED.getRequestParameterName()));
 
         node.getConfig().getMapConfig("hazelcast").setReadBackupData(true);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED.getRequestParameterName()));
     }
 
     @Test
@@ -196,157 +195,157 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     public void testMapCountWithMapStoreEnabled() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_MAP_STORE_ENABLED.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_MAP_STORE_ENABLED.getRequestParameterName()));
 
         Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_MAP_STORE_ENABLED.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_MAP_STORE_ENABLED.getRequestParameterName()));
 
         node.getConfig().getMapConfig("hazelcast").getMapStoreConfig().setEnabled(true);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_MAP_STORE_ENABLED.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_MAP_STORE_ENABLED.getRequestParameterName()));
     }
 
     @Test
     public void testMapCountWithAtleastOneQueryCache() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE.getRequestParameterName()));
 
         Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE.getRequestParameterName()));
 
         QueryCacheConfig cacheConfig = new QueryCacheConfig();
         cacheConfig.setName("hazelcastconfig");
         node.getConfig().getMapConfig("hazelcast").addQueryCacheConfig(cacheConfig);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE.getRequestParameterName()));
 
         cacheConfig = new QueryCacheConfig();
         cacheConfig.setName("hazelcastconfig2");
         node.getConfig().getMapConfig("hazelcast").addQueryCacheConfig(cacheConfig);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE.getRequestParameterName()));
     }
 
     @Test
     public void testMapCountWithAtleastOneIndex() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_INDEX.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_INDEX.getRequestParameterName()));
 
         Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_INDEX.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_INDEX.getRequestParameterName()));
 
         IndexConfig config = new IndexConfig(IndexType.SORTED, "hazelcast");
         node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(config);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_INDEX.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_INDEX.getRequestParameterName()));
 
         config = new IndexConfig(IndexType.HASH, "phonehome");
         node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(config);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_INDEX.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_INDEX.getRequestParameterName()));
     }
 
     @Test
     public void testMapCountWithHotRestartEnabled() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()));
 
         node.hazelcastInstance.getMap("hazelcast");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()));
 
         node.hazelcastInstance.getMap("with-hot-restart");
         node.getConfig().getMapConfig("with-hot-restart").getHotRestartConfig().setEnabled(true);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()));
 
         node.hazelcastInstance.getMap("with-persistence");
         node.getConfig().getMapConfig("with-persistence").getDataPersistenceConfig().setEnabled(true);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()), "2");
+        assertEquals("2", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()));
 
         node.hazelcastInstance.getMap("with-both");
         node.getConfig().getMapConfig("with-both").getHotRestartConfig().setEnabled(true);
         node.getConfig().getMapConfig("with-both").getDataPersistenceConfig().setEnabled(true);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()), "3");
+        assertEquals("3", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()));
     }
 
     @Test
     public void testMapCountWithWANReplication() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION.getRequestParameterName()));
 
         Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION.getRequestParameterName()));
 
         node.getConfig().getMapConfig("hazelcast").setWanReplicationRef(new WanReplicationRef());
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION.getRequestParameterName()));
     }
 
     @Test
     public void testMapCountWithAtleastOneAttribute() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE.getRequestParameterName()));
 
         Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE.getRequestParameterName()));
 
         node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig());
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE.getRequestParameterName()));
 
         node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig());
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE.getRequestParameterName()));
     }
 
     @Test
     public void testMapCountUsingEviction() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_EVICTION.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_EVICTION.getRequestParameterName()));
 
         Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_EVICTION.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_EVICTION.getRequestParameterName()));
 
         EvictionConfig config = new EvictionConfig();
         config.setEvictionPolicy(EvictionPolicy.LRU);
         node.getConfig().getMapConfig("hazelcast").setEvictionConfig(config);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_EVICTION.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_EVICTION.getRequestParameterName()));
 
         config.setEvictionPolicy(EvictionPolicy.NONE);
         node.getConfig().getMapConfig("hazelcast").setEvictionConfig(config);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_EVICTION.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_EVICTION.getRequestParameterName()));
     }
 
     @Test
     public void testMapCountWithNativeInMemory() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT.getRequestParameterName()));
 
         Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT.getRequestParameterName()));
 
         node.getConfig().getMapConfig("hazelcast").setInMemoryFormat(InMemoryFormat.NATIVE);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT.getRequestParameterName()));
     }
 
     @Test
@@ -383,33 +382,33 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     public void testCacheCount() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES_ALL_TIME.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES.getRequestParameterName()));
+        assertEquals("0", parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES_ALL_TIME.getRequestParameterName()));
 
         CachingProvider cachingProvider = createServerCachingProvider(node.hazelcastInstance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         cacheManager.createCache("hazelcast", new CacheConfig<>("hazelcast"));
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES.getRequestParameterName()), "1");
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES_ALL_TIME.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES.getRequestParameterName()));
+        assertEquals("1", parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES_ALL_TIME.getRequestParameterName()));
 
         Cache<Object, Object> cache = cacheManager.createCache("phonehome", new CacheConfig<>("phonehome"));
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES.getRequestParameterName()), "2");
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES_ALL_TIME.getRequestParameterName()), "2");
+        assertEquals("2", parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES.getRequestParameterName()));
+        assertEquals("2", parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES_ALL_TIME.getRequestParameterName()));
 
         cacheManager.destroyCache("phonehome");
         cacheManager.destroyCache("hazelcast");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES_ALL_TIME.getRequestParameterName()), "2");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES.getRequestParameterName()));
+        assertEquals("2", parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES_ALL_TIME.getRequestParameterName()));
     }
 
     @Test
     public void testCacheWithWANReplication() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.CACHE_COUNT_WITH_WAN_REPLICATION.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.CACHE_COUNT_WITH_WAN_REPLICATION.getRequestParameterName()));
 
         CachingProvider cachingProvider = createServerCachingProvider(node.hazelcastInstance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
@@ -419,7 +418,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         cacheManager.createCache("hazelcast", new CacheConfig<>("hazelcast"));
         node.getConfig().addCacheConfig(cacheSimpleConfig);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.CACHE_COUNT_WITH_WAN_REPLICATION.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.CACHE_COUNT_WITH_WAN_REPLICATION.getRequestParameterName()));
 
     }
 
@@ -463,38 +462,38 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     public void testMapPutLatencyWithoutMapStore() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()), "-1");
+        assertEquals("-1", parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()));
 
         IMap<Object, Object> iMap = node.hazelcastInstance.getMap("hazelcast");
         LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) iMap.getLocalMapStats();
         localMapStats.incrementPutLatencyNanos(2000000000L);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()), String.valueOf(2000));
+        assertEquals(String.valueOf(2000), parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()));
 
         localMapStats.incrementPutLatencyNanos(1000000000L);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()), String.valueOf(1500));
+        assertEquals(String.valueOf(1500), parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()));
 
         localMapStats.incrementPutLatencyNanos(2000000000L);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()), String.valueOf(1666));
+        assertEquals(String.valueOf(1666), parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()));
     }
 
     @Test
     public void testMapGetLatencyWithoutMapStore() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()), "-1");
+        assertEquals("-1", parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()));
 
         IMap<Object, Object> iMap = node.hazelcastInstance.getMap("hazelcast");
         LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) iMap.getLocalMapStats();
         localMapStats.incrementGetLatencyNanos(2000000000L);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()), String.valueOf(2000));
+        assertEquals(String.valueOf(2000), parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()));
 
         localMapStats.incrementGetLatencyNanos(2000000000L);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()), String.valueOf(2000));
+        assertEquals(String.valueOf(2000), parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()));
     }
 
     private IMap<Object, Object> initialiseForMapStore(String mapName) {
@@ -510,7 +509,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     public void testMapPutLatencyWithMapStore() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName()), "-1");
+        assertEquals("-1", parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName()));
 
         IMap<Object, Object> iMap1 = initialiseForMapStore("hazelcast");
         iMap1.put("key1", "hazelcast");
@@ -530,7 +529,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     public void testMapGetLatencyWithMapStore() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName()), "-1");
+        assertEquals("-1", parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName()));
 
         IMap<Object, Object> iMap1 = initialiseForMapStore("hazelcast");
         iMap1.get("key1");
@@ -547,24 +546,9 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSqlQueriesSubmitted() {
-        Map<String, String> parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.SQL_QUERIES_SUBMITTED.getRequestParameterName()), "0");
-
-        SqlServiceImpl sqlService = node.getNodeEngine().getSqlService();
-        try {
-            sqlService.execute("SELECT * FROM map");
-        } catch (Exception e) {
-            ignore(e);
-        }
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.SQL_QUERIES_SUBMITTED.getRequestParameterName()), "1");
-    }
-
-    @Test
     public void testJetJobsSubmitted() {
         Map<String, String> parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.JET_JOBS_SUBMITTED.getRequestParameterName()), "0");
+        assertEquals("0", parameters.get(PhoneHomeMetrics.JET_JOBS_SUBMITTED.getRequestParameterName()));
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(1, 2, 3))
@@ -572,7 +556,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         node.hazelcastInstance.getJet().newJob(pipeline);
 
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.JET_JOBS_SUBMITTED.getRequestParameterName()), "1");
+        assertEquals("1", parameters.get(PhoneHomeMetrics.JET_JOBS_SUBMITTED.getRequestParameterName()));
     }
 
     @Test
@@ -610,6 +594,13 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         long twoMapsMemoryCost = parseLong(parameters.get(PhoneHomeMetrics.DATA_MEMORY_COST.getRequestParameterName()));
         assertThat(twoMapsMemoryCost).isGreaterThan(oneMapMemoryCost);
+    }
+
+    @Test
+    public void testViridianPhoneHomeNullByDefault() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertThat(parameters.get(PhoneHomeMetrics.VIRIDIAN.getRequestParameterName())).isNull();
     }
 
     private void testCounts(Function<String, ? extends DistributedObject> distributedObjectCreateFn,

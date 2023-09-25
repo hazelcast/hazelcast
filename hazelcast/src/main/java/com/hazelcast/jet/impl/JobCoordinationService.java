@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,12 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.JobConfigArguments;
@@ -47,6 +47,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.impl.MasterJobContext.TerminationRequest;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.execution.DoneItem;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
@@ -65,6 +66,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.version.Version;
@@ -82,6 +84,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterators;
 import java.util.UUID;
@@ -103,19 +106,21 @@ import java.util.stream.StreamSupport;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.spi.properties.ClusterProperty.JOB_SCAN_PERIOD;
@@ -151,6 +156,8 @@ public class JobCoordinationService {
      */
     private static final Object UNINITIALIZED_LIGHT_JOB_MARKER = new Object();
 
+    final List<JobInvocationObserver> jobInvocationObservers = new ArrayList<>();
+
     private final NodeEngineImpl nodeEngine;
     private final JetServiceBackend jetServiceBackend;
     private final JetConfig config;
@@ -163,7 +170,7 @@ public class JobCoordinationService {
     private final ConcurrentMap<Long, ScheduledFuture<?>> scheduledJobTimeouts = new ConcurrentHashMap<>();
     /**
      * Map of {memberUuid; removeTime}.
-     *
+     * <p>
      * A collection of UUIDs of members which left the cluster and for which we
      * didn't receive {@link NotifyMemberShutdownOperation}.
      */
@@ -298,14 +305,14 @@ public class JobCoordinationService {
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
             } catch (Throwable e) {
                 jetServiceBackend.getJobClassLoaderService()
-                                 .tryRemoveClassloadersForJob(jobId, COORDINATOR);
+                        .tryRemoveClassloadersForJob(jobId, COORDINATOR);
 
                 res.completeExceptionally(e);
                 throw e;
             } finally {
                 res.complete(null);
             }
-            tryStartJob(masterContext);
+            masterContext.jobContext().tryStartJob();
         });
         return res;
     }
@@ -346,11 +353,11 @@ public class JobCoordinationService {
                     scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
 
                     return mc.getCompletionFuture()
-                      .whenComplete((r, t) -> {
-                          Object removed = lightMasterContexts.remove(jobId);
-                          assert removed instanceof LightMasterContext : "LMC not found: " + removed;
-                          unscheduleJobTimeout(jobId);
-                      });
+                            .whenComplete((r, t) -> {
+                                Object removed = lightMasterContexts.remove(jobId);
+                                assert removed instanceof LightMasterContext : "LMC not found: " + removed;
+                                unscheduleJobTimeout(jobId);
+                            });
                 }, coordinationExecutor());
     }
 
@@ -386,7 +393,8 @@ public class JobCoordinationService {
                 .collect(Collectors.toSet());
     }
 
-    @SuppressWarnings("WeakerAccess") // used by jet-enterprise
+    @SuppressWarnings("WeakerAccess")
+        // used by jet-enterprise
     MasterContext createMasterContext(JobRecord jobRecord, JobExecutionRecord jobExecutionRecord) {
         return new MasterContext(nodeEngine, this, jobRecord, jobExecutionRecord);
     }
@@ -401,8 +409,8 @@ public class JobCoordinationService {
         }
 
         return masterContexts.values()
-                             .stream()
-                             .anyMatch(ctx -> jobName.equals(ctx.jobConfig().getName()));
+                .stream()
+                .anyMatch(ctx -> jobName.equals(ctx.jobConfig().getName()));
     }
 
     public CompletableFuture<Void> prepareForPassiveClusterState() {
@@ -471,7 +479,7 @@ public class JobCoordinationService {
         return ((LightMasterContext) mc).getCompletionFuture();
     }
 
-    public CompletableFuture<Void> terminateJob(long jobId, TerminationMode terminationMode) {
+    public CompletableFuture<Void> terminateJob(long jobId, TerminationMode terminationMode, boolean userInitiated) {
         return runWithJob(jobId,
                 masterContext -> {
                     // User can cancel in any state, other terminations are allowed only when running.
@@ -487,7 +495,9 @@ public class JobCoordinationService {
                                 + ", should be " + RUNNING);
                     }
 
-                    String terminationResult = masterContext.jobContext().requestTermination(terminationMode, false).f1();
+                    String terminationResult = masterContext.jobContext()
+                            .requestTermination(terminationMode, false, userInitiated)
+                            .f1();
                     if (terminationResult != null) {
                         throw new IllegalStateException("Cannot " + terminationMode + ": " + terminationResult);
                     }
@@ -507,12 +517,12 @@ public class JobCoordinationService {
         );
     }
 
-    public void terminateLightJob(long jobId) {
+    public void terminateLightJob(long jobId, boolean userInitiated) {
         Object mc = lightMasterContexts.get(jobId);
         if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
             throw new JobNotFoundException(jobId);
         }
-        ((LightMasterContext) mc).requestTermination();
+        ((LightMasterContext) mc).requestTermination(userInitiated);
     }
 
     /**
@@ -574,12 +584,12 @@ public class JobCoordinationService {
                     }
 
                     jobs.entrySet().stream()
-                        .sorted(
-                                comparing(Entry<Long, Long>::getValue)
-                                        .thenComparing(Entry::getKey)
-                                        .reversed()
-                        )
-                        .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
+                            .sorted(
+                                    comparing(Entry<Long, Long>::getValue)
+                                            .thenComparing(Entry::getKey)
+                                            .reversed()
+                            )
+                            .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
                 } else {
                     for (Long jobId : jobRepository.getAllJobIds()) {
                         result.add(tuple2(jobId, false));
@@ -596,21 +606,39 @@ public class JobCoordinationService {
      * if the requested job is not found.
      */
     public CompletableFuture<JobStatus> getJobStatus(long jobId) {
+        // Logic of determining job status should be in sync
+        // with getJobAndSqlSummary and getJobAndSqlSummaryList.
         return callWithJob(jobId,
-                mc -> {
-                    // When the job finishes running, we write NOT_RUNNING to jobStatus first and then
-                    // write null to requestedTerminationMode (see MasterJobContext.finalizeJob()). We
-                    // have to read them in the opposite order.
-                    TerminationMode terminationMode = mc.jobContext().requestedTerminationMode();
-                    JobStatus jobStatus = mc.jobStatus();
-                    return jobStatus == RUNNING && terminationMode != null
-                            ? COMPLETING
-                            : jobStatus;
-                },
+                JobCoordinationService::determineJobStatusFromMasterContext,
                 JobResult::getJobStatus,
                 jobRecord -> NOT_RUNNING,
                 jobExecutionRecord -> jobExecutionRecord.isSuspended() ? SUSPENDED : NOT_RUNNING
         );
+    }
+
+    private static JobStatus determineJobStatusFromMasterContext(MasterContext mc) {
+        // When the job finishes running, we write NOT_RUNNING to jobStatus first and then
+        // write null to terminationRequest (see MasterJobContext.finalizeJob()). We
+        // have to read them in the opposite order.
+        Optional<TerminationRequest> maybeTerminationRequest = mc.jobContext().getTerminationRequest();
+        JobStatus jobStatus = mc.jobStatus();
+        return jobStatus == RUNNING && maybeTerminationRequest.isPresent()
+                ? COMPLETING
+                : jobStatus;
+    }
+
+    private static boolean determineIsJobUserCancelledFromMasterContext(MasterContext mc) {
+        // order of reads is important, see comment in determineJobStatusFromMasterContext
+        boolean userInitiatedTermination = mc.jobContext().isUserInitiatedTermination();
+        JobStatus jobStatus = mc.jobStatus();
+        switch (jobStatus) {
+            case COMPLETED:
+                return false;
+            case FAILED:
+                return userInitiatedTermination;
+            default:
+                throw new IllegalStateException("Job not finished");
+        }
     }
 
     /**
@@ -642,6 +670,20 @@ public class JobCoordinationService {
                     throw new IllegalStateException("Job not suspended");
                 },
                 jobExecutionRecordHandler
+        );
+    }
+
+    public CompletableFuture<Boolean> isJobUserCancelled(long jobId) {
+        // Logic of determining userCancelled should be in sync
+        // with getJobAndSqlSummary and getJobAndSqlSummaryList.
+        return callWithJob(jobId,
+                JobCoordinationService::determineIsJobUserCancelledFromMasterContext,
+                JobResult::isUserCancelled,
+                // If we do not have result, the job has not finished yet so cannot be cancelled.
+                jobRecord -> {
+                    throw new IllegalStateException("Job not finished");
+                },
+                null
         );
     }
 
@@ -684,7 +726,7 @@ public class JobCoordinationService {
 
     public CompletableFuture<Void> resumeJob(long jobId) {
         return runWithJob(jobId,
-                masterContext -> masterContext.jobContext().resumeJob(jobRepository::newExecutionId),
+                masterContext -> masterContext.jobContext().resumeJob(),
                 jobResult -> {
                     throw new IllegalStateException("Job already completed");
                 },
@@ -696,7 +738,10 @@ public class JobCoordinationService {
 
     /**
      * Return a summary of all jobs
+     *
+     * @deprecated Since 5.3, to be removed in 6.0. Use {@link #getJobAndSqlSummaryList()} instead
      */
+    @Deprecated
     public CompletableFuture<List<JobSummary>> getJobSummaryList() {
         return getJobAndSqlSummaryList().thenApply(jobAndSqlSummaries -> jobAndSqlSummaries.stream()
                 .map(this::toJobSummary)
@@ -717,13 +762,25 @@ public class JobCoordinationService {
             Map<Long, JobAndSqlSummary> jobs = new HashMap<>();
             if (isMaster()) {
                 // running jobs
-                jobRepository.getJobRecords().stream().map(this::getJobAndSqlSummary).forEach(s -> jobs.put(s.getJobId(), s));
+                jobRepository.getJobRecords().stream()
+                        .map(this::getJobAndSqlSummary)
+                        .forEach(s -> jobs.put(s.getJobId(), s));
 
                 // completed jobs
+                // (can overwrite entries created from JobRecords but that is fine and in fact desired
+                // because JobResult is always more recent than JobRecord for given job)
                 jobRepository.getJobResults().stream()
-                        .map(r -> new JobAndSqlSummary(
-                                false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
-                                r.getCompletionTime(), r.getFailureText(), null))
+                        .map(r -> {
+                            // Pre-review note : volatile read at supplier, should not read under lock path.
+                            // Q: Any other better way to get executionRecord?
+                            JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(r.getJobId());
+                            return new JobAndSqlSummary(
+                                    false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
+                                    r.getCompletionTime(), r.getFailureText(), null,
+                                    executionRecord == null || executionRecord.getSuspensionCause() == null ? null :
+                                            executionRecord.getSuspensionCause().description(),
+                                    r.isUserCancelled());
+                        })
                         .forEach(s -> jobs.put(s.getJobId(), s));
             }
 
@@ -743,9 +800,76 @@ public class JobCoordinationService {
         Object unbounded = lmc.getJobConfig().getArgument(JobConfigArguments.KEY_SQL_UNBOUNDED);
         SqlSummary sqlSummary = query != null && unbounded != null ?
                 new SqlSummary(query, Boolean.TRUE.equals(unbounded)) : null;
+
+        // For simplicity, we assume here that light job is running iff LightMasterContext exists:
+        // running jobs are not cancelled and others are not visible.
+        //
+        // It is possible that LightMasterContext still exists (for a short period of time)
+        // when the job is already terminated.
+        // LightMasterContext is removed from map in submitLightJob() _after_ setting result
+        // on the jobCompletionFuture in LightMasterContext.finalizeJob().
+        // jobCompletionFuture is also used in join operation so join operation sees
+        // finished job even though master context still exists.
+        // Also, future completion handlers (thenApply etc.) are not guaranteed to run in
+        // any particular order and can be executed in parallel.
+        //
+        // This is unlikely and we do not care however such scenario is possible:
+        // 1. user submits a light job
+        // 2. user gets the job by id and joins it (separate Job proxy instance is necessary
+        //    because different future will be used than for submit)
+        // 3. job finishes (either normally or via error or cancellation)
+        // 4. join finishes - user get information that the job completed (from join, not submit)
+        // 5. user asks for jobs list and the job is reported as running
+        //
+        // In such scenario finished job will be reported as running.
+        //
+        // Note: suspensionCause is not supported for light jobs.
         return new JobAndSqlSummary(
                 true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
-                RUNNING, lmc.getStartTime(), 0, null, sqlSummary);
+                RUNNING, lmc.getStartTime(), 0, null, sqlSummary, null,
+                false);
+    }
+
+    /**
+     * Applies the specified delta configuration if the job is suspended.
+     * Otherwise, an {@link IllegalStateException} is thrown by the returned future.
+     */
+    public CompletableFuture<JobConfig> updateJobConfig(long jobId, @Nonnull DeltaJobConfig deltaConfig) {
+        return callWithJob(jobId,
+                masterContext -> masterContext.updateJobConfig(deltaConfig),
+                jobResult -> {
+                    throw new IllegalStateException("Job not suspended, but " + jobResult.getJobStatus());
+                },
+                jobRecord -> {
+                    throw new IllegalStateException("Job not suspended");
+                },
+                null
+        );
+    }
+
+    /**
+     * Applies the specified listener registration if the job is not completed/failed.
+     * Otherwise, an {@link IllegalStateException} is thrown by the returned future.
+     */
+    public CompletableFuture<UUID> addJobStatusListener(long jobId, boolean isLightJob, Registration registration) {
+        if (isLightJob) {
+            Object mc = lightMasterContexts.get(jobId);
+            if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
+                throw new JobNotFoundException(jobId);
+            } else {
+                return completedFuture(((LightMasterContext) mc).addStatusListener(registration));
+            }
+        }
+        return callWithJob(jobId,
+                masterContext -> masterContext.addStatusListener(registration),
+                jobResult -> {
+                    throw cannotAddStatusListener(jobResult.getJobStatus());
+                },
+                jobRecord -> {
+                    JobEventService jobEventService = nodeEngine.getService(JobEventService.SERVICE_NAME);
+                    return jobEventService.handleAllRegistrations(jobId, registration).getId();
+                },
+                null);
     }
 
     /**
@@ -771,11 +895,11 @@ public class JobCoordinationService {
         }
         logFine(logger, "Added a shutting-down member: %s", uuid);
         CompletableFuture[] futures = masterContexts.values().stream()
-                                                    .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
-                                                    .toArray(CompletableFuture[]::new);
+                .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
+                .toArray(CompletableFuture[]::new);
         // Need to do this even if futures.length == 0, we need to perform the action in whenComplete
         CompletableFuture.allOf(futures)
-                         .whenComplete(withTryCatch(logger, (r, e) -> future.complete(null)));
+                .whenComplete(withTryCatch(logger, (r, e) -> future.complete(null)));
         return future;
     }
 
@@ -792,6 +916,10 @@ public class JobCoordinationService {
     // only for testing
     public MasterContext getMasterContext(long jobId) {
         return masterContexts.get(jobId);
+    }
+
+    public void registerInvocationObserver(JobInvocationObserver observer) {
+        this.jobInvocationObservers.add(observer);
     }
 
     JetServiceBackend getJetServiceBackend() {
@@ -831,6 +959,15 @@ public class JobCoordinationService {
         }
         if (!getInternalPartitionService().getPartitionStateManager().isInitialized()) {
             logger.fine("Not starting jobs because partitions are not yet initialized.");
+            return false;
+        }
+        if (nodeEngine.getNode().isClusterStateManagementAutomatic()
+                && !nodeEngine.getNode().isManagedClusterStable()) {
+            LoggingUtil.logFine(logger, "Not starting jobs because cluster is running in managed context "
+                            + "and is not yet stable. Current cluster topology intent: %s, "
+                            + "expected cluster size: %d, current: %d.",
+                    nodeEngine.getNode().getClusterTopologyIntent(),
+                    nodeEngine.getNode().currentSpecifiedReplicaCount(), nodeEngine.getClusterService().getSize());
             return false;
         }
         return true;
@@ -874,14 +1011,21 @@ public class JobCoordinationService {
         return submitToCoordinatorThread(() -> {
             // when job is finalized, actions happen in this order:
             // - JobResult and JobMetrics are created
-            // - JobRecord and JobExecutionRecord are deleted
+            // - JobRecord and JobExecutionRecord are deleted (asynchronously and in parallel)
             // - masterContext is removed from the map
             // We check them in reverse order so that no race is possible.
             //
-            // We check the JobResult after MasterContext for optimization because in most cases
-            // there will either be MasterContext or JobResult. Neither of them is present only after
-            // master failed and the new master didn't yet scan jobs. We check the JobResult
-            // again at the end for correctness.
+            // We check the MasterContext before JobResult for optimization. In
+            // most cases there will either be MasterContext or JobResult.
+            // Neither of them is present only after master failed and the new
+            // master didn't yet scan jobs. We check the JobResult again at the
+            // end for correctness to avoid race with job completion.
+            //
+            // We check the JobResult before JobRecord and JobExecutionRecord
+            // because JobResult is more recent and contains more information.
+            // In some cases (slow deleteJob execution) there can exist
+            // JobResult, one or both JobRecord and JobExecutionRecord, and no
+            // MasterContext.
 
             // check masterContext first
             MasterContext mc = masterContexts.get(jobId);
@@ -948,14 +1092,15 @@ public class JobCoordinationService {
      * Completes the job which is coordinated with the given master context object.
      */
     @CheckReturnValue
-    CompletableFuture<Void> completeJob(MasterContext masterContext, Throwable error, long completionTime) {
+    CompletableFuture<Void> completeJob(MasterContext masterContext, Throwable error, long completionTime,
+                                        boolean userCancelled) {
         return submitToCoordinatorThread(() -> {
             // the order of operations is important.
             List<RawJobMetrics> jobMetrics =
                     masterContext.jobConfig().isStoreMetricsAfterJobCompletion()
                             ? masterContext.jobContext().jobMetrics()
                             : null;
-            jobRepository.completeJob(masterContext, jobMetrics, error, completionTime);
+            jobRepository.completeJob(masterContext, jobMetrics, error, completionTime, userCancelled);
             if (removeMasterContext(masterContext)) {
                 completeObservables(masterContext.jobRecord().getOwnedObservables(), error);
                 logger.fine(masterContext.jobIdString() + " is completed");
@@ -1014,7 +1159,7 @@ public class JobCoordinationService {
             logger.severe("Master context for job " + idToString(jobId) + " not found to restart");
             return;
         }
-        tryStartJob(masterContext);
+        masterContext.jobContext().tryStartJob();
     }
 
     private void checkOperationalState() {
@@ -1155,7 +1300,7 @@ public class JobCoordinationService {
             logFinest(logger, "MasterContext for suspended %s is created", masterContext.jobIdString());
         } else {
             logger.info("Starting job " + idToString(jobId) + ": " + reason);
-            tryStartJob(masterContext);
+            masterContext.jobContext().tryStartJob();
         }
 
         return masterContext.jobContext().jobCompletionFuture();
@@ -1179,22 +1324,13 @@ public class JobCoordinationService {
         if (!masterContext.jobConfig().isAutoScaling() && masterContext.jobExecutionRecord().executed()) {
             logger.info("Suspending or failing " + masterContext.jobIdString()
                     + " since auto-restart is disabled and the job has been executed before");
-            masterContext.jobContext().finalizeJob(new TopologyChangedException());
+            masterContext.jobContext().finalizeExecution(new TopologyChangedException());
             return true;
         }
         return false;
     }
 
-    private void tryStartJob(MasterContext masterContext) {
-        masterContext.jobContext().tryStartJob(jobRepository::newExecutionId);
-
-        if (masterContext.hasTimeout()) {
-            long remainingTime = masterContext.remainingTime(Clock.currentTimeMillis());
-            scheduleJobTimeout(masterContext.jobId(), Math.max(1, remainingTime));
-        }
-    }
-
-    private int getQuorumSize() {
+    int getQuorumSize() {
         return (getDataMemberCount() / 2) + 1;
     }
 
@@ -1206,16 +1342,38 @@ public class JobCoordinationService {
     private JobAndSqlSummary getJobAndSqlSummary(JobRecord record) {
         MasterContext ctx = masterContexts.get(record.getJobId());
         long execId = ctx == null ? 0 : ctx.executionId();
+        JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
+        String suspensionCause = executionRecord != null && executionRecord.getSuspensionCause() != null
+                ? executionRecord.getSuspensionCause().description() : null;
         JobStatus status;
+        boolean userCancelled;
         if (ctx == null) {
-            JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
+            // If we have a JobRecord but not the MasterContext, it may mean that:
+            // 1) job has not yet created MasterContext => NOT_RUNNING
+            // 2) job is suspended => SUSPENDED
+            // 3) job has already ended but JobRecord has not yet been deleted =>
+            //    do not care, result will be overwritten by the one obtained from JobResult
+            //    which is guaranteed to exist in this case
             status = executionRecord != null && executionRecord.isSuspended()
                     ? JobStatus.SUSPENDED : JobStatus.NOT_RUNNING;
+            userCancelled = false;
         } else {
-            status = ctx.jobStatus();
+            // order of reads is important, see comment in determineJobStatusFromMasterContext
+            // for consistent result we must use single instance of TerminationRequest for all checks
+            Optional<TerminationRequest> maybeTerminationRequest = ctx.jobContext().getTerminationRequest();
+            JobStatus jobStatus = ctx.jobStatus();
+            status = jobStatus == RUNNING && maybeTerminationRequest.isPresent()
+                    ? COMPLETING
+                    : jobStatus;
+
+            // job is running, so not cancelled
+            // or has just ended but MasterContext still exists
+            userCancelled = status == FAILED &&
+                    maybeTerminationRequest.map(TerminationRequest::isUserInitiated).orElse(false);
         }
         return new JobAndSqlSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
-                record.getCreationTime(), 0, null, null);
+                record.getCreationTime(), 0, null, null, suspensionCause,
+                userCancelled);
     }
 
     private InternalPartitionServiceImpl getInternalPartitionService() {
@@ -1262,6 +1420,11 @@ public class JobCoordinationService {
         jobRepository.cleanup(nodeEngine);
         if (!jobsScanned) {
             synchronized (lock) {
+                // Note that setting jobsScanned is required for Jet to accept submitted jobs.
+                // When a new cluster is started, job records IMap does not exist until first job is submitted.
+                // This causes slight possibility of accepting duplicated job in case of HotRestart,
+                // but that is acceptable risk.
+                // See comment in JobRepository.cleanup().
                 jobsScanned = true;
             }
         }
@@ -1272,7 +1435,7 @@ public class JobCoordinationService {
     }
 
     @SuppressWarnings("WeakerAccess")
-    // used by jet-enterprise
+        // used by jet-enterprise
     void assertIsMaster(String error) {
         if (!isMaster()) {
             throw new JetException(error + ". Master address: " + nodeEngine.getClusterService().getMasterAddress());
@@ -1283,7 +1446,8 @@ public class JobCoordinationService {
         return nodeEngine.getClusterService().isMaster();
     }
 
-    @SuppressWarnings("unused") // used in jet-enterprise
+    @SuppressWarnings("unused")
+        // used in jet-enterprise
     NodeEngineImpl nodeEngine() {
         return nodeEngine;
     }
@@ -1355,7 +1519,7 @@ public class JobCoordinationService {
         }).toArray();
     }
 
-    private void scheduleJobTimeout(final long jobId, final long timeout) {
+    void scheduleJobTimeout(final long jobId, final long timeout) {
         if (timeout <= 0) {
             return;
         }
@@ -1377,9 +1541,9 @@ public class JobCoordinationService {
 
             try {
                 if (mc != null && isMaster() && !mc.jobStatus().isTerminal()) {
-                    terminateJob(jobId, CANCEL_FORCEFUL);
+                    terminateJob(jobId, CANCEL_FORCEFUL, false);
                 } else if (lightMc != null && !lightMc.isCancelled()) {
-                    lightMc.requestTermination();
+                    lightMc.requestTermination(false);
                 }
             } finally {
                 scheduledJobTimeouts.remove(jobId);

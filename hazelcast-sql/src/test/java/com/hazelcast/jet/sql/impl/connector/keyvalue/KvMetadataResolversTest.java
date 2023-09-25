@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
-import com.hazelcast.jet.sql.impl.schema.TablesStorage;
+import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlServiceImpl;
@@ -27,11 +28,11 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
 
 import java.util.List;
@@ -49,6 +50,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(JUnitParamsRunner.class)
 public class KvMetadataResolversTest {
@@ -62,7 +64,7 @@ public class KvMetadataResolversTest {
     private CalciteSqlOptimizer optimizer;
 
     @Mock
-    private TablesStorage tablesStorage;
+    private RelationsStorage relationsStorage;
 
     @Mock
     private SqlServiceImpl sqlService;
@@ -73,18 +75,25 @@ public class KvMetadataResolversTest {
     @Mock
     private InternalSerializationService ss;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
+        openMocks = openMocks(this);
 
         given(nodeEngine.getSerializationService()).willReturn(ss);
         given(resolver.supportedFormats())
                 .willAnswer((Answer<Stream<String>>) invocationOnMock -> Stream.of(JAVA_FORMAT));
         given(nodeEngine.getSqlService()).willReturn(sqlService);
         given(sqlService.getOptimizer()).willReturn(optimizer);
-        given(optimizer.tablesStorage()).willReturn(tablesStorage);
+        given(optimizer.relationsStorage()).willReturn(relationsStorage);
 
         resolvers = new KvMetadataResolvers(resolver);
+    }
+
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
     }
 
     @Test

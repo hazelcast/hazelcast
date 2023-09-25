@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.aws;
 
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.utils.PortRange;
 
 import java.util.ArrayList;
@@ -48,13 +49,14 @@ final class AwsConfig {
     private final String cluster;
     private final String family;
     private final String serviceName;
+    private final DiscoveryMode discoveryMode;
 
     @SuppressWarnings("checkstyle:parameternumber")
     // Constructor has a lot of parameters, but it's private.
     private AwsConfig(String accessKey, String secretKey, String region, String iamRole, String hostHeader,
                       String securityGroupName, String tagKey, String tagValue, int connectionTimeoutSeconds,
                       int connectionRetries, int readTimeoutSeconds, PortRange hzPort, String cluster, String family,
-                      String serviceName) {
+                      String serviceName, DiscoveryMode discoveryMode) {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.region = region;
@@ -69,6 +71,7 @@ final class AwsConfig {
         this.cluster = cluster;
         this.family = family;
         this.serviceName = serviceName;
+        this.discoveryMode = discoveryMode;
 
         validateConfig();
     }
@@ -105,38 +108,34 @@ final class AwsConfig {
     private void validateConfig() {
         if (anyOfEc2PropertiesConfigured() && anyOfEcsPropertiesConfigured()) {
             throw new InvalidConfigurationException(
-                "You have to configure either EC2 properties ('iam-role', 'security-group-name', 'tag-key', 'tag-value')"
-                    + " or ECS properties ('cluster', 'family', 'service-name'). You cannot define both of them"
+                    "You have to configure either EC2 properties ('iam-role', 'security-group-name')"
+                            + " or ECS properties ('cluster', 'family', 'service-name'). You cannot define both of them"
             );
         }
         if (!isNullOrEmptyAfterTrim(family) && !isNullOrEmptyAfterTrim(serviceName)) {
             throw new InvalidConfigurationException(
-                "You cannot configure ECS discovery with both 'family' and 'service-name', these filters are mutually"
-                    + " exclusive"
+                    "You cannot configure ECS discovery with both 'family' and 'service-name', these filters are mutually"
+                            + " exclusive"
             );
         }
         if (!isNullOrEmptyAfterTrim(iamRole)
                 && (!isNullOrEmptyAfterTrim(accessKey) || !isNullOrEmptyAfterTrim(secretKey))) {
             throw new InvalidConfigurationException(
-                "You cannot define both 'iam-role' and 'access-key'/'secret-key'. Choose how you want to authenticate"
-                    + " with AWS API, either with IAM Role or with hardcoded AWS Credentials");
+                    "You cannot define both 'iam-role' and 'access-key'/'secret-key'. Choose how you want to authenticate"
+                            + " with AWS API, either with IAM Role or with hardcoded AWS Credentials");
         }
         if ((isNullOrEmptyAfterTrim(accessKey) && !isNullOrEmptyAfterTrim(secretKey))
                 || (!isNullOrEmptyAfterTrim(accessKey) && isNullOrEmptyAfterTrim(secretKey))) {
             throw new InvalidConfigurationException(
-                "You have to either define both ('access-key', 'secret-key') or none of them");
+                    "You have to either define both ('access-key', 'secret-key') or none of them");
         }
     }
 
-    private boolean anyOfEc2PropertiesConfigured() {
-        return !isNullOrEmptyAfterTrim(iamRole) || !isNullOrEmptyAfterTrim(securityGroupName) || hasTags(tags);
+    boolean anyOfEc2PropertiesConfigured() {
+        return !isNullOrEmptyAfterTrim(iamRole) || !isNullOrEmptyAfterTrim(securityGroupName);
     }
 
-    private boolean hasTags(List<Tag> tags) {
-        return tags != null && !tags.isEmpty();
-    }
-
-    private boolean anyOfEcsPropertiesConfigured() {
+    boolean anyOfEcsPropertiesConfigured() {
         return !isNullOrEmptyAfterTrim(cluster) || !isNullOrEmptyAfterTrim(family) || !isNullOrEmptyAfterTrim(serviceName);
     }
 
@@ -200,24 +199,29 @@ final class AwsConfig {
         return serviceName;
     }
 
+    public DiscoveryMode getDiscoveryMode() {
+        return discoveryMode;
+    }
+
     @Override
     public String toString() {
         return "AwsConfig{"
-            + "accessKey='***'"
-            + ", secretKey='***'"
-            + ", iamRole='" + iamRole + '\''
-            + ", region='" + region + '\''
-            + ", hostHeader='" + hostHeader + '\''
-            + ", securityGroupName='" + securityGroupName + '\''
-            + ", tags='" + tags + '\''
-            + ", hzPort=" + hzPort
-            + ", cluster='" + cluster + '\''
-            + ", family='" + family + '\''
-            + ", serviceName='" + serviceName + '\''
-            + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds
-            + ", connectionRetries=" + connectionRetries
-            + ", readTimeoutSeconds=" + readTimeoutSeconds
-            + '}';
+                + "accessKey='***'"
+                + ", secretKey='***'"
+                + ", iamRole='" + iamRole + '\''
+                + ", region='" + region + '\''
+                + ", hostHeader='" + hostHeader + '\''
+                + ", securityGroupName='" + securityGroupName + '\''
+                + ", tags='" + tags + '\''
+                + ", hzPort=" + hzPort
+                + ", cluster='" + cluster + '\''
+                + ", family='" + family + '\''
+                + ", serviceName='" + serviceName + '\''
+                + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds
+                + ", connectionRetries=" + connectionRetries
+                + ", readTimeoutSeconds=" + readTimeoutSeconds
+                + ", discoveryMode=" + discoveryMode
+                + '}';
     }
 
     static class Builder {
@@ -237,6 +241,7 @@ final class AwsConfig {
         private String cluster;
         private String family;
         private String serviceName;
+        private DiscoveryMode discoveryMode;
 
         Builder setAccessKey(String accessKey) {
             this.accessKey = accessKey;
@@ -313,9 +318,15 @@ final class AwsConfig {
             return this;
         }
 
+        Builder setDiscoveryMode(DiscoveryMode discoveryMode) {
+            this.discoveryMode = discoveryMode;
+            return this;
+        }
+
         AwsConfig build() {
             return new AwsConfig(accessKey, secretKey, region, iamRole, hostHeader, securityGroupName, tagKey, tagValue,
-                connectionTimeoutSeconds, connectionRetries, readTimeoutSeconds, hzPort, cluster, family, serviceName);
+                    connectionTimeoutSeconds, connectionRetries, readTimeoutSeconds, hzPort, cluster, family, serviceName,
+                    discoveryMode);
         }
     }
 }

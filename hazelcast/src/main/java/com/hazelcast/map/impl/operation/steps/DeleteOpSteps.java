@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 
-public enum DeleteOpSteps implements Step<State> {
+public enum DeleteOpSteps implements IMapOpStep {
 
     READ() {
         @Override
@@ -33,7 +33,7 @@ public enum DeleteOpSteps implements Step<State> {
             MapContainer mapContainer = recordStore.getMapContainer();
             MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
 
-            Record record = recordStore.getRecordOrNull(state.getKey());
+            Record record = recordStore.getRecordOrNull(state.getKey(), false);
             state.setOldValue(record == null ? null : record.getValue());
             state.setRecordExistsInMemory(record != null);
 
@@ -54,7 +54,7 @@ public enum DeleteOpSteps implements Step<State> {
 
     DELETE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
@@ -70,7 +70,7 @@ public enum DeleteOpSteps implements Step<State> {
         @Override
         public Step nextStep(State state) {
             return state.isRecordExistsInMemory()
-                    ? DeleteOpSteps.ON_DELETE : UtilSteps.SEND_RESPONSE;
+                    ? DeleteOpSteps.ON_DELETE : UtilSteps.FINAL_STEP;
         }
     },
 
@@ -85,7 +85,7 @@ public enum DeleteOpSteps implements Step<State> {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

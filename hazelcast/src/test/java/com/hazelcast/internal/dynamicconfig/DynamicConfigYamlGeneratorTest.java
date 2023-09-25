@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.internal.dynamicconfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.EndpointConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryYamlConfig;
 import com.hazelcast.config.MemberAddressProviderConfig;
@@ -99,14 +99,14 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         Config newConfigViaGenerator = getNewConfigViaGenerator(cfg, true);
         SSLConfig generatedSSLConfig = newConfigViaGenerator.getNetworkConfig().getSSLConfig();
 
-        assertEquals(generatedSSLConfig.getProperty("keyStorePassword"), MASK_FOR_SENSITIVE_DATA);
-        assertEquals(generatedSSLConfig.getProperty("trustStorePassword"), MASK_FOR_SENSITIVE_DATA);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, generatedSSLConfig.getProperty("keyStorePassword"));
+        assertEquals(MASK_FOR_SENSITIVE_DATA, generatedSSLConfig.getProperty("trustStorePassword"));
 
         String secPassword = newConfigViaGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getPassword();
         String theSalt = newConfigViaGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
-        assertEquals(secPassword, MASK_FOR_SENSITIVE_DATA);
-        assertEquals(theSalt, MASK_FOR_SENSITIVE_DATA);
-        assertEquals(newConfigViaGenerator.getLicenseKey(), MASK_FOR_SENSITIVE_DATA);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, secPassword);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, theSalt);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, newConfigViaGenerator.getLicenseKey());
     }
 
     @Test
@@ -138,9 +138,9 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
 
         String secPassword = newConfigViaGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getPassword();
         String theSalt = newConfigViaGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
-        assertEquals(secPassword, password);
-        assertEquals(theSalt, salt);
-        assertEquals(newConfigViaGenerator.getLicenseKey(), licenseKey);
+        assertEquals(password, secPassword);
+        assertEquals(salt, theSalt);
+        assertEquals(licenseKey, newConfigViaGenerator.getLicenseKey());
     }
 
     private MemberAddressProviderConfig getMemberAddressProviderConfig(Config cfg) {
@@ -518,21 +518,21 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
 
 
     @Test
-    public void testExternalDataStoreConfig() {
+    public void testDataConnectionConfig() {
         Config expectedConfig = new Config();
 
         Properties properties = new Properties();
         properties.put("jdbcUrl", "jdbc:h2:mem:" + DynamicConfigYamlGeneratorTest.class.getSimpleName());
-        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
-                .setName("test-data-store")
-                .setClassName("com.hazelcast.datastore.JdbcDataStoreFactory")
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+                .setName("test-data-connection")
+                .setType("jdbc")
                 .setProperties(properties);
 
-        expectedConfig.addExternalDataStoreConfig(externalDataStoreConfig);
+        expectedConfig.addDataConnectionConfig(dataConnectionConfig);
 
         Config actualConfig = getNewConfigViaGenerator(expectedConfig);
 
-        assertEquals(expectedConfig.getExternalDataStoreConfigs(), actualConfig.getExternalDataStoreConfigs());
+        assertEquals(expectedConfig.getDataConnectionConfigs(), actualConfig.getDataConnectionConfigs());
     }
 
     @Override

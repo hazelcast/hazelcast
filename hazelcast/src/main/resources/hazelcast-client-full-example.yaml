@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -257,11 +257,13 @@ hazelcast-client:
     ssl:
       enabled: false
       properties:
-        protocol: TLS
+        protocol: TLSv1.3
 
         trustStore: /opt/hazelcast-client.truststore
         trustStorePassword: secret.123456
         trustStoreType: PKCS12
+
+        keyMaterialDuration: PT10M
 
         # Following properties are only needed when the mutual authentication is used.
         keyStore: /opt/hazelcast-client.keystore
@@ -972,3 +974,14 @@ hazelcast-client:
   #     Sets the resubmission mode for failing queries. By default, it is set to NEVER.
   sql:
     resubmission-mode: RETRY_SELECTS
+  # Configures the client for TPC, which is the next generation Hazelcast that
+  # uses thread-per-core model. TPC-aware clients will maintain connections to
+  # all cores of all cluster members. The client will route partition-specific
+  # invocations to the correct core of the correct member in the best effort
+  # basis. Configuration element's name is "tpc".
+  #
+  # It has the following sub-elements:
+  # * "enabled":
+  #     Enables or disables the TPC-aware mode.
+  tpc:
+    enabled: true

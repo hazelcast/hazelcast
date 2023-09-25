@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ import com.hazelcast.internal.cluster.impl.MulticastJoiner;
 import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
+import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.config.DiscoveryConfigReadOnly;
 import com.hazelcast.internal.config.MemberAttributeConfigReadOnly;
@@ -88,6 +89,7 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
@@ -96,7 +98,9 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
@@ -104,6 +108,7 @@ import com.hazelcast.version.Version;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,6 +147,10 @@ import static java.security.AccessController.doPrivileged;
         "checkstyle:classfanoutcomplexity"})
 public class Node {
 
+    // name of property used to inject ClusterTopologyIntentTracker in Discovery Service
+    public static final String DISCOVERY_PROPERTY_CLUSTER_TOPOLOGY_INTENT_TRACKER =
+            "hazelcast.internal.discovery.cluster.topology.intent.tracker";
+
     private static final int THREAD_SLEEP_DURATION_MS = 500;
     private static final String GRACEFUL_SHUTDOWN_EXECUTOR_NAME = "hz:graceful-shutdown";
 
@@ -164,6 +173,7 @@ public class Node {
      */
     public final Address address;
     public final SecurityContext securityContext;
+    final ClusterTopologyIntentTracker clusterTopologyIntentTracker;
 
     private final ILogger logger;
     private final AtomicBoolean shuttingDown = new AtomicBoolean();
@@ -261,6 +271,12 @@ public class Node {
             healthMonitor = new HealthMonitor(this);
             clientEngine = hasClientServerSocket() ? new ClientEngineImpl(this) : new NoOpClientEngine();
             JoinConfig joinConfig = getActiveMemberNetworkConfig(this.config).getJoin();
+            if (properties.getBoolean(ClusterProperty.PERSISTENCE_AUTO_CLUSTER_STATE)
+                    && config.getPersistenceConfig().isEnabled()) {
+                clusterTopologyIntentTracker = new KubernetesTopologyIntentTracker(this);
+            } else {
+                clusterTopologyIntentTracker = new NoOpClusterTopologyIntentTracker();
+            }
             DiscoveryConfig discoveryConfig = new DiscoveryConfigReadOnly(joinConfig.getDiscoveryConfig());
             List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
                     AliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(joinConfig);
@@ -331,6 +347,10 @@ public class Node {
         }
         ILogger logger = getLogger(DiscoveryService.class);
 
+        final Map attributes = new HashMap<>(localMember.getAttributes());
+        attributes.put(DISCOVERY_PROPERTY_CLUSTER_TOPOLOGY_INTENT_TRACKER, clusterTopologyIntentTracker);
+        DiscoveryNode thisDiscoveryNode = new SimpleDiscoveryNode(localMember.getAddress(), attributes);
+
         DiscoveryServiceSettings settings = new DiscoveryServiceSettings()
                 .setConfigClassLoader(configClassLoader)
                 .setLogger(logger)
@@ -338,8 +358,7 @@ public class Node {
                 .setDiscoveryConfig(discoveryConfig)
                 .setAliasedDiscoveryConfigs(aliasedDiscoveryConfigs)
                 .setAutoDetectionEnabled(isAutoDetectionEnabled)
-                .setDiscoveryNode(
-                        new SimpleDiscoveryNode(localMember.getAddress(), localMember.getAttributes()));
+                .setDiscoveryNode(thisDiscoveryNode);
 
         return factory.newDiscoveryService(settings);
     }
@@ -688,6 +707,10 @@ public class Node {
         state = NodeState.PASSIVE;
     }
 
+    public void forceNodeStateToPassive() {
+        state = NodeState.PASSIVE;
+    }
+
     /**
      * Resets the internal cluster-state of the Node to be able to make it ready to join a new cluster.
      * After this method is called,
@@ -765,23 +788,70 @@ public class Node {
         @Override
         public void run() {
             try {
-                if (isRunning()) {
-                    logger.info("Running shutdown hook... Current state: " + state);
-                    switch (policy) {
-                        case TERMINATE:
-                            hazelcastInstance.getLifecycleService().terminate();
-                            break;
-                        case GRACEFUL:
-                            hazelcastInstance.getLifecycleService().shutdown();
-                            break;
-                        default:
-                            throw new IllegalArgumentException("Unimplemented shutdown hook policy: " + policy);
-                    }
+                if (!isRunning()) {
+                    return;
+                }
+                final ClusterTopologyIntent shutdownIntent = clusterTopologyIntentTracker.getClusterTopologyIntent();
+                if (clusterTopologyIntentTracker.isEnabled()
+                        && getNodeExtension().getInternalHotRestartService().isEnabled()
+                        && shutdownIntent != ClusterTopologyIntent.IN_MANAGED_CONTEXT_UNKNOWN
+                        && shutdownIntent != ClusterTopologyIntent.NOT_IN_MANAGED_CONTEXT) {
+                    final ClusterState clusterState = clusterService.getClusterState();
+                    logger.info("Running shutdown hook... Current node state: " + state
+                                + ", detected shutdown intent: " + shutdownIntent
+                                + ", cluster state: " + clusterState);
+                    clusterTopologyIntentTracker.shutdownWithIntent(shutdownIntent);
+                } else {
+                    logger.info("Running shutdown hook... Current node state: " + state);
+                }
+                switch (policy) {
+                    case TERMINATE:
+                        hazelcastInstance.getLifecycleService().terminate();
+                        break;
+                    case GRACEFUL:
+                        hazelcastInstance.getLifecycleService().shutdown();
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unimplemented shutdown hook policy: " + policy);
                 }
             } catch (Exception e) {
                 logger.warning(e);
             }
         }
+    }
+
+    public ClusterTopologyIntent getClusterTopologyIntent() {
+        return clusterTopologyIntentTracker.getClusterTopologyIntent();
+    }
+
+    public void initializeClusterTopologyIntent(ClusterTopologyIntent clusterTopologyIntent) {
+        clusterTopologyIntentTracker.initializeClusterTopologyIntent(clusterTopologyIntent);
+    }
+
+    // true when Hazelcast is running in managed context with a tracker enabled
+    public boolean isClusterStateManagementAutomatic() {
+        return clusterTopologyIntentTracker.isEnabled();
+    }
+
+    /**
+     * When running in managed context with automatic cluster state management,
+     * return true if the current cluster size (as observed by Hazelcast's cluster service)
+     * is same as the cluster specification size (as provided by the runtime environment ie Kubernetes).
+     * @return  {@code true} if running with auto cluster state management and current cluster size is same as
+     *          specified one, otherwise {@code false}.
+     */
+    public boolean isClusterComplete() {
+        return clusterTopologyIntentTracker.isEnabled()
+                && clusterTopologyIntentTracker.getCurrentSpecifiedReplicaCount() == clusterService.getSize();
+    }
+
+    public boolean isManagedClusterStable() {
+        return isClusterComplete()
+                && clusterTopologyIntentTracker.getClusterTopologyIntent() == ClusterTopologyIntent.CLUSTER_STABLE;
+    }
+
+    public int currentSpecifiedReplicaCount() {
+        return clusterTopologyIntentTracker.getCurrentSpecifiedReplicaCount();
     }
 
     public SplitBrainJoinMessage createSplitBrainJoinMessage() {
@@ -803,9 +873,11 @@ public class Node {
         MemberImpl localMember = getLocalMember();
         CPMemberInfo localCPMember = getLocalCPMember();
         UUID cpMemberUUID = localCPMember != null ? localCPMember.getUuid() : null;
+        OnJoinRegistrationOperation preJoinOps = nodeEngine.getEventService().getPreJoinOperation();
+        OnJoinOp onJoinOp = preJoinOps != null ? new OnJoinOp(Collections.singletonList(preJoinOps)) : null;
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), version, address,
                 localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
-                localMember.getAttributes(), excludedMemberUuids, localMember.getAddressMap(), cpMemberUUID);
+                localMember.getAttributes(), excludedMemberUuids, localMember.getAddressMap(), cpMemberUUID, onJoinOp);
     }
 
     private CPMemberInfo getLocalCPMember() {

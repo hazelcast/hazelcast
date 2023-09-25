@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -29,14 +32,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.nio.serialization.TypedStreamDeserializer;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.ServiceLoader;
-import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DATA_SERIALIZABLE;
@@ -62,13 +63,19 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
     DataSerializableSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                                ClassLoader classLoader) {
         try {
-            final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
-            while (hooks.hasNext()) {
-                DataSerializerHook hook = hooks.next();
+            List<DataSerializerHook> hooks = new ArrayList<>();
+            ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader)
+                    .forEachRemaining(hooks::add);
+
+            for (DataSerializerHook hook : hooks) {
                 final DataSerializableFactory factory = hook.createFactory();
                 if (factory != null) {
                     register(hook.getFactoryId(), factory);
                 }
+            }
+
+            for (DataSerializerHook hook : hooks) {
+                hook.afterFactoriesCreated(factories);
             }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -112,15 +119,15 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         return readInternal(in, aClass);
     }
 
-    private DataSerializable readInternal(ObjectDataInput in, Class aClass)
+    private DataSerializable readInternal(ObjectDataInput in, Class<?> aClass)
             throws IOException {
         setInputVersion(in, version);
         DataSerializable ds = null;
         if (null != aClass) {
             try {
-                ds = (DataSerializable) aClass.newInstance();
+                ds = (DataSerializable) aClass.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
-                e = tryClarifyInstantiationException(aClass, e);
+                e = tryClarifyReflectiveOperationException(aClass, e);
                 throw new HazelcastSerializationException("Requested class " + aClass + " could not be instantiated.", e);
             }
         }
@@ -183,19 +190,27 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
                 + ", exception: " + e.getMessage(), e);
     }
 
-    private Exception tryClarifyInstantiationException(Class aClass, Exception exception) {
-        if (!(exception instanceof InstantiationException)) {
+    /**
+     * @return
+     *         <ul>
+     *         <li>If {@code exception} is an {@link NoSuchMethodError} and matches criteria of
+     *         {@link #tryGenerateClarifiedExceptionMessage(Class)}, a new {@link ReflectiveOperationException} with the new
+     *         message
+     *         <li>Otherwise, {code exception}
+     *         </ul>
+     */
+    private Exception tryClarifyReflectiveOperationException(Class<?> aClass, Exception exception) {
+        if (!(exception instanceof ReflectiveOperationException)) {
             return exception;
         }
-        InstantiationException instantiationException = (InstantiationException) exception;
 
         String message = tryGenerateClarifiedExceptionMessage(aClass);
         if (message == null) {
-            return instantiationException;
+            return exception;
         }
 
-        InstantiationException clarifiedException = new InstantiationException(message);
-        clarifiedException.initCause(instantiationException);
+        Exception clarifiedException = new ReflectiveOperationException(message);
+        clarifiedException.initCause(exception);
         return clarifiedException;
     }
 
@@ -205,7 +220,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         }
         NoSuchMethodException noSuchMethodException = (NoSuchMethodException) exception;
 
-        Class aClass;
+        Class<?> aClass;
         try {
             ClassLoader effectiveClassLoader = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;
             aClass = ClassLoaderUtil.loadClass(effectiveClassLoader, className);
@@ -257,8 +272,16 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         ((VersionedObjectDataInput) in).setVersion(version);
     }
 
-    private static String tryGenerateClarifiedExceptionMessage(Class aClass) {
-        String classType;
+    /**
+     * @return an error message if {@code aClass} is:
+     *         <ul>
+     *         <li>{@link Class#isAnonymousClass()}
+     *         <li>{@link Class#isLocalClass()}
+     *         <li>non-{@code static} {@link Class#isMemberClass()}
+     *         </ul>
+     */
+    private static String tryGenerateClarifiedExceptionMessage(Class<?> aClass) {
+        final String classType;
         if (aClass.isAnonymousClass()) {
             classType = "Anonymous";
         } else if (aClass.isLocalClass()) {
@@ -272,5 +295,4 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         return String.format("%s classes can't conform to DataSerializable since they can't "
                 + "provide an explicit no-arguments constructor.", classType);
     }
-
 }

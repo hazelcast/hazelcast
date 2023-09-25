@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,7 +173,12 @@ public class ProxyServiceImpl
             calls.add(f);
         }
 
-        destroyLocalDistributedObject(serviceName, name, source, true);
+        try {
+            destroyLocalDistributedObject(serviceName, name, source, true);
+        } catch (Throwable e) {
+            logger.warning("Destroying local DistributedObject failed", e);
+            throw e;
+        }
         waitWithDeadline(calls, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS, destroyProxyExceptionHandler);
     }
 

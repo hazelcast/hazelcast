@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,5 +54,10 @@ public final class HazelcastRandFunction extends HazelcastFunction {
         }
 
         return TypedOperandChecker.BIGINT.check(binding, throwOnFailure, 0);
+    }
+
+    @Override
+    public boolean isDeterministic() {
+        return false;
     }
 }

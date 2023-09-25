@@ -1,6 +1,6 @@
 /*
  * Original work Copyright 2015 Real Logic Ltd.
- * Modified work Copyright (c) 2015-2021, Hazelcast, Inc. All Rights Reserved.
+ * Modified work Copyright (c) 2015-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package com.hazelcast.internal.util.collection;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.data.Offset;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,24 +33,21 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static java.lang.Long.valueOf;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.number.IsCloseTo.closeTo;
-import static org.hamcrest.number.OrderingComparison.lessThan;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class Long2ObjectHashMapTest {
-    private final Long2ObjectHashMap<String> longToObjectMap = new Long2ObjectHashMap<String>();
+    private final Long2ObjectHashMap<String> longToObjectMap = new Long2ObjectHashMap<>();
 
     @Test
     public void shouldDoPutAndThenGet() {
         final String value = "Seven";
         longToObjectMap.put(7, value);
 
-        assertThat(longToObjectMap.get(7), is(value));
+        assertThat(longToObjectMap.get(7)).isEqualTo(value);
     }
 
     @Test
@@ -61,38 +59,38 @@ public class Long2ObjectHashMapTest {
         final String newValue = "New Seven";
         final String oldValue = longToObjectMap.put(key, newValue);
 
-        assertThat(longToObjectMap.get(key), is(newValue));
-        assertThat(oldValue, is(value));
-        assertThat(valueOf(longToObjectMap.size()), is(valueOf(1)));
+        assertThat(longToObjectMap.get(key)).isEqualTo(newValue);
+        assertThat(oldValue).isEqualTo(value);
+        assertThat(valueOf(longToObjectMap.size())).isEqualTo(valueOf(1));
     }
 
     @Test
     public void shouldGrowWhenThresholdExceeded() {
         final double loadFactor = 0.5d;
-        final Long2ObjectHashMap<String> map = new Long2ObjectHashMap<String>(32, loadFactor);
+        final Long2ObjectHashMap<String> map = new Long2ObjectHashMap<>(32, loadFactor);
         for (int i = 0; i < 16; i++) {
             map.put(i, Long.toString(i));
         }
 
-        assertThat(valueOf(map.resizeThreshold()), is(valueOf(16)));
-        assertThat(valueOf(map.capacity()), is(valueOf(32)));
-        assertThat(valueOf(map.size()), is(valueOf(16)));
+        assertThat(valueOf(map.resizeThreshold())).isEqualTo(valueOf(16));
+        assertThat(valueOf(map.capacity())).isEqualTo(valueOf(32));
+        assertThat(valueOf(map.size())).isEqualTo(valueOf(16));
 
         map.put(16, "16");
 
-        assertThat(valueOf(map.resizeThreshold()), is(valueOf(32)));
-        assertThat(valueOf(map.capacity()), is(valueOf(64)));
-        assertThat(valueOf(map.size()), is(valueOf(17)));
+        assertThat(valueOf(map.resizeThreshold())).isEqualTo(valueOf(32));
+        assertThat(valueOf(map.capacity())).isEqualTo(valueOf(64));
+        assertThat(valueOf(map.size())).isEqualTo(valueOf(17));
 
-        assertThat(map.get(16), equalTo("16"));
-        assertThat(loadFactor, closeTo(map.loadFactor(), 0.0));
+        assertThat(map.get(16)).isEqualTo("16");
+        assertThat(loadFactor).isCloseTo(map.loadFactor(), Offset.offset(0.0));
 
     }
 
     @Test
     public void shouldHandleCollisionAndThenLinearProbe() {
         final double loadFactor = 0.5d;
-        final Long2ObjectHashMap<String> map = new Long2ObjectHashMap<String>(32, loadFactor);
+        final Long2ObjectHashMap<String> map = new Long2ObjectHashMap<>(32, loadFactor);
         final long key = 7;
         final String value = "Seven";
         map.put(key, value);
@@ -101,9 +99,9 @@ public class Long2ObjectHashMapTest {
         final String collisionValue = Long.toString(collisionKey);
         map.put(collisionKey, collisionValue);
 
-        assertThat(map.get(key), is(value));
-        assertThat(map.get(collisionKey), is(collisionValue));
-        assertThat(loadFactor, closeTo(map.loadFactor(), 0.0));
+        assertThat(map.get(key)).isEqualTo(value);
+        assertThat(map.get(collisionKey)).isEqualTo(collisionValue);
+        assertThat(loadFactor).isCloseTo(map.loadFactor(), Offset.offset(0.0));
     }
 
     @Test
@@ -112,13 +110,13 @@ public class Long2ObjectHashMapTest {
             longToObjectMap.put(i, Long.toString(i));
         }
 
-        assertThat(valueOf(longToObjectMap.size()), is(valueOf(15)));
-        assertThat(longToObjectMap.get(1), is("1"));
+        assertThat(valueOf(longToObjectMap.size())).isEqualTo(valueOf(15));
+        assertThat(longToObjectMap.get(1)).isEqualTo("1");
 
         longToObjectMap.clear();
 
-        assertThat(valueOf(longToObjectMap.size()), is(valueOf(0)));
-        Assert.assertNull(longToObjectMap.get(1));
+        assertThat(valueOf(longToObjectMap.size())).isEqualTo(valueOf(0));
+        assertNull(longToObjectMap.get(1));
     }
 
     @Test
@@ -135,7 +133,7 @@ public class Long2ObjectHashMapTest {
         final int capacityBeforeCompaction = longToObjectMap.capacity();
         longToObjectMap.compact();
 
-        assertThat(valueOf(longToObjectMap.capacity()), lessThan(valueOf(capacityBeforeCompaction)));
+        assertThat(valueOf(longToObjectMap.capacity())).isLessThan(valueOf(capacityBeforeCompaction));
     }
 
     @Test
@@ -188,12 +186,12 @@ public class Long2ObjectHashMapTest {
         longToObjectMap.put(collisionKey, collisionValue);
         longToObjectMap.put(14, "14");
 
-        assertThat(longToObjectMap.remove(key), is(value));
+        assertThat(longToObjectMap.remove(key)).isEqualTo(value);
     }
 
     @Test
     public void shouldIterateValues() {
-        final Collection<String> initialSet = new HashSet<String>();
+        final Collection<String> initialSet = new HashSet<>();
 
         for (int i = 0; i < 11; i++) {
             final String value = Long.toString(i);
@@ -201,57 +199,56 @@ public class Long2ObjectHashMapTest {
             initialSet.add(value);
         }
 
-        final Collection<String> copyToSet = new HashSet<String>(longToObjectMap.values());
+        final Collection<String> copyToSet = new HashSet<>(longToObjectMap.values());
 
-        assertThat(copyToSet, is(initialSet));
+        assertThat(copyToSet).isEqualTo(initialSet);
     }
 
     @Test
     public void shouldIterateKeysGettingLongAsPrimitive() {
-        final Collection<Long> initialSet = new HashSet<Long>();
+        final Collection<Long> initialSet = new HashSet<>();
 
         for (int i = 0; i < 11; i++) {
             final String value = Long.toString(i);
             longToObjectMap.put(i, value);
-            initialSet.add(valueOf(i));
+            initialSet.add((long) i);
         }
 
-        final Collection<Long> copyToSet = new HashSet<Long>();
+        final Collection<Long> copyToSet = new HashSet<>();
 
-        for (final Long2ObjectHashMap.KeyIterator iter = longToObjectMap.keySet().iterator(); iter.hasNext(); ) {
-            copyToSet.add(valueOf(iter.nextLong()));
+        for (final var iter = longToObjectMap.keySet().iterator(); iter.hasNext(); ) {
+            copyToSet.add(iter.nextLong());
         }
-
-        assertThat(copyToSet, is(initialSet));
+        assertThat(copyToSet).isEqualTo(initialSet);
     }
 
     @Test
     public void shouldIterateKeys() {
-        final Collection<Long> initialSet = new HashSet<Long>();
+        final Collection<Long> initialSet = new HashSet<>();
 
         for (int i = 0; i < 11; i++) {
             final String value = Long.toString(i);
             longToObjectMap.put(i, value);
-            initialSet.add(valueOf(i));
+            initialSet.add((long) i);
         }
 
-        final Collection<Long> copyToSet = new HashSet<Long>(longToObjectMap.keySet());
+        final Collection<Long> copyToSet = new HashSet<>(longToObjectMap.keySet());
 
-        assertThat(copyToSet, is(initialSet));
+        assertThat(copyToSet).isEqualTo(initialSet);
     }
 
     @Test
     public void shouldIterateAndHandleRemove() {
-        final Collection<Long> initialSet = new HashSet<Long>();
+        final Collection<Long> initialSet = new HashSet<>();
 
         final int count = 11;
         for (int i = 0; i < count; i++) {
             final String value = Long.toString(i);
             longToObjectMap.put(i, value);
-            initialSet.add(valueOf(i));
+            initialSet.add((long) i);
         }
 
-        final Collection<Long> copyOfSet = new HashSet<Long>();
+        final Collection<Long> copyOfSet = new HashSet<>();
 
         int i = 0;
         for (final Iterator<Long> iter = longToObjectMap.keySet().iterator(); iter.hasNext(); ) {
@@ -263,10 +260,10 @@ public class Long2ObjectHashMapTest {
             }
         }
 
-        assertThat(valueOf(initialSet.size()), is(valueOf(count)));
+        assertThat(valueOf(initialSet.size())).isEqualTo(valueOf(count));
         final int reducedSetSize = count - 1;
-        assertThat(valueOf(longToObjectMap.size()), is(valueOf(reducedSetSize)));
-        assertThat(valueOf(copyOfSet.size()), is(valueOf(reducedSetSize)));
+        assertThat(valueOf(longToObjectMap.size())).isEqualTo(valueOf(reducedSetSize));
+        assertThat(valueOf(copyOfSet.size())).isEqualTo(valueOf(reducedSetSize));
     }
 
     @Test
@@ -279,14 +276,14 @@ public class Long2ObjectHashMapTest {
 
         final String testValue = "Wibble";
         for (final Map.Entry<Long, String> entry : longToObjectMap.entrySet()) {
-            assertThat(entry.getKey(), equalTo(valueOf(entry.getValue())));
+            assertThat(entry.getKey()).isEqualTo(valueOf(entry.getValue()));
 
             if (entry.getKey().intValue() == 7) {
                 entry.setValue(testValue);
             }
         }
 
-        assertThat(longToObjectMap.get(7), equalTo(testValue));
+        assertThat(longToObjectMap.get(7)).isEqualTo(testValue);
     }
 
     @Test
@@ -298,7 +295,7 @@ public class Long2ObjectHashMapTest {
         }
 
         final String mapAsAString = "{11=11, 7=7, 3=3, 12=12, 19=19, 1=1}";
-        assertThat(longToObjectMap.toString(), equalTo(mapAsAString));
+        assertThat(longToObjectMap.toString()).isEqualTo(mapAsAString);
     }
 
     @Test

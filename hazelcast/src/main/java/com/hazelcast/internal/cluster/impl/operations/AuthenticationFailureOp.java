@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ public class AuthenticationFailureOp extends AbstractClusterOperation {
     public void run() {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();
+        JoinOperation.verifyCanShutdown(node, "Authentication failed on master node!");
         final ILogger logger = nodeEngine.getLogger("com.hazelcast.security");
         logger.severe("Node could not join cluster. Authentication failed on master node! Node is going to shutdown now!");
         node.shutdown(true);

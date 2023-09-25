@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
@@ -45,10 +44,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -75,6 +72,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.SCHEDULED_EXECUTOR_PREFIX;
 import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static com.hazelcast.scheduledexecutor.TaskUtils.autoDisposable;
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
@@ -82,6 +80,7 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -94,9 +93,6 @@ import static org.junit.Assert.fail;
 public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceTestSupport {
 
     private static final String ANY_EXECUTOR_NAME = "s";
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @Test
     public void config() {
@@ -138,10 +134,9 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         assertTrueEventually(() -> assertTrue(f.isDone()));
 
         assertEquals(1L, f.getStats().getTotalRuns());
-        expected.expect(ExecutionException.class);
-        expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Erroneous task"));
 
-        f.get();
+        assertThatThrownBy(f::get).isInstanceOf(ExecutionException.class)
+                .cause().has(rootCause(IllegalStateException.class, "Erroneous task"));
     }
 
     @Test
@@ -1266,9 +1261,9 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         ScheduledTaskHandler handler = first.getHandler();
         first.dispose();
 
-        expected.expect(ExecutionException.class);
-        expected.expectCause(new RootCauseMatcher(StaleTaskException.class));
-        executorService.getScheduledFuture(handler).get();
+        assertThatThrownBy(() -> executorService.getScheduledFuture(handler).get())
+                .isInstanceOf(ExecutionException.class)
+                .cause().has(rootCause(StaleTaskException.class));
     }
 
     @Test
@@ -1492,7 +1487,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledFuture<Double> copy = executorService.getScheduledFuture(handler);
 
         assertEquals(first.getHandler(), copy.getHandler());
-        assertEquals(copy.getHandler().getTaskName(), taskName);
+        assertEquals(taskName, copy.getHandler().getTaskName());
     }
 
     @Test
@@ -1509,7 +1504,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledFuture<Double> copy = executorService.getScheduledFuture(handler);
 
         assertEquals(first.getHandler(), copy.getHandler());
-        assertEquals(copy.getHandler().getTaskName(), taskName);
+        assertEquals(taskName, copy.getHandler().getTaskName());
     }
 
     @Test
@@ -1571,9 +1566,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
                 named(taskName, new ErroneousCallableTask(completionLatchName)), key, delay, SECONDS);
 
         assertOpenEventually(latch);
-        expected.expect(ExecutionException.class);
-        expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Erroneous task"));
-        future.get();
+        assertThatThrownBy(future::get).has(rootCause(IllegalStateException.class, "Erroneous task"));
     }
 
     @Test
@@ -1596,9 +1589,9 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         instances[1].getLifecycleService().shutdown();
         Thread.sleep(2000);
 
-        expected.expect(ExecutionException.class);
-        expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Erroneous task"));
-        future.get();
+        assertThatThrownBy(future::get)
+                .isInstanceOf(ExecutionException.class)
+                .cause().has(rootCause(IllegalStateException.class, "Erroneous task"));
     }
 
     @Test

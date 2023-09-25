@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,44 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.google.common.primitives.Ints;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlDialect;
+
+import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.stream.Collectors.joining;
+class DeleteQueryBuilder extends AbstractQueryBuilder {
 
-class DeleteQueryBuilder {
+    private final List<Integer> dynamicParams = new ArrayList<>();
+    private final List<Integer> inputRefs = new ArrayList<>();
 
-    private final String query;
+    DeleteQueryBuilder(
+            JdbcTable table,
+            SqlDialect dialect,
+            RexNode predicate,
+            boolean hasInput
+    ) {
+        super(table, dialect);
 
-    DeleteQueryBuilder(String tableName, List<String> pkFields) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("DELETE FROM ");
+        dialect.quoteIdentifier(sb, table.getExternalNameList());
 
-        String whereClause = pkFields.stream().map(e -> '\"' + e + "\" = ?")
-                                     .collect(joining(" AND "));
+        if (predicate != null) {
+            appendPredicate(sb, predicate, dynamicParams);
+        } else if (hasInput) {
+            appendPrimaryKeyPredicate(sb, inputRefs);
+        }
 
-        query = "DELETE FROM " + tableName +
-                " WHERE " + whereClause;
+        query = sb.toString();
     }
 
-    String query() {
-        return query;
+    int[] dynamicParams() {
+        return Ints.toArray(dynamicParams);
+    }
+
+    int[] inputRefs() {
+        return Ints.toArray(inputRefs);
     }
 }

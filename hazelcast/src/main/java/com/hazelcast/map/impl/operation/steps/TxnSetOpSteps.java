@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 
 import java.util.UUID;
 
-public enum TxnSetOpSteps implements Step<State> {
+public enum TxnSetOpSteps implements IMapOpStep {
 
     READ() {
         @Override
@@ -40,7 +40,7 @@ public enum TxnSetOpSteps implements Step<State> {
 
             recordStore.unlock(dataKey, ownerUuid, threadId, callId);
 
-            Record record = recordStore.getRecordOrNull(dataKey);
+            Record record = recordStore.getRecordOrNull(dataKey, false);
             if (record == null || version == record.getVersion()) {
                 PutOpSteps.READ.runStep(state);
 

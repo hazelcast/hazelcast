@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.services;
 
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
@@ -25,10 +26,12 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
  * {@link PostJoinAwareService#getPostJoinOperation()}s which are executed on the joining member after it is set as joined.
  * The practical outcome is that pre-join operations are already executed before the {@link com.hazelcast.core.HazelcastInstance}
  * is returned to the caller, while post-join operations may be still executing.
+ * Additionally, pre-join operations must implement {@link AllowedDuringPassiveState}, since they have to be executed
+ * during recovery from persistence.
  *
  * @since 3.9
  */
-public interface PreJoinAwareService {
+public interface PreJoinAwareService<T extends Operation & AllowedDuringPassiveState> {
 
     /**
      * An operation to be executed on the joining member before it is set as joined. As is the case with
@@ -36,7 +39,7 @@ public interface PreJoinAwareService {
      * locks, no database interaction are allowed. Additionally, a pre-join operation is executed while the cluster
      * lock is being held on the joining member, so it is important that the operation finishes quickly and does not
      * interact with other locks.
-     *
+     * <p>
      * The {@link Operation#getPartitionId()} method should return a negative value.
      * This means that the operations should not implement {@link PartitionAwareOperation}.
      * <p>
@@ -44,5 +47,5 @@ public interface PreJoinAwareService {
      *
      * @return an operation to be executed on joining member before it is set as joined. Can be {@code null}.
      */
-    Operation getPreJoinOperation();
+     T getPreJoinOperation();
 }

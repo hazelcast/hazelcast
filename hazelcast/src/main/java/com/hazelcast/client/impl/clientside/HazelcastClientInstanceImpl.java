@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -426,7 +426,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clientExtension.afterStart(this);
             cpSubsystem.init(clientContext);
             addClientConfigAddedListeners(configuredListeners);
-            sendStateToCluster();
+            if (!asyncStart) {
+                sendStateToCluster();
+            }
         } catch (Throwable e) {
             try {
                 lifecycleService.terminate();
@@ -442,14 +444,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         long heartbeatInterval = properties.getPositiveMillisOrDefault(HEARTBEAT_INTERVAL);
         ILogger logger = loggingService.getLogger(HeartbeatManager.class);
         HeartbeatManager.start(this, executionService, logger,
-                heartbeatInterval, heartbeatTimeout,
-                Collections.unmodifiableCollection(connectionManager.getActiveConnections()));
+                heartbeatInterval, heartbeatTimeout, connectionManager.getActiveConnections());
     }
 
     private void startIcmpPing() {
         ILogger logger = loggingService.getLogger(HeartbeatManager.class);
         ClientICMPManager.start(config.getNetworkConfig().getClientIcmpPingConfig(), executionService, logger,
-                Collections.unmodifiableCollection(connectionManager.getActiveConnections()));
+                connectionManager.getActiveConnections());
     }
 
     public void disposeOnClusterChange(Disposable disposable) {

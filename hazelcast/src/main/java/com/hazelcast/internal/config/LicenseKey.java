@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,10 @@ public class LicenseKey {
     }
 
     public static String maskLicense(String licenseKey) {
+        if (licenseKey == null) {
+            return null;
+        }
+
         if (licenseKey.length() > LICENSE_KEY_VISIBLE_CHAR_COUNT) {
             String[] licenceKeyParts = licenseKey.split("#");
             String originalKeyPart = licenceKeyParts[licenceKeyParts.length - 1];

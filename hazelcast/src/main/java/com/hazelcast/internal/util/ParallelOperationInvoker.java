@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,12 +38,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 
 /**
- * See {@link InvocationUtil#invokeOnStableClusterParallel(NodeEngine, Supplier, int)}.
+ * See {@link InvocationUtil#invokeOnStableClusterParallel(NodeEngine, Supplier, int, Predicate)}.
  */
 class ParallelOperationInvoker {
     private final NodeEngine nodeEngine;
@@ -53,14 +54,19 @@ class ParallelOperationInvoker {
     private final long retryDelayMillis;
     private final AtomicInteger retryCount = new AtomicInteger();
     private final InternalCompletableFuture<Collection<UUID>> future = new InternalCompletableFuture<>();
+    private final Predicate<Member> memberFilter;
     private volatile Set<Member> members;
 
-    ParallelOperationInvoker(NodeEngine nodeEngine, Supplier<Operation> operationSupplier, int maxRetries) {
+    ParallelOperationInvoker(NodeEngine nodeEngine,
+                             Supplier<Operation> operationSupplier,
+                             int maxRetries,
+                             Predicate<Member> memberFilter) {
         this.nodeEngine = nodeEngine;
         this.clusterService = nodeEngine.getClusterService();
         this.operationSupplier = operationSupplier;
         this.maxRetries = maxRetries;
         this.retryDelayMillis = nodeEngine.getProperties().getMillis(ClusterProperty.INVOCATION_RETRY_PAUSE);
+        this.memberFilter = memberFilter;
     }
 
     public InternalCompletableFuture<Collection<UUID>> invoke() {
@@ -70,7 +76,7 @@ class ParallelOperationInvoker {
 
     private void doInvoke() {
         members = clusterService.getMembers();
-        InternalCompletableFuture[] futures = invokeOnAllMembersExcludingThis(members);
+        InternalCompletableFuture[] futures = invokeOnMatchingMembers(members);
         CompletableFuture.allOf(futures)
                 .whenCompleteAsync(
                         (ignored, throwable) -> completeFutureOrRetry(throwable == null, futures),
@@ -81,9 +87,9 @@ class ParallelOperationInvoker {
         nodeEngine.getExecutionService().schedule(this::doInvoke, retryDelayMillis, TimeUnit.MILLISECONDS);
     }
 
-    private InternalCompletableFuture[] invokeOnAllMembersExcludingThis(Collection<Member> members) {
+    private InternalCompletableFuture[] invokeOnMatchingMembers(Collection<Member> members) {
         return members.stream()
-                .filter(member -> !nodeEngine.getThisAddress().equals(member.getAddress()))
+                .filter(memberFilter)
                 .map(this::invokeOnMember)
                 .toArray(InternalCompletableFuture[]::new);
     }
@@ -92,7 +98,7 @@ class ParallelOperationInvoker {
         Operation operation = operationSupplier.get();
         String serviceName = operation.getServiceName();
         Address target = member.getAddress();
-        return nodeEngine.getOperationService().invokeOnTarget(serviceName, operation, target);
+        return nodeEngine.getOperationService().invokeOnTargetAsync(serviceName, operation, target);
     }
 
     private void completeFutureOrRetry(boolean noExceptionReceived, InternalCompletableFuture[] futures) {
@@ -136,7 +142,7 @@ class ParallelOperationInvoker {
                 || t instanceof HazelcastInstanceNotActiveException;
     }
 
-    private void onExceptionalCompletion(InternalCompletableFuture[] futures, Collection<Member> members) {
+    private void onExceptionalCompletion(InternalCompletableFuture[] futures, Collection<Member> currentMembers) {
         // We know all futures are done, and at least one of them completed
         // with an exception. We will inspect all the futures, and act
         // according to thrown exception(s)
@@ -185,6 +191,11 @@ class ParallelOperationInvoker {
                 terminalException = t;
                 break;
             }
+        }
+
+        if (!currentMembers.equals(members)) {
+            // It may be possible that we get an ignorable exception but the topology is changed.
+            isClusterTopologyChanged = true;
         }
 
         if (isTerminalExceptionReceived) {

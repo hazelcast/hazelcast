@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,18 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Constructor;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TargetTest {
-
-    @Rule
-    public ExpectedException rule = ExpectedException.none();
 
     @Test
     public void testConstructor_withInvalidPartitionId() throws Exception {
@@ -43,7 +40,7 @@ public class TargetTest {
         constructor.setAccessible(true);
 
         // we expect an IllegalArgumentException to be thrown
-        rule.expect(new RootCauseMatcher(IllegalArgumentException.class));
-        constructor.newInstance(Target.TargetMode.PARTITION_OWNER, null);
+        assertThatThrownBy(() -> constructor.newInstance(Target.TargetMode.PARTITION_OWNER, null))
+                .has(rootCause(IllegalArgumentException.class));
     }
 }

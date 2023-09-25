@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector;
 
+import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -28,7 +29,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 
 public class RowProjector implements Row {
 
@@ -76,15 +76,13 @@ public class RowProjector implements Row {
     public JetSqlRow project(Object object) {
         target.setTarget(object, null);
 
-        if (!Boolean.TRUE.equals(evaluate(predicate, this, evalContext))) {
-            return null;
-        }
+        return ExpressionUtil.projection(predicate, projection, this, evalContext);
+    }
 
-        Object[] row = new Object[projection.size()];
-        for (int i = 0; i < projection.size(); i++) {
-            row[i] = evaluate(projection.get(i), this, evalContext);
-        }
-        return new JetSqlRow(evalContext.getSerializationService(), row);
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T get(int index, boolean useLazyDeserialization) {
+        return (T) extractors[index].get(useLazyDeserialization);
     }
 
     @SuppressWarnings("unchecked")

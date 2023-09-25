@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ public class LeadershipTransferTask implements Runnable {
             logger.info("Transferring leadership to " + leadershipTransferState.endpoint());
         }
 
-        leaderState.getFollowerState(targetEndpoint).appendRequestAckReceived();
+        leaderState.getFollowerState(targetEndpoint).resetRequestBackoff();
         raftNode.sendAppendRequest(targetEndpoint);
 
         LogEntry entry = state.log().lastLogOrSnapshotEntry();

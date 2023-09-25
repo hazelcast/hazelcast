@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.2.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd">
 
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
@@ -446,6 +446,11 @@
             </memory-tier>
             <disk-tier enabled="true" device-name="default-tiered-store-device"/>
         </tiered-store>
+        <partition-strategy>com.example.Strategy</partition-strategy>
+        <partition-attributes>
+            <attribute>attributeName1</attribute>
+            <attribute>attributeName2</attribute>
+        </partition-attributes>
     </map>
 
     <multimap name="default">
@@ -811,14 +816,14 @@
                 <property name="property">value</property>
             </properties>
         </client-permission-policy>
-        <client-permissions on-join-operation="SEND">
+        <client-permissions on-join-operation="SEND" priority-grant="true">
             <all-permissions principal="admin">
                 <endpoints>
                     <endpoint>127.0.0.1</endpoint>
                 </endpoints>
             </all-permissions>
             <config-permission principal="deployer"/>
-            <transaction-permission principal="deployer"/>
+            <transaction-permission principal="deployer" deny="true"/>
             <map-permission name="custom" principal="dev">
                 <endpoints>
                     <endpoint>127.0.0.1</endpoint>
@@ -1086,14 +1091,19 @@
 
     <sql>
         <statement-timeout-millis>0</statement-timeout-millis>
+        <catalog-persistence-enabled>false</catalog-persistence-enabled>
     </sql>
 
-    <external-data-store name="mysql-database">
-        <class-name>com.hazelcast.datastore.JdbcDataStoreFactory</class-name>
+    <data-connection name="mysql-database">
+        <type>jdbc</type>
         <properties>
             <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
         </properties>
         <shared>false</shared>
-    </external-data-store>
+    </data-connection>
+
+    <tpc enabled="true">
+        <eventloop-count>12</eventloop-count>
+    </tpc>
 
 </hazelcast>

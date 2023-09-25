@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.helpers;
 
-import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -29,7 +29,8 @@ import java.io.IOException;
  * User: danny Date: 11/26/13
  */
 
-public class SimpleClientInterceptor implements MapInterceptor, Portable {
+public class SimpleClientInterceptor extends MapInterceptorAdaptor implements Portable {
+    private static final long serialVersionUID = 1L;
 
     public static final int ID = 345;
 
@@ -42,16 +43,8 @@ public class SimpleClientInterceptor implements MapInterceptor, Portable {
     }
 
     @Override
-    public void afterGet(Object value) {
-    }
-
-    @Override
     public Object interceptPut(Object oldValue, Object newValue) {
-        return newValue.toString().toUpperCase(StringUtil.LOCALE_INTERNAL);
-    }
-
-    @Override
-    public void afterPut(Object value) {
+        return StringUtil.upperCaseInternal(newValue.toString());
     }
 
     @Override
@@ -59,11 +52,7 @@ public class SimpleClientInterceptor implements MapInterceptor, Portable {
         if (removedValue.equals("ISTANBUL")) {
             throw new RuntimeException("you can not remove this");
         }
-        return removedValue;
-    }
-
-    @Override
-    public void afterRemove(Object value) {
+        return super.interceptRemove(removedValue);
     }
 
     @Override

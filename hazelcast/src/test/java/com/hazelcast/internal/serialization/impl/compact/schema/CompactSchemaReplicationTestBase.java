@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,13 @@ import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import example.serialization.NodeDTO;
 import org.junit.After;
-import org.junit.Before;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.function.Function;
 
 import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.getSchemasFor;
-import static org.mockito.Mockito.spy;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mockingDetails;
 
 public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
 
@@ -51,12 +50,7 @@ public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
 
     protected static final Schema SCHEMA = getSchemasFor(NodeDTO.class).iterator().next();
 
-    protected HazelcastInstance instance1;
-    protected HazelcastInstance instance2;
-    protected HazelcastInstance instance3;
-    protected HazelcastInstance instance4;
-
-    protected Collection<HazelcastInstance> instances;
+    protected HazelcastInstance[] instances;
 
     private final CustomTestInstanceFactory factory = new CustomTestInstanceFactory();
 
@@ -65,19 +59,17 @@ public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
         factory.terminateAll();
     }
 
-    @Before
-    public void setup() {
-        instance1 = factory.newHazelcastInstance(getConfig());
-        instance2 = factory.newHazelcastInstance(getConfig());
-        instance3 = factory.newHazelcastInstance(getConfig());
-        instance4 = factory.newHazelcastInstance(getConfig());
-
-        instances = Arrays.asList(instance1, instance2, instance3, instance4);
+    public void setupInstances(Function<Integer, MemberSchemaService> spyServiceCreator) {
+        int instanceCount = 4;
+        instances = new HazelcastInstance[instanceCount];
+        for (int i = 0; i < 4; i++) {
+            instances[i] = factory.newHazelcastInstance(getConfig(), spyServiceCreator.apply(i));
+        }
     }
 
     @Override
     public Config getConfig() {
-        return smallInstanceConfig();
+        return smallInstanceConfigWithoutJetAndMetrics();
     }
 
     protected void fillMapUsing(HazelcastInstance instance) {
@@ -92,8 +84,9 @@ public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
     }
 
     private static class CustomTestInstanceFactory extends TestHazelcastInstanceFactory {
-        @Override
-        public HazelcastInstance newHazelcastInstance(Config config) {
+        public HazelcastInstance newHazelcastInstance(Config config, MemberSchemaService schemaService) {
+            assertTrue(mockingDetails(schemaService).isSpy());
+
             String instanceName = config != null ? config.getInstanceName() : null;
             NodeContext nodeContext;
             if (TestEnvironment.isMockNetwork()) {
@@ -103,21 +96,23 @@ public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
                 nodeContext = new DefaultNodeContext();
             }
             return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName,
-                    new MemberSchemaServiceMockingNodeContext(nodeContext));
+                    new MemberSchemaServiceMockingNodeContext(nodeContext, schemaService));
         }
     }
 
     private static class MemberSchemaServiceMockingNodeContext implements NodeContext {
 
         private final NodeContext delegate;
+        private final MemberSchemaService schemaService;
 
-        private MemberSchemaServiceMockingNodeContext(NodeContext delegate) {
+        private MemberSchemaServiceMockingNodeContext(NodeContext delegate, MemberSchemaService schemaService) {
             this.delegate = delegate;
+            this.schemaService = schemaService;
         }
 
         @Override
         public NodeExtension createNodeExtension(Node node) {
-            return new MemberSchemaServiceMockingNodeExtension(node);
+            return new MemberSchemaServiceMockingNodeExtension(node, schemaService);
         }
 
         @Override
@@ -139,9 +134,9 @@ public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
     private static class MemberSchemaServiceMockingNodeExtension extends DefaultNodeExtension {
         private final MemberSchemaService schemaService;
 
-        MemberSchemaServiceMockingNodeExtension(Node node) {
+        MemberSchemaServiceMockingNodeExtension(Node node, MemberSchemaService schemaService) {
             super(node);
-            schemaService = spy(new MemberSchemaService());
+            this.schemaService = schemaService;
         }
 
         @Override

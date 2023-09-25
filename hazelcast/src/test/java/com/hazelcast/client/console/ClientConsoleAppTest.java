@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -36,9 +35,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -96,11 +95,11 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
         consoleApp.handleCommand("m.put putTestKey testValue");
         assertTextInSystemOut("null"); // original value for the key
         assertEquals("Unexpected map size", 1, map.size());
-        assertThat(map.get("putTestKey"), CoreMatchers.containsString("testValue"));
+        assertThat(map.get("putTestKey")).contains("testValue");
 
         consoleApp.handleCommand("m.put putTestKey testXValue");
         assertTextInSystemOut("testValue"); // original value for the key
-        assertThat(map.get("putTestKey"), CoreMatchers.containsString("testXValue"));
+        assertThat(map.get("putTestKey")).contains("testXValue");
         consoleApp.handleCommand("m.put putTestKey2 testValue");
         assertEquals("Unexpected map size", 2, map.size());
     }
@@ -174,7 +173,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
      * @param substring
      */
     private void assertTextInSystemOut(String substring) {
-        assertThat(resetSystemOut(), CoreMatchers.containsString(substring));
+        assertThat(resetSystemOut()).contains(substring);
     }
 
     /**

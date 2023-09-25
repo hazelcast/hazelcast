@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.sql.impl.SqlInternalService;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.sql.impl.InternalSqlService;
 
 import java.security.Permission;
 
@@ -36,7 +37,7 @@ public class SqlMappingDdlTask extends SqlAbstractMessageTask<String> {
 
     @Override
     protected Object call() {
-        SqlServiceImpl sqlService = nodeEngine.getSqlService();
+        InternalSqlService sqlService = nodeEngine.getSqlService();
         return sqlService.mappingDdl(parameters);
     }
 
@@ -52,7 +53,7 @@ public class SqlMappingDdlTask extends SqlAbstractMessageTask<String> {
 
     @Override
     public String getServiceName() {
-        return SqlInternalService.SERVICE_NAME;
+        return InternalSqlService.SERVICE_NAME;
     }
 
     @Override
@@ -72,6 +73,6 @@ public class SqlMappingDdlTask extends SqlAbstractMessageTask<String> {
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new MapPermission(parameters, ActionConstants.ACTION_READ);
     }
 }

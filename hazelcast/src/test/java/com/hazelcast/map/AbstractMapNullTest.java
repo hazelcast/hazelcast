@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
         assertThrowsNPE(m -> m.entrySet(null));
         assertThrowsNPE(m -> m.values(null));
         assertThrows(NullPointerException.class, m -> m.addIndex(null, "attribute"));
-        assertThrows(NullPointerException.class, m -> m.addIndex(IndexType.SORTED, null));
+        assertThrows(NullPointerException.class, m -> m.addIndex(IndexType.SORTED, (String[]) null));
         assertThrows(NullPointerException.class, m -> m.addIndex(null));
         assertThrowsNPE(m -> m.aggregate(null));
         assertThrowsNPE(m -> m.aggregate(null, samplePredicate));

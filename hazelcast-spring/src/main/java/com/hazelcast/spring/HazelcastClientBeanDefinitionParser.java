@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientTpcConfig;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
@@ -199,6 +200,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleNativeMemory(node);
                 } else if ("sql".equals(nodeName)) {
                     handleSql(node);
+                } else if ("tpc".equals(nodeName)) {
+                    handleTpc(node);
                 }
             }
             return configBuilder.getBeanDefinition();
@@ -651,6 +654,12 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder sqlConfigBuilder = createBeanBuilder(ClientSqlConfig.class);
             fillValues(node, sqlConfigBuilder);
             this.configBuilder.addPropertyValue("sqlConfig", sqlConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleTpc(Node node) {
+            BeanDefinitionBuilder tpcConfigBuilder = createBeanBuilder(ClientTpcConfig.class);
+            fillAttributeValues(node, tpcConfigBuilder);
+            this.configBuilder.addPropertyValue("tpcConfig", tpcConfigBuilder.getBeanDefinition());
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package com.hazelcast.jet.sql.impl.expression.misc;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -1211,7 +1211,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization() {
         CastExpression<?> original = CastExpression.create(ConstantExpression.create(1, INT), QueryDataType.BIGINT);
-        CastExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CAST);
+        CastExpression<?> restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_CAST);
 
         checkEquals(original, restored, true);
     }

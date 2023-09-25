@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,21 +22,41 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
-import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
-import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
+/**
+ * Index iteration range or point lookup.
+ * <p>
+ * The following types of pointers are supported:
+ * <ul>
+ *     <li>unconstrained pointer: (null, null) - scans null and not-null values</li>
+ *     <li>single side constrained ranges: (null, X) and (X, null). Note that (null, X)
+ *     includes also NULL</li>
+ *     <li>constrained range: (X, Y)</li>
+ *     <li>point lookup pointer: (X, X)</li>
+ *     <li>IS NULL pointer: [NULL, NULL] - scans only NULL values. Special case of point lookup pointer</li>
+ *     <li>NOT NULL pointer: (NULL, null)</li>
+ * </ul>
+ * Important conventions:
+ * <ol>
+ *     <li>either end can be NULL and NULL end can be inclusive or not.
+ *     Inclusive NULL on the left side is equivalent to null (i.e. -Inf).
+ *     [null, NULL] is equivalent to  [NULL, NULL]. [null, NULL) should produce empty result.</li>
+ *     <li>null can be inclusive or not - both variants are treated in the same way</li>
+ *     <li>NULL end does not make sense for composite index because composite index
+ *     stores {@link com.hazelcast.query.impl.CompositeValue} which are never null, even if
+ *     they consist entirely of {@link com.hazelcast.query.impl.AbstractIndex#NULL} values.</li>
+ *     </li>beware of distinction between Java null and NULL - it is not always obvious.</li>
+ * </ol>
+ */
 public class IndexIterationPointer implements IdentifiedDataSerializable {
 
     private static final byte FLAG_DESCENDING = 1;
     private static final byte FLAG_FROM_INCLUSIVE = 1 << 1;
     private static final byte FLAG_TO_INCLUSIVE = 1 << 2;
+    // Note this flag is misleading, it is also set for unconstrained pointers
     private static final byte FLAG_POINT_LOOKUP = 1 << 3;
 
     private byte flags;
@@ -49,23 +69,30 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
 
     private IndexIterationPointer(
             byte flags,
-            Comparable<?> from,
-            Comparable<?> to,
-            Data lastEntryKeyData
+            @Nullable Comparable<?> from,
+            @Nullable Comparable<?> to,
+            @Nullable Data lastEntryKeyData
     ) {
+        assert from == null || to == null || ((Comparable) from).compareTo(to) <= 0 : "from must be <= than to";
+
         this.flags = flags;
+
+        assert from == null || to == null || ((Comparable) from).compareTo(to) != 0
+                || (isFromInclusive() && isToInclusive())
+                : "Point lookup limits must be all inclusive";
+
         this.from = from;
         this.to = to;
         this.lastEntryKeyData = lastEntryKeyData;
     }
 
     public static IndexIterationPointer create(
-            Comparable<?> from,
+            @Nullable Comparable<?> from,
             boolean fromInclusive,
-            Comparable<?> to,
+            @Nullable Comparable<?> to,
             boolean toInclusive,
             boolean descending,
-            Data lastEntryKey
+            @Nullable Data lastEntryKey
     ) {
         return new IndexIterationPointer(
                 (byte) ((descending ? FLAG_DESCENDING : 0)
@@ -78,63 +105,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         );
     }
 
-    public static IndexIterationPointer[] createFromIndexFilter(
-            IndexFilter indexFilter,
-            boolean descending,
-            ExpressionEvalContext evalContext
-    ) {
-        ArrayList<IndexIterationPointer> result = new ArrayList<>();
-        createFromIndexFilterInt(indexFilter, descending, evalContext, result);
-        return result.toArray(new IndexIterationPointer[0]);
-    }
-
-    private static void createFromIndexFilterInt(
-            IndexFilter indexFilter,
-            boolean descending,
-            ExpressionEvalContext evalContext,
-            List<IndexIterationPointer> result
-    ) {
-        if (indexFilter == null) {
-            result.add(create(null, true, null, true, descending, null));
-        }
-        if (indexFilter instanceof IndexRangeFilter) {
-            IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
-
-            Comparable<?> from = null;
-            if (rangeFilter.getFrom() != null) {
-                Comparable<?> fromValue = rangeFilter.getFrom().getValue(evalContext);
-                // If the index filter has expression like a > NULL, we need to
-                // stop creating index iteration pointer because comparison with NULL
-                // produces UNKNOWN result.
-                if (fromValue == null) {
-                    return;
-                }
-                from = fromValue;
-            }
-
-            Comparable<?> to = null;
-            if (rangeFilter.getTo() != null) {
-                Comparable<?> toValue = rangeFilter.getTo().getValue(evalContext);
-                // Same comment above for expressions like a < NULL.
-                if (toValue == null) {
-                    return;
-                }
-                to = toValue;
-            }
-
-            result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), descending, null));
-        } else if (indexFilter instanceof IndexEqualsFilter) {
-            IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
-            Comparable<?> value = equalsFilter.getComparable(evalContext);
-            result.add(create(value, true, value, true, descending, null));
-        } else if (indexFilter instanceof IndexCompositeFilter) {
-            IndexCompositeFilter inFilter = (IndexCompositeFilter) indexFilter;
-            for (IndexFilter filter : inFilter.getFilters()) {
-                createFromIndexFilterInt(filter, descending, evalContext, result);
-            }
-        }
-    }
-
+    @Nullable
     public Comparable<?> getFrom() {
         return from;
     }
@@ -143,6 +114,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         return (flags & FLAG_FROM_INCLUSIVE) != 0;
     }
 
+    @Nullable
     public Comparable<?> getTo() {
         return to;
     }
@@ -189,5 +161,14 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
     @Override
     public int getClassId() {
         return MapDataSerializerHook.INDEX_ITERATION_POINTER;
+    }
+
+    @Override
+    public String toString() {
+        return "IndexIterationPointer{"
+                + (isFromInclusive() ? "[" : "(") + from + ", " + to + (isToInclusive() ? "]" : ")")
+                + (isDescending() ? " DESC" : " ASC")
+                + ", lastEntryKeyData=" + lastEntryKeyData
+                + "}";
     }
 }

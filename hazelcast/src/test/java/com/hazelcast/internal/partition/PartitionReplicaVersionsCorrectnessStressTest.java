@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,7 +42,7 @@ import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionRe
 import static com.hazelcast.internal.partition.TestPartitionUtils.getReplicaAddresses;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -160,7 +159,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
             if (replicaVersions.getVersions(namespace) == null) {
                 if (namespace instanceof DistributedObjectNamespace) {
                     String objectName = ((DistributedObjectNamespace) namespace).getObjectName();
-                    assertThat(objectName, Matchers.isIn(lostMapNames));
+                    assertThat(objectName).isIn(lostMapNames);
                     continue;
                 } else {
                     fail("No replica version found for " + namespace);

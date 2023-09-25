@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
+import static org.assertj.core.util.Lists.newArrayList;
 import static java.util.Arrays.asList;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -101,16 +101,14 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + "id INT, "
                 + "table_column " + mappingType
                 + ") "
-                + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
-                + ")"
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");
         execute("INSERT INTO " + mappingName + " VALUES(1, ?)", javaValue);
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, jdbcValue.getClass()),
                 new Row(0, jdbcValue),
                 new Row(1, jdbcValue)
         );

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("169b4b678680864c98306be3b0ad7ee7")
+@Generated("a807adb78ecabd061064a442ee78d549")
 public final class ScheduledExecutorGetStatsFromMemberCodec {
     //hex: 0x1A0600
     public static final int REQUEST_MESSAGE_TYPE = 1705472;

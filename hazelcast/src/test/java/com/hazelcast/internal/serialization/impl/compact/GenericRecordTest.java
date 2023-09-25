@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,10 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createInMemorySchemaService;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
@@ -104,8 +106,19 @@ public class GenericRecordTest {
     }
 
     @Test
+    public void testChangingClonedRecordDoesNotChangeOriginal() {
+        GenericRecordBuilder builder = compact("foo");
+        GenericRecord record = builder.setString("str" , "hello").build();
+
+        GenericRecordBuilder builder2 = record.newBuilderWithClone();
+        builder2.setString("str", "aa");
+
+        assertEquals("hello", record.getString("str"));
+    }
+
+    @Test
     public void testCloneCompactInternalGenericRecord() throws IOException {
-        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        InternalSerializationService serializationService = createSerializationService();
 
         GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
@@ -131,53 +144,6 @@ public class GenericRecordTest {
 
         assertEquals(2, clone.getInt32("foo"));
         assertEquals(1231L, clone.getInt64("bar"));
-    }
-
-    @Test
-    public void testBuildFromCompactInternalGenericRecord() throws IOException {
-        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
-
-        GenericRecordBuilder builder = compact("fooBarTypeName");
-        builder.setInt32("foo", 1);
-        assertSetterThrows(builder, "foo", 5, "Field can only be written once");
-        builder.setInt64("bar", 1231L);
-        GenericRecord expectedGenericRecord = builder.build();
-
-        Data data = serializationService.toData(expectedGenericRecord);
-
-        CompactInternalGenericRecord genericRecord = (CompactInternalGenericRecord)
-                serializationService.readAsInternalGenericRecord(data);
-
-        verifyNewBuilder(genericRecord);
-    }
-
-    private void verifyNewBuilder(GenericRecord genericRecord) {
-        GenericRecordBuilder recordBuilder = genericRecord.newBuilder();
-        recordBuilder.setInt32("foo", 2);
-
-        assertSetterThrows(recordBuilder, "foo", 5, "Field can only be written once");
-        assertSetterThrows(recordBuilder, "notExisting", 3, "Invalid field name");
-
-        assertThatThrownBy(recordBuilder::build)
-                .isInstanceOf(HazelcastSerializationException.class)
-                .hasMessageStartingWith("Found an unset field");
-
-        recordBuilder.setInt64("bar", 100);
-        GenericRecord newRecord = recordBuilder.build();
-
-        assertEquals(2, newRecord.getInt32("foo"));
-        assertEquals(100, newRecord.getInt64("bar"));
-    }
-
-    @Test
-    public void testBuildFromDeserializedGenericRecord() {
-        GenericRecordBuilder builder = compact("fooBarTypeName");
-        builder.setInt32("foo", 1);
-        assertSetterThrows(builder, "foo", 5, "Field can only be written once");
-        builder.setInt64("bar", 1231L);
-        DeserializedGenericRecord genericRecord = (DeserializedGenericRecord) builder.build();
-
-        verifyNewBuilder(genericRecord);
     }
 
     @Test
@@ -233,7 +199,7 @@ public class GenericRecordTest {
             record.getInt32("doesNotExist");
         }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field name");
 
-        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        InternalSerializationService serializationService = createSerializationService();
         Data data = serializationService.toData(record);
 
         InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
@@ -250,7 +216,7 @@ public class GenericRecordTest {
             record.getInt64("foo");
         }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field kind");
 
-        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        InternalSerializationService serializationService = createSerializationService();
         Data data = serializationService.toData(record);
 
         InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
@@ -258,5 +224,43 @@ public class GenericRecordTest {
         assertThatThrownBy(() -> {
             internalGenericRecord.getInt64("foo");
         }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field kind");
+    }
+
+    @Test
+    public void testReadingGenericRecord_classLoaderShouldBeInvokedOncePerTypeName() {
+        SchemaService schemaService = createInMemorySchemaService();
+        InternalSerializationService ss1 = createSerializationService(schemaService);
+        GenericRecord record = compact("test").setInt32("foo", 123).build();
+        Data recordData = ss1.toData(record);
+
+        CountingClassLoader classLoader = new CountingClassLoader("test");
+        InternalSerializationService ss2 = createSerializationService(classLoader, schemaService);
+        assertEquals(0, classLoader.getCount());
+        assertEquals(record, ss2.toObject(recordData));
+        assertEquals(record, ss2.toObject(recordData));
+        assertEquals(record, ss2.toObject(recordData));
+        assertEquals(1, classLoader.getCount());
+    }
+
+    private static final class CountingClassLoader extends ClassLoader {
+        private final String classNameToCount;
+        private final AtomicInteger count;
+
+        CountingClassLoader(String classNameToCount) {
+            this.classNameToCount = classNameToCount;
+            this.count = new AtomicInteger();
+        }
+
+        @Override
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
+            if (classNameToCount.equals(name)) {
+                count.incrementAndGet();
+            }
+            return super.loadClass(name);
+        }
+
+        public int getCount() {
+            return count.get();
+        }
     }
 }

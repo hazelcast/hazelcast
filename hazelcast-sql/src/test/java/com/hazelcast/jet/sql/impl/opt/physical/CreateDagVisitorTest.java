@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,10 +38,10 @@ public class CreateDagVisitorTest {
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         dag.edge(between(a, b));
-        CreateDagVisitor.decreaseParallelism(dag, 16);
+        CreateTopLevelDagVisitor.decreaseParallelism(dag, 16);
 
-        assertEquals(a.getLocalParallelism(), 4);
-        assertEquals(b.getLocalParallelism(), 4);
+        assertEquals(4, a.getLocalParallelism());
+        assertEquals(4, b.getLocalParallelism());
     }
 
     @Test
@@ -52,11 +52,11 @@ public class CreateDagVisitorTest {
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
         dag.edge(between(a, b));
         dag.edge(between(b, c));
-        CreateDagVisitor.decreaseParallelism(dag, 16);
+        CreateTopLevelDagVisitor.decreaseParallelism(dag, 16);
 
-        assertEquals(a.getLocalParallelism(), 4);
-        assertEquals(b.getLocalParallelism(), 4);
-        assertEquals(c.getLocalParallelism(), 4);
+        assertEquals(4, a.getLocalParallelism());
+        assertEquals(4, b.getLocalParallelism());
+        assertEquals(4, c.getLocalParallelism());
     }
 
     @Test
@@ -67,10 +67,10 @@ public class CreateDagVisitorTest {
 
         a.localParallelism(1);
         dag.edge(between(a, b));
-        CreateDagVisitor.decreaseParallelism(dag, 16);
+        CreateTopLevelDagVisitor.decreaseParallelism(dag, 16);
 
-        assertEquals(a.getLocalParallelism(), 1);
-        assertEquals(b.getLocalParallelism(), LOCAL_PARALLELISM_USE_DEFAULT);
+        assertEquals(1, a.getLocalParallelism());
+        assertEquals(LOCAL_PARALLELISM_USE_DEFAULT, b.getLocalParallelism());
     }
 
     @Test
@@ -80,10 +80,10 @@ public class CreateDagVisitorTest {
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
 
         dag.edge(between(a, b));
-        CreateDagVisitor.decreaseParallelism(dag, 1);
+        CreateTopLevelDagVisitor.decreaseParallelism(dag, 1);
 
-        assertEquals(a.getLocalParallelism(), LOCAL_PARALLELISM_USE_DEFAULT);
-        assertEquals(b.getLocalParallelism(), LOCAL_PARALLELISM_USE_DEFAULT);
+        assertEquals(LOCAL_PARALLELISM_USE_DEFAULT, a.getLocalParallelism());
+        assertEquals(LOCAL_PARALLELISM_USE_DEFAULT, b.getLocalParallelism());
     }
 
     @Test
@@ -92,7 +92,7 @@ public class CreateDagVisitorTest {
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         dag.edge(between(a, b));
-        CreateDagVisitor.decreaseParallelism(dag, 16);
+        CreateTopLevelDagVisitor.decreaseParallelism(dag, 16);
 
         assertEquals(Edge.RoutingPolicy.ISOLATED, dag.getOutboundEdges(a.getName()).get(0).getRoutingPolicy());
     }
@@ -106,10 +106,10 @@ public class CreateDagVisitorTest {
         Edge edge = dag.getOutboundEdges(a.getName()).get(0);
         edge.distributed();
 
-        CreateDagVisitor.decreaseParallelism(dag, 16);
+        CreateTopLevelDagVisitor.decreaseParallelism(dag, 16);
 
-        assertEquals(a.getLocalParallelism(), LOCAL_PARALLELISM_USE_DEFAULT);
-        assertEquals(b.getLocalParallelism(), LOCAL_PARALLELISM_USE_DEFAULT);
+        assertEquals(LOCAL_PARALLELISM_USE_DEFAULT, a.getLocalParallelism());
+        assertEquals(LOCAL_PARALLELISM_USE_DEFAULT, b.getLocalParallelism());
     }
 
     @Test
@@ -122,7 +122,7 @@ public class CreateDagVisitorTest {
         edge.distributed();
         Edge.RoutingPolicy routingPolicy = edge.getRoutingPolicy();
 
-        CreateDagVisitor.decreaseParallelism(dag, 16);
+        CreateTopLevelDagVisitor.decreaseParallelism(dag, 16);
 
         assertEquals(routingPolicy, edge.getRoutingPolicy());
     }
