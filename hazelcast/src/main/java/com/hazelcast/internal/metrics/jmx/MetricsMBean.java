@@ -45,7 +45,8 @@ public class MetricsMBean implements DynamicMBean {
      * Adds a metric if necessary and sets its value.
      */
     void setMetricValue(String name, String unit, Number value, Type type) {
-        TriTuple<String, AtomicReference<Number>, Type> metricTuple = metrics.computeIfAbsent(name, x ->of(unit, new AtomicReference<>(), type));
+        TriTuple<String, AtomicReference<Number>, Type> metricTuple = metrics.computeIfAbsent(name,
+                x -> of(unit, new AtomicReference<>(), type));
         metricTuple.element2.lazySet(value);
     }
 
