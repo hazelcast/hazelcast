@@ -90,9 +90,9 @@ public final class HazelcastRelMdWatermarkedFields
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(SlidingWindow rel, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        // TODO also add watermark to window start and end, under a different key, but it needs
+        // Note: we may want to add watermark to window start and end, under a different key, but it needs
         //  to be supported by the processor. It's not really needed as when we're doing aggregation,
-        //  the rule removes this rel, but would be needed for future cases
+        //  the rule removes this rel, but would be needed for future cases.
         return query.extractWatermarkedFields(rel.getInput());
     }
 

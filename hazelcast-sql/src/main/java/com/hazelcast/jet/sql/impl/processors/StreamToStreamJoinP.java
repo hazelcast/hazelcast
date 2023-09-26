@@ -294,7 +294,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         // 5.1: update wm state
         boolean modified = applyToWmState(watermark);
         if (modified) {
-            // TODO don't need to clean up particular edge, if nothing was changed for that edge
             clearExpiredItemsInBuffer(0);
             clearExpiredItemsInBuffer(1);
         }
