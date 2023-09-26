@@ -106,7 +106,7 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         fullExampleYaml = fullExampleYaml
                 .replace("\r", "")
                 .replace("import:\n    - your-configuration-YAML-file", "");
-        
+
         fullExampleXml = replacePasswordFileWithTemporaryFile(fullExampleXml);
         fullExampleYaml = replacePasswordFileWithTemporaryFile(fullExampleYaml);
 
