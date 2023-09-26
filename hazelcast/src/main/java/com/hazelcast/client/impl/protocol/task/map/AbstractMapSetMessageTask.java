@@ -22,6 +22,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
@@ -58,7 +59,7 @@ public abstract class AbstractMapSetMessageTask<P> extends AbstractMapPartitionM
 
     @Override
     public String getServiceName() {
-        return MapService.SERVICE_NAME;
+        return SecurityInterceptorConstants.IMAP_SERVICE;
     }
 
 }

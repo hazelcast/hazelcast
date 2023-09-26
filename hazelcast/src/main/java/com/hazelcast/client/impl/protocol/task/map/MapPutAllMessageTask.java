@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -96,7 +97,7 @@ public class MapPutAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "putAll";
+        return SecurityInterceptorConstants.PUT_ALL;
     }
 
     @Override

@@ -28,6 +28,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 import java.security.Permission;
 import java.util.List;
@@ -105,7 +106,7 @@ public class CacheAddNearCacheInvalidationListenerTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.ADD_NEAR_CACHE_INVALIDATION_LISTENER;
     }
 
     @Override

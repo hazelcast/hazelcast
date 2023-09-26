@@ -23,6 +23,7 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.list.operations.ListSubOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -73,7 +74,7 @@ public class ListSubMessageTask
 
     @Override
     public String getMethodName() {
-        return "subList";
+        return SecurityInterceptorConstants.SUB_LIST;
     }
 
     @Override
