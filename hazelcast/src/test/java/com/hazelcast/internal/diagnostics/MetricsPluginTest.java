@@ -25,9 +25,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
-import java.io.IOException;
-import java.nio.file.Files;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,23 +36,33 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
+import org.junit.After;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
 
     private MetricsPlugin plugin;
     private MetricsRegistry metricsRegistry;
+    private Diagnostics diagnostics;
 
     @Before
-    public void setup() throws IOException {
-        Config config = new Config().setProperty(Diagnostics.ENABLED.getName(), "true")
-                .setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1")
-                .setProperty(Diagnostics.DIRECTORY.getName(), Files.createTempDirectory(Diagnostics.DIRECTORY.getSystemProperty()).toString());
+    public void setup() {
+        Config config = new Config()
+                .setProperty(Diagnostics.ENABLED.getName(), "true")
+                .setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
         HazelcastInstance hz = createHazelcastInstance(config);
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
         metricsRegistry = nodeEngineImpl.getMetricsRegistry();
         plugin = new MetricsPlugin(nodeEngineImpl);
         plugin.onStart();
+
+        diagnostics = AbstractDiagnosticsPluginTest.getDiagnostics(hz);
+    }
+
+    @After
+    public void teardown() {
+        cleanupDiagnosticFiles(diagnostics);
     }
 
     @Test
