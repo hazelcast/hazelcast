@@ -97,43 +97,40 @@ public class CPMapService
 
     @Override
     public final CPMapSnapshot takeSnapshot(CPGroupId groupId, long commitIndex) {
-//        checkNotNull(groupId);
-//        Map<String, CPMapInternal> values = new HashMap<>();
-//        for (CPMapInternal value : maps.values()) {
-//            if (value.groupId().equals(groupId)) {
-//                values.put(value.name(), value.get());
-//            }
-//        }
-//
-//        Set<String> destroyed = new HashSet<>();
-//        for (BiTuple<CPGroupId, String> tuple : destroyedValues) {
-//            if (groupId.equals(tuple.element1)) {
-//                destroyed.add(tuple.element2);
-//            }
-//        }
-//
-//        return newSnapshot(values, destroyed);
-        throw new RuntimeException();
+        checkNotNull(groupId);
+        Map<String, Map<Object,Object>> values = new HashMap<>();
+        for (CPMapInternal value : maps.values()) {
+            if (value.groupId().equals(groupId)) {
+                values.put(value.name(), value.map());
+            }
+        }
+
+        Set<String> destroyed = new HashSet<>();
+        for (BiTuple<CPGroupId, String> tuple : destroyedValues) {
+            if (groupId.equals(tuple.element1)) {
+                destroyed.add(tuple.element2);
+            }
+        }
+
+        return newSnapshot(values, destroyed);
     }
 
-    protected  CPMapSnapshot newSnapshot(Map<String, CPMapInternal> values, Set<String> destroyed){
-        throw new RuntimeException();
-        //return new CPMapSnapshot(maps, destroyed);
+    protected  CPMapSnapshot newSnapshot(Map<String, Map<Object,Object>> values, Set<String> destroyed){
+        return new CPMapSnapshot(values, destroyed);
     }
 
     @Override
     public final void restoreSnapshot(CPGroupId groupId, long commitIndex, CPMapSnapshot snapshot) {
-//        checkNotNull(groupId);
-//        for (Map.Entry<String, Map<Object, Object>> e : snapshot.getValues()) {
-//            String name = e.getKey();
-//            Map val = e.getValue();
-//            maps.put(BiTuple.of(groupId, name), newAtomicValue(groupId, name, val));
-//        }
-//
-//        for (String name : snapshot.getDestroyed()) {
-//            destroyedValues.add(BiTuple.of(groupId, name));
-//        }
-        throw new RuntimeException();
+        checkNotNull(groupId);
+        for (Map.Entry<String, Map<Object, Object>> e : snapshot.getValues()) {
+            String name = e.getKey();
+            Map val = e.getValue();
+            maps.put(BiTuple.of(groupId, name), newAtomicValue(groupId, name, val));
+        }
+
+        for (String name : snapshot.getDestroyed()) {
+            destroyedValues.add(BiTuple.of(groupId, name));
+        }
     }
 
     protected CPMapInternal newAtomicValue(CPGroupId groupId, String name, Map<Object,Object> val) {
@@ -176,7 +173,7 @@ public class CPMapService
         }
         CPMapInternal map = maps.get(key);
         if (map == null) {
-            map = newAtomicValue(groupId, name, null);
+            map = newAtomicValue(groupId, name, new HashMap<>());
             maps.put(key, map);
         }
         return map;

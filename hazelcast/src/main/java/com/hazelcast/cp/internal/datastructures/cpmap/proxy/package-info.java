@@ -15,7 +15,7 @@
  */
 
 /**
- * Contains {@link com.hazelcast.cp.IAtomicLong} functionality
+ * Contains {@link com.hazelcast.cp.CPMap} functionality
  * based on the Raft algorithm.
  */
 package com.hazelcast.cp.internal.datastructures.cpmap.proxy;

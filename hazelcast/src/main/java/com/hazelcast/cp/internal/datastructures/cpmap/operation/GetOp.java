@@ -17,21 +17,15 @@
 package com.hazelcast.cp.internal.datastructures.cpmap.operation;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.internal.datastructures.cpmap.CPMapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.Map;
 
-/**
- * Operation for {@link IAtomicLong#getAndAdd(long)} (long, long)}
- * and {@link IAtomicLong#get()}
- */
 public class GetOp extends AbstractCPMapOp {
 
-    private  Object key;
+    private Object key;
 
     public GetOp() {
     }

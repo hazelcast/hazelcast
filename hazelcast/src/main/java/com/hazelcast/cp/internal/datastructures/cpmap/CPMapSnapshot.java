@@ -33,21 +33,19 @@ import java.util.Set;
  */
 public class CPMapSnapshot implements IdentifiedDataSerializable {
 
-    protected Map<String, CPMapInternal> values = Collections.emptyMap();
+    protected Map<String, Map<Object,Object>> values = Collections.emptyMap();
     protected Set<String> destroyed = Collections.emptySet();
 
     public CPMapSnapshot() {
     }
 
-    public CPMapSnapshot(Map<String, CPMapInternal> maps, Set<String> destroyed) {
+    public CPMapSnapshot(Map<String, Map<Object,Object>> maps, Set<String> destroyed) {
         this.values = values;
         this.destroyed = destroyed;
-
     }
 
     public Iterable<Map.Entry<String, Map<Object,Object>>> getValues() {
-        //return values.entrySet();
-        throw new RuntimeException();
+        return values.entrySet();
     }
 
     public Set<String> getDestroyed() {
@@ -57,7 +55,7 @@ public class CPMapSnapshot implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(values.size());
-        for (Map.Entry<String, CPMapInternal> entry : values.entrySet()) {
+        for (Map.Entry<String, Map<Object,Object>> entry : values.entrySet()) {
             out.writeString(entry.getKey());
             out.writeObject(entry.getValue());
         }
@@ -70,20 +68,20 @@ public class CPMapSnapshot implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-//        int len = in.readInt();
-//        values = new HashMap<>(len);
-//        for (int i = 0; i < len; i++) {
-//            String name = in.readString();
-//            Map value = (Map)in.readObject();
-//            values.put(name, value);
-//        }
-//
-//        len = in.readInt();
-//        destroyed = new HashSet<>(len);
-//        for (int i = 0; i < len; i++) {
-//            String name = in.readString();
-//            destroyed.add(name);
-//        }
+        int len = in.readInt();
+        values = new HashMap<>(len);
+        for (int i = 0; i < len; i++) {
+            String name = in.readString();
+            Map<Object,Object> value = (Map)in.readObject();
+            values.put(name, value);
+        }
+
+        len = in.readInt();
+        destroyed = new HashSet<>(len);
+        for (int i = 0; i < len; i++) {
+            String name = in.readString();
+            destroyed.add(name);
+        }
     }
 
     @Override
