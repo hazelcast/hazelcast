@@ -169,6 +169,17 @@ public final class QueryUtil {
                 to = toValue;
             }
 
+            if (from != null && to != null) {
+                int cmp = ((Comparable) from).compareTo(to);
+                if (cmp > 0 || (cmp == 0 && (!rangeFilter.isFromInclusive() || !rangeFilter.isToInclusive()))) {
+                    // Range scan with from > to would produce empty result.
+                    // Range scan which reduces to point lookup (from = to) produces result only
+                    // if both ends are inclusive. Otherwise, result would be empty.
+                    // Do not create iteration pointer for such scans (as they would be invalid).
+                    return;
+                }
+            }
+
             result.add(IndexIterationPointer.create(
                     from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), descending, null));
         } else if (indexFilter instanceof IndexEqualsFilter) {
