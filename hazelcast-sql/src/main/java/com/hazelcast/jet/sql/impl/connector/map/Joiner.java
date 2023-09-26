@@ -92,7 +92,7 @@ final class Joiner {
                     )
             );
         }
-        // TODO: detect and handle always-false condition ?
+        // TODO: detect and handle always-false condition? (HZ-3241)
     }
 
     /**

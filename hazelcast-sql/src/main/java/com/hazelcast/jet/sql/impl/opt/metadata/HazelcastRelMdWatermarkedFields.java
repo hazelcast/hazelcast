@@ -109,8 +109,8 @@ public final class HazelcastRelMdWatermarkedFields
         for (int i = 0; i < projectList.size(); i++) {
             RexNode project = projectList.get(i);
             RexNode project2 = unwrapAsOperatorOperand(project);
-            // TODO [viliam] we currently handle only direct input references. We should handle also monotonic
-            //  transformations of input references.
+            // TODO: we currently handle only direct input references.
+            //  We should handle also monotonic transformations of input references.
             if (project2 instanceof RexInputRef) {
                 int index = ((RexInputRef) project2).getIndex();
                 if (inputWmFields.getFieldIndexes().contains(index)) {

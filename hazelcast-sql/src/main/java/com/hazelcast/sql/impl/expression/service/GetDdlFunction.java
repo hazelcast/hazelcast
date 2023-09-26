@@ -84,7 +84,7 @@ public class GetDdlFunction extends TriExpression<String> {
             if (catalogObject instanceof DataConnectionCatalogEntry) {
                 context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_DATACONNECTION));
             } else {
-                // TODO: implement mapping 'view' permission.
+                // TODO: implement mapping 'view' permission. (HZ-)
                 // if context.subject() != null -> HZ is able to check permissions for mapping
                 if (context.subject() != null && catalogObject instanceof Mapping) {
                     throw new UnsupportedOperationException("GET_DDL is not available for mappings "

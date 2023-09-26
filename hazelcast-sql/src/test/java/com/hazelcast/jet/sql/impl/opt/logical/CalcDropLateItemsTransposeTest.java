@@ -74,7 +74,6 @@ public class CalcDropLateItemsTransposeTest extends OptimizerTestSupport {
 
     @Test
     public void given_calcAndDropItemsRelTransposes_whenNoProjectPermutes_then_success() {
-        // TODO: optimizer support for stream tables and assertPlan(..)
         String sql = "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.001' SECOND))";
 
         assertInstanceOf(TestAbstractSqlConnector.TestTable.class, resolver.getTables().get(0));

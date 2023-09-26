@@ -314,7 +314,7 @@ public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
         TestSupport.verifyProcessor(processorSupplier)
                 .hazelcastInstance(instance())
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
-                .cooperativeTimeout(0) // todo remove
+                .cooperativeTimeout(0)
                 .expectExactOutput(
                         in(0, jetRow(1L, 42)),
                         in(0, jetRow(1L, 43)),

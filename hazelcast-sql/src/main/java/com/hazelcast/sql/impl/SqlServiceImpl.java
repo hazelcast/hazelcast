@@ -262,7 +262,6 @@ public class SqlServiceImpl implements InternalSqlService {
             plan.checkPermissions(securityContext);
         }
 
-        // TODO: pageSize ?
         return plan.execute(queryId, args0, timeout, securityContext);
     }
 

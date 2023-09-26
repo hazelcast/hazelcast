@@ -117,11 +117,10 @@ public final class CalcMergeRule extends RelRule<Config> {
         RexBuilder rexBuilder = upperCalc.getCluster().getRexBuilder();
         // Merge the programs together.
         RexProgram mergedProgram = RexProgramBuilder.mergePrograms(
-                upperCalc.getProgram(), lowerCalc.getProgram(), rexBuilder);
+                upperCalc.getProgram(), lowerCalc.getProgram(), rexBuilder, true);
 
         assert mergedProgram.getOutputRowType().equals(topProgram.getOutputRowType());
 
-        // TODO: optimize filter expression
         Calc newCalc = upperCalc.copy(upperCalc.getTraitSet(), lowerCalc.getInput(), mergedProgram);
         if (newCalc.getDigest().equals(lowerCalc.getDigest())) {
             call.getPlanner().prune(upperCalc);

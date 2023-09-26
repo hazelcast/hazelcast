@@ -57,7 +57,7 @@ public class SlidingWindowJoinTransposeRule extends RelRule<Config> implements T
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        // TODO [sasha]: finish in follow-up PR
+        // TODO [sasha]: enable the rule [HZ-3244]
         final Join join = call.rel(0);
         final SlidingWindow sw = call.rel(1);
 

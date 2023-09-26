@@ -252,7 +252,7 @@ public class IMapSqlConnector implements SqlConnector {
             // TODO: this would be better done if we could reuse results of the analysis
             //  done for member pruning, eg. if it was available in each RelNode
 
-            // We need some low-level data which are not passed to SqlConnector, this code should be refactored.
+            // TODO: We need some low-level data which are not passed to SqlConnector, this code should be refactored.
             DagBuildContextImpl contextImpl = (DagBuildContextImpl) context;
             var relPrunability = CalciteSqlOptimizer.partitionStrategyCandidates(contextImpl.getRel(),
                     contextImpl.getParameterMetadata(),
@@ -442,7 +442,7 @@ public class IMapSqlConnector implements SqlConnector {
 
         return context.getDag().newUniqueVertex(
                 toString(table),
-                // TODO do a simpler, specialized deleting-only processor
+                // TODO do a simpler, specialized deleting-only processor (HZ-3242)
                 updateMapP(table.getMapName(), (FunctionEx<JetSqlRow, Object>) row -> {
                     assert row.getFieldCount() == 1;
                     return row.get(0);

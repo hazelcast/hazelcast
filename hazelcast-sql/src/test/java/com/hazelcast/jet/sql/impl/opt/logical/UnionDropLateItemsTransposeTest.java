@@ -86,7 +86,6 @@ public class UnionDropLateItemsTransposeTest extends OptimizerTestSupport {
     @Ignore("This rule is disabled; introduce it and implement DropLateItemsP in correct way.")
     @Test
     public void when_unionAndDropItemsRelTransposes_then_transposes() {
-        // TODO: optimizer support for stream tables and assertPlan(..)
         String sql = "" +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.001' SECOND)) " +
                 "UNION ALL " +

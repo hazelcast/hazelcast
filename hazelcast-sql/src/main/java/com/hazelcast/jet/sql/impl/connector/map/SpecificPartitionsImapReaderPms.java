@@ -137,7 +137,6 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
                 requiredPartitionsExprs.stream().allMatch(l -> l.stream().allMatch(Expression::isCooperative));
     }
 
-    // TODO: name it properly.
     public static ProcessorMetaSupplier mapReader(String mapName,
                                                   @Nullable PartitioningStrategy<?> partitioningStrategy,
                                                   @Nullable List<List<Expression<?>>> requiredPartitionsExprs) {

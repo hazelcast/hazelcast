@@ -182,7 +182,7 @@ public class TableResolverImpl implements TableResolver {
     private SqlConnector extractConnector(@Nonnull String dataConnection) {
         InternalDataConnectionService dataConnectionService = nodeEngine.getDataConnectionService();
         // TODO atm data connection and connector types match, but that's
-        // not going to be universally true in the future
+        //  not going to be universally true in the future
         String type = dataConnectionService.typeForDataConnection(dataConnection);
         return connectorCache.forType(type);
     }

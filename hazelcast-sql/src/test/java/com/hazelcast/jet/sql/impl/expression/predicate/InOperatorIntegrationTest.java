@@ -227,14 +227,6 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
                 .hasMessage(null);
     }
 
-    @Ignore(value = "Support ROW().")
-    @Test
-    public void inPredicateRowsTest() {
-        putAll(0, 1);
-        String inClause = "IN (ROW(0, 0), ROW(1, 1), ROW(2, 2))";
-        // TODO: write check
-    }
-
     protected void checkValues(
             String sql,
             SqlColumnType expectedType,

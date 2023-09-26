@@ -116,7 +116,7 @@ public final class HazelcastRelMdPrunability
             IndexScanMapPhysicalRel scan,
             RelMetadataQuery mq
     ) {
-        // TODO: Implement
+        // TODO: Implement (HZ-2521)
         return emptyMap();
     }
 
@@ -128,7 +128,7 @@ public final class HazelcastRelMdPrunability
 
     @SuppressWarnings("unused")
     public Map<String, List<Map<String, RexNode>>> extractPrunability(Aggregate agg, RelMetadataQuery mq) {
-        // TODO: Implement
+        // TODO: Implement (HZ-2518/2519)
         return emptyMap();
     }
 
