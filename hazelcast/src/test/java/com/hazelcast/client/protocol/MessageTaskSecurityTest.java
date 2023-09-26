@@ -64,7 +64,6 @@ import com.hazelcast.cp.internal.client.AddCPGroupAvailabilityListenerMessageTas
 import com.hazelcast.cp.internal.client.AddCPMembershipListenerMessageTask;
 import com.hazelcast.cp.internal.client.RemoveCPGroupAvailabilityListenerMessageTask;
 import com.hazelcast.cp.internal.client.RemoveCPMembershipListenerMessageTask;
-import com.hazelcast.cp.internal.datastructures.semaphore.client.GetSemaphoreTypeMessageTask;
 import com.hazelcast.cp.internal.datastructures.spi.client.CreateRaftGroupMessageTask;
 import com.hazelcast.sql.impl.client.SqlCloseMessageTask;
 import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
@@ -127,7 +126,6 @@ public class MessageTaskSecurityTest {
         skip(ExperimentalTpcAuthenticationMessageTask.class, "Authentication message processing");
         skip(ExperimentalAuthenticationCustomCredentialsMessageTask.class, "Authentication message processing");
         skip(CreateProxiesMessageTask.class, "Permissions handled in beforeProcess() method");
-        skip(GetSemaphoreTypeMessageTask.class, "Returns true/false if given semaphore is JDK compatible");
     }
 
     @Test
