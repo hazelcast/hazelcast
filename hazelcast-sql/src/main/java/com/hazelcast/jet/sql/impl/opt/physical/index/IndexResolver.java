@@ -351,7 +351,7 @@ public final class IndexResolver {
      * @param exp expression
      * @return candidate or {@code null} if the expression cannot be used by any index implementation
      */
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     private static IndexComponentCandidate prepareSingleColumnCandidate(
             RexNode exp,
             QueryParameterMetadata parameterMetadata
@@ -396,6 +396,13 @@ public final class IndexResolver {
                 // Handle SELECT * FROM WHERE column IS NULL.
                 // Internally it is converted into EQUALS(NULL) filter
                 return prepareSingleColumnCandidateIsNull(
+                        exp,
+                        removeCastIfPossible(((RexCall) exp).getOperands().get(0))
+                );
+
+            case IS_NOT_NULL:
+                // Handle SELECT * FROM WHERE column IS NOT NULL.
+                return prepareSingleColumnCandidateIsNotNull(
                         exp,
                         removeCastIfPossible(((RexCall) exp).getOperands().get(0))
                 );
@@ -546,6 +553,35 @@ public final class IndexResolver {
         );
 
         IndexFilter filter = new IndexEqualsFilter(filterValue);
+
+        return new IndexComponentCandidate(
+                exp,
+                columnIndex,
+                filter
+        );
+    }
+
+    /**
+     * Try creating a candidate filter for the "IS NOT NULL" expression.
+     * <p>
+     * Returns the filter RANGE(-inf..+inf) with "allowNulls-false".
+     *
+     * @param exp     original expression, e.g. {col IS NOT NULL}
+     * @param operand operand, e.g. {col}; CAST must be unwrapped before the method is invoked
+     * @return candidate or {@code null}
+     */
+    private static IndexComponentCandidate prepareSingleColumnCandidateIsNotNull(RexNode exp, RexNode operand) {
+        if (operand.getKind() != SqlKind.INPUT_REF) {
+            // The operand is not a column, e.g. {'literal' IS NOT NULL}, index cannot be used
+            return null;
+        }
+
+        int columnIndex = ((RexInputRef) operand).getIndex();
+
+        QueryDataType type = HazelcastTypeUtils.toHazelcastType(operand.getType());
+
+        // Create a range scan for entire range (-inf..+inf), range scan does not include nulls
+        IndexFilter filter = new IndexRangeFilter(null, false, null, false);
 
         return new IndexComponentCandidate(
                 exp,
@@ -783,11 +819,6 @@ public final class IndexResolver {
 
             IndexFilter candidateFilter = candidate.getFilter();
 
-            if (!(candidateFilter instanceof IndexEqualsFilter || candidateFilter instanceof IndexCompositeFilter)) {
-                // Support only equality for ORs
-                return null;
-            }
-
             // Make sure that all '=' expressions relate to a single column
             if (columnIndex == null) {
                 columnIndex = candidate.getColumnIndex();
@@ -796,7 +827,7 @@ public final class IndexResolver {
             }
 
             // Flatten. E.g. ((a=1 OR a=2) OR a=3) is parsed into IN(1, 2) and OR(3), that is then flatten into IN(1, 2, 3)
-            if (candidateFilter instanceof IndexEqualsFilter) {
+            if (candidateFilter instanceof IndexEqualsFilter || candidateFilter instanceof IndexRangeFilter) {
                 filters.add(candidateFilter);
             } else {
                 filters.addAll(((IndexCompositeFilter) candidateFilter).getFilters());

@@ -141,13 +141,26 @@ public final class QueryUtil {
             // based on null end (before conversion) meaning different things.
             // The above affects only `from` because NULLs are smaller than any other value and only DESC sort order
             // for which `to` is updated during the scan.
-            result.add(IndexIterationPointer.create(!compositeIndex && descending ? NULL : null, true,
-                    null, true, descending, null));
+            if (!compositeIndex && descending) {
+                result.add(IndexIterationPointer.ALL_ALT_DESC);
+            } else {
+                result.add(descending ? IndexIterationPointer.ALL_DESC : IndexIterationPointer.ALL);
+            }
         }
         if (indexFilter instanceof IndexRangeFilter) {
             IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
 
-            Comparable<?> from = null;
+            if (rangeFilter.getFrom() == null && rangeFilter.getTo() == null) {
+                // IS NOT NULL range
+                assert !compositeIndex : "IS NOT NULL range should not be generated for composite index";
+                result.add(descending ? IndexIterationPointer.IS_NOT_NULL_DESC : IndexIterationPointer.IS_NOT_NULL);
+                return;
+            }
+
+            // Range filter for non-composite index never includes NULLs.
+            // Composite index should have both ends specified, and they might cover also NULL values for components
+            // but from/to will never be NULL but CompositeValue.
+            Comparable<?> from = compositeIndex ? null : NULL;
             if (rangeFilter.getFrom() != null) {
                 Comparable<?> fromValue = rangeFilter.getFrom().getValue(evalContext);
                 // If the index filter has expression like a > NULL, we need to
@@ -169,7 +182,7 @@ public final class QueryUtil {
                 to = toValue;
             }
 
-            if (from != null && to != null) {
+            if (to != null) {
                 int cmp = ((Comparable) from).compareTo(to);
                 if (cmp > 0 || (cmp == 0 && (!rangeFilter.isFromInclusive() || !rangeFilter.isToInclusive()))) {
                     // Range scan with from > to would produce empty result.

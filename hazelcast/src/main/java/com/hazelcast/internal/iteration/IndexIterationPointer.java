@@ -68,7 +68,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
 
     public static final IndexIterationPointer ALL = create(null, false, null, false, false, null);
     public static final IndexIterationPointer ALL_DESC = ALL.asDescending();
-    // alternative representation of ALL pointer
+    // alternative representation of ALL pointer (valid only for non-composite index)
     public static final IndexIterationPointer ALL_ALT = create(AbstractIndex.NULL, true, null, false, false, null);
     public static final IndexIterationPointer ALL_ALT_DESC = ALL_ALT.asDescending();
     public static final IndexIterationPointer IS_NULL = create(AbstractIndex.NULL, true, AbstractIndex.NULL, true, false, null);
