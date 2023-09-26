@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
@@ -79,7 +80,7 @@ public class MapAddPartitionLostListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "addPartitionLostListener";
+        return SecurityInterceptorConstants.ADD_PARTITION_LOST_LISTENER;
     }
 
     @Override

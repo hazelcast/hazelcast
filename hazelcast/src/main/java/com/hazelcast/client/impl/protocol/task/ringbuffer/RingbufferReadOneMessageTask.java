@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.ReadOneOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -32,7 +33,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.RingbufferMessageType#RINGBUFFER_READONE}
+ * {@link com.hazelcast.client.impl.protocol.codec.RingbufferReadOneCodec#REQUEST_MESSAGE_TYPE}
  */
 public class RingbufferReadOneMessageTask
         extends AbstractPartitionMessageTask<RingbufferReadOneCodec.RequestParameters> {
@@ -68,7 +69,7 @@ public class RingbufferReadOneMessageTask
 
     @Override
     public String getMethodName() {
-        return "readOne";
+        return SecurityInterceptorConstants.READ_ONE;
     }
 
     @Override

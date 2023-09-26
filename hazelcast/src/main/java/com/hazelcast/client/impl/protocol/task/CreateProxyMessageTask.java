@@ -23,6 +23,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -96,11 +97,11 @@ public class CreateProxyMessageTask extends AbstractInvocationMessageTask<Client
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.CREATE;
     }
 
     @Override
     public Object[] getParameters() {
-        return null;
+        return new Object[]{parameters.name};
     }
 }

@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyInfo;
@@ -121,11 +122,11 @@ public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<Lis
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.CREATE_PROXIES;
     }
 
     @Override
     public Object[] getParameters() {
-        return null;
+        return new Object[]{parameters};
     }
 }
