@@ -16,12 +16,13 @@
 
 package com.hazelcast.cp.internal.datastructures;
 
-import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
-import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.cpmap.CPMapService;
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
+import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.servicemanager.ServiceDescriptor;
 import com.hazelcast.spi.impl.servicemanager.ServiceDescriptorProvider;
@@ -33,13 +34,14 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
 
     @Override
     public ServiceDescriptor[] createServiceDescriptors() {
-        return new ServiceDescriptor[] {
-            new AtomicLongServiceDescriptor(),
-            new LockServiceDescriptor(),
-            new RaftSessionManagerServiceDescriptor(),
-            new AtomicRefServiceDescriptor(),
-            new SemaphoreServiceDescriptor(),
-            new CountDownLatchServiceDescriptor(),
+        return new ServiceDescriptor[]{
+                new AtomicLongServiceDescriptor(),
+                new LockServiceDescriptor(),
+                new RaftSessionManagerServiceDescriptor(),
+                new AtomicRefServiceDescriptor(),
+                new SemaphoreServiceDescriptor(),
+                new CountDownLatchServiceDescriptor(),
+                new CPMapServiceDescriptor(),
         };
     }
 
@@ -94,7 +96,7 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
     private static class SemaphoreServiceDescriptor implements ServiceDescriptor {
         @Override
         public String getServiceName() {
-                return SemaphoreService.SERVICE_NAME;
+            return SemaphoreService.SERVICE_NAME;
         }
 
         @Override
@@ -112,6 +114,18 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
         @Override
         public Object getService(NodeEngine nodeEngine) {
             return new CountDownLatchService(nodeEngine);
+        }
+    }
+
+    private static class CPMapServiceDescriptor implements ServiceDescriptor {
+        @Override
+        public String getServiceName() {
+            return CPMapService.SERVICE_NAME;
+        }
+
+        @Override
+        public Object getService(NodeEngine nodeEngine) {
+            return new CPMapService(nodeEngine);
         }
     }
 }

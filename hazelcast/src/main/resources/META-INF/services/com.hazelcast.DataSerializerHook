@@ -52,6 +52,7 @@ com.hazelcast.cp.internal.RaftServiceDataSerializerHook
 com.hazelcast.cp.internal.session.RaftSessionServiceDataSerializerHook
 com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongDataSerializerHook
 com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefDataSerializerHook
+com.hazelcast.cp.internal.datastructures.cpmap.CPMapDataSerializerHook
 com.hazelcast.cp.internal.datastructures.lock.LockDataSerializerHook
 com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook
 com.hazelcast.cp.internal.datastructures.RaftDataServiceDataSerializerHook

@@ -20,18 +20,20 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.CPMap;
 import com.hazelcast.cp.CPMember;
-import com.hazelcast.cp.event.CPGroupAvailabilityListener;
-import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
+import com.hazelcast.cp.event.CPGroupAvailabilityListener;
+import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.cpmap.CPMapService;
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
@@ -69,6 +71,13 @@ public class CPSubsystemImpl implements CPSubsystem {
             logger.warning("CP Subsystem is not enabled. CP data structures will operate in UNSAFE mode! "
                     + "Please note that UNSAFE mode will not provide strong consistency guarantees.");
         }
+    }
+
+    @Nonnull
+    @Override
+    public CPMap getCPMap(@Nonnull String name) {
+        checkNotNull(name, "Retrieving an cpmap instance with a null name is not allowed!");
+        return createProxy(CPMapService.SERVICE_NAME, name);
     }
 
     @Nonnull

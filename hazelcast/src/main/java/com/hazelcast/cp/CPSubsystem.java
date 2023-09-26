@@ -369,6 +369,9 @@ import java.util.UUID;
  */
 public interface CPSubsystem {
 
+    @Nonnull
+    CPMap getCPMap(@Nonnull String name);
+
     /**
      * Returns a proxy for an {@link IAtomicLong} instance created on CP
      * Subsystem. Hazelcast's {@link IAtomicLong} is a distributed version of
