@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
+import com.hazelcast.cache.CacheUtil;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.PreJoinCacheConfig;
