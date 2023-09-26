@@ -24,6 +24,10 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+
+import java.io.IOException;
+import java.nio.file.Files;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,10 +47,10 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
     private MetricsRegistry metricsRegistry;
 
     @Before
-    public void setup() {
-        Config config = new Config()
-                .setProperty(Diagnostics.ENABLED.getName(), "true")
-                .setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
+    public void setup() throws IOException {
+        Config config = new Config().setProperty(Diagnostics.ENABLED.getName(), "true")
+                .setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1")
+                .setProperty(Diagnostics.DIRECTORY.getName(), Files.createTempDirectory(Diagnostics.DIRECTORY.getSystemProperty()).toString());
         HazelcastInstance hz = createHazelcastInstance(config);
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
         metricsRegistry = nodeEngineImpl.getMetricsRegistry();
