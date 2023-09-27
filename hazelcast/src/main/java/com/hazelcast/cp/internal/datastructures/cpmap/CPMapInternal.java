@@ -57,12 +57,21 @@ public class CPMapInternal {
         return map.get(key);
     }
 
+    public Map<Object,Object> map() {
+        return map;
+    }
+
+    public void clear() {
+        map.clear();
+    }
+
+    public void remove(Object key) {
+        map.remove(key);
+    }
+
     @Override
     public String toString() {
         return "CPMapInternal{" + "groupId=" + groupId() + ", name='" + name() + '\'' + ", map=" + map + '}';
     }
 
-    public Map<Object,Object> map() {
-        return map;
-    }
 }

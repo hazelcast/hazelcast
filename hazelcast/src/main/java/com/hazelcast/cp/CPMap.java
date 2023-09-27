@@ -7,4 +7,8 @@ public interface CPMap<K, V> extends DistributedObject {
     V get(K key);
 
     void set(K key, V value);
+
+    void remove(K key);
+
+    void clear();
 }

@@ -16,7 +16,9 @@
 
 package com.hazelcast.cp.internal.datastructures.cpmap;
 
+import com.hazelcast.cp.internal.datastructures.cpmap.operation.ClearOp;
 import com.hazelcast.cp.internal.datastructures.cpmap.operation.GetOp;
+import com.hazelcast.cp.internal.datastructures.cpmap.operation.RemoveOp;
 import com.hazelcast.cp.internal.datastructures.cpmap.operation.SetOp;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -33,7 +35,9 @@ public final class CPMapDataSerializerHook implements DataSerializerHook {
 
     public static final int GET_OP = 1;
     public static final int SET_OP = 2;
-    public static final int SNAPSHOT = 3;
+    public static final int REMOVE_OP = 3;
+    public static final int CLEAR_OP = 4;
+    public static final int SNAPSHOT = 5;
 
     @Override
     public int getFactoryId() {
@@ -48,6 +52,10 @@ public final class CPMapDataSerializerHook implements DataSerializerHook {
                     return new GetOp();
                 case SET_OP:
                     return new SetOp();
+                case REMOVE_OP:
+                    return new RemoveOp();
+                case CLEAR_OP:
+                    return new ClearOp();
                 case SNAPSHOT:
                     return new CPMapSnapshot();
                 default:

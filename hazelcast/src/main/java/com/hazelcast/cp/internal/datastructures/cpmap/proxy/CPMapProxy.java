@@ -22,7 +22,7 @@ import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.cpmap.CPMapService;
-import com.hazelcast.cp.internal.datastructures.cpmap.operation.GetOp;
+import com.hazelcast.cp.internal.datastructures.cpmap.operation.*;
 import com.hazelcast.cp.internal.datastructures.cpmap.operation.SetOp;
 import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -60,6 +60,20 @@ public class CPMapProxy<K, V> implements CPMap<K, V> {
     @Override
     public void set(K key, V value) {
         SetOp op = new SetOp(objectName, key, value);
+        InternalCompletableFuture f = invocationManager.invoke(groupId, op);
+        f.join();
+    }
+
+    @Override
+    public void remove(K key) {
+        RemoveOp op = new RemoveOp(objectName, key);
+        InternalCompletableFuture f = invocationManager.invoke(groupId, op);
+        f.join();
+    }
+
+    @Override
+    public void clear() {
+        ClearOp op = new ClearOp(objectName);
         InternalCompletableFuture f = invocationManager.invoke(groupId, op);
         f.join();
     }
