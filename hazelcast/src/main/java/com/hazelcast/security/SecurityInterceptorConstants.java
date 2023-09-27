@@ -56,7 +56,6 @@ public final class SecurityInterceptorConstants {
     public static final String PUT = "put";
     public static final String GET_AND_PUT = "getAndPut";
     public static final String REMOVE = "remove";
-    public static final String REMOVE_ALL_KEYS = "removeAllKeys";
     public static final String REMOVE_ALL = "removeAll";
     public static final String REPLACE = "replace";
     public static final String SET_EXPIRY_POLICY = "setExpiryPolicy";
