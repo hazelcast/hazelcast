@@ -578,8 +578,6 @@ public final class IndexResolver {
 
         int columnIndex = ((RexInputRef) operand).getIndex();
 
-        QueryDataType type = HazelcastTypeUtils.toHazelcastType(operand.getType());
-
         // Create a range scan for entire range (-inf..+inf), range scan does not include nulls
         IndexFilter filter = new IndexRangeFilter(null, false, null, false);
 
@@ -684,7 +682,7 @@ public final class IndexResolver {
         );
     }
 
-    @SuppressWarnings({"ConstantConditions", "UnstableApiUsage"})
+    @SuppressWarnings({"ConstantConditions"})
     private static IndexComponentCandidate prepareSingleColumnSearchCandidateComparison(
             RexNode exp,
             RexNode operand1,

@@ -182,7 +182,7 @@ public final class QueryUtil {
                 to = toValue;
             }
 
-            if (to != null) {
+            if (from != null && to != null) {
                 int cmp = ((Comparable) from).compareTo(to);
                 if (cmp > 0 || (cmp == 0 && (!rangeFilter.isFromInclusive() || !rangeFilter.isToInclusive()))) {
                     // Range scan with from > to would produce empty result.
