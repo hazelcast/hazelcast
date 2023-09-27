@@ -21,7 +21,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.event.CPGroupAvailabilityEvent;
 import com.hazelcast.cp.event.CPGroupAvailabilityListener;
-import com.hazelcast.cp.event.impl.CPGroupAvailabilityEventGracefulImpl;
+import com.hazelcast.cp.event.impl.CPGroupAvailabilityEventImpl;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -165,7 +165,8 @@ public class CPGroupAvailabilityListenerTest extends HazelcastRaftTestSupport {
         }
 
         private void handleEvent(CPGroupAvailabilityEvent event, boolean isAvailabilityDecrease) {
-            if (event instanceof CPGroupAvailabilityEventGracefulImpl) {
+            CPGroupAvailabilityEventImpl impl = (CPGroupAvailabilityEventImpl) event;
+            if (impl.isShutdown()) {
                 membersShutdown.addAll(event.getUnavailableMembers().stream().map(CPMember::getUuid).collect(Collectors.toSet()));
                 if (isAvailabilityDecrease) {
                     availabilityDecreased.incrementAndGet();

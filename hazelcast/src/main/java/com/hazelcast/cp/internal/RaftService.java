@@ -27,7 +27,6 @@ import com.hazelcast.cp.event.CPGroupAvailabilityEvent;
 import com.hazelcast.cp.event.CPGroupAvailabilityListener;
 import com.hazelcast.cp.event.CPMembershipEvent;
 import com.hazelcast.cp.event.CPMembershipListener;
-import com.hazelcast.cp.event.impl.CPGroupAvailabilityEventGracefulImpl;
 import com.hazelcast.cp.event.impl.CPGroupAvailabilityEventImpl;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
@@ -602,8 +601,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     private void publishGroupAvailabilityEventsForGracefulShutdown(MemberImpl removedMember) {
-        // TODO CPGroupAvailabilityEventGracefulImpl added in V5_4; we require cluster to be on at least V5_4 for its publication
-        // TODO consider removing this check in versions > V5_4
+        // RU_COMPAT_5_3
         if (nodeEngine.getClusterService().getClusterVersion().isUnknownOrLessThan(V5_4)) {
             return;
         }
@@ -628,10 +626,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             }
 
             if (availabilityDecreased) {
-                CPGroupAvailabilityEvent e =
-                        isShutdown
-                                ? new CPGroupAvailabilityEventGracefulImpl(group.id(), group.members(), missing)
-                                : new CPGroupAvailabilityEventImpl(group.id(), group.members(), missing);
+                CPGroupAvailabilityEvent e = new CPGroupAvailabilityEventImpl(group.id(), group.members(), missing, isShutdown);
                 nodeEngine.getEventService().publishEvent(SERVICE_NAME, EVENT_TOPIC_AVAILABILITY, e,
                         EVENT_TOPIC_AVAILABILITY.hashCode());
             }

@@ -30,7 +30,6 @@ public final class CpEventDataSerializerHook implements DataSerializerHook {
 
     public static final int MEMBERSHIP_EVENT = 1;
     public static final int GROUP_AVAILABILITY_EVENT = 2;
-    public static final int GROUP_AVAILABILITY_GRACEFUL_EVENT = 3;
 
     @Override
     public int getFactoryId() {
@@ -45,8 +44,6 @@ public final class CpEventDataSerializerHook implements DataSerializerHook {
                     return new CPMembershipEventImpl();
                 case GROUP_AVAILABILITY_EVENT:
                     return new CPGroupAvailabilityEventImpl();
-                case GROUP_AVAILABILITY_GRACEFUL_EVENT:
-                    return new CPGroupAvailabilityEventGracefulImpl();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }

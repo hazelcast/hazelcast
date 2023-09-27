@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 
@@ -43,13 +44,28 @@ public class CPGroupAvailabilityEventImpl implements CPGroupAvailabilityEvent, I
     private Collection<CPMember> members;
     private Collection<CPMember> missingMembers;
 
+    // only ever potentially true when cluster version >= V5_4
+    private boolean isShutdown;
+
     public CPGroupAvailabilityEventImpl() {
     }
 
     public CPGroupAvailabilityEventImpl(CPGroupId groupId, Collection<CPMember> members, Collection<CPMember> missingMembers) {
+        this(groupId, members, missingMembers, false);
+    }
+
+    public CPGroupAvailabilityEventImpl(CPGroupId groupId,
+                                        Collection<CPMember> members,
+                                        Collection<CPMember> missingMembers,
+                                        boolean isShutdown) {
         this.groupId = groupId;
         this.members = members;
         this.missingMembers = missingMembers;
+        this.isShutdown = isShutdown;
+    }
+
+    public boolean isShutdown() {
+        return isShutdown;
     }
 
     @Override
@@ -99,6 +115,10 @@ public class CPGroupAvailabilityEventImpl implements CPGroupAvailabilityEvent, I
         out.writeObject(groupId);
         writeCollection(members, out);
         writeCollection(missingMembers, out);
+
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            out.writeBoolean(isShutdown);
+        }
     }
 
     @Override
@@ -106,6 +126,13 @@ public class CPGroupAvailabilityEventImpl implements CPGroupAvailabilityEvent, I
         groupId = in.readObject();
         members = readCollection(in);
         missingMembers = readCollection(in);
+
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
+            isShutdown = in.readBoolean();
+        } else {
+            // < V5_4 there's not notion of a discriminating a shutdown; it's always false
+            isShutdown = false;
+        }
     }
 
     @Override
@@ -133,7 +160,10 @@ public class CPGroupAvailabilityEventImpl implements CPGroupAvailabilityEvent, I
         if (!missingMembers.containsAll(that.missingMembers)) {
             return false;
         }
-        return members.containsAll(that.members);
+        if (!members.containsAll(that.members)) {
+            return false;
+        }
+        return isShutdown == that.isShutdown;
     }
 
     @Override
@@ -145,12 +175,13 @@ public class CPGroupAvailabilityEventImpl implements CPGroupAvailabilityEvent, I
         for (CPMember member : missingMembers) {
             result = 31 * result + member.hashCode();
         }
+        result = 31 * result + Boolean.hashCode(isShutdown);
         return result;
     }
 
     @Override
     public String toString() {
         return "CPGroupAvailabilityEvent{" + "groupId=" + groupId + ", members=" + members + ", missingMembers="
-                + missingMembers + '}';
+                + missingMembers + ", isShutdown=" + isShutdown + '}';
     }
 }
