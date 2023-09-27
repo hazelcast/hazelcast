@@ -189,13 +189,13 @@ public class MapContainer {
     // There are cases where a global index is used. In this case, the global-index is stored in the MapContainer.
     // By using this method in the context of global index an exception will be thrown.
     // -------------------------------------------------------------------------------------------------------------
-    Indexes getOrCreateIndexes(int partitionId) {
+    Indexes getOrCreatePartitionedIndexes(int partitionId) {
         if (isGlobalIndexEnabled()) {
             throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
         }
 
-        Indexes ixs = indexesPerPartition.get(partitionId);
-        return ixs != null ? ixs : createIndexes(false, partitionId);
+        Indexes existing = indexesPerPartition.get(partitionId);
+        return existing != null ? existing : createIndexes(false, partitionId);
     }
 
     public AtomicLong getLastInvalidMergePolicyCheckTime() {
@@ -361,7 +361,7 @@ public class MapContainer {
         if (globalIndexes != null) {
             return globalIndexes;
         }
-        return getOrCreateIndexes(partitionId);
+        return getOrCreatePartitionedIndexes(partitionId);
     }
 
     public boolean isGlobalIndexEnabled() {
@@ -507,14 +507,9 @@ public class MapContainer {
     }
 
     private Map<String, IndexConfig> addLocalIndexDefinitions(Map<String, IndexConfig> definitions) {
-        MapContainer existingMapContainer = mapServiceContext.getExistingMapContainer(name);
-        if (existingMapContainer == null) {
-            return definitions;
-        }
-
         int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
-            Indexes partitionedIndexes = existingMapContainer.getOrNullPartitionedIndexes(i);
+            Indexes partitionedIndexes = getOrNullPartitionedIndexes(i);
             if (partitionedIndexes == null) {
                 continue;
             }

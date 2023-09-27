@@ -235,17 +235,15 @@ class MapMigrationAwareService
     private void clearNonGlobalIndexes(PartitionMigrationEvent event) {
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
-            final MapContainer mapContainer = recordStore.getMapContainer();
-
-            final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
-            if (!indexes.haveAtLeastOneIndex() || indexes.isGlobal()) {
-                // no indexes to work with
+            MapContainer mapContainer = recordStore.getMapContainer();
+            Indexes partitionedIndexes = mapContainer.getOrNullPartitionedIndexes(event.getPartitionId());
+            if (partitionedIndexes == null) {
                 continue;
             }
 
             recordStore.beforeOperation();
             try {
-                indexes.clearAll();
+                partitionedIndexes.clearAll();
             } finally {
                 recordStore.afterOperation();
             }

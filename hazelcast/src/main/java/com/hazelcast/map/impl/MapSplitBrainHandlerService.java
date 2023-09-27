@@ -68,8 +68,6 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
         // state into merged cluster. An example old state that we
         // don't want to leak into merged cluster is index state. In
         // merged cluster, there will be a fresh mapContainer object.
-        PartitionContainer partitionContainer
-                = mapServiceContext.getPartitionContainer(recordStore.getPartitionId());
         MapContainer mapContainer = recordStore.getMapContainer();
 
         // `onStoreCollection` method is called after collection
@@ -81,6 +79,8 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
         //
         // This one-time logic also helps us to add shared
         // global indexes to new-map-container only once.
+        PartitionContainer partitionContainer
+                = mapServiceContext.getPartitionContainer(recordStore.getPartitionId());
         if (partitionContainer.destroyMapContainer(mapContainer)) {
             if (mapContainer.shouldUseGlobalIndex()) {
                 // remove global indexes from old-map-container and add them to new one
@@ -91,9 +91,11 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
 
         // remove partitioned indexes from old-map-container and add them to new one
         if (!mapContainer.shouldUseGlobalIndex()) {
-            Indexes indexes = mapContainer.getIndexes(recordStore.getPartitionId());
-            addIndexConfigToNewMapContainer(mapContainer.name, recordStore.getPartitionId(),
-                    indexes);
+            Indexes partitionedIndexes = mapContainer.indexesPerPartition.remove(recordStore.getPartitionId());
+            if (partitionedIndexes != null) {
+                addIndexConfigToNewMapContainer(mapContainer.name, recordStore.getPartitionId(),
+                        partitionedIndexes);
+            }
         }
     }
 
@@ -112,7 +114,7 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
         // create new map-container here.
         MapContainer newMapContainer = mapServiceContext.getMapContainer(mapName);
         for (IndexConfig indexConfig : indexConfigs) {
-            newMapContainer.getIndexes(partitionId).addOrGetIndex(indexConfig);
+            newMapContainer.getIndexes(partitionId).recordIndexDefinition(indexConfig);
         }
     }
 

@@ -33,7 +33,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
@@ -199,15 +198,12 @@ public class MapChunk extends Operation
 
     private void applyIndexStateBefore(RecordStore recordStore) {
         MapContainer mapContainer = recordStore.getMapContainer();
-        PartitionContainer partitionContainer = mapContainer.getMapServiceContext()
-                .getPartitionContainer(getPartitionId());
+        Indexes indexes = mapContainer.getIndexes(recordStore.getPartitionId());
 
         for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
-            Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
             indexes.addOrGetIndex(indexDefinition.getValue());
         }
 
-        Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
         boolean populateIndexes = indexesMustBePopulated(indexes);
 
         if (populateIndexes) {
