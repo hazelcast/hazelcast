@@ -34,14 +34,14 @@ import java.util.List;
 
 import static com.hazelcast.internal.util.JavaVersion.JAVA_19;
 import static java.time.ZoneOffset.UTC;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnitParamsRunner.class)
 public class HazelcastJsonUpsertTargetTest extends UpsertTargetTestSupport {
 
     @Test
     public void test_set() {
-        UpsertTarget target = new HazelcastJsonUpsertTarget();
+        UpsertTarget target = new HazelcastJsonUpsertTarget(null);
         UpsertConverter converter = target.createConverter(List.of(
                 field("null", QueryDataType.OBJECT),
                 field("object", QueryDataType.OBJECT),
@@ -117,7 +117,7 @@ public class HazelcastJsonUpsertTargetTest extends UpsertTargetTestSupport {
                     + ",\"timestampTz\":\"2020-09-09T12:23:34.200Z\""
                     + "}";
         }
-        assertThat(hazelcastJson).isEqualTo(new HazelcastJsonValue(expectedJson));
+        assertEquals(new HazelcastJsonValue(expectedJson), hazelcastJson);
     }
 
     @SuppressWarnings("unused")
@@ -145,13 +145,13 @@ public class HazelcastJsonUpsertTargetTest extends UpsertTargetTestSupport {
     @Test
     @Parameters(method = "values")
     public void when_typeIsObject_then_allValuesAreAllowed(Object value, String expected) {
-        UpsertTarget target = new HazelcastJsonUpsertTarget();
+        UpsertTarget target = new HazelcastJsonUpsertTarget(null);
         UpsertConverter converter = target.createConverter(List.of(
                 field("object", QueryDataType.OBJECT)
         ));
 
         Object hazelcastJson = converter.applyRow(value);
 
-        assertThat(hazelcastJson).isEqualTo(new HazelcastJsonValue("{\"object\":" + expected + "}"));
+        assertEquals(new HazelcastJsonValue("{\"object\":" + expected + "}"), hazelcastJson);
     }
 }

@@ -35,14 +35,14 @@ import java.util.List;
 import static com.hazelcast.internal.util.JavaVersion.JAVA_19;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyMap;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnitParamsRunner.class)
 public class JsonUpsertTargetTest extends UpsertTargetTestSupport {
 
     @Test
     public void test_set() {
-        UpsertTarget target = new JsonUpsertTarget();
+        UpsertTarget target = new JsonUpsertTarget(null);
         UpsertConverter converter = target.createConverter(List.of(
                 field("null", QueryDataType.OBJECT),
                 field("object", QueryDataType.OBJECT),
@@ -118,7 +118,7 @@ public class JsonUpsertTargetTest extends UpsertTargetTestSupport {
                     + ",\"timestampTz\":\"2020-09-09T12:23:34.200Z\""
                     + "}";
         }
-        assertThat(new String((byte[]) json)).isEqualTo(expectedJson);
+        assertEquals(expectedJson, new String((byte[]) json));
     }
 
     @SuppressWarnings("unused")
@@ -146,13 +146,13 @@ public class JsonUpsertTargetTest extends UpsertTargetTestSupport {
     @Test
     @Parameters(method = "values")
     public void when_typeIsObject_then_allValuesAreAllowed(Object value, String expected) {
-        UpsertTarget target = new JsonUpsertTarget();
+        UpsertTarget target = new JsonUpsertTarget(null);
         UpsertConverter converter = target.createConverter(List.of(
                 field("object", QueryDataType.OBJECT)
         ));
 
         Object json = converter.applyRow(value);
 
-        assertThat(new String((byte[]) json)).isEqualTo("{\"object\":" + expected + "}");
+        assertEquals("{\"object\":" + expected + "}", new String((byte[]) json));
     }
 }

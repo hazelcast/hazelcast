@@ -24,21 +24,18 @@ public final class HazelcastJsonUpsertTargetDescriptor implements UpsertTargetDe
 
     public static final HazelcastJsonUpsertTargetDescriptor INSTANCE = new HazelcastJsonUpsertTargetDescriptor();
 
-    private HazelcastJsonUpsertTargetDescriptor() {
-    }
+    private HazelcastJsonUpsertTargetDescriptor() { }
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new HazelcastJsonUpsertTarget();
+        return new HazelcastJsonUpsertTarget(serializationService);
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) {
-    }
+    public void writeData(ObjectDataOutput out) { }
 
     @Override
-    public void readData(ObjectDataInput in) {
-    }
+    public void readData(ObjectDataInput in) { }
 
     @Override
     public boolean equals(Object obj) {

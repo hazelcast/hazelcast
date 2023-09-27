@@ -85,7 +85,7 @@ public abstract class UpsertTarget {
         } else if (value instanceof GenericRecord) {
             return (i, name) -> AvroQueryTarget.extractValue((GenericRecord) value, name);
         } else {
-            return (i, name) -> extractors.extract(value, name, false);
+            return (i, name) -> extractors.extract(value, name, null);
         }
     }
 

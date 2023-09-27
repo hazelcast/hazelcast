@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.Field;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -31,11 +32,22 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
+import static com.hazelcast.sql.impl.type.QueryDataType.DOUBLE;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.REAL;
+import static com.hazelcast.sql.impl.type.QueryDataType.SMALLINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 
 @NotThreadSafe
 class JsonUpsertTarget extends UpsertTarget {
     private static final JsonFactory JSON_FACTORY = new ObjectMapper().getFactory();
+
+    JsonUpsertTarget(InternalSerializationService serializationService) {
+        super(serializationService);
+    }
 
     @Override
     protected Converter<byte[]> createConverter(Stream<Field> fields) {
@@ -77,19 +89,19 @@ class JsonUpsertTarget extends UpsertTarget {
     private InjectorEx<JsonGenerator> createInjector0(String path, QueryDataType type) {
         switch (type.getTypeFamily()) {
             case BOOLEAN:
-                return (json, value) -> json.writeBooleanField(path, (boolean) value);
+                return (json, value) -> json.writeBooleanField(path, (boolean) BOOLEAN.convert(value));
             case TINYINT:
-                return (json, value) -> json.writeNumberField(path, (byte) value);
+                return (json, value) -> json.writeNumberField(path, (byte) TINYINT.convert(value));
             case SMALLINT:
-                return (json, value) -> json.writeNumberField(path, (short) value);
+                return (json, value) -> json.writeNumberField(path, (short) SMALLINT.convert(value));
             case INTEGER:
-                return (json, value) -> json.writeNumberField(path, (int) value);
+                return (json, value) -> json.writeNumberField(path, (int) INT.convert(value));
             case BIGINT:
-                return (json, value) -> json.writeNumberField(path, (long) value);
+                return (json, value) -> json.writeNumberField(path, (long) BIGINT.convert(value));
             case REAL:
-                return (json, value) -> json.writeNumberField(path, (float) value);
+                return (json, value) -> json.writeNumberField(path, (float) REAL.convert(value));
             case DOUBLE:
-                return (json, value) -> json.writeNumberField(path, (double) value);
+                return (json, value) -> json.writeNumberField(path, (double) DOUBLE.convert(value));
             case DECIMAL:
             case TIME:
             case DATE:

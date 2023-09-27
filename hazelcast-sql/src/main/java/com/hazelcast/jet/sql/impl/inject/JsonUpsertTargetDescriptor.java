@@ -24,21 +24,18 @@ public final class JsonUpsertTargetDescriptor implements UpsertTargetDescriptor 
 
     public static final JsonUpsertTargetDescriptor INSTANCE = new JsonUpsertTargetDescriptor();
 
-    private JsonUpsertTargetDescriptor() {
-    }
+    private JsonUpsertTargetDescriptor() { }
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new JsonUpsertTarget();
+        return new JsonUpsertTarget(serializationService);
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) {
-    }
+    public void writeData(ObjectDataOutput out) { }
 
     @Override
-    public void readData(ObjectDataInput in) {
-    }
+    public void readData(ObjectDataInput in) { }
 
     @Override
     public boolean equals(Object obj) {
