@@ -38,7 +38,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -188,15 +187,16 @@ public class Accessors {
             return Collections.singletonList(maybeGlobalIndexes);
         }
 
-        PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
         List<Indexes> allIndexes = new ArrayList<>();
-        for (PartitionContainer partitionContainer : partitionContainers) {
-            IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
+
+        int partitionCount = partitionService.getPartitionCount();
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            IPartition partition = partitionService.getPartition(partitionId);
             if (!partition.isLocal()) {
                 continue;
             }
 
-            Indexes partitionIndexes = partitionContainer.getIndexes().get(mapName);
+            Indexes partitionIndexes = mapContainer.getOrNullPartitionedIndexes(partitionId);
             if (partitionIndexes == null) {
                 continue;
             }

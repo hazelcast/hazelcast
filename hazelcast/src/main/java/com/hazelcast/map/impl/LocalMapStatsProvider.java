@@ -374,10 +374,16 @@ public class LocalMapStatsProvider {
                     continue;
                 }
 
-                Indexes partitionIndexes = partitionContainer.getIndexes().get(mapName);
+                MapContainer existingMapContainer = mapServiceContext.getExistingMapContainer(mapName);
+                if(existingMapContainer == null){
+                    continue;
+                }
+
+                Indexes partitionIndexes = existingMapContainer.getOrNullPartitionedIndexes(i);
                 if (partitionIndexes == null) {
                     continue;
                 }
+
                 assert !partitionIndexes.isGlobal();
                 IndexesStats indexesStats = partitionIndexes.getIndexesStats();
 

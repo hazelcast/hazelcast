@@ -1549,7 +1549,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     public void destroyStorageImmediate(boolean isDuringShutdown,
                                         boolean internal, boolean onSplitBrainHeal) {
-        mutationObserver.onDestroy(isDuringShutdown, internal, onSplitBrainHeal);
+        mutationObserver.onDestroy(isDuringShutdown, internal);
         expirySystem.destroy();
         destroyMetadataStore();
         // Destroy storage in the end
@@ -1562,7 +1562,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * only releases internal resources of backing data structure.
      *
      * @param isDuringShutdown {@link Storage#clear(boolean)}
-     * @param internal         see {@link MutationObserver#onDestroy(boolean, boolean, boolean)}}
+     * @param internal         see {@link MutationObserver#onDestroy(boolean, boolean)}}
      * @param onSplitBrainHeal {@code true} if this method is called on heal of split-brain
      */
     public void destroyStorageAfterClear(boolean isDuringShutdown, boolean internal, boolean onSplitBrainHeal) {

@@ -64,15 +64,6 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
     protected void onStoreCollection(RecordStore recordStore) {
         assertRunningOnPartitionThread();
 
-        recordStore.beforeOperation();
-        try {
-            DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
-            defaultRecordStore.getMapDataStore().reset();
-            defaultRecordStore.getIndexingObserver().onDestroy(false, true, false);
-        } finally {
-            recordStore.afterOperation();
-        }
-
         // Removal of old mapContainer is required not to leak old
         // state into merged cluster. An example old state that we
         // don't want to leak into merged cluster is index state. In
@@ -100,7 +91,7 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
 
         // remove partitioned indexes from old-map-container and add them to new one
         if (!mapContainer.shouldUseGlobalIndex()) {
-            Indexes indexes = partitionContainer.getIndexes().remove(mapContainer.name);
+            Indexes indexes = mapContainer.getIndexes(recordStore.getPartitionId());
             addIndexConfigToNewMapContainer(mapContainer.name, recordStore.getPartitionId(),
                     indexes);
         }

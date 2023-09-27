@@ -197,8 +197,19 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     }
 
     private void assertAllPartitionContainersAreEmpty(HazelcastInstance instance) {
-        MapServiceContext context = getMapServiceContext(instance);
         int partitionCount = getPartitionCount(instance);
+
+        MapServiceContext context = getMapServiceContext(instance);
+        Map<String, MapContainer> mapContainers = context.getMapContainers();
+        for (MapContainer mapContainer : mapContainers.values()) {
+            if (mapContainer.getName().startsWith(JobRepository.INTERNAL_JET_OBJECTS_PREFIX)) {
+                continue;
+            }
+
+            for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+                assertTrue("indexes not empty", mapContainer.getPartitionedIndexes().isEmpty());
+            }
+        }
 
         for (int i = 0; i < partitionCount; i++) {
             PartitionContainer container = context.getPartitionContainer(i);
@@ -207,12 +218,6 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
                     .filter(e -> !e.getKey().startsWith(JobRepository.INTERNAL_JET_OBJECTS_PREFIX))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             assertTrue("record stores not empty", maps.isEmpty());
-
-            Map<String, Indexes> indexes = container.getIndexes()
-                    .entrySet().stream()
-                    .filter(e -> !e.getKey().startsWith(JobRepository.INTERNAL_JET_OBJECTS_PREFIX))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            assertTrue("indexes not empty", indexes.isEmpty());
         }
     }
 
@@ -238,12 +243,11 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
 
             if (!globalIndex()) {
                 // also assert contents of partition indexes when NATIVE memory format
-                ConcurrentMap<String, Indexes> indexes = container.getIndexes();
-                final Indexes index = indexes.get(mapName);
+                Indexes indexes = context.getExistingMapContainer(mapName).getPartitionedIndexes().get(i);
                 assertNotNull("indexes is null", indexes);
-                assertEquals(2, index.getIndexes().length);
-                assertNotNull("There should be a partition index for attribute 'author'", index.getIndex("author"));
-                assertNotNull("There should be a partition index for attribute 'year'", index.getIndex("year"));
+                assertEquals(2, indexes.getIndexes().length);
+                assertNotNull("There should be a partition index for attribute 'author'", indexes.getIndex("author"));
+                assertNotNull("There should be a partition index for attribute 'year'", indexes.getIndex("year"));
 
                 authorRecordsCounter.getAndAdd(numberOfPartitionQueryResults(instance, i, "author", authorOwned));
                 yearRecordsCounter.getAndAdd(numberOfPartitionQueryResults(instance, i, "year", yearOwned));
