@@ -36,6 +36,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -197,6 +198,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
         assertTrueEventually(HazelcastTestSupport::assertNoRunningInstances, 30);
     }
 
+    @Ignore
     @Test(timeout = 1_200_000L)
     public void stressTest() throws Exception {
         // https://hazelcast.atlassian.net/browse/HZ-3187

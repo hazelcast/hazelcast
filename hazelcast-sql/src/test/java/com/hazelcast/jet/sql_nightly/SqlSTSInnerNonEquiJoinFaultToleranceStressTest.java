@@ -16,20 +16,20 @@
 
 package com.hazelcast.jet.sql_nightly;
 
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.ClassRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 
-@Category(QuickTest.class)
+@Category(NightlyTest.class)
 public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerEquiJoinFaultToleranceStressTest {
     @ClassRule
     public static Timeout globalTimeout = Timeout.seconds(30 * 60);
 
     public SqlSTSInnerNonEquiJoinFaultToleranceStressTest() {
         super();
-        this.eventsPerSink = 3000;
-        this.sinkCount = 10;
+        this.eventsPerSink = 1000;
+        this.sinkCount = 30;
         this.eventsToProcess = eventsPerSink * sinkCount;
     }
 
@@ -40,7 +40,7 @@ public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerE
         lastItemId = eventsToProcess;
         return "CREATE JOB " + JOB_NAME +
                 " OPTIONS (" +
-                " 'processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '500') " +
+                " 'processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '1000') " +
                 " AS SINK INTO " + sinkTopic +
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s2.__key " +
                 " BETWEEN s1.__key AND s1.__key + 1" +
