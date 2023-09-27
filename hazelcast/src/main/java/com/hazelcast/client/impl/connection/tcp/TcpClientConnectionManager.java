@@ -522,7 +522,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             do {
                 Set<Address> triedAddressesPerAttempt = new HashSet<>();
 
-                List<Member> memberList = new ArrayList<>(client.getClientClusterService().getMemberList());
+                List<Member> memberList = new ArrayList<>(client.getClientClusterService().getEffectiveMemberList());
                 if (shuffleMemberList) {
                     Collections.shuffle(memberList);
                 }
