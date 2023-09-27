@@ -542,7 +542,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return removeOrEvictEntries(dataKeys, records, false, backup);
     }
 
-    protected int evictBulk(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean backup) {
+    public int evictBulk(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean backup) {
         return removeOrEvictEntries(dataKeys, records, true, backup);
     }
 
@@ -557,7 +557,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return dataKeys.size();
     }
 
-    private void removeOrEvictEntry(Data dataKey, Record record, boolean eviction, boolean backup) {
+    public void removeOrEvictEntry(Data dataKey, Record record, boolean eviction, boolean backup) {
         if (eviction) {
             mutationObserver.onEvictRecord(dataKey, record, backup);
         } else {
