@@ -258,6 +258,10 @@ public final class EntryOperator {
         return oldValue;
     }
 
+    public Object getOldValueClone() {
+        return oldValueClone;
+    }
+
     public Data getResult() {
         return result;
     }
