@@ -6817,10 +6817,13 @@ public class ClientCompatibilityTest_2_5 {
 
     private static class CPSubsystemAddGroupAvailabilityListenerCodecHandler extends CPSubsystemAddGroupAvailabilityListenerCodec.AbstractEventHandler {
         @Override
-        public void handleGroupAvailabilityEventEvent(com.hazelcast.cp.internal.RaftGroupId groupId, java.util.Collection<com.hazelcast.cp.CPMember> members, java.util.Collection<com.hazelcast.cp.CPMember> unavailableMembers) {
+        public void handleGroupAvailabilityEventEvent(com.hazelcast.cp.internal.RaftGroupId groupId, java.util.Collection<com.hazelcast.cp.CPMember> members, java.util.Collection<com.hazelcast.cp.CPMember> unavailableMembers,
+                                                      boolean isIsShutdownExists, boolean isShutdown) {
             assertTrue(isEqual(aRaftGroupId, groupId));
             assertTrue(isEqual(aListOfCpMembers, members));
             assertTrue(isEqual(aListOfCpMembers, unavailableMembers));
+            assertFalse(isIsShutdownExists); // < 2.7
+            assertFalse(isShutdown); // < 2.7
         }
     }
 
