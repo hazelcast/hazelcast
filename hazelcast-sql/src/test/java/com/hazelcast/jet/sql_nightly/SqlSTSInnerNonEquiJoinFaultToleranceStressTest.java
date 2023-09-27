@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql_nightly;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 
-@Category(QuickTest.class)
+@Category(NightlyTest.class)
 public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerEquiJoinFaultToleranceStressTest {
 
     @Override
