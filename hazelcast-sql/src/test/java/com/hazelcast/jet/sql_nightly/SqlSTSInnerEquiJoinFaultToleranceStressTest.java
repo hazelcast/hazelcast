@@ -31,12 +31,11 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -64,7 +63,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category(NightlyTest.class)
+@Category(QuickTest.class)
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport {
     protected static final int INSTANCE_COUNT = 5;
     protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
@@ -75,8 +74,8 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
     protected HazelcastInstance[] instances;
     protected HazelcastInstance coordinator;
 
-    protected int eventsPerSink = 500;
-    protected int sinkCount = 150;
+    protected int eventsPerSink = 200;
+    protected int sinkCount = 250;
     protected int eventsToProcess = eventsPerSink * sinkCount;
 
     private static KafkaTestSupport kafkaTestSupport;
@@ -198,7 +197,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
         assertTrueEventually(HazelcastTestSupport::assertNoRunningInstances, 30);
     }
 
-    @Ignore
+//    @Ignore
     @Test(timeout = 1_200_000L)
     public void stressTest() throws Exception {
         // https://hazelcast.atlassian.net/browse/HZ-3187
@@ -308,6 +307,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
                 assertEquals(itemsSank, eventsPerSink * sink);
                 sqlService.execute(queryBuilder.toString());
                 logger.info("Items sank " + itemsSank);
+                Thread.sleep(500L);
             }
         } catch (Throwable e) {
             logger.warning(null, e);
