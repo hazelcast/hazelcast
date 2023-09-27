@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql_nightly;
 
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
