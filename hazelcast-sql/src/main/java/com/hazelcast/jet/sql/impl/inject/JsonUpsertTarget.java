@@ -42,8 +42,8 @@ class JsonUpsertTarget extends UpsertTarget {
         Injector<JsonGenerator> injector = createRecordInjector(fields,
                 field -> createInjector(field.name(), field.type()));
         return value -> {
-            if (value == null || value instanceof byte[]) { // Checking the schema is expensive
-                return (byte[]) value;
+            if (value == null) {
+                return null;
             }
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
                  JsonGenerator json = JSON_FACTORY.createGenerator(baos)) {

@@ -25,9 +25,6 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.concurrent.NotThreadSafe;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
@@ -37,16 +34,11 @@ class HazelcastJsonUpsertTarget extends UpsertTarget {
 
     @Override
     protected Converter<HazelcastJsonValue> createConverter(Stream<Field> fields) {
-        List<String> fieldNames = new ArrayList<>();
-        Injector<JsonObject> injector = createRecordInjector(fields, field -> {
-            fieldNames.add(field.name());
-            return createInjector(field.name(), field.type());
-        });
+        Injector<JsonObject> injector = createRecordInjector(fields,
+                field -> createInjector(field.name(), field.type()));
         return value -> {
-            if (value == null || value instanceof HazelcastJsonValue) { // Checking the schema is expensive
-                return (HazelcastJsonValue) value;
-            } else if (value instanceof JsonObject && ((JsonObject) value).names().equals(fieldNames)) {
-                return new HazelcastJsonValue(value.toString());
+            if (value == null) {
+                return null;
             }
             JsonObject json = Json.object();
             injector.set(json, value);
