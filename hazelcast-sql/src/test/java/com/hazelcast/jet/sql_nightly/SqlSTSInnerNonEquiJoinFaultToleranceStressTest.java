@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql_nightly;
 
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -26,12 +25,13 @@ import org.junit.runners.Parameterized;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(QuickTest.class)
 public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerEquiJoinFaultToleranceStressTest {
 
     public SqlSTSInnerNonEquiJoinFaultToleranceStressTest() {
         super();
-        this.sinkCount = 100;
+        this.eventsPerSink = 3000;
+        this.sinkCount = 10;
         this.eventsToProcess = eventsPerSink * sinkCount;
     }
 
@@ -42,7 +42,7 @@ public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerE
         lastItemId = eventsToProcess;
         return "CREATE JOB " + JOB_NAME +
                 " OPTIONS (" +
-                " 'processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '750') " +
+                " 'processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '500') " +
                 " AS SINK INTO " + sinkTopic +
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s2.__key " +
                 " BETWEEN s1.__key AND s1.__key + 1" +

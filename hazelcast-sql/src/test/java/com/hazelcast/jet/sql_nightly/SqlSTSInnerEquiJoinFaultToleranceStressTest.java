@@ -31,8 +31,7 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -64,7 +63,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(NightlyTest.class)
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport {
     protected static final int INSTANCE_COUNT = 5;
     protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
@@ -75,7 +74,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
     protected HazelcastInstance[] instances;
     protected HazelcastInstance coordinator;
 
-    protected final int eventsPerSink = 500;
+    protected int eventsPerSink = 500;
     protected int sinkCount = 150;
     protected int eventsToProcess = eventsPerSink * sinkCount;
 
