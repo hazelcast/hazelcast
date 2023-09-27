@@ -265,7 +265,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     }
 
     private void readExistingMapping() {
-        logger.fine("Reading existing mapping for map" + mapName);
+        logger.fine("Reading existing mapping for map " + mapName);
         try {
             // If mappingName does not exist, we get "... did you forget to CREATE MAPPING?" exception
             columnMetadataList = mappingHelper.loadColumnMetadataFromMapping(mappingName);
