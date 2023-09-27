@@ -193,6 +193,8 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
         if (ex != null) {
             throw new RuntimeException(ex);
         }
+
+        assertTrueEventually(HazelcastTestSupport::assertNoRunningInstances, 30);
     }
 
     @Test(timeout = 1_200_000L)

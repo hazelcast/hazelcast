@@ -16,17 +16,15 @@
 
 package com.hazelcast.jet.sql_nightly;
 
-import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.ClassRule;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.rules.Timeout;
 
-@RunWith(HazelcastParametrizedRunner.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerEquiJoinFaultToleranceStressTest {
+    @ClassRule
+    public static Timeout globalTimeout = Timeout.seconds(30 * 60);
 
     public SqlSTSInnerNonEquiJoinFaultToleranceStressTest() {
         super();
