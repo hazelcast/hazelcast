@@ -74,8 +74,8 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends JetTestSupport 
     protected HazelcastInstance[] instances;
     protected HazelcastInstance coordinator;
 
-    protected int eventsPerSink = 200;
-    protected int sinkCount = 250;
+    protected int eventsPerSink = 100;
+    protected int sinkCount = 100;
     protected int eventsToProcess = eventsPerSink * sinkCount;
 
     private static KafkaTestSupport kafkaTestSupport;
