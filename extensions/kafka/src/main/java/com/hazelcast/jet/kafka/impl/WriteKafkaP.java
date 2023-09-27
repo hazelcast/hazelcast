@@ -34,6 +34,7 @@ import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.logging.ILogger;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.InvalidTxnStateException;
 import org.apache.kafka.common.errors.ProducerFencedException;
@@ -42,9 +43,11 @@ import org.apache.kafka.common.errors.TimeoutException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
+import java.security.Permission;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -53,10 +56,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
+import static com.hazelcast.security.permission.ConnectorPermission.kafka;
 
 /**
  * See {@link KafkaProcessors#writeKafkaP}.
@@ -214,6 +219,14 @@ public final class WriteKafkaP<T, K, V> implements Processor {
         }
     }
 
+    private static String getPermissionName(Properties properties) {
+        return (String) properties.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
+    }
+
+    private static String getPermissionName(DataConnectionRef dataConnectionRef) {
+        return dataConnectionRef.getName();
+    }
+
     /**
      * Use {@link KafkaProcessors#writeKafkaP(Properties, FunctionEx, boolean)}
      */
@@ -225,15 +238,26 @@ public final class WriteKafkaP<T, K, V> implements Processor {
         if (properties.containsKey("transactional.id")) {
             throw new IllegalArgumentException("Property `transactional.id` must not be set, Jet sets it as needed");
         }
-        return () -> new WriteKafkaP<>(s -> {
-            @SuppressWarnings({"rawtypes", "unchecked"})
-            Map<String, Object> castProperties = (Map) properties;
-            Map<String, Object> copy = new HashMap<>(castProperties);
-            if (s != null) {
-                copy.put("transactional.id", s);
+        return new SupplierEx<>() {
+            @Override
+            public List<Permission> permissions() {
+                String permissionName = getPermissionName(properties);
+                return List.of(kafka(permissionName, ACTION_WRITE));
             }
-            return new KafkaProducer<>(copy);
-        }, toRecordFn, exactlyOnce);
+
+            @Override
+            public Processor getEx() {
+                return new WriteKafkaP<>(s -> {
+                    @SuppressWarnings({"rawtypes", "unchecked"})
+                    Map<String, Object> castProperties = (Map) properties;
+                    Map<String, Object> copy = new HashMap<>(castProperties);
+                    if (s != null) {
+                        copy.put("transactional.id", s);
+                    }
+                    return new KafkaProducer<>(copy);
+                }, toRecordFn, exactlyOnce);
+            }
+        };
     }
 
     /**
@@ -255,12 +279,18 @@ public final class WriteKafkaP<T, K, V> implements Processor {
                         .getAndRetainDataConnection(dataConnectionRef.getName(), KafkaDataConnection.class);
             }
 
+            @Override
+            public List<Permission> permissions() {
+                String permissionName = getPermissionName(dataConnectionRef);
+                return List.of(kafka(permissionName, ACTION_WRITE));
+            }
+
             @Nonnull
             @Override
             public Collection<? extends Processor> get(int count) {
                 return IntStream.range(0, count)
                                 .mapToObj(i -> new WriteKafkaP<T, K, V>(
-                                        (txnId) -> kafkaDataConnection.getProducer(txnId),
+                                        txnId -> kafkaDataConnection.getProducer(txnId),
                                         toRecordFn,
                                         exactlyOnce
                                 ))
@@ -296,12 +326,18 @@ public final class WriteKafkaP<T, K, V> implements Processor {
                         .getAndRetainDataConnection(dataConnectionRef.getName(), KafkaDataConnection.class);
             }
 
+            @Override
+            public List<Permission> permissions() {
+                String permissionName = getPermissionName(properties);
+                return List.of(kafka(permissionName, ACTION_WRITE));
+            }
+
             @Nonnull
             @Override
             public Collection<? extends Processor> get(int count) {
                 return IntStream.range(0, count)
                         .mapToObj(i -> new WriteKafkaP<T, K, V>(
-                                (txnId) -> kafkaDataConnection.getProducer(txnId, properties),
+                                txnId -> kafkaDataConnection.getProducer(txnId, properties),
                                 toRecordFn,
                                 exactlyOnce
                         ))

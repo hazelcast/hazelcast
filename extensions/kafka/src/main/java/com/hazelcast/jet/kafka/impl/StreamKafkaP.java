@@ -34,11 +34,13 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TimeoutException;
 
 import javax.annotation.Nonnull;
+import java.security.Permission;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,6 +59,8 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static com.hazelcast.security.permission.ConnectorPermission.kafka;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toMap;
 
@@ -242,15 +246,15 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
 
         traverser = isEmpty(records)
                 ? eventTimeMapper.flatMapIdle()
-                : traverseIterable(records).flatMap(record -> {
-            offsets.get(record.topic())[record.partition()] = record.offset();
-            T projectedRecord = projectionFn.apply(record);
+                : traverseIterable(records).flatMap(consumerRecord -> {
+            offsets.get(consumerRecord.topic())[consumerRecord.partition()] = consumerRecord.offset();
+            T projectedRecord = projectionFn.apply(consumerRecord);
             if (projectedRecord == null) {
                 return Traversers.empty();
             }
-            TopicPartition topicPartition = new TopicPartition(record.topic(), record.partition());
+            TopicPartition topicPartition = new TopicPartition(consumerRecord.topic(), consumerRecord.partition());
             return eventTimeMapper.flatMapEvent(projectedRecord, currentAssignment.get(topicPartition),
-                    record.timestamp());
+                    consumerRecord.timestamp());
         });
 
         emitFromTraverser(traverser);
@@ -368,14 +372,46 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
                 .collect(toMap(Entry::getKey, e -> eventTimeMapper.getWatermark(e.getValue())));
     }
 
+    private static String getPermissionName(Object object) {
+        String permissionName = null;
+        if (object instanceof Properties) {
+            Properties properties = (Properties) object;
+            permissionName = getPermissionName(properties);
+
+        } else if (object instanceof DataConnectionRef) {
+            DataConnectionRef dataConnectionRef = (DataConnectionRef) object;
+            permissionName = getPermissionName(dataConnectionRef);
+        }
+        return permissionName;
+    }
+
+    private static String getPermissionName(Properties properties) {
+        return (String) properties.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
+    }
+
+    private static String getPermissionName(DataConnectionRef dataConnectionRef) {
+        return dataConnectionRef.getName();
+    }
+
     @Nonnull
     public static <K, V, T> SupplierEx<Processor> processorSupplier(
+            Object object,
             @Nonnull FunctionEx<Context, Consumer<K, V>> kafkaConsumerSup,
             @Nonnull TopicsConfig topicsConfig,
             @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
-        return () -> new StreamKafkaP<>(kafkaConsumerSup, topicsConfig, projectionFn, eventTimePolicy);
+        return new SupplierEx<>() {
+            @Override
+            public List<Permission> permissions() {
+                String permissionName = getPermissionName(object);
+                return List.of(kafka(permissionName, ACTION_READ));
+            }
+            @Override
+            public Processor getEx() {
+                return new StreamKafkaP<>(kafkaConsumerSup, topicsConfig, projectionFn, eventTimePolicy);
+            }
+        };
     }
 
     private boolean handledByThisProcessor(int topicIndex, int partition) {
@@ -390,13 +426,13 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     }
 
     public static <K, V> FunctionEx<Processor.Context, Consumer<K, V>> kafkaConsumerFn(Properties properties) {
-        return (c) -> new KafkaConsumer<>(properties);
+        return c -> new KafkaConsumer<>(properties);
     }
 
     public static <K, V> FunctionEx<Processor.Context, Consumer<K, V>> kafkaConsumerFn(
             DataConnectionRef dataConnectionRef
     ) {
-        return (context) -> {
+        return context -> {
             KafkaDataConnection kafkaDataConnection = context
                     .dataConnectionService()
                     .getAndRetainDataConnection(dataConnectionRef.getName(), KafkaDataConnection.class);
@@ -412,7 +448,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             DataConnectionRef dataConnectionRef,
             Properties mappingProperties
     ) {
-        return (context) -> {
+        return context -> {
             KafkaDataConnection kafkaDataConnection = context
                     .dataConnectionService()
                     .getAndRetainDataConnection(dataConnectionRef.getName(), KafkaDataConnection.class);

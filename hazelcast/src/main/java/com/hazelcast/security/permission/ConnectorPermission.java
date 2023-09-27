@@ -20,6 +20,7 @@ import com.hazelcast.jet.impl.util.IOUtil;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public class ConnectorPermission extends InstancePermission {
 
@@ -28,6 +29,7 @@ public class ConnectorPermission extends InstancePermission {
     public static final String JMS_PREFIX = "jms:";
     public static final String JDBC_PREFIX = "jdbc:";
     public static final String MONGO_PREFIX = "mongo:";
+    public static final String KAFKA_PREFIX = "kafka:";
 
     private static final int READ = 1;
     private static final int WRITE = 2;
@@ -55,11 +57,15 @@ public class ConnectorPermission extends InstancePermission {
     }
 
     public static ConnectorPermission jms(@Nullable String destination, String action) {
-        return new ConnectorPermission(JMS_PREFIX + (destination == null ? "" : destination), action);
+        return new ConnectorPermission(JMS_PREFIX + Objects.toString(destination, ""), action);
     }
 
     public static ConnectorPermission jdbc(@Nullable String connectionUrl, String action) {
-        return new ConnectorPermission(JDBC_PREFIX + (connectionUrl == null ? "" : connectionUrl), action);
+        return new ConnectorPermission(JDBC_PREFIX + Objects.toString(connectionUrl, ""), action);
+    }
+
+    public static ConnectorPermission kafka(@Nullable String name, String action) {
+        return new ConnectorPermission(KAFKA_PREFIX + Objects.toString(name, ""), action);
     }
 
     /**
@@ -71,10 +77,11 @@ public class ConnectorPermission extends InstancePermission {
     public static ConnectorPermission mongo(@Nullable String connectionDescription,
                                             @Nullable String databaseName, @Nullable String collectionName,
                                             String action) {
-        String db = databaseName == null ? "$ANY$" : databaseName;
-        String col = collectionName == null ? "$ANY$" : collectionName;
+        String genericAny = "$ANY$";
+        String db = Objects.toString(databaseName, genericAny);
+        String col = Objects.toString(collectionName, genericAny);
         String dbCol = db + "/" + col;
-        String connectionDescNonNull = connectionDescription == null ? "$ANY$" : connectionDescription;
+        String connectionDescNonNull = Objects.toString(connectionDescription, genericAny);
         return new ConnectorPermission(MONGO_PREFIX + connectionDescNonNull + ":" + dbCol, action);
     }
 
