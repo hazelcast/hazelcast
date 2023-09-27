@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
  * <p>
  * If the serializer supports versioning it will act accordingly to its implementation.
  *
- * @see Version
+ * @see com.hazelcast.version.Version
  */
 public interface Versioned {
 }
