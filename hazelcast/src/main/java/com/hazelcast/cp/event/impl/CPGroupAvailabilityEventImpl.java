@@ -23,6 +23,7 @@ import com.hazelcast.cp.event.CPGroupAvailabilityEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -38,7 +39,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeC
  *
  * @since 4.1
  */
-public class CPGroupAvailabilityEventImpl implements CPGroupAvailabilityEvent, IdentifiedDataSerializable {
+public class CPGroupAvailabilityEventImpl implements CPGroupAvailabilityEvent, IdentifiedDataSerializable, Versioned {
 
     private CPGroupId groupId;
     private Collection<CPMember> members;
