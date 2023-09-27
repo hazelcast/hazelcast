@@ -35,14 +35,14 @@ public final class SqlClientUtils {
     public static SqlError exceptionToClientError(Exception exception, UUID localMemberId) {
         HazelcastSqlException sqlException = CoreQueryUtils.toPublicException(exception, localMemberId);
 
-        Throwable rootCause = ExceptionUtil.getRootCause(exception);
-
         boolean causeStackTraceExists = false;
-
         String causeStackString = "";
-        if (rootCause != null) {
+
+        // Get stack trace of the "cause" if it exists
+        Throwable cause = exception.getCause();
+        if (cause != null) {
             causeStackTraceExists = true;
-            causeStackString = ExceptionUtil.stackTraceToString(rootCause);
+            causeStackString = ExceptionUtil.stackTraceToString(cause);
         }
 
         return new SqlError(
