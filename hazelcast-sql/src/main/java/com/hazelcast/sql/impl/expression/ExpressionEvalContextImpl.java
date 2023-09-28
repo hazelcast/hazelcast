@@ -123,6 +123,12 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     @Override
     @Nullable
     public Subject subject() {
-        return contextRef != null ? contextRef.subject() : null;
+        if (contextRef != null) {
+            return contextRef.subject();
+        }
+        if (ssc != null) {
+            return ssc.subject();
+        }
+        throw new AssertionError("At least one security context must be available");
     }
 }
