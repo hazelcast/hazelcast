@@ -26,7 +26,6 @@ import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
