@@ -935,19 +935,19 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private void addClientConfigAddedListeners(Collection<EventListener> configuredListeners) {
-        configuredListeners.stream().filter(listener -> listener instanceof DistributedObjectListener)
+        configuredListeners.stream().filter(DistributedObjectListener.class::isInstance)
                 .forEach(listener -> proxyManager.addDistributedObjectListener((DistributedObjectListener) listener));
 
-        configuredListeners.stream().filter(listener -> listener instanceof MigrationListener)
+        configuredListeners.stream().filter(MigrationListener.class::isInstance)
                 .forEach(listener -> getPartitionService().addMigrationListener((MigrationListener) listener));
 
-        configuredListeners.stream().filter(listener -> listener instanceof PartitionLostListener)
+        configuredListeners.stream().filter(PartitionLostListener.class::isInstance)
                 .forEach(listener -> getPartitionService().addPartitionLostListener((PartitionLostListener) listener));
 
-        configuredListeners.stream().filter(listener -> listener instanceof CPMembershipListener)
+        configuredListeners.stream().filter(CPMembershipListener.class::isInstance)
                 .forEach(listener -> getCPSubsystem().addMembershipListener((CPMembershipListener) listener));
 
-        configuredListeners.stream().filter(listener -> listener instanceof CPGroupAvailabilityListener)
+        configuredListeners.stream().filter(CPGroupAvailabilityListener.class::isInstance)
                 .forEach(listener -> getCPSubsystem().addGroupAvailabilityListener((CPGroupAvailabilityListener) listener));
     }
 
