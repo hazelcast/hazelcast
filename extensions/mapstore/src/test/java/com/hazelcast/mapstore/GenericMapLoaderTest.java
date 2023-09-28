@@ -29,6 +29,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 
+import com.hazelcast.test.jdbc.OracleDatabaseProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -524,12 +525,12 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenTableNameProperty_whenCreateMapLoader_thenUseTableNameWithCustomSchema() throws Exception {
-        String schemaName = "custom_schema";
+        String schemaName = quote("custom_schema");
         createSchema(schemaName);
         String tableName = randomTableName() + "-with-hyphen";
         String fullTableName = schemaName + "." + quote(tableName);
 
-        createTable(fullTableName);
+        createTableWithQuotation(fullTableName);
         insertItems(fullTableName, 1);
 
         Properties properties = new Properties();
@@ -547,12 +548,12 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         // See MySQLSchemaJdbcSqlConnectorTest
         assumeFalse(MySQLDatabaseProvider.TEST_MYSQL_VERSION.startsWith("5"));
 
-        String schemaName = "custom_schema";
+        String schemaName = quote("custom_schema2");
         createSchema(schemaName);
         String tableName = randomTableName() + ".with_dot";
         String fullTableName = schemaName + "." + quote(tableName);
 
-        createTable(fullTableName);
+        createTableWithQuotation(fullTableName);
         insertItems(fullTableName, 1);
 
         Properties properties = new Properties();
@@ -566,6 +567,9 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     private static void createSchema(String schemaName) throws SQLException {
         executeJdbc(databaseProvider.createSchemaQuery(schemaName));
+        if (databaseProvider instanceof OracleDatabaseProvider) {
+            executeJdbc("GRANT UNLIMITED TABLESPACE TO " + schemaName);
+        }
     }
 
     private <K> GenericMapLoader<K> createMapLoader() {
