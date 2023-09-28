@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.oracle;
 import com.hazelcast.jet.sql.impl.connector.jdbc.SchemaJdbcConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.OracleDatabaseProvider;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
@@ -29,18 +28,6 @@ public class OracleSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
     @BeforeClass
     public static void beforeClass() {
         initialize(new OracleDatabaseProvider());
-    }
-
-    @Before
-    public void setUp() throws Exception {
-        tableFull = quote(schema, table);
-        try {
-            executeJdbc(databaseProvider.createSchemaQuery(quote(schema)));
-            executeJdbc("GRANT UNLIMITED TABLESPACE TO " + quote(schema));
-        } catch (Exception e) {
-            logger.info("Could not create schema", e);
-        }
-        createTableWithQuotation(tableFull);
     }
 
 }

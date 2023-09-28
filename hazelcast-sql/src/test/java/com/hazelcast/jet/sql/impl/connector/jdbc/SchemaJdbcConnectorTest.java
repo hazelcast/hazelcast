@@ -20,6 +20,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.OracleDatabaseProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -48,7 +49,7 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
     @Parameter(value = 2)
     public String externalName;
 
-    protected String tableFull;
+    private String tableFull;
 
     @Parameters(name = "{index}: schemaName={0}, tableName={1}, externalTableName={2}")
     public static List<Object[]> data() {
@@ -101,10 +102,13 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
         tableFull = quote(schema, table);
         try {
             executeJdbc(databaseProvider.createSchemaQuery(quote(schema)));
+            if (databaseProvider instanceof OracleDatabaseProvider) {
+                executeJdbc("GRANT UNLIMITED TABLESPACE TO " + quote(schema));
+            }
         } catch (Exception e) {
             logger.info("Could not create schema", e);
         }
-        createTable(tableFull);
+        createTableWithQuotation(tableFull);
     }
 
     @After
