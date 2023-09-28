@@ -249,7 +249,7 @@ public class PlanExecutor {
             // If `IF NOT EXISTS` isn't specified, we do a simple check for the existence of the index. This is not
             // OK if two clients concurrently try to create the index (they could both succeed), but covers the
             // common case. There's no atomic operation to create an index in IMDG, so it's not easy to implement.
-            if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {
+            if (mapContainer.getGlobalIndexRegistry().getIndex(plan.indexName()) != null) {
                 throw QueryException.error("Can't create index: index '" + plan.indexName() + "' already exists");
             }
         }

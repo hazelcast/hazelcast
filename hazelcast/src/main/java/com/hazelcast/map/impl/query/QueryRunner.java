@@ -30,7 +30,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
@@ -96,7 +96,7 @@ public class QueryRunner {
                                                                IterationPointer[] pointers,
                                                                int fetchSize) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
-        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
+        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexRegistry(partitionId));
         QueryableEntriesSegment entries = partitionScanExecutor
                 .execute(query.getMapName(), predicate, partitionId, pointers, fetchSize);
 
@@ -133,9 +133,9 @@ public class QueryRunner {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // to optimize the query we need to get any index instance
-        Indexes indexes = mapContainer.getIndexes();
+        IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
         if (indexes == null) {
-            indexes = mapContainer.getIndexes(ownedPartitions.iterator().next());
+            indexes = mapContainer.getIndexRegistry(ownedPartitions.iterator().next());
         }
         // first we optimize the query
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
@@ -195,9 +195,9 @@ public class QueryRunner {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // to optimize the query we need to get any index instance
-        Indexes indexes = mapContainer.getIndexes();
+        IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
         if (indexes == null) {
-            indexes = mapContainer.getIndexes(ownedPartitions.iterator().next());
+            indexes = mapContainer.getIndexRegistry(ownedPartitions.iterator().next());
         }
         // first we optimize the query
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
@@ -225,10 +225,10 @@ public class QueryRunner {
         PartitionIdSet partitions = singletonPartitionIdSet(partitionCount, partitionId);
 
         // first we optimize the query
-        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
+        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexRegistry(partitionId));
 
         Iterable<QueryableEntry> entries = null;
-        Indexes indexes = mapContainer.getIndexes(partitionId);
+        IndexRegistry indexes = mapContainer.getIndexRegistry(partitionId);
         if (indexes != null && !indexes.isGlobal()) {
             entries = indexes.query(predicate, partitions.size());
         }
@@ -270,7 +270,7 @@ public class QueryRunner {
             return null;
         }
 
-        Indexes indexes = mapContainer.getIndexes();
+        IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
         if (indexes == null) {
             return null;
         }

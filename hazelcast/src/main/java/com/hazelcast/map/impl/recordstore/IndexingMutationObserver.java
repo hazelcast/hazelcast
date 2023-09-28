@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -111,7 +111,7 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
      * Only indexed data will be removed, index info will stay.
      */
     private void clearGlobalIndexes(boolean destroy) {
-        Indexes indexes = mapContainer.getIndexes(partitionId);
+        IndexRegistry indexes = mapContainer.getIndexRegistry(partitionId);
         if (!indexes.isGlobal()) {
             return;
         }
@@ -132,7 +132,7 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
      * Only indexed data will be removed, index info will stay.
      */
     private void clearPartitionedIndexes(boolean destroy) {
-        Indexes indexes = mapContainer.getIndexes(partitionId);
+        IndexRegistry indexes = mapContainer.getIndexRegistry(partitionId);
         if (indexes.isGlobal()) {
             return;
         }
@@ -149,24 +149,24 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
      * Clears local data of this partition from global index by doing
      * partition full-scan.
      */
-    private void fullScanLocalDataToClear(Indexes indexes) {
-        InternalIndex[] indexesSnapshot = indexes.getIndexes();
+    private void fullScanLocalDataToClear(IndexRegistry indexRegistry) {
+        InternalIndex[] indexesSnapshot = indexRegistry.getIndexes();
 
-        Indexes.beginPartitionUpdate(indexesSnapshot);
+        IndexRegistry.beginPartitionUpdate(indexesSnapshot);
 
         CachedQueryEntry<?, ?> entry = new CachedQueryEntry<>(ss, mapContainer.getExtractors());
         recordStore.forEach((BiConsumer<Data, Record>) (dataKey, record) -> {
             Object value = getValueOrCachedValue(record, ss);
             entry.init(dataKey, value);
-            indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
+            indexRegistry.removeEntry(entry, Index.OperationSource.SYSTEM);
         }, false);
 
-        Indexes.markPartitionAsUnindexed(partitionId, indexesSnapshot);
+        IndexRegistry.markPartitionAsUnindexed(partitionId, indexesSnapshot);
     }
 
     private void saveIndex(Data dataKey, Record record, Object oldValue,
                            Index.OperationSource operationSource) {
-        Indexes indexes = mapContainer.getIndexes(partitionId);
+        IndexRegistry indexes = mapContainer.getIndexRegistry(partitionId);
         if (!indexes.haveAtLeastOneIndex()) {
             return;
         }
@@ -180,7 +180,7 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
     private void removeIndex(Data dataKey, Record record,
                              Index.OperationSource operationSource) {
-        Indexes indexes = mapContainer.getIndexes(partitionId);
+        IndexRegistry indexes = mapContainer.getIndexRegistry(partitionId);
         if (!indexes.haveAtLeastOneIndex()) {
             return;
         }

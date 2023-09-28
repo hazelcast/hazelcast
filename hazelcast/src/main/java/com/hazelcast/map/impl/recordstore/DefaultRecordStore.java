@@ -1528,13 +1528,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         if (onShutdown) {
             if (hasPooledMemoryAllocator()) {
-                destroyStorageImmediate(true, true, false);
+                destroyStorageImmediate(true, true);
             } else {
-                destroyStorageAfterClear(true, true, false);
+                destroyStorageAfterClear(true, true);
             }
         } else {
             if (onStorageDestroy) {
-                destroyStorageAfterClear(false, false, false);
+                destroyStorageAfterClear(false, false);
             } else {
                 clearStorage(false);
             }
@@ -1548,7 +1548,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     public void destroyStorageImmediate(boolean isDuringShutdown,
-                                        boolean internal, boolean onSplitBrainHeal) {
+                                        boolean internal) {
         mutationObserver.onDestroy(isDuringShutdown, internal);
         expirySystem.destroy();
         destroyMetadataStore();
@@ -1563,11 +1563,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      *
      * @param isDuringShutdown {@link Storage#clear(boolean)}
      * @param internal         see {@link MutationObserver#onDestroy(boolean, boolean)}}
-     * @param onSplitBrainHeal {@code true} if this method is called on heal of split-brain
      */
-    public void destroyStorageAfterClear(boolean isDuringShutdown, boolean internal, boolean onSplitBrainHeal) {
+    public void destroyStorageAfterClear(boolean isDuringShutdown, boolean internal) {
         clearStorage(isDuringShutdown);
-        destroyStorageImmediate(isDuringShutdown, internal, onSplitBrainHeal);
+        destroyStorageImmediate(isDuringShutdown, internal);
     }
 
     private void clearStorage(boolean isDuringShutdown) {

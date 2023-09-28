@@ -39,7 +39,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -164,7 +164,7 @@ public class Accessors {
     }
 
     /**
-     * Obtains a list of {@link Indexes} for the given map local to the node
+     * Obtains a list of {@link IndexRegistry} for the given map local to the node
      * associated with it.
      * <p>
      * There may be more than one indexes instance associated with a map if its
@@ -173,7 +173,7 @@ public class Accessors {
      * @param map the map to obtain the indexes for.
      * @return the obtained indexes list.
      */
-    public static List<Indexes> getAllIndexes(IMap map) {
+    public static List<IndexRegistry> getAllIndexes(IMap map) {
         MapProxyImpl mapProxy = (MapProxyImpl) map;
         String mapName = mapProxy.getName();
         NodeEngine nodeEngine = mapProxy.getNodeEngine();
@@ -182,12 +182,12 @@ public class Accessors {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
 
-        Indexes maybeGlobalIndexes = mapContainer.getIndexes();
+        IndexRegistry maybeGlobalIndexes = mapContainer.getGlobalIndexRegistry();
         if (maybeGlobalIndexes != null) {
             return Collections.singletonList(maybeGlobalIndexes);
         }
 
-        List<Indexes> allIndexes = new ArrayList<>();
+        List<IndexRegistry> allIndexes = new ArrayList<>();
 
         int partitionCount = partitionService.getPartitionCount();
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
@@ -196,7 +196,7 @@ public class Accessors {
                 continue;
             }
 
-            Indexes partitionIndexes = mapContainer.getOrNullPartitionedIndexes(partitionId);
+            IndexRegistry partitionIndexes = mapContainer.getOrNullPartitionedIndexRegistry(partitionId);
             if (partitionIndexes == null) {
                 continue;
             }

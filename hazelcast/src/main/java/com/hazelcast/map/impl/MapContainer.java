@@ -47,8 +47,7 @@ import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
 import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -94,10 +93,10 @@ public class MapContainer {
     // on-heap indexes are global, meaning there is only one index per map,
     // stored in the mapContainer, so if globalIndexes is null it means that
     // global index is not in use
-    protected final Indexes globalIndexes;
     protected final Extractors extractors;
     protected final MapStoreContext mapStoreContext;
     protected final ObjectNamespace objectNamespace;
+    protected final IndexRegistry globalIndexRegistry;
     protected final MapServiceContext mapServiceContext;
     protected final QueryEntryFactory queryEntryFactory;
     protected final EventJournalConfig eventJournalConfig;
@@ -105,7 +104,7 @@ public class MapContainer {
     protected final InternalSerializationService serializationService;
     protected final Function<Object, Data> toDataFunction = new ObjectToData();
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
-    protected final ConcurrentMap<Integer, Indexes> indexesPerPartition = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<Integer, IndexRegistry> partitionedIndexRegistry = new ConcurrentHashMap<>();
 
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
@@ -145,7 +144,7 @@ public class MapContainer {
                 .build();
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues(),
                 serializationService, extractors);
-        this.globalIndexes = shouldUseGlobalIndex() ? createIndexes(true, -1) : null;
+        this.globalIndexRegistry = shouldUseGlobalIndex() ? createIndexRegistry(true, -1) : null;
         this.mapStoreContext = createMapStoreContext(this);
         this.invalidationListenerCounter = mapServiceContext.getEventListenerCounter()
                 .getOrCreateCounter(name);
@@ -162,13 +161,14 @@ public class MapContainer {
      *                    {@code false} to have partitioned indexes
      * @param partitionId the partition ID the index is created on. {@code -1}
      *                    for global indexes.
-     * @return a new Indexes object
+     * @return a new IndexRegistry object
      */
-    public Indexes createIndexes(boolean global, int partitionId) {
+    public IndexRegistry createIndexRegistry(boolean global, int partitionId) {
         int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
 
         Node node = ((NodeEngineImpl) mapServiceContext.getNodeEngine()).getNode();
-        Indexes indexes = Indexes.newBuilder(node, getName(), serializationService, mapServiceContext.getIndexCopyBehavior(),
+        IndexRegistry newIndexRegistry = IndexRegistry.newBuilder(node, getName(),
+                        serializationService, mapServiceContext.getIndexCopyBehavior(),
                         mapConfig.getInMemoryFormat())
                 .global(global)
                 .extractors(extractors)
@@ -180,8 +180,9 @@ public class MapContainer {
                 .resultFilterFactory(new IndexResultFilterFactory())
                 .build();
 
-        Indexes current = indexesPerPartition.putIfAbsent(partitionId, indexes);
-        return current == null ? indexes : current;
+        IndexRegistry currentIndexRegistry
+                = partitionedIndexRegistry.putIfAbsent(partitionId, newIndexRegistry);
+        return currentIndexRegistry == null ? newIndexRegistry : currentIndexRegistry;
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -189,13 +190,13 @@ public class MapContainer {
     // There are cases where a global index is used. In this case, the global-index is stored in the MapContainer.
     // By using this method in the context of global index an exception will be thrown.
     // -------------------------------------------------------------------------------------------------------------
-    Indexes getOrCreatePartitionedIndexes(int partitionId) {
+    IndexRegistry getOrCreatePartitionedIndexRegistry(int partitionId) {
         if (isGlobalIndexEnabled()) {
             throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
         }
 
-        Indexes existing = indexesPerPartition.get(partitionId);
-        return existing != null ? existing : createIndexes(false, partitionId);
+        IndexRegistry existing = partitionedIndexRegistry.get(partitionId);
+        return existing != null ? existing : createIndexRegistry(false, partitionId);
     }
 
     public AtomicLong getLastInvalidMergePolicyCheckTime() {
@@ -206,8 +207,8 @@ public class MapContainer {
 
         @Override
         public Predicate<QueryableEntry> get() {
-            return new Predicate<QueryableEntry>() {
-                private long nowInMillis = Clock.currentTimeMillis();
+            return new Predicate<>() {
+                private final long nowInMillis = Clock.currentTimeMillis();
 
                 @Override
                 public boolean test(QueryableEntry queryableEntry) {
@@ -226,7 +227,7 @@ public class MapContainer {
         IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         int partitionId = partitionService.getPartitionId(keyData);
 
-        if (!getIndexes(partitionId).isGlobal()) {
+        if (!getIndexRegistry(partitionId).isGlobal()) {
             ThreadUtil.assertRunningOnPartitionThread();
         }
 
@@ -341,31 +342,39 @@ public class MapContainer {
     /**
      * @return the global index, if the global index is in use or null.
      */
-    public Indexes getIndexes() {
-        return globalIndexes;
+    public IndexRegistry getGlobalIndexRegistry() {
+        return globalIndexRegistry;
     }
 
-    public ConcurrentMap<Integer, Indexes> getPartitionedIndexes() {
-        return indexesPerPartition;
+    public ConcurrentMap<Integer, IndexRegistry> getPartitionedIndexRegistry() {
+        return partitionedIndexRegistry;
     }
 
     @Nullable
-    public Indexes getOrNullPartitionedIndexes(int partitionId) {
-        return indexesPerPartition.get(partitionId);
+    public IndexRegistry getOrNullPartitionedIndexRegistry(int partitionId) {
+        return partitionedIndexRegistry.get(partitionId);
     }
 
     /**
      * @param partitionId partitionId
      */
-    public Indexes getIndexes(int partitionId) {
-        if (globalIndexes != null) {
-            return globalIndexes;
+    public IndexRegistry getIndexRegistry(int partitionId) {
+        if (globalIndexRegistry != null) {
+            return globalIndexRegistry;
         }
-        return getOrCreatePartitionedIndexes(partitionId);
+        return getOrCreatePartitionedIndexRegistry(partitionId);
+    }
+
+    // Only used for testing
+    public boolean isEmptyIndexRegistry() {
+        if (globalIndexRegistry != null) {
+            return globalIndexRegistry.getIndexes().length == 0;
+        }
+        return partitionedIndexRegistry.isEmpty();
     }
 
     public boolean isGlobalIndexEnabled() {
-        return globalIndexes != null;
+        return globalIndexRegistry != null;
     }
 
     public DelegatingWanScheme getWanReplicationDelegate() {
@@ -479,7 +488,7 @@ public class MapContainer {
     }
 
     public boolean shouldCloneOnEntryProcessing(int partitionId) {
-        return getIndexes(partitionId).haveAtLeastOneIndex()
+        return getIndexRegistry(partitionId).haveAtLeastOneIndex()
                 && OBJECT.equals(mapConfig.getInMemoryFormat());
     }
 
@@ -488,33 +497,30 @@ public class MapContainer {
     }
 
     public Map<String, IndexConfig> getIndexDefinitions() {
-        Map<String, IndexConfig> definitions = new HashMap<>();
-
-        // global index definitions
-        if (isGlobalIndexEnabled()) {
-            return addGlobalIndexDefinitions(definitions);
-        }
-
-        // local(partitioned) index definitions
-        return addLocalIndexDefinitions(definitions);
+        return isGlobalIndexEnabled()
+                ? getGlobalIndexDefinitions()
+                : getPartitionedIndexDefinitions();
     }
 
-    private Map<String, IndexConfig> addGlobalIndexDefinitions(Map<String, IndexConfig> definitions) {
-        for (Index index : globalIndexes.getIndexes()) {
-            definitions.put(index.getName(), index.getConfig());
+    private Map<String, IndexConfig> getGlobalIndexDefinitions() {
+        Map<String, IndexConfig> definitions = new HashMap<>();
+        InternalIndex[] indexes = globalIndexRegistry.getIndexes();
+        for (int i = 0; i < indexes.length; i++) {
+            definitions.put(indexes[i].getName(), indexes[i].getConfig());
         }
         return definitions;
     }
 
-    private Map<String, IndexConfig> addLocalIndexDefinitions(Map<String, IndexConfig> definitions) {
+    private Map<String, IndexConfig> getPartitionedIndexDefinitions() {
+        Map<String, IndexConfig> definitions = new HashMap<>();
         int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
-            Indexes partitionedIndexes = getOrNullPartitionedIndexes(i);
-            if (partitionedIndexes == null) {
+            IndexRegistry partitionedIndexRegistry = getOrNullPartitionedIndexRegistry(i);
+            if (partitionedIndexRegistry == null) {
                 continue;
             }
 
-            InternalIndex[] indexes = partitionedIndexes.getIndexes();
+            InternalIndex[] indexes = partitionedIndexRegistry.getIndexes();
             for (int j = 0; j < indexes.length; j++) {
                 definitions.put(indexes[j].getName(), indexes[j].getConfig());
             }
@@ -543,7 +549,7 @@ public class MapContainer {
                 return true;
             default:
                 //if index exists then cached value is already set -> let's use it
-                return getIndexes(partitionId).haveAtLeastOneIndex();
+                return getIndexRegistry(partitionId).haveAtLeastOneIndex();
         }
     }
 

@@ -38,7 +38,7 @@ import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -46,6 +46,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 import static com.hazelcast.config.CacheDeserializedValues.NEVER;
@@ -95,10 +96,10 @@ class MapMigrationAwareService
             // during promotion finalization phase.
 
             // 1. Defensively clear possible stale leftovers from the previous failed promotion attempt.
-            clearNonGlobalIndexes(event);
+            clearPartitionedIndexes(event);
 
             // 2. Populate non-global partitioned indexes.
-            populateIndexes(event, TargetIndexes.NON_GLOBAL, "beforeMigration");
+            populateIndexes(event, TargetIndexes.PARTITIONED, "beforeMigration");
         }
 
         flushAndRemoveQueryCaches(event);
@@ -232,22 +233,31 @@ class MapMigrationAwareService
         }
     }
 
-    private void clearNonGlobalIndexes(PartitionMigrationEvent event) {
-        final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
-        for (RecordStore recordStore : container.getMaps().values()) {
-            MapContainer mapContainer = recordStore.getMapContainer();
-            Indexes partitionedIndexes = mapContainer.getOrNullPartitionedIndexes(event.getPartitionId());
-            if (partitionedIndexes == null) {
+    private void clearPartitionedIndexes(PartitionMigrationEvent event) {
+        Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
+        for (MapContainer mapContainer : mapContainers.values()) {
+            IndexRegistry partitionedIndexRegistry
+                    = mapContainer.getOrNullPartitionedIndexRegistry(event.getPartitionId());
+            if (partitionedIndexRegistry == null) {
+                continue;
+            }
+
+            RecordStore recordStore = getOrNullRecordStore(event, mapContainer.getName());
+            if (recordStore == null) {
                 continue;
             }
 
             recordStore.beforeOperation();
             try {
-                partitionedIndexes.clearAll();
+                partitionedIndexRegistry.clearAll();
             } finally {
                 recordStore.afterOperation();
             }
         }
+    }
+
+    private RecordStore getOrNullRecordStore(PartitionMigrationEvent event, String mapName) {
+        return mapServiceContext.getPartitionContainer(event.getPartitionId()).getExistingRecordStore(mapName);
     }
 
     private void removeRecordStoresHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
@@ -311,28 +321,28 @@ class MapMigrationAwareService
         for (RecordStore<Record> recordStore : container.getMaps().values()) {
             MapContainer mapContainer = recordStore.getMapContainer();
 
-            Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
+            IndexRegistry indexRegistry = mapContainer.getIndexRegistry(event.getPartitionId());
             recordStore.beforeOperation();
             try {
-                indexes.createIndexesFromRecordedDefinitions();
+                indexRegistry.createIndexesFromRecordedDefinitions();
             } finally {
                 recordStore.afterOperation();
             }
-            if (!indexes.haveAtLeastOneIndex()) {
-                // no indexes to work with
+            if (!indexRegistry.haveAtLeastOneIndex()) {
+                // no indexRegistry to work with
                 continue;
             }
 
-            if (indexes.isGlobal() && targetIndexes == TargetIndexes.NON_GLOBAL) {
+            if (indexRegistry.isGlobal() && targetIndexes == TargetIndexes.PARTITIONED) {
                 continue;
             }
-            if (!indexes.isGlobal() && targetIndexes == TargetIndexes.GLOBAL) {
+            if (!indexRegistry.isGlobal() && targetIndexes == TargetIndexes.GLOBAL) {
                 continue;
             }
 
-            InternalIndex[] indexesSnapshot = indexes.getIndexes();
+            InternalIndex[] indexesSnapshot = indexRegistry.getIndexes();
 
-            Indexes.beginPartitionUpdate(indexesSnapshot);
+            IndexRegistry.beginPartitionUpdate(indexesSnapshot);
 
             CacheDeserializedValues cacheDeserializedValues = mapContainer.getMapConfig().getCacheDeserializedValues();
             CachedQueryEntry<?, ?> cachedEntry = cacheDeserializedValues == NEVER ? new CachedQueryEntry<>(serializationService,
@@ -345,15 +355,15 @@ class MapMigrationAwareService
                         QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
                         queryEntry.setRecord(record);
                         CachedQueryEntry<?, ?> newEntry =
-                            cachedEntry == null ? (CachedQueryEntry<?, ?>) queryEntry : cachedEntry.init(key, value);
-                        indexes.putEntry(newEntry, null, queryEntry, Index.OperationSource.SYSTEM);
+                                cachedEntry == null ? (CachedQueryEntry<?, ?>) queryEntry : cachedEntry.init(key, value);
+                        indexRegistry.putEntry(newEntry, null, queryEntry, Index.OperationSource.SYSTEM);
                     }
                 }, false);
             } finally {
                 recordStore.afterOperation();
             }
 
-            Indexes.markPartitionAsIndexed(event.getPartitionId(), indexesSnapshot);
+            IndexRegistry.markPartitionAsIndexed(event.getPartitionId(), indexesSnapshot);
         }
 
         if (logger.isFinestEnabled()) {
@@ -373,15 +383,15 @@ class MapMigrationAwareService
         PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore<Record> recordStore : container.getMaps().values()) {
             MapContainer mapContainer = recordStore.getMapContainer();
-            Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
-            if (!indexes.haveAtLeastOneIndex()) {
-                // no indexes to work with
+            IndexRegistry indexRegistry = mapContainer.getIndexRegistry(event.getPartitionId());
+            if (!indexRegistry.haveAtLeastOneIndex()) {
+                // no indexRegistry to work with
                 continue;
             }
 
-            InternalIndex[] indexesSnapshot = indexes.getIndexes();
+            InternalIndex[] indexesSnapshot = indexRegistry.getIndexes();
 
-            Indexes.beginPartitionUpdate(indexesSnapshot);
+            IndexRegistry.beginPartitionUpdate(indexesSnapshot);
 
             CachedQueryEntry<?, ?> entry = new CachedQueryEntry<>(serializationService, mapContainer.getExtractors());
             recordStore.beforeOperation();
@@ -389,13 +399,13 @@ class MapMigrationAwareService
                 recordStore.forEach((key, record) -> {
                     Object value = Records.getValueOrCachedValue(record, serializationService);
                     entry.init(key, value);
-                    indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
+                    indexRegistry.removeEntry(entry, Index.OperationSource.SYSTEM);
                 }, false);
             } finally {
                 recordStore.afterOperation();
             }
 
-            Indexes.markPartitionAsUnindexed(event.getPartitionId(), indexesSnapshot);
+            IndexRegistry.markPartitionAsUnindexed(event.getPartitionId(), indexesSnapshot);
         }
 
         if (logger.isFinestEnabled()) {
@@ -404,7 +414,7 @@ class MapMigrationAwareService
     }
 
     private enum TargetIndexes {
-        GLOBAL, NON_GLOBAL
+        GLOBAL, PARTITIONED
     }
 
     public static boolean isLocalPromotion(PartitionMigrationEvent event) {

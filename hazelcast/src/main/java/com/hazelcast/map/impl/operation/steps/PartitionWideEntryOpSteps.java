@@ -28,7 +28,7 @@ import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 
@@ -80,7 +80,7 @@ public enum PartitionWideEntryOpSteps implements IMapOpStep {
             }
 
             // we use the partitioned-index to operate on the selected keys only
-            Indexes indexes = mapContainer.getIndexes(partitionId);
+            IndexRegistry indexes = mapContainer.getIndexRegistry(partitionId);
             Iterable<QueryableEntry> entries = indexes.query(queryOptimizer.optimize(predicate, indexes), 1);
             if (entries == null) {
                 return false;

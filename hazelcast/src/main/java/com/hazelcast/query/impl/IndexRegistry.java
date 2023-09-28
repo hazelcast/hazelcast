@@ -51,7 +51,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Contains all indexes for a data-structure, e.g. an IMap.
  */
 @SuppressWarnings("rawtypes")
-public class Indexes {
+public class IndexRegistry {
 
     /**
      * The partitions count check detects a race condition when a
@@ -90,19 +90,19 @@ public class Indexes {
     private volatile InternalIndex[] compositeIndexes = EMPTY_INDEXES;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private Indexes(Node node,
-                    String mapName,
-                    InternalSerializationService ss,
-                    IndexCopyBehavior indexCopyBehavior,
-                    Extractors extractors,
-                    IndexProvider indexProvider,
-                    boolean usesCachedQueryableEntries,
-                    boolean statisticsEnabled,
-                    boolean global,
-                    InMemoryFormat inMemoryFormat,
-                    int partitionCount,
-                    int partitionId,
-                    Supplier<java.util.function.Predicate<QueryableEntry>> resultFilterFactory) {
+    private IndexRegistry(Node node,
+                          String mapName,
+                          InternalSerializationService ss,
+                          IndexCopyBehavior indexCopyBehavior,
+                          Extractors extractors,
+                          IndexProvider indexProvider,
+                          boolean usesCachedQueryableEntries,
+                          boolean statisticsEnabled,
+                          boolean global,
+                          InMemoryFormat inMemoryFormat,
+                          int partitionCount,
+                          int partitionId,
+                          Supplier<java.util.function.Predicate<QueryableEntry>> resultFilterFactory) {
         this.node = node;
         this.mapName = mapName;
         this.global = global;
@@ -572,11 +572,14 @@ public class Indexes {
         return stats;
     }
 
-    private static QueryContextProvider createQueryContextProvider(Indexes indexes, boolean global, boolean statisticsEnabled) {
+    private static QueryContextProvider createQueryContextProvider(IndexRegistry indexes,
+                                                                   boolean global, boolean statisticsEnabled) {
         if (statisticsEnabled) {
-            return global ? new GlobalQueryContextProviderWithStats() : new PartitionQueryContextProviderWithStats(indexes);
+            return global ? new GlobalQueryContextProviderWithStats()
+                    : new PartitionQueryContextProviderWithStats(indexes);
         } else {
-            return global ? new GlobalQueryContextProvider() : new PartitionQueryContextProvider(indexes);
+            return global ? new GlobalQueryContextProvider()
+                    : new PartitionQueryContextProvider(indexes);
         }
     }
 
@@ -701,8 +704,8 @@ public class Indexes {
         /**
          * @return a new instance of Indexes
          */
-        public Indexes build() {
-            return new Indexes(node, mapName, serializationService, indexCopyBehavior, extractors,
+        public IndexRegistry build() {
+            return new IndexRegistry(node, mapName, serializationService, indexCopyBehavior, extractors,
                     indexProvider, usesCachedQueryableEntries, statsEnabled, global,
                     inMemoryFormat, partitionCount, partitionId, resultFilterFactory);
         }

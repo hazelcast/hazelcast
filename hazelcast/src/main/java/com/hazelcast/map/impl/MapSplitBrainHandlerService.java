@@ -20,7 +20,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
@@ -64,11 +64,26 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
     protected void onStoreCollection(RecordStore recordStore) {
         assertRunningOnPartitionThread();
 
-        // Removal of old mapContainer is required not to leak old
-        // state into merged cluster. An example old state that we
-        // don't want to leak into merged cluster is index state. In
-        // merged cluster, there will be a fresh mapContainer object.
+        // Removal of old mapContainer is required not to leak
+        // old state into merged cluster. An example old state
+        // that we don't want to leak into merged cluster is
+        // index state. In merged cluster, there will be a
+        // fresh mapContainer object. So not to leak HD memory
+        // for example, we need to destroy old index objects.
         MapContainer mapContainer = recordStore.getMapContainer();
+        recordStore.beforeOperation();
+        try {
+            IndexRegistry partitionedIndexRegistry
+                    = mapContainer.getOrNullPartitionedIndexRegistry(recordStore.getPartitionId());
+            if (partitionedIndexRegistry != null) {
+                InternalIndex[] indexes = partitionedIndexRegistry.getIndexes();
+                for (int i = 0; i < indexes.length; i++) {
+                    indexes[i].destroy();
+                }
+            }
+        } finally {
+            recordStore.afterOperation();
+        }
 
         // `onStoreCollection` method is called after collection
         // of each record-store. Since same map-container is shared
@@ -85,22 +100,23 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
             if (mapContainer.shouldUseGlobalIndex()) {
                 // remove global indexes from old-map-container and add them to new one
                 addIndexConfigToNewMapContainer(mapContainer.name, -1,
-                        mapContainer.getIndexes());
+                        mapContainer.getGlobalIndexRegistry());
             }
         }
 
         // remove partitioned indexes from old-map-container and add them to new one
         if (!mapContainer.shouldUseGlobalIndex()) {
-            Indexes partitionedIndexes = mapContainer.indexesPerPartition.remove(recordStore.getPartitionId());
-            if (partitionedIndexes != null) {
-                addIndexConfigToNewMapContainer(mapContainer.name, recordStore.getPartitionId(),
-                        partitionedIndexes);
+            IndexRegistry partitionedIndexRegistry = mapContainer
+                    .getOrNullPartitionedIndexRegistry(recordStore.getPartitionId());
+            if (partitionedIndexRegistry != null) {
+                addIndexConfigToNewMapContainer(mapContainer.name,
+                        recordStore.getPartitionId(), partitionedIndexRegistry);
             }
         }
     }
 
     private void addIndexConfigToNewMapContainer(String mapName, int partitionId,
-                                                 Indexes indexes) {
+                                                 IndexRegistry indexes) {
         if (indexes == null) {
             return;
         }
@@ -114,7 +130,7 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
         // create new map-container here.
         MapContainer newMapContainer = mapServiceContext.getMapContainer(mapName);
         for (IndexConfig indexConfig : indexConfigs) {
-            newMapContainer.getIndexes(partitionId).recordIndexDefinition(indexConfig);
+            newMapContainer.getIndexRegistry(partitionId).recordIndexDefinition(indexConfig);
         }
     }
 
@@ -130,9 +146,9 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
         store.beforeOperation();
         try {
             if (store.getMapContainer().getMapConfig().getTieredStoreConfig().isEnabled()) {
-                ((DefaultRecordStore) store).destroyStorageImmediate(false, true, true);
+                ((DefaultRecordStore) store).destroyStorageImmediate(false, true);
             } else {
-                ((DefaultRecordStore) store).destroyStorageAfterClear(false, true, true);
+                ((DefaultRecordStore) store).destroyStorageAfterClear(false, true);
             }
         } finally {
             store.afterOperation();

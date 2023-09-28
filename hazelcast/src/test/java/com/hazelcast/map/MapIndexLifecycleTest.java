@@ -36,7 +36,7 @@ import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -169,21 +169,21 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         if (!globalIndex()) {
             return;
         }
-        assertTrueEventually(() -> assertEquals(2, mapContainer.getIndexes().getIndexes().length));
+        assertTrueEventually(() -> assertEquals(2, mapContainer.getGlobalIndexRegistry().getIndexes().length));
 
         assertNotNull("There should be a global index for attribute 'author'",
-                mapContainer.getIndexes().getIndex("author"));
+                mapContainer.getGlobalIndexRegistry().getIndex("author"));
         assertNotNull("There should be a global index for attribute 'year'",
-                mapContainer.getIndexes().getIndex("year"));
+                mapContainer.getGlobalIndexRegistry().getIndex("year"));
         final String authorOwned = findAuthorOwnedBy(instance);
         final Integer yearOwned = findYearOwnedBy(instance);
         assertTrueEventually(() -> assertTrue("Author index should contain records.",
-                mapContainer.getIndexes()
+                mapContainer.getGlobalIndexRegistry()
                         .getIndex("author")
                         .getRecords(authorOwned).size() > 0));
 
         assertTrueEventually(() -> assertTrue("Year index should contain records",
-                mapContainer.getIndexes().getIndex("year").getRecords(yearOwned).size() > 0));
+                mapContainer.getGlobalIndexRegistry().getIndex("year").getRecords(yearOwned).size() > 0));
     }
 
     private int numberOfPartitionQueryResults(HazelcastInstance instance, int partitionId, String attribute, Comparable value) {
@@ -207,7 +207,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
             }
 
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                assertTrue("indexes not empty", mapContainer.getPartitionedIndexes().isEmpty());
+                assertTrue("indexes not empty", mapContainer.isEmptyIndexRegistry());
             }
         }
 
@@ -243,7 +243,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
 
             if (!globalIndex()) {
                 // also assert contents of partition indexes when NATIVE memory format
-                Indexes indexes = context.getExistingMapContainer(mapName).getPartitionedIndexes().get(i);
+                IndexRegistry indexes = context.getExistingMapContainer(mapName).getPartitionedIndexRegistry().get(i);
                 assertNotNull("indexes is null", indexes);
                 assertEquals(2, indexes.getIndexes().length);
                 assertNotNull("There should be a partition index for attribute 'author'", indexes.getIndex("author"));

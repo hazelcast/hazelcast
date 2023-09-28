@@ -28,7 +28,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.MapMergeResponse;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
@@ -191,7 +191,7 @@ public class MergeOperation extends MapOperation
 
     public Queue<InternalIndex> beginIndexMarking() {
         int partitionId = getPartitionId();
-        Indexes indexes = mapContainer.getIndexes(partitionId);
+        IndexRegistry indexes = mapContainer.getIndexRegistry(partitionId);
         InternalIndex[] indexesSnapshot = indexes.getIndexes();
 
         Queue<InternalIndex> notIndexedPartitions = new LinkedList<>();
