@@ -25,7 +25,7 @@ public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerE
     @Override
     protected String setupFetchingQuery() {
         expectedEventsCount = eventsToProcess - 1; // we expect fewer items for query below
-    firstItemId = 2;                               // we do expect first item to be [1, value-2]
+        firstItemId = 2;                           // we expect first item to be [1, value-2]
         lastItemId = eventsToProcess;
         return "CREATE JOB " + JOB_NAME +
                 " OPTIONS (" +
