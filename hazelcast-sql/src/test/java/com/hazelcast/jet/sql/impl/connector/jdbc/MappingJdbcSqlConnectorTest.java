@@ -29,6 +29,7 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
+import com.hazelcast.test.jdbc.OracleDatabaseProvider;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -85,8 +86,12 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingWithExternalSchemaAndTableName() throws Exception {
-        executeJdbc("CREATE SCHEMA schema1");
-        createTable("schema1." + tableName);
+        String schemaName = quote("schema1");
+        executeJdbc(databaseProvider.createSchemaQuery(schemaName));
+        if (databaseProvider instanceof OracleDatabaseProvider) {
+            executeJdbc("GRANT UNLIMITED TABLESPACE TO " + schemaName);
+        }
+        createTableWithQuotation(quote("schema1")+ "." + quote(tableName));
 
         String mappingName = "mapping_" + randomName();
         createMapping("\"schema1\".\"" + tableName + '\"', mappingName);
