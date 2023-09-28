@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.cost.Cost;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
 import org.apache.calcite.plan.RelOptCluster;
@@ -40,6 +39,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.jet.sql.impl.opt.cost.Cost.JOIN_ROW_CMP_MULTIPLIER;
 
 public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
     private JoinInfo modifiedJoinInfo;
@@ -149,7 +150,7 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
         // TODO: introduce selectivity estimator, but ATM we taking the worst case scenario : selectivity = 1.0.
         double producedRows = mq.getRowCount(this);
         double processedRowsEstimate = leftRowCount * selectivity * rightRowCount;
-        double cpuEstimate = Math.max(1.0, processedRowsEstimate - 1) * Cost.JOIN_ROW_CMP_MULTIPLIER;
+        double cpuEstimate = Math.max(1.0, processedRowsEstimate - 1) * rightCost.getCpu() * JOIN_ROW_CMP_MULTIPLIER;
 
         return planner.getCostFactory().makeCost(producedRows, cpuEstimate, 0);
     }
