@@ -33,6 +33,8 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
@@ -43,8 +45,10 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -198,6 +202,8 @@ public final class QueryUtil {
         private transient ExpressionEvalContext evalContext;
         private transient Extractors extractors;
 
+        private Subject subject;
+
         @SuppressWarnings("unused")
         private JoinProjection() {
         }
@@ -206,6 +212,7 @@ public final class QueryUtil {
             this.rightRowProjectorSupplier = rightRowProjectorSupplier;
             this.evalContext = evalContext;
             this.arguments = evalContext.getArguments();
+            this.subject = evalContext.subject();
         }
 
         @Override
@@ -220,15 +227,15 @@ public final class QueryUtil {
 
         @Override
         public void setSerializationService(SerializationService serializationService) {
+            InternalSerializationService iss = (InternalSerializationService) serializationService;
             if (evalContext == null) {
-                this.evalContext = new ExpressionEvalContextImpl(
-                        arguments,
-                        (InternalSerializationService) serializationService,
-                        Util.getNodeEngine(hzInstance),
-                        NoOpSqlSecurityContext.INSTANCE);
+                NodeEngineImpl nodeEngine = Util.getNodeEngine(hzInstance);
+                SecurityContext sc = nodeEngine.getNode().securityContext;
+                SqlSecurityContext ssc = sc != null ? sc.createSqlContext(subject) : NoOpSqlSecurityContext.INSTANCE;
+                this.evalContext = new ExpressionEvalContextImpl(arguments, iss, nodeEngine, ssc);
             } else {
                 ExpressionEvalContextImpl eeci = (ExpressionEvalContextImpl) evalContext;
-                this.evalContext = eeci.clone(hzInstance, (InternalSerializationService) serializationService);
+                this.evalContext = eeci.clone(hzInstance, iss);
             }
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
 
@@ -238,12 +245,14 @@ public final class QueryUtil {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(rightRowProjectorSupplier);
             out.writeObject(arguments);
+            out.writeObject(subject);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             rightRowProjectorSupplier = in.readObject();
             arguments = in.readObject();
+            subject = in.readObject();
         }
     }
 }
