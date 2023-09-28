@@ -92,7 +92,6 @@ public abstract class VariExpression<T> implements Expression<T> {
                 return false;
             }
         }
-
         return true;
     }
 }
