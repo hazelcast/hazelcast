@@ -54,11 +54,18 @@ public class AttributeIndexRegistry {
      * @param index the index to register.
      * @see Indexes#addOrGetIndex
      */
+    // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
+    // effect on throughput such that it's not a direct replacement
+    @SuppressWarnings("squid:S3824")
     public void register(InternalIndex index) {
         String[] components = index.getComponents();
         String attribute = components[0];
 
-        Record record = registry.computeIfAbsent(attribute, x -> new Record());
+        Record record = registry.get(attribute);
+        if (record == null) {
+            record = new Record();
+            registry.put(attribute, record);
+        }
 
         if (index.isOrdered()) {
             if (record.orderedWorseThan(index)) {

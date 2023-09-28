@@ -44,9 +44,15 @@ public class MetricsMBean implements DynamicMBean {
     /**
      * Adds a metric if necessary and sets its value.
      */
+    // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
+    // effect on throughput such that it's not a direct replacement
+    @SuppressWarnings("squid:S3824")
     void setMetricValue(String name, String unit, Number value, Type type) {
-        TriTuple<String, AtomicReference<Number>, Type> metricTuple = metrics.computeIfAbsent(name,
-                x -> of(unit, new AtomicReference<>(), type));
+        TriTuple<String, AtomicReference<Number>, Type> metricTuple = metrics.get(name);
+        if (metricTuple == null) {
+            metricTuple = of(unit, new AtomicReference<>(), type);
+            metrics.put(name, metricTuple);
+        }
         metricTuple.element2.lazySet(value);
     }
 

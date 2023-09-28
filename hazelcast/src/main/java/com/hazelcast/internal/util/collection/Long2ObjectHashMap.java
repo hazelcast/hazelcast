@@ -33,6 +33,8 @@ import java.util.function.LongFunction;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.collection.Hashing.longHash;
 
+import com.hazelcast.internal.util.ConcurrencyUtil;
+
 /**
  * {@link java.util.Map} implementation specialised for {@code long} keys using open addressing and
  * linear probing for cache efficient access.

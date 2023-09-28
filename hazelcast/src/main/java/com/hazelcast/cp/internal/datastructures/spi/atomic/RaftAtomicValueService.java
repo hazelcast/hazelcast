@@ -26,6 +26,7 @@ import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -154,6 +155,9 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         return atomicValues.size();
     }
 
+    // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
+    // effect on throughput such that it's not a direct replacement
+    @SuppressWarnings("squid:S3824")
     public final V getAtomicValue(CPGroupId groupId, String name) {
         checkNotNull(groupId);
         checkNotNull(name);
@@ -161,7 +165,11 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         if (destroyedValues.contains(key)) {
             throw new DistributedObjectDestroyedException("AtomicValue[" + name + "] is already destroyed!");
         }
-        V atomicValue = atomicValues.computeIfAbsent(key, x -> newAtomicValue(groupId, name, null));
+        V atomicValue = atomicValues.get(key);
+        if (atomicValue == null) {
+            atomicValue = newAtomicValue(groupId, name, null);
+            atomicValues.put(key, atomicValue);
+        }
         return atomicValue;
     }
 

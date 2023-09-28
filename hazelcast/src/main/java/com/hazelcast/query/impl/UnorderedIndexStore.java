@@ -321,14 +321,20 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
      * @see IndexCopyBehavior
      */
     private class AddFunctor implements IndexFunctor<Comparable, QueryableEntry> {
-
+        // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
+        // effect on throughput such that it's not a direct replacement
+        @SuppressWarnings("squid:S3824")
         @Override
         public Object invoke(Comparable value, QueryableEntry entry) {
             if (value == NULL) {
                 return recordsWithNullValue.put(entry.getKeyData(), entry);
             } else {
-                return recordMap.computeIfAbsent(value, x -> new ConcurrentHashMap<>(1, LOAD_FACTOR, 1)).put(entry.getKeyData(),
-                        entry);
+                Map<Data, QueryableEntry> records = recordMap.get(value);
+                if (records == null) {
+                    records = new ConcurrentHashMap<>(1, LOAD_FACTOR, 1);
+                    recordMap.put(value, records);
+                }
+                return records.put(entry.getKeyData(), entry);
             }
         }
 

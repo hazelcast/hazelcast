@@ -278,9 +278,17 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
                 .sum();
     }
 
+    // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
+    // effect on throughput such that it's not a direct replacement
+    @SuppressWarnings("squid:S3824")
     protected final RR getOrInitRegistry(CPGroupId groupId) {
         checkNotNull(groupId);
-        return registries.computeIfAbsent(groupId, this::createNewRegistry);
+        RR registry = registries.get(groupId);
+        if (registry == null) {
+            registry = createNewRegistry(groupId);
+            registries.put(groupId, registry);
+        }
+        return registry;
     }
 
     protected final void scheduleTimeout(CPGroupId groupId, String name, UUID invocationUid, long timeoutMs) {

@@ -224,14 +224,19 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
         return new SessionResponse(sessionId, sessionTTLMillis, getHeartbeatIntervalMillis());
     }
 
+    // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
+    // effect on throughput such that it's not a direct replacement
+    @SuppressWarnings("squid:S3824")
     private RaftSessionRegistry getOrInitRegistry(CPGroupId groupId) {
-        return registries.computeIfAbsent(groupId, x -> {
-            RaftSessionRegistry raftSessionRegistry = new RaftSessionRegistry(groupId);
+        RaftSessionRegistry registry = registries.get(groupId);
+        if (registry == null) {
+            registry = new RaftSessionRegistry(groupId);
+            registries.put(groupId, registry);
             if (logger.isFineEnabled()) {
                 logger.fine("Created new session registry for " + groupId);
             }
-            return raftSessionRegistry;
-        });
+        }
+        return registry;
     }
 
     public void heartbeat(CPGroupId groupId, long sessionId) {
