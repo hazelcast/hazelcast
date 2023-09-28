@@ -52,7 +52,7 @@ public class AttributeIndexRegistry {
      * there is no more than one writer at any given time.
      *
      * @param index the index to register.
-     * @see Indexes#addOrGetIndex
+     * @see IndexRegistry#addOrGetIndex
      */
     public void register(InternalIndex index) {
         String[] components = index.getComponents();

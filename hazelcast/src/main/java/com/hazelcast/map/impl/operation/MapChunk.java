@@ -33,7 +33,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
@@ -47,7 +46,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -188,34 +187,31 @@ public class MapChunk extends Operation
 
     private void applyIndexStateAfter(RecordStore recordStore) {
         MapContainer mapContainer = recordStore.getMapContainer();
-        Indexes indexes = mapContainer.getIndexes(recordStore.getPartitionId());
+        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(recordStore.getPartitionId());
 
-        if (!indexesMustBePopulated(indexes)) {
+        if (!indexesMustBePopulated(indexRegistry)) {
             return;
         }
 
-        Indexes.markPartitionAsIndexed(getPartitionId(), indexes.getIndexes());
+        IndexRegistry.markPartitionAsIndexed(getPartitionId(), indexRegistry.getIndexes());
     }
 
     private void applyIndexStateBefore(RecordStore recordStore) {
         MapContainer mapContainer = recordStore.getMapContainer();
-        PartitionContainer partitionContainer = mapContainer.getMapServiceContext()
-                .getPartitionContainer(getPartitionId());
+        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(recordStore.getPartitionId());
 
         for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
-            Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-            indexes.addOrGetIndex(indexDefinition.getValue());
+            indexRegistry.addOrGetIndex(indexDefinition.getValue());
         }
 
-        Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-        boolean populateIndexes = indexesMustBePopulated(indexes);
+        boolean populateIndexes = indexesMustBePopulated(indexRegistry);
 
         if (populateIndexes) {
             // defensively clear possible stale
-            // leftovers in non-global indexes from
+            // leftovers in non-global indexRegistry from
             // the previous failed promotion attempt
-            Indexes.beginPartitionUpdate(indexes.getIndexes());
-            indexes.clearAll();
+            IndexRegistry.beginPartitionUpdate(indexRegistry.getIndexes());
+            indexRegistry.clearAll();
         }
     }
 
@@ -227,7 +223,7 @@ public class MapChunk extends Operation
             Record record = (Record) keyRecordExpiry.poll();
             ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.poll();
 
-            Indexes indexes = recordStore.getMapContainer().getIndexes(recordStore.getPartitionId());
+            IndexRegistry indexes = recordStore.getMapContainer().getOrCreateIndexRegistry(recordStore.getPartitionId());
 
             recordStore.putOrUpdateReplicatedRecord(dataKey, record, expiryMetadata,
                     indexesMustBePopulated(indexes), nowInMillis);
@@ -266,7 +262,7 @@ public class MapChunk extends Operation
                     recordStore.doPostEvictionOperations(dataKey, record.getValue(), ExpiryReason.NOT_EXPIRED);
                 }
             } else {
-                Indexes indexes = mapContainer.getIndexes(recordStore.getPartitionId());
+                IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(recordStore.getPartitionId());
 
                 recordStore.putOrUpdateReplicatedRecord(dataKey, record, expiryMetadata,
                         indexesMustBePopulated(indexes), nowInMillis);
@@ -346,7 +342,7 @@ public class MapChunk extends Operation
         if (mapContainer.isGlobalIndexEnabled()) {
             // creating global indexes on partition thread in case they do not exist
             for (IndexConfig indexConfig : indexConfigs) {
-                Indexes indexes = mapContainer.getIndexes();
+                IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
 
                 // optimisation not to synchronize each partition thread on the addOrGetIndex method
                 if (indexes.getIndex(indexConfig.getName()) == null) {
@@ -354,7 +350,7 @@ public class MapChunk extends Operation
                 }
             }
         } else {
-            Indexes indexes = mapContainer.getIndexes(getPartitionId());
+            IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(getPartitionId());
             indexes.createIndexesFromRecordedDefinitions();
             for (IndexConfig indexConfig : indexConfigs) {
                 indexes.addOrGetIndex(indexConfig);
@@ -362,7 +358,7 @@ public class MapChunk extends Operation
         }
     }
 
-    private boolean indexesMustBePopulated(Indexes indexes) {
+    private boolean indexesMustBePopulated(IndexRegistry indexes) {
         if (!indexes.haveAtLeastOneIndex()) {
             // no indexes to populate
             return false;

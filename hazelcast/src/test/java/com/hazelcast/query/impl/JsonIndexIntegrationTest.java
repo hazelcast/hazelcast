@@ -206,7 +206,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
         List<Index> result = new ArrayList<Index>();
         for (int partitionId : mapServiceContext.getCachedOwnedPartitions()) {
-            Indexes indexes = mapContainer.getIndexes(partitionId);
+            IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(partitionId);
 
             for (InternalIndex index : indexes.getIndexes()) {
                 for (String component : index.getComponents()) {

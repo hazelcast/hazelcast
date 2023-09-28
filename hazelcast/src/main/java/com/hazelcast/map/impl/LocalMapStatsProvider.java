@@ -39,7 +39,7 @@ import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.NodeEngine;
 
@@ -354,32 +354,33 @@ public class LocalMapStatsProvider {
         if (mapContainer == null) {
             return;
         }
-        Indexes globalIndexes = mapContainer.getIndexes();
-
+        IndexRegistry globalIndexRegistry = mapContainer.getGlobalIndexRegistry();
         Map<String, OnDemandIndexStats> freshStats = null;
-        if (globalIndexes != null) {
-            assert globalIndexes.isGlobal();
-            localMapStats.setQueryCount(globalIndexes.getIndexesStats().getQueryCount());
-            localMapStats.setIndexedQueryCount(globalIndexes.getIndexesStats().getIndexedQueryCount());
-            freshStats = aggregateFreshIndexStats(globalIndexes.getIndexes(), null);
+        if (globalIndexRegistry != null) {
+            assert globalIndexRegistry.isGlobal();
+            localMapStats.setQueryCount(globalIndexRegistry.getIndexesStats().getQueryCount());
+            localMapStats.setIndexedQueryCount(globalIndexRegistry.getIndexesStats().getIndexedQueryCount());
+            freshStats = aggregateFreshIndexStats(globalIndexRegistry.getIndexes(), null);
             finalizeFreshIndexStats(freshStats);
         } else {
             long queryCount = 0;
             long indexedQueryCount = 0;
-            PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
-            for (int i = 0; i < partitionContainers.length; i++) {
-                PartitionContainer partitionContainer = partitionContainers[i];
-                IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
+
+            int partitionCount = partitionService.getPartitionCount();
+            for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+                IPartition partition = partitionService.getPartition(partitionId);
                 if (!partition.isLocal()) {
                     continue;
                 }
 
-                Indexes partitionIndexes = partitionContainer.getIndexes().get(mapName);
-                if (partitionIndexes == null) {
+                IndexRegistry partitionedIndexRegistry
+                        = mapContainer.getOrNullPartitionedIndexRegistry(partitionId);
+                if (partitionedIndexRegistry == null) {
                     continue;
                 }
-                assert !partitionIndexes.isGlobal();
-                IndexesStats indexesStats = partitionIndexes.getIndexesStats();
+
+                assert !partitionedIndexRegistry.isGlobal();
+                IndexesStats indexesStats = partitionedIndexRegistry.getIndexesStats();
 
                 // Partitions may have different query stats due to migrations
                 // (partition stats is not preserved while migrating) and/or
@@ -388,7 +389,7 @@ public class LocalMapStatsProvider {
                 queryCount = Math.max(queryCount, indexesStats.getQueryCount());
                 indexedQueryCount = Math.max(indexedQueryCount, indexesStats.getIndexedQueryCount());
 
-                freshStats = aggregateFreshIndexStats(partitionIndexes.getIndexes(), freshStats);
+                freshStats = aggregateFreshIndexStats(partitionedIndexRegistry.getIndexes(), freshStats);
             }
 
             localMapStats.setQueryCount(queryCount);
