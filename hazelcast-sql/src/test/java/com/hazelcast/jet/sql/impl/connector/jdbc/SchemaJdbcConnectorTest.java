@@ -48,7 +48,7 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
     @Parameter(value = 2)
     public String externalName;
 
-    private String tableFull;
+    protected String tableFull;
 
     @Parameters(name = "{index}: schemaName={0}, tableName={1}, externalTableName={2}")
     public static List<Object[]> data() {
@@ -150,7 +150,9 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
 
         execute("INSERT INTO " + mappingName + " VALUES (0, 'name-0')");
 
-        assertJdbcRowsAnyOrder(tableFull, new Row(0, "name-0"));
+        assertJdbcRowsAnyOrder(tableFull,
+                newArrayList(Integer.class, String.class),
+                new Row(0, "name-0"));
     }
 
     @Test
@@ -161,7 +163,9 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
 
         execute("UPDATE " + mappingName + " SET name = 'updated'");
 
-        assertJdbcRowsAnyOrder(tableFull, new Row(0, "updated"));
+        assertJdbcRowsAnyOrder(tableFull,
+                newArrayList(Integer.class, String.class),
+                new Row(0, "updated"));
     }
 
     @Test
@@ -181,6 +185,8 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
 
         execute("SINK INTO " + mappingName + " VALUES (0, 'name-0')");
 
-        assertJdbcRowsAnyOrder(tableFull, new Row(0, "name-0"));
+        assertJdbcRowsAnyOrder(tableFull,
+                newArrayList(Integer.class, String.class),
+                new Row(0, "name-0"));
     }
 }

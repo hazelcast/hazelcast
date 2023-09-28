@@ -17,6 +17,7 @@
 package com.hazelcast.test.jdbc;
 
 import org.testcontainers.containers.OracleContainer;
+import org.testcontainers.utility.MountableFile;
 
 public class OracleDatabaseProvider implements TestDatabaseProvider {
 
@@ -27,11 +28,11 @@ public class OracleDatabaseProvider implements TestDatabaseProvider {
     @Override
     public String createDatabase(String dbName) {
         container = new OracleContainer("gvenzl/oracle-xe:21-slim-faststart")
-                .withUsername("test")
-                .withPassword("test");
+                .withCopyFileToContainer(MountableFile.forClasspathResource("init.sql"), "/container-entrypoint-startdb.d/init.sql");
+
 
         container.start();
-        String jdbcUrl = "jdbc:oracle:thin:test/test@" + container.getHost() + ":" + container.getOraclePort() + "/" + container.getDatabaseName();
+        String jdbcUrl = "jdbc:oracle:thin:test1/password@" + container.getHost() + ":" + container.getOraclePort() + "/" + container.getDatabaseName();
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }
@@ -40,18 +41,18 @@ public class OracleDatabaseProvider implements TestDatabaseProvider {
     @Override
     public String noAuthJdbcUrl() {
         return container.getJdbcUrl()
-                .replaceAll("&?user=test", "")
-                .replaceAll("&?password=test", "");
+                .replaceAll("&?user=test1", "")
+                .replaceAll("&?password=password", "");
     }
 
     @Override
     public String user() {
-        return "test";
+        return "test1";
     }
 
     @Override
     public String password() {
-        return "test";
+        return "password";
     }
 
     @Override
@@ -60,5 +61,9 @@ public class OracleDatabaseProvider implements TestDatabaseProvider {
             container.stop();
             container = null;
         }
+    }
+    @Override
+    public String createSchemaQuery(String schemaName) {
+        return "CREATE USER " + schemaName + " IDENTIFIED BY \"password\"";
     }
 }
