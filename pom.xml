@@ -116,6 +116,7 @@
         <mysql.connector.version>8.1.0</mysql.connector.version>
         <netty.version>4.1.96.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
+        <oracle.version>21.11.0.0</oracle.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
         <picocli.version>4.7.4</picocli.version>
