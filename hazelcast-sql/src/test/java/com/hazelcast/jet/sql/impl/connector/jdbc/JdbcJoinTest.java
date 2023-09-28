@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.OracleDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -202,17 +203,20 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
     @Test
     public void joinWithOtherJdbcNonDefaultSchema() throws SQLException {
-        String schemaName = randomName();
-        executeJdbc("CREATE SCHEMA " + schemaName);
-        String fullyQualifiedTable = schemaName + "." + tableName;
-        createTable(fullyQualifiedTable);
+        String schemaName = quote(randomName());
+        executeJdbc(databaseProvider.createSchemaQuery(schemaName));
+        if (databaseProvider instanceof OracleDatabaseProvider) {
+            executeJdbc("GRANT UNLIMITED TABLESPACE TO " + schemaName);
+        }
+        String fullyQualifiedTable = schemaName + "." + quote(tableName);
+        createTableWithQuotation(fullyQualifiedTable);
         insertItems(fullyQualifiedTable, ITEM_COUNT);
         String mappingName = randomTableName();
         createMapping(fullyQualifiedTable, mappingName);
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
-                        "FROM " + tableName + " t1 " +
+                        "FROM " + quote(tableName) + " t1 " +
                         "JOIN \"" + mappingName + "\" t2 " +
                         "   ON t1.id = t2.id",
                 newArrayList(
