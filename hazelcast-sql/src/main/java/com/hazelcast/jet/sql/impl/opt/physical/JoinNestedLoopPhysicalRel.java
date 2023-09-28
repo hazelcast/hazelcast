@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.cost.Cost;
+import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
 import org.apache.calcite.plan.RelOptCluster;
@@ -39,8 +41,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.hazelcast.jet.sql.impl.opt.cost.Cost.JOIN_ROW_CMP_MULTIPLIER;
 
 public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
     private JoinInfo modifiedJoinInfo;
@@ -120,39 +120,47 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
      * <p>
      * Nested Loop Join algorithm is a simple join algorithm, where for each left row,
      * we are traversing the whole right row set. Cost estimation is the following: <ol>
+     * <li> L is a count of left side rows.
+     * <li> R is a count of right side rows.
      * <li> Produced row count is L * R * (join selectivity).
      * <li> Processed row count is L * k * R, where k is 1 for non-equi-join,
-     *      (join selectivity) ≤ k ≤ 1 for equi-join and 1/R for key lookup.
-     * <li> CPU is L * (join selectivity) * R * (row comparison cost) assuming k
-     *      converges to the join selectivity on average. </ol>
+     * (join selectivity) ≤ k ≤ 1 for equi-join and 1/R for key lookup.
+     * <li> CPU is L * R * (row comparison cost)
+     * + L * R * (selectivity) * (row join cost)
+     * + ((L - 1) * cost of right side scan)
+     * </ol>
      * <p>
      * A perfect estimation must also include memory and IO costs.
      */
     @Override
     @Nullable
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        final double leftRowCount = mq.getRowCount(left);
-        final double rightRowCount = mq.getRowCount(right);
+        boolean isEquiJoin = this.analyzeCondition().isEqui();
+
+        double leftRowCount = mq.getRowCount(left);
+        double rightRowCount = mq.getRowCount(right);
+        double projectionUnitCost = this.getRowType().getFieldCount();
+
         if (Double.isInfinite(leftRowCount) || Double.isInfinite(rightRowCount)) {
             return planner.getCostFactory().makeInfiniteCost();
         }
 
-        RelOptCost rightCost = planner.getCost(getRight(), mq);
-        if (rightCost == null) {
-            return planner.getCostFactory().makeInfiniteCost();
-        }
-
-        Double selectivity = mq.getSelectivity(this, condition);
-        if (selectivity == null) {
-            selectivity = 1.;
-        }
-
-        // TODO: introduce selectivity estimator, but ATM we taking the worst case scenario : selectivity = 1.0.
         double producedRows = mq.getRowCount(this);
-        double processedRowsEstimate = leftRowCount * selectivity * rightRowCount;
-        double cpuEstimate = Math.max(1.0, processedRowsEstimate - 1) * rightCost.getCpu() * JOIN_ROW_CMP_MULTIPLIER;
+        double processedRowCount = Math.max(1.0, leftRowCount * rightRowCount);
 
-        return planner.getCostFactory().makeCost(producedRows, cpuEstimate, 0);
+        double joinComparisonCost = processedRowCount * Cost.NLJ_JOIN_ROW_CMP_MULTIPLIER;
+        double joinProjectionCost = producedRows * projectionUnitCost;
+        double rightSideRepetitions = Math.max(.0, leftRowCount - 1);
+
+        if (!isEquiJoin) {
+            // TODO: reconsider the value for this constant later.
+            rightSideRepetitions /= CostUtils.AVERAGE_NON_EQUI_JOIN_LEFT_BATCH_SIZE;
+        }
+
+        double rightSideRepetitionsCost = ((Cost) planner.getCost(right, mq)).getCpuInternal() * rightSideRepetitions;
+        double cpuEstimate = joinComparisonCost + joinProjectionCost + rightSideRepetitionsCost;
+
+        return planner.getCostFactory().makeCost(processedRowCount, cpuEstimate, 0);
     }
 
     @Override

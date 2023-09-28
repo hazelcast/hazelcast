@@ -17,9 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.cost;
 
 import com.hazelcast.config.IndexType;
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
-import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.type.RelDataTypeField;
 
 /**
  * Utility methods for cost estimation.
@@ -43,6 +40,9 @@ public final class CostUtils {
 
     /** Multiplier for the CPU part of the cost. Assumes 1ns per item. */
     public static final double CPU_COST_MULTIPLIER = 1.0d;
+
+    /** Estimation for average batch size of NLJ' left side. */
+    public static final double AVERAGE_NON_EQUI_JOIN_LEFT_BATCH_SIZE = 1.0d;
 
     /** Multiplier for the network part of the cost. Assumes ~10µs per 1Kb that results in ~10ns per byte. */
     public static final double NETWORK_COST_MULTIPLIER = CPU_COST_MULTIPLIER * 10;
@@ -109,15 +109,5 @@ public final class CostUtils {
 
     public static double getProjectCpu(double rowCount, int expressionCount) {
         return rowCount * expressionCount;
-    }
-
-    public static int getEstimatedRowWidth(RelNode rel) {
-        int res = 0;
-
-        for (RelDataTypeField field : rel.getRowType().getFieldList()) {
-            res += HazelcastTypeUtils.toHazelcastType(field.getType()).getTypeFamily().getEstimatedSize();
-        }
-
-        return res;
     }
 }

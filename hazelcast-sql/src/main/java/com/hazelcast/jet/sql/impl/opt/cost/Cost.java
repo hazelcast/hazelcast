@@ -30,7 +30,7 @@ import org.apache.calcite.plan.RelOptUtil;
  * Our implementation still tracks row count, CPU and network, but it doesn't implement unnecessary methods, has proper
  * comparison semantics, and use CPU and network for cost comparison instead row count.
  * <p>
- * [1] https://issues.apache.org/jira/browse/CALCITE-3956
+ * [1] <a href="https://issues.apache.org/jira/browse/CALCITE-3956">LINK</a>
  */
 public class Cost implements RelOptCost {
 
@@ -50,10 +50,11 @@ public class Cost implements RelOptCost {
      */
     public static final double HASH_JOIN_MULTIPLIER = 7;
 
-    /**
-     * Multiplier to display row comparison
-     */
-    public static final double JOIN_ROW_CMP_MULTIPLIER = 2;
+    // Most of the time you compare one field from both sides in join condition.
+    public static final double NLJ_JOIN_ROW_CMP_MULTIPLIER = 1.5;
+
+    // During the comparison for each right row we do everything, except adding.
+    public static final double HASH_JOIN_ROW_CMP_MULTIPLIER = HASH_JOIN_MULTIPLIER - 1;
 
     private final double rows;
     private final double cpu;
