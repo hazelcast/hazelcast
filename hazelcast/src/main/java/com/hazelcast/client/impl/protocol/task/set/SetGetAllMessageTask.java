@@ -73,7 +73,7 @@ public class SetGetAllMessageTask
 
     @Override
     public String getMethodName() {
-        return SecurityInterceptorConstants.GET_ALL;
+        return SecurityInterceptorConstants.ITERATOR;
     }
 
     @Override
