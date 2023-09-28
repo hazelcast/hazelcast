@@ -60,10 +60,10 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     }
 
     public ExpressionEvalContextImpl(
-            @Nonnull MetaSupplierCtx context,
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
-            @Nonnull NodeEngine nodeEngine) {
+            @Nonnull NodeEngine nodeEngine,
+            @Nonnull MetaSupplierCtx context) {
         this.arguments = requireNonNull(arguments);
         this.serializationService = requireNonNull(serializationService);
         this.nodeEngine = requireNonNull(nodeEngine);
@@ -72,7 +72,7 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
 
     public ExpressionEvalContextImpl clone(HazelcastInstance hz, InternalSerializationService ss) {
         if (contextRef != null) {
-            return new ExpressionEvalContextImpl(contextRef, arguments, ss, Util.getNodeEngine(hz));
+            return new ExpressionEvalContextImpl(arguments, ss, Util.getNodeEngine(hz), contextRef);
         } else if (ssc != null) {
             return new ExpressionEvalContextImpl(arguments, ss, Util.getNodeEngine(hz), ssc);
         } else {

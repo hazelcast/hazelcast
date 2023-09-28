@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.jet.core.ProcessorMetaSupplier.Context;
 import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts;
+import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
@@ -45,20 +46,23 @@ public interface ExpressionEvalContext {
         List<Object> arguments = ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME);
 
         if (ctx instanceof Contexts.ProcSupplierCtx) {
+            Contexts.ProcSupplierCtx pCtx = (Contexts.ProcSupplierCtx) ctx;
             return new ExpressionEvalContextImpl(
-                    (Contexts.MetaSupplierCtx) ctx,
                     requireNonNull(arguments),
-                    ((Contexts.ProcSupplierCtx) ctx).serializationService(),
-                    ((Contexts.ProcSupplierCtx) ctx).nodeEngine()
+                    pCtx.serializationService(),
+                    pCtx.nodeEngine(),
+                    pCtx
             );
         } else if (ctx instanceof Contexts.MetaSupplierCtx) {
+            MetaSupplierCtx mCtx = (Contexts.MetaSupplierCtx) ctx;
             // Note that additional serializers configured for the job are not available in PMS.
             // Currently this is not needed.
             return new ExpressionEvalContextImpl(
-                    (Contexts.MetaSupplierCtx) ctx,
                     arguments != null ? arguments : List.of(),
-                    (InternalSerializationService) ((Contexts.MetaSupplierCtx) ctx).nodeEngine().getSerializationService(),
-                    ((Contexts.MetaSupplierCtx) ctx).nodeEngine());
+                    (InternalSerializationService) mCtx.nodeEngine().getSerializationService(),
+                    mCtx.nodeEngine(),
+                    mCtx
+            );
         } else {
             // Path intended for test code
             assert ctx instanceof TestProcessorMetaSupplierContext;
