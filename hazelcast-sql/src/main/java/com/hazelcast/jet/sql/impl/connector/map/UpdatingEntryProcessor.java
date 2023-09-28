@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.map.EntryProcessor;
@@ -29,20 +28,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
-import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
@@ -105,19 +99,10 @@ public final class UpdatingEntryProcessor
         this.hzInstance = hazelcastInstance;
     }
 
-    @SuppressWarnings("DuplicatedCode")
     @Override
     public void setSerializationService(SerializationService serializationService) {
         InternalSerializationService iss = (InternalSerializationService) serializationService;
-        if (evalContext == null) {
-            NodeEngineImpl nodeEngine = Util.getNodeEngine(hzInstance);
-            SecurityContext sc = nodeEngine.getNode().securityContext;
-            SqlSecurityContext ssc = sc != null ? sc.createSqlContext(subject) : NoOpSqlSecurityContext.INSTANCE;
-            this.evalContext = new ExpressionEvalContextImpl(arguments, iss, nodeEngine, ssc);
-        } else {
-            ExpressionEvalContextImpl eeci = (ExpressionEvalContextImpl) evalContext;
-            this.evalContext = eeci.clone(hzInstance, iss);
-        }
+        this.evalContext = ExpressionEvalContext.recreateContext(evalContext, hzInstance, arguments, iss, subject);
         this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 

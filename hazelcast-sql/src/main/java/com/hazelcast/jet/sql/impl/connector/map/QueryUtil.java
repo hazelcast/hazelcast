@@ -22,7 +22,6 @@ import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,19 +32,14 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.security.auth.Subject;
@@ -228,17 +222,8 @@ public final class QueryUtil {
         @Override
         public void setSerializationService(SerializationService serializationService) {
             InternalSerializationService iss = (InternalSerializationService) serializationService;
-            if (evalContext == null) {
-                NodeEngineImpl nodeEngine = Util.getNodeEngine(hzInstance);
-                SecurityContext sc = nodeEngine.getNode().securityContext;
-                SqlSecurityContext ssc = sc != null ? sc.createSqlContext(subject) : NoOpSqlSecurityContext.INSTANCE;
-                this.evalContext = new ExpressionEvalContextImpl(arguments, iss, nodeEngine, ssc);
-            } else {
-                ExpressionEvalContextImpl eeci = (ExpressionEvalContextImpl) evalContext;
-                this.evalContext = eeci.clone(hzInstance, iss);
-            }
+            this.evalContext = ExpressionEvalContext.recreateContext(evalContext, hzInstance, arguments, iss, subject);
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
-
         }
 
         @Override

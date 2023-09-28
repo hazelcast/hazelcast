@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.ProcessorMetaSupplier.Context;
@@ -23,9 +24,13 @@ import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.security.Permission;
@@ -74,6 +79,23 @@ public interface ExpressionEvalContext {
                     new DefaultSerializationServiceBuilder().build(),
                     Util.getNodeEngine(ctx.hazelcastInstance()),
                     NoOpSqlSecurityContext.INSTANCE);
+        }
+    }
+
+    static ExpressionEvalContext recreateContext(
+            @Nullable ExpressionEvalContext eec,
+            @Nonnull HazelcastInstance hz,
+            @Nonnull List<Object> arguments,
+            @Nonnull InternalSerializationService iss,
+            @Nullable Subject subject) {
+        if (eec == null) {
+            NodeEngineImpl nodeEngine = Util.getNodeEngine(hz);
+            SecurityContext sc = nodeEngine.getNode().securityContext;
+            SqlSecurityContext ssc = sc != null ? sc.createSqlContext(subject) : NoOpSqlSecurityContext.INSTANCE;
+            return new ExpressionEvalContextImpl(arguments, iss, nodeEngine, ssc);
+        } else {
+            ExpressionEvalContextImpl eeci = (ExpressionEvalContextImpl) eec;
+            return eeci.clone(hz, iss);
         }
     }
 
