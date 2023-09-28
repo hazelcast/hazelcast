@@ -78,8 +78,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
-import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
@@ -119,7 +119,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final ClusterViewListenerService clusterListenerService;
     private final boolean advancedNetworkConfigEnabled;
     private final ClientLifecycleMonitor lifecycleMonitor;
-    private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
+    private final Map<UUID, LongConsumer> backupListeners = new ConcurrentHashMap<>();
     private final AddressChecker addressChecker;
     private final IOBufferAllocator responseBufAllocator = new ConcurrentIOBufferAllocator(4096, true);
     private final boolean tpcEnabled;
@@ -525,24 +525,24 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public void addBackupListener(UUID clientUuid, Consumer<Long> backupListener) {
+    public void addBackupListener(UUID clientUuid, LongConsumer backupListener) {
         backupListeners.put(clientUuid, backupListener);
     }
 
     @Override
     public void dispatchBackupEvent(UUID clientUUID, long clientCorrelationId) {
-        Consumer<Long> backupListener = backupListeners.get(clientUUID);
+        LongConsumer backupListener = backupListeners.get(clientUUID);
         if (backupListener != null) {
             backupListener.accept(clientCorrelationId);
         }
     }
 
     @Override
-    public boolean deregisterBackupListener(UUID clientUUID, Consumer<Long> backupListener) {
+    public boolean deregisterBackupListener(UUID clientUUID, LongConsumer backupListener) {
         return backupListeners.remove(clientUUID, backupListener);
     }
 
-    public Map<UUID, Consumer<Long>> getBackupListeners() {
+    public Map<UUID, LongConsumer> getBackupListeners() {
         return backupListeners;
     }
 
