@@ -22,6 +22,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.multimap.impl.operations.ContainsEntryOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -30,7 +31,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_CONTAINSKEY}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapContainsEntryCodec#REQUEST_MESSAGE_TYPE}
  */
 public class MultiMapContainsKeyMessageTask
         extends AbstractMultiMapPartitionMessageTask<MultiMapContainsKeyCodec.RequestParameters> {
@@ -69,7 +70,7 @@ public class MultiMapContainsKeyMessageTask
 
     @Override
     public String getMethodName() {
-        return "containsKey";
+        return SecurityInterceptorConstants.CONTAINS_KEY;
     }
 
     @Override

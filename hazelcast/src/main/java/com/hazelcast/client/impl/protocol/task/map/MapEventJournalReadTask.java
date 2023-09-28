@@ -25,6 +25,7 @@ import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -104,7 +105,7 @@ public class MapEventJournalReadTask<K, V, T>
 
     @Override
     public String getMethodName() {
-        return "readFromEventJournal";
+        return SecurityInterceptorConstants.READ_FROM_EVENT_JOURNAL;
     }
 
     @Override

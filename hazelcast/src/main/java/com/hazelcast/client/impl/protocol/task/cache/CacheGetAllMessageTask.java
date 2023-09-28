@@ -25,6 +25,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -90,7 +91,7 @@ public class CacheGetAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "getAll";
+        return SecurityInterceptorConstants.GET_ALL;
     }
 
     @Override

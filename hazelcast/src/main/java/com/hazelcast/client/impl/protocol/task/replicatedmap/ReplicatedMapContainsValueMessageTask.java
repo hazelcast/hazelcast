@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.ContainsValueOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -68,7 +69,7 @@ public class ReplicatedMapContainsValueMessageTask
 
     @Override
     public String getMethodName() {
-        return "containsValue";
+        return SecurityInterceptorConstants.CONTAINS_VALUE;
     }
 
     @Override

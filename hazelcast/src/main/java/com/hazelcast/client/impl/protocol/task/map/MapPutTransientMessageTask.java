@@ -23,6 +23,7 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.TimeUnit;
@@ -66,7 +67,7 @@ public class MapPutTransientMessageTask
 
     @Override
     public String getMethodName() {
-        return "putTransient";
+        return SecurityInterceptorConstants.PUT_TRANSIENT;
     }
 
     @Override

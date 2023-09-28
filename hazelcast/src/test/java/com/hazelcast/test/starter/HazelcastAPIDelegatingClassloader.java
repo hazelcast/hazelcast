@@ -162,6 +162,11 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
         if (!name.startsWith("com.hazelcast")) {
             return false;
         }
+        if (name.startsWith("com.hazelcast.shaded")) {
+            // test deps are not shaded but some of them might contain classes
+            // matching checks in isTestClass.
+            return false;
+        }
         return isTestClass(name);
     }
 

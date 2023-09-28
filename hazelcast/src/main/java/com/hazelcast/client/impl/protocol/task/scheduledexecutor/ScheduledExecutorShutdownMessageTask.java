@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.operations.ShutdownOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -76,7 +77,7 @@ public class ScheduledExecutorShutdownMessageTask
 
     @Override
     public String getMethodName() {
-        return "shutdown";
+        return SecurityInterceptorConstants.SHUTDOWN;
     }
 
     @Override

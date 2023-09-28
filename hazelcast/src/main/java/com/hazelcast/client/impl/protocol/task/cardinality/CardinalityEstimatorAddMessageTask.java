@@ -16,13 +16,13 @@
 
 package com.hazelcast.client.impl.protocol.task.cardinality;
 
-import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.cardinality.impl.operations.AggregateOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAddCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CardinalityEstimatorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -53,7 +53,7 @@ public class CardinalityEstimatorAddMessageTask
 
     @Override
     public String getServiceName() {
-        return CardinalityEstimatorService.SERVICE_NAME;
+        return SecurityInterceptorConstants.CARDINALITY_ESTIMATOR_SERVICE;
     }
 
     @Override
@@ -68,7 +68,7 @@ public class CardinalityEstimatorAddMessageTask
 
     @Override
     public String getMethodName() {
-        return "add";
+        return SecurityInterceptorConstants.ADD;
     }
 
     @Override

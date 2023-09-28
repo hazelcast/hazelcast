@@ -116,7 +116,7 @@ public class AddCPGroupAvailabilityListenerMessageTask extends AbstractAsyncMess
 
     @Override
     public String getMethodName() {
-        return null;
+        return "addCPGroupAvailabilityListener";
     }
 
     @Override

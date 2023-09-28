@@ -125,7 +125,7 @@ public final class StringUtil {
         if (s == null) {
             return true;
         }
-        return s.trim().isEmpty();
+        return s.isBlank();
     }
 
     /**

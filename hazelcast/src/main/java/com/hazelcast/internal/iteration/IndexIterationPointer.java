@@ -26,13 +26,37 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
-import static com.hazelcast.query.impl.AbstractIndex.NULL;
-
+/**
+ * Index iteration range or point lookup.
+ * <p>
+ * The following types of pointers are supported:
+ * <ul>
+ *     <li>unconstrained pointer: (null, null) - scans null and not-null values</li>
+ *     <li>single side constrained ranges: (null, X) and (X, null). Note that (null, X)
+ *     includes also NULL</li>
+ *     <li>constrained range: (X, Y)</li>
+ *     <li>point lookup pointer: (X, X)</li>
+ *     <li>IS NULL pointer: [NULL, NULL] - scans only NULL values. Special case of point lookup pointer</li>
+ *     <li>NOT NULL pointer: (NULL, null)</li>
+ * </ul>
+ * Important conventions:
+ * <ol>
+ *     <li>either end can be NULL and NULL end can be inclusive or not.
+ *     Inclusive NULL on the left side is equivalent to null (i.e. -Inf).
+ *     [null, NULL] is equivalent to  [NULL, NULL]. [null, NULL) should produce empty result.</li>
+ *     <li>null can be inclusive or not - both variants are treated in the same way</li>
+ *     <li>NULL end does not make sense for composite index because composite index
+ *     stores {@link com.hazelcast.query.impl.CompositeValue} which are never null, even if
+ *     they consist entirely of {@link com.hazelcast.query.impl.AbstractIndex#NULL} values.</li>
+ *     </li>beware of distinction between Java null and NULL - it is not always obvious.</li>
+ * </ol>
+ */
 public class IndexIterationPointer implements IdentifiedDataSerializable {
 
     private static final byte FLAG_DESCENDING = 1;
     private static final byte FLAG_FROM_INCLUSIVE = 1 << 1;
     private static final byte FLAG_TO_INCLUSIVE = 1 << 2;
+    // Note this flag is misleading, it is also set for unconstrained pointers
     private static final byte FLAG_POINT_LOOKUP = 1 << 3;
 
     private byte flags;
@@ -50,9 +74,13 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
             @Nullable Data lastEntryKeyData
     ) {
         assert from == null || to == null || ((Comparable) from).compareTo(to) <= 0 : "from must be <= than to";
-        assert (from == NULL && to == NULL) || (from != NULL && to != NULL)
-                : "IS NULL pointer must point lookup without range or unspecified end: " + from + " ... " + to;
+
         this.flags = flags;
+
+        assert from == null || to == null || ((Comparable) from).compareTo(to) != 0
+                || (isFromInclusive() && isToInclusive())
+                : "Point lookup limits must be all inclusive";
+
         this.from = from;
         this.to = to;
         this.lastEntryKeyData = lastEntryKeyData;

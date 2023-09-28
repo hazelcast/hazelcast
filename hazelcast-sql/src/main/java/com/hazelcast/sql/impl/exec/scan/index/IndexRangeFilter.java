@@ -27,6 +27,12 @@ import java.util.Objects;
 
 /**
  * Filter the is used for range requests. Could have either lower bound, upper bound or both.
+ * <p>
+ * For non-composite index: matches only NOT NULL values. If any of the bounds
+ * is {@link com.hazelcast.query.impl.AbstractIndex#NULL}, matches nothing.
+ * <p>
+ * For composite index obeys {@link com.hazelcast.query.impl.CompositeValue} comparison rules,
+ * including special values (NULL, infinity).
  */
 @SuppressWarnings("rawtypes")
 public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable {
@@ -55,6 +61,10 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
     }
 
     public IndexRangeFilter(IndexFilterValue from, boolean fromInclusive, IndexFilterValue to, boolean toInclusive) {
+        assert from != null || to != null;
+        assert from != null || !fromInclusive : "Unspecified from end must not be inclusive";
+        assert to != null || !toInclusive : "Unspecified to end must not be inclusive";
+
         this.from = from;
         this.fromInclusive = fromInclusive;
         this.to = to;
@@ -63,19 +73,12 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
 
     @Override
     public Comparable getComparable(ExpressionEvalContext evalContext) {
-        return from != null ? from.getValue(evalContext) : to.getValue(evalContext);
+        throw new UnsupportedOperationException("Should not be called");
     }
 
     @Override
     public boolean isCooperative() {
-        boolean ret = true;
-        if (from != null) {
-            ret = from.isCooperative();
-        }
-        if (to != null) {
-            ret &= to.isCooperative();
-        }
-        return ret;
+        return (from == null || from.isCooperative()) && (to == null || to.isCooperative());
     }
 
     public IndexFilterValue getFrom() {

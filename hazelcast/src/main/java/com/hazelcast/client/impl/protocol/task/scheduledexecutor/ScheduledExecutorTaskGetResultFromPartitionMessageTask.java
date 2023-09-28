@@ -27,6 +27,7 @@ import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskResult;
 import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -76,7 +77,7 @@ public class ScheduledExecutorTaskGetResultFromPartitionMessageTask
 
     @Override
     public String getMethodName() {
-        return "getResultTimeout";
+        return SecurityInterceptorConstants.GET_RESULT;
     }
 
     @Override

@@ -97,7 +97,7 @@ public final class ConversionsFromBson {
             value = ((BsonJavaScript) value).getCode();
         }
         else if (toConvert instanceof BsonJavaScriptWithScope) {
-            value = ((BsonJavaScript) value).getCode();
+            value = ((BsonJavaScriptWithScope) value).getCode();
         }
         else if (toConvert instanceof Date) {
             value = convertJavaDate((Date) toConvert, sqlType);

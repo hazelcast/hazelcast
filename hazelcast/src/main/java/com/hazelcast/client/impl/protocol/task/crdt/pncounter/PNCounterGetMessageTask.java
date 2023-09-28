@@ -23,11 +23,11 @@ import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.crdt.pncounter.PNCounter;
-import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.crdt.pncounter.operations.CRDTTimestampedLong;
 import com.hazelcast.internal.crdt.pncounter.operations.GetOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.PNCounterPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -79,7 +79,7 @@ public class PNCounterGetMessageTask extends AbstractTargetMessageTask<RequestPa
 
     @Override
     public String getServiceName() {
-        return PNCounterService.SERVICE_NAME;
+        return SecurityInterceptorConstants.PN_COUNTER_SERVICE;
     }
 
     public Object[] getParameters() {
@@ -93,7 +93,7 @@ public class PNCounterGetMessageTask extends AbstractTargetMessageTask<RequestPa
 
     @Override
     public String getMethodName() {
-        return "get";
+        return SecurityInterceptorConstants.GET;
     }
 
     @Override
