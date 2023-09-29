@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -41,7 +42,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         createMapping("test", Long.class, String.class);
         assertFalse(assertQueryPlan("SELECT * FROM test").isAnalyzed());
         assertTrue(assertQueryPlan("ANALYZE SELECT * FROM test").isAnalyzed());
-       SelectPlan plan = assertQueryPlan(
+        SelectPlan plan = assertQueryPlan(
                 "ANALYZE WITH OPTIONS('opt1'='opt1val', 'opt2'='opt2val') SELECT * FROM test");
         assertTrue(plan.isAnalyzed());
         assertEquals("opt1val", plan.getAnalyzeOptions().get("opt1"));

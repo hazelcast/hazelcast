@@ -26,6 +26,7 @@ data: {
     imports: [
       "com.hazelcast.jet.sql.impl.parse.ParserResource"
       "com.hazelcast.jet.sql.impl.parse.SqlAlterJob"
+      "com.hazelcast.jet.sql.impl.parse.SqlAnalyzeStatement"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateDataConnection"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
@@ -52,29 +53,28 @@ data: {
       "com.hazelcast.sql.impl.type.QueryDataType"
       "org.apache.calcite.sql.SqlCreate"
       "org.apache.calcite.sql.SqlDrop"
-      "com.hazelcast.jet.sql.impl.parse.SqlAnalyzeStatement"
     ]
 
     # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is
     # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
-      "CONNECTOR"
+      "ANALYZE"
       "CONNECTIONS"
+      "CONNECTOR"
       "IF"
       "INDEX"
       "JOB"
       "JOBS"
       "MAPPING"
       "MAPPINGS"
+      "RESOURCES"
       "RESUME"
-      "SINK"
       "SHARED"
+      "SINK"
       "SNAPSHOT"
       "SUSPEND"
-      "VIEWS"
       "TYPES"
-      "RESOURCES"
-      "ANALYZE"
+      "VIEWS"
     ]
 
     # List of keywords from "keywords" section that are not reserved.
@@ -417,21 +417,21 @@ data: {
       "ZONE"
 
       # added by Hazelcast
+      "ANALYZE"
       "CONNECTOR"
       "EXTERNAL"
       "JOB"
       "JOBS"
       "MAPPING"
       "MAPPINGS"
+      "RESOURCES"
       "RESUME"
+      "SHARED"
       "SINK"
       "SNAPSHOT"
-      "SHARED"
       "SUSPEND"
-      "VIEWS"
       "TYPES"
-      "RESOURCES"
-      "ANALYZE"
+      "VIEWS"
     ]
 
     # List of non-reserved keywords to add;
@@ -454,10 +454,10 @@ data: {
     # Example: "SqlShowDatabases()", "SqlShowTables()".
     statementParserMethods: [
       "SqlAlterJob()"
+      "SqlAnalyzeStatement()"
       "SqlExplainStatement()"
       "SqlExtendedInsert()"
       "SqlShowStatement()"
-      "SqlAnalyzeStatement()"
     ]
 
     # List of methods for parsing custom literals.

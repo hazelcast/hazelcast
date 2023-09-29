@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
@@ -69,7 +68,7 @@ public class SqlAnalyzeStatement extends SqlCall {
 
     @Override
     public List<SqlNode> getOperandList() {
-        return ImmutableList.of(query);
+        return List.of(query);
     }
 
     @Override

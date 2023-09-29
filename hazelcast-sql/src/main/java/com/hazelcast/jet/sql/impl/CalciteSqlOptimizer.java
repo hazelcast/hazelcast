@@ -594,7 +594,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
     }
 
-    @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:ParameterNumber"})
+    @SuppressWarnings({"ReturnCount", "ParameterNumber"})
     private SqlPlanImpl toPlan(
             PlanKey planKey,
             QueryParameterMetadata parameterMetadata,
@@ -603,8 +603,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             OptimizerContext context,
             boolean isCreateJob,
             String query,
-            final boolean analyze,
-            final Map<String, String> analyzeOptions
+            boolean analyze,
+            Map<String, String> analyzeOptions
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
 
