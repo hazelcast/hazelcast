@@ -41,8 +41,8 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         createMapping("test", Long.class, String.class);
         assertFalse(assertQueryPlan("SELECT * FROM test").isAnalyzed());
         assertTrue(assertQueryPlan("ANALYZE SELECT * FROM test").isAnalyzed());
-        final SqlPlanImpl.SelectPlan plan = assertQueryPlan("ANALYZE WITH OPTIONS('opt1'='opt1val', 'opt2'='opt2val') "
-                + "SELECT * FROM test");
+       SelectPlan plan = assertQueryPlan(
+                "ANALYZE WITH OPTIONS('opt1'='opt1val', 'opt2'='opt2val') SELECT * FROM test");
         assertTrue(plan.isAnalyzed());
         assertEquals("opt1val", plan.getAnalyzeOptions().get("opt1"));
         assertEquals("opt2val", plan.getAnalyzeOptions().get("opt2"));
