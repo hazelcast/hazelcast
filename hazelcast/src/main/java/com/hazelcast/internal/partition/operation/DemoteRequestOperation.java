@@ -44,7 +44,7 @@ import java.util.UUID;
  * @since 5.4
  */
 public class DemoteRequestOperation
-        extends AbstractPartitionOperation implements MigrationCycleOperation, Versioned {
+        extends AbstractPartitionOperation implements MigrationCycleOperation {
 
     private UUID uuid;
     private transient boolean response;

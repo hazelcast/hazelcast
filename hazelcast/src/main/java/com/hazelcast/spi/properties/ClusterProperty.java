@@ -700,12 +700,6 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.graceful.shutdown.max.wait", 600, SECONDS);
 
     /**
-     * Maximum wait in seconds during member demote.
-     */
-    public static final HazelcastProperty DEMOTE_MAX_WAIT
-            = new HazelcastProperty("hazelcast.member.demote.max.wait", 600, SECONDS);
-
-    /**
      * Interval for publishing partition table periodically to all cluster members
      * in seconds.
      */
@@ -1928,6 +1922,14 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty WAN_REPLICATE_ICACHE_EVICTIONS
             = new HazelcastProperty("hazelcast.wan.replicate.icache.evictions", false);
+
+    /**
+     * Maximum wait in seconds during member demotion to a lite member.
+     *
+     * @since 5.4
+     */
+    public static final HazelcastProperty DEMOTE_MAX_WAIT
+            = new HazelcastProperty("hazelcast.member.demote.max.wait", 600, SECONDS);
 
     private ClusterProperty() {
     }

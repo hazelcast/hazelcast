@@ -1993,7 +1993,7 @@ public class MigrationManager {
                 final int demoteRequestCount = demoteRequestedMembers.size();
                 if (demoteRequestCount > 0) {
                     boolean present = false;
-                    List<Member> demotedMembers = new ArrayList<>();
+                    List<Member> demotedMembers = new ArrayList<>(demoteRequestCount);
                     for (Member member : demoteRequestedMembers) {
                         if (partitionStateManager.isAbsentInPartitionTable(member)) {
                             demotedMembers.add(member);
