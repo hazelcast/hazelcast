@@ -269,7 +269,7 @@ public class LocalMapStatsProvider {
                 // todo consider if this should be logged as a warning
                 //  it is normal to have some replicas unassigned under various circumstances
                 //  depending on cluster state and membership changes
-                printWarning(partitionId, replicaNumber);
+                logReplicaHasNoOwner(partitionId, replicaNumber);
                 continue;
             }
             if (isReplicaOnThisNode(replicaAddress)) {
@@ -294,8 +294,10 @@ public class LocalMapStatsProvider {
         return localAddress.equals(replicaAddress);
     }
 
-    private void printWarning(int partitionId, int replica) {
-        logger.warning("partitionId: " + partitionId + ", replica: " + replica + " has no owner!");
+    private void logReplicaHasNoOwner(int partitionId, int replica) {
+        if (logger.isFinestEnabled()) {
+            logger.finest("partitionId: " + partitionId + ", replica: " + replica + " has no owner!");
+        }
     }
 
     /**
