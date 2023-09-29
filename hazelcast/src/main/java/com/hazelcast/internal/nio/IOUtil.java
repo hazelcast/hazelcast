@@ -62,7 +62,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Collection;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -317,10 +316,12 @@ public final class IOUtil {
 
     public static OutputStream newOutputStream(final ByteBuffer dst) {
         return new OutputStream() {
+            @Override
             public void write(int b) {
                 dst.put((byte) b);
             }
 
+            @Override
             public void write(byte[] bytes, int off, int len) {
                 dst.put(bytes, off, len);
             }
@@ -329,6 +330,7 @@ public final class IOUtil {
 
     public static InputStream newInputStream(final ByteBuffer src) {
         return new InputStream() {
+            @Override
             public int read() {
                 if (!src.hasRemaining()) {
                     return -1;
@@ -336,6 +338,7 @@ public final class IOUtil {
                 return src.get() & 0xff;
             }
 
+            @Override
             public int read(byte[] bytes, int off, int len) {
                 if (!src.hasRemaining()) {
                     return -1;
@@ -451,21 +454,6 @@ public final class IOUtil {
         }
     }
 
-    public static void closeResources(Collection<? extends Closeable> collection) {
-        if (collection == null) {
-            return;
-        }
-        for (Closeable closeable : collection) {
-            if (closeable != null) {
-                try {
-                    closeable.close();
-                } catch (IOException e) {
-                    LOGGER.finest("closeResource failed", e);
-                }
-            }
-        }
-    }
-
     public static void close(Connection conn, String reason) {
         if (conn == null) {
             return;
@@ -544,7 +532,7 @@ public final class IOUtil {
             return;
         }
         try {
-            Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(path, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Files.delete(file);

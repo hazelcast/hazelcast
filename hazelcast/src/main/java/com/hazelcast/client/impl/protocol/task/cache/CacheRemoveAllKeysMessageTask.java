@@ -96,7 +96,7 @@ public class CacheRemoveAllKeysMessageTask
 
     @Override
     public String getMethodName() {
-        return SecurityInterceptorConstants.REMOVE_ALL_KEYS;
+        return SecurityInterceptorConstants.REMOVE_ALL;
     }
 
 }
