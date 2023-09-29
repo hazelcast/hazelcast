@@ -84,10 +84,10 @@ public class CompositeMetricsCollectorTest {
     @Test
     public void testCollectException() {
         Exception ex = new Exception();
-        compositeCollector.collectThrowable(metricsDescriptor, ex);
+        compositeCollector.collectException(metricsDescriptor, ex);
 
-        verify(collectorMock1).collectThrowable(metricsDescriptor, ex);
-        verify(collectorMock2).collectThrowable(metricsDescriptor, ex);
+        verify(collectorMock1).collectException(metricsDescriptor, ex);
+        verify(collectorMock2).collectException(metricsDescriptor, ex);
     }
 
     @Test

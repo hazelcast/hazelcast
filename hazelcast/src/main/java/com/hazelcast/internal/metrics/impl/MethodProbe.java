@@ -24,6 +24,7 @@ import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.counters.Counter;
 
 import java.lang.invoke.LambdaMetafactory;
@@ -189,27 +190,33 @@ abstract class MethodProbe implements ProbeFunction {
 
         @SuppressWarnings("checkstyle:CyclomaticComplexity")
         @Override
-        public long get(final S source) throws Throwable {
-            switch (type) {
-                case TYPE_LONG_PRIMITIVE:
-                    return isMethodStatic ? (long) methodHandle.invokeExact() : (long) methodHandle.invokeExact(source);
-                case TYPE_LONG_NUMBER:
-                    final Number longNumber = invoke(source);
-                    return longNumber == null ? 0 : longNumber.longValue();
-                case TYPE_MAP:
-                    final Map<?, ?> map = invoke(source);
-                    return map == null ? 0 : map.size();
-                case TYPE_COLLECTION:
-                    final Collection<?> collection = invoke(source);
-                    return collection == null ? 0 : collection.size();
-                case TYPE_COUNTER:
-                    final Counter counter = invoke(source);
-                    return counter == null ? 0 : counter.get();
-                case TYPE_SEMAPHORE:
-                    final Semaphore semaphore = invoke(source);
-                    return semaphore == null ? 0 : semaphore.availablePermits();
-                default:
-                    throw new IllegalStateException("Unrecognized type: " + type);
+        public long get(final S source) throws Exception {
+            try {
+                switch (type) {
+                    case TYPE_LONG_PRIMITIVE:
+                        return isMethodStatic ? (long) methodHandle.invokeExact() : (long) methodHandle.invokeExact(source);
+                    case TYPE_LONG_NUMBER:
+                        final Number longNumber = invoke(source);
+                        return longNumber == null ? 0 : longNumber.longValue();
+                    case TYPE_MAP:
+                        final Map<?, ?> map = invoke(source);
+                        return map == null ? 0 : map.size();
+                    case TYPE_COLLECTION:
+                        final Collection<?> collection = invoke(source);
+                        return collection == null ? 0 : collection.size();
+                    case TYPE_COUNTER:
+                        final Counter counter = invoke(source);
+                        return counter == null ? 0 : counter.get();
+                    case TYPE_SEMAPHORE:
+                        final Semaphore semaphore = invoke(source);
+                        return semaphore == null ? 0 : semaphore.availablePermits();
+                    default:
+                        throw new IllegalStateException("Unrecognized type: " + type);
+                }
+            } catch (final Exception e) {
+                throw e;
+            } catch (final Throwable t) {
+                throw ExceptionUtil.sneakyThrow(t);
             }
         }
     }
@@ -220,15 +227,21 @@ abstract class MethodProbe implements ProbeFunction {
         }
 
         @Override
-        public double get(final S source) throws Throwable {
-            switch (type) {
-                case TYPE_DOUBLE_PRIMITIVE:
-                    return isMethodStatic ? (double) methodHandle.invokeExact() : (double) methodHandle.invokeExact(source);
-                case TYPE_DOUBLE_NUMBER:
-                    final Number result = invoke(source);
-                    return result == null ? 0 : result.doubleValue();
-                default:
-                    throw new IllegalStateException("Unrecognized type: " + type);
+        public double get(final S source) throws Exception {
+            try {
+                switch (type) {
+                    case TYPE_DOUBLE_PRIMITIVE:
+                        return isMethodStatic ? (double) methodHandle.invokeExact() : (double) methodHandle.invokeExact(source);
+                    case TYPE_DOUBLE_NUMBER:
+                        final Number result = invoke(source);
+                        return result == null ? 0 : result.doubleValue();
+                    default:
+                        throw new IllegalStateException("Unrecognized type: " + type);
+                }
+            } catch (final Exception e) {
+                throw e;
+            } catch (final Throwable t) {
+                throw ExceptionUtil.sneakyThrow(t);
             }
         }
     }

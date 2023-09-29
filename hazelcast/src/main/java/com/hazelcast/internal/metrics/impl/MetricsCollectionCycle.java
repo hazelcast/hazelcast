@@ -166,8 +166,8 @@ class MetricsCollectionCycle {
         try {
             double value = function.get(source);
             metricsCollector.collectDouble(descriptor, value);
-        } catch (Throwable t) {
-            metricsCollector.collectThrowable(descriptor, t);
+        } catch (Exception ex) {
+            metricsCollector.collectException(descriptor, ex);
         }
     }
 
@@ -175,8 +175,8 @@ class MetricsCollectionCycle {
         try {
             long value = function.get(source);
             metricsCollector.collectLong(descriptor, value);
-        } catch (Throwable t) {
-            metricsCollector.collectThrowable(descriptor, t);
+        } catch (Exception ex) {
+            metricsCollector.collectException(descriptor, ex);
         }
     }
 

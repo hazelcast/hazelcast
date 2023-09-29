@@ -774,10 +774,10 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
 
         @Override
-        public void collectThrowable(MetricDescriptor descriptor, Throwable t) {
+        public void collectException(MetricDescriptor descriptor, Exception e) {
             Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
             if (this.executionId.equals(executionId)) {
-                logger.warning("Throwable when rendering job metrics: " + t, t);
+                logger.warning("Exception when rendering job metrics: " + e, e);
             }
         }
 

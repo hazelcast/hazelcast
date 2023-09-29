@@ -406,8 +406,8 @@ public class ClientStatisticsService {
         }
 
         @Override
-        public void collectThrowable(MetricDescriptor descriptor, Throwable t) {
-            logger.warning("Error when collecting '" + descriptor.toString() + '\'', t);
+        public void collectException(MetricDescriptor descriptor, Exception e) {
+            logger.warning("Error when collecting '" + descriptor.toString() + '\'', e);
         }
 
         @Override

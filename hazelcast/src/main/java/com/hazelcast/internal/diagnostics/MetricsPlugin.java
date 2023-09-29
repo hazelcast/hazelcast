@@ -103,10 +103,10 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         }
 
         @Override
-        public void collectThrowable(MetricDescriptor descriptor, Throwable t) {
+        public void collectException(MetricDescriptor descriptor, Exception e) {
             if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(),
-                        t.getClass().getName() + ':' + t.getMessage());
+                        e.getClass().getName() + ':' + e.getMessage());
             }
         }
 

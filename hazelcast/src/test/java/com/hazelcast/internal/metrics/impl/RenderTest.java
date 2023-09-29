@@ -108,7 +108,7 @@ public class RenderTest {
 
         metricsRegistry.collect(renderer);
 
-        verify(renderer).collectThrowable(metricDescriptor("foo"), ex);
+        verify(renderer).collectException(metricDescriptor("foo"), ex);
         verifyNoMoreInteractions(renderer);
     }
 }

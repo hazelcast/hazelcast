@@ -104,8 +104,8 @@ class LongGaugeImpl extends AbstractGauge implements LongGauge {
                 double doubleResult = doubleFunction.get(source);
                 return Math.round(doubleResult);
             }
-        } catch (Throwable t) {
-            metricsRegistry.logger.warning("Failed to access the probe: " + gaugeName, t);
+        } catch (Exception e) {
+            metricsRegistry.logger.warning("Failed to access the probe: " + gaugeName, e);
             return DEFAULT_VALUE;
         }
     }

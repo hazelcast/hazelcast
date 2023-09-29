@@ -213,7 +213,7 @@ public class LocalRecordStoreStatsFailoverTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void collectThrowable(MetricDescriptor descriptor, Throwable t) {
+        public void collectException(MetricDescriptor descriptor, Exception e) {
         }
 
         @Override
