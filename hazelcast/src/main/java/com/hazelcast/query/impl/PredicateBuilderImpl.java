@@ -46,7 +46,7 @@ public class PredicateBuilderImpl
     private String attribute;
 
     @Override
-    public Predicate accept(Visitor visitor, Indexes indexes) {
+    public Predicate accept(Visitor visitor, IndexRegistry indexes) {
         Predicate predicate = lsPredicates.get(0);
         if (predicate instanceof VisitablePredicate) {
             Predicate newPredicate = ((VisitablePredicate) predicate).accept(visitor, indexes);
