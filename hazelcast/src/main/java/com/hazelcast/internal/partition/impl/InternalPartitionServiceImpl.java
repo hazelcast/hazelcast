@@ -1053,9 +1053,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     public void onDemoteResponse() {
         CountDownLatch latch = demoteLatchRef.get();
-        assert latch != null;
-        latch.countDown();
-        demoteLatchRef.compareAndSet(latch, null);
+        if (latch != null) {
+            latch.countDown();
+            demoteLatchRef.compareAndSet(latch, null);
+        }
     }
 
     public void onShutdownRequest(Member member) {
