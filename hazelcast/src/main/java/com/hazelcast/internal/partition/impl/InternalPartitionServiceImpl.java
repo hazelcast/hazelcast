@@ -621,7 +621,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                                 return sendPartitionRuntimeState(member.getAddress());
                             }
                         }, internalAsyncExecutor)
-                        .thenCompose(x -> x));
+                        .thenComposeAsync(x -> x, internalAsyncExecutor));
             }
         }
         return futures;
