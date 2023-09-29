@@ -67,7 +67,7 @@ class KubernetesApiEndpointResolver
     }
 
     private static KubernetesClient buildKubernetesClient(KubernetesConfig config, ClusterTopologyIntentTracker tracker) {
-        return new KubernetesClient(config.getNamespace(), config.getKubernetesMasterUrl(), config.getTokenProvider(),
+        return new KubernetesClient(config.getNamespace(), config.getServiceAccount(), config.getKubernetesMasterUrl(), config.getTokenProvider(),
                 config.getKubernetesCaCertificate(), config.getKubernetesApiRetries(), config.getExposeExternallyMode(),
                 config.isUseNodeNameAsExternalAddress(), config.getServicePerPodLabelName(),
                 config.getServicePerPodLabelValue(), tracker);
@@ -110,7 +110,7 @@ class KubernetesApiEndpointResolver
     }
 
     private Address createAddress(KubernetesClient.EndpointAddress address,
-            ToIntFunction<KubernetesClient.EndpointAddress> portResolver) {
+                                  ToIntFunction<KubernetesClient.EndpointAddress> portResolver) {
         if (address == null) {
             return null;
         }
