@@ -38,14 +38,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
 
     private final BiFunctionEx<? super V, ? super T, ? extends V> updateFn;
-    private final BiFunction<Object, Object, Object> remappingFunction =
+    private final BinaryOperator<Object> remappingFunction =
             (o, n) -> ApplyFnEntryProcessor.append(o, (Data) n);
 
     public UpdateMapP(HazelcastInstance instance,

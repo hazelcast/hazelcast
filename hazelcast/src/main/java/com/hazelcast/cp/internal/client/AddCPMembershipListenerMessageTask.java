@@ -112,7 +112,7 @@ public class AddCPMembershipListenerMessageTask extends AbstractAsyncMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "addCPMembershipListener";
     }
 
     @Override

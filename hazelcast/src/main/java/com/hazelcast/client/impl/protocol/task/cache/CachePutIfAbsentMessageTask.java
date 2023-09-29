@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CachePutIfAbsentCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -79,6 +80,6 @@ public class CachePutIfAbsentMessageTask
 
     @Override
     public String getMethodName() {
-        return "putIfAbsent";
+        return SecurityInterceptorConstants.PUT_IF_ABSENT;
     }
 }

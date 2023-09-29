@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -68,7 +69,7 @@ public class TopicPublishMessageTask
 
     @Override
     public String getMethodName() {
-        return "publish";
+        return SecurityInterceptorConstants.PUBLISH;
     }
 
     @Override

@@ -140,7 +140,7 @@ public class MapContainer {
                 .build();
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues(),
                 serializationService, extractors);
-        this.globalIndexes = shouldUseGlobalIndex() ? createIndexes(true) : null;
+        this.globalIndexes = shouldUseGlobalIndex() ? createIndexes(true, -1) : null;
         this.mapStoreContext = createMapStoreContext(this);
         this.invalidationListenerCounter = mapServiceContext.getEventListenerCounter()
                 .getOrCreateCounter(name);
@@ -155,9 +155,11 @@ public class MapContainer {
     /**
      * @param global set {@code true} to create global indexes, otherwise set
      *               {@code false} to have partitioned indexes
+     * @param partitionId  the partition ID the index is created on. {@code -1}
+     *                     for global indexes.
      * @return a new Indexes object
      */
-    public Indexes createIndexes(boolean global) {
+    public Indexes createIndexes(boolean global, int partitionId) {
         int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
 
         Node node = ((NodeEngineImpl) mapServiceContext.getNodeEngine()).getNode();
@@ -169,6 +171,7 @@ public class MapContainer {
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
                 .partitionCount(partitionCount)
+                .partitionId(partitionId)
                 .resultFilterFactory(new IndexResultFilterFactory())
                 .build();
     }

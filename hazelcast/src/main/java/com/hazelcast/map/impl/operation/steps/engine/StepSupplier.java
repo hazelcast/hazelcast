@@ -19,16 +19,19 @@ package com.hazelcast.map.impl.operation.steps.engine;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
+import com.hazelcast.map.impl.recordstore.StepAwareStorage;
+import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 
-import javax.annotation.Nullable;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 import static com.hazelcast.map.impl.operation.ForcedEviction.runStepWithForcedEvictionStrategies;
+import static com.hazelcast.map.impl.operation.steps.engine.AppendAsNewHeadStep.appendAsNewHeadStep;
 
 /**
  * <lu>
@@ -37,7 +40,7 @@ import static com.hazelcast.map.impl.operation.ForcedEviction.runStepWithForcedE
  * <li>Must be thread safe</li>
  * </lu>
  */
-public class StepSupplier implements Supplier<Runnable> {
+public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
 
     private final State state;
     private final OperationRunnerImpl operationRunner;
@@ -55,53 +58,39 @@ public class StepSupplier implements Supplier<Runnable> {
         this(operation, true);
     }
 
-    public StepSupplier(MapOperation operation, boolean checkCurrentThread) {
+    // package-private for testing purposes
+    StepSupplier(MapOperation operation,
+                 boolean checkCurrentThread) {
         assert operation != null;
 
         this.state = operation.createState();
-        Step injectedStep = operation.getRecordStore().getStorage().newInjectedStep();
-        Step currentFirstStep = operation.getStartingStep();
-        this.currentStep = injectedStep == null
-                ? currentFirstStep : setAndGetInjectedStepAsFirstStep(currentFirstStep, injectedStep);
+        this.currentStep = operation.getStartingStep();
+        collectAndUpdateHeadSteps(operation);
         this.operationRunner = UtilSteps.getPartitionOperationRunner(state);
         this.checkCurrentThread = checkCurrentThread;
 
-        assert state != null;
         assert this.currentStep != null;
     }
 
-    /**
-     * Sets injected step as starting step.
-     * <p>
-     * Current starting step becomes 2nd step in this case.
-     * @param currentStep  starting step of operation
-     * @param injectedStep new step to inject before currentStep
-     * @return injected step after setting its next step to currentStep
-     */
-    private static Step setAndGetInjectedStepAsFirstStep(Step currentStep, Step injectedStep) {
-        return new Step<State>() {
+    @Override
+    public void accept(Step headStep) {
+        if (headStep == null) {
+            return;
+        }
 
-            @Override
-            public boolean isOffloadStep(State state) {
-                return injectedStep.isOffloadStep(state);
-            }
+        this.currentStep = appendAsNewHeadStep(currentStep, headStep);
+    }
 
-            @Override
-            public void runStep(State state) {
-                injectedStep.runStep(state);
-            }
+    private void collectAndUpdateHeadSteps(MapOperation operation) {
+        Storage storage = operation.getRecordStore().getStorage();
+        if (storage instanceof StepAwareStorage) {
+            ((StepAwareStorage) storage).addAsHeadStep(this);
+        }
+    }
 
-            @Override
-            public String getExecutorName(State state) {
-                return injectedStep.getExecutorName(state);
-            }
-
-            @Nullable
-            @Override
-            public Step nextStep(State state) {
-                return currentStep;
-            }
-        };
+    // used only for testing
+    Step getCurrentStep() {
+        return currentStep;
     }
 
     @Override
@@ -129,9 +118,7 @@ public class StepSupplier implements Supplier<Runnable> {
 
                 @Override
                 public void run() {
-                    if (checkCurrentThread) {
-                        assert !isRunningOnPartitionThread();
-                    }
+                    assert !checkCurrentThread || !isRunningOnPartitionThread();
 
                     runStepWithState(step, state);
                 }

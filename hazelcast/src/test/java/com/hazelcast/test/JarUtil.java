@@ -16,18 +16,18 @@
 
 package com.hazelcast.test;
 
-import org.apache.commons.io.IOUtils;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.util.Lists.newArrayList;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.assertj.core.util.Lists.newArrayList;
 
 /**
  * Util class to work with (create) jar files for tests. Usually used when testing classloading features.
@@ -69,8 +69,8 @@ public class JarUtil {
 
     private static void writeEntry(JarOutputStream jarOS, String sourceFolder, String name) throws IOException {
         jarOS.putNextEntry(new JarEntry(name));
-        try (FileInputStream fis = new FileInputStream(sourceFolder + name)) {
-            jarOS.write(IOUtils.toByteArray(fis));
+        try (InputStream fis = new FileInputStream(sourceFolder + name)) {
+            fis.transferTo(jarOS);
         }
         jarOS.closeEntry();
     }
@@ -79,7 +79,7 @@ public class JarUtil {
         if (fileNames.size() != data.size()) {
             throw new IllegalArgumentException("fileNames and data must have same size()");
         }
-        try (FileOutputStream out = new FileOutputStream(outputJar);
+        try (OutputStream out = new FileOutputStream(outputJar);
              JarOutputStream jarOS = new JarOutputStream(out)) {
 
             for (int i = 0; i < fileNames.size(); i++) {
@@ -90,5 +90,4 @@ public class JarUtil {
             throw new RuntimeException(e);
         }
     }
-
 }

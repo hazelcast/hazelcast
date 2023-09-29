@@ -1,27 +1,17 @@
 # Hazelcast
 
 [![Slack](https://img.shields.io/badge/slack-chat-green.svg)](https://slack.hazelcast.com/) 
-[![javadoc](https://javadoc.io/badge2/com.hazelcast/hazelcast/5.0/javadoc.svg)](https://javadoc.io/doc/com.hazelcast/hazelcast/5.0)
+[![javadoc](https://javadoc.io/badge2/com.hazelcast/hazelcast/latest/javadoc.svg)](https://javadoc.io/doc/com.hazelcast/hazelcast/latest)
 [![Docker pulls](https://img.shields.io/docker/pulls/hazelcast/hazelcast)](https://img.shields.io/docker/pulls/hazelcast/hazelcast)
-[![Total Alerts](https://img.shields.io/lgtm/alerts/g/hazelcast/hazelcast.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/hazelcast/hazelcast/alerts)
-[![Code Quality: Java](https://img.shields.io/lgtm/grade/java/g/hazelcast/hazelcast.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/hazelcast/hazelcast/context:java)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=hz-os-master&metric=alert_status)](https://sonarcloud.io/dashboard?id=hz-os-master)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=hazelcast_hazelcast&metric=alert_status)](https://sonarcloud.io/dashboard?id=hazelcast_hazelcast)
 
 ----
 
 ## What is Hazelcast
 
-Hazelcast is a distributed computation and storage platform for consistently
-low-latency querying, aggregation and stateful computation against event streams
-and traditional data sources. It allows you to quickly build resource-efficient,
-real-time applications. You can deploy it at any scale from small edge devices
-to a large cluster of cloud instances. 
+The world’s leading companies trust Hazelcast to modernize applications and take instant action on data in motion to create new revenue streams, mitigate risk, and operate more efficiently. Businesses use Hazelcast’s unified **real-time data platform** to process **streaming** data, enrich it with historical context and take instant action with standard or **ML/AI-driven automation** - before it is stored in a database or data lake. 
 
-A cluster of Hazelcast nodes share both the data storage and computational load
-which can dynamically scale up and down. When you add new nodes to the cluster,
-the data is automatically rebalanced across the cluster, and currently running
-computational tasks (known as jobs) snapshot their state and scale with
-processing guarantees.
+Hazelcast is named in the Gartner Market Guide to Event Stream Processing and a leader in the GigaOm Radar Report for Streaming Data Platforms. To join our community of CXOs, architects and developers at brands such as Lowe’s, HSBC, JPMorgan Chase, Volvo, New York Life, and others, visit [hazelcast.com](https://hazelcast.com).
 
 ## When to use Hazelcast
 

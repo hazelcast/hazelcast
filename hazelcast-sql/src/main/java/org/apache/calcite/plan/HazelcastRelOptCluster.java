@@ -17,6 +17,7 @@
 package org.apache.calcite.plan;
 
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
@@ -42,23 +43,29 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
      */
     private boolean requiresJob;
 
+    /** SQL security context */
+    private final SqlSecurityContext securityContext;
+
     private HazelcastRelOptCluster(
             RelOptPlanner planner,
             RelDataTypeFactory typeFactory,
             RexBuilder rexBuilder,
             AtomicInteger nextCorrel,
-            Map<String, RelNode> mapCorrelToRel
+            Map<String, RelNode> mapCorrelToRel,
+            SqlSecurityContext securityContext
     ) {
         super(planner, typeFactory, rexBuilder, nextCorrel, mapCorrelToRel);
+        this.securityContext = securityContext;
     }
 
-    public static HazelcastRelOptCluster create(RelOptPlanner planner, RexBuilder rexBuilder) {
+    public static HazelcastRelOptCluster create(RelOptPlanner planner, RexBuilder rexBuilder, SqlSecurityContext ssc) {
         return new HazelcastRelOptCluster(
                 planner,
                 rexBuilder.getTypeFactory(),
                 rexBuilder,
                 new AtomicInteger(0),
-                new HashMap<>()
+                new HashMap<>(),
+                ssc
         );
     }
 
@@ -76,5 +83,9 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
 
     public void setRequiresJob(boolean requiresJob) {
         this.requiresJob = requiresJob;
+    }
+
+    public SqlSecurityContext getSecurityContext() {
+        return securityContext;
     }
 }

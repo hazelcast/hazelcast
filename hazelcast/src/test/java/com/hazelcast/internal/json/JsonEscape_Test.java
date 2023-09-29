@@ -110,7 +110,6 @@ public class JsonEscape_Test {
     @Test
     public void escapesLastChar() {
         String x = string('x', '\\');
-        System.out.println(x);
         JsonEscape.writeEscaped(stringBuilder, x);
 
         assertEquals("\"x\\\\\"", stringBuilder.toString());

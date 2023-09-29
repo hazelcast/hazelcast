@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -85,7 +86,7 @@ public class MultiMapEntrySetMessageTask
 
     @Override
     public String getMethodName() {
-        return "entrySet";
+        return SecurityInterceptorConstants.ENTRY_SET;
     }
 
     @Override

@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
@@ -76,7 +77,7 @@ public class MapFetchNearCacheInvalidationMetadataTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.FETCH_NEAR_CACHE_INVALIDATION_METADATA;
     }
 
     @Override

@@ -28,7 +28,9 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.AbstractIndexReader;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionException;
@@ -44,6 +46,8 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -90,7 +94,11 @@ import static java.util.stream.Collectors.toList;
  * with the new owners. If all partitions in a `split` were read, the
  * `split` is removed from execution.
  */
-final class MapIndexScanP extends AbstractProcessor {
+public final class MapIndexScanP extends AbstractProcessor {
+
+    public static final String FETCH_SIZE_HINT_PROPERTY_NAME = "hazelcast.sql.index.hint.fetch.size";
+    public static final HazelcastProperty FETCH_SIZE_HINT_PROPERTY
+            = new HazelcastProperty(MapIndexScanP.FETCH_SIZE_HINT_PROPERTY_NAME, 128);
 
     private static final long DELAY_AFTER_MISSING_PARTITION = MILLISECONDS.toNanos(100);
 
@@ -115,8 +123,13 @@ final class MapIndexScanP extends AbstractProcessor {
         evalContext = ExpressionEvalContext.from(context);
         reader = new LocalMapIndexReader(hazelcastInstance, evalContext.getSerializationService(), metadata);
 
+        MapContainer mapContainer = QueryUtils.getMapContainer(hazelcastInstance.getMap(metadata.getMapName()));
+        boolean compositeIndex = MapFetchIndexOperation.getInternalIndex(mapContainer,
+                        metadata.getMapName(), metadata.getIndexName()).isComposite();
+
         int[] memberPartitions = context.processorPartitions();
-        IndexIterationPointer[] pointers = indexFilterToPointers(metadata.getFilter(), metadata.isDescending(), evalContext);
+        IndexIterationPointer[] pointers = indexFilterToPointers(metadata.getFilter(), compositeIndex,
+                metadata.isDescending(), evalContext);
         splits.add(new Split(
                 new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), memberPartitions),
                 hazelcastInstance.getCluster().getLocalMember().getAddress(),
@@ -407,7 +420,8 @@ final class MapIndexScanP extends AbstractProcessor {
     private static final class LocalMapIndexReader
             extends AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> {
 
-        static final int FETCH_SIZE_HINT = 128;
+
+        private final int fetchSizeHint;
 
         private final HazelcastInstance hazelcastInstance;
         private final String indexName;
@@ -422,6 +436,8 @@ final class MapIndexScanP extends AbstractProcessor {
             this.hazelcastInstance = hzInstance;
             this.indexName = indexScanMetadata.getIndexName();
             this.serializationService = serializationService;
+
+            this.fetchSizeHint = Util.getNodeEngine(hzInstance).getProperties().getInteger(FETCH_SIZE_HINT_PROPERTY);
         }
 
         @Override
@@ -437,7 +453,7 @@ final class MapIndexScanP extends AbstractProcessor {
                     indexName,
                     pointers,
                     partitions,
-                    FETCH_SIZE_HINT
+                    fetchSizeHint
             );
             return mapProxyImpl.getOperationService().invokeOnTarget(mapProxyImpl.getServiceName(), op, address);
         }

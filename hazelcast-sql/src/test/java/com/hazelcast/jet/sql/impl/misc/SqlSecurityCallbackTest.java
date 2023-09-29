@@ -42,6 +42,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -155,6 +157,12 @@ public class SqlSecurityCallbackTest extends OptimizerTestSupport {
         @Override
         public void checkPermission(Permission permission) {
             permissions.add(permission);
+        }
+
+        @Nullable
+        @Override
+        public Subject subject() {
+            return null;
         }
 
         private List<Permission> getPermissions() {

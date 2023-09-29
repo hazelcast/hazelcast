@@ -22,6 +22,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -31,7 +32,7 @@ import java.util.Map;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_CONTAINSVALUE}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapContainsValueCodec#REQUEST_MESSAGE_TYPE}
  */
 public class MultiMapContainsValueMessageTask
         extends AbstractMultiMapAllPartitionsMessageTask<MultiMapContainsValueCodec.RequestParameters> {
@@ -81,7 +82,7 @@ public class MultiMapContainsValueMessageTask
 
     @Override
     public String getMethodName() {
-        return "containsValue";
+        return SecurityInterceptorConstants.CONTAINS_VALUE;
     }
 
     @Override

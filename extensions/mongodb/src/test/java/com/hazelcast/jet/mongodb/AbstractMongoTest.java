@@ -56,7 +56,7 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
     /**
      * Version of MongoDB Container that will be used in the tests.
      */
-    public static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
+    public static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "7.0.0");
 
     static MongoClient mongo;
     static BsonTimestamp startAtOperationTime;

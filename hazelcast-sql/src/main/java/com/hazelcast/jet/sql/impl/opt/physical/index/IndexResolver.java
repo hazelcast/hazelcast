@@ -151,6 +151,17 @@ public final class IndexResolver {
                     fullScanRels.add(relAscending);
                     RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
                     fullScanRels.add(relDescending);
+
+                    // For full scan we do not add unsorted scan (unlike in case of filters)
+                    // because it would never be chosen.
+                    //
+                    // Full index scan will never be cheaper than full table scan. This might be
+                    // possible if the index covers all columns in the query. However, we do not
+                    // support this use (index scan always fetches entire entry) and even if we
+                    // did, full scan might still be cheaper. The only use case where full index
+                    // scan makes sense is if order is needed, but in that case, EMPTY collation
+                    // will not be beneficial since [Sort + unsorted index scan] would be worse
+                    // than just sorted index scan.
                 }
             }
         }
@@ -201,6 +212,10 @@ public final class IndexResolver {
                     RelCollation relDescCollation = getCollation(relDescending);
                     // Exclude a full scan that has the same collation
                     fullScanRelsMap.remove(relDescCollation);
+
+                    // Add variant without enforced collation which may be cheaper
+                    // if the ordering of the result is not required.
+                    rels.add(removeCollation(relAscending));
                 }
             }
         }
@@ -210,7 +225,7 @@ public final class IndexResolver {
     }
 
     private static RelCollation getCollation(RelNode rel) {
-        return rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+        return rel.getTraitSet().getCollation();
     }
 
     /**
@@ -234,6 +249,10 @@ public final class IndexResolver {
         traitSet = OptUtils.traitPlus(traitSet, newCollation);
 
         return rel.copy(traitSet, rel.getInputs());
+    }
+
+    private static RelNode removeCollation(RelNode rel) {
+        return ((IndexScanMapPhysicalRel) rel).withoutCollation();
     }
 
     /**
@@ -473,11 +492,12 @@ public final class IndexResolver {
 
             case IS_NOT_TRUE:
                 filter = new IndexCompositeFilter(
-                        new IndexEqualsFilter(new IndexFilterValue(
-                                singletonList(ConstantExpression.FALSE), singletonList(false)
-                        )),
+                        // produce results in ASC order (null first)
                         new IndexEqualsFilter(new IndexFilterValue(
                                 singletonList(NULL), singletonList(true)
+                        )),
+                        new IndexEqualsFilter(new IndexFilterValue(
+                                singletonList(ConstantExpression.FALSE), singletonList(false)
                         ))
                 );
 
@@ -487,11 +507,12 @@ public final class IndexResolver {
                 assert kind == SqlKind.IS_NOT_FALSE;
 
                 filter = new IndexCompositeFilter(
-                        new IndexEqualsFilter(new IndexFilterValue(
-                                singletonList(ConstantExpression.TRUE), singletonList(false)
-                        )),
+                        // produce results in ASC order (null first)
                         new IndexEqualsFilter(new IndexFilterValue(
                                 singletonList(NULL), singletonList(true)
+                        )),
+                        new IndexEqualsFilter(new IndexFilterValue(
+                                singletonList(ConstantExpression.TRUE), singletonList(false)
                         ))
                 );
         }

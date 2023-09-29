@@ -22,9 +22,10 @@ import com.tngtech.archunit.lang.ArchRule;
 import java.io.Serializable;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.test.archunit.MatchersUsageCondition.notUseHamcrestMatchers;
-import static com.hazelcast.test.archunit.SerialVersionUidFieldCondition.haveValidSerialVersionUid;
 import static com.hazelcast.test.archunit.CompletableFutureUsageCondition.useExplicitExecutorServiceInCFAsyncMethods;
+import static com.hazelcast.test.archunit.MatchersUsageCondition.notUseHamcrestMatchers;
+import static com.hazelcast.test.archunit.MixTestAnnotationsCondition.notMixJUnit4AndJUnit5Annotations;
+import static com.hazelcast.test.archunit.SerialVersionUidFieldCondition.haveValidSerialVersionUid;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 
 public final class ArchUnitRules {
@@ -54,6 +55,13 @@ public final class ArchUnitRules {
     public static final ArchRule MATCHERS_USAGE = classes()
             .that().haveSimpleNameEndingWith("Test")
             .should(notUseHamcrestMatchers());
+
+    /**
+     * ArchUnit rule checking that JUnit4 and JUnit5 annotations are not mixed within the same tes
+     */
+    public static final ArchRule NO_JUNIT_MIXING = classes()
+            .that().haveSimpleNameEndingWith("Test")
+            .should(notMixJUnit4AndJUnit5Annotations());
 
     private ArchUnitRules() {
     }

@@ -222,6 +222,7 @@
                                     <include>org.antlr:antlr4-runtime</include>
                                     <include>com.jayway.jsonpath:json-path</include>
                                     <include>commons-codec:commons-codec</include>
+                                    <include>org.apache.commons:commons-math3</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
                                     <include>org.codehaus.janino:janino</include>
                                     <include>com.google.code.gson:gson</include>
@@ -267,6 +268,10 @@
                                 <relocation>
                                     <pattern>org.apache.commons</pattern>
                                     <shadedPattern>${relocation.root}.org.apache.commons</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.math3</pattern>
+                                    <shadedPattern>${relocation.root}.org.apache.commons.math3</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.codehaus</pattern>
@@ -489,7 +494,6 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.code.findbugs</groupId>
@@ -508,7 +512,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jsurfer</groupId>
@@ -537,7 +540,6 @@
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
-            <version>${avro.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -596,6 +598,12 @@
             <artifactId>JUnitParams</artifactId>
             <version>1.1.1</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -619,7 +627,6 @@
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro-mapred</artifactId>
-            <version>${avro.version}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -631,7 +638,6 @@
         <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-avro</artifactId>
-            <version>${parquet.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -684,7 +690,6 @@
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
-            <version>${jaxb.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -726,7 +731,12 @@
             <version>${log4j2.version}</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-archunit-rules</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>kafka</artifactId>

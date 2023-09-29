@@ -24,6 +24,7 @@ import com.hazelcast.internal.locksupport.operations.IsLockedOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
@@ -70,7 +71,7 @@ public class MultiMapIsLockedMessageTask
 
     @Override
     public String getMethodName() {
-        return "isLocked";
+        return SecurityInterceptorConstants.IS_LOCKED;
     }
 
     @Override

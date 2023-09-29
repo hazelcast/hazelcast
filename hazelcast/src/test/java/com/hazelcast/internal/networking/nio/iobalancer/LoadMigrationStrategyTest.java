@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -51,14 +50,14 @@ public class LoadMigrationStrategyTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        ownerToPipelines = new HashMap<NioThread, Set<MigratablePipeline>>();
-        loadCounter = new ItemCounter<MigratablePipeline>();
+        ownerToPipelines = new HashMap<>();
+        loadCounter = new ItemCounter<>();
         imbalance = new LoadImbalance(ownerToPipelines, loadCounter);
         strategy = new LoadMigrationStrategy();
     }
 
     @Test
-    public void testImbalanceDetected_shouldReturnFalseWhenNoKnownMinimum() throws Exception {
+    public void testImbalanceDetected_shouldReturnFalseWhenNoKnownMinimum() {
         imbalance.minimumLoad = Long.MIN_VALUE;
 
         boolean imbalanceDetected = strategy.imbalanceDetected(imbalance);
@@ -66,7 +65,7 @@ public class LoadMigrationStrategyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testImbalanceDetected_shouldReturnFalseWhenNoKnownMaximum() throws Exception {
+    public void testImbalanceDetected_shouldReturnFalseWhenNoKnownMaximum() {
         imbalance.maximumLoad = Long.MAX_VALUE;
 
         boolean imbalanceDetected = strategy.imbalanceDetected(imbalance);
@@ -74,7 +73,7 @@ public class LoadMigrationStrategyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testImbalanceDetected_shouldReturnFalseWhenBalanced() throws Exception {
+    public void testImbalanceDetected_shouldReturnFalseWhenBalanced() {
         imbalance.maximumLoad = 1000;
         imbalance.minimumLoad = (long) (1000 * 0.8);
 
@@ -83,7 +82,7 @@ public class LoadMigrationStrategyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testImbalanceDetected_shouldReturnTrueWhenNotBalanced() throws Exception {
+    public void testImbalanceDetected_shouldReturnTrueWhenNotBalanced() {
         imbalance.maximumLoad = 1000;
         imbalance.minimumLoad = (long) (1000 * 0.8) - 1;
 
@@ -92,7 +91,7 @@ public class LoadMigrationStrategyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFindPipelineToMigrate() throws Exception {
+    public void testFindPipelineToMigrate() {
         NioThread srcOwner = mock(NioThread.class);
         NioThread dstOwner = mock(NioThread.class);
         imbalance.srcOwner = srcOwner;
@@ -108,7 +107,7 @@ public class LoadMigrationStrategyTest extends HazelcastTestSupport {
         MigratablePipeline pipeline3 = mock(MigratablePipeline.class);
         loadCounter.set(pipeline2, 200L);
         loadCounter.set(pipeline3, 100L);
-        ownerToPipelines.put(srcOwner, setOf(pipeline2, pipeline3));
+        ownerToPipelines.put(srcOwner, Set.of(pipeline2, pipeline3));
 
         MigratablePipeline pipelineToMigrate = strategy.findPipelineToMigrate(imbalance);
         assertEquals(pipeline3, pipelineToMigrate);

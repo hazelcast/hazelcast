@@ -16,11 +16,13 @@
 
 package com.hazelcast.spi.discovery.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -50,7 +52,21 @@ public class PredefinedDiscoveryService implements DiscoveryService {
     }
 
     @Override
+    public void markEndpointAsUnhealthy(Address address) {
+        strategy.markEndpointAsUnhealthy(address);
+    }
+
+    @Override
+    public Set<Address> getUnhealthyEndpoints() {
+        return strategy.getUnhealthyEndpoints();
+    }
+
+    @Override
     public void destroy() {
         strategy.destroy();
+    }
+
+    public DiscoveryStrategy getStrategy() {
+        return strategy;
     }
 }

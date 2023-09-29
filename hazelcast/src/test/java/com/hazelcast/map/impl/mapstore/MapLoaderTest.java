@@ -34,7 +34,7 @@ import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreAdapter;
@@ -373,7 +373,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
-        map.addInterceptor(new TestInterceptor());
+        map.addInterceptor(new MapInterceptorAdaptor());
 
         assertThatThrownBy(map::size)
                 .isInstanceOf(NullPointerException.class)
@@ -631,7 +631,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap imap = instance.getMap(mapName);
-        imap.addInterceptor(new TestInterceptor());
+        imap.addInterceptor(new MapInterceptorAdaptor());
 
         assertEquals(sizePerPartition * partitionCount, imap.size());
     }
@@ -730,36 +730,6 @@ public class MapLoaderTest extends HazelcastTestSupport {
             }
         }
         throw new IllegalArgumentException();
-    }
-
-    private static class TestInterceptor implements MapInterceptor, Serializable {
-
-        @Override
-        public Object interceptGet(Object value) {
-            return null;
-        }
-
-        @Override
-        public void afterGet(Object value) {
-        }
-
-        @Override
-        public Object interceptPut(Object oldValue, Object newValue) {
-            return null;
-        }
-
-        @Override
-        public void afterPut(Object value) {
-        }
-
-        @Override
-        public Object interceptRemove(Object removedValue) {
-            return null;
-        }
-
-        @Override
-        public void afterRemove(Object value) {
-        }
     }
 
     public static class DummyMapLoader implements MapLoader<Integer, Integer> {

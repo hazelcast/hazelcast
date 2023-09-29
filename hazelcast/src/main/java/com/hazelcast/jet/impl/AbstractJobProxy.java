@@ -39,6 +39,7 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -48,12 +49,12 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -73,6 +74,12 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
     /** Null for normal jobs, non-null for light jobs  */
     protected final M lightJobCoordinator;
+    // Subject that is used to submit a job. Not available for jobs obtained by id.
+    //
+    // Technical debt: this field should is used only in JobProxy and should be there
+    // but because AbstractJobProxy constructor invokes overriden (!) invokeSubmitJob method
+    // that needs this field we initialize in it superclass constructor.
+    protected final Subject subject;
 
     private final long jobId;
     private volatile String name = NOT_LOADED;
@@ -96,6 +103,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
      */
     private final boolean submittingInstance;
 
+
     AbstractJobProxy(C container, long jobId, M lightJobCoordinator) {
         this.jobId = jobId;
         this.container = container;
@@ -105,14 +113,21 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         future = new NonCompletableFuture();
         joinJobCallback = new JoinJobCallback();
         submittingInstance = false;
+        subject = null;
     }
 
-    AbstractJobProxy(C container, long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
+    AbstractJobProxy(C container,
+                     long jobId,
+                     boolean isLightJob,
+                     @Nonnull Object jobDefinition,
+                     @Nonnull JobConfig config,
+                     @Nullable Subject subject) {
         this.jobId = jobId;
         this.container = container;
         this.lightJobCoordinator = isLightJob ? findLightJobCoordinator() : null;
         this.logger = loggingService().getLogger(Job.class);
         submittingInstance = true;
+        this.subject = subject;
 
         try {
             NonCompletableFuture submitFuture = doSubmitJob(jobDefinition, config);

@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.GetAllOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -89,7 +90,7 @@ public class MapGetAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "getAll";
+        return SecurityInterceptorConstants.GET_ALL;
     }
 
     @Override

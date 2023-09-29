@@ -24,6 +24,9 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
@@ -67,7 +70,7 @@ public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new MapPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -77,7 +80,7 @@ public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<
 
     @Override
     public String getMethodName() {
-        return "iterator";
+        return SecurityInterceptorConstants.ITERATOR_FETCH_ENTRIES;
     }
 
     @Override

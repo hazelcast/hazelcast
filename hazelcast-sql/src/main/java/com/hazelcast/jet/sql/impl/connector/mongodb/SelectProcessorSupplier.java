@@ -19,9 +19,12 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
+import com.hazelcast.jet.mongodb.impl.ReadMongoParams.Aggregates;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -34,6 +37,7 @@ import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.security.Permission;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -42,6 +46,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonDateTimeToLocalDateTime;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonTimestampToLocalDateTime;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
@@ -57,41 +62,35 @@ import static java.util.stream.Collectors.toList;
 /**
  * ProcessorSupplier that creates {@linkplain com.hazelcast.jet.mongodb.impl.ReadMongoP} processors on each instance.
  */
-public class SelectProcessorSupplier implements ProcessorSupplier {
-    private transient SupplierEx<? extends MongoClient> clientSupplier;
-    private final String databaseName;
-    private final String collectionName;
-    private final boolean stream;
-    private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
-    private final Document predicate;
-    private final List<ProjectionData> projection;
-    private final String[] externalNames;
+public class SelectProcessorSupplier extends MongoProcessorSupplier implements DataSerializable {
 
-    private final Long startAt;
-    private final String connectionString;
-    private final String dataConnectionName;
+    private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
+    private Document predicate;
+    private List<ProjectionData> projection;
+
+    private Long startAt;
+    private boolean stream;
+    private boolean forceMongoParallelismOne;
+
     private transient ExpressionEvalContext evalContext;
 
-    private final boolean forceMongoParallelismOne;
+    @SuppressWarnings("unused")
+    public SelectProcessorSupplier() {
+    }
 
     SelectProcessorSupplier(MongoTable table, Document predicate,
                             List<ProjectionData> projection,
-                            BsonTimestamp startAt, boolean stream,
+                            BsonTimestamp startAt,
+                            boolean stream,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
+        super(table);
         checkArgument(projection != null && !projection.isEmpty(), "projection cannot be empty");
-
         this.predicate = predicate;
         this.projection = projection;
-        this.connectionString = table.connectionString;
-        this.dataConnectionName = table.dataConnectionName;
-        this.databaseName = table.databaseName;
-        this.collectionName = table.collectionName;
         this.startAt = startAt == null ? null : startAt.getValue();
-        this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
-        this.forceMongoParallelismOne = table.isForceMongoParallelismOne();
-
-        externalNames = table.externalNames();
+        this.stream = stream;
+        this.forceMongoParallelismOne = table.isforceReadTotalParallelismOne();
     }
 
     SelectProcessorSupplier(MongoTable table, Document predicate,
@@ -123,19 +122,19 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     @Nonnull
     @Override
     public Collection<? extends Processor> get(int count) {
-        ArrayList<Bson> aggregates = new ArrayList<>();
+        Aggregates aggregates = new Aggregates();
 
         if (this.predicate != null) {
             Bson filterWithParams = PlaceholderReplacer.replacePlaceholders(predicate, evalContext, (Object[]) null,
                     externalNames, false);
-            aggregates.add(match(filterWithParams.toBsonDocument()));
+            aggregates.setFilter(bsonToDocument(match(filterWithParams.toBsonDocument())));
         }
         Bson proj = fields(projection.stream().map(p -> p.projectionExpr).collect(toList()));
         List<String> projectedNames = projection.stream().map(p -> p.externalName).collect(toList());
         if (!projectedNames.contains("_id") && !stream) {
-            aggregates.add(project(fields(excludeId(), proj)));
+            aggregates.setProjection(bsonToDocument(project(fields(excludeId(), proj))));
         } else {
-            aggregates.add(project(proj));
+            aggregates.setProjection(bsonToDocument(project(proj)));
         }
 
         List<Processor> processors = new ArrayList<>();
@@ -157,6 +156,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
                             .setStartAtTimestamp(startAt == null ? null : new BsonTimestamp(startAt))
                             .setEventTimePolicy(eventTimePolicy)
                             .setNonDistributed(forceMongoParallelismOne)
+                            .setCheckExistenceOnEachConnect(checkExistenceOnEachConnect)
             );
 
             processors.add(processor);
@@ -215,5 +215,36 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         return projection.stream().filter(p -> p.externalName.equals(columnName))
                          .map(p -> p.index)
                          .findAny().orElse(-1);
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(databaseName);
+        out.writeString(collectionName);
+        out.writeBoolean(stream);
+        out.writeObject(eventTimePolicyProvider);
+        out.writeObject(predicate);
+        out.writeObject(projection);
+        out.writeStringArray(externalNames);
+        out.writeLong(startAt == null ? -1 : startAt);
+        out.writeString(connectionString);
+        out.writeString(dataConnectionName);
+        out.writeBoolean(forceMongoParallelismOne);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        databaseName = in.readString();
+        collectionName = in.readString();
+        stream = in.readBoolean();
+        eventTimePolicyProvider = in.readObject();
+        predicate = in.readObject();
+        projection = in.readObject();
+        externalNames = in.readStringArray();
+        long startAtDirect = in.readLong();
+        startAt = startAtDirect == -1 ? null : startAtDirect;
+        connectionString = in.readString();
+        dataConnectionName = in.readString();
+        forceMongoParallelismOne = in.readBoolean();
     }
 }
