@@ -122,6 +122,7 @@ public interface Cluster {
      * @throws IllegalStateException when member is not a data member or mastership claim is in progress
      *                               or local member cannot be identified as a member of the cluster
      *                               or cluster state doesn't allow migrations/repartitioning
+     *                               or the member is the only data member in the cluster.
      * @since 5.4
      */
     void demoteLocalDataMember();

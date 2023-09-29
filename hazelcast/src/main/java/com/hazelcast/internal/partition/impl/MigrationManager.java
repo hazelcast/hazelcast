@@ -636,6 +636,10 @@ public class MigrationManager {
     }
 
     boolean onDemoteRequest(Member member) {
+        if (this.node.getClusterService().getSize(DATA_MEMBER_SELECTOR) - getDataDisownRequestedMembers().size() <= 1) {
+            logger.info("Demote is not possible because there would be no data member left after demotion");
+            return false;
+        }
         if (!partitionStateManager.isInitialized()) {
             if (demoteRequestedMembers.add(member)) {
                 logger.info("Demote request of " + member + " is handled");
@@ -915,6 +919,10 @@ public class MigrationManager {
             } else {
                 newState = partitionStateManager.repartition(getDataDisownRequestedMembers(), null);
             }
+            if (newState == null) {
+                migrationQueue.add(new ProcessShutdownRequestsTask());
+                return null;
+            }
 
             if (!migrationsTasksAllowed()) {
                 return null;
@@ -1131,6 +1139,8 @@ public class MigrationManager {
                 } else if (destination == null && sourceNewReplicaIndex == -1) {
                     assert source != null : "partitionId=" + partitionId + " source is null";
                     assert sourceCurrentReplicaIndex != -1
+                            : "partitionId=" + partitionId + " invalid index: " + sourceCurrentReplicaIndex;
+                    assert sourceCurrentReplicaIndex != 0
                             : "partitionId=" + partitionId + " invalid index: " + sourceCurrentReplicaIndex;
                     PartitionReplica currentSource = partition.getReplica(sourceCurrentReplicaIndex);
                     assert source.equals(currentSource)

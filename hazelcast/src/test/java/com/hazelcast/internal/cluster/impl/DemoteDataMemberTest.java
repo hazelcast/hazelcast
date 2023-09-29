@@ -26,7 +26,6 @@ import com.hazelcast.internal.cluster.impl.operations.DemoteDataMemberOp;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.IMap;
-import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
@@ -64,6 +63,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -81,12 +81,12 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(new Config().setLiteMember(true));
         HazelcastInstance hz3 = factory.newHazelcastInstance(new Config().setLiteMember(true));
 
-        hz1.getCluster().demoteLocalDataMember();
-        assertTrue(getMember(hz1).isLiteMember());
-        assertAllLiteMembers(hz1.getCluster());
+        assertThatThrownBy(() -> hz1.getCluster().demoteLocalDataMember())
+                .isInstanceOf(IllegalStateException.class);
 
-        assertAllLiteMembersEventually(hz2.getCluster());
-        assertAllLiteMembersEventually(hz3.getCluster());
+        assertFalse(getMember(hz1).isLiteMember());
+        assertTrue(getMember(hz2).isLiteMember());
+        assertTrue(getMember(hz3).isLiteMember());
     }
 
     @Test
@@ -97,12 +97,12 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
         HazelcastInstance hz3 = factory.newHazelcastInstance(new Config().setLiteMember(true));
 
-        hz2.getCluster().demoteLocalDataMember();
-        assertTrue(getMember(hz2).isLiteMember());
-        assertAllLiteMembers(hz1.getCluster());
+        assertThatThrownBy(() -> hz2.getCluster().demoteLocalDataMember())
+                .isInstanceOf(IllegalStateException.class);
 
-        assertAllLiteMembersEventually(hz2.getCluster());
-        assertAllLiteMembersEventually(hz3.getCluster());
+        assertTrue(getMember(hz1).isLiteMember());
+        assertFalse(getMember(hz2).isLiteMember());
+        assertTrue(getMember(hz3).isLiteMember());
     }
 
     @Test
@@ -172,11 +172,10 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = factory.newHazelcastInstance(new Config());
 
-        hz.getCluster().demoteLocalDataMember();
-        assertTrue(getMember(hz).isLiteMember());
-        assertAllLiteMembers(hz.getCluster());
+        assertThatThrownBy(() -> hz.getCluster().demoteLocalDataMember())
+                .isInstanceOf(IllegalStateException.class);
 
-        assertNoPartitionsAssigned(hz);
+        assertFalse(getMember(hz).isLiteMember());
     }
 
     @Test
@@ -223,7 +222,7 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dataMember_shouldLooseDataWhenOnlyMember() {
+    public void dataMember_shouldFailWhenOnlyMember() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
@@ -237,17 +236,15 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         assertEquals(entryCount, testMap.size());
         assertPartitionsAssigned(hz1);
 
-        hz1.getCluster().demoteLocalDataMember();
+        assertThatThrownBy(() -> hz1.getCluster().demoteLocalDataMember())
+                .isInstanceOf(IllegalStateException.class);
 
-        assertNoPartitionsAssigned(hz1);
-        assertTrue(getMember(hz1).isLiteMember());
-        assertAllLiteMembers(hz1.getCluster());
-
-        assertThatThrownBy(testMap::isEmpty).isInstanceOf(NoDataMemberInClusterException.class);
+        assertPartitionsAssigned(hz1);
+        assertFalse(getMember(hz1).isLiteMember());
     }
 
     @Test
-    public void dataMember_shouldLooseDataWhenLastDataMember() {
+    public void dataMember_shouldFailWhenLastDataMember() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(new Config().setLiteMember(true));
@@ -260,14 +257,11 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         assertTrue(hz1.getPartitionService().isLocalMemberSafe());
         assertTrue(hz1.getPartitionService().isClusterSafe());
 
-        hz2.getCluster().demoteLocalDataMember();
+        assertThatThrownBy(() -> hz2.getCluster().demoteLocalDataMember())
+                .isInstanceOf(IllegalStateException.class);
 
-        assertNoPartitionsAssigned(hz2);
-        assertTrue(getMember(hz2).isLiteMember());
-        assertAllLiteMembers(hz1.getCluster());
-
-        assertAllLiteMembersEventually(hz2.getCluster());
-        assertAllLiteMembersEventually(hz3.getCluster());
+        assertPartitionsAssigned(hz2);
+        assertFalse(getMember(hz2).isLiteMember());
     }
 
     @Test
@@ -492,17 +486,6 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
     private static void assertNoPartitionsAssignedEventually(HazelcastInstance instance) {
         assertTrueEventually(() -> assertNoPartitionsAssigned(instance));
     }
-
-    private static void assertAllLiteMembers(Cluster cluster) {
-        for (Member member : cluster.getMembers()) {
-            assertTrue("Member is lite: " + member, member.isLiteMember());
-        }
-    }
-
-    private static void assertAllLiteMembersEventually(Cluster cluster) {
-        assertTrueEventually(() -> assertAllLiteMembers(cluster));
-    }
-
 
     private static Member getMember(HazelcastInstance hz) {
         return hz.getCluster().getLocalMember();

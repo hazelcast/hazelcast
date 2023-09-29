@@ -928,6 +928,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         long timeoutMillis = unit.toMillis(timeout);
         long awaitStep = Math.min(DEMOTE_MAX_AWAIT_STEP_MILLIS, timeoutMillis);
         try {
+            boolean shouldRetry;
             do {
                 Address masterAddress = nodeEngine.getMasterAddress();
                 if (masterAddress == null) {
@@ -935,6 +936,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     return false;
                 }
 
+                shouldRetry = false;
                 boolean demoteInitiated;
                 if (node.isMaster()) {
                     demoteInitiated = onDemoteRequest(node.getLocalMember());
@@ -952,6 +954,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     } catch (TimeoutException e) {
                         // allow the loop to continue with another demote attempt
                         demoteInitiated = false;
+                        shouldRetry = true;
                     } catch (Exception e) {
                         logger.warning("Failed to initialize member demotion", e);
                         return false;
@@ -962,11 +965,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 if (demoteInitiated) {
                     if (latch.await(latchTimeout, TimeUnit.MILLISECONDS)) {
                         return true;
+                    } else {
+                        timeoutMillis -= latchTimeout;
+                        shouldRetry = true;
                     }
                 }
 
-                timeoutMillis -= latchTimeout;
-            } while (timeoutMillis > 0);
+            } while (timeoutMillis > 0 && shouldRetry);
         } catch (InterruptedException e) {
             currentThread().interrupt();
             logger.info("Member demote is interrupted!");
