@@ -205,7 +205,7 @@ public class MapInternalStateSplitBrainTest extends SplitBrainTestSupport {
                         .getProperties().getBoolean(ClusterProperty.GLOBAL_HD_INDEX_ENABLED);
 
                 if (globalIndex) {
-                    InternalIndex[] indexes = container.getIndexes().getIndexes();
+                    InternalIndex[] indexes = container.getGlobalIndexRegistry().getIndexes();
                     for (InternalIndex index : indexes) {
                         stampByMap.computeIfAbsent(mapName,
                                 s -> new ArrayList<>()).add(index.getPartitionStamp());
@@ -213,7 +213,7 @@ public class MapInternalStateSplitBrainTest extends SplitBrainTestSupport {
                 } else {
                     int partitionCount = container.getMapServiceContext().getNodeEngine().getPartitionService().getPartitionCount();
                     for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                        InternalIndex[] indexes = container.getIndexes(partitionId).getIndexes();
+                        InternalIndex[] indexes = container.getOrCreateIndexRegistry(partitionId).getIndexes();
                         for (InternalIndex index : indexes) {
                             stampByMap.computeIfAbsent(mapName,
                                     s -> new ArrayList<>()).add(index.getPartitionStamp());
@@ -236,7 +236,7 @@ public class MapInternalStateSplitBrainTest extends SplitBrainTestSupport {
                 boolean globalIndex = container.getMapServiceContext().getNodeEngine()
                         .getProperties().getBoolean(ClusterProperty.GLOBAL_HD_INDEX_ENABLED);
                 if (globalIndex) {
-                    InternalIndex[] indexes = container.getIndexes().getIndexes();
+                    InternalIndex[] indexes = container.getGlobalIndexRegistry().getIndexes();
                     for (InternalIndex index : indexes) {
                         stampByMap.computeIfAbsent(instance.getCluster().getLocalMember().getUuid(),
                                 s -> new ArrayList<>()).add(index.getPartitionStamp());
@@ -244,7 +244,7 @@ public class MapInternalStateSplitBrainTest extends SplitBrainTestSupport {
                 } else {
                     int partitionCount = container.getMapServiceContext().getNodeEngine().getPartitionService().getPartitionCount();
                     for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                        InternalIndex[] indexes = container.getIndexes(partitionId).getIndexes();
+                        InternalIndex[] indexes = container.getOrCreateIndexRegistry(partitionId).getIndexes();
                         for (InternalIndex index : indexes) {
                             stampByMap.computeIfAbsent(instance.getCluster().getLocalMember().getUuid(),
                                     s -> new ArrayList<>()).add(index.getPartitionStamp());

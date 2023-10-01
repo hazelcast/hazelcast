@@ -31,7 +31,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -224,13 +224,13 @@ public class SingleValueBitmapIndexTest extends HazelcastTestSupport {
             HazelcastInstanceImpl instanceImpl = (HazelcastInstanceImpl) instance;
             MapService mapService = instanceImpl.node.getNodeEngine().getService(MapService.SERVICE_NAME);
 
-            Indexes indexes = mapService.getMapServiceContext().getMapContainer(persons.getName()).getIndexes();
+            IndexRegistry indexes = mapService.getMapServiceContext().getMapContainer(persons.getName()).getGlobalIndexRegistry();
             indexes.clearAll();
 
             for (Partition partition : instanceImpl.getPartitionService().getPartitions()) {
                 if (partition.getOwner().localMember()) {
-                    Indexes.beginPartitionUpdate(indexes.getIndexes());
-                    Indexes.markPartitionAsIndexed(partition.getPartitionId(), indexes.getIndexes());
+                    IndexRegistry.beginPartitionUpdate(indexes.getIndexes());
+                    IndexRegistry.markPartitionAsIndexed(partition.getPartitionId(), indexes.getIndexes());
                 }
             }
         }

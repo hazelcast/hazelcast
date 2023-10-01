@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class GetDdlTest extends SqlTestSupport {
@@ -192,5 +193,12 @@ public class GetDdlTest extends SqlTestSupport {
                                 "  'valueFormat'='java'," + LE +
                                 "  'valueJavaClass'='java.lang.String'" + LE +
                                 ")")));
+    }
+
+    @Test
+    public void when_queryDdlWithInputInPredicate_then_success() {
+        createMapping("a", int.class, String.class);
+        instance().getMap("a").put(1, "a");
+        assertRowsAnyOrder("SELECT * FROM a WHERE GET_DDL('relation', this) = 'a'", emptyList());
     }
 }

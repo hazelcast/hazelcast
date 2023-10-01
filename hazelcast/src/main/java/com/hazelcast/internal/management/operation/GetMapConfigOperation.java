@@ -22,7 +22,7 @@ import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
@@ -65,9 +65,9 @@ public class GetMapConfigOperation extends AbstractLocalOperation {
     }
 
     private List<IndexConfig> getIndexConfigsFromContainer(MapContainer mapContainer) {
-        Indexes indexes = mapContainer.getIndexes();
-        if (indexes != null) {
-            return Arrays.stream(indexes.getIndexes())
+        IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
+        if (indexRegistry != null) {
+            return Arrays.stream(indexRegistry.getIndexes())
                     .map(InternalIndex::getConfig)
                     .collect(Collectors.toList());
         } else {
