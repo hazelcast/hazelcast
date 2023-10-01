@@ -87,8 +87,8 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         eec = new ExpressionEvalContextImpl(
                 emptyList(),
                 Util.getSerializationService(instance()),
-                Util.getNodeEngine(instance()),
-                NoOpSqlSecurityContext.INSTANCE);
+                Util.getNodeEngine(instance())
+        );
     }
 
     SqlPlanImpl.SelectPlan assertQueryPlan(String query) {
@@ -111,8 +111,8 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
             eec = new ExpressionEvalContextImpl(
                     arguments,
                     Util.getSerializationService(instance()),
-                    Util.getNodeEngine(instance()),
-                    NoOpSqlSecurityContext.INSTANCE);
+                    Util.getNodeEngine(instance())
+            );
         }
         QueryId queryId = QueryId.create(UUID.randomUUID());
         SqlResult result = planExecutor.execute(selectPlan,

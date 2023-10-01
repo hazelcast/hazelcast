@@ -27,7 +27,6 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
@@ -77,8 +76,8 @@ public interface ExpressionEvalContext {
             return new ExpressionEvalContextImpl(
                     arguments,
                     new DefaultSerializationServiceBuilder().build(),
-                    Util.getNodeEngine(ctx.hazelcastInstance()),
-                    NoOpSqlSecurityContext.INSTANCE);
+                    Util.getNodeEngine(ctx.hazelcastInstance())
+            );
         }
     }
 
@@ -90,9 +89,13 @@ public interface ExpressionEvalContext {
             @Nullable Subject subject) {
         if (eec == null) {
             NodeEngineImpl nodeEngine = Util.getNodeEngine(hz);
+            ExpressionEvalContext newEec = new ExpressionEvalContextImpl(arguments, iss, nodeEngine);
             SecurityContext sc = nodeEngine.getNode().securityContext;
-            SqlSecurityContext ssc = sc != null ? sc.createSqlContext(subject) : NoOpSqlSecurityContext.INSTANCE;
-            return new ExpressionEvalContextImpl(arguments, iss, nodeEngine, ssc);
+            if (sc != null) {
+                SqlSecurityContext ssc = sc.createSqlContext(subject);
+                newEec.setSecurityContext(ssc);
+            }
+            return newEec;
         } else {
             ExpressionEvalContextImpl eeci = (ExpressionEvalContextImpl) eec;
             return eeci.clone(hz, iss);
@@ -127,4 +130,6 @@ public interface ExpressionEvalContext {
 
     @Nullable
     Subject subject();
+
+    void setSecurityContext(SqlSecurityContext securityContext);
 }

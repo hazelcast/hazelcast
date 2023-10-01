@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
@@ -60,5 +61,10 @@ public class MockExpressionEvalContext implements ExpressionEvalContext {
     @Override
     public Subject subject() {
         return null;
+    }
+
+    @Override
+    public void setSecurityContext(SqlSecurityContext securityContext) {
+        throw new UnsupportedOperationException("setSecurityContext operation is not supported for Mock EEC");
     }
 }

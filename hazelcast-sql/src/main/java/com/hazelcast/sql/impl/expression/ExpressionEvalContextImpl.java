@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
@@ -51,12 +52,10 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     public ExpressionEvalContextImpl(
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
-            @Nonnull NodeEngine nodeEngine,
-            @Nonnull SqlSecurityContext ssc) {
+            @Nonnull NodeEngine nodeEngine) {
         this.arguments = requireNonNull(arguments);
         this.serializationService = requireNonNull(serializationService);
         this.nodeEngine = requireNonNull(nodeEngine);
-        this.ssc = ssc;
     }
 
     public ExpressionEvalContextImpl(
@@ -71,13 +70,17 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     }
 
     public ExpressionEvalContextImpl clone(HazelcastInstance hz, InternalSerializationService ss) {
+        NodeEngineImpl nodeEngine = Util.getNodeEngine(hz);
+        ExpressionEvalContextImpl eeci;
         if (contextRef != null) {
-            return new ExpressionEvalContextImpl(arguments, ss, Util.getNodeEngine(hz), contextRef);
-        } else if (ssc != null) {
-            return new ExpressionEvalContextImpl(arguments, ss, Util.getNodeEngine(hz), ssc);
+            eeci = new ExpressionEvalContextImpl(arguments, ss, nodeEngine, contextRef);
         } else {
-            throw new AssertionError("At least one security context must be available");
+            eeci = new ExpressionEvalContextImpl(arguments, ss, nodeEngine);
         }
+        if (ssc != null && ssc.isSecurityEnabled()) {
+            eeci.setSecurityContext(ssc);
+        }
+        return eeci;
     }
 
     /**
@@ -115,8 +118,6 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
             contextRef.checkPermission(permission);
         } else if (ssc != null) {
             ssc.checkPermission(permission);
-        } else {
-            throw new AssertionError("At least one security context must be available");
         }
     }
 
@@ -129,6 +130,15 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
         if (ssc != null) {
             return ssc.subject();
         }
-        throw new AssertionError("At least one security context must be available");
+        return null;
+    }
+
+    @Override
+    public void setSecurityContext(@Nonnull SqlSecurityContext ssc) {
+        if (contextRef != null) {
+            throw new IllegalStateException("Security context is already set by Jet");
+        } else if (ssc.isSecurityEnabled()) {
+            this.ssc = ssc;
+        }
     }
 }

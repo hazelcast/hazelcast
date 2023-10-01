@@ -524,8 +524,10 @@ public class PlanExecutor {
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 serializationService,
-                Util.getNodeEngine(hazelcastInstance),
-                ssc);
+                Util.getNodeEngine(hazelcastInstance)
+        );
+
+        evalContext.setSecurityContext(ssc);
 
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
@@ -603,8 +605,10 @@ public class PlanExecutor {
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 serializationService,
-                Util.getNodeEngine(hazelcastInstance),
-                ssc);
+                Util.getNodeEngine(hazelcastInstance)
+        );
+        evalContext.setSecurityContext(ssc);
+
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<JetSqlRow> future = hazelcastInstance.getMap(plan.mapName())
                 .getAsync(key)
@@ -633,8 +637,10 @@ public class PlanExecutor {
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 Util.getSerializationService(hazelcastInstance),
-                Util.getNodeEngine(hazelcastInstance),
-                ssc);
+                Util.getNodeEngine(hazelcastInstance)
+        );
+        evalContext.setSecurityContext(ssc);
+
         List<Entry<Object, Object>> entries = plan.entriesFn().apply(evalContext);
         if (!entries.isEmpty()) {
             assert entries.size() == 1;
@@ -658,8 +664,10 @@ public class PlanExecutor {
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 Util.getSerializationService(hazelcastInstance),
-                Util.getNodeEngine(hazelcastInstance),
-                ssc);
+                Util.getNodeEngine(hazelcastInstance)
+        );
+        evalContext.setSecurityContext(ssc);
+
         Map<Object, Object> entries = plan.entriesFn().apply(evalContext);
         CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .putAllAsync(entries)
@@ -673,8 +681,10 @@ public class PlanExecutor {
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 Util.getSerializationService(hazelcastInstance),
-                Util.getNodeEngine(hazelcastInstance),
-                ssc);
+                Util.getNodeEngine(hazelcastInstance)
+        );
+        evalContext.setSecurityContext(ssc);
+
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Long> future = hazelcastInstance.getMap(plan.mapName())
                 .submitToKey(key, plan.updaterSupplier().get(evalContext))
@@ -689,8 +699,10 @@ public class PlanExecutor {
         ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
                 Util.getSerializationService(hazelcastInstance),
-                Util.getNodeEngine(hazelcastInstance),
-                ssc);
+                Util.getNodeEngine(hazelcastInstance)
+        );
+        evalContext.setSecurityContext(ssc);
+
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)

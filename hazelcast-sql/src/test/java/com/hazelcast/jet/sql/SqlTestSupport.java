@@ -48,7 +48,6 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -822,8 +821,8 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return new ExpressionEvalContextImpl(
                 Arrays.asList(args),
                 TEST_SS,
-                instances() != null ? Util.getNodeEngine(instance()) : mock(NodeEngine.class),
-                NoOpSqlSecurityContext.INSTANCE);
+                instances() != null ? Util.getNodeEngine(instance()) : mock(NodeEngine.class)
+        );
     }
 
     public static JetSqlRow jetRow(Object... values) {
