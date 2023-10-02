@@ -21,6 +21,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPGroupAvailabilityListenerTest.CountingDownCPGroupAvailabilityListener;
+import com.hazelcast.cp.CPGroupAvailabilityListenerTest.GracefulShutdownAvailabilityListener;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -130,5 +131,20 @@ public class ClientCPGroupAvailabilityListenerTest extends HazelcastRaftTestSupp
         assertOpenEventually(listener2.availabilityLatch);
         assertEquals(1, listener1.availabilityEventCount.get());
         assertEquals(1, listener2.availabilityEventCount.get());
+    }
+
+    @Test
+    public void whenShutdown_receiveAvailabilityEvents() {
+        HazelcastInstance[] instances = newInstances(5);
+        HazelcastInstance client = factory.newHazelcastClient();
+
+        GracefulShutdownAvailabilityListener listener = new GracefulShutdownAvailabilityListener();
+        client.getCPSubsystem().addGroupAvailabilityListener(listener);
+
+        instances[0].getLifecycleService().shutdown();
+        assertTrueAllTheTime(() -> assertEquals(1, listener.availabilityDecreased.get()), 3);
+
+        instances[1].getLifecycleService().shutdown();
+        assertTrueAllTheTime(() -> assertEquals(2, listener.availabilityDecreased.get()), 3);
     }
 }

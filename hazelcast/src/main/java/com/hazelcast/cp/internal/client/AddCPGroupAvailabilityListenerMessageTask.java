@@ -53,7 +53,7 @@ public class AddCPGroupAvailabilityListenerMessageTask extends AbstractAsyncMess
 
         boolean local = parameters;
         if (local) {
-            UUID id = eventService.registerLocalListener(getServiceName(), TOPIC, listener).getId();
+            UUID id = eventService.registerListener(getServiceName(), TOPIC, listener).getId();
             return CompletableFuture.completedFuture(id);
         }
 

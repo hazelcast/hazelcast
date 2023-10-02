@@ -141,14 +141,14 @@ public class CPGroupAvailabilityListenerTest extends HazelcastRaftTestSupport {
         }
     }
 
-    static class GracefulShutdownAvailabilityListener
+    public static class GracefulShutdownAvailabilityListener
             implements CPGroupAvailabilityListener {
-        private final AtomicInteger availabilityDecreased;
+        public final AtomicInteger availabilityDecreased;
         private final AtomicInteger majorityLost;
 
         private final Set<UUID> membersShutdown;
 
-        GracefulShutdownAvailabilityListener() {
+        public GracefulShutdownAvailabilityListener() {
             availabilityDecreased = new AtomicInteger();
             majorityLost = new AtomicInteger();
             membersShutdown = ConcurrentHashMap.newKeySet();
