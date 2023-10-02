@@ -1078,8 +1078,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     @SuppressWarnings("unchecked")
     public MapMergeResponse merge(MapMergeTypes<Object, Object> mergingEntry,
-                               SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
-                               CallerProvenance provenance) {
+                                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
+                                  CallerProvenance provenance) {
         checkIfLoaded();
         long now = getNow();
 
@@ -1547,7 +1547,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() == POOLED;
     }
 
-    public void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
+    public void destroyStorageImmediate(boolean isDuringShutdown,
+                                        boolean internal) {
         mutationObserver.onDestroy(isDuringShutdown, internal);
         expirySystem.destroy();
         destroyMetadataStore();
@@ -1557,7 +1558,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     /**
      * Calls also {@link #clearStorage(boolean)} to release allocated HD memory
-     * of key+value pairs because {@link #destroyStorageImmediate(boolean, boolean)}
+     * of key+value pairs because
      * only releases internal resources of backing data structure.
      *
      * @param isDuringShutdown {@link Storage#clear(boolean)}

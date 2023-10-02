@@ -29,7 +29,7 @@ import com.hazelcast.map.LocalIndexStatsTest;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -136,7 +136,7 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         LocalMapStats stats1 = map1.getLocalMapStats();
         LocalMapStats stats2 = map2.getLocalMapStats();
 
-        List<Indexes> allIndexes = new ArrayList<Indexes>();
+        List<IndexRegistry> allIndexes = new ArrayList<IndexRegistry>();
         allIndexes.addAll(getAllIndexes(map1));
         allIndexes.addAll(getAllIndexes(map2));
 
@@ -165,7 +165,7 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
 
             long totalHitCount = 0;
             double totalNormalizedHitCardinality = 0.0;
-            for (Indexes indexes : allIndexes) {
+            for (IndexRegistry indexes : allIndexes) {
                 PerIndexStats perIndexStats = indexes.getIndex(indexEntry.getKey()).getPerIndexStats();
                 totalHitCount += perIndexStats.getHitCount();
                 totalNormalizedHitCardinality += perIndexStats.getTotalNormalizedHitCardinality();

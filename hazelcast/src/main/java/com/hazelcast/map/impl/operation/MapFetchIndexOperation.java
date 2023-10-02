@@ -132,7 +132,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                     + "\" is set to \"true\")");
         }
 
-        InternalIndex index = mapContainer.getIndexes().getIndex(indexName);
+        InternalIndex index = mapContainer.getGlobalIndexRegistry().getIndex(indexName);
         if (index == null) {
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Index \"" + indexName + "\" does not exist");
         }
