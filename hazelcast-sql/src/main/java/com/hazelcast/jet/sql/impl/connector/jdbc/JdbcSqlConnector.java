@@ -31,9 +31,7 @@ import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.jdbc.mssql.HazelcastMSSQLDialect;
 import com.hazelcast.jet.sql.impl.connector.jdbc.mysql.HazelcastMySqlDialect;
-import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -50,7 +48,6 @@ import org.apache.calcite.sql.SqlDialects;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.security.Permission;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -65,9 +62,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.core.ProcessorSupplier.of;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
-import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
 public class JdbcSqlConnector implements SqlConnector {
@@ -159,23 +154,6 @@ public class JdbcSqlConnector implements SqlConnector {
                     + quoteCompoundIdentifier(externalName), exception);
         } finally {
             dataConnection.release();
-        }
-    }
-
-    @Override
-    @Nonnull
-    public List<Permission> permissionsForResolve(SqlExternalResource resource,
-                                                  NodeEngine nodeEngine) {
-        JdbcDataConnection jdbcDataConnection = nodeEngine.getDataConnectionService()
-                                                          .getAndRetainDataConnection(resource.dataConnection(),
-                                                                  JdbcDataConnection.class);
-        try {
-            String url = jdbcDataConnection.getConnection().getMetaData().getURL();
-            return singletonList(ConnectorPermission.jdbc(url, ACTION_READ));
-        } catch (Exception e) {
-            throw new HazelcastSqlException("Could not get URL for external resource: " + resource, e);
-        } finally {
-            jdbcDataConnection.release();
         }
     }
 
