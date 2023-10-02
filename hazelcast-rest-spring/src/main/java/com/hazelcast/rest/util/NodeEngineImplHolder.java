@@ -13,18 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.rest;
+package com.hazelcast.rest.util;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import lombok.Data;
+import org.springframework.stereotype.Component;
 
-@SpringBootApplication
-public class HazelcastRestSpringApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(HazelcastRestSpringApplication.class, args);
-    }
+@Data
+@Component
+public class NodeEngineImplHolder {
+    private NodeEngineImpl nodeEngine;
 
-    public void nodeEngine() {
+/*    public NodeEngineImpl getNodeEngine() {
+        return nodeEngine;
+    }*/
 
-    }
+   // public void setNodeEngine(NodeEngineImpl nodeEngine) {
+   //     this.nodeEngine = nodeEngine;
+   // }
 }

@@ -13,18 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.rest;
+package com.hazelcast.rest.service;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import com.hazelcast.rest.util.NodeEngineImplHolder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-@SpringBootApplication
-public class HazelcastRestSpringApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(HazelcastRestSpringApplication.class, args);
+@Service
+public class MapService {
+    @Autowired
+    NodeEngineImplHolder nodeEngineImplHolder;
+
+    public Object getMap(String mapName, String key) {
+        return nodeEngineImplHolder.getNodeEngine().getHazelcastInstance().getMap(mapName).get(key);
     }
 
-    public void nodeEngine() {
-
+    public void putMap(String mapName, String key, String value) {
+        nodeEngineImplHolder.getNodeEngine().getHazelcastInstance().getMap(mapName).set(key, value);
     }
 }

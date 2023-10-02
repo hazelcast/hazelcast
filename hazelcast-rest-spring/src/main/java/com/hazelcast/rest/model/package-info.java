@@ -13,18 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.rest;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class HazelcastRestSpringApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(HazelcastRestSpringApplication.class, args);
-    }
-
-    public void nodeEngine() {
-
-    }
-}
+/**
+ * Provides Spring interfaces/classes for Hazelcast.
+ */
+package com.hazelcast.rest.model;

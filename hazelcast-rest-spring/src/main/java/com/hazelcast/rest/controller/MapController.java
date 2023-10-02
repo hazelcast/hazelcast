@@ -15,7 +15,7 @@
  */
 package com.hazelcast.rest.controller;
 
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.rest.service.MapService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -32,17 +32,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/maps")
 public class MapController {
+    private final MapService mapService;
 
-    private NodeEngineImpl nodeEngine;
+    public MapController(MapService mapService) {
+        this.mapService = mapService;
+    }
 
     @GetMapping(value = "/{mapName}/{key}")
     @Operation(summary = "Find value by key in a map",
-            tags = {"map controller"},
+            tags = {"Map Controller"},
             description = "Returns if there is a corresponding value for given mapName and key",
             responses = {
                     @ApiResponse(responseCode = "200", description = "OK"),
                     @ApiResponse(responseCode = "204", description = "No Content"),
                     @ApiResponse(responseCode = "400", description = "Bad Request"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
                     @ApiResponse(responseCode = "404", description = "Not found"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             })
@@ -50,8 +54,8 @@ public class MapController {
             schema = @Schema()) @PathVariable("mapName") String mapName,
                                   @Parameter(in = ParameterIn.PATH, description = "The key of map", required = true,
                                           schema = @Schema()) @PathVariable("key") String key) {
+        Object value = mapService.getMap(mapName, key);
 
-        Object value = nodeEngine.getHazelcastInstance().getMap(mapName).get(key);
         if (value == null) {
             return ResponseEntity.notFound().build();
         }
@@ -60,11 +64,11 @@ public class MapController {
 
     @PostMapping(value = "/{mapName}/{key}")
     @Operation(summary = "Add a new value to the map",
-            tags = {"map controller"},
+            tags = {"Map Controller"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "OK"),
-                    @ApiResponse(responseCode = "204", description = "No Content"),
                     @ApiResponse(responseCode = "400", description = "Bad Request"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             })
     ResponseEntity<String> postMap(@Parameter(in = ParameterIn.PATH, description = "The map name", required = true,
@@ -73,15 +77,7 @@ public class MapController {
                                            schema = @Schema()) @PathVariable("key") String key,
                                    @Parameter(in = ParameterIn.DEFAULT, description = "", required = true,
                                            schema = @Schema()) @RequestBody String value) {
-        nodeEngine.getHazelcastInstance().getMap(mapName).set(key, value);
+        mapService.putMap(mapName, key, value);
         return ResponseEntity.ok("(" + key + " : " + value + ") is added to map " + mapName);
-    }
-
-    public NodeEngineImpl getNodeEngine() {
-        return nodeEngine;
-    }
-
-    public void setNodeEngine(NodeEngineImpl nodeEngine) {
-        this.nodeEngine = nodeEngine;
     }
 }
