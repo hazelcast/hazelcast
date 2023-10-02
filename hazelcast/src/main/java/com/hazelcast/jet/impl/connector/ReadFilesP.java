@@ -18,11 +18,9 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
@@ -30,6 +28,7 @@ import com.hazelcast.jet.pipeline.file.impl.FileProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.file.impl.FileTraverser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
@@ -51,7 +50,6 @@ import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
-import static java.util.Collections.singletonList;
 
 /**
  * Private API, use {@link SourceProcessors#readFilesP}.
@@ -77,7 +75,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
 
     private LocalFileTraverser<T> traverser;
 
-    private ReadFilesP(
+    public ReadFilesP(
             @Nonnull String directory,
             @Nonnull String glob,
             boolean sharedFileSystem,
@@ -177,17 +175,9 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         @Nonnull
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> ProcessorSupplier.of(new SupplierEx<>() {
-                @Override
-                public Processor getEx() {
-                    return new ReadFilesP<>(directory, glob, sharedFileSystem, ignoreFileNotFound, readFileFn);
-                }
-
-                @Override
-                public List<Permission> permissions() {
-                    return singletonList(ConnectorPermission.file(directory, ACTION_READ));
-                }
-            });
+            return address -> ProcessorSupplier.of(SecuredFunctions.readFilesProcessorFn(
+                    directory, glob, sharedFileSystem, ignoreFileNotFound, readFileFn
+            ));
         }
 
         @Override
