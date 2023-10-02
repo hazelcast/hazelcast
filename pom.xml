@@ -144,7 +144,7 @@
         <atomikos.version>3.9.3</atomikos.version>
         <bytebuddy.version>1.14.7</bytebuddy.version>
         <commons-codec.version>1.16.0</commons-codec.version>
-        <commons-io.version>2.13.0</commons-io.version>
+        <commons-io.version>2.14.0</commons-io.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
         <confluent.version>7.4.0</confluent.version>
         <felix.utils.version>1.11.6</felix.utils.version>
