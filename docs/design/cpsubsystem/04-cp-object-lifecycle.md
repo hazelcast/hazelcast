@@ -92,7 +92,7 @@ Thus, if an object was destroyed, a new object will be created.
 
 In POC, the existing "get-or-create" semantics have been reworked, and has been introduced the ability to distinguish between old and new objects with the same name.
 
-For tracking CP object lifecycle (creation/destruction) each internal CP object should have a unique object ID (UUID):
+For tracking CP object lifecycle (creation/destruction) each internal CP object should have a unique object ID (UUID, Random Long, Timestamp, FlakeIdGenerator, ...):
 
 - A Hazelcast client should obtain an object ID during the Client-proxy creation
 - Each Client → Server CP method call (operation) should include object ID
@@ -148,7 +148,17 @@ public abstract class RaftAtomicValue<T> {
 }
 ```
 
-To minimize the number of changes on a client/server side, and do not recreate/update dozens of codecs, messages and Raft operations, object UUID and object name are concatenated on the Client side. This combined object name passes via existing API during each operation call:
+To implement Client -> Server interaction there are two options:
+- the name-mangling scheme
+- extend Client/Server API
+
+Let's analyze each of those options
+
+#### The name-mangling scheme
+
+The name-mangling scheme has been implemented in a POC
+
+To minimize the number of changes on a client/server side, and do not recreate/update dozens of codecs, messages and Raft operations, object UUID and object name are concatenated on the Client side (the name-mangling scheme). This combined object name passes via existing API during each operation call:
 
 ```java
 public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
@@ -223,7 +233,45 @@ During the Raft log snapshot (and persist), the combined object name is used aga
     }
 ```
 
-### POC performance test
+Pros:
+- minimal code changes on Client/Server
+- no existing Client/Server API changes
+- no changes in persisted Raft-log format
+- minimal changes for client(s)-to-member compatibility
+- no changes for member-to-member compatibility
+- no migration is needed for persisted Raft-log compatibility (5.4 version can use 5.3 log)
+
+Cons:
+- less source maintainability and higher chance of error (due to juggling with the mangled name)
+- mangled name parsing overhead (performance degradation)
+- new Client -> Server API call for object creation
+
+#### Extending Client/Server API
+
+To pass the object ID from Client -> Server, another option is to extend the Client/Server API.
+
+To do this, a new object ID parameter should be added to all Client -> Server API calls and subsequent method call chains.
+
+An approximate number of API changes:
+- ~ 30 codecs (and regenerate them for all Hazelcast client implementations)
+- ~ 30 MessageTasks
+- ~ 10 RaftOps
+
+Pros:
+- explicit and clear API
+- better source maintainability
+- no performance degradation expected
+
+Cons:
+- significant codebase changes on server side and for all Hazelcast client implementations
+- new Client -> Server API call for object creation
+- changing persisted Raft-log format
+- efforts to provide persisted Raft-log compatibility (start 5.4 version with 5.3 log, possibly need some tool for Raft-log migration)
+- efforts to provide client(s)-to-member compatibility (for codecs)
+- efforts to provide member-to-member compatibility (for MessageTasks and RaftOps)
+- extended testing for all changed API calls
+
+### Name-mangling POC performance test
 
 For testing differences in performance, the following rough test was used:
 
@@ -243,7 +291,7 @@ For testing differences in performance, the following rough test was used:
 On the local dev environment, the POC version is 4-5% slower than the existing one 5.4.0-SNAPSHOT.
 
 
-### Compatibility
+### Name-mangling Compatibility
 For 5.3 Client -> 5.4 Server compatibility, an existing "get-or-create" semantics have been saved. If there is no object UUID in a client request, the "get-or-create" approach is used:
 
 ```java
