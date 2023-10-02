@@ -138,7 +138,7 @@
         <mongodb.version>4.10.2</mongodb.version>
 
         <!-- test dependencies -->
-        <activemq-artemis.version>2.30.0</activemq-artemis.version>
+        <activemq-artemis.version>2.31.0</activemq-artemis.version>
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.24.2</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
