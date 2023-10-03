@@ -49,10 +49,12 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     ExpressionEvalContextImpl(
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
-            @Nonnull NodeEngine nodeEngine) {
+            @Nonnull NodeEngine nodeEngine,
+            @Nullable SqlSecurityContext ssc) {
         this.arguments = requireNonNull(arguments);
         this.serializationService = requireNonNull(serializationService);
         this.nodeEngine = requireNonNull(nodeEngine);
+        this.ssc = ssc;
     }
 
     ExpressionEvalContextImpl(
@@ -114,14 +116,5 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
             return ssc.subject();
         }
         return null;
-    }
-
-    @Override
-    public void setSecurityContext(@Nonnull SqlSecurityContext ssc) {
-        if (contextRef != null) {
-            throw new IllegalStateException("Security context is already set by Jet");
-        } else if (ssc.isSecurityEnabled()) {
-            this.ssc = ssc;
-        }
     }
 }

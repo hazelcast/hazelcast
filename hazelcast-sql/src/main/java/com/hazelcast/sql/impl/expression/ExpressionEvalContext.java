@@ -74,7 +74,8 @@ public interface ExpressionEvalContext {
             return new ExpressionEvalContextImpl(
                     arguments,
                     new DefaultSerializationServiceBuilder().build(),
-                    Util.getNodeEngine(ctx.hazelcastInstance())
+                    Util.getNodeEngine(ctx.hazelcastInstance()),
+                    (SqlSecurityContext) null
             );
         }
     }
@@ -84,11 +85,7 @@ public interface ExpressionEvalContext {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull InternalSerializationService iss,
             @Nullable SqlSecurityContext ssc) {
-        ExpressionEvalContext newEec = new ExpressionEvalContextImpl(arguments, iss, nodeEngine);
-        if (ssc != null) {
-            newEec.setSecurityContext(ssc);
-        }
-        return newEec;
+        return new ExpressionEvalContextImpl(arguments, iss, nodeEngine, ssc);
     }
 
     static ExpressionEvalContext createContext(
@@ -127,6 +124,4 @@ public interface ExpressionEvalContext {
 
     @Nullable
     Subject subject();
-
-    void setSecurityContext(@Nonnull SqlSecurityContext securityContext);
 }

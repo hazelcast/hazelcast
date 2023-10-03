@@ -258,7 +258,7 @@ public final class QueryUtil {
             assert objectInitializationStageChecker == CHECKER_ISS_INJECTOR_CALLED :
                     "Object initialization lifecycle via HazelcastManagedContext is failed";
             this.evalContext = ExpressionEvalContext.createContext(arguments, hzInstance, iss, ssc);
-            this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
+            this.extractors = Extractors.newBuilder(iss).build();
         }
 
         @Override
