@@ -91,7 +91,7 @@ abstract class MethodProbe implements ProbeFunction {
     final String probeName;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
-    MethodProbe(final Method method, final Probe probe, final ProbeType type, final SourceMetadata sourceMetadata) {
+    MethodProbe(Method method, Probe probe, ProbeType type, SourceMetadata sourceMetadata) {
         try {
             method.setAccessible(true);
             final MethodHandle unreflected = LOOKUP.unreflect(method);
@@ -148,13 +148,13 @@ abstract class MethodProbe implements ProbeFunction {
         }
     }
 
-    void register(final MetricsRegistryImpl metricsRegistry, final Object source, final String namePrefix) {
+    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
         final MetricDescriptor descriptor = metricsRegistry.newMetricDescriptor().withPrefix(namePrefix)
                 .withMetric(getProbeName());
         metricsRegistry.registerInternal(source, descriptor, probe.level(), this);
     }
 
-    void register(final MetricsRegistryImpl metricsRegistry, final MetricDescriptor descriptor, final Object source) {
+    void register(MetricsRegistryImpl metricsRegistry, MetricDescriptor descriptor, Object source) {
         metricsRegistry.registerStaticProbe(source, descriptor, getProbeName(), probe.level(), probe.unit(), this);
     }
 
@@ -162,7 +162,7 @@ abstract class MethodProbe implements ProbeFunction {
         return probeName;
     }
 
-    static <S> MethodProbe createMethodProbe(final Method method, final Probe probe, final SourceMetadata sourceMetadata) {
+    static <S> MethodProbe createMethodProbe(Method method, Probe probe, SourceMetadata sourceMetadata) {
         final ProbeType type = getType(method.getReturnType());
         if (type == null) {
             throw new IllegalArgumentException(format("@Probe method '%s.%s() has an unsupported return type'",
@@ -184,7 +184,7 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     static class LongMethodProbe<S> extends MethodProbe implements LongProbeFunction<S> {
-        LongMethodProbe(final Method method, final Probe probe, final ProbeType type, final SourceMetadata sourceMetadata) {
+        LongMethodProbe(Method method, Probe probe, ProbeType type, SourceMetadata sourceMetadata) {
             super(method, probe, type, sourceMetadata);
         }
 
@@ -222,7 +222,7 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     static class DoubleMethodProbe<S> extends MethodProbe implements DoubleProbeFunction<S> {
-        DoubleMethodProbe(final Method method, final Probe probe, final ProbeType type, final SourceMetadata sourceMetadata) {
+        DoubleMethodProbe(Method method, Probe probe, ProbeType type, SourceMetadata sourceMetadata) {
             super(method, probe, type, sourceMetadata);
         }
 

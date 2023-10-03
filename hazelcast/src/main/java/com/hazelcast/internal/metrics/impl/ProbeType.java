@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics.impl;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.unmodifiableMap;
 
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.Counter;
 
 import java.util.Arrays;
@@ -50,7 +51,7 @@ enum ProbeType {
     /** The type(s) the {@link Probe} could be attached to */
     private final Class<?>[] types;
 
-    ProbeType(final Class<?> mapsTo, final Class<?>... types) {
+    ProbeType(final Class<?> mapsTo, Class<?>... types) {
         this.mapsTo = mapsTo;
         this.types = types;
     }
@@ -80,7 +81,7 @@ enum ProbeType {
      * @param classType the class object type.
      * @return the accessible object probe type.
      */
-    static ProbeType getType(final Class<?> classType) {
+    static ProbeType getType(Class<?> classType) {
         final ProbeType type = TYPES.get(classType);
         if (type != null) {
             return type;
