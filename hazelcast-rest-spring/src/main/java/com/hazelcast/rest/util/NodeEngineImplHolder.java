@@ -23,12 +23,4 @@ import org.springframework.stereotype.Component;
 @Component
 public class NodeEngineImplHolder {
     private NodeEngineImpl nodeEngine;
-
-/*    public NodeEngineImpl getNodeEngine() {
-        return nodeEngine;
-    }*/
-
-   // public void setNodeEngine(NodeEngineImpl nodeEngine) {
-   //     this.nodeEngine = nodeEngine;
-   // }
 }
