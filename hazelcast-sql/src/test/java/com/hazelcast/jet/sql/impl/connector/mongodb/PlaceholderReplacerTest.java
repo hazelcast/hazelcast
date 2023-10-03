@@ -17,14 +17,14 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,11 +35,15 @@ import java.util.List;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class PlaceholderReplacerTest {
+public class PlaceholderReplacerTest extends SimpleTestInClusterSupport {
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        initialize(1, null);
+    }
 
     @Test
     public void replaces_dynamic_param() {
@@ -122,10 +126,11 @@ public class PlaceholderReplacerTest {
     }
 
     private ExpressionEvalContext evalContext(List<Object> arguments) {
-        return new ExpressionEvalContextImpl(
+        return ExpressionEvalContext.createContext(
                 arguments,
+                instance(),
                 getInternalSerializationService(),
-                mock(NodeEngine.class)
+                null
         );
     }
 

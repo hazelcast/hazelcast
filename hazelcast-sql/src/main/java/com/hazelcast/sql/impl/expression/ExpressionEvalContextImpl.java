@@ -46,7 +46,7 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     private final transient InternalSerializationService serializationService;
     private final transient NodeEngine nodeEngine;
 
-    public ExpressionEvalContextImpl(
+    ExpressionEvalContextImpl(
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
             @Nonnull NodeEngine nodeEngine) {
@@ -55,7 +55,7 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
         this.nodeEngine = requireNonNull(nodeEngine);
     }
 
-    public ExpressionEvalContextImpl(
+    ExpressionEvalContextImpl(
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
             @Nonnull NodeEngine nodeEngine,
