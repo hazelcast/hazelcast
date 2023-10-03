@@ -27,8 +27,6 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-import static com.hazelcast.internal.metrics.impl.FieldProbe.createProbe;
-import static com.hazelcast.internal.metrics.impl.MethodProbe.createProbe;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.flatten;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -86,7 +84,7 @@ final class SourceMetadata {
                 continue;
             }
 
-            MethodHandleProbe<?> fieldProbe = createProbe(field, probe, this);
+            MethodHandleProbe<?> fieldProbe = FieldProbe.createFieldProbe(field, probe, this);
             fields.add(fieldProbe);
         }
     }
@@ -99,7 +97,7 @@ final class SourceMetadata {
                 continue;
             }
 
-            MethodHandleProbe<Object> methodProbe = createProbe(method, probe, this);
+            MethodHandleProbe<Object> methodProbe = MethodProbe.createMethodProbe(method, probe, this);
             methods.add(methodProbe);
         }
     }

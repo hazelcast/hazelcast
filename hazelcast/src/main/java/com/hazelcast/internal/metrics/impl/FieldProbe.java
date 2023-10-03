@@ -33,7 +33,7 @@ abstract class FieldProbe<S> extends MethodHandleProbe<S> {
         super(getterMethod, isStatic, probe, type, sourceMetadata);
     }
 
-    static <S> MethodHandleProbe<S> createProbe(Field field, Probe probe, SourceMetadata sourceMetadata) {
+    static <S> MethodHandleProbe<S> createFieldProbe(Field field, Probe probe, SourceMetadata sourceMetadata) {
         try {
             field.setAccessible(true);
             return createProbe(LOOKUP.unreflectGetter(field), Modifier.isStatic(field.getModifiers()), probe, sourceMetadata);

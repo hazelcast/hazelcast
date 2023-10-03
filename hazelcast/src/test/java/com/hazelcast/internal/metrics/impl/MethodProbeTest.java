@@ -39,7 +39,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.metrics.impl.MethodProbe.createProbe;
+import static com.hazelcast.internal.metrics.impl.MethodProbe.createMethodProbe;
 import static com.hazelcast.internal.util.CollectionUtil.getItemAtPositionOrNull;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static org.junit.Assert.assertEquals;
@@ -84,7 +84,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod("getSomeIntegerMethod");
         Probe probe = method.getAnnotation(Probe.class);
-        MethodHandleProbe<SomeSource> methodProbe = createProbe(method, probe, new SourceMetadata(SomeSource.class));
+        MethodHandleProbe<SomeSource> methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(mock(ILogger.class), ProbeLevel.DEBUG);
         methodProbe.register(metricsRegistry, source, "prefix");
@@ -99,7 +99,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod(methodName);
         Probe probe = method.getAnnotation(Probe.class);
-        MethodHandleProbe<SomeSource> methodProbe = createProbe(method, probe, new SourceMetadata(SomeSource.class));
+        MethodHandleProbe<SomeSource> methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         LongMethodHandleProbe<SomeSource> longMethodProbe = assertInstanceOf(LongMethodHandleProbe.class, methodProbe);
 
@@ -123,7 +123,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod(fieldName);
         Probe probe = method.getAnnotation(Probe.class);
-        MethodHandleProbe<SomeSource> methodProbe = createProbe(method, probe, new SourceMetadata(SomeSource.class));
+        MethodHandleProbe<SomeSource> methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         DoubleMethodHandleProbe<SomeSource> doubleMethodProbe = assertInstanceOf(DoubleMethodHandleProbe.class, methodProbe);
         double value = doubleMethodProbe.get(source);
