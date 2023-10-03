@@ -64,8 +64,10 @@ public final class UpdatingEntryProcessor
     private transient HazelcastInstance hzInstance;
     private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
-
     private transient SqlSecurityContext ssc;
+
+    private transient byte objectInitializationStageChecker;
+
     private Subject subject;
 
     @SuppressWarnings("unused")
@@ -101,22 +103,33 @@ public final class UpdatingEntryProcessor
 
     @Override
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        // TODO: setHazelcastInstance called twice, but in order.
+//        assert objectInitializationStageChecker == 0 :
+//                "objectInitializationStageChecker must be set to initial value";
         this.hzInstance = hazelcastInstance;
+        objectInitializationStageChecker = QueryUtil.CHECKER_HZ_INJECTOR_CALLED;
     }
 
     @Override
     public void setNode(Node node) {
+        assert objectInitializationStageChecker == QueryUtil.CHECKER_HZ_INJECTOR_CALLED :
+                "setHazelcastInstance should be called before setNode";
         SecurityContext securityContext = node.securityContext;
         if (securityContext != null && subject != null) {
             this.ssc = securityContext.createSqlContext(subject);
         }
+        objectInitializationStageChecker <<= 1;
     }
 
     @Override
     public void setSerializationService(SerializationService serializationService) {
+        assert objectInitializationStageChecker == QueryUtil.CHECKER_NODE_INJECTOR_CALLED :
+                "setHazelcastInstance and setNode should be called before setSerializationService";
         InternalSerializationService iss = (InternalSerializationService) serializationService;
+        objectInitializationStageChecker <<= 1;
         initContext(iss);
     }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(rowProjectorSupplier);
@@ -218,6 +231,8 @@ public final class UpdatingEntryProcessor
     }
 
     private void initContext(InternalSerializationService iss) {
+        assert objectInitializationStageChecker == QueryUtil.CHECKER_ISS_INJECTOR_CALLED :
+                "Object initialization lifecycle via HazelcastManagedContext is failed";
         this.evalContext = ExpressionEvalContext.createContext(arguments, hzInstance, iss, ssc);
         this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
