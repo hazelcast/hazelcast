@@ -124,7 +124,7 @@ public class FieldProbeTest extends HazelcastTestSupport {
         Probe probe = field.getAnnotation(Probe.class);
 
         MethodHandleProbe<SomeSource> fieldProbe = createFieldProbe(field, probe, new SourceMetadata(SomeSource.class));
-       
+
         DoubleMethodHandleProbe<SomeSource> doubleFieldProbe =  assertInstanceOf(DoubleMethodHandleProbe.class, fieldProbe);
 
         double value = doubleFieldProbe.get(source);

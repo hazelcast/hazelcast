@@ -147,6 +147,7 @@ abstract class MethodHandleProbe<S> implements ProbeFunction {
             }
         }
 
+        @SuppressWarnings({"checkstyle:npathcomplexity"})
         @Override
         public long get(S source) throws Exception {
             switch (type) {
