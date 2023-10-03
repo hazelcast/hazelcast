@@ -16,12 +16,9 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
@@ -67,20 +64,6 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
         this.serializationService = requireNonNull(serializationService);
         this.nodeEngine = requireNonNull(nodeEngine);
         this.contextRef = context;
-    }
-
-    public ExpressionEvalContextImpl clone(HazelcastInstance hz, InternalSerializationService ss) {
-        NodeEngineImpl nodeEngine = Util.getNodeEngine(hz);
-        ExpressionEvalContextImpl eeci;
-        if (contextRef != null) {
-            eeci = new ExpressionEvalContextImpl(arguments, ss, nodeEngine, contextRef);
-        } else {
-            eeci = new ExpressionEvalContextImpl(arguments, ss, nodeEngine);
-        }
-        if (ssc != null && ssc.isSecurityEnabled()) {
-            eeci.setSecurityContext(ssc);
-        }
-        return eeci;
     }
 
     /**

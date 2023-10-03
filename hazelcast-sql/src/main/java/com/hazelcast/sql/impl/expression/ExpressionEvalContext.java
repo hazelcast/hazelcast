@@ -24,7 +24,6 @@ import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
@@ -81,25 +80,17 @@ public interface ExpressionEvalContext {
         }
     }
 
-    static ExpressionEvalContext recreateContext(
-            @Nullable ExpressionEvalContext eec,
-            @Nonnull HazelcastInstance hz,
+    static ExpressionEvalContext createContext(
             @Nonnull List<Object> arguments,
+            @Nonnull HazelcastInstance hz,
             @Nonnull InternalSerializationService iss,
-            @Nullable Subject subject) {
-        if (eec == null) {
-            NodeEngineImpl nodeEngine = Util.getNodeEngine(hz);
-            ExpressionEvalContext newEec = new ExpressionEvalContextImpl(arguments, iss, nodeEngine);
-            SecurityContext sc = nodeEngine.getNode().securityContext;
-            if (sc != null) {
-                SqlSecurityContext ssc = sc.createSqlContext(subject);
-                newEec.setSecurityContext(ssc);
-            }
-            return newEec;
-        } else {
-            ExpressionEvalContextImpl eeci = (ExpressionEvalContextImpl) eec;
-            return eeci.clone(hz, iss);
+            @Nullable SqlSecurityContext ssc) {
+        NodeEngineImpl nodeEngine = Util.getNodeEngine(hz);
+        ExpressionEvalContext newEec = new ExpressionEvalContextImpl(arguments, iss, nodeEngine);
+        if (ssc != null) {
+            newEec.setSecurityContext(ssc);
         }
+        return newEec;
     }
 
     /**
@@ -131,5 +122,5 @@ public interface ExpressionEvalContext {
     @Nullable
     Subject subject();
 
-    void setSecurityContext(SqlSecurityContext securityContext);
+    void setSecurityContext(@Nonnull SqlSecurityContext securityContext);
 }

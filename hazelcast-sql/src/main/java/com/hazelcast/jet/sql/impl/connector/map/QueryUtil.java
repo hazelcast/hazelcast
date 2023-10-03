@@ -18,10 +18,12 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
+import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,6 +34,7 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
@@ -40,6 +43,7 @@ import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.security.auth.Subject;
@@ -187,7 +191,7 @@ public final class QueryUtil {
     )
     private static final class JoinProjection
             implements Projection<Entry<Object, Object>, JetSqlRow>, DataSerializable,
-            HazelcastInstanceAware, SerializationServiceAware {
+            HazelcastInstanceAware, NodeAware, SerializationServiceAware {
 
         private KvRowProjector.Supplier rightRowProjectorSupplier;
         private List<Object> arguments;
@@ -195,6 +199,7 @@ public final class QueryUtil {
         private transient HazelcastInstance hzInstance;
         private transient ExpressionEvalContext evalContext;
         private transient Extractors extractors;
+        private transient SqlSecurityContext ssc;
 
         private Subject subject;
 
@@ -220,9 +225,20 @@ public final class QueryUtil {
         }
 
         @Override
+        public void setNode(Node node) {
+            SecurityContext securityContext = node.securityContext;
+            if (securityContext != null && subject != null) {
+                this.ssc = securityContext.createSqlContext(subject);
+            }
+        }
+
+        @Override
         public void setSerializationService(SerializationService serializationService) {
-            InternalSerializationService iss = (InternalSerializationService) serializationService;
-            this.evalContext = ExpressionEvalContext.recreateContext(evalContext, hzInstance, arguments, iss, subject);
+            initContext((InternalSerializationService) serializationService);
+        }
+
+        private void initContext(InternalSerializationService iss) {
+            this.evalContext = ExpressionEvalContext.createContext(arguments, hzInstance, iss, ssc);
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
         }
 

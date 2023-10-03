@@ -18,9 +18,11 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
+import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.map.EntryProcessor;
@@ -28,6 +30,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -37,6 +40,7 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
@@ -51,7 +55,7 @@ import static java.util.stream.Collectors.toMap;
 
 public final class UpdatingEntryProcessor
         implements EntryProcessor<Object, Object, Long>, DataSerializable,
-        HazelcastInstanceAware, SerializationServiceAware {
+        HazelcastInstanceAware, NodeAware, SerializationServiceAware {
 
     private KvRowProjector.Supplier rowProjectorSupplier;
     private Projector.Supplier valueProjectorSupplier;
@@ -61,6 +65,7 @@ public final class UpdatingEntryProcessor
     private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
 
+    private transient SqlSecurityContext ssc;
     private Subject subject;
 
     @SuppressWarnings("unused")
@@ -100,12 +105,18 @@ public final class UpdatingEntryProcessor
     }
 
     @Override
-    public void setSerializationService(SerializationService serializationService) {
-        InternalSerializationService iss = (InternalSerializationService) serializationService;
-        this.evalContext = ExpressionEvalContext.recreateContext(evalContext, hzInstance, arguments, iss, subject);
-        this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
+    public void setNode(Node node) {
+        SecurityContext securityContext = node.securityContext;
+        if (securityContext != null && subject != null) {
+            this.ssc = securityContext.createSqlContext(subject);
+        }
     }
 
+    @Override
+    public void setSerializationService(SerializationService serializationService) {
+        InternalSerializationService iss = (InternalSerializationService) serializationService;
+        initContext(iss);
+    }
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(rowProjectorSupplier);
@@ -204,5 +215,10 @@ public final class UpdatingEntryProcessor
             rowProjectorSupplier = in.readObject();
             valueProjectorSupplier = in.readObject();
         }
+    }
+
+    private void initContext(InternalSerializationService iss) {
+        this.evalContext = ExpressionEvalContext.createContext(arguments, hzInstance, iss, ssc);
+        this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 }
