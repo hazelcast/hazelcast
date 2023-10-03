@@ -49,7 +49,7 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
     @Parameter(value = 2)
     public String externalName;
 
-    private String tableFull;
+    protected String tableFull;
 
     @Parameters(name = "{index}: schemaName={0}, tableName={1}, externalTableName={2}")
     public static List<Object[]> data() {
@@ -102,9 +102,6 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
         tableFull = quote(schema, table);
         try {
             executeJdbc(databaseProvider.createSchemaQuery(quote(schema)));
-            if (databaseProvider instanceof OracleDatabaseProvider) {
-                executeJdbc("GRANT UNLIMITED TABLESPACE TO " + quote(schema));
-            }
         } catch (Exception e) {
             logger.info("Could not create schema", e);
         }

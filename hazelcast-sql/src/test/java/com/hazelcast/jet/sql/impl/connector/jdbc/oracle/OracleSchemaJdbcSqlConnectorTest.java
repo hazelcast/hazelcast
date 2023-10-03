@@ -19,8 +19,12 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.oracle;
 import com.hazelcast.jet.sql.impl.connector.jdbc.SchemaJdbcConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.OracleDatabaseProvider;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
+
+import static org.assertj.core.api.Assumptions.assumeThat;
+
 
 @Category(NightlyTest.class)
 public class OracleSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
@@ -30,4 +34,17 @@ public class OracleSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
         initialize(new OracleDatabaseProvider());
     }
 
+    @Before
+    public void setUp() throws Exception {
+        assumeThat(schema).describedAs("Name with double quotes not supported on Oracle")
+                .isNotEqualTo("schema_with_quote\"");
+        tableFull = quote(schema, table);
+        try {
+            executeJdbc(databaseProvider.createSchemaQuery(quote(schema)));
+            executeJdbc("GRANT UNLIMITED TABLESPACE TO " + quote(schema));
+        } catch (Exception e) {
+            logger.info("Could not create schema", e);
+        }
+        createTableWithQuotation(tableFull);
+    }
 }
