@@ -17,8 +17,8 @@
 package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.impl.FieldProbe.DoubleFieldProbe;
-import com.hazelcast.internal.metrics.impl.FieldProbe.LongFieldProbe;
+import com.hazelcast.internal.metrics.impl.MethodHandleProbe.DoubleMethodHandleProbe;
+import com.hazelcast.internal.metrics.impl.MethodHandleProbe.LongMethodHandleProbe;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAccumulator;
 import java.util.concurrent.atomic.LongAdder;
 
-import static com.hazelcast.internal.metrics.impl.FieldProbe.createFieldProbe;
+import static com.hazelcast.internal.metrics.impl.FieldProbe.createProbe;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static org.junit.Assert.assertEquals;
 
@@ -53,7 +53,7 @@ public class FieldProbeTest extends HazelcastTestSupport {
         Probe probe = field.getAnnotation(Probe.class);
         SourceMetadata ignoredSourceMetadata = new SourceMetadata(Object.class);
 
-        createFieldProbe(field, probe, ignoredSourceMetadata);
+        createProbe(field, probe, ignoredSourceMetadata);
     }
 
     private class UnknownFieldType {
@@ -99,9 +99,9 @@ public class FieldProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Field field = source.getClass().getDeclaredField(fieldName);
         Probe probe = field.getAnnotation(Probe.class);
-        FieldProbe fieldProbe = createFieldProbe(field, probe, new SourceMetadata(SomeSource.class));
+        MethodHandleProbe<SomeSource> fieldProbe = createProbe(field, probe, new SourceMetadata(SomeSource.class));
 
-        LongFieldProbe longFieldProbe = assertInstanceOf(LongFieldProbe.class, fieldProbe);
+        LongMethodHandleProbe<SomeSource> longFieldProbe = assertInstanceOf(LongMethodHandleProbe.class, fieldProbe);
 
         long value = longFieldProbe.get(source);
 
@@ -123,10 +123,9 @@ public class FieldProbeTest extends HazelcastTestSupport {
         Field field = source.getClass().getDeclaredField(fieldName);
         Probe probe = field.getAnnotation(Probe.class);
 
-        FieldProbe fieldProbe = createFieldProbe(field, probe, new SourceMetadata(SomeSource.class));
-        assertInstanceOf(DoubleFieldProbe.class, fieldProbe);
-
-        DoubleFieldProbe doubleFieldProbe = (DoubleFieldProbe) fieldProbe;
+        MethodHandleProbe<SomeSource> fieldProbe = createProbe(field, probe, new SourceMetadata(SomeSource.class));
+       
+        DoubleMethodHandleProbe<SomeSource> doubleFieldProbe =  assertInstanceOf(DoubleMethodHandleProbe.class, fieldProbe);
 
         double value = doubleFieldProbe.get(source);
 

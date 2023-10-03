@@ -153,11 +153,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(source, "source can't be null");
 
         SourceMetadata metadata = loadSourceMetadata(source.getClass());
-        for (FieldProbe field : metadata.fields()) {
+        for (MethodHandleProbe<?> field : metadata.fields()) {
             field.register(this, descriptor, source);
         }
 
-        for (MethodProbe method : metadata.methods()) {
+        for (MethodHandleProbe<?> method : metadata.methods()) {
             method.register(this, descriptor, source);
         }
     }

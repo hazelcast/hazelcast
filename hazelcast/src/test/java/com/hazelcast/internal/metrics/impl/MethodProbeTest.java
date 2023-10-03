@@ -18,7 +18,8 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.impl.MethodProbe.LongMethodProbe;
+import com.hazelcast.internal.metrics.impl.MethodHandleProbe.DoubleMethodHandleProbe;
+import com.hazelcast.internal.metrics.impl.MethodHandleProbe.LongMethodHandleProbe;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -38,7 +39,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.metrics.impl.MethodProbe.createMethodProbe;
+import static com.hazelcast.internal.metrics.impl.MethodProbe.createProbe;
 import static com.hazelcast.internal.util.CollectionUtil.getItemAtPositionOrNull;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static org.junit.Assert.assertEquals;
@@ -83,7 +84,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod("getSomeIntegerMethod");
         Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
+        MethodHandleProbe<SomeSource> methodProbe = createProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(mock(ILogger.class), ProbeLevel.DEBUG);
         methodProbe.register(metricsRegistry, source, "prefix");
@@ -98,9 +99,9 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod(methodName);
         Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
+        MethodHandleProbe<SomeSource> methodProbe = createProbe(method, probe, new SourceMetadata(SomeSource.class));
 
-        LongMethodProbe<SomeSource> longMethodProbe = assertInstanceOf(LongMethodProbe.class, methodProbe);
+        LongMethodHandleProbe<SomeSource> longMethodProbe = assertInstanceOf(LongMethodHandleProbe.class, methodProbe);
 
         long value = longMethodProbe.get(source);
 
@@ -122,9 +123,9 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod(fieldName);
         Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
+        MethodHandleProbe<SomeSource> methodProbe = createProbe(method, probe, new SourceMetadata(SomeSource.class));
 
-        MethodProbe.DoubleMethodProbe<SomeSource> doubleMethodProbe = assertInstanceOf(MethodProbe.DoubleMethodProbe.class, methodProbe);
+        DoubleMethodHandleProbe<SomeSource> doubleMethodProbe = assertInstanceOf(DoubleMethodHandleProbe.class, methodProbe);
         double value = doubleMethodProbe.get(source);
 
         assertEquals(expected, value, 0.1);

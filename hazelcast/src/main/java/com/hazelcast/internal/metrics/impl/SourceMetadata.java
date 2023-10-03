@@ -27,8 +27,8 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-import static com.hazelcast.internal.metrics.impl.FieldProbe.createFieldProbe;
-import static com.hazelcast.internal.metrics.impl.MethodProbe.createMethodProbe;
+import static com.hazelcast.internal.metrics.impl.FieldProbe.createProbe;
+import static com.hazelcast.internal.metrics.impl.MethodProbe.createProbe;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.flatten;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -40,8 +40,8 @@ import static java.util.Collections.unmodifiableList;
  * This object is effectively immutable after construction.
  */
 final class SourceMetadata {
-    private final List<FieldProbe> fields = new ArrayList<>();
-    private final List<MethodProbe> methods = new ArrayList<>();
+    private final List<MethodHandleProbe<?>> fields = new ArrayList<>();
+    private final List<MethodHandleProbe<?>> methods = new ArrayList<>();
     private final Collection<MetricTarget> excludedTargetsClass;
 
     SourceMetadata(Class clazz) {
@@ -58,11 +58,11 @@ final class SourceMetadata {
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        for (FieldProbe field : fields) {
+        for (MethodHandleProbe<?> field : fields) {
             field.register(metricsRegistry, source, namePrefix);
         }
 
-        for (MethodProbe method : methods) {
+        for (MethodHandleProbe<?> method : methods) {
             method.register(metricsRegistry, source, namePrefix);
         }
     }
@@ -86,7 +86,7 @@ final class SourceMetadata {
                 continue;
             }
 
-            FieldProbe fieldProbe = createFieldProbe(field, probe, this);
+            MethodHandleProbe<?> fieldProbe = createProbe(field, probe, this);
             fields.add(fieldProbe);
         }
     }
@@ -99,7 +99,7 @@ final class SourceMetadata {
                 continue;
             }
 
-            MethodProbe methodProbe = createMethodProbe(method, probe, this);
+            MethodHandleProbe<Object> methodProbe = createProbe(method, probe, this);
             methods.add(methodProbe);
         }
     }
@@ -107,14 +107,14 @@ final class SourceMetadata {
     /**
      * Don't modify the returned list!
      */
-    public List<FieldProbe> fields() {
+    public List<MethodHandleProbe<?>> fields() {
         return fields;
     }
 
     /**
      * Don't modify the returned list!
      */
-    public List<MethodProbe> methods() {
+    public List<MethodHandleProbe<?>> methods() {
         return methods;
     }
 

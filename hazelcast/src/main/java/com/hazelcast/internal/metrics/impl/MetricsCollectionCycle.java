@@ -116,7 +116,7 @@ class MetricsCollectionCycle {
     private void extractAndCollectDynamicMetrics(MetricDescriptor descriptor, Object source) {
         SourceMetadata metadata = lookupMetadataFn.apply(source.getClass());
 
-        for (MethodProbe methodProbe : metadata.methods()) {
+        for (MethodHandleProbe<?> methodProbe : metadata.methods()) {
             if (methodProbe.probe.level().isEnabled(minimumLevel)) {
                 MetricDescriptor descriptorCopy = descriptor
                         .copy()
@@ -129,7 +129,7 @@ class MetricsCollectionCycle {
             }
         }
 
-        for (FieldProbe fieldProbe : metadata.fields()) {
+        for (MethodHandleProbe<?> fieldProbe : metadata.fields()) {
             if (fieldProbe.probe.level().isEnabled(minimumLevel)) {
                 MetricDescriptor descriptorCopy = descriptor
                         .copy()

@@ -664,6 +664,10 @@
                     <artifactId>junit</artifactId>
                     <groupId>junit</groupId>
                 </exclusion>
+                <exclusion>
+                	<groupId>asm</groupId>
+                	<artifactId>asm</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -839,6 +843,12 @@
             <artifactId>maven-resolver-provider</artifactId>
             <version>3.9.4</version>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.LanternPowered</groupId>
+            <artifactId>Lmbda</artifactId>
+            <version>c9030d67cf17e2981913f6ddb282df9d9e90f2a4</version>
         </dependency>
 	</dependencies>
 </project>
