@@ -25,7 +25,6 @@ import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
@@ -82,15 +81,22 @@ public interface ExpressionEvalContext {
 
     static ExpressionEvalContext createContext(
             @Nonnull List<Object> arguments,
-            @Nonnull HazelcastInstance hz,
+            @Nonnull NodeEngine nodeEngine,
             @Nonnull InternalSerializationService iss,
             @Nullable SqlSecurityContext ssc) {
-        NodeEngineImpl nodeEngine = Util.getNodeEngine(hz);
         ExpressionEvalContext newEec = new ExpressionEvalContextImpl(arguments, iss, nodeEngine);
         if (ssc != null) {
             newEec.setSecurityContext(ssc);
         }
         return newEec;
+    }
+
+    static ExpressionEvalContext createContext(
+            @Nonnull List<Object> arguments,
+            @Nonnull HazelcastInstance hz,
+            @Nonnull InternalSerializationService iss,
+            @Nullable SqlSecurityContext ssc) {
+        return createContext(arguments, Util.getNodeEngine(hz), iss, ssc);
     }
 
     /**

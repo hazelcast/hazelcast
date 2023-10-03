@@ -26,6 +26,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.logging.ILogger;
@@ -817,7 +818,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         return ExpressionEvalContext.createContext(
                 Arrays.asList(args),
-                instances() != null ? instance() : mock(HazelcastInstance.class),
+                instances() != null ? Util.getNodeEngine(instance()) : mock(NodeEngineImpl.class),
                 TEST_SS,
                 null
         );
