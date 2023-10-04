@@ -182,8 +182,8 @@ public class PlanExecutor {
         logger = nodeEngine.getLogger(getClass());
     }
 
-    SqlResult execute(CreateMappingPlan plan) {
-        catalog.createMapping(plan.mapping(), plan.replace(), plan.ifNotExists());
+    SqlResult execute(CreateMappingPlan plan, SqlSecurityContext ssc) {
+        catalog.createMapping(plan.mapping(), plan.replace(), plan.ifNotExists(), ssc);
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
