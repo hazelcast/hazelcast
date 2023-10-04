@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.config;
 
+import com.hazelcast.internal.util.collection.ArrayUtils;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.spi.annotation.PrivateApi;
 
@@ -28,62 +29,46 @@ public enum ResourceType {
      * Represents a classpath resource that will be on the classpath of the Jet
      * job.
      */
-    CLASSPATH_RESOURCE(0),
+    CLASSPATH_RESOURCE,
     /**
      * Represents a plain file. It will be available to the Jet job by its ID,
      * through {@link ProcessorSupplier.Context#attachedFile}.
      */
-    FILE(1),
+    FILE,
     /**
      * Represents a directory of plain files. It will be available to the Jet
      * job by its ID, through {@link ProcessorSupplier.Context#attachedDirectory}.
      */
-    DIRECTORY(2),
+    DIRECTORY,
     /**
      * Represents a class that will be on the classpath of the Jet job.
      */
-    CLASS(3),
+    CLASS,
     /**
      * Represents a JAR file whose classes will be on the classpath of the Jet
      * job.
      */
-    JAR(4),
+    JAR,
     /**
      * Represents a ZIP file that contains JAR files, all of whose classes will
      * be on the classpath of the Jet job.
      */
-    JARS_IN_ZIP(5);
-
-    private final int id;
-
-    ResourceType(int id) {
-        this.id = id;
-    }
+    JARS_IN_ZIP;
 
     public int getId() {
-        return id;
+        return ordinal();
     }
 
     /**
-     * Returns whether this resource type represents an archive containing
+     * @return whether this resource type represents an archive containing
      * classes.
      */
     public boolean isClassArchive() {
         return this == ResourceType.JAR || this == ResourceType.JARS_IN_ZIP;
     }
 
-    /**
-     * Returns the ResourceType for the given ID.
-     *
-     * @return the ResourceType found or null if not found
-     */
+    /** @return the ResourceType found for the given {@code ID}, or {@code null} if not found */
     public static ResourceType getById(final int id) {
-        for (ResourceType resourceType : values()) {
-            if (resourceType.id == id) {
-                return resourceType;
-            }
-        }
-        return null;
+        return ArrayUtils.getItemAtPositionOrNull(values(), id);
     }
-
 }
