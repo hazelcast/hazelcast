@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -58,26 +57,6 @@ public final class CollectionUtil {
         return !isEmpty(collection);
     }
 
-    /**
-     * Adds a value to a list of values in the map.
-     * <p>
-     * Creates a new list if no list is found for the key.
-     *
-     * @param map   the given map of lists
-     * @param key   the key of the target list
-     * @param value the value to add to the target list
-     * @return the updated list of values
-     */
-    public static <K, V> List<V> addToValueList(Map<K, List<V>> map, K key, V value) {
-        List<V> valueList = map.get(key);
-        if (valueList == null) {
-            valueList = new ArrayList<V>();
-            map.put(key, valueList);
-        }
-        valueList.add(value);
-
-        return valueList;
-    }
 
     /**
      * Returns the n-th item or {@code null} if collection is smaller.
