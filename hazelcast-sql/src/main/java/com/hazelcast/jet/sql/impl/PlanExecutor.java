@@ -236,8 +236,8 @@ public class PlanExecutor {
     SqlResult execute(CreateIndexPlan plan) {
         MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
         if (!mapContainer.isGlobalIndexEnabled()) {
-            // for local indexes checking existence is more complicated
-            // and SQL cannot yet use local indexes
+            // for partitioned indexes checking existence is more complicated
+            // and SQL cannot yet use partitioned indexes
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot create index \"" + plan.indexName()
                     + "\" on the IMap \"" + plan.mapName() + "\" because it would not be global "
                     + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED

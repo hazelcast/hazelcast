@@ -146,19 +146,19 @@ public class MapChunkContext {
         Set<IndexConfig> indexConfigs = new HashSet<>();
         if (mapContainer.isGlobalIndexEnabled()) {
             // global-index
-            final IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
-            for (Index index : indexes.getIndexes()) {
+            final IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
+            for (Index index : indexRegistry.getIndexes()) {
                 indexConfigs.add(index.getConfig());
             }
-            indexConfigs.addAll(indexes.getIndexDefinitions());
+            indexConfigs.addAll(indexRegistry.getIndexDefinitions());
         } else {
             // partitioned-index
-            final IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(partitionId);
-            if (indexes != null && indexes.haveAtLeastOneIndexOrDefinition()) {
-                for (Index index : indexes.getIndexes()) {
+            final IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
+            if (indexRegistry != null && indexRegistry.haveAtLeastOneIndexOrDefinition()) {
+                for (Index index : indexRegistry.getIndexes()) {
                     indexConfigs.add(index.getConfig());
                 }
-                indexConfigs.addAll(indexes.getIndexDefinitions());
+                indexConfigs.addAll(indexRegistry.getIndexDefinitions());
             }
         }
         return new MapIndexInfo(mapName)
