@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.transactionalmap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMapKeySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
@@ -84,7 +85,7 @@ public class TransactionalMapKeySetMessageTask
 
     @Override
     public String getMethodName() {
-        return "keySet";
+        return SecurityInterceptorConstants.KEY_SET;
     }
 
     @Override

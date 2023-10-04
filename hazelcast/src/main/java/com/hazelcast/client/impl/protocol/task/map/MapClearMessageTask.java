@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -99,7 +100,7 @@ public class MapClearMessageTask
 
     @Override
     public String getMethodName() {
-        return "clear";
+        return SecurityInterceptorConstants.CLEAR;
     }
 
     @Override

@@ -20,6 +20,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.InternalSqlService;
 
 import java.security.Permission;
@@ -71,6 +73,6 @@ public class SqlMappingDdlTask extends SqlAbstractMessageTask<String> {
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new MapPermission(parameters, ActionConstants.ACTION_READ);
     }
 }

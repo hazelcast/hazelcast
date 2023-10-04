@@ -27,6 +27,7 @@ import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 
@@ -75,7 +76,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
 
     @Override
     public String getMethodName() {
-        return "addEntryListener";
+        return SecurityInterceptorConstants.ADD_ENTRY_LISTENER;
     }
 
     public Data getKey() {

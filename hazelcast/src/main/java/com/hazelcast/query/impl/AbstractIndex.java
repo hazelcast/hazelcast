@@ -172,39 +172,12 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
-    public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending) {
         if (converter == null) {
             return emptyIterator();
         }
 
-        return indexStore.getSqlRecordIterator(descending);
-    }
-
-    @Override
-    public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
-        if (converter == null) {
-            return emptyIterator();
-        }
-
-        return indexStore.getSqlRecordIterator(convert(value));
-    }
-
-    @Override
-    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending) {
-        if (converter == null) {
-            return emptyIterator();
-        }
-
-        return indexStore.getSqlRecordIterator(comparison, convert(value), descending);
-    }
-
-    @Override
-    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
-        if (converter == null) {
-            return emptyIterator();
-        }
-
-        return indexStore.getSqlRecordIteratorBatch(convert(value));
+        return indexStore.getSqlRecordIteratorBatch(convert(value), descending);
     }
 
     @Override
@@ -223,21 +196,6 @@ public abstract class AbstractIndex implements InternalIndex {
         }
 
         return indexStore.getSqlRecordIteratorBatch(comparison, convert(value), descending);
-    }
-
-    @Override
-    public Iterator<QueryableEntry> getSqlRecordIterator(
-            Comparable from,
-            boolean fromInclusive,
-            Comparable to,
-            boolean toInclusive,
-            boolean descending
-    ) {
-        if (converter == null) {
-            return emptyIterator();
-        }
-
-        return indexStore.getSqlRecordIterator(convert(from), fromInclusive, convert(to), toInclusive, descending);
     }
 
     @Override

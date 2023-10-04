@@ -20,13 +20,9 @@ import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Iterator;
 
 /**
  * Equality filter that is used for "WHERE a = ?" and "WHERE a IS NULL" conditions.
@@ -46,18 +42,6 @@ public class IndexEqualsFilter implements IndexFilter, IdentifiedDataSerializabl
 
     public IndexFilterValue getValue() {
         return value;
-    }
-
-    @Override
-    public Iterator<QueryableEntry> getEntries(InternalIndex index, boolean descending, ExpressionEvalContext evalContext) {
-        Comparable value = getComparable(evalContext);
-
-        if (value == null) {
-            // "WHERE a = NULL" always yields an empty result set.
-            return Collections.emptyIterator();
-        }
-
-        return index.getSqlRecordIterator(value);
     }
 
     @Override

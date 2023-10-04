@@ -26,6 +26,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 import java.util.List;
 
@@ -74,7 +75,7 @@ public class AddQueueConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "addQueueConfig";
+        return SecurityInterceptorConstants.ADD_QUEUE_CONFIG;
     }
 
     @Override

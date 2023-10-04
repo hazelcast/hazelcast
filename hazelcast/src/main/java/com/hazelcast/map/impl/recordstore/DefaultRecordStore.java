@@ -542,7 +542,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return removeOrEvictEntries(dataKeys, records, false, backup);
     }
 
-    protected int evictBulk(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean backup) {
+    public int evictBulk(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean backup) {
         return removeOrEvictEntries(dataKeys, records, true, backup);
     }
 
@@ -557,7 +557,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return dataKeys.size();
     }
 
-    private void removeOrEvictEntry(Data dataKey, Record record, boolean eviction, boolean backup) {
+    public void removeOrEvictEntry(Data dataKey, Record record, boolean eviction, boolean backup) {
         if (eviction) {
             mutationObserver.onEvictRecord(dataKey, record, backup);
         } else {
@@ -1078,8 +1078,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     @SuppressWarnings("unchecked")
     public MapMergeResponse merge(MapMergeTypes<Object, Object> mergingEntry,
-                               SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
-                               CallerProvenance provenance) {
+                                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
+                                  CallerProvenance provenance) {
         checkIfLoaded();
         long now = getNow();
 
@@ -1127,6 +1127,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             boolean persist = persistenceEnabledFor(provenance);
             updateRecord(record, key, oldValue, newValue, true, UNSET, UNSET, UNSET,
                     now, null, persist, true, false);
+            mergeRecordExpiration(key, record, mergingEntry, now);
             return MapMergeResponse.RECORD_UPDATED;
         }
     }
@@ -1546,7 +1547,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() == POOLED;
     }
 
-    private void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
+    public void destroyStorageImmediate(boolean isDuringShutdown,
+                                        boolean internal) {
         mutationObserver.onDestroy(isDuringShutdown, internal);
         expirySystem.destroy();
         destroyMetadataStore();
@@ -1556,7 +1558,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     /**
      * Calls also {@link #clearStorage(boolean)} to release allocated HD memory
-     * of key+value pairs because {@link #destroyStorageImmediate(boolean, boolean)}
+     * of key+value pairs because
      * only releases internal resources of backing data structure.
      *
      * @param isDuringShutdown {@link Storage#clear(boolean)}

@@ -43,6 +43,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
@@ -128,8 +129,8 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 HazelcastSchemaUtils.createCatalog(schema),
                 QueryUtils.prepareSearchPaths(null, null),
                 emptyList(),
-                1,
-                name -> null
+                name -> null,
+                NoOpSqlSecurityContext.INSTANCE
         );
 
         ParameterConverter[] parameterConverters = IntStream.range(0, parameterTypes.length)

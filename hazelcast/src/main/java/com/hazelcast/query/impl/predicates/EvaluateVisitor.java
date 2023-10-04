@@ -19,7 +19,7 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryContext.IndexMatchHint;
 
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
+import static com.hazelcast.query.impl.IndexRegistry.SKIP_PARTITIONS_COUNT_CHECK;
 
 /**
  * Tries to divide the predicate tree into isolated subtrees every of which can
@@ -39,7 +39,7 @@ public class EvaluateVisitor extends AbstractVisitor {
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     @Override
-    public Predicate visit(AndPredicate andPredicate, Indexes indexes) {
+    public Predicate visit(AndPredicate andPredicate, IndexRegistry indexes) {
         Predicate[] predicates = andPredicate.predicates;
 
         // Try to group evaluable predicates by their indexes.
@@ -118,7 +118,7 @@ public class EvaluateVisitor extends AbstractVisitor {
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     @Override
-    public Predicate visit(OrPredicate orPredicate, Indexes indexes) {
+    public Predicate visit(OrPredicate orPredicate, IndexRegistry indexes) {
         Predicate[] predicates = orPredicate.predicates;
 
         // Try to group evaluable predicates by their indexes.
@@ -196,7 +196,7 @@ public class EvaluateVisitor extends AbstractVisitor {
     }
 
     @Override
-    public Predicate visit(NotPredicate notPredicate, Indexes indexes) {
+    public Predicate visit(NotPredicate notPredicate, IndexRegistry indexes) {
         Predicate subPredicate = notPredicate.getPredicate();
         if (!(subPredicate instanceof EvaluatePredicate)) {
             return notPredicate;
@@ -214,7 +214,7 @@ public class EvaluateVisitor extends AbstractVisitor {
     }
 
     @Override
-    public Predicate visit(EqualPredicate predicate, Indexes indexes) {
+    public Predicate visit(EqualPredicate predicate, IndexRegistry indexes) {
         Index index = indexes.matchIndex(predicate.attributeName, predicate.getClass(), IndexMatchHint.PREFER_UNORDERED,
                 SKIP_PARTITIONS_COUNT_CHECK);
         if (index == null) {
@@ -230,7 +230,7 @@ public class EvaluateVisitor extends AbstractVisitor {
     }
 
     @Override
-    public Predicate visit(NotEqualPredicate predicate, Indexes indexes) {
+    public Predicate visit(NotEqualPredicate predicate, IndexRegistry indexes) {
         Index index = indexes.matchIndex(predicate.attributeName, predicate.getClass(), IndexMatchHint.PREFER_UNORDERED,
                 SKIP_PARTITIONS_COUNT_CHECK);
         if (index == null) {
@@ -246,7 +246,7 @@ public class EvaluateVisitor extends AbstractVisitor {
     }
 
     @Override
-    public Predicate visit(InPredicate predicate, Indexes indexes) {
+    public Predicate visit(InPredicate predicate, IndexRegistry indexes) {
         Index index = indexes.matchIndex(predicate.attributeName, predicate.getClass(), IndexMatchHint.PREFER_UNORDERED,
                 SKIP_PARTITIONS_COUNT_CHECK);
         if (index == null) {

@@ -101,7 +101,7 @@ public class RelationsStorage extends AbstractSchemaStorage {
         return storage().values()
                 .stream()
                 .filter(t -> t instanceof Type)
-                .map(t -> ((Type) t).getName())
+                .map(t -> ((Type) t).name())
                 .collect(Collectors.toList());
     }
 }

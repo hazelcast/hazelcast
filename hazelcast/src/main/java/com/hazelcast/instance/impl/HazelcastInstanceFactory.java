@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ModularJavaUtils;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -164,7 +165,7 @@ public final class HazelcastInstanceFactory {
     public static String getInstanceName(String instanceName, Config config) {
         String name = instanceName;
 
-        if (name == null || name.trim().length() == 0) {
+        if (StringUtil.isNullOrEmptyAfterTrim(name)) {
             name = createInstanceName(config);
         }
 

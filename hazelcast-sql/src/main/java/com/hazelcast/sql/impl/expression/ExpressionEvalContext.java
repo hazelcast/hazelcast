@@ -16,14 +16,21 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.ProcessorMetaSupplier.Context;
 import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts;
+import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,18 +46,25 @@ public interface ExpressionEvalContext {
 
     static ExpressionEvalContext from(Context ctx) {
         List<Object> arguments = ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME);
+
         if (ctx instanceof Contexts.ProcSupplierCtx) {
+            Contexts.ProcSupplierCtx pCtx = (Contexts.ProcSupplierCtx) ctx;
             return new ExpressionEvalContextImpl(
                     requireNonNull(arguments),
-                    ((Contexts.ProcSupplierCtx) ctx).serializationService(),
-                    ((Contexts.ProcSupplierCtx) ctx).nodeEngine());
+                    pCtx.serializationService(),
+                    pCtx.nodeEngine(),
+                    pCtx
+            );
         } else if (ctx instanceof Contexts.MetaSupplierCtx) {
+            MetaSupplierCtx mCtx = (Contexts.MetaSupplierCtx) ctx;
             // Note that additional serializers configured for the job are not available in PMS.
             // Currently this is not needed.
             return new ExpressionEvalContextImpl(
                     arguments != null ? arguments : List.of(),
-                    (InternalSerializationService) ((Contexts.MetaSupplierCtx) ctx).nodeEngine().getSerializationService(),
-                    ((Contexts.MetaSupplierCtx) ctx).nodeEngine());
+                    (InternalSerializationService) mCtx.nodeEngine().getSerializationService(),
+                    mCtx.nodeEngine(),
+                    mCtx
+            );
         } else {
             // Path intended for test code
             assert ctx instanceof TestProcessorMetaSupplierContext;
@@ -60,8 +74,26 @@ public interface ExpressionEvalContext {
             return new ExpressionEvalContextImpl(
                     arguments,
                     new DefaultSerializationServiceBuilder().build(),
-                    Util.getNodeEngine(ctx.hazelcastInstance()));
+                    Util.getNodeEngine(ctx.hazelcastInstance()),
+                    (SqlSecurityContext) null
+            );
         }
+    }
+
+    static ExpressionEvalContext createContext(
+            @Nonnull List<Object> arguments,
+            @Nonnull NodeEngine nodeEngine,
+            @Nonnull InternalSerializationService iss,
+            @Nullable SqlSecurityContext ssc) {
+        return new ExpressionEvalContextImpl(arguments, iss, nodeEngine, ssc);
+    }
+
+    static ExpressionEvalContext createContext(
+            @Nonnull List<Object> arguments,
+            @Nonnull HazelcastInstance hz,
+            @Nonnull InternalSerializationService iss,
+            @Nullable SqlSecurityContext ssc) {
+        return createContext(arguments, Util.getNodeEngine(hz), iss, ssc);
     }
 
     /**
@@ -84,4 +116,12 @@ public interface ExpressionEvalContext {
      * @return node engine
      */
     NodeEngine getNodeEngine();
+
+    /**
+     * checks security permissions
+     */
+    void checkPermission(Permission permission);
+
+    @Nullable
+    Subject subject();
 }

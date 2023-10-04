@@ -33,6 +33,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static com.hazelcast.map.impl.record.Record.UNSET;
 
@@ -100,6 +102,7 @@ public class State {
     private volatile Queue<InternalIndex> notMarkedIndexes;
     private volatile Set keysFromIndex;
     private volatile Throwable throwable;
+    private volatile Consumer backupOpAfterRun;
 
     public State(RecordStore recordStore, MapOperation operation) {
         this.recordStore = recordStore;
@@ -499,5 +502,15 @@ public class State {
 
     public boolean isChangeExpiryOnUpdate() {
         return changeExpiryOnUpdate;
+    }
+
+    public State setBackupOpAfterRun(Consumer backupOpAfterRun) {
+        this.backupOpAfterRun = backupOpAfterRun;
+        return this;
+    }
+
+    @Nullable
+    public Consumer getBackupOpAfterRun() {
+        return backupOpAfterRun;
     }
 }

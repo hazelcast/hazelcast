@@ -62,7 +62,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Collection;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -317,10 +316,12 @@ public final class IOUtil {
 
     public static OutputStream newOutputStream(final ByteBuffer dst) {
         return new OutputStream() {
+            @Override
             public void write(int b) {
                 dst.put((byte) b);
             }
 
+            @Override
             public void write(byte[] bytes, int off, int len) {
                 dst.put(bytes, off, len);
             }
@@ -329,6 +330,7 @@ public final class IOUtil {
 
     public static InputStream newInputStream(final ByteBuffer src) {
         return new InputStream() {
+            @Override
             public int read() {
                 if (!src.hasRemaining()) {
                     return -1;
@@ -336,6 +338,7 @@ public final class IOUtil {
                 return src.get() & 0xff;
             }
 
+            @Override
             public int read(byte[] bytes, int off, int len) {
                 if (!src.hasRemaining()) {
                     return -1;
@@ -451,21 +454,6 @@ public final class IOUtil {
         }
     }
 
-    public static void closeResources(Collection<? extends Closeable> collection) {
-        if (collection == null) {
-            return;
-        }
-        for (Closeable closeable : collection) {
-            if (closeable != null) {
-                try {
-                    closeable.close();
-                } catch (IOException e) {
-                    LOGGER.finest("closeResource failed", e);
-                }
-            }
-        }
-    }
-
     public static void close(Connection conn, String reason) {
         if (conn == null) {
             return;
@@ -544,7 +532,7 @@ public final class IOUtil {
             return;
         }
         try {
-            Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(path, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Files.delete(file);
@@ -641,33 +629,6 @@ public final class IOUtil {
 
     public static String toFileName(String name) {
         return name.replaceAll("[:\\\\/*\"?|<>',]", "_");
-    }
-
-    /**
-     * Concatenates path parts to a single path using the {@link File#separator} where it applies.
-     * There is no validation done on the newly formed path.
-     *
-     * @param parts The path parts that together should form a path
-     * @return The path formed using the parts
-     * @throws IllegalArgumentException if the parts param is null or empty
-     */
-    public static String getPath(String... parts) {
-        if (parts == null || parts.length == 0) {
-            throw new IllegalArgumentException("Parts is null or empty.");
-        }
-
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < parts.length; i++) {
-            String part = parts[i];
-            builder.append(part);
-
-            boolean hasMore = i < parts.length - 1;
-            if (!part.endsWith(File.separator) && hasMore) {
-                builder.append(File.separator);
-            }
-        }
-
-        return builder.toString();
     }
 
     public static File getFileFromResources(String resourceFileName) {
@@ -817,17 +778,6 @@ public final class IOUtil {
         }
         for (File file : sourceFiles) {
             copy(file, targetSubDir);
-        }
-    }
-
-    public static byte[] toByteArray(InputStream is) throws IOException {
-        ByteArrayOutputStream os = null;
-        try {
-            os = new ByteArrayOutputStream();
-            drainTo(is, os);
-            return os.toByteArray();
-        } finally {
-            closeResource(os);
         }
     }
 
