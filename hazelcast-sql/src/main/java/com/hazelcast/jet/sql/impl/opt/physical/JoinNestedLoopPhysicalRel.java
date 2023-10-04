@@ -122,8 +122,8 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
      * we are traversing the whole right row set. Cost estimation is the following: <ol>
      * <li> L is a count of left side rows.
      * <li> R is a count of right side rows.
-     * <li> PD is a produced row count is L * R * (join selectivity).
-     * <li> PR is Processed row count is L * k * R, where k is 1 for non-equi-join,
+     * <li> PD is a produced row count: L * R * (join selectivity).
+     * <li> PR is a processed row count: L * k * R, where k is 1 for non-equi-join,
      * (join selectivity) ≤ k ≤ 1 for equi-join and 1/R for key lookup.
      * <li> CPU cost is estimated as
      *   PR * (row comparison cost) + PD * (selectivity) * (row join cost) + ((L - 1) * cost of right side scan)
