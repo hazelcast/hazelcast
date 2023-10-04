@@ -130,22 +130,6 @@ public final class CollectionUtil {
     }
 
     /**
-     * Converts a {@link Collection} of {@link Long} to a primitive {@code long[]} array.
-     *
-     * @param collection the given collection
-     * @return a primitive long[] array
-     * @throws NullPointerException if collection is {@code null}
-     */
-    public static long[] toLongArray(Collection<Long> collection) {
-        long[] collectionArray = new long[collection.size()];
-        int index = 0;
-        for (Long item : collection) {
-            collectionArray[index++] = item;
-        }
-        return collectionArray;
-    }
-
-    /**
      * Adapts an int array to an Integer {@link List}.
      *
      * @param array the array

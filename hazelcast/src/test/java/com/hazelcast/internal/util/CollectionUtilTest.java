@@ -40,7 +40,6 @@ import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.internal.util.CollectionUtil.nullToEmpty;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
-import static com.hazelcast.internal.util.CollectionUtil.toLongArray;
 import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.emptyList;
@@ -186,27 +185,6 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testToIntArray_whenNull_thenThrowNPE() {
         toIntArray(null);
-    }
-
-    @Test
-    public void testToLongArray() {
-        List<Long> list = new ArrayList<>();
-        list.add(42L);
-        list.add(23L);
-        list.add(Long.MAX_VALUE);
-
-        long[] longArray = toLongArray(list);
-
-        assertNotNull(longArray);
-        assertEquals(list.size(), longArray.length);
-        assertEquals(list.get(0).longValue(), longArray[0]);
-        assertEquals(list.get(1).longValue(), longArray[1]);
-        assertEquals(list.get(2).longValue(), longArray[2]);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testToLongArray_whenNull_thenThrowNPE() {
-        toLongArray(null);
     }
 
     @Test(expected = NullPointerException.class)
