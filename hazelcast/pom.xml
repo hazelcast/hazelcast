@@ -849,6 +849,7 @@
             <groupId>com.github.LanternPowered</groupId>
             <artifactId>Lmbda</artifactId>
             <version>c9030d67cf17e2981913f6ddb282df9d9e90f2a4</version>
+            <optional>true</optional>
         </dependency>
 	</dependencies>
 </project>
