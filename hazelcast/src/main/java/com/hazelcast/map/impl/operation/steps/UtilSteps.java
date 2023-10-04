@@ -28,6 +28,8 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
+import java.util.function.Consumer;
+
 public enum UtilSteps implements IMapOpStep {
 
     /**
@@ -60,7 +62,13 @@ public enum UtilSteps implements IMapOpStep {
             operation.disposeDeferredBlocks();
 
             if (operation instanceof BackupOperation) {
-                state.getBackupOpAfterRun().accept(operation);
+                // it can be possible that some operations marked
+                // as BackupOperation but does not have backup.
+                // see EvictBatchBackupOperation
+                Consumer backupOpAfterRun = state.getBackupOpAfterRun();
+                if (backupOpAfterRun != null) {
+                    backupOpAfterRun.accept(operation);
+                }
             }
         }
 

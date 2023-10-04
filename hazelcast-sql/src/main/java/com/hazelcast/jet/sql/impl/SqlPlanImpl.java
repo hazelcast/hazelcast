@@ -1381,7 +1381,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
-            return planExecutor.execute(this, arguments, timeout);
+            return planExecutor.execute(this, arguments, timeout, ssc);
         }
     }
 
@@ -1447,7 +1447,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
-            return planExecutor.execute(this, arguments, timeout);
+            return planExecutor.execute(this, arguments, timeout, ssc);
         }
     }
 
@@ -1529,7 +1529,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
-            return planExecutor.execute(this, arguments, timeout);
+            return planExecutor.execute(this, arguments, timeout, ssc);
         }
     }
 
@@ -1604,7 +1604,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
-            return planExecutor.execute(this, arguments, timeout);
+            return planExecutor.execute(this, arguments, timeout, ssc);
         }
     }
 

@@ -18,10 +18,11 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
-import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.map.EntryProcessor;
@@ -29,18 +30,20 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +55,7 @@ import static java.util.stream.Collectors.toMap;
 
 public final class UpdatingEntryProcessor
         implements EntryProcessor<Object, Object, Long>, DataSerializable,
-        HazelcastInstanceAware, SerializationServiceAware {
+        HazelcastInstanceAware, NodeAware, SerializationServiceAware {
 
     private KvRowProjector.Supplier rowProjectorSupplier;
     private Projector.Supplier valueProjectorSupplier;
@@ -61,6 +64,11 @@ public final class UpdatingEntryProcessor
     private transient HazelcastInstance hzInstance;
     private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
+    private transient SqlSecurityContext ssc;
+
+    private transient byte objectInitializationStageChecker;
+
+    private Subject subject;
 
     @SuppressWarnings("unused")
     private UpdatingEntryProcessor() {
@@ -69,10 +77,12 @@ public final class UpdatingEntryProcessor
     private UpdatingEntryProcessor(
             KvRowProjector.Supplier rowProjectorSupplier,
             Projector.Supplier valueProjectorSupplier,
-            List<Object> arguments) {
+            ExpressionEvalContext evalContext) {
         this.rowProjectorSupplier = rowProjectorSupplier;
         this.valueProjectorSupplier = valueProjectorSupplier;
-        this.arguments = arguments;
+        this.evalContext = evalContext;
+        this.arguments = evalContext.getArguments();
+        this.subject = evalContext.subject();
     }
 
     @Override
@@ -93,16 +103,31 @@ public final class UpdatingEntryProcessor
 
     @Override
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        // TODO: setHazelcastInstance called twice, but in order.
+//        assert objectInitializationStageChecker == 0 :
+//                "objectInitializationStageChecker must be set to initial value";
         this.hzInstance = hazelcastInstance;
+        objectInitializationStageChecker = QueryUtil.CHECKER_HZ_INJECTOR_CALLED;
+    }
+
+    @Override
+    public void setNode(Node node) {
+        assert objectInitializationStageChecker == QueryUtil.CHECKER_HZ_INJECTOR_CALLED :
+                "setHazelcastInstance should be called before setNode";
+        SecurityContext securityContext = node.securityContext;
+        if (securityContext != null && subject != null) {
+            this.ssc = securityContext.createSqlContext(subject);
+        }
+        objectInitializationStageChecker <<= 1;
     }
 
     @Override
     public void setSerializationService(SerializationService serializationService) {
-        this.evalContext = new ExpressionEvalContextImpl(
-                arguments,
-                (InternalSerializationService) serializationService,
-                Util.getNodeEngine(hzInstance));
-        this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
+        assert objectInitializationStageChecker == QueryUtil.CHECKER_NODE_INJECTOR_CALLED :
+                "setHazelcastInstance and setNode should be called before setSerializationService";
+        InternalSerializationService iss = (InternalSerializationService) serializationService;
+        objectInitializationStageChecker <<= 1;
+        initContext(iss);
     }
 
     @Override
@@ -110,6 +135,7 @@ public final class UpdatingEntryProcessor
         out.writeObject(rowProjectorSupplier);
         out.writeObject(valueProjectorSupplier);
         out.writeObject(arguments);
+        out.writeObject(subject);
     }
 
     @Override
@@ -117,6 +143,7 @@ public final class UpdatingEntryProcessor
         rowProjectorSupplier = in.readObject();
         valueProjectorSupplier = in.readObject();
         arguments = in.readObject();
+        subject = in.readObject();
     }
 
     public static Supplier supplier(
@@ -186,8 +213,8 @@ public final class UpdatingEntryProcessor
             this.valueProjectorSupplier = valueProjectorSupplier;
         }
 
-        public EntryProcessor<Object, Object, Long> get(List<Object> arguments) {
-            return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, arguments);
+        public EntryProcessor<Object, Object, Long> get(ExpressionEvalContext eec) {
+            return new UpdatingEntryProcessor(rowProjectorSupplier, valueProjectorSupplier, eec);
         }
 
         @Override
@@ -201,5 +228,12 @@ public final class UpdatingEntryProcessor
             rowProjectorSupplier = in.readObject();
             valueProjectorSupplier = in.readObject();
         }
+    }
+
+    private void initContext(InternalSerializationService iss) {
+        assert objectInitializationStageChecker == QueryUtil.CHECKER_ISS_INJECTOR_CALLED :
+                "Object initialization lifecycle via HazelcastManagedContext is failed";
+        this.evalContext = ExpressionEvalContext.createContext(arguments, hzInstance, iss, ssc);
+        this.extractors = Extractors.newBuilder(iss).build();
     }
 }

@@ -31,6 +31,7 @@ import com.hazelcast.scheduledexecutor.impl.InvokeOnMembers;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerAccessor;
 import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnMemberOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnPartitionOperationFactory;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -88,7 +89,7 @@ public class ScheduledExecutorGetAllScheduledMessageTask
 
     @Override
     public String getMethodName() {
-        return "getAllScheduled";
+        return SecurityInterceptorConstants.GET_ALL_SCHEDULED_FUTURES;
     }
 
     @Override

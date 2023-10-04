@@ -46,30 +46,25 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
     private final transient InternalSerializationService serializationService;
     private final transient NodeEngine nodeEngine;
 
-    public ExpressionEvalContextImpl(
-            @Nonnull List<Object> arguments,
-            @Nonnull InternalSerializationService serializationService,
-            @Nonnull NodeEngine nodeEngine) {
-        this.arguments = requireNonNull(arguments);
-        this.serializationService = requireNonNull(serializationService);
-        this.nodeEngine = requireNonNull(nodeEngine);
-    }
-
-    public ExpressionEvalContextImpl(
+    ExpressionEvalContextImpl(
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
             @Nonnull NodeEngine nodeEngine,
             @Nullable SqlSecurityContext ssc) {
-        this(arguments, serializationService, nodeEngine);
+        this.arguments = requireNonNull(arguments);
+        this.serializationService = requireNonNull(serializationService);
+        this.nodeEngine = requireNonNull(nodeEngine);
         this.ssc = ssc;
     }
 
-    public ExpressionEvalContextImpl(
-            @Nonnull MetaSupplierCtx context,
+    ExpressionEvalContextImpl(
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
-            @Nonnull NodeEngine nodeEngine) {
-        this(arguments, serializationService, nodeEngine);
+            @Nonnull NodeEngine nodeEngine,
+            @Nonnull MetaSupplierCtx context) {
+        this.arguments = requireNonNull(arguments);
+        this.serializationService = requireNonNull(serializationService);
+        this.nodeEngine = requireNonNull(nodeEngine);
         this.contextRef = context;
     }
 
@@ -108,14 +103,18 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
             contextRef.checkPermission(permission);
         } else if (ssc != null) {
             ssc.checkPermission(permission);
-        } else {
-            throw new AssertionError("Unreachable : any of contexts must be available");
         }
     }
 
     @Override
     @Nullable
     public Subject subject() {
-        return contextRef != null ? contextRef.subject() : null;
+        if (contextRef != null) {
+            return contextRef.subject();
+        }
+        if (ssc != null) {
+            return ssc.subject();
+        }
+        return null;
     }
 }

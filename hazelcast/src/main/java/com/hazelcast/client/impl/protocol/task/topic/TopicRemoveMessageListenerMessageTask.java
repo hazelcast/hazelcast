@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.topic.impl.TopicService;
@@ -75,7 +76,7 @@ public class TopicRemoveMessageListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "removeMessageListener";
+        return SecurityInterceptorConstants.REMOVE_MESSAGE_LISTENER;
     }
 
 }

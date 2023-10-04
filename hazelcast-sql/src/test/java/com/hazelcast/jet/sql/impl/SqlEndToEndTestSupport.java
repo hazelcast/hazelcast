@@ -25,7 +25,7 @@ import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.JobInvocationObserver;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -33,7 +33,6 @@ import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -62,7 +61,7 @@ import static java.util.stream.Collectors.toSet;
 public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
     protected ExpressionEvalContext eec;
 
-    protected NodeEngine nodeEngine;
+    protected NodeEngineImpl nodeEngine;
     protected SqlServiceImpl sqlService;
     protected PlanExecutor planExecutor;
     protected JobCoordinationService jobCoordinationService;
@@ -84,10 +83,12 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         planExecutor.registerJobInvocationObserver(sqlJobInvocationObserver);
         jobCoordinationService.registerInvocationObserver(jobInvocationObserver);
 
-        eec = new ExpressionEvalContextImpl(
+        eec = ExpressionEvalContext.createContext(
                 emptyList(),
+                instance(),
                 Util.getSerializationService(instance()),
-                Util.getNodeEngine(instance()));
+                null
+        );
     }
 
     SqlPlanImpl.SelectPlan assertQueryPlan(String query) {
@@ -107,10 +108,12 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         List<Object> arguments = Collections.emptyList();
         if (args.length > 0) {
             arguments = Arrays.asList(args);
-            eec = new ExpressionEvalContextImpl(
+            eec = ExpressionEvalContext.createContext(
                     arguments,
+                    instance(),
                     Util.getSerializationService(instance()),
-                    Util.getNodeEngine(instance()));
+                    null
+            );
         }
         QueryId queryId = QueryId.create(UUID.randomUUID());
         SqlResult result = planExecutor.execute(selectPlan,

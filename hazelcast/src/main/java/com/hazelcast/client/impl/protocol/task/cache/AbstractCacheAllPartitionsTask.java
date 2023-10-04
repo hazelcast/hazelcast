@@ -53,11 +53,6 @@ abstract class AbstractCacheAllPartitionsTask<P>
     }
 
     @Override
-    public String getMethodName() {
-        return null;
-    }
-
-    @Override
     public Object[] getParameters() {
         return null;
     }

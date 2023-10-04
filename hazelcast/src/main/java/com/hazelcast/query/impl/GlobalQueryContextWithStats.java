@@ -38,7 +38,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
     private final HashSet<QueryTrackingIndex> trackedIndexes = new HashSet<>(8);
 
     @Override
-    void attachTo(Indexes indexes, int ownedPartitionCount) {
+    void attachTo(IndexRegistry indexes, int ownedPartitionCount) {
         super.attachTo(indexes, ownedPartitionCount);
         for (QueryTrackingIndex trackedIndex : trackedIndexes) {
             trackedIndex.resetPerQueryStats();
@@ -55,7 +55,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
 
     @Override
     public Index matchIndex(String pattern, IndexMatchHint matchHint) {
-        InternalIndex delegate = indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
+        InternalIndex delegate = indexRegistry.matchIndex(pattern, matchHint, ownedPartitionCount);
         if (delegate == null) {
             return null;
         }
@@ -147,8 +147,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
-            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(value);
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(value, descending);
             hasQueries = true;
             return result;
         }

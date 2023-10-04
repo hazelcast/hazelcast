@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -88,7 +89,7 @@ public class MapExecuteOnAllKeysMessageTask
 
     @Override
     public String getMethodName() {
-        return "executeOnEntries";
+        return SecurityInterceptorConstants.EXECUTE_ON_ENTRIES;
     }
 
     @Override

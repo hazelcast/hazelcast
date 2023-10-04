@@ -23,7 +23,7 @@ import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**
- * Provides storage-specific indexes to {@link com.hazelcast.query.impl.Indexes
+ * Provides storage-specific indexes to {@link IndexRegistry
  * Indexes}.
  */
 public interface IndexProvider {

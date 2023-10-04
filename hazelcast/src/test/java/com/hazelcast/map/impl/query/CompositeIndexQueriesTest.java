@@ -26,7 +26,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.Extractable;
 import com.hazelcast.query.impl.IndexUtils;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
@@ -334,7 +334,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Predicate accept(Visitor visitor, Indexes indexes) {
+        public Predicate accept(Visitor visitor, IndexRegistry indexes) {
             Predicate delegate = this.delegate;
             if (delegate instanceof VisitablePredicate) {
                 this.delegate = ((VisitablePredicate) delegate).accept(visitor, indexes);

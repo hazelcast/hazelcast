@@ -221,7 +221,7 @@ public enum EntryOpSteps implements IMapOpStep {
                         }
                         Object newValue = entryOperator.extractNewValue();
                         newValue = mapServiceContext.interceptPut(mapContainer.getInterceptorRegistry(),
-                                state.getOldValue(), newValue);
+                                entryOperator.getOldValueClone(), newValue);
                         state.setNewValue(newValue);
                         state.setTtl(entryOperator.getEntry().getNewTtl());
                         state.setChangeExpiryOnUpdate(entryOperator.getEntry().isChangeExpiryOnUpdate());

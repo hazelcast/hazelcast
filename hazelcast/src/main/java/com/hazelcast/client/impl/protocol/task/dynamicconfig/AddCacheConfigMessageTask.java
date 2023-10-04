@@ -26,6 +26,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -106,7 +107,7 @@ public class AddCacheConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "addCacheConfig";
+        return SecurityInterceptorConstants.ADD_CACHE_CONFIG;
     }
 
     @Override

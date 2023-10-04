@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
@@ -71,7 +72,7 @@ public class RemoveDistributedObjectListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "removeDistributedObjectListener";
+        return SecurityInterceptorConstants.REMOVE_DISTRIBUTED_OBJECT_LISTENER;
     }
 
 }

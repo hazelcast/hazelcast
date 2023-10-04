@@ -492,11 +492,12 @@ public final class IndexResolver {
 
             case IS_NOT_TRUE:
                 filter = new IndexCompositeFilter(
-                        new IndexEqualsFilter(new IndexFilterValue(
-                                singletonList(ConstantExpression.FALSE), singletonList(false)
-                        )),
+                        // produce results in ASC order (null first)
                         new IndexEqualsFilter(new IndexFilterValue(
                                 singletonList(NULL), singletonList(true)
+                        )),
+                        new IndexEqualsFilter(new IndexFilterValue(
+                                singletonList(ConstantExpression.FALSE), singletonList(false)
                         ))
                 );
 
@@ -506,11 +507,12 @@ public final class IndexResolver {
                 assert kind == SqlKind.IS_NOT_FALSE;
 
                 filter = new IndexCompositeFilter(
-                        new IndexEqualsFilter(new IndexFilterValue(
-                                singletonList(ConstantExpression.TRUE), singletonList(false)
-                        )),
+                        // produce results in ASC order (null first)
                         new IndexEqualsFilter(new IndexFilterValue(
                                 singletonList(NULL), singletonList(true)
+                        )),
+                        new IndexEqualsFilter(new IndexFilterValue(
+                                singletonList(ConstantExpression.TRUE), singletonList(false)
                         ))
                 );
         }

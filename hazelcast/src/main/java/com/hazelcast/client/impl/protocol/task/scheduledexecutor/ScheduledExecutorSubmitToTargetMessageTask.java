@@ -26,6 +26,7 @@ import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -91,7 +92,7 @@ public class ScheduledExecutorSubmitToTargetMessageTask
 
     @Override
     public String getMethodName() {
-        return "submitToAddress";
+        return SecurityInterceptorConstants.SCHEDULE_ON_MEMBER;
     }
 
     @Override
