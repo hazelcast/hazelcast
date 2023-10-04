@@ -428,11 +428,14 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     public final void evict(Data justAddedKey) {
-        if (mapContainer.getEvictor() == Evictor.NULL_EVICTOR) {
-            return;
+        try {
+            if (mapContainer.getEvictor() == Evictor.NULL_EVICTOR) {
+                return;
+            }
+            recordStore.evictEntries(justAddedKey);
+        } finally {
+            disposeDeferredBlocks();
         }
-        recordStore.evictEntries(justAddedKey);
-        disposeDeferredBlocks();
     }
 
     @Override
