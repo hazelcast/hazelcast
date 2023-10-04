@@ -42,7 +42,7 @@ public final class CostUtils {
     public static final double CPU_COST_MULTIPLIER = 1.0d;
 
     /** Estimation for average batch size of NLJ' left side. */
-    public static final double AVERAGE_NON_EQUI_JOIN_LEFT_BATCH_SIZE = 1.0d;
+    public static final double AVERAGE_NON_EQUI_JOIN_LEFT_BATCH_SIZE = 4.0d;
 
     /** Multiplier for the network part of the cost. Assumes ~10µs per 1Kb that results in ~10ns per byte. */
     public static final double NETWORK_COST_MULTIPLIER = CPU_COST_MULTIPLIER * 10;

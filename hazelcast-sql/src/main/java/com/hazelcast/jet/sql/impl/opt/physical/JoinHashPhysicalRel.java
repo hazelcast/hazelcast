@@ -63,8 +63,8 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
      * <p>
      * Hash Join algorithm is a more advanced join algorithm, which builds a hash table for the left
      * row set, and then compare each row from the right side. Cost estimation is the following: <ol>
-     * <li> Processed row count is L + R because we traverse both sides once per join.
-     * <li> CPU is L * (hash table build cost) + R * (row comparison cost) + ((L + R) * (row projection cost))</ol>
+     * <li> Processed row count (PR) is L + R because we traverse both sides once per join.
+     * <li> CPU is L * (hash table build cost) + R * (row comparison cost) + (PR * (row projection cost))</ol>
      * <p>
      * A perfect estimation must also include memory (occupied by the hash table) and IO costs.
      */

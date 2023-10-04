@@ -122,12 +122,11 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
      * we are traversing the whole right row set. Cost estimation is the following: <ol>
      * <li> L is a count of left side rows.
      * <li> R is a count of right side rows.
-     * <li> Produced row count is L * R * (join selectivity).
-     * <li> Processed row count is L * k * R, where k is 1 for non-equi-join,
+     * <li> PD is a produced row count is L * R * (join selectivity).
+     * <li> PR is Processed row count is L * k * R, where k is 1 for non-equi-join,
      * (join selectivity) ≤ k ≤ 1 for equi-join and 1/R for key lookup.
-     * <li> CPU is L * R * (row comparison cost)
-     * + L * R * (selectivity) * (row join cost)
-     * + ((L - 1) * cost of right side scan)
+     * <li> CPU cost is estimated as
+     *   PR * (row comparison cost) + PD * (selectivity) * (row join cost) + ((L - 1) * cost of right side scan)
      * </ol>
      * <p>
      * A perfect estimation must also include memory and IO costs.
@@ -153,7 +152,7 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
         double rightSideRepetitions = Math.max(.0, leftRowCount - 1);
 
         if (!isEquiJoin) {
-            // TODO: reconsider the value for this constant later.
+            // TODO: measure that value for this constant in load tests.
             rightSideRepetitions /= CostUtils.AVERAGE_NON_EQUI_JOIN_LEFT_BATCH_SIZE;
         }
 
