@@ -695,37 +695,6 @@ public final class IOUtil {
     }
 
     /**
-     * Deep copies source to target. If target doesn't exist, this will fail with {@link HazelcastException}.
-     * <p>
-     * The source is only accessed here, but not managed. It's the responsibility of the caller to release
-     * any resources held by the source.
-     *
-     * @param source the source
-     * @param target the destination
-     * @throws HazelcastException if the target doesn't exist
-     */
-    public static void copy(InputStream source, File target) {
-        if (!target.exists()) {
-            throw new HazelcastException("The target file doesn't exist " + target.getAbsolutePath());
-        }
-
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(target);
-            byte[] buff = new byte[8192];
-
-            int length;
-            while ((length = source.read(buff)) > 0) {
-                out.write(buff, 0, length);
-            }
-        } catch (Exception e) {
-            throw new HazelcastException("Error occurred while copying InputStream", e);
-        } finally {
-            closeResource(out);
-        }
-    }
-
-    /**
      * Copies source file to target and creates the target if necessary. The target can be a directory or file. If the target
      * is a file, nests the new file under the target directory, otherwise copies to the given target.
      *
