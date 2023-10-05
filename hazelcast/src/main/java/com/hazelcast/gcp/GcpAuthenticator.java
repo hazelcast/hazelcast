@@ -73,8 +73,11 @@ class GcpAuthenticator {
 
     private String createBody(String privateKeyPath, long currentTimeMs)
             throws Exception {
-        JsonObject privateKeyJson = Json.parse(
-                new InputStreamReader(new FileInputStream(privateKeyPath), StandardCharsets.UTF_8)).asObject();
+        JsonObject privateKeyJson;
+        try (InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(privateKeyPath),
+                StandardCharsets.UTF_8)) {
+            privateKeyJson = Json.parse(inputStreamReader).asObject();
+        }
         String privateKey = privateKeyJson.get("private_key").asString();
         String clientEmail = privateKeyJson.get("client_email").asString();
 
