@@ -40,7 +40,7 @@ jobs:
         suite: ['ec2_cl_to_ec2_m', 'ec2_cl_to_fargate_ecs_m', 'fargate_ecs_cl_to_ec2_m', 'fargate_ecs_cl_to_fargate_ecs_m']
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3.0.0
+        uses: aws-actions/configure-aws-credentials@v4.0.1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
