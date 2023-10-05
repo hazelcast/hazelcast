@@ -917,7 +917,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @return old value if this is an update operation, otherwise returns null
      */
     @SuppressWarnings({"checkstyle:npathcomplexity",
-                       "checkstyle:parameternumber", "checkstyle:cyclomaticcomplexity"})
+            "checkstyle:parameternumber", "checkstyle:cyclomaticcomplexity"})
     private Object putInternal(Data key, Object newValue, boolean changeExpiryOnUpdate, long ttl,
                                long maxIdle, long expiryTime, long now, Object expectedValue,
                                @Nullable UUID transactionId, Address callerAddress,
@@ -1033,8 +1033,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public Object updateMemory(Record record, Data key, Object oldValue, Object newValue,
-                               boolean changeExpiryOnUpdate, long ttl, long maxIdle,
-                               long expiryTime, long now, boolean backup) {
+                             boolean changeExpiryOnUpdate, long ttl, long maxIdle,
+                             long expiryTime, long now, boolean backup) {
         storage.updateRecordValue(key, record, newValue);
         if (changeExpiryOnUpdate) {
             expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
