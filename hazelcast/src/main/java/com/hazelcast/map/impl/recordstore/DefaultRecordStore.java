@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,6 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
@@ -72,7 +71,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
@@ -81,10 +79,8 @@ import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
-import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
-import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.map.impl.record.Record.UNSET;
@@ -108,7 +104,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @see #loadAll(boolean)
      * @see #loadAllFromStore(List, boolean)
      */
-    protected final Collection<Future<?>> loadingFutures = new ConcurrentLinkedQueue<>();
+    protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<>();
 
     /**
      * A reference to the Json Metadata store. It is initialized lazily only if the
@@ -129,11 +125,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * key loading.
      */
     private boolean loadedOnPreMigration;
-    /**
-     * Defined by {@link com.hazelcast.spi.properties.ClusterProperty#WAN_REPLICATE_IMAP_EVICTIONS},
-     * if set to true then eviction operations by this RecordStore will be WAN replicated
-     */
-    private boolean wanReplicateEvictions;
 
     private final IPartitionService partitionService;
     private final InterceptorRegistry interceptorRegistry;
@@ -151,8 +142,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
         this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         this.interceptorRegistry = mapContainer.getInterceptorRegistry();
-        this.wanReplicateEvictions = mapContainer.isWanReplicationEnabled()
-                && mapServiceContext.getNodeEngine().getProperties().getBoolean(ClusterProperty.WAN_REPLICATE_IMAP_EVICTIONS);
         initJsonMetadataStore();
     }
 
@@ -563,10 +552,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         removeKeyFromExpirySystem(dataKey);
         storage.removeRecord(dataKey, record);
-
-        if (wanReplicateEvictions && eviction) {
-            mapEventPublisher.publishWanRemove(name, toHeapData(dataKey));
-        }
     }
 
     @Override
@@ -581,9 +566,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.removeRecord(key, record);
             if (!backup) {
                 mapServiceContext.interceptRemove(interceptorRegistry, value);
-            }
-            if (wanReplicateEvictions) {
-                mapEventPublisher.publishWanRemove(name, toHeapData(key));
             }
         }
         return value;
@@ -917,7 +899,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @return old value if this is an update operation, otherwise returns null
      */
     @SuppressWarnings({"checkstyle:npathcomplexity",
-                       "checkstyle:parameternumber", "checkstyle:cyclomaticcomplexity"})
+            "checkstyle:parameternumber", "checkstyle:cyclomaticcomplexity"})
     private Object putInternal(Data key, Object newValue, boolean changeExpiryOnUpdate, long ttl,
                                long maxIdle, long expiryTime, long now, Object expectedValue,
                                @Nullable UUID transactionId, Address callerAddress,
@@ -1018,8 +1000,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     ttl, maxIdle, now, transactionId);
         }
 
-        return updateMemory(record, key, oldValue, newValue, changeExpiryOnUpdate,
+        updateMemory(record, key, oldValue, newValue, changeExpiryOnUpdate,
                 ttl, maxIdle, expiryTime, now, backup);
+        return oldValue;
     }
 
     public void updateRecord0(Record record, long now, boolean countAsAccess) {
@@ -1032,15 +1015,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public Object updateMemory(Record record, Data key, Object oldValue, Object newValue,
-                               boolean changeExpiryOnUpdate, long ttl, long maxIdle,
-                               long expiryTime, long now, boolean backup) {
+    public void updateMemory(Record record, Data key, Object oldValue, Object newValue,
+                             boolean changeExpiryOnUpdate, long ttl, long maxIdle,
+                             long expiryTime, long now, boolean backup) {
         storage.updateRecordValue(key, record, newValue);
         if (changeExpiryOnUpdate) {
             expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
         }
         mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
-        return oldValue;
     }
 
     private Record getOrLoadRecord(@Nullable Record record, Data key,
@@ -1324,7 +1306,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         if (FutureUtil.allDone(loadingFutures)) {
-            List<Future<?>> doneFutures = null;
+            List<Future> doneFutures = null;
             try {
                 doneFutures = FutureUtil.getAllDone(loadingFutures);
                 // check all finished loading futures for exceptions
@@ -1353,7 +1335,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     // only used for testing purposes
-    public Collection<Future<?>> getLoadingFutures() {
+    public Collection<Future> getLoadingFutures() {
         return loadingFutures;
     }
 
@@ -1368,7 +1350,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     logger.finest("Triggering load " + getStateMessage());
                 }
                 loadedOnCreate = true;
-                addLoadingFuture(keyLoader.startInitialLoad(mapStoreContext, partitionId));
+                loadingFutures.add(keyLoader.startInitialLoad(mapStoreContext, partitionId));
             } else {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Promoting to loaded on migration " + getStateMessage());
@@ -1376,17 +1358,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 keyLoader.promoteToLoadedOnMigration();
             }
         }
-    }
-
-    private void addLoadingFuture(Future<?> e) {
-        if (e instanceof CompletableFuture) {
-            ((CompletableFuture<?>) e).whenCompleteAsync((result, throwable) -> {
-                if (throwable != null) {
-                    logger.warning("Loading completed exceptionally", throwable);
-                }
-            }, CALLER_RUNS);
-        }
-        loadingFutures.add(e);
     }
 
     @Override
@@ -1402,15 +1373,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         logger.info("Starting to load all keys for map " + name + " on partitionId=" + partitionId);
         Future<?> loadingKeysFuture = keyLoader.startLoading(mapStoreContext, replaceExistingValues);
-        addLoadingFuture(loadingKeysFuture);
+        loadingFutures.add(loadingKeysFuture);
     }
 
     @Override
     public void loadAllFromStore(List<Data> keys,
                                  boolean replaceExistingValues) {
         if (!keys.isEmpty()) {
-            Future<?> f = recordStoreLoader.loadValues(keys, replaceExistingValues);
-            addLoadingFuture(f);
+            Future f = recordStoreLoader.loadValues(keys, replaceExistingValues);
+            loadingFutures.add(f);
         }
 
         // We should not track key loading here. IT's not key loading but values loading.
