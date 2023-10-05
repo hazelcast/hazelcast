@@ -917,7 +917,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @return old value if this is an update operation, otherwise returns null
      */
     @SuppressWarnings({"checkstyle:npathcomplexity",
-            "checkstyle:parameternumber", "checkstyle:cyclomaticcomplexity"})
+                       "checkstyle:parameternumber", "checkstyle:cyclomaticcomplexity"})
     private Object putInternal(Data key, Object newValue, boolean changeExpiryOnUpdate, long ttl,
                                long maxIdle, long expiryTime, long now, Object expectedValue,
                                @Nullable UUID transactionId, Address callerAddress,
@@ -1033,8 +1033,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public Object updateMemory(Record record, Data key, Object oldValue, Object newValue,
-                             boolean changeExpiryOnUpdate, long ttl, long maxIdle,
-                             long expiryTime, long now, boolean backup) {
+                               boolean changeExpiryOnUpdate, long ttl, long maxIdle,
+                               long expiryTime, long now, boolean backup) {
         storage.updateRecordValue(key, record, newValue);
         if (changeExpiryOnUpdate) {
             expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
@@ -1114,7 +1114,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
-                mergeRecordExpiration(key, record, mergingEntry, now);
+                // When receiving WAN replicated data, it is possible that the merge policy rejects an incoming
+                //  value, which would result in the above condition being true (merge policy selects the existing
+                //  value as the outcome). However, we do not want to apply metadata changes if we are rejecting
+                //  the merge and sticking with our original data. Due to current limitations of the
+                //  SplitBrainMergePolicy, we have no view on whether the merge policy modified the outcome or not,
+                //  only the resultant value. Long-term we need to address this shortfall in merge policies, but
+                //  for now the additional check below allows us to make an educated guess about whether the merge
+                //  changed data and use that. Since this only matters for WAN-received merge events, we can avoid
+                //  additional overhead by checking provenance. Fixes HZ-3392, Backlog for merge changes: HZ-3397
+                boolean shouldMergeExpiration = provenance != CallerProvenance.WAN
+                        || valueComparator.isEqual(oldValue, mergingEntry.getValue(), serializationService);
+                if (shouldMergeExpiration) {
+                    mergeRecordExpiration(key, record, mergingEntry, now);
+                }
                 return true;
             }
 
