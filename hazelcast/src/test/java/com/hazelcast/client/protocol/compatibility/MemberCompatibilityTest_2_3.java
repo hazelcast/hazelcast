@@ -53,14 +53,15 @@ public class MemberCompatibilityTest_2_3 {
     @Before
     public void setUp() throws IOException {
         File file = new File(getClass().getResource("/2.3.protocol.compatibility.binary").getFile());
-        InputStream inputStream = new FileInputStream(file);
-        byte[] data = new byte[(int) file.length()];
-        inputStream.read(data);
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        ClientMessageReader reader = new ClientMessageReader(0);
-        while (reader.readFrom(buffer, true)) {
-            clientMessages.add(reader.getClientMessage());
-            reader.reset();
+        try (InputStream inputStream = new FileInputStream(file)) {
+            byte[] data = new byte[(int) file.length()];
+            inputStream.read(data);
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            ClientMessageReader reader = new ClientMessageReader(0);
+            while (reader.readFrom(buffer, true)) {
+                clientMessages.add(reader.getClientMessage());
+                reader.reset();
+            }
         }
     }
 

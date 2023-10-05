@@ -38,12 +38,64 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aBoolean;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aByte;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aByteArray;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aCacheConfigHolder;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aCpMember;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aDataPersistenceConfig;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListJobAndSqlSummary;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfCacheEventData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfClientBwListEntries;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfCpMembers;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfDataToData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfDataToListOfData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfDistributedObjectInfo;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfIndexConfigs;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfIntegerToInteger;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfIntegerToUUID;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfLongToByteArray;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfLongs;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfMCEvents;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfMemberInfos;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfQueryCacheEventData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfScheduledTaskHandler;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfSchemas;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfSimpleEntryViews;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfStringToByteArray;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfStringToListOfIntegerToLong;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfStringToString;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfStrings;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfUUIDToListOfIntegers;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfUUIDToUUID;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfUUIDs;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfUuidToLong;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfWanBatchPublisherConfigHolders;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfWanCustomPublisherConfigsHolders;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfXids;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aLong;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aMapOfStringToString;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aMigrationState;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aPagingPredicateHolder;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aQueryCacheEventData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aRaftGroupId;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aSchema;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aSetOfUUIDs;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aString;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aTieredStoreConfig;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aUUID;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anAnchorDataListHolder;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anIndexConfig;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anInt;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anSqlQueryId;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anXid;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.isEqual;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -53,14 +105,15 @@ public class MemberCompatibilityNullTest_2_7 {
     @Before
     public void setUp() throws IOException {
         File file = new File(getClass().getResource("/2.7.protocol.compatibility.null.binary").getFile());
-        InputStream inputStream = new FileInputStream(file);
-        byte[] data = new byte[(int) file.length()];
-        inputStream.read(data);
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        ClientMessageReader reader = new ClientMessageReader(0);
-        while (reader.readFrom(buffer, true)) {
-            clientMessages.add(reader.getClientMessage());
-            reader.reset();
+        try (InputStream inputStream = new FileInputStream(file)) {
+            byte[] data = new byte[(int) file.length()];
+            inputStream.read(data);
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            ClientMessageReader reader = new ClientMessageReader(0);
+            while (reader.readFrom(buffer, true)) {
+                clientMessages.add(reader.getClientMessage());
+                reader.reset();
+            }
         }
     }
 
