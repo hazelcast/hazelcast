@@ -141,10 +141,14 @@ public class ClientCPGroupAvailabilityListenerTest extends HazelcastRaftTestSupp
         GracefulShutdownAvailabilityListener listener = new GracefulShutdownAvailabilityListener();
         client.getCPSubsystem().addGroupAvailabilityListener(listener);
 
+        long secondsToAssertInvariant = 3;
         instances[0].getLifecycleService().shutdown();
-        assertTrueAllTheTime(() -> assertEquals(1, listener.availabilityDecreased.get()), 3);
+        assertTrueAllTheTime(() -> assertEquals(1, listener.availabilityDecreased.get()), secondsToAssertInvariant);
 
         instances[1].getLifecycleService().shutdown();
-        assertTrueAllTheTime(() -> assertEquals(2, listener.availabilityDecreased.get()), 3);
+        assertTrueAllTheTime(() -> assertEquals(2, listener.availabilityDecreased.get()), secondsToAssertInvariant);
+
+        instances[2].getLifecycleService().shutdown();
+        assertTrueAllTheTime(() -> assertEquals(3, listener.availabilityDecreased.get()), secondsToAssertInvariant);
     }
 }
