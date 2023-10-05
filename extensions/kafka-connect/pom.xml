@@ -122,7 +122,7 @@
         <dependency>
             <groupId>com.couchbase.client</groupId>
             <artifactId>java-client</artifactId>
-            <version>3.4.10</version>
+            <version>3.4.11</version>
             <scope>test</scope>
         </dependency>
          <dependency>
