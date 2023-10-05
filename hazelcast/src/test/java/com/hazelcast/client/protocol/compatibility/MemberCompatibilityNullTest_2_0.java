@@ -28,8 +28,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -52,10 +50,9 @@ public class MemberCompatibilityNullTest_2_0 {
 
     @Before
     public void setUp() throws IOException {
-        File file = new File(getClass().getResource("/2.0.protocol.compatibility.null.binary").getFile());
-        try (InputStream inputStream = new FileInputStream(file)) {
-            byte[] data = new byte[(int) file.length()];
-            inputStream.read(data);
+        try (InputStream inputStream = getClass().getResourceAsStream("/2.0.protocol.compatibility.null.binary")) {
+            assert inputStream != null;
+            byte[] data = inputStream.readAllBytes();
             ByteBuffer buffer = ByteBuffer.wrap(data);
             ClientMessageReader reader = new ClientMessageReader(0);
             while (reader.readFrom(buffer, true)) {

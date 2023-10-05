@@ -52,10 +52,9 @@ public class MemberCompatibilityNullTest_2_2 {
 
     @Before
     public void setUp() throws IOException {
-        File file = new File(getClass().getResource("/2.2.protocol.compatibility.null.binary").getFile());
-        try (InputStream inputStream = new FileInputStream(file)) {
-            byte[] data = new byte[(int) file.length()];
-            inputStream.read(data);
+        try (InputStream inputStream = getClass().getResourceAsStream("/2.2.protocol.compatibility.null.binary")) {
+            assert inputStream != null;
+            byte[] data = inputStream.readAllBytes();
             ByteBuffer buffer = ByteBuffer.wrap(data);
             ClientMessageReader reader = new ClientMessageReader(0);
             while (reader.readFrom(buffer, true)) {
