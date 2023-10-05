@@ -835,13 +835,13 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     public int getStoreSnapshotTaskletCount() {
         return (int) tasklets.stream()
-                .filter(StoreSnapshotTasklet.class::isInstance)
+                .filter(t -> t instanceof StoreSnapshotTasklet)
                 .count();
     }
 
     public int getProcessorTaskletCount() {
         return (int) tasklets.stream()
-                .filter(ProcessorTasklet.class::isInstance)
+                .filter(t -> t instanceof ProcessorTasklet)
                 .count();
     }
 

@@ -170,7 +170,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     public void start(Collection<EventListener> configuredListeners) {
-        configuredListeners.stream().filter(MembershipListener.class::isInstance)
+        configuredListeners.stream().filter(listener -> listener instanceof MembershipListener)
                 .forEach(listener -> addMembershipListener((MembershipListener) listener));
     }
 
