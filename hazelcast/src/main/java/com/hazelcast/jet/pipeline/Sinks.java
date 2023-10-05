@@ -595,7 +595,7 @@ public final class Sinks {
      * input item.
      */
     // squid:S1612 Convert2MethodRef (provokes a javac 9 bug)
-    @SuppressWarnings({"LockAcquiredButNotSafelyReleased", "squid:S1612"})
+    @SuppressWarnings("squid:S1612")
     @Nonnull
     public static <K, V, E extends Entry<K, V>> Sink<E> remoteMapWithUpdating(
             @Nonnull String mapName,
