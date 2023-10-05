@@ -75,6 +75,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED;
@@ -1118,7 +1119,18 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
-                if (mergeRecordExpiration(key, record, mergingEntry, now)) {
+                // When receiving WAN replicated data, it is possible that the merge policy rejects an incoming
+                //  value, which would result in the above condition being true (merge policy selects the existing
+                //  value as the outcome). However, we do not want to apply metadata changes if we are rejecting
+                //  the merge and sticking with our original data. Due to current limitations of the
+                //  SplitBrainMergePolicy, we have no view on whether the merge policy modified the outcome or not,
+                //  only the resultant value. Long-term we need to address this shortfall in merge policies, but
+                //  for now the additional check below allows us to make an educated guess about whether the merge
+                //  changed data and use that. Since this only matters for WAN-received merge events, we can avoid
+                //  additional overhead by checking provenance. Fixes HZ-3392, Backlog for merge changes: HZ-3397
+                boolean shouldMergeExpiration = provenance != CallerProvenance.WAN
+                        || valueComparator.isEqual(oldValue, mergingEntry.getValue(), serializationService);
+                if (shouldMergeExpiration && mergeRecordExpiration(key, record, mergingEntry, now)) {
                     return MapMergeResponse.RECORD_EXPIRY_UPDATED;
                 }
                 return MapMergeResponse.RECORDS_ARE_EQUAL;
