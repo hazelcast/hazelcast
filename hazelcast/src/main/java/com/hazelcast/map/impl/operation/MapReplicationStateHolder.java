@@ -138,7 +138,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                             .getLocalMapStatsImpl(mapName).getReplicationStats());
 
             Set<IndexConfig> indexConfigs = new HashSet<>();
-            if (mapContainer.isGlobalIndexEnabled()) {
+            if (mapContainer.shouldUseGlobalIndex()) {
                 // global-index
                 final IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
                 for (Index index : indexRegistry.getIndexes()) {
@@ -305,7 +305,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
         RecordStore recordStore = operation.getRecordStore(mapName);
         MapContainer mapContainer = recordStore.getMapContainer();
-        if (mapContainer.isGlobalIndexEnabled()) {
+        if (mapContainer.shouldUseGlobalIndex()) {
             // creating global indexes on partition thread in case they do not exist
             for (IndexConfig indexConfig : indexConfigs) {
                 IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();

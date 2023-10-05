@@ -186,7 +186,7 @@ public class MapContainer {
     // By using this method in the context of global index an exception will be thrown.
     // -------------------------------------------------------------------------------------------------------------
     IndexRegistry getOrCreatePartitionedIndexRegistry(int partitionId) {
-        if (isGlobalIndexEnabled()) {
+        if (shouldUseGlobalIndex()) {
             throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
         }
 
@@ -250,7 +250,9 @@ public class MapContainer {
     }
 
     public boolean shouldUseGlobalIndex() {
-        return mapConfig.getInMemoryFormat() != NATIVE || mapServiceContext.globalIndexEnabled();
+        return mapConfig.getInMemoryFormat() != NATIVE
+            || (!mapConfig.getTieredStoreConfig().isEnabled() && mapServiceContext.globalIndexEnabled())
+            || mapServiceContext.isForciblyEnabledGlobalIndex();
     }
 
     protected static MemoryInfoAccessor getMemoryInfoAccessor() {
@@ -319,15 +321,6 @@ public class MapContainer {
         }
         return partitionedIndexRegistry.isEmpty();
     }
-
-    public boolean isGlobalIndexEnabled() {
-        return globalIndexRegistry != null;
-    }
-
-    public MapWanContext getWanContext() {
-        return wanContext;
-    }
-
 
     public int getTotalBackupCount() {
         return getBackupCount() + getAsyncBackupCount();
@@ -441,7 +434,7 @@ public class MapContainer {
     }
 
     public Map<String, IndexConfig> getIndexDefinitions() {
-        return isGlobalIndexEnabled()
+        return shouldUseGlobalIndex()
                 ? getGlobalIndexDefinitions()
                 : getPartitionedIndexDefinitions();
     }

@@ -235,7 +235,7 @@ public class PlanExecutor {
 
     SqlResult execute(CreateIndexPlan plan) {
         MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
-        if (!mapContainer.isGlobalIndexEnabled()) {
+        if (!mapContainer.shouldUseGlobalIndex()) {
             // for partitioned indexes checking existence is more complicated
             // and SQL cannot yet use partitioned indexes
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot create index \"" + plan.indexName()
