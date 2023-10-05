@@ -574,8 +574,8 @@ public class ProcessorTasklet implements Tasklet {
                 continue;
             }
             result = currInstream.drainTo(addToInboxFunction);
-            assert inbox.queue().stream().allMatch(SpecialBroadcastItem.class::isInstance)
-                    || inbox.queue().stream().noneMatch(SpecialBroadcastItem.class::isInstance)
+            assert inbox.queue().stream().allMatch(i -> i instanceof SpecialBroadcastItem)
+                    || inbox.queue().stream().noneMatch(i -> i instanceof SpecialBroadcastItem)
                     : "mix of special and non-special items in the inbox: " + inbox.queue();
             progTracker.madeProgress(result.isMadeProgress());
 
