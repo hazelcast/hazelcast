@@ -32,11 +32,15 @@ import com.hazelcast.sql.impl.schema.Table;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.security.Permission;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static com.hazelcast.security.permission.ConnectorPermission.file;
+import static java.util.Collections.singletonList;
 
 public class FileSqlConnector implements SqlConnector {
 
@@ -83,6 +87,12 @@ public class FileSqlConnector implements SqlConnector {
             @Nonnull List<MappingField> userFields
     ) {
         return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options);
+    }
+
+    @Nonnull
+    @Override
+    public List<Permission> permissionsForResolve(SqlExternalResource resource, NodeEngine nodeEngine) {
+        return singletonList(file(resource.options().get(OPTION_PATH), ACTION_READ));
     }
 
     @Nonnull

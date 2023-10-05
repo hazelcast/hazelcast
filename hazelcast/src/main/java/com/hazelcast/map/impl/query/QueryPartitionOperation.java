@@ -20,7 +20,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
@@ -47,7 +47,7 @@ public class QueryPartitionOperation extends MapOperation
 
         // we have to increment query count here manually since we are not even
         // trying to use indexes
-        Indexes indexes = mapContainer.getIndexes();
+        IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
         if (indexes != null) {
             indexes.getIndexesStats().incrementQueryCount();
         }

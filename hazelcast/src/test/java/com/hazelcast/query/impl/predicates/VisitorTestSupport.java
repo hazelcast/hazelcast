@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -46,7 +46,7 @@ public abstract class VisitorTestSupport {
     /**
      * @return the indexes available to the visitor being tested.
      */
-    protected abstract Indexes getIndexes();
+    protected abstract IndexRegistry getIndexes();
 
     protected static void assertEqualPredicate(EqualPredicate expected, Predicate actual) {
         assertTrue(actual instanceof EqualPredicate);

@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -29,21 +29,17 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 
-import static com.hazelcast.internal.util.CollectionUtil.addToValueList;
+import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
 import static com.hazelcast.internal.util.CollectionUtil.getItemAtPositionOrNull;
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.internal.util.CollectionUtil.nullToEmpty;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
-import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
-import static com.hazelcast.internal.util.CollectionUtil.toLongArray;
 import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.emptyList;
@@ -80,37 +76,10 @@ public class CollectionUtilTest extends HazelcastTestSupport {
         assertTrue(isNotEmpty(singletonList(23)));
     }
 
-    @Test
-    public void testAddToValueList() {
-        List<Integer> list = new ArrayList<Integer>();
-        list.add(23);
-
-        Map<String, List<Integer>> map = new HashMap<String, List<Integer>>();
-        map.put("existingKey", list);
-
-        addToValueList(map, "existingKey", 42);
-
-        assertEquals(1, map.size());
-        assertEquals(2, list.size());
-        assertContains(list, 42);
-    }
-
-    @Test
-    public void testAddToValueList_whenKeyDoesNotExist_thenNewListIsCreated() {
-        Map<String, List<Integer>> map = new HashMap<String, List<Integer>>();
-
-        addToValueList(map, "nonExistingKey", 42);
-
-        assertEquals(1, map.size());
-
-        List<Integer> list = map.get("nonExistingKey");
-        assertEquals(1, list.size());
-        assertContains(list, 42);
-    }
 
     @Test
     public void testGetItemAtPositionOrNull_whenEmptyArray_thenReturnNull() {
-        Collection<Object> src = new LinkedHashSet<Object>();
+        Collection<Object> src = new LinkedHashSet<>();
         Object result = getItemAtPositionOrNull(src, 0);
 
         assertNull(result);
@@ -119,7 +88,7 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     @Test
     public void testGetItemAtPositionOrNull_whenPositionExist_thenReturnTheItem() {
         Object obj = new Object();
-        Collection<Object> src = new LinkedHashSet<Object>();
+        Collection<Object> src = new LinkedHashSet<>();
         src.add(obj);
 
         Object result = getItemAtPositionOrNull(src, 0);
@@ -130,7 +99,7 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     @Test
     public void testGetItemAtPositionOrNull_whenSmallerArray_thenReturnNull() {
         Object obj = new Object();
-        Collection<Object> src = new LinkedHashSet<Object>();
+        Collection<Object> src = new LinkedHashSet<>();
         src.add(obj);
 
         Object result = getItemAtPositionOrNull(src, 1);
@@ -156,7 +125,7 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     @Test
     public void testObjectToDataCollection_size() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        Collection<Object> list = new ArrayList<Object>();
+        Collection<Object> list = new ArrayList<>();
         list.add(1);
         list.add("foo");
 
@@ -168,7 +137,7 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testObjectToDataCollection_withNullItem() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        Collection<Object> list = new ArrayList<Object>();
+        Collection<Object> list = new ArrayList<>();
         list.add(null);
 
         objectToDataCollection(list, serializationService);
@@ -184,14 +153,14 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     @Test
     public void testObjectToDataCollection_deserializeBack() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        Collection<Object> list = new ArrayList<Object>();
+        Collection<Object> list = new ArrayList<>();
         list.add(1);
         list.add("foo");
 
         Collection<Data> dataCollection = objectToDataCollection(list, serializationService);
 
         Iterator<Data> it1 = dataCollection.iterator();
-        Iterator it2 = list.iterator();
+        Iterator<Object> it2 = list.iterator();
         while (it1.hasNext() && it2.hasNext()) {
             assertEquals(serializationService.toObject(it1.next()), it2.next());
         }
@@ -199,7 +168,7 @@ public class CollectionUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testToIntArray() {
-        List<Integer> list = new ArrayList<Integer>();
+        List<Integer> list = new ArrayList<>();
         list.add(42);
         list.add(23);
         list.add(Integer.MAX_VALUE);
@@ -216,27 +185,6 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testToIntArray_whenNull_thenThrowNPE() {
         toIntArray(null);
-    }
-
-    @Test
-    public void testToLongArray() {
-        List<Long> list = new ArrayList<Long>();
-        list.add(42L);
-        list.add(23L);
-        list.add(Long.MAX_VALUE);
-
-        long[] longArray = toLongArray(list);
-
-        assertNotNull(longArray);
-        assertEquals(list.size(), longArray.length);
-        assertEquals(list.get(0).longValue(), longArray[0]);
-        assertEquals(list.get(1).longValue(), longArray[1]);
-        assertEquals(list.get(2).longValue(), longArray[2]);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testToLongArray_whenNull_thenThrowNPE() {
-        toLongArray(null);
     }
 
     @Test(expected = NullPointerException.class)

@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
@@ -74,7 +75,7 @@ public class MapRemoveEntryListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "removeEntryListener";
+        return SecurityInterceptorConstants.REMOVE_ENTRY_LISTENER;
     }
 
 }

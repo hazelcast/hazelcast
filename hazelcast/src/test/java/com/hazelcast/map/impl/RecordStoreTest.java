@@ -58,7 +58,7 @@ public class RecordStoreTest extends HazelcastTestSupport {
         MapServiceContext mapServiceContext = getMapServiceContext((MapProxyImpl) map);
         MapContainer mapContainer = mapServiceContext.getMapContainer(map.getName());
         for (int partitionId : mapServiceContext.getCachedOwnedPartitions()) {
-            mapContainer.getIndexes(partitionId).destroyIndexes();
+            mapContainer.getOrCreateIndexRegistry(partitionId).destroyIndexes();
         }
     }
 

@@ -52,7 +52,7 @@ public class AttributeIndexRegistry {
      * there is no more than one writer at any given time.
      *
      * @param index the index to register.
-     * @see Indexes#addOrGetIndex
+     * @see IndexRegistry#addOrGetIndex
      */
     // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
     // effect on throughput such that it's not a direct replacement

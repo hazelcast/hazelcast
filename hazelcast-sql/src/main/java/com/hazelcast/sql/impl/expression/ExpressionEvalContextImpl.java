@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,27 +36,35 @@ import static java.util.Objects.requireNonNull;
  * @see Expression#eval
  */
 public class ExpressionEvalContextImpl implements ExpressionEvalContext {
+    // Two security context holders for different scopes. If one is active, the other must be empty.
+    // MetaSupplierCtx holds sql security context for Jet job execution.
     private transient MetaSupplierCtx contextRef;
+    // SqlSecurityContext is applicable for non-Jet query execution (ByKey plans).
+    private transient SqlSecurityContext ssc;
 
     private final List<Object> arguments;
     private final transient InternalSerializationService serializationService;
     private final transient NodeEngine nodeEngine;
 
-    public ExpressionEvalContextImpl(
+    ExpressionEvalContextImpl(
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
-            @Nonnull NodeEngine nodeEngine) {
+            @Nonnull NodeEngine nodeEngine,
+            @Nullable SqlSecurityContext ssc) {
         this.arguments = requireNonNull(arguments);
         this.serializationService = requireNonNull(serializationService);
         this.nodeEngine = requireNonNull(nodeEngine);
+        this.ssc = ssc;
     }
 
-    public ExpressionEvalContextImpl(
-            @Nonnull MetaSupplierCtx context,
+    ExpressionEvalContextImpl(
             @Nonnull List<Object> arguments,
             @Nonnull InternalSerializationService serializationService,
-            @Nonnull NodeEngine nodeEngine) {
-        this(arguments, serializationService, nodeEngine);
+            @Nonnull NodeEngine nodeEngine,
+            @Nonnull MetaSupplierCtx context) {
+        this.arguments = requireNonNull(arguments);
+        this.serializationService = requireNonNull(serializationService);
+        this.nodeEngine = requireNonNull(nodeEngine);
         this.contextRef = context;
     }
 
@@ -90,12 +99,22 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
 
     @Override
     public void checkPermission(Permission permission) {
-        contextRef.checkPermission(permission);
+        if (contextRef != null) {
+            contextRef.checkPermission(permission);
+        } else if (ssc != null) {
+            ssc.checkPermission(permission);
+        }
     }
 
     @Override
     @Nullable
     public Subject subject() {
-        return contextRef != null ? contextRef.subject() : null;
+        if (contextRef != null) {
+            return contextRef.subject();
+        }
+        if (ssc != null) {
+            return ssc.subject();
+        }
+        return null;
     }
 }

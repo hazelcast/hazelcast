@@ -23,6 +23,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
@@ -74,7 +75,7 @@ public class AddDistributedObjectListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "addDistributedObjectListener";
+        return SecurityInterceptorConstants.ADD_DISTRIBUTED_OBJECT_LISTENER;
     }
 
     @Override
