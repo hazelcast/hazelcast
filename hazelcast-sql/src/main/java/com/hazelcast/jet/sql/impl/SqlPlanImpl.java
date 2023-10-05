@@ -56,7 +56,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.sql.impl.CalciteSqlOptimizer.extractPermissions;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_DATACONNECTION;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_TYPE;
