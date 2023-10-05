@@ -41,7 +41,7 @@ jobs:
             GCP_SA_KEY,CN/GKE_SA_KEY
 
       - name: Checkout Auto Discovery Test Suite
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: hazelcast/auto-discovery-test-suite
           token: ${{ env.DEVOPS_GITHUB_TOKEN }}
@@ -57,7 +57,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{steps.decide-ref.outputs.ref}}
           path: ${{steps.decide-ref.outputs.ref}}

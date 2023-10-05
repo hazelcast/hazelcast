@@ -71,7 +71,7 @@ jobs:
           kubectl config view > ${HOME}/.kube/config
 
       - name: Checkout Auto Discovery Test Suite
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: hazelcast/auto-discovery-test-suite
           token: ${{ env.DEVOPS_GITHUB_TOKEN }}
