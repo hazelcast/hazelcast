@@ -90,6 +90,18 @@ public class ExpressionEvalContextImpl implements ExpressionEvalContext {
         return serializationService;
     }
 
+    @Override
+    public ExpressionEvalContextImpl withSerializationService(@Nonnull InternalSerializationService newService) {
+        if (serializationService == newService) {
+            return this;
+        }
+        if (contextRef != null) {
+            return new ExpressionEvalContextImpl(arguments, newService, nodeEngine, contextRef);
+        } else {
+            return new ExpressionEvalContextImpl(arguments, newService, nodeEngine, ssc);
+        }
+    }
+
     /**
      * @return node engine
      */

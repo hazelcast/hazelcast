@@ -25,6 +25,7 @@ import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
@@ -75,7 +76,7 @@ public interface ExpressionEvalContext {
                     arguments,
                     new DefaultSerializationServiceBuilder().build(),
                     Util.getNodeEngine(ctx.hazelcastInstance()),
-                    (SqlSecurityContext) null
+                    NoOpSqlSecurityContext.INSTANCE
             );
         }
     }
@@ -111,6 +112,12 @@ public interface ExpressionEvalContext {
      * @return serialization service
      */
     InternalSerializationService getSerializationService();
+
+    /**
+     * Changes serialization service for this context
+     * @return context with changed serialization service
+     */
+    ExpressionEvalContext withSerializationService(@Nonnull InternalSerializationService newService);
 
     /**
      * @return node engine

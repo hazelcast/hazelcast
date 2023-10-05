@@ -164,14 +164,20 @@ public class SqlServiceImpl implements InternalSqlService {
         return execute(statement, NoOpSqlSecurityContext.INSTANCE);
     }
 
+    @Nonnull
+    @Override
     public SqlResult execute(@Nonnull SqlStatement statement, SqlSecurityContext securityContext) {
         return execute(statement, securityContext, null);
     }
 
+    @Nonnull
+    @Override
     public SqlResult execute(@Nonnull SqlStatement statement, SqlSecurityContext securityContext, QueryId queryId) {
         return execute(statement, securityContext, queryId, false);
     }
 
+    @Nonnull
+    @Override
     public SqlResult execute(
             @Nonnull SqlStatement statement,
             SqlSecurityContext securityContext,
