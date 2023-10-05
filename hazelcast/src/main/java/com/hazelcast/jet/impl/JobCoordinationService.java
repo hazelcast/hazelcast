@@ -196,7 +196,7 @@ public class JobCoordinationService {
         this.nodeEngine = nodeEngine;
         this.jetServiceBackend = jetServiceBackend;
         this.config = config;
-        this.pipelineToDagContext = () -> this.config.getCooperativeThreadCount();
+        this.pipelineToDagContext = this.config::getCooperativeThreadCount;
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRepository = jobRepository;
 
