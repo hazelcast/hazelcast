@@ -558,7 +558,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 false
         );
 
-        return new ExplainStatementPlan(planKey, physicalRel, planExecutor);
+        List<Permission> permissions = extractPermissions(physicalRel);
+
+        return new ExplainStatementPlan(planKey, physicalRel, permissions, planExecutor);
     }
 
     private SqlPlan toCreateTypePlan(PlanKey planKey, SqlCreateType sqlNode) {

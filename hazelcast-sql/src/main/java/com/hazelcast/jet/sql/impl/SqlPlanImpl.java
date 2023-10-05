@@ -1016,15 +1016,18 @@ abstract class SqlPlanImpl extends SqlPlan {
     static class ExplainStatementPlan extends SqlPlanImpl {
         private final PhysicalRel rel;
         private final PlanExecutor planExecutor;
+        private final List<Permission> permissions;
 
         ExplainStatementPlan(
                 PlanKey planKey,
                 PhysicalRel rel,
+                List<Permission> permissions,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
             this.rel = rel;
             this.planExecutor = planExecutor;
+            this.permissions = permissions;
         }
 
         public PhysicalRel getRel() {
@@ -1043,8 +1046,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            // Note: it must not expose the presence of the mapping.
-            extractPermissions(rel).forEach(context::checkPermission);
+            permissions.forEach(context::checkPermission);
         }
 
         @Override
