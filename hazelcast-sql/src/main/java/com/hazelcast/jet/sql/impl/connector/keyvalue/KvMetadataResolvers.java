@@ -19,14 +19,15 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
+import com.hazelcast.jet.sql.impl.schema.TypeUtils.FieldEnricher;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.schema.MappingField;
-import com.hazelcast.sql.impl.schema.type.TypeKind;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,15 +38,13 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
-import static com.hazelcast.jet.sql.impl.schema.TypesUtils.enrichMappingFieldType;
-import static com.hazelcast.jet.sql.impl.schema.TypesUtils.formatToTypeKind;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
+import static com.hazelcast.jet.sql.impl.schema.TypeUtils.getFieldEnricher;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE_PREFIX;
-import static com.hazelcast.sql.impl.schema.type.TypeKind.COMPACT;
-import static com.hazelcast.sql.impl.schema.type.TypeKind.JAVA;
-import static com.hazelcast.sql.impl.schema.type.TypeKind.PORTABLE;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -56,7 +55,8 @@ public class KvMetadataResolvers {
 
     // A string of characters (excluding a `.`), optionally prefixed with "__key." or "this."
     private static final Pattern EXT_NAME_PATTERN = Pattern.compile("((" + KEY + "|" + VALUE + ")\\.)?[^.]+");
-    private static final Set<TypeKind> NESTED_FIELDS_SUPPORTED_FORMATS = Set.of(JAVA, PORTABLE, COMPACT);
+    private static final Set<String> NESTED_FIELDS_SUPPORTED_FORMATS = new HashSet<>(Set.of(
+            SqlConnector.JAVA_FORMAT, SqlConnector.PORTABLE_FORMAT, SqlConnector.COMPACT_FORMAT));
 
     private final Map<String, KvMetadataResolver> keyResolvers;
     private final Map<String, KvMetadataResolver> valueResolvers;
@@ -137,16 +137,20 @@ public class KvMetadataResolvers {
             InternalSerializationService serializationService,
             RelationsStorage relationsStorage
     ) {
+        String format = getFormat(options, isKey);
+        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(format)) {
+            List<MappingField> fieldsWithCustomTypes = extractFields(userFields, isKey).values().stream()
+                    .filter(mappingField -> mappingField.type().isCustomType()).collect(toList());
+            if (!fieldsWithCustomTypes.isEmpty()) {
+                FieldEnricher<?, ?> enricher = getFieldEnricher(format, serializationService, relationsStorage);
+                fieldsWithCustomTypes.forEach(mappingField -> enricher.enrich(mappingField, options, isKey));
+            }
+        }
+
         String name = isKey ? KEY : VALUE;
-        Stream<MappingField> fields = findMetadataResolver(options, isKey)
+        return findMetadataResolver(options, isKey)
                 .resolveAndValidateFields(isKey, userFields, options, serializationService)
                 .filter(field -> !field.name().equals(name) || field.externalName().equals(name));
-
-        TypeKind keyKind = formatToTypeKind(getFormat(options, isKey));
-        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(keyKind)) {
-            return fields.peek(mappingField -> enrichMappingFieldType(keyKind, mappingField, relationsStorage));
-        }
-        return fields;
     }
 
     /**
@@ -159,7 +163,6 @@ public class KvMetadataResolvers {
             InternalSerializationService serializationService
     ) {
         KvMetadataResolver resolver = findMetadataResolver(options, isKey);
-        // TODO: enhance types
         return requireNonNull(resolver.resolveMetadata(isKey, resolvedFields, options, serializationService));
     }
 

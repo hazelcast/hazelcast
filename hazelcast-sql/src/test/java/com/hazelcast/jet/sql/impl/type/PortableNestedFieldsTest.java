@@ -33,17 +33,13 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_CLASS_ID;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -94,8 +90,8 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
     }
 
     static void setupPortableTypesForNestedQuery(HazelcastInstance instance) {
-        createPortableType(instance, "Office", 1, 3);
-        createPortableType(instance, "Organization", 1, 2);
+        new SqlType("Office").create(instance);
+        new SqlType("Organization").fields("id BIGINT", "name VARCHAR", "office Office").create(instance);
 
         createPortableMapping(instance, "test", 1, 1, "id BIGINT", "name VARCHAR", "organization Organization");
     }
@@ -110,20 +106,6 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
                          OPTION_VALUE_FACTORY_ID, factoryId,
                          OPTION_VALUE_CLASS_ID, classId)
                 .create(instance);
-    }
-
-    static void createPortableType(HazelcastInstance instance, String name, int factoryId, int classId,
-                                   String... fields) {
-        new SqlType(name)
-                .fields(fields)
-                .options(OPTION_FORMAT, PORTABLE_FORMAT,
-                         OPTION_TYPE_PORTABLE_FACTORY_ID, factoryId,
-                         OPTION_TYPE_PORTABLE_CLASS_ID, classId)
-                .create(instance);
-    }
-
-    private static void createPortableType(String name, int factoryId, int classId, String... fields) {
-        createPortableType(instance(), name, factoryId, classId, fields);
     }
 
     private static SqlResult execute(String sql) {
@@ -141,9 +123,9 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_nestedPortablesAreReturnedAsDeserialized() {
-        createPortableType("Office", 1, 3);
-        createPortableType("Organization", 1, 2, "id BIGINT", "name VARCHAR", "office Office");
-        createPortableType("OrganizationAndLong", 1, 4, "id BIGINT", "l BIGINT", "organization Organization");
+        new SqlType("Office").create();
+        new SqlType("Organization").fields("id BIGINT", "name VARCHAR", "office Office").create();
+        new SqlType("OrganizationAndLong").fields("id BIGINT", "l BIGINT", "organization Organization").create();
 
         createPortableMapping(instance(), "test", 1, 5,
                 "id BIGINT", "name VARCHAR", "organizationAndLong OrganizationAndLong");
@@ -160,15 +142,8 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_unknownClassDef_noColumns_then_fail() {
-        assertThatThrownBy(() -> createPortableType("Foo", 42, 43))
-                .hasMessage("The given FactoryID/ClassID/Version combination not known to the member. You need" +
-                        " to provide column list for this type");
-    }
-
-    @Test
     public void test_unknownClassDef_givenColumns() {
-        assertThatCode(() -> createPortableType("Foo", 44, 45, "column1 INT", "column2 VARCHAR"))
+        assertThatCode(() -> new SqlType("Foo").fields("column1 INT", "column2 VARCHAR").create())
                 .doesNotThrowAnyException();
     }
 }

@@ -44,21 +44,22 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         BasicNestedFieldsTest.createJavaMapping(client(), name, valueClass, valueFields);
     }
 
-    private static void createJavaType(String name, Class<?> typeClass, String... fields) {
-        BasicNestedFieldsTest.createJavaType(client(), name, typeClass, fields);
+    private static void createType(String name, String... fields) {
+        new SqlType(name)
+                .fields(fields)
+                .create(client());
     }
 
     @Test
     public void test_cyclicTypeUpsertsValidationError() {
-        createJavaType("FCA", FullyConnectedA.class, "name VARCHAR", "b FCB", "c FCC");
-        createJavaType("FCB", FullyConnectedB.class, "name VARCHAR", "a FCA", "c FCC");
-        createJavaType("FCC", FullyConnectedC.class, "name VARCHAR", "a FCA", "b FCB");
+        createType("FCA", "name VARCHAR", "b FCB", "c FCC");
+        createType("FCB", "name VARCHAR", "a FCA", "c FCC");
+        createType("FCC", "name VARCHAR", "a FCA", "b FCB");
         createJavaMapping("tableA", FullyConnectedA.class, "this FCA");
         createJavaMapping("tableB", FullyConnectedB.class, "this FCB");
         createJavaMapping("tableC", FullyConnectedC.class, "this FCC");
 
-        createJavaType("DualGraph", DualPathGraph.class,
-                "name VARCHAR", "\"left\" DualGraph", "\"right\" DualGraph");
+        createType("DualGraph", "name VARCHAR", "\"left\" DualGraph", "\"right\" DualGraph");
         createJavaMapping("tableD", DualPathGraph.class, "this DualGraph");
 
         Consumer<String> assertNotSupported = sql -> assertThatThrownBy(() -> client().getSql().execute(sql))
@@ -77,9 +78,9 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_fullyConnectedGraph() {
-        createJavaType("FCA", FullyConnectedA.class, "name VARCHAR", "b FCB", "c FCC");
-        createJavaType("FCB", FullyConnectedB.class, "name VARCHAR", "a FCA", "c FCC");
-        createJavaType("FCC", FullyConnectedC.class, "name VARCHAR", "a FCA", "b FCB");
+        createType("FCA", "name VARCHAR", "b FCB", "c FCC");
+        createType("FCB", "name VARCHAR", "a FCA", "c FCC");
+        createType("FCC", "name VARCHAR", "a FCA", "b FCB");
 
         final FullyConnectedA a = new FullyConnectedA("A1");
         final FullyConnectedB b = new FullyConnectedB("B1");
@@ -111,9 +112,9 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_sameTypesDifferentInstances() {
-        createJavaType("FCA", FullyConnectedA.class, "name VARCHAR", "b FCB", "c FCC");
-        createJavaType("FCB", FullyConnectedB.class, "name VARCHAR", "a FCA", "c FCC");
-        createJavaType("FCC", FullyConnectedC.class, "name VARCHAR", "a FCA", "b FCB");
+        createType("FCA", "name VARCHAR", "b FCB", "c FCC");
+        createType("FCB", "name VARCHAR", "a FCA", "c FCC");
+        createType("FCC", "name VARCHAR", "a FCA", "b FCB");
 
         // A1 -> B1 -> C1 -> A2 -> B2 -> C2 -> <A1>
         final FullyConnectedA a1 = new FullyConnectedA("A1");
@@ -158,8 +159,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
                 |   \     \
                [A1][A4]   [A3]
          */
-        createJavaType("DualGraph", DualPathGraph.class,
-                "name VARCHAR", "\"left\" DualGraph", "\"right\" DualGraph");
+        createType("DualGraph", "name VARCHAR", "\"left\" DualGraph", "\"right\" DualGraph");
         DualPathGraph a1 = new DualPathGraph("A1");
         DualPathGraph a2 = new DualPathGraph("A2");
         DualPathGraph a3 = new DualPathGraph("A3");

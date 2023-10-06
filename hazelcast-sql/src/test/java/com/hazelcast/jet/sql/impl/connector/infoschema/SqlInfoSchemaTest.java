@@ -28,11 +28,8 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
@@ -80,16 +77,12 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                         "name VARCHAR",
                         "created TIMESTAMP WITH TIME ZONE",
                         "balance DOUBLE")
-                .options(OPTION_FORMAT, COMPACT_FORMAT,
-                         OPTION_TYPE_COMPACT_TYPE_NAME, firstTypeName)
                 .create();
 
         new SqlType(secondTypeName)
                 .fields("id BIGINT",
                         "name VARCHAR",
                         "other " + firstTypeName)
-                .options(OPTION_FORMAT, COMPACT_FORMAT,
-                         OPTION_TYPE_COMPACT_TYPE_NAME, secondTypeName)
                 .create();
     }
 

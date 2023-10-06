@@ -73,8 +73,10 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
         initializeWithClient(3, config, null);
     }
 
-    private static void createJavaType(String name, Class<?> typeClass, String... fields) {
-        BasicNestedFieldsTest.createJavaType(client(), name, typeClass, fields);
+    private static void createType(String name, String... fields) {
+        new SqlType(name)
+                .fields(fields)
+                .create(client());
     }
 
     private static void execute(String sql, Object... args) {
@@ -82,9 +84,9 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
     }
 
     private void initDefault() {
-        createJavaType("UserType", User.class, "id BIGINT", "name VARCHAR", "organization OrganizationType");
-        createJavaType("OrganizationType", Organization.class, "id BIGINT", "name VARCHAR", "office OfficeType");
-        createJavaType("OfficeType", Office.class, "id BIGINT", "name VARCHAR");
+        createType("UserType", "id BIGINT", "name VARCHAR", "organization OrganizationType");
+        createType("OrganizationType", "id BIGINT", "name VARCHAR", "office OfficeType");
+        createType("OfficeType", "id BIGINT", "name VARCHAR");
 
         final IMap<Long, User> testMap = client().getMap("test");
         createJavaMapping(client(), "test", User.class, "this UserType");
@@ -106,9 +108,9 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
 
     @Test
     public void test_failOnCycles() {
-        createJavaType("AType", A.class, "name VARCHAR", "b BType");
-        createJavaType("BType", B.class, "name VARCHAR", "c CType");
-        createJavaType("CType", C.class, "name VARCHAR", "a AType");
+        createType("AType", "name VARCHAR", "b BType");
+        createType("BType", "name VARCHAR", "c CType");
+        createType("CType", "name VARCHAR", "a AType");
 
         final A a = new A("a");
         final B b = new B("b");
