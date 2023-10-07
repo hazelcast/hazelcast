@@ -140,39 +140,47 @@ public class YamlTest {
 
     @Test
     public void testLoadingInvalidYamlFromReader() throws IOException {
-        try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml");
-             InputStreamReader reader = new InputStreamReader(inputStream)) {
-            expectedException.expect(YamlException.class);
-            YamlLoader.load(reader);
+        try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml")) {
+            assert inputStream != null;
+            try (InputStreamReader reader = new InputStreamReader(inputStream)) {
+                expectedException.expect(YamlException.class);
+                YamlLoader.load(reader);
+            }
         }
     }
 
     @Test
     public void testLoadingInvalidYamlFromReaderWithRootName() throws IOException {
-        try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml");
-             InputStreamReader reader = new InputStreamReader(inputStream)) {
-            expectedException.expect(YamlException.class);
-            YamlLoader.load(reader, "root-map");
+        try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml")) {
+            assert inputStream != null;
+            try (InputStreamReader reader = new InputStreamReader(inputStream)) {
+                expectedException.expect(YamlException.class);
+                YamlLoader.load(reader, "root-map");
+            }
         }
     }
 
     @Test
     public void testLoadingInvalidYamlFromString() throws IOException {
-        try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml");
-             InputStreamReader reader = new InputStreamReader(inputStream)) {
-            String yamlString = CharStreams.toString(reader);
-            expectedException.expect(YamlException.class);
-            YamlLoader.load(yamlString);
+        try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml")) {
+            assert inputStream != null;
+            try (InputStreamReader reader = new InputStreamReader(inputStream)) {
+                String yamlString = CharStreams.toString(reader);
+                expectedException.expect(YamlException.class);
+                YamlLoader.load(yamlString);
+            }
         }
     }
 
     @Test
     public void testLoadingInvalidYamlFromStringWithRootName() throws IOException {
-        try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml");
-             InputStreamReader reader = new InputStreamReader(inputStream)) {
-            String yamlString = CharStreams.toString(reader);
-            expectedException.expect(YamlException.class);
-            YamlLoader.load(yamlString, "root-map");
+        try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml")) {
+            assert inputStream != null;
+            try (InputStreamReader reader = new InputStreamReader(inputStream)) {
+                String yamlString = CharStreams.toString(reader);
+                expectedException.expect(YamlException.class);
+                YamlLoader.load(yamlString, "root-map");
+            }
         }
     }
 
@@ -363,19 +371,21 @@ public class YamlTest {
 
     @Test
     public void testYamlListInRoot() throws IOException {
-        try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-seq.yaml");
-             InputStreamReader reader = new InputStreamReader(inputStream)) {
-            String yamlString = CharStreams.toString(reader);
-            YamlNode root = YamlLoader.load(yamlString);
+        try (InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-seq.yaml")) {
+            assert inputStream != null;
+            try (InputStreamReader reader = new InputStreamReader(inputStream)) {
+                String yamlString = CharStreams.toString(reader);
+                YamlNode root = YamlLoader.load(yamlString);
 
-            assertTrue(root instanceof YamlSequence);
+                assertTrue(root instanceof YamlSequence);
 
-            YamlSequence rootSeq = asSequence(root);
-            assertEquals(42, ((Integer) rootSeq.childAsScalarValue(0)).intValue());
+                YamlSequence rootSeq = asSequence(root);
+                assertEquals(42, ((Integer) rootSeq.childAsScalarValue(0)).intValue());
 
-            YamlMapping map = rootSeq.childAsMapping(1);
-            assertEquals(YamlNode.UNNAMED_NODE, map.nodeName());
-            assertEquals("embedded-map", map.childAsMapping("embedded-map").nodeName());
+                YamlMapping map = rootSeq.childAsMapping(1);
+                assertEquals(YamlNode.UNNAMED_NODE, map.nodeName());
+                assertEquals("embedded-map", map.childAsMapping("embedded-map").nodeName());
+            }
         }
     }
 
