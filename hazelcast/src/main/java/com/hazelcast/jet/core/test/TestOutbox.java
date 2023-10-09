@@ -78,6 +78,8 @@ public final class TestOutbox implements OutboxInternal {
         allOrdinals = IntStream.range(0, edgeCapacities.length).toArray();
 
         OutboundCollector[] outstreams = new OutboundCollector[edgeCapacities.length + (snapshotCapacity > 0 ? 1 : 0)];
+        // Intermediate variable required to workaround Eclipse bug
+        // https://github.com/hazelcast/hazelcast/pull/25652
         IntFunction<OutboundCollector> generator = i -> i < edgeCapacities.length
                 ? e -> addToQueue(buckets[i], edgeCapacities[i], e)
                 : e -> addToQueue(snapshotQueue, snapshotCapacity, deserializeSnapshotEntry((Entry<Data, Data>) e));
