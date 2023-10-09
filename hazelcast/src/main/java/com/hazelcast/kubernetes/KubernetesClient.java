@@ -176,7 +176,7 @@ class KubernetesClient {
         // before the intent tracker is shutdown
         if (stsMonitorThread != null) {
             LOGGER.info("Interrupting StatefulSet monitor thread");
-            stsMonitorThread.interrupt();
+            stsMonitorThread.shutdown();
         }
 
         if (clusterTopologyIntentTracker != null) {
