@@ -20,6 +20,7 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.Network;
 
 import java.util.Arrays;
+import java.util.Map;
 
 import static java.util.stream.Collectors.joining;
 
@@ -40,7 +41,11 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
                 .withDatabaseName(dbName)
                 .withUsername("root")
                 .withUrlParam("user", "root")
-                .withUrlParam("password", "test");
+                .withUrlParam("password", "test")
+                .withTmpFs(Map.of(
+                        "/var/lib/mysql/", "rw",
+                        "/tmp/", "rw"
+                ));
         container.start();
         String jdbcUrl = container.getJdbcUrl();
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -121,12 +120,8 @@ public class LocalRecordStoreStatsImpl
         out.writeLong(hits);
         out.writeLong(lastAccessTime);
         out.writeLong(lastUpdateTime);
-
-        // RU_COMPAT 5.2
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
-            out.writeLong(evictionCount);
-            out.writeLong(expirationCount);
-        }
+        out.writeLong(evictionCount);
+        out.writeLong(expirationCount);
     }
 
     @Override
@@ -134,12 +129,8 @@ public class LocalRecordStoreStatsImpl
         hits = in.readLong();
         lastAccessTime = in.readLong();
         lastUpdateTime = in.readLong();
-
-        // RU_COMPAT 5.2
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
-            evictionCount = in.readLong();
-            expirationCount = in.readLong();
-        }
+        evictionCount = in.readLong();
+        expirationCount = in.readLong();
     }
 
     @Override

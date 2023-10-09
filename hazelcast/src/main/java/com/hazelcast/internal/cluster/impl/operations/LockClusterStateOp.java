@@ -19,7 +19,6 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateChange;
@@ -39,6 +38,7 @@ import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 import java.util.UUID;
 
+// RU_COMPAT_5_3 "implements Versioned" can be removed in 5.5
 public class LockClusterStateOp  extends Operation implements AllowedDuringPassiveState, UrgentSystemOperation,
         IdentifiedDataSerializable, Versioned {
 
@@ -114,11 +114,7 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
         out.writeObject(initiator);
         UUIDSerializationUtil.writeUUID(out, txnId);
         out.writeLong(leaseTime);
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeLong(partitionStateStamp);
-        } else {
-            out.writeInt((int) partitionStateStamp);
-        }
+        out.writeLong(partitionStateStamp);
         out.writeInt(memberListVersion);
     }
 
@@ -129,11 +125,7 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
         initiator = in.readObject();
         txnId = UUIDSerializationUtil.readUUID(in);
         leaseTime = in.readLong();
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            partitionStateStamp = in.readLong();
-        } else {
-            partitionStateStamp = in.readInt();
-        }
+        partitionStateStamp = in.readLong();
         memberListVersion = in.readInt();
     }
 

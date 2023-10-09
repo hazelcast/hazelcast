@@ -27,10 +27,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -39,7 +37,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ_WRITE;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.WRITE;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.isA;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -53,9 +51,6 @@ public class CardinalityEstimatorSplitBrainProtectionWriteTest extends AbstractS
 
     @Parameter
     public static SplitBrainProtectionOn splitBrainProtectionOn;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void setUp() {
@@ -83,9 +78,9 @@ public class CardinalityEstimatorSplitBrainProtectionWriteTest extends AbstractS
     }
 
     @Test
-    public void addAsync_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        estimator(3).addAsync(1).toCompletableFuture().get();
+    public void addAsync_noSplitBrainProtection() {
+        assertThatThrownBy(() -> estimator(3).addAsync(1).toCompletableFuture().get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     protected CardinalityEstimator estimator(int index) {

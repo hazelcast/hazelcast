@@ -36,10 +36,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
@@ -54,13 +52,10 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.core.Is.isA;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -69,9 +64,6 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
 
     private static final String RAFT_GROUP_NAME = "sessions";
     private static final int LOG_ENTRY_COUNT_TO_SNAPSHOT = 10;
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     private HazelcastInstance[] instances;
     private RaftInvocationManager invocationManager;
@@ -98,7 +90,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
                 assertNotNull(session);
 
                 Collection<CPSession> sessions = service.getAllSessions(groupId).get();
-                assertThat(sessions, hasItem(session));
+                assertThat(sessions).contains(session);
             }
         });
     }
@@ -152,7 +144,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
                 RaftSessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                 assertNotNull(registry);
                 assertNull(registry.getSession(response.getSessionId()));
-                assertThat(service.getAllSessions(groupId).get(), empty());
+                assertThat(service.getAllSessions(groupId).get()).isEmpty();
             }
         });
     }
@@ -171,9 +163,9 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
 
         invocationManager.invoke(groupId, new CloseSessionOp(response.getSessionId())).get();
 
-        exception.expectCause(isA(SessionExpiredException.class));
-
-        invocationManager.invoke(groupId, new HeartbeatSessionOp(response.getSessionId())).get();
+        var exc = assertThrows(ExecutionException.class,
+                () -> invocationManager.invoke(groupId, new HeartbeatSessionOp(response.getSessionId())).get());
+        assertThat(exc).hasCauseInstanceOf(SessionExpiredException.class);
     }
 
     @Test

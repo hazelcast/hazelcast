@@ -24,6 +24,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -31,10 +32,15 @@ import com.hazelcast.sql.impl.schema.Table;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.security.Permission;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static com.hazelcast.security.permission.ConnectorPermission.file;
+import static java.util.Collections.singletonList;
 
 public class FileSqlConnector implements SqlConnector {
 
@@ -85,6 +91,12 @@ public class FileSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
+    public List<Permission> permissionsForResolve(SqlExternalResource resource, NodeEngine nodeEngine) {
+        return singletonList(file(resource.options().get(OPTION_PATH), ACTION_READ));
+    }
+
+    @Nonnull
+    @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
@@ -130,6 +142,7 @@ public class FileSqlConnector implements SqlConnector {
             @Nonnull DagBuildContext context,
             @Nullable HazelcastRexNode predicate,
             @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
@@ -158,5 +171,14 @@ public class FileSqlConnector implements SqlConnector {
     @Override
     public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
         return true;
+    }
+
+    @Override
+    public Set<String> nonSensitiveConnectorOptions() {
+        Set<String> set = SqlConnector.super.nonSensitiveConnectorOptions();
+        // Note: OPTION_PATH and OPTION_GLOB are considered sensitive and won't be returned.
+        set.add(OPTION_SHARED_FILE_SYSTEM);
+        set.add(OPTION_IGNORE_FILE_NOT_FOUND);
+        return set;
     }
 }

@@ -33,7 +33,7 @@ import java.nio.charset.CharsetDecoder;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.internal.util.JVMUtil.upcast;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 

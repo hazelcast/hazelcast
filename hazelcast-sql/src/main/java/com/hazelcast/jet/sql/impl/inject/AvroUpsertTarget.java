@@ -16,27 +16,67 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.google.common.collect.ImmutableMap;
+import com.hazelcast.internal.util.collection.DefaultedMap;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericContainer;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericRecordBuilder;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.function.Predicate;
+
+import static com.google.common.collect.Sets.toImmutableEnumSet;
+import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.AVRO_TO_SQL;
+import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
+import static org.apache.avro.Schema.Type.BOOLEAN;
+import static org.apache.avro.Schema.Type.DOUBLE;
+import static org.apache.avro.Schema.Type.FLOAT;
+import static org.apache.avro.Schema.Type.INT;
+import static org.apache.avro.Schema.Type.LONG;
+import static org.apache.avro.Schema.Type.STRING;
 
 @NotThreadSafe
-class AvroUpsertTarget implements UpsertTarget {
+public class AvroUpsertTarget implements UpsertTarget {
+    // We try to preserve the precision. Floating-point numbers may underflow,
+    // i.e. become 0 due to being very small, when converted to an integer.
+    public static final DefaultedMap<Class<?>, List<Schema.Type>> CONVERSION_PREFS = new DefaultedMap<>(
+            // TODO We may consider supporting temporal types <-> int/long conversions (globally).
+            ImmutableMap.<Class<?>, List<Schema.Type>>builder()
+                    .put(Boolean.class, List.of(BOOLEAN, STRING))
+                    .put(Byte.class, List.of(INT, LONG, FLOAT, DOUBLE, STRING))
+                    .put(Short.class, List.of(INT, LONG, FLOAT, DOUBLE, STRING))
+                    .put(Integer.class, List.of(INT, LONG, DOUBLE, STRING, FLOAT))
+                    .put(Long.class, List.of(LONG, INT, STRING, DOUBLE, FLOAT))
+                    .put(Float.class, List.of(FLOAT, DOUBLE, STRING, INT, LONG))
+                    .put(Double.class, List.of(DOUBLE, FLOAT, STRING, LONG, INT))
+                    .put(BigDecimal.class, List.of(STRING, LONG, DOUBLE, INT, FLOAT))
+                    .put(String.class, List.of(STRING, LONG, DOUBLE, INT, FLOAT, BOOLEAN))
+                    .put(LocalTime.class, List.of(STRING))
+                    .put(LocalDate.class, List.of(STRING))
+                    .put(LocalDateTime.class, List.of(STRING))
+                    .put(OffsetDateTime.class, List.of(STRING))
+                    .build(),
+            List.of(STRING));
 
     private final Schema schema;
 
     private GenericRecordBuilder record;
 
-    AvroUpsertTarget(String schema) {
-        this.schema = new Schema.Parser().parse(schema);
+    AvroUpsertTarget(Schema schema) {
+        this.schema = schema;
     }
 
     @Override
@@ -45,53 +85,54 @@ class AvroUpsertTarget implements UpsertTarget {
             return FAILING_TOP_LEVEL_INJECTOR;
         }
 
-        switch (type.getTypeFamily()) {
-            case TINYINT:
-                return value -> record.set(path, value == null ? null : ((Byte) value).intValue());
-            case SMALLINT:
-                return value -> record.set(path, value == null ? null : ((Short) value).intValue());
+        Schema fieldSchema = unwrapNullableType(schema.getField(path).schema());
+        Schema.Type fieldSchemaType = fieldSchema.getType();
+        switch (fieldSchemaType) {
             case BOOLEAN:
-            case INTEGER:
-            case BIGINT:
-            case REAL:
+            case INT:
+            case LONG:
+            case FLOAT:
             case DOUBLE:
-                return value -> record.set(path, value);
-            case DECIMAL:
-            case TIME:
-            case DATE:
-            case TIMESTAMP:
-            case TIMESTAMP_WITH_TIME_ZONE:
-            case VARCHAR:
-                return value -> record.set(path, QueryDataType.VARCHAR.convert(value));
-            case OBJECT:
-                return createObjectInjector(path);
+            case STRING:
+                QueryDataType targetType = AVRO_TO_SQL.getOrDefault(fieldSchemaType);
+                return value -> {
+                    try {
+                        record.set(path, targetType.convert(value));
+                    } catch (QueryException e) {
+                        throw QueryException.error("Cannot convert " + value + " to " + fieldSchemaType
+                                + " (field=" + path + ")");
+                    }
+                };
+            case UNION:
+                Predicate<Schema.Type> hasType = fieldSchema.getTypes().stream()
+                        .map(Schema::getType).collect(toImmutableEnumSet())::contains;
+                DefaultedMap<Class<?>, List<QueryDataType>> availableTargets =
+                        CONVERSION_PREFS.mapKeysAndValues(identity(), targets -> targets.stream()
+                                .filter(hasType).map(AVRO_TO_SQL::getOrDefault).collect(toList()));
+                return value -> {
+                    if (value == null) {
+                        record.set(path, null);
+                        return;
+                    }
+                    for (QueryDataType target : availableTargets.getOrDefault(value.getClass())) {
+                        try {
+                            record.set(path, target.convert(value));
+                            return;
+                        } catch (QueryException ignored) { }
+                    }
+                    throw QueryException.error("Not in union " + fieldSchema + ": " + value + " ("
+                            + value.getClass().getSimpleName() + ") (field=" + path + ")");
+                };
+            case NULL:
+                return value -> {
+                    if (value != null) {
+                        throw QueryException.error("Cannot convert " + value + " to NULL (field=" + path + ")");
+                    }
+                    record.set(path, null);
+                };
             default:
-                throw QueryException.error("Unsupported type: " + type);
+                throw QueryException.error("Schema type " + fieldSchemaType + " is unsupported (field=" + path + ")");
         }
-    }
-
-    private UpsertInjector createObjectInjector(String path) {
-        return value -> {
-            if (value == null) {
-                record.set(path, null);
-            } else if (value instanceof GenericContainer) {
-                throw QueryException.error("Cannot set value of type " + value.getClass().getName()
-                        + " to field \"" + path + "\"");
-            } else if (value instanceof Byte) {
-                record.set(path, ((Byte) value).intValue());
-            } else if (value instanceof Short) {
-                record.set(path, ((Short) value).intValue());
-            } else if (value instanceof Boolean
-                    || value instanceof Integer
-                    || value instanceof Long
-                    || value instanceof Float
-                    || value instanceof Double
-            ) {
-                record.set(path, value);
-            } else {
-                record.set(path, QueryDataType.VARCHAR.convert(value));
-            }
-        };
     }
 
     @Override

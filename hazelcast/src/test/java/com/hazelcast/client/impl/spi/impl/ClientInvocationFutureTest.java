@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
@@ -29,10 +28,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CancellationException;
@@ -40,11 +37,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -55,9 +53,6 @@ import static org.mockito.Mockito.verify;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientInvocationFutureTest {
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     private ClientMessage request;
     private ClientMessage response;
@@ -104,52 +99,50 @@ public class ClientInvocationFutureTest {
         assertTrue(invocationFuture.isDone());
         assertFalse(invocationFuture.isCancelled());
         assertTrue(invocationFuture.isCompletedExceptionally());
-        expected.expect(ExecutionException.class);
-        expected.expectCause(new RootCauseMatcher(IllegalArgumentException.class));
-        invocationFuture.get();
+        assertThatThrownBy(() -> invocationFuture.get())
+                .isInstanceOf(ExecutionException.class)
+                .cause().has(rootCause(IllegalArgumentException.class));
     }
 
     @Test
     public void test_exceptionalCompletion_withJoin() {
         invocationFuture.completeExceptionally(new IllegalArgumentException());
 
-        expected.expect(CompletionException.class);
-        expected.expectCause(new RootCauseMatcher(IllegalArgumentException.class));
-        invocationFuture.join();
+        assertThatThrownBy(() -> invocationFuture.get())
+                .isInstanceOf(ExecutionException.class)
+                .cause().has(rootCause(IllegalArgumentException.class));
     }
 
     @Test
     public void test_exceptionalCompletion_withJoinInternal() {
         invocationFuture.completeExceptionally(new IllegalArgumentException());
 
-        expected.expect(IllegalArgumentException.class);
-        invocationFuture.joinInternal();
+        assertThatThrownBy(() -> invocationFuture.joinInternal())
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    public void test_interruptionDuringGet()
-            throws ExecutionException, InterruptedException {
+    public void test_interruptionDuringGet() {
         Thread thisThread = Thread.currentThread();
         Thread t = new Thread(() -> {
             sleepSeconds(2);
             thisThread.interrupt();
         });
         t.start();
-        expected.expect(InterruptedException.class);
-        invocationFuture.get();
+        assertThatThrownBy(() -> invocationFuture.get())
+                .isInstanceOf(InterruptedException.class);
     }
 
     @Test
-    public void test_interruptionDuringGetWithTimeout()
-            throws ExecutionException, InterruptedException, TimeoutException {
+    public void test_interruptionDuringGetWithTimeout() {
         Thread thisThread = Thread.currentThread();
         Thread t = new Thread(() -> {
             sleepSeconds(2);
             thisThread.interrupt();
         });
         t.start();
-        expected.expect(InterruptedException.class);
-        invocationFuture.get(30, TimeUnit.SECONDS);
+        assertThatThrownBy(() -> invocationFuture.get(30, TimeUnit.SECONDS))
+                .isInstanceOf(InterruptedException.class);
     }
 
     @Test
@@ -160,9 +153,9 @@ public class ClientInvocationFutureTest {
             thisThread.interrupt();
         });
         t.start();
-        expected.expect(CompletionException.class);
-        expected.expectCause(new RootCauseMatcher(InterruptedException.class));
-        invocationFuture.join();
+        assertThatThrownBy(invocationFuture::join)
+                .isInstanceOf(CompletionException.class)
+                .cause().has(rootCause(InterruptedException.class));
     }
 
     @Test
@@ -172,8 +165,8 @@ public class ClientInvocationFutureTest {
 
         assertTrue(invocationFuture.isDone());
         assertTrue(invocationFuture.isCancelled());
-        expected.expect(CancellationException.class);
-        invocationFuture.get();
+        assertThatThrownBy(() -> invocationFuture.get())
+                .isInstanceOf(CancellationException.class);
     }
 
     @Test

@@ -26,9 +26,8 @@ import java.util.Map;
 
 import static com.hazelcast.kubernetes.KubernetesClient.Endpoint;
 import static com.hazelcast.kubernetes.KubernetesClient.EndpointAddress;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class KubernetesApiProviderTest {
 
@@ -48,8 +47,7 @@ public abstract class KubernetesApiProviderTest {
         //when
         Map<EndpointAddress, String> nodes = provider.extractNodes(endpointsJson, privateAddresses);
         //then
-        assertThat(format(nodes), containsInAnyOrder(toString("192.168.0.25", 5701, "node-name-1"),
-                toString("172.17.0.5", 5701, "node-name-2")));
+        assertThat(format(nodes)).containsExactlyInAnyOrder(toString("192.168.0.25", 5701, "node-name-1"), toString("172.17.0.5", 5701, "node-name-2"));
     }
 
     @Test
@@ -74,8 +72,7 @@ public abstract class KubernetesApiProviderTest {
     public void parseEndpointsList() {
         JsonObject endpointsListJson = Json.parse(getEndpointsListResponse()).asObject();
         List<Endpoint> endpoints = provider.parseEndpointsList(endpointsListJson);
-        assertThat(format(endpoints),
-                containsInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5702), notReady("172.17.0.6", 5702)));
+        assertThat(format(endpoints)).containsExactlyInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5702), notReady("172.17.0.6", 5702));
 
     }
 
@@ -83,7 +80,7 @@ public abstract class KubernetesApiProviderTest {
     public void parseEndpoints() {
         JsonObject endpointsListJson = Json.parse(getEndpointsResponse()).asObject();
         List<Endpoint> endpoints = provider.parseEndpoints(endpointsListJson);
-        assertThat(format(endpoints), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5701)));
+        assertThat(format(endpoints)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5701));
 
     }
 
@@ -97,8 +94,7 @@ public abstract class KubernetesApiProviderTest {
         //when
         Map<EndpointAddress, String> services = provider.extractServices(endpointsJson, privateAddresses);
         //then
-        assertThat(format(services), containsInAnyOrder(toString("192.168.0.25", 5701, "hazelcast-0"),
-                toString("172.17.0.5", 5701, "service-1")));
+        assertThat(format(services)).containsExactlyInAnyOrder(toString("192.168.0.25", 5701, "hazelcast-0"), toString("172.17.0.5", 5701, "service-1"));
     }
 
     private static List<String> format(List<Endpoint> addresses) {

@@ -54,7 +54,6 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -276,7 +275,7 @@ public class ProcessorTaskletTest {
 
         final ProcessorTasklet t = new ProcessorTasklet(context, executor,
                 new DefaultSerializationServiceBuilder().build(), processor, instreams, outstreams,
-                mock(SnapshotContext.class), new MockOutboundCollector(10), false);
+                new MockSnapshotContext(), new MockOutboundCollector(10), false);
         t.init();
         return t;
     }

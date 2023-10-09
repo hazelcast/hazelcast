@@ -59,7 +59,7 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.hamcrest.core.Is.isA;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -121,24 +121,25 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
 
     @Test
     public void prepare_step_throws_reached_max_size_exception_when_two_phase() {
-        expectedException.expect(TransactionException.class);
-        expectedException.expectCause(isA(ReachedMaxSizeException.class));
+        assertThatThrownBy(() -> {
+            String mapName = "map";
+            long maxWbqCapacity = 100;
 
-        String mapName = "map";
-        long maxWbqCapacity = 100;
+            Config config = getConfig(mapName, maxWbqCapacity);
+            HazelcastInstance node = createHazelcastInstance(config);
 
-        Config config = getConfig(mapName, maxWbqCapacity);
-        HazelcastInstance node = createHazelcastInstance(config);
+            TransactionContext context = newTransactionContext(node, TWO_PHASE);
+            context.beginTransaction();
 
-        TransactionContext context = newTransactionContext(node, TWO_PHASE);
-        context.beginTransaction();
+            TransactionalMap<String, String> map = context.getMap(mapName);
 
-        TransactionalMap map = context.getMap(mapName);
-
-        for (int i = 0; i < 101; i++) {
-            map.put("item-" + i, "value");
-        }
-        context.commitTransaction();
+            for (int i = 0; i < 101; i++) {
+                map.put("item-" + i, "value");
+            }
+            context.commitTransaction();
+        })
+                .isInstanceOf(TransactionException.class)
+                .hasCauseInstanceOf(ReachedMaxSizeException.class);
     }
 
     private static TransactionContext newTransactionContext(HazelcastInstance node,

@@ -25,6 +25,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
@@ -79,7 +80,7 @@ public class MapLoadAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "loadAll";
+        return SecurityInterceptorConstants.LOAD_ALL;
     }
 
     @Override

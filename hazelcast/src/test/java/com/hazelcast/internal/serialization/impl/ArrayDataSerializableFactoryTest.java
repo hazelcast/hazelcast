@@ -28,8 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -51,7 +50,7 @@ public class ArrayDataSerializableFactoryTest {
 
         assertNull(factory.create(-1));
         assertNull(factory.create(1));
-        assertThat(factory.create(0), instanceOf(SampleIdentifiedDataSerializable.class));
+        assertThat(factory.create(0)).isInstanceOf(SampleIdentifiedDataSerializable.class);
     }
 
     @Test

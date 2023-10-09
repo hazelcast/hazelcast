@@ -34,9 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.LAZY;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.lessThan;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -58,7 +56,7 @@ public class MapLoaderUnexpectedLoadedItemsTest extends HazelcastTestSupport {
 
         map.loadAll(true);
 
-        assertThat(map.size(), lessThan(KEYS_TO_LOAD.length));
+        assertThat(map.size()).isLessThan(KEYS_TO_LOAD.length);
 
         instance.shutdown();
     }
@@ -75,7 +73,7 @@ public class MapLoaderUnexpectedLoadedItemsTest extends HazelcastTestSupport {
 
         map.loadAll(true);
 
-        assertThat(map.size(), equalTo(KEYS_TO_LOAD.length));
+        assertThat(map.size()).isEqualTo(KEYS_TO_LOAD.length);
 
         instance.shutdown();
     }

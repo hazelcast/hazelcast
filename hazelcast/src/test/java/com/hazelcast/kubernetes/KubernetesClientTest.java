@@ -76,10 +76,8 @@ import static com.hazelcast.kubernetes.KubernetesFakeUtils.serviceLbHost;
 import static com.hazelcast.kubernetes.KubernetesFakeUtils.servicePort;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -125,14 +123,14 @@ public class KubernetesClientTest {
                 + "}";
         stub(String.format("/apis/discovery.k8s.io/v1/namespaces/%s/endpointslices", NAMESPACE),
                 404, endpointSlicesResponse);
-        assertThat(kubernetesClient.buildKubernetesApiUrlProvider(), instanceOf(KubernetesApiEndpointProvider.class));
+        assertThat(kubernetesClient.buildKubernetesApiUrlProvider()).isInstanceOf(KubernetesApiEndpointProvider.class);
     }
 
     @Test
     public void buildKubernetesApiUrlProviderReturnsEndpointSlicesProvider() throws JsonProcessingException {
         stub(String.format("/apis/discovery.k8s.io/v1/namespaces/%s/endpointslices", NAMESPACE),
                 endpointSliceList(Collections.singletonList(443), "34.68.96.71"));
-        assertThat(kubernetesClient.buildKubernetesApiUrlProvider(), instanceOf(KubernetesApiEndpointSlicesProvider.class));
+        assertThat(kubernetesClient.buildKubernetesApiUrlProvider()).isInstanceOf(KubernetesApiEndpointSlicesProvider.class);
     }
 
     @Test
@@ -151,8 +149,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(formatPrivate(result),
-                containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702), notReady("172.17.0.7", null)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702), notReady("172.17.0.7", null));
     }
 
     @Test
@@ -165,7 +162,7 @@ public class KubernetesClientTest {
                 endpointsList(
                         endpoints("192.168.0.25", "hazelcast-1",
                                 endpointPort("some-port", 5701),
-                                endpointPort("hazelcast-service-port", 5702)),
+                                endpointPort("hazelcast", 5702)),
                         endpoints("172.17.0.5", "172.17.0.6", "hazelcast-1", 5701)
                 ));
         stub(String.format("/api/v1/namespaces/%s/pods/hazelcast-0", NAMESPACE),
@@ -178,8 +175,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpointsByServiceLabel(serviceLabel, serviceLabelValue);
 
         // then
-        assertThat(formatPrivate(result),
-                containsInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5701), notReady("172.17.0.6", 5701)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5701), notReady("172.17.0.6", 5701));
     }
 
     @Test
@@ -192,7 +188,7 @@ public class KubernetesClientTest {
                 endpointsList(
                         endpoints("192.168.0.25", "hazelcast-1",
                                 endpointPort("some-port", 5701),
-                                endpointPort("hazelcast-service-port", 5702)),
+                                endpointPort("hazelcast", 5702)),
                         endpoints("172.17.0.5", "172.17.0.6", "hazelcast-1", 5701)
                 ));
         stub(String.format("/api/v1/namespaces/%s/pods/hazelcast-0", NAMESPACE),
@@ -204,8 +200,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpointsByServiceLabel(serviceLabels, serviceLabelValues);
 
         // then
-        assertThat(formatPrivate(result),
-                containsInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5701), notReady("172.17.0.6", 5701)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5701), notReady("172.17.0.6", 5701));
     }
 
     @Test
@@ -223,7 +218,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpointsByName(serviceName);
 
         // then
-        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5702));
     }
 
     @Test
@@ -245,8 +240,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpointsByPodLabel(podLabel, podLabelValue);
 
         // then
-        assertThat(formatPrivate(result),
-                containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702));
     }
 
 
@@ -269,8 +263,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpointsByPodLabel(podLabel, podLabelValue);
 
         // then
-        assertThat(formatPrivate(result),
-                containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702));
     }
 
     @Test
@@ -380,8 +373,8 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
-        assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 32123), ready("35.232.226.201", 32124)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702));
+        assertThat(formatPublic(result)).containsExactlyInAnyOrder(ready("35.232.226.200", 32123), ready("35.232.226.201", 32124));
     }
 
     @Test
@@ -403,8 +396,8 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
-        assertThat(formatPublic(result), containsInAnyOrder(ready("abc.hostname", 32123), ready("abc2.hostname", 32124)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702));
+        assertThat(formatPublic(result)).containsExactlyInAnyOrder(ready("abc.hostname", 32123), ready("abc2.hostname", 32124));
     }
 
     @Test
@@ -426,8 +419,8 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
-        assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702));
+        assertThat(formatPublic(result)).containsExactlyInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917));
     }
 
     @Test
@@ -453,8 +446,8 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
-        assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702));
+        assertThat(formatPublic(result)).containsExactlyInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917));
     }
 
     @Test
@@ -482,8 +475,8 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
-        assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702));
+        assertThat(formatPublic(result)).containsExactlyInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917));
     }
 
     @Test
@@ -511,8 +504,8 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
-        assertThat(formatPublic(result), containsInAnyOrder(ready("node-name-1", 31916), ready("node-name-2", 31917)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702));
+        assertThat(formatPublic(result)).containsExactlyInAnyOrder(ready("node-name-1", 31916), ready("node-name-2", 31917));
     }
 
     @Test
@@ -534,7 +527,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702));
     }
 
     @Test(expected = KubernetesClientException.class)
@@ -666,8 +659,8 @@ public class KubernetesClientTest {
 
         List<Endpoint> result = kubernetesClient.endpoints();
 
-        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
-        assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 32124), ready("35.232.226.201", 32124)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702));
+        assertThat(formatPublic(result)).containsExactlyInAnyOrder(ready("35.232.226.200", 32124), ready("35.232.226.201", 32124));
     }
 
     @Test
@@ -700,8 +693,8 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpoints();
 
         // then
-        assertThat(formatPrivate(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5701)));
-        assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5701));
+        assertThat(formatPublic(result)).containsExactlyInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917));
     }
 
     @Test
@@ -742,7 +735,7 @@ public class KubernetesClientTest {
 
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), prodsJsonResponse);
         List<Endpoint> result = kubernetesClient.endpoints();
-        assertThat(formatPrivate(result), containsInAnyOrder(ready("172.17.0.5", 5701), ready("172.17.1.5", 5701)));
+        assertThat(formatPrivate(result)).containsExactlyInAnyOrder(ready("172.17.0.5", 5701), ready("172.17.1.5", 5701));
     }
 
     private static PodList podsListResponse() throws JsonProcessingException {

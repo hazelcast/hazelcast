@@ -20,7 +20,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,13 +37,11 @@ import java.util.Map;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.createMockVisitablePredicate;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.createPassthroughVisitor;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@SuppressWarnings("rawtypes")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NotPredicateTest {
@@ -60,7 +58,7 @@ public class NotPredicateTest {
         NotPredicate notPredicate = new NotPredicate(inner);
         Predicate negate = notPredicate.negate();
 
-        assertThat(negate, sameInstance(inner));
+        assertThat(negate).isSameAs(inner);
     }
 
     @Test
@@ -91,18 +89,18 @@ public class NotPredicateTest {
     @Test
     public void accept_whenNullPredicate_thenReturnItself() {
         Visitor mockVisitor = createPassthroughVisitor();
-        Indexes mockIndexes = mock(Indexes.class);
+        IndexRegistry mockIndexes = mock(IndexRegistry.class);
 
         NotPredicate notPredicate = new NotPredicate(null);
         NotPredicate result = (NotPredicate) notPredicate.accept(mockVisitor, mockIndexes);
 
-        assertThat(result, sameInstance(notPredicate));
+        assertThat(result).isSameAs(notPredicate);
     }
 
     @Test
     public void accept_whenPredicateChangedOnAccept_thenReturnAndNewNotPredicate() {
         Visitor mockVisitor = createPassthroughVisitor();
-        Indexes mockIndexes = mock(Indexes.class);
+        IndexRegistry mockIndexes = mock(IndexRegistry.class);
 
         Predicate transformed = mock(Predicate.class);
         Predicate predicate = createMockVisitablePredicate(transformed);
@@ -110,8 +108,8 @@ public class NotPredicateTest {
         NotPredicate notPredicate = new NotPredicate(predicate);
         NotPredicate result = (NotPredicate) notPredicate.accept(mockVisitor, mockIndexes);
 
-        assertThat(result, not(sameInstance(notPredicate)));
-        assertThat(result.predicate, equalTo(transformed));
+        assertThat(result).isNotSameAs(notPredicate);
+        assertThat(result.predicate).isEqualTo(transformed);
     }
 
     @Test

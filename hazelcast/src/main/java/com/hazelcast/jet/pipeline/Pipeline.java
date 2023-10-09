@@ -127,7 +127,7 @@ public interface Pipeline extends Serializable {
      * @deprecated since Jet 4.3, Jet performs this transformation on the server-side.
      */
     @Nonnull
-    @Deprecated()
+    @Deprecated
     DAG toDag();
 
     /**

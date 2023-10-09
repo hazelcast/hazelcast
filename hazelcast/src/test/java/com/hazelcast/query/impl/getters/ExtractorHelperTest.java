@@ -23,10 +23,8 @@ import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -41,9 +39,8 @@ import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeN
 import static groovy.util.GroovyTestCase.assertEquals;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.isA;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -63,9 +60,6 @@ public class ExtractorHelperTest {
     @Parameter
     public boolean useClassloader;
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
-
     @Test
     public void instantiate_extractor() {
         // GIVEN
@@ -76,7 +70,7 @@ public class ExtractorHelperTest {
         ValueExtractor extractor = instantiateExtractor(config);
 
         // THEN
-        assertThat(extractor, instanceOf(IqExtractor.class));
+        assertThat(extractor).isInstanceOf(IqExtractor.class);
     }
 
     @Test
@@ -84,12 +78,10 @@ public class ExtractorHelperTest {
         // GIVEN
         AttributeConfig config = new AttributeConfig("iq", "not.existing.class");
 
-        // EXPECT
-        expected.expect(IllegalArgumentException.class);
-        expected.expectCause(isA(ClassNotFoundException.class));
-
         // WHEN
-        instantiateExtractor(config);
+        assertThatThrownBy(() -> instantiateExtractor(config))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasCauseInstanceOf(ClassNotFoundException.class);
     }
 
     @Test
@@ -105,8 +97,8 @@ public class ExtractorHelperTest {
                 instantiateExtractors(asList(iqExtractor, nameExtractor));
 
         // THEN
-        assertThat(extractors.get("iq"), instanceOf(IqExtractor.class));
-        assertThat(extractors.get("name"), instanceOf(NameExtractor.class));
+        assertThat(extractors.get("iq")).isInstanceOf(IqExtractor.class);
+        assertThat(extractors.get("name")).isInstanceOf(NameExtractor.class);
     }
 
     @Test
@@ -125,8 +117,8 @@ public class ExtractorHelperTest {
         Map<String, ValueExtractor> extractors = instantiateExtractors(asList(iqExtractor, nameExtractor));
 
         // THEN
-        assertThat(extractors.get("iq"), instanceOf(IqExtractor.class));
-        assertThat(extractors.get("name"), instanceOf(NameExtractor.class));
+        assertThat(extractors.get("iq")).isInstanceOf(IqExtractor.class);
+        assertThat(extractors.get("name")).isInstanceOf(NameExtractor.class);
     }
 
     @Test
@@ -136,12 +128,10 @@ public class ExtractorHelperTest {
                 = new AttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
         AttributeConfig nameExtractor = new AttributeConfig("name", "not.existing.class");
 
-        // EXPECT
-        expected.expect(IllegalArgumentException.class);
-        expected.expectCause(isA(ClassNotFoundException.class));
-
         // WHEN
-        instantiateExtractors(asList(iqExtractor, nameExtractor));
+        assertThatThrownBy(() -> instantiateExtractors(asList(iqExtractor, nameExtractor)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasCauseInstanceOf(ClassNotFoundException.class);
     }
 
     @Test
@@ -152,11 +142,9 @@ public class ExtractorHelperTest {
         AttributeConfig iqExtractorDuplicate
                 = new AttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
 
-        // EXPECT
-        expected.expect(IllegalArgumentException.class);
-
         // WHEN
-        instantiateExtractors(asList(iqExtractor, iqExtractorDuplicate));
+        assertThatThrownBy(() -> instantiateExtractors(asList(iqExtractor, iqExtractorDuplicate)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -164,11 +152,9 @@ public class ExtractorHelperTest {
         // GIVEN
         AttributeConfig string = new AttributeConfig("iq", "java.lang.String");
 
-        // EXPECT
-        expected.expect(IllegalArgumentException.class);
-
         // WHEN
-        instantiateExtractors(singletonList(string));
+        assertThatThrownBy(() -> instantiateExtractors(singletonList(string)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -177,11 +163,9 @@ public class ExtractorHelperTest {
         AttributeConfig string
                 = new AttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$InitExceptionExtractor");
 
-        // EXPECT
-        expected.expect(IllegalArgumentException.class);
-
         // WHEN
-        instantiateExtractors(singletonList(string));
+        assertThatThrownBy(() -> instantiateExtractors(singletonList(string)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -190,11 +174,9 @@ public class ExtractorHelperTest {
         AttributeConfig string
                 = new AttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$AccessExceptionExtractor");
 
-        // EXPECT
-        expected.expect(IllegalArgumentException.class);
-
         // WHEN
-        instantiateExtractors(singletonList(string));
+        assertThatThrownBy(() -> instantiateExtractors(singletonList(string)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

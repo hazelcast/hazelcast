@@ -260,7 +260,7 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_createCloseLoop_withNewReactor() {
-        SocketAddress local = new InetSocketAddress("127.0.0.1", 5001);
+        SocketAddress local = new InetSocketAddress("127.0.0.1", 5003);
         for (int k = 0; k < 1000; k++) {
             Reactor reactor = newReactor();
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()

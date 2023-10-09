@@ -54,8 +54,7 @@ public class MergePolicyValidatorMultiMapIntegrationTest extends AbstractMergePo
     public void testMultiMap_withHyperLogLogMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("cardinalityEstimator", hyperLogLogMergePolicy);
 
-        expectCardinalityEstimatorException();
-        hz.getMultiMap("cardinalityEstimator");
+        expectCardinalityEstimatorException(() -> hz.getMultiMap("cardinalityEstimator"));
     }
 
     @Test
@@ -69,7 +68,6 @@ public class MergePolicyValidatorMultiMapIntegrationTest extends AbstractMergePo
     public void testMultiMap_withInvalidMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("invalid", invalidMergePolicyConfig);
 
-        expectedInvalidMergePolicyException();
-        hz.getMultiMap("invalid");
+        expectedInvalidMergePolicyException(() -> hz.getMultiMap("invalid"));
     }
 }

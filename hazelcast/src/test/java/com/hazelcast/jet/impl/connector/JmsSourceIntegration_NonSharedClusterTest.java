@@ -40,8 +40,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.jms.ConnectionFactory;
-import javax.jms.TextMessage;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.TextMessage;
 import java.io.Serializable;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
@@ -52,9 +52,8 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.DAYS;
-import static org.hamcrest.Matchers.isIn;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -140,7 +139,7 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
         if (expectFailure) {
             // the job should be repeatedly restarted due to the snapshot failure. It goes through NOT_RUNNING and STARTING
             // states, we should observe one of those eventually
-            assertTrueEventually(() -> assertThat(job.getStatus(), isIn(asList(NOT_RUNNING, STARTING))));
+            assertTrueEventually(() -> assertThat(job.getStatus()).isIn(asList(NOT_RUNNING, STARTING)));
             assertTrue(storeFailed);
         } else {
             assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 3);

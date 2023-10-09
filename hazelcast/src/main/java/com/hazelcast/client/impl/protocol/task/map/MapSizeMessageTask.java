@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -82,7 +83,7 @@ public class MapSizeMessageTask
 
     @Override
     public String getMethodName() {
-        return "size";
+        return SecurityInterceptorConstants.SIZE;
     }
 
     @Override

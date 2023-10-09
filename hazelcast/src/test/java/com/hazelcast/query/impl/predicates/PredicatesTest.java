@@ -62,10 +62,8 @@ import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.query.Predicates.regex;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -252,7 +250,9 @@ public class PredicatesTest extends HazelcastTestSupport {
     public void testILike_Id() {
         ILikePredicate predicate = (ILikePredicate) ilike(ATTRIBUTE, "Java_World");
 
-        assertThat(predicate.getClassId(), allOf(equalTo(6), equalTo(PredicateDataSerializerHook.ILIKE_PREDICATE)));
+        assertThat(predicate.getClassId())
+                .isEqualTo(6)
+                .isEqualTo(PredicateDataSerializerHook.ILIKE_PREDICATE);
     }
 
     @Test
@@ -300,7 +300,7 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testInNullWithNullArray() {
-        Predicates.in(ATTRIBUTE, null);
+        Predicates.in(ATTRIBUTE, (Comparable<?>[]) null);
     }
 
     private class DummyEntry extends QueryEntry {

@@ -20,8 +20,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.JobStateSnapshot;
+import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -38,9 +38,9 @@ import com.hazelcast.jet.impl.operation.GetJobSuspensionCauseOperation;
 import com.hazelcast.jet.impl.operation.IsJobUserCancelledOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
-import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
+import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -48,6 +48,8 @@ import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -64,14 +66,13 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         super(nodeEngine, jobId, coordinator);
     }
 
-    public JobProxy(
-            NodeEngineImpl engine,
-            long jobId,
-            boolean isLightJob,
-            @Nonnull Object jobDefinition,
-            @Nonnull JobConfig config
-    ) {
-        super(engine, jobId, isLightJob, jobDefinition, config);
+    public JobProxy(NodeEngineImpl nodeEngine,
+                    long jobId,
+                    boolean isLightJob,
+                    Object jobDefinition,
+                    JobConfig config,
+                    @Nullable Subject subject) {
+        super(nodeEngine, jobId, isLightJob, jobDefinition, config, subject);
     }
 
     @Nonnull @Override
@@ -139,10 +140,10 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
             Data configData = serializationService().toData(config);
             Data jobDefinitionData = serializationService().toData(jobDefinition);
             return invokeOp(new SubmitJobOperation(
-                    getId(), null, null, jobDefinitionData, configData, isLightJob(), null));
+                    getId(), null, null, jobDefinitionData, configData, isLightJob(), subject));
         }
         return invokeOp(new SubmitJobOperation(
-                getId(), jobDefinition, config, null, null, isLightJob(), null));
+                getId(), jobDefinition, config, null, null, isLightJob(), subject));
     }
 
     @Override
@@ -236,7 +237,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
                 .invoke();
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     protected Address masterId() {
         Address masterAddress = container().getMasterAddress();
         if (masterAddress == null) {

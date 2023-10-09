@@ -26,18 +26,17 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.Properties;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -48,9 +47,6 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class MemberAddressProviderTest {
-
-    @Rule
-    public ExpectedException rule = ExpectedException.none();
 
     @After
     public void tearDown() {
@@ -236,9 +232,9 @@ public class MemberAddressProviderTest {
         final Config config = getConfig(mock);
 
         // we expect an BindException to be thrown (wrapped in an IllegalStateException)
-        rule.expect(HazelcastException.class);
-        rule.expect(new RootCauseMatcher(BindException.class));
-        Hazelcast.newHazelcastInstance(config);
+        assertThatThrownBy(() -> Hazelcast.newHazelcastInstance(config))
+                .isInstanceOf(HazelcastException.class)
+                .has(rootCause(BindException.class));
     }
 
     private Config getConfig(Class memberAddressProviderClass) {

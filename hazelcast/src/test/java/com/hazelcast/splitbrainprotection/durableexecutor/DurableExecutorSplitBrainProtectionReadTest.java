@@ -28,10 +28,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -41,7 +39,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.isA;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -55,9 +53,6 @@ public class DurableExecutorSplitBrainProtectionReadTest extends AbstractSplitBr
 
     @Parameter
     public static SplitBrainProtectionOn splitBrainProtectionOn;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void setUp() {
@@ -112,8 +107,8 @@ public class DurableExecutorSplitBrainProtectionReadTest extends AbstractSplitBr
 
     @Test
     public void retrieveResult_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).retrieveResult(125L).get();
+        assertThatThrownBy(() -> exec(3).retrieveResult(125L).get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     protected DurableExecutorService exec(int index) {

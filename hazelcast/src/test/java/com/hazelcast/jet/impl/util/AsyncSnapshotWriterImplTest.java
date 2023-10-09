@@ -27,7 +27,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.execution.SnapshotContext;
+import com.hazelcast.jet.impl.execution.MockSnapshotContext;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.CustomByteArrayOutputStream;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataKey;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataValueTerminator;
@@ -36,7 +36,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.core.StringContains;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -59,10 +58,8 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Stream.generate;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -78,7 +75,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     private IMap<SnapshotDataKey, byte[]> map;
     private InternalSerializationService serializationService;
     private InternalPartitionService partitionService;
-    private SnapshotContext snapshotContext;
+    private MockSnapshotContext snapshotContext;
 
     @Before
     public void before() {
@@ -93,12 +90,12 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         nodeEngine = Util.getNodeEngine(instance);
         serializationService = Util.getSerializationService(instance);
         partitionService = nodeEngine.getPartitionService();
-        snapshotContext = mock(SnapshotContext.class);
-        when(snapshotContext.currentMapName()).thenReturn("map1");
-        when(snapshotContext.currentSnapshotId()).thenReturn(0L);
+        snapshotContext = new MockSnapshotContext();
+        snapshotContext.setCurrentMapName("map1");
+        snapshotContext.setCurrentSnapshotId(0L);
         writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1,
                 (InternalSerializationService) nodeEngine.getSerializationService());
-        when(snapshotContext.currentSnapshotId()).thenReturn(1L); // simulates starting new snapshot
+        snapshotContext.setCurrentSnapshotId(1L); // simulates starting new snapshot
         map = instance.getMap("map1");
         assertTrue(writer.usableChunkCapacity > 0);
     }
@@ -113,7 +110,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     @Test
     public void test_flushingAtEdgeCases() {
         for (int i = 64; i < 196; i++) {
-            when(snapshotContext.currentMapName()).thenReturn(randomMapName());
+            snapshotContext.setCurrentMapName(randomMapName());
             writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1,
                     (InternalSerializationService) nodeEngine.getSerializationService());
             try {
@@ -262,14 +259,14 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     @Test
     public void when_error_then_reported() {
         // When
-        when(snapshotContext.currentMapName()).thenReturn(ALWAYS_FAILING_MAP);
+        snapshotContext.setCurrentMapName(ALWAYS_FAILING_MAP);
         Entry<Data, Data> entry = entry(serialize("k"), serialize("v"));
         assertTrue(writer.offer(entry));
         assertTrue(writer.flushAndResetMap());
 
         // Then
         assertTrueEventually(() ->
-                assertThat(String.valueOf(writer.getError()), StringContains.containsString("Always failing store")));
+                assertThat(String.valueOf(writer.getError())).contains("Always failing store"));
     }
 
     @Test
@@ -296,9 +293,9 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
     @Test
     public void when_noItemsAndNoCurrentMap_then_flushAndResetReturnsFalse() {
-        when(snapshotContext.currentMapName()).thenReturn(null);
+        snapshotContext.setCurrentMapName(null);
         assertFalse(writer.flushAndResetMap());
-        when(snapshotContext.currentMapName()).thenReturn("map1");
+        snapshotContext.setCurrentMapName("map1");
     }
 
     private void assertTargetMapEntry(String key, int sequence, int entryLength) {

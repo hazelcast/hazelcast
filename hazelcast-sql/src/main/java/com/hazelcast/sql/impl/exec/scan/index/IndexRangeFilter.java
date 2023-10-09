@@ -20,19 +20,19 @@ import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.AbstractIndex;
-import com.hazelcast.query.impl.Comparison;
-import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.Objects;
 
 /**
  * Filter the is used for range requests. Could have either lower bound, upper bound or both.
+ * <p>
+ * For non-composite index: matches only NOT NULL values. If any of the bounds
+ * is {@link com.hazelcast.query.impl.AbstractIndex#NULL}, matches nothing.
+ * <p>
+ * For composite index obeys {@link com.hazelcast.query.impl.CompositeValue} comparison rules,
+ * including special values (NULL, infinity).
  */
 @SuppressWarnings("rawtypes")
 public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable {
@@ -61,88 +61,24 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
     }
 
     public IndexRangeFilter(IndexFilterValue from, boolean fromInclusive, IndexFilterValue to, boolean toInclusive) {
+        assert from != null || to != null;
+        assert from != null || !fromInclusive : "Unspecified from end must not be inclusive";
+        assert to != null || !toInclusive : "Unspecified to end must not be inclusive";
+
         this.from = from;
         this.fromInclusive = fromInclusive;
         this.to = to;
         this.toInclusive = toInclusive;
     }
 
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    @Override
-    public Iterator<QueryableEntry> getEntries(InternalIndex index, boolean descending, ExpressionEvalContext evalContext) {
-        if (from != null) {
-            if (to != null) {
-                // Lower and upper bounds
-                Comparable fromValue = from.getValue(evalContext);
-
-                if (isNull(fromValue)) {
-                    return Collections.emptyIterator();
-                }
-
-                Comparable toValue = to.getValue(evalContext);
-
-                if (isNull(toValue)) {
-                    return Collections.emptyIterator();
-                }
-
-                return index.getSqlRecordIterator(fromValue, fromInclusive, toValue, toInclusive, descending);
-            } else {
-                // Lower bound only
-                Comparable fromValue = from.getValue(evalContext);
-                Comparison fromComparison = fromInclusive ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER;
-
-                if (isNull(fromValue)) {
-                    return Collections.emptyIterator();
-                }
-
-                return index.getSqlRecordIterator(fromComparison, fromValue, descending);
-            }
-        } else {
-            assert to != null;
-
-            // Upper bound only
-            Comparable toValue = to.getValue(evalContext);
-            Comparison toComparison = toInclusive ? Comparison.LESS_OR_EQUAL : Comparison.LESS;
-
-            if (isNull(toValue)) {
-                return Collections.emptyIterator();
-            }
-
-            return index.getSqlRecordIterator(toComparison, toValue, descending);
-        }
-    }
-
-    /**
-     * Check if the value is null, and hence its usage with any comparison operator cannot produce any row.
-     *
-     * @param value value
-     * @return {@code} true if the value is null
-     */
-    private static boolean isNull(Object value) {
-        // AbstractIndex.NULL is only returned for the "IS NULL" filter.
-        // For composite index the AbstractIndex.NULL is wrapped into a composite object.
-        // For non-composite index, we never produce the range filter for "IS NULL".
-        // Hence, AbstractIndex.NULL is not possible here.
-        assert value != AbstractIndex.NULL;
-
-        return value == null;
-    }
-
     @Override
     public Comparable getComparable(ExpressionEvalContext evalContext) {
-        return from != null ? from.getValue(evalContext) : to.getValue(evalContext);
+        throw new UnsupportedOperationException("Should not be called");
     }
 
     @Override
     public boolean isCooperative() {
-        boolean ret = true;
-        if (from != null) {
-            ret = from.isCooperative();
-        }
-        if (to != null) {
-            ret &= to.isCooperative();
-        }
-        return ret;
+        return (from == null || from.isCooperative()) && (to == null || to.isCooperative());
     }
 
     public IndexFilterValue getFrom() {

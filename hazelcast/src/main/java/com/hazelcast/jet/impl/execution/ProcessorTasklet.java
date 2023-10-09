@@ -88,7 +88,7 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_PR
 import static com.hazelcast.jet.impl.execution.ProcessorState.WAITING_FOR_SNAPSHOT_COMPLETED;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE_TIME;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;

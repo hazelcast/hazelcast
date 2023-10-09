@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.internal.util.IterationType;
@@ -84,7 +85,7 @@ public class MapKeySetMessageTask
 
     @Override
     public String getMethodName() {
-        return "keySet";
+        return SecurityInterceptorConstants.KEY_SET;
     }
 
     @Override

@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.kinesis;
 
-import com.amazonaws.SDKGlobalConfiguration;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
@@ -46,11 +45,10 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAXIMUM_KEY_LENGTH;
 import static com.hazelcast.jet.kinesis.KinesisSinks.MAX_RECORD_SIZE;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
-import static com.hazelcast.test.TestStringUtils.repeat;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
@@ -78,11 +76,9 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     @BeforeClass
     public static void beforeClass() {
         assumeDockerEnabled();
-        //Newer version of localstack with arm64 support fails in KinesisIntegrationTest
-        assumeNoArm64Architecture();
 
         localStack = new LocalStackContainer(parse("localstack/localstack")
-                .withTag("0.12.3"))
+                .withTag(LOCALSTACK_VERSION))
                 .withNetwork(NETWORK)
                 .withServices(Service.KINESIS)
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER));
@@ -93,10 +89,6 @@ public class KinesisFailureTest extends AbstractKinesisTest {
                 .withNetworkAliases("toxiproxy")
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER));
         toxiProxy.start();
-
-        System.setProperty(SDKGlobalConfiguration.AWS_CBOR_DISABLE_SYSTEM_PROPERTY, "true");
-        // with the jackson versions we use (2.11.x) Localstack doesn't without disabling CBOR
-        // https://github.com/localstack/localstack/issues/3208
 
         PROXY = toxiProxy.getProxy(localStack, 4566);
 
@@ -217,8 +209,8 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     @Test
     @Category(SerialTest.class)
     public void keyTooLong() {
-        Entry<String, byte[]> valid = entry(repeat("*", MAXIMUM_KEY_LENGTH), new byte[0]);
-        Entry<String, byte[]> invalid = entry(repeat("*", MAXIMUM_KEY_LENGTH + 1), new byte[0]);
+        Entry<String, byte[]> valid = entry("*".repeat(MAXIMUM_KEY_LENGTH), new byte[0]);
+        Entry<String, byte[]> invalid = entry("*".repeat(MAXIMUM_KEY_LENGTH + 1), new byte[0]);
         invalidInputToSink(valid, invalid, "Key too long");
     }
 

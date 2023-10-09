@@ -17,13 +17,19 @@
 package com.hazelcast.spi.utils;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.RestClientException;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -33,7 +39,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
-import static com.hazelcast.internal.nio.IOUtil.close;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -50,6 +56,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class})
 public class RestClientTest {
     private static final String API_ENDPOINT = "/some/endpoint";
     private static final String BODY_REQUEST = "some body request";
@@ -231,21 +239,29 @@ public class RestClientTest {
 
     @Test
     public void tls13SupportDefaultCacert() throws IOException {
-        Tls13CipherCheckingServer server = new Tls13CipherCheckingServer(new ServerSocket(0));
-        try {
-            new Thread(server).start();
-            RestClient.create("https://127.0.0.1:" + server.serverSocket.getLocalPort()).get();
-        } catch (Exception e) {
-            // whatever
-        } finally {
-            server.shutdownRequested = true;
-        }
-        assertTrue("No TLS 1.3 cipher used", server.tls13CipherFound.get());
+        assertTls13SupportInternal(null);
     }
 
     @Test
     public void tls13SupportCustomCacert() throws IOException {
-        Tls13CipherCheckingServer server = new Tls13CipherCheckingServer(new ServerSocket(0));
+        assertTls13SupportInternal("src/test/resources/kubernetes/ca.crt");
+    }
+
+    private void assertTls13SupportInternal(String caFileName) throws IOException {
+        try (Tls13CipherCheckingServer server = new Tls13CipherCheckingServer()) {
+            new Thread(server).start();
+            RestClient restClient = RestClient.create("https://127.0.0.1:" + server.getPort());
+            if (caFileName != null) {
+                restClient.withCaCertificates(readFile(caFileName));
+            }
+            try {
+                restClient.get();
+            } catch (Exception e) {
+                Logger.getLogger(getClass()).info("REST call failed (expected)", e);
+            }
+            assertTrueEventually(() -> assertTrue("No TLS 1.3 cipher used", server.tls13CipherFound.get()), 8);
+        }
+        /*
         try {
             new Thread(server).start();
             RestClient.createWithSSL("https://127.0.0.1:" + server.serverSocket.getLocalPort(),
@@ -255,22 +271,22 @@ public class RestClientTest {
         } finally {
             server.shutdownRequested = true;
         }
-        assertTrue("No TLS 1.3 cipher used", server.tls13CipherFound.get());
+         */
     }
 
     private String readFile(String fileName) throws IOException {
         return StringUtil.bytesToString(Files.readAllBytes(Paths.get(fileName)));
     }
 
-    static final class Tls13CipherCheckingServer implements Runnable {
+    static final class Tls13CipherCheckingServer implements Runnable, AutoCloseable {
         private static final ILogger LOGGER = Logger.getLogger(Tls13CipherCheckingServer.class);
 
-        final ServerSocket serverSocket;
-        volatile boolean shutdownRequested;
-        final AtomicBoolean tls13CipherFound = new AtomicBoolean();
+        private final AtomicBoolean tls13CipherFound = new AtomicBoolean();
+        private final ServerSocket serverSocket;
+        private volatile boolean shutdownRequested;
 
-        Tls13CipherCheckingServer(ServerSocket serverSocket) {
-            this.serverSocket = serverSocket;
+        Tls13CipherCheckingServer() throws IOException {
+            this.serverSocket = new ServerSocket(0);
             try {
                 this.serverSocket.setSoTimeout(500);
             } catch (SocketException e) {
@@ -279,35 +295,41 @@ public class RestClientTest {
             LOGGER.info("The server will be listening on port " + serverSocket.getLocalPort());
         }
 
+        public int getPort() {
+            return serverSocket.getLocalPort();
+        }
+
         public void run() {
-            try {
-                while (!(shutdownRequested || tls13CipherFound.get())) {
-                    try {
-                        Socket socket = serverSocket.accept();
-                        new Thread(() -> {
-                            LOGGER.info("Socket accepted " + socket);
-                            try {
-                                socket.setSoTimeout(5000);
-                                tls13CipherFound.compareAndSet(false, hasTls13Cipher(socket.getInputStream()));
-                            } catch (IOException e) {
-                                LOGGER.warning("Reading from the socket failed", e);
-                            } finally {
-                                close(socket);
-                            }
-                        }).start();
-                    } catch (SocketTimeoutException e) {
-                        // it's fine
-                    }
+            while (!(shutdownRequested || tls13CipherFound.get())) {
+                try {
+                    Socket socket = serverSocket.accept();
+                    new Thread(() -> {
+                        LOGGER.info("Socket accepted " + socket);
+                        try {
+                            socket.setSoTimeout(5000);
+                            tls13CipherFound.compareAndSet(false, hasTls13Cipher(socket.getInputStream()));
+                        } catch (IOException e) {
+                            LOGGER.warning("Reading from the socket (serverPort=" + getPort() + ") failed", e);
+                        } finally {
+                            LOGGER.info("Closing " + socket);
+                            IOUtil.close(socket);
+                        }
+                    }).start();
+                } catch (SocketTimeoutException e) {
+                    // it's fine
+                } catch (Exception e) {
+                    LOGGER.warning("The ServerSocket (" + getPort() + ") has thrown an exception", e);
                 }
-            } catch (IOException e) {
-                LOGGER.warning("The test server thrown an exception", e);
-            } finally {
-                close(serverSocket);
             }
         }
 
-        void stop() {
+        public void close() {
             shutdownRequested = true;
+            try {
+                serverSocket.close();
+            } catch (Exception e) {
+                LOGGER.warning("ServerSocket.close() has failed", e);
+            }
         }
 
         static boolean hasTls13Cipher(InputStream is) throws IOException {

@@ -83,7 +83,7 @@ public class TcpClientConnectionTest extends ClientTestSupport {
     @Test
     public void testNullAsAddress() {
         ClientNetworkConfig networkConfig = new ClientConfig().getNetworkConfig();
-        assertThrows(IllegalArgumentException.class, () -> networkConfig.addAddress(null));
+        assertThrows(IllegalArgumentException.class, () -> networkConfig.addAddress((String[]) null));
     }
 
     @Test

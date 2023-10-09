@@ -35,12 +35,11 @@ import java.util.Optional;
 
 import static com.hazelcast.spi.partitiongroup.PartitionGroupMetaData.PARTITION_GROUP_ZONE;
 import static java.util.Collections.emptyList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class AwsDiscoveryStrategyTest {
     private static final int PORT1 = 5701;
     private static final int PORT2 = 5702;
@@ -216,8 +215,8 @@ public class AwsDiscoveryStrategyTest {
 
         // 2 instances found
         given(awsClient.getAddresses()).willReturn(ImmutableMap.of(
-            "192.168.1.15", "38.146.24.2",
-            "192.168.1.16", "38.146.28.15"
+                "192.168.1.15", "38.146.24.2",
+                "192.168.1.16", "38.146.28.15"
         ));
 
         // when
@@ -225,7 +224,7 @@ public class AwsDiscoveryStrategyTest {
 
         // then
         // 2 * 8 = 16 addresses found
-        assertThat(toList(nodes), hasSize(16));
+        assertThat(toList(nodes)).hasSize(16);
     }
 
     @Test

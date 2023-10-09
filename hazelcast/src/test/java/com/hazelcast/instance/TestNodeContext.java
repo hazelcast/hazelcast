@@ -26,6 +26,7 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
+import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
@@ -93,6 +94,7 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.createMemberUuid()).thenReturn(UuidUtil.newUnsecureUUID());
         when(nodeExtension.getCPPersistenceService()).thenReturn(new NopCPPersistenceService());
         when(nodeExtension.getAuditlogService()).thenReturn(NoOpAuditlogService.INSTANCE);
+        when(nodeExtension.getInternalHotRestartService()).thenReturn(new NoopInternalHotRestartService());
         return nodeExtension;
     }
 

@@ -175,8 +175,16 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
         Consumer<HazelcastInstance[]> afterMerge = instances -> {
             assertTrueEventually(() -> {
-                assertEquals(clusterSize * 2, MockPS.initCount.get());
-                assertEquals(clusterSize * 2, MockPS.closeCount.get());
+                // Members may be slow when joining and the job may start when the cluster reaches quorum size,
+                // but not all members have joined.
+                // The expected initCount is between
+                // clusterSize (first start of the job) + quorumSize (size of the cluster when quorum is met)
+                // and clusterSize * 2 (start of the job on all members before split and after healing split
+                int quorumSize = clusterSize / 2 + 1;
+                assertThat(MockPS.initCount.get()).isBetween(clusterSize + quorumSize, clusterSize * 2);
+
+                // Close count must match init count
+                assertThat(MockPS.closeCount.get()).isEqualTo(MockPS.initCount.get());
             });
 
             assertEquals(clusterSize, MockPS.receivedCloseErrors.size());

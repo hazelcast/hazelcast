@@ -33,7 +33,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -332,7 +331,10 @@ class DefaultAddressPicker
         }
         if (address != null) {
             address = address.trim();
-            if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
+            if (address.isEmpty()) {
+                throw new IllegalArgumentException("Public address cannot be blank. Configure it to a"
+                        + " non-blank value or remove it from configuration.");
+            } else if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
                 return pickLoopbackAddress(address, port);
             } else {
                 // allow port to be defined in same string in the form of <host>:<port>, e.g. 10.0.0.0:1234
@@ -378,30 +380,52 @@ class DefaultAddressPicker
                 if (address == null) {
                     continue;
                 }
-                matchingAddress = address;
-
-                if (preferIPv6Addresses) {
-                    // IPv6 address is preferred, return if address is IPv6.
-                    if (inetAddress instanceof Inet6Address) {
-                        return matchingAddress;
-                    }
-                } else if (inetAddress instanceof Inet4Address) {
-                    // No IPv6 address preference, return if address is IPv4.
-                    return matchingAddress;
+                if (getPriority(address, preferIPv6Addresses) > getPriority(matchingAddress, preferIPv6Addresses)) {
+                    matchingAddress = address;
                 }
             }
         }
-        // nothing matched to IP version preference, return what we have.
         return matchingAddress;
+    }
+
+    /**
+     * The priority in desc-order:
+     * <ol>
+     * <li>IPv6-preference
+     * <li>global address
+     * <li>site-local address
+     * <li>link-local address
+     * <li>loopback address
+     * </ol>
+     */
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private int getPriority(AddressDefinition address, boolean preferIPv6Addresses) {
+        if (address == null) {
+            return 0;
+        }
+        InetAddress ia = address.inetAddress;
+        boolean isIpv6 = ia instanceof Inet6Address;
+        int priority;
+        if (ia.isLoopbackAddress()) {
+            priority = 1;
+        } else if (ia.isLinkLocalAddress()) {
+            priority = 2;
+        } else if (ia.isSiteLocalAddress()) {
+            priority = 3;
+        } else {
+            priority = 5;
+        }
+        if (isIpv6 ^ !preferIPv6Addresses) {
+            priority += 10;
+        }
+        return priority;
     }
 
     private AddressDefinition getMatchingAddress(Collection<InterfaceDefinition> interfaces, InetAddress inetAddress) {
         if (isNotEmpty(interfaces)) {
             return match(inetAddress, interfaces);
-        } else if (!inetAddress.isLoopbackAddress()) {
-            return new AddressDefinition(inetAddress);
         }
-        return null;
+        return new AddressDefinition(inetAddress);
     }
 
     /**

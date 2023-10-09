@@ -20,6 +20,7 @@ import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -53,8 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.phonehome.TestUtil.getNode;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -221,7 +221,7 @@ public final class CompactTestUtil {
         return new ArrayOfFixedSizeFieldsDTO(null, null, null, null, null, null, null);
     }
 
-    public static SerializationService createSerializationService() {
+    public static InternalSerializationService createSerializationService() {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
@@ -229,14 +229,14 @@ public final class CompactTestUtil {
                 .build();
     }
 
-    public static SerializationService createSerializationService(SchemaService schemaService) {
+    public static InternalSerializationService createSerializationService(SchemaService schemaService) {
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .setConfig(new SerializationConfig())
                 .build();
     }
 
-    public static SerializationService createSerializationService(SerializationConfig config) {
+    public static InternalSerializationService createSerializationService(SerializationConfig config) {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
@@ -244,7 +244,7 @@ public final class CompactTestUtil {
                 .build();
     }
 
-    public static SerializationService createSerializationService(CompactSerializationConfig compactSerializationConfig) {
+    public static InternalSerializationService createSerializationService(CompactSerializationConfig compactSerializationConfig) {
         SerializationConfig config = new SerializationConfig();
         config.setCompactSerializationConfig(compactSerializationConfig);
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
@@ -254,7 +254,7 @@ public final class CompactTestUtil {
                 .build();
     }
 
-    public static <T> SerializationService createSerializationService(Supplier<CompactSerializer<T>> serializerSupplier) {
+    public static <T> InternalSerializationService createSerializationService(Supplier<CompactSerializer<T>> serializerSupplier) {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
         compactSerializationConfig.addSerializer(serializerSupplier.get());
@@ -264,7 +264,7 @@ public final class CompactTestUtil {
                 .build();
     }
 
-    public static <T> SerializationService createSerializationService(
+    public static <T> InternalSerializationService createSerializationService(
             Supplier<CompactSerializer<T>> serializerSupplier, SchemaService schemaService
     ) {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
@@ -272,6 +272,13 @@ public final class CompactTestUtil {
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+    }
+
+    public static InternalSerializationService createSerializationService(ClassLoader classLoader, SchemaService schemaService) {
+        return new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setClassLoader(classLoader)
                 .build();
     }
 
@@ -333,7 +340,7 @@ public final class CompactTestUtil {
         Collection<Schema> expectedSchemas = getSchemasFor(classes);
         for (HazelcastInstance instance : instances) {
             Collection<Schema> schemas = getNode(instance).getSchemaService().getAllSchemas();
-            assertThat(schemas, containsInAnyOrder(expectedSchemas.toArray()));
+            assertThat(schemas).containsExactlyInAnyOrderElementsOf(expectedSchemas);
         }
     }
 

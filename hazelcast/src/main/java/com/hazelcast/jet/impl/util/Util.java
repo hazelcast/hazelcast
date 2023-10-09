@@ -62,6 +62,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -81,6 +82,7 @@ import java.util.function.ToIntFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
@@ -89,7 +91,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.lang.String.format;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -97,7 +99,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
-import static java.util.stream.IntStream.range;
 
 public final class Util {
     public static final String CONFIG_OVERRIDE_WARNING = "(for Hazelcast embedded, works only when " +
@@ -239,7 +240,7 @@ public final class Util {
         if (!(object instanceof Serializable)) {
             throw new IllegalArgumentException('"' + objectName + "\" must implement Serializable");
         }
-        try (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
+        try (ObjectOutputStream os = new ObjectOutputStream(OutputStream.nullOutputStream())) {
             os.writeObject(object);
         } catch (NotSerializableException | InvalidClassException e) {
             throw new IllegalArgumentException("\"" + objectName + "\" must be serializable", e);
@@ -289,7 +290,7 @@ public final class Util {
      * the value
      */
     public static <T> Map<Integer, List<T>> distributeObjects(int count, List<T> objects) {
-        Map<Integer, List<T>> processorToObjects = range(0, objects.size())
+        Map<Integer, List<T>> processorToObjects = IntStream.range(0, objects.size())
                 .mapToObj(i -> entry(i, objects.get(i)))
                 .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, Collectors.toList())));
 
@@ -345,13 +346,6 @@ public final class Util {
             res[i] = j;
         }
         return res;
-    }
-
-    private static class NullOutputStream extends OutputStream {
-        @Override
-        public void write(int b) {
-            // do nothing
-        }
     }
 
     public static String jobNameAndExecutionId(String jobName, long executionId) {
@@ -453,6 +447,23 @@ public final class Util {
      */
     public static void lazyAdd(AtomicLongArray counters, int index, long addend) {
         counters.lazySet(index, counters.get(index) + addend);
+    }
+
+    /**
+     * Returns list of integers from begin (inclusive) to end (exclusive).
+     */
+    public static List<Integer> range(final int begin, final int end) {
+        return new AbstractList<>() {
+            @Override
+            public Integer get(int index) {
+                return begin + index;
+            }
+
+            @Override
+            public int size() {
+                return end - begin;
+            }
+        };
     }
 
     /**

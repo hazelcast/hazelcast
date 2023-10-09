@@ -21,7 +21,6 @@ import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -35,10 +34,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -50,8 +47,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -60,9 +59,6 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DistributedObjectTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void testMap() {
@@ -220,7 +216,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         String objectName = "test-object";
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        Future f = spawn(() -> {
+        Future<?> f = spawn(() -> {
             // must fail with DistributedObjectDestroyedException
             instance.getDistributedObject(serviceName, objectName);
         });
@@ -230,9 +226,9 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         nodeEngine.getProxyService().destroyDistributedObject(serviceName, objectName, source);
         objectDestroyed.countDown();
 
-        expectedException.expect(ExecutionException.class);
-        expectedException.expectCause(new RootCauseMatcher(DistributedObjectDestroyedException.class));
-        f.get();
+        assertThatThrownBy(f::get)
+                .isInstanceOf(ExecutionException.class)
+                .cause().has(rootCause(DistributedObjectDestroyedException.class));
     }
 
     private static class TestInitializingObjectService implements RemoteService {

@@ -24,11 +24,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -108,7 +106,7 @@ public class PhiAccrualFailureDetectorTest {
 
         double suspicionLevel = failureDetector.suspicionLevel(timestamp + acceptableHeartbeatPause / 2);
 
-        assertThat(suspicionLevel, lessThan(phiThreshold));
+        assertThat(suspicionLevel).isLessThan(phiThreshold);
     }
 
     @Test
@@ -118,7 +116,7 @@ public class PhiAccrualFailureDetectorTest {
 
         double suspicionLevel = failureDetector.suspicionLevel(timestamp + acceptableHeartbeatPause * 2);
 
-        assertThat(suspicionLevel, greaterThanOrEqualTo(phiThreshold));
+        assertThat(suspicionLevel).isGreaterThanOrEqualTo(phiThreshold);
     }
 
     @Test(expected = IllegalArgumentException.class)

@@ -28,7 +28,6 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.List;
 
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.UPDATE_ALL_PREDICATE;
 import static java.util.stream.Collectors.toList;
 
@@ -76,10 +75,11 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
                                                           })
                                                           .collect(toList());
 
+        String[] fieldNamesArray = fieldNames.toArray(String[]::new);
         if (hasInput) {
             return context.getDag().newUniqueVertex(
                     "Update(" + table.getSqlName() + ")",
-                    new UpdateProcessorSupplier(table, fieldNames, updates, null, hasInput)
+                    wrap(context, new UpdateProcessorSupplier(table, fieldNamesArray, updates, null, hasInput))
             );
         } else {
             Object predicateRaw = predicate == null
@@ -91,8 +91,8 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
 
             return context.getDag().newUniqueVertex(
                     "Update(" + table.getSqlName() + ")",
-                    forceTotalParallelismOne(
-                        new UpdateProcessorSupplier(table, fieldNames, updates, translated, hasInput)
+                    wrapWithParallelismOne(context,
+                        new UpdateProcessorSupplier(table, fieldNamesArray, updates, translated, hasInput)
                     )
             );
         }
@@ -105,7 +105,7 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
 
         return context.getDag().newUniqueVertex(
                 "Sink(" + table.getSqlName() + ")",
-                new InsertProcessorSupplier(table, WriteMode.UPSERT)
+                wrap(context, new InsertProcessorSupplier(table, WriteMode.UPSERT))
         );
     }
 
@@ -121,7 +121,7 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
         if (hasInput) {
             return context.getDag().newUniqueVertex(
                     "Delete(" + table.getSqlName() + ")",
-                    new DeleteProcessorSupplier(table, null, hasInput)
+                    wrap(context, new DeleteProcessorSupplier(table, null, hasInput))
             );
         } else {
             Object predicateTranslated = predicate == null
@@ -137,7 +137,7 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
 
             return context.getDag().newUniqueVertex(
                     "Delete(" + table.getSqlName() + ")",
-                    forceTotalParallelismOne(new DeleteProcessorSupplier(table, predicateToSend, hasInput))
+                    wrapWithParallelismOne(context, new DeleteProcessorSupplier(table, predicateToSend, hasInput))
             );
         }
     }

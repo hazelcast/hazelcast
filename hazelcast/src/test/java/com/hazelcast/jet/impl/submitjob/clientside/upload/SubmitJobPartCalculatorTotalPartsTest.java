@@ -41,17 +41,17 @@ public class SubmitJobPartCalculatorTotalPartsTest {
 
     @Parameters (name = "{index}: jarSize - {0}")
     public static Collection<Object> parameters() {
-        return Arrays.asList(new Object[][]{
+        return Arrays.asList(new Object[] {
                 // {jarSize,partSize,totalParts}
-                {0, 10_000_000, 0},
-                {1, 10_000_000, 1},
-                {3_500, 1_000, 4},
-                {30_720, 10_000_000, 1},
-                {999_9999, 10_000_000, 1},
-                {10_000_000, 10_000_000, 1},
-                {10_000_001, 10_000_000, 2},
-                {100_999_999, 10_000_000, 11},
-                {100_999_999_001L, 1_000, 101_000_000},
+                new Object[] {0, 10_000_000, 0},
+                new Object[] {1, 10_000_000, 1},
+                new Object[] {3_500, 1_000, 4},
+                new Object[] {30_720, 10_000_000, 1},
+                new Object[] {999_9999, 10_000_000, 1},
+                new Object[] {10_000_000, 10_000_000, 1},
+                new Object[] {10_000_001, 10_000_000, 2},
+                new Object[] {100_999_999, 10_000_000, 11},
+                new Object[] {100_999_999_001L, 1_000, 101_000_000},
         });
     }
 

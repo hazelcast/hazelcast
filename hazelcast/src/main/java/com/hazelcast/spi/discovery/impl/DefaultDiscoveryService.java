@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.discovery.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -41,8 +42,7 @@ import java.util.Set;
 
 import static com.hazelcast.internal.util.CollectionUtil.nullToEmpty;
 
-public class DefaultDiscoveryService
-        implements DiscoveryService {
+public class DefaultDiscoveryService implements DiscoveryService {
 
     private static final String SERVICE_LOADER_TAG = DiscoveryStrategyFactory.class.getCanonicalName();
 
@@ -98,6 +98,28 @@ public class DefaultDiscoveryService
         }
     }
 
+    @Override
+    public void markEndpointAsUnhealthy(Address address) {
+        for (DiscoveryStrategy discoveryStrategy : discoveryStrategies) {
+            discoveryStrategy.markEndpointAsUnhealthy(address);
+        }
+    }
+
+    @Override
+    public Set<Address> getUnhealthyEndpoints() {
+        Set<Address> combinedAddresses = null;
+        for (DiscoveryStrategy strategy : discoveryStrategies) {
+            Set<Address> strategyAddresses = strategy.getUnhealthyEndpoints();
+            if (!strategyAddresses.isEmpty()) {
+                if (combinedAddresses == null) {
+                    combinedAddresses = new HashSet<>(strategyAddresses.size());
+                }
+                combinedAddresses.addAll(strategyAddresses);
+            }
+        }
+        return combinedAddresses == null ? Collections.emptySet() : combinedAddresses;
+    }
+
     public Iterable<DiscoveryStrategy> getDiscoveryStrategies() {
         return discoveryStrategies;
     }
@@ -116,7 +138,7 @@ public class DefaultDiscoveryService
                 }
 
                 String className = discoveryConfig.getNodeFilterClass();
-                return (NodeFilter) cl.loadClass(className).newInstance();
+                return (NodeFilter) cl.loadClass(className).getDeclaredConstructor().newInstance();
             } catch (Exception e) {
                 throw new RuntimeException("Failed to configure discovery node filter", e);
             }

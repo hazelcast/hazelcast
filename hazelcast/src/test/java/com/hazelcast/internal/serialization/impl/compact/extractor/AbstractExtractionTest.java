@@ -29,9 +29,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Setups HZ instance and map for extraction testing.
@@ -163,13 +162,13 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
 
         // WHEN
         putTestDataToMap(input.objects);
-        Collection<?> values = map.values(query.predicate);
+        Collection<Object> values = map.values(query.predicate);
 
         // THEN
-        assertThat(values, hasSize(expected.objects.length));
+        assertThat(values).hasSize(expected.objects.length);
 
         if (expected.objects.length > 0) {
-            assertThat(values, containsInAnyOrder(expected.objects));
+            assertThat(values).containsExactlyInAnyOrderElementsOf(asList(expected.objects));
         }
     }
 

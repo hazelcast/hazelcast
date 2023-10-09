@@ -21,6 +21,8 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
@@ -33,6 +35,7 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -102,18 +105,25 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         if (instances == null) {
             return;
         }
-        for (HazelcastInstance inst : instances) {
+        List<HazelcastInstance> stillActiveInstances = Arrays.stream(instances())
+                .filter(SimpleTestInClusterSupport::testIfInstanceIsStillActive)
+                .collect(toList());
+
+        if (stillActiveInstances.isEmpty()) {
+            return;
+        }
+        for (HazelcastInstance inst : stillActiveInstances) {
             PacketFiltersUtil.resetPacketFiltersFrom(inst);
         }
         // after each test ditch all jobs and objects
-        List<Job> jobs = instances[0].getJet().getJobs();
+        List<Job> jobs = stillActiveInstances.get(0).getJet().getJobs();
         SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in SimpleTestInClusterSupport.@After: " +
                 jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
         for (Job job : jobs) {
             ditchJob(job, instances());
         }
         // cancel all light jobs by cancelling their executions
-        for (HazelcastInstance inst : instances) {
+        for (HazelcastInstance inst : stillActiveInstances) {
             JetServiceBackend jetServiceBackend = getJetServiceBackend(inst);
             jetServiceBackend.getJobExecutionService().cancelAllExecutions("ditching all jobs after a test");
             jetServiceBackend.getJobExecutionService().waitAllExecutionsTerminated();
@@ -136,6 +146,22 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
                 // Let's wait for all unprocessed operations (like destroying distributed object) to complete
                 assertEquals(0, getNodeEngineImpl(instance).getEventService().getEventQueueSize());
             });
+        }
+    }
+
+    private static boolean testIfInstanceIsStillActive(HazelcastInstance instance) {
+        if (instance instanceof HazelcastInstanceImpl) {
+            try {
+                return ((HazelcastInstanceImpl) instance).isRunning();
+            } catch (HazelcastInstanceNotActiveException ignored) {
+                return false;
+            }
+        }
+        try {
+            instance.getCluster().getClusterState();
+            return true;
+        } catch (HazelcastInstanceNotActiveException ignored) {
+            return false;
         }
     }
 

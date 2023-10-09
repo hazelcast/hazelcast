@@ -28,8 +28,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -53,15 +51,15 @@ public class ClientCompatibilityNullTest_2_4 {
 
     @Before
     public void setUp() throws IOException {
-        File file = new File(getClass().getResource("/2.4.protocol.compatibility.null.binary").getFile());
-        InputStream inputStream = new FileInputStream(file);
-        byte[] data = new byte[(int) file.length()];
-        inputStream.read(data);
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        ClientMessageReader reader = new ClientMessageReader(0);
-        while (reader.readFrom(buffer, true)) {
-            clientMessages.add(reader.getClientMessage());
-            reader.reset();
+        try (InputStream inputStream = getClass().getResourceAsStream("/2.4.protocol.compatibility.null.binary")) {
+            assert inputStream != null;
+            byte[] data = inputStream.readAllBytes();
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            ClientMessageReader reader = new ClientMessageReader(0);
+            while (reader.readFrom(buffer, true)) {
+                clientMessages.add(reader.getClientMessage());
+                reader.reset();
+            }
         }
     }
 
@@ -579,6 +577,9 @@ public class ClientCompatibilityNullTest_2_4 {
     @Test
     public void test_MapDeleteCodec_decodeResponse() {
         int fileClientMessageIndex = 60;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MapDeleteCodec.ResponseParameters parameters = MapDeleteCodec.decodeResponse(fromFile);
+        assertFalse(parameters.isResponseExists);
     }
 
     @Test

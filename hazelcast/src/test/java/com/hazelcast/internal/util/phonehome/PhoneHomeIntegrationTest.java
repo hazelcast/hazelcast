@@ -34,16 +34,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
@@ -64,6 +65,7 @@ import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -86,10 +88,12 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     @Mock
     private Path dockerPath;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void initialise()
             throws IOException {
-        MockitoAnnotations.initMocks(this);
+        openMocks = openMocks(this);
         HazelcastInstance hz = createHazelcastInstance();
         node = getNode(hz);
 
@@ -103,6 +107,11 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
         phoneHome = new PhoneHome(node, "http://localhost:" + port + "/ping", cloudInfoCollector);
         stubUrls("200", "4XX", "4XX", "4XX");
+    }
+
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
     }
 
     public void stubUrls(String phoneHomeStatus, String awsStatus, String azureStatus, String gcpStatus) {

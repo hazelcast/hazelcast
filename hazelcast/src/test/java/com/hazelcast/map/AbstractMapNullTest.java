@@ -162,7 +162,7 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
         assertThrowsNPE(m -> m.entrySet(null));
         assertThrowsNPE(m -> m.values(null));
         assertThrows(NullPointerException.class, m -> m.addIndex(null, "attribute"));
-        assertThrows(NullPointerException.class, m -> m.addIndex(IndexType.SORTED, null));
+        assertThrows(NullPointerException.class, m -> m.addIndex(IndexType.SORTED, (String[]) null));
         assertThrows(NullPointerException.class, m -> m.addIndex(null));
         assertThrowsNPE(m -> m.aggregate(null));
         assertThrowsNPE(m -> m.aggregate(null, samplePredicate));

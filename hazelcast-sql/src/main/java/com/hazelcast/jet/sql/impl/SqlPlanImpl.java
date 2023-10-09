@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
@@ -46,6 +47,7 @@ import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 
+import javax.annotation.Nonnull;
 import java.security.Permission;
 import java.util.Collections;
 import java.util.List;
@@ -148,10 +150,10 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("CREATE MAPPING", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE MAPPING", timeout);
-            return planExecutor.execute(this);
+            return planExecutor.execute(this, ssc);
         }
     }
 
@@ -197,7 +199,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("DROP MAPPING", arguments);
             SqlPlanImpl.ensureNoTimeout("DROP MAPPING", timeout);
             return planExecutor.execute(this);
@@ -278,7 +280,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("CREATE DATA CONNECTION", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE DATA CONNECTION", timeout);
             return planExecutor.execute(this);
@@ -327,7 +329,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoTimeout("DROP DATA CONNECTION", timeout);
             return planExecutor.execute(this);
         }
@@ -403,7 +405,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("CREATE INDEX", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE INDEX", timeout);
             return planExecutor.execute(this);
@@ -413,19 +415,15 @@ abstract class SqlPlanImpl extends SqlPlan {
     static class DropIndexPlan extends SqlPlanImpl {
         private final String name;
         private final boolean ifExists;
-        private final PlanExecutor planExecutor;
 
         DropIndexPlan(
                 PlanKey planKey,
                 String name,
-                boolean ifExists,
-                PlanExecutor planExecutor
+                boolean ifExists
         ) {
             super(planKey);
-
             this.name = name;
             this.ifExists = ifExists;
-            this.planExecutor = planExecutor;
         }
 
         String name() {
@@ -452,7 +450,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             throw QueryException.error("DROP INDEX is not supported.");
         }
     }
@@ -530,8 +528,11 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoTimeout("CREATE JOB", timeout);
+            if (!infiniteRows) {
+                SqlPlanImpl.ensureNoneGuaranteesForBatchJob(jobConfig);
+            }
             return planExecutor.execute(this, arguments);
         }
     }
@@ -580,7 +581,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("ALTER JOB", arguments);
             SqlPlanImpl.ensureNoTimeout("ALTER JOB", timeout);
             return planExecutor.execute(this);
@@ -631,7 +632,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("DROP JOB", arguments);
             SqlPlanImpl.ensureNoTimeout("DROP JOB", timeout);
             return planExecutor.execute(this);
@@ -675,7 +676,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("CREATE SNAPSHOT", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE SNAPSHOT", timeout);
             return planExecutor.execute(this);
@@ -719,7 +720,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("DROP SNAPSHOT", arguments);
             SqlPlanImpl.ensureNoTimeout("DROP SNAPSHOT", timeout);
             return planExecutor.execute(this);
@@ -789,7 +790,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("CREATE VIEW", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE VIEW", timeout);
             return planExecutor.execute(this);
@@ -838,7 +839,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("DROP VIEW", arguments);
             SqlPlanImpl.ensureNoTimeout("DROP VIEW", timeout);
             return planExecutor.execute(this);
@@ -911,7 +912,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("CREATE TYPE", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE TYPE", timeout);
             return planExecutor.execute(this);
@@ -960,7 +961,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("DROP TYPE", arguments);
             SqlPlanImpl.ensureNoTimeout("DROP TYPE", timeout);
             return planExecutor.execute(this);
@@ -1004,7 +1005,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoArguments("SHOW " + showTarget, arguments);
             SqlPlanImpl.ensureNoTimeout("SHOW " + showTarget, timeout);
             return planExecutor.execute(this);
@@ -1014,15 +1015,18 @@ abstract class SqlPlanImpl extends SqlPlan {
     static class ExplainStatementPlan extends SqlPlanImpl {
         private final PhysicalRel rel;
         private final PlanExecutor planExecutor;
+        private final List<Permission> permissions;
 
         ExplainStatementPlan(
                 PlanKey planKey,
                 PhysicalRel rel,
+                List<Permission> permissions,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
             this.rel = rel;
             this.planExecutor = planExecutor;
+            this.permissions = permissions;
         }
 
         public PhysicalRel getRel() {
@@ -1040,7 +1044,12 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        public void checkPermissions(SqlSecurityContext context) {
+            permissions.forEach(context::checkPermission);
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
             SqlPlanImpl.ensureNoTimeout("EXPLAIN", timeout);
             return planExecutor.execute(this);
         }
@@ -1055,7 +1064,11 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final SqlRowMetadata rowMetadata;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        // map of per-table partition pruning candidates, structured as
+        // mapName -> { columnName -> RexLiteralOrDynamicParam }
+        private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
 
+        @SuppressWarnings("checkstyle:ParameterNumber")
         SelectPlan(
                 PlanKey planKey,
                 QueryParameterMetadata parameterMetadata,
@@ -1065,8 +1078,8 @@ abstract class SqlPlanImpl extends SqlPlan {
                 boolean isStreaming,
                 SqlRowMetadata rowMetadata,
                 PlanExecutor planExecutor,
-                List<Permission> permissions
-        ) {
+                List<Permission> permissions,
+                Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates) {
             super(planKey);
 
             this.objectKeys = objectKeys;
@@ -1077,6 +1090,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.partitionStrategyCandidates = partitionStrategyCandidates;
         }
 
         QueryParameterMetadata getParameterMetadata() {
@@ -1109,6 +1123,10 @@ abstract class SqlPlanImpl extends SqlPlan {
             return context.isValid(objectKeys);
         }
 
+        public Map<String, List<Map<String, Expression<?>>>> getPartitionStrategyCandidates() {
+            return partitionStrategyCandidates;
+        }
+
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             checkPermissions(context, dag);
@@ -1121,8 +1139,8 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            return planExecutor.execute(this, queryId, arguments, timeout);
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
+            return planExecutor.execute(this, queryId, arguments, timeout, ssc);
         }
     }
 
@@ -1201,8 +1219,8 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            return planExecutor.execute(this, queryId, arguments, timeout);
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
+            return planExecutor.execute(this, queryId, arguments, timeout, ssc);
         }
     }
 
@@ -1289,8 +1307,8 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            return planExecutor.execute(this, queryId, arguments, timeout);
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
+            return planExecutor.execute(this, queryId, arguments, timeout, ssc);
         }
     }
 
@@ -1363,8 +1381,8 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            return planExecutor.execute(this, arguments, timeout);
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
+            return planExecutor.execute(this, arguments, timeout, ssc);
         }
     }
 
@@ -1429,8 +1447,8 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            return planExecutor.execute(this, arguments, timeout);
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
+            return planExecutor.execute(this, arguments, timeout, ssc);
         }
     }
 
@@ -1511,8 +1529,8 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            return planExecutor.execute(this, arguments, timeout);
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
+            return planExecutor.execute(this, arguments, timeout, ssc);
         }
     }
 
@@ -1586,8 +1604,8 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            return planExecutor.execute(this, arguments, timeout);
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
+            return planExecutor.execute(this, arguments, timeout, ssc);
         }
     }
 
@@ -1600,6 +1618,12 @@ abstract class SqlPlanImpl extends SqlPlan {
     private static void ensureNoTimeout(String name, long timeout) {
         if (timeout > 0) {
             throw QueryException.error(name + " does not support timeout");
+        }
+    }
+
+    private static void ensureNoneGuaranteesForBatchJob(JobConfig jobConfig) {
+        if (jobConfig.getProcessingGuarantee() != ProcessingGuarantee.NONE) {
+            throw QueryException.error("Only NONE guarantee is allowed for batch job");
         }
     }
 }

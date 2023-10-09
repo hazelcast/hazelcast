@@ -20,6 +20,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.nearcache.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.LongAccumulator;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_CREATION_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_EVICTIONS;
@@ -49,10 +50,6 @@ public class NearCacheStatsImpl implements NearCacheStats {
             newUpdater(NearCacheStatsImpl.class, "ownedEntryCount");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> OWNED_ENTRY_MEMORY_COST =
             newUpdater(NearCacheStatsImpl.class, "ownedEntryMemoryCost");
-    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> HITS =
-            newUpdater(NearCacheStatsImpl.class, "hits");
-    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> MISSES =
-            newUpdater(NearCacheStatsImpl.class, "misses");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> EVICTIONS =
             newUpdater(NearCacheStatsImpl.class, "evictions");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> EXPIRATIONS =
@@ -71,9 +68,9 @@ public class NearCacheStatsImpl implements NearCacheStats {
     @Probe(name = NEARCACHE_METRIC_OWNED_ENTRY_MEMORY_COST, unit = BYTES)
     private volatile long ownedEntryMemoryCost;
     @Probe(name = NEARCACHE_METRIC_HITS)
-    private volatile long hits;
+    private final LongAccumulator hits = new LongAccumulator(Long::sum, 0);
     @Probe(name = NEARCACHE_METRIC_MISSES)
-    private volatile long misses;
+    private final LongAccumulator misses = new LongAccumulator(Long::sum, 0);
     @Probe(name = NEARCACHE_METRIC_EVICTIONS)
     private volatile long evictions;
     @Probe(name = NEARCACHE_METRIC_EXPIRATIONS)
@@ -100,24 +97,23 @@ public class NearCacheStatsImpl implements NearCacheStats {
         this.creationTime = getNowInMillis();
     }
 
-    public NearCacheStatsImpl(NearCacheStats nearCacheStats) {
-        NearCacheStatsImpl stats = (NearCacheStatsImpl) nearCacheStats;
-        creationTime = stats.creationTime;
-        ownedEntryCount = stats.ownedEntryCount;
-        ownedEntryMemoryCost = stats.ownedEntryMemoryCost;
-        hits = stats.hits;
-        misses = stats.misses;
-        evictions = stats.evictions;
-        expirations = stats.expirations;
-        invalidations = stats.invalidations;
-        invalidationRequests = stats.invalidationRequests;
+    public NearCacheStatsImpl(NearCacheStats stats) {
+        creationTime = stats.getCreationTime();
+        ownedEntryCount = stats.getOwnedEntryCount();
+        ownedEntryMemoryCost = stats.getOwnedEntryMemoryCost();
+        setHits(stats.getHits());
+        setMisses(stats.getMisses());
+        evictions = stats.getEvictions();
+        expirations = stats.getExpirations();
+        invalidations = stats.getInvalidations();
+        invalidationRequests = stats.getInvalidationRequests();
 
-        persistenceCount = stats.persistenceCount;
-        lastPersistenceTime = stats.lastPersistenceTime;
-        lastPersistenceDuration = stats.lastPersistenceDuration;
-        lastPersistenceWrittenBytes = stats.lastPersistenceWrittenBytes;
-        lastPersistenceKeyCount = stats.lastPersistenceKeyCount;
-        lastPersistenceFailure = stats.lastPersistenceFailure;
+        persistenceCount = stats.getPersistenceCount();
+        lastPersistenceTime = stats.getLastPersistenceTime();
+        lastPersistenceDuration = stats.getLastPersistenceDuration();
+        lastPersistenceWrittenBytes = stats.getLastPersistenceWrittenBytes();
+        lastPersistenceKeyCount = stats.getLastPersistenceKeyCount();
+        lastPersistenceFailure = stats.getLastPersistenceFailure();
     }
 
     @Override
@@ -161,42 +157,44 @@ public class NearCacheStatsImpl implements NearCacheStats {
 
     @Override
     public long getHits() {
-        return hits;
+        return hits.longValue();
     }
 
     // just for testing
     void setHits(long hits) {
-        HITS.set(this, hits);
+        this.hits.reset();
+        this.hits.accumulate(hits);
     }
 
     public void incrementHits() {
-        HITS.incrementAndGet(this);
+        hits.accumulate(1);
     }
 
     @Override
     public long getMisses() {
-        return misses;
+        return misses.longValue();
     }
 
     // just for testing
     void setMisses(long misses) {
-        MISSES.set(this, misses);
+        this.misses.reset();
+        this.misses.accumulate(misses);
     }
 
     public void incrementMisses() {
-        MISSES.incrementAndGet(this);
+        misses.accumulate(1);
     }
 
     @Override
     public double getRatio() {
-        if (misses == 0) {
-            if (hits == 0) {
+        if (misses.get() == 0) {
+            if (hits.get() == 0) {
                 return Double.NaN;
             } else {
                 return Double.POSITIVE_INFINITY;
             }
         } else {
-            return ((double) hits / misses) * PERCENTAGE;
+            return hits.doubleValue() / misses.doubleValue() * PERCENTAGE;
         }
     }
 
@@ -231,6 +229,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
         INVALIDATIONS.addAndGet(this, delta);
     }
 
+    @Override
     public long getInvalidationRequests() {
         return invalidationRequests;
     }

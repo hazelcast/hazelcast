@@ -21,12 +21,9 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.core.IsInstanceOf;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Set;
@@ -34,6 +31,7 @@ import java.util.Set;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static java.lang.reflect.Modifier.isAbstract;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -43,9 +41,6 @@ public class SplitBrainMergePolicyProviderTest extends HazelcastTestSupport {
 
     private SplitBrainMergePolicyProvider mergePolicyProvider;
 
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
-
     @Before
     public void setup() {
         mergePolicyProvider = new SplitBrainMergePolicyProvider(getNode(createHazelcastInstance()).getConfigClassLoader());
@@ -53,15 +48,15 @@ public class SplitBrainMergePolicyProviderTest extends HazelcastTestSupport {
 
     @Test
     public void getMergePolicy_withNotExistingMergePolicy() {
-        expected.expect(InvalidConfigurationException.class);
-        expected.expectCause(IsInstanceOf.any(ClassNotFoundException.class));
-        mergePolicyProvider.getMergePolicy("No such policy!");
+        assertThatThrownBy(() -> mergePolicyProvider.getMergePolicy("No such policy!"))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasCauseInstanceOf(ClassNotFoundException.class);
     }
 
     @Test
     public void getMergePolicy_withNullPolicy() {
-        expected.expect(InvalidConfigurationException.class);
-        mergePolicyProvider.getMergePolicy(null);
+        assertThatThrownBy(() -> mergePolicyProvider.getMergePolicy(null))
+                .isInstanceOf(InvalidConfigurationException.class);
     }
 
     @Test

@@ -125,7 +125,7 @@ public final class StringUtil {
         if (s == null) {
             return true;
         }
-        return s.trim().isEmpty();
+        return s.isBlank();
     }
 
     /**
@@ -548,5 +548,9 @@ public final class StringUtil {
             }
         }
         return new String(chars, 0, pos);
+    }
+
+    public static boolean isBoolean(String value) {
+        return value.equalsIgnoreCase("false") || value.equalsIgnoreCase("true");
     }
 }

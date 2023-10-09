@@ -31,10 +31,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -62,9 +60,11 @@ import static com.hazelcast.splitbrainprotection.executor.ExecutorSplitBrainProt
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.isA;
+import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.fail;
 
+@SuppressWarnings("unchecked")
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -77,9 +77,6 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
 
     @Parameter
     public static SplitBrainProtectionOn splitBrainProtectionOn;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void setUp() {
@@ -129,14 +126,14 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
 
     @Test
     public void executeOnMembers_collection_splitBrainProtection() {
-        exec(0).executeOnMembers(runnable(), asList(member(0)));
+        exec(0).executeOnMembers(runnable(), singletonList(member(0)));
     }
 
     @Test
     public void executeOnMembers_collection_noSplitBrainProtection() {
         // fire and forget operation, no split brain protection exception propagation
         // expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).executeOnMembers(runnable(), asList(member(3)));
+        exec(3).executeOnMembers(runnable(), singletonList(member(3)));
     }
 
     @Test
@@ -169,9 +166,9 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     }
 
     @Test
-    public void submit_runnable_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).submit(runnable()).get();
+    public void submit_runnable_noSplitBrainProtection() {
+        assertThatThrownBy(() -> exec(3).submit(runnable()).get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -180,9 +177,9 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     }
 
     @Test
-    public void submit_runnable_result_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).submit(runnable(), "result").get();
+    public void submit_runnable_result_noSplitBrainProtection() {
+        assertThatThrownBy(() -> exec(3).submit(runnable(), "result").get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -191,9 +188,9 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     }
 
     @Test
-    public void submit_runnable_selector_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).submit(runnable(), selector(3)).get();
+    public void submit_runnable_selector_noSplitBrainProtection() {
+        assertThatThrownBy(() -> exec(3).submit(runnable(), selector(3)).get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -216,9 +213,9 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     }
 
     @Test
-    public void submit_callable_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).submit(callable()).get();
+    public void submit_callable_noSplitBrainProtection() {
+        assertThatThrownBy(() -> exec(3).submit(callable()).get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -227,9 +224,9 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     }
 
     @Test
-    public void submit_callable_selector_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).submit(callable(), selector(3)).get();
+    public void submit_callable_selector_noSplitBrainProtection() {
+        assertThatThrownBy(() -> exec(3).submit(callable(), selector(3)).get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -252,9 +249,9 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     }
 
     @Test
-    public void submitToAllMembers_callable_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        wait(exec(3).submitToAllMembers(callable()));
+    public void submitToAllMembers_callable_noSplitBrainProtection() {
+        assertThatThrownBy(() -> wait(exec(3).submitToAllMembers(callable())))
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -291,9 +288,9 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     }
 
     @Test
-    public void submitToKeyOwner_callable_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).submitToKeyOwner(callable(), key(3)).get();
+    public void submitToKeyOwner_callable_noSplitBrainProtection() {
+        assertThatThrownBy(() -> exec(3).submitToKeyOwner(callable(), key(3)).get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -330,9 +327,9 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     }
 
     @Test
-    public void submitToMember_callable_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        exec(3).submitToMember(callable(), member(3)).get();
+    public void submitToMember_callable_noSplitBrainProtection() {
+        assertThatThrownBy(() -> exec(3).submitToMember(callable(), member(3)).get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -365,26 +362,26 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
 
     @Test
     public void submitToMembers_callable_member_splitBrainProtection() throws Exception {
-        wait(exec(0).submitToMembers(callable(), asList(member(0))));
+        wait(exec(0).submitToMembers(callable(), singletonList(member(0))));
     }
 
     @Test
-    public void submitToMembers_callable_member_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        wait(exec(3).submitToMembers(callable(), asList(member(3))));
+    public void submitToMembers_callable_member_noSplitBrainProtection() {
+        assertThatThrownBy(() -> wait(exec(3).submitToMembers(callable(), singletonList(member(3)))))
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
     public void submitToMembers_callable_member_callback_splitBrainProtection() {
         MultiCallback multiCallback = multiCallback();
-        exec(0).submitToMembers(callable(), asList(member(0)), multiCallback);
+        exec(0).submitToMembers(callable(), singletonList(member(0)), multiCallback);
         multiCallback.get();
     }
 
     @Test
     public void submitToMembers_callable_member_callback_noSplitBrainProtection() {
         MultiCallback multiCallback = multiCallback();
-        exec(3).submitToMembers(callable(), asList(member(3)), multiCallback);
+        exec(3).submitToMembers(callable(), singletonList(member(3)), multiCallback);
         expectSplitBrainProtectionException(multiCallback);
     }
 
@@ -394,9 +391,9 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     }
 
     @Test
-    public void submitToMembers_callable_selector_noSplitBrainProtection() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        wait(exec(3).submitToMembers(callable(), selector(3)));
+    public void submitToMembers_callable_selector_noSplitBrainProtection() {
+        assertThatThrownBy(() -> wait(exec(3).submitToMembers(callable(), selector(3))))
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -404,7 +401,6 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
         MultiCallback multiCallback = multiCallback();
         exec(0).submitToMembers(callable(), selector(0), multiCallback);
         multiCallback.get();
-
     }
 
     @Test
@@ -431,14 +427,14 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     @Test
     public void submitToMembers_runnable_member_callback_splitBrainProtection() {
         MultiCallback multiCallback = multiCallback();
-        exec(0).submitToMembers(runnable(), asList(member(0)), multiCallback);
+        exec(0).submitToMembers(runnable(), singletonList(member(0)), multiCallback);
         multiCallback.get();
     }
 
     @Test
     public void submitToMembers_runnable_member_callback_noSplitBrainProtection() {
         MultiCallback multiCallback = multiCallback();
-        exec(3).submitToMembers(runnable(), asList(member(3)), multiCallback);
+        exec(3).submitToMembers(runnable(), singletonList(member(3)), multiCallback);
         expectSplitBrainProtectionException(multiCallback);
     }
 
@@ -530,7 +526,7 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     }
 
     private void wait(Map<Member, ? extends Future<?>> futures) throws Exception {
-        for (Future f : futures.values()) {
+        for (Future<?> f : futures.values()) {
             f.get();
         }
     }

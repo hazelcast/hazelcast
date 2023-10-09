@@ -38,6 +38,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
@@ -71,6 +72,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.cluster.Versions.V4_0;
 import static com.hazelcast.internal.cluster.Versions.V5_2;
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.FutureUtil.waitForever;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -118,6 +120,7 @@ public class ClusterWideConfigurationService implements
     private final ConcurrentMap<String, CacheSimpleConfig> cacheSimpleConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, DataConnectionConfig> dataConnectionConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
 
@@ -140,6 +143,7 @@ public class ClusterWideConfigurationService implements
             flakeIdGeneratorConfigs,
             pnCounterConfigs,
             dataConnectionConfigs,
+            wanReplicationConfigs,
     };
 
     private volatile Version version;
@@ -333,6 +337,12 @@ public class ClusterWideConfigurationService implements
             currentConfig = dataConnectionConfigs.putIfAbsent(config.getName(), config);
             if (currentConfig == null) {
                 nodeEngine.getDataConnectionService().createConfigDataConnection(config);
+            }
+        } else if (newConfig instanceof WanReplicationConfig) {
+            WanReplicationConfig config = (WanReplicationConfig) newConfig;
+            currentConfig = wanReplicationConfigs.putIfAbsent(config.getName(), config);
+            if (currentConfig == null) {
+                nodeEngine.getWanReplicationService().addWanReplicationConfig(config);
             }
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
@@ -546,6 +556,16 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
+    public WanReplicationConfig findWanReplicationConfig(String name) {
+        return lookupByPattern(configPatternMatcher, wanReplicationConfigs, name);
+    }
+
+    @Override
+    public Map<String, WanReplicationConfig> getWanReplicationConfigs() {
+        return wanReplicationConfigs;
+    }
+
+    @Override
     public Runnable prepareMergeRunnable() {
         IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
         if (noConfigurationExist(allConfigurations)) {
@@ -556,10 +576,6 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public void updateTcpIpConfigMemberList(List<String> memberList) {
-        if (version.isLessThan(V5_2)) {
-            throw new UnsupportedOperationException("TCP-IP member list update is not supported"
-                    + " for the cluster version less than 5.2");
-        }
         invokeOnStableClusterSerial(
                 nodeEngine,
                 () -> new UpdateTcpIpMemberListOperation(memberList), CONFIG_PUBLISH_MAX_ATTEMPT_COUNT
@@ -614,6 +630,7 @@ public class ClusterWideConfigurationService implements
         configToVersion.put(PNCounterConfig.class, V4_0);
         configToVersion.put(MerkleTreeConfig.class, V4_0);
         configToVersion.put(DataConnectionConfig.class, V5_2);
+        configToVersion.put(WanReplicationConfig.class, V5_4);
 
         return Collections.unmodifiableMap(configToVersion);
     }

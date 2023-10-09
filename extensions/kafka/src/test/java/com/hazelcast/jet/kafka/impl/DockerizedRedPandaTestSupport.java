@@ -16,51 +16,35 @@
 
 package com.hazelcast.jet.kafka.impl;
 
-import org.apache.kafka.clients.admin.Admin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.redpanda.RedpandaContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import java.io.IOException;
-import java.util.Properties;
-
 import static org.testcontainers.utility.DockerImageName.parse;
 
 class DockerizedRedPandaTestSupport extends KafkaTestSupport {
-
     private static final String TEST_REDPANDA_VERSION = System.getProperty("test.redpanda.version", "v22.3.20");
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerizedRedPandaTestSupport.class);
 
     private RedpandaContainer redpandaContainer;
 
-    public void createKafkaCluster() throws IOException {
+    @Override
+    protected String createKafkaCluster0() {
         DockerImageName imageName = parse("docker.redpanda.com/redpandadata/redpanda:" + TEST_REDPANDA_VERSION);
         redpandaContainer = new RedpandaContainer(imageName)
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER));
         redpandaContainer.start();
 
-        brokerConnectionString = redpandaContainer.getBootstrapServers();
-        Properties props = new Properties();
-        props.setProperty("bootstrap.servers", brokerConnectionString);
-        admin = Admin.create(props);
+        return redpandaContainer.getBootstrapServers();
     }
 
-    public void shutdownKafkaCluster() {
+    @Override
+    protected void shutdownKafkaCluster0() {
         if (redpandaContainer != null) {
             redpandaContainer.stop();
-            if (admin != null) {
-                admin.close();
-            }
-            if (producer != null) {
-                producer.close();
-            }
-            producer = null;
-            admin = null;
             redpandaContainer = null;
-            brokerConnectionString = null;
         }
     }
-
 }

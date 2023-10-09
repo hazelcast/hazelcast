@@ -40,7 +40,7 @@
         <pax.exam.version>2.6.0</pax.exam.version>
         <pax.runner.version>1.8.6</pax.runner.version>
         <javax.inject.version>1</javax.inject.version>
-        <wiremock.version>2.27.2</wiremock.version>
+        <wiremock.version>3.0.1</wiremock.version>
     </properties>
 
     <build>
@@ -278,6 +278,7 @@
                                     !org.junit,
                                     !com.hazelcast.*,
                                     !com.fasterxml.jackson.*,
+                                    !com.zaxxer.hikari.*,
                                     !org.snakeyaml.*,
                                     !io.github.classgraph.*,
                                     !org.everit.json.*,
@@ -306,6 +307,8 @@
                                     org.hibernate.service;resolution:=optional,
                                     org.hibernate.service.spi;resolution:=optional,
                                     net.openhft.affinity;resolution:=optional,
+                                    jakarta.jms;resolution:=optional,
+                                    org.osgi.framework;resolution:=optional,
                                     *
                                 </Import-Package>
                                 <Bundle-Name>Hazelcast(Core)</Bundle-Name>
@@ -434,7 +437,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <phase>clean</phase>
@@ -468,7 +471,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -554,8 +556,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>javax.jms</groupId>
-            <artifactId>javax.jms-api</artifactId>
+            <groupId>jakarta.jms</groupId>
+            <artifactId>jakarta.jms-api</artifactId>
             <version>${jms.api.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
@@ -564,7 +566,22 @@
             <groupId>javax.cache</groupId>
             <artifactId>cache-tests</artifactId>
             <classifier>tests</classifier>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
             <version>${jsr107.tck.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Required as dependency of cache-tests -->
+        <!-- Tests like CacheExpiryTest won't work if it's not provided, -->
+        <!-- although javax.cache does not declare dependency -->
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <version>2.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -572,6 +589,12 @@
             <artifactId>cache-tests</artifactId>
             <version>${jsr107.tck.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>ch.qos.reload4j</groupId>
@@ -614,14 +637,6 @@
             <scope>test</scope>
             <version>1.1.1</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>${http.client.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <!-- OSGi -->
         <dependency>
             <groupId>org.osgi</groupId>
@@ -644,6 +659,12 @@
             <artifactId>pax-exam-junit4</artifactId>
             <version>${pax.exam.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.ops4j.pax.exam</groupId>
@@ -676,30 +697,14 @@
             <version>2.1.12</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.github.tomakehurst</groupId>
-            <artifactId>wiremock-jre8-standalone</artifactId>
-            <version>2.35.0</version>
-            <scope>test</scope>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.activemq</groupId>
-            <artifactId>apache-artemis</artifactId>
+            <artifactId>artemis-jakarta-server</artifactId>
             <version>${activemq-artemis.version}</version>
             <type>pom</type>
             <scope>test</scope>
 
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.activemq</groupId>
-                    <artifactId>artemis-jms-client-all</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -707,6 +712,19 @@
             <artifactId>artemis-junit</artifactId>
             <version>${activemq-artemis.version}</version>
             <scope>test</scope>
+
+            <!-- Exclude dependencies that bring in jms namespace -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.activemq</groupId>
+                    <artifactId>artemis-jms-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
+
         </dependency>
 
         <dependency>
@@ -714,11 +732,17 @@
             <artifactId>rabbitmq</artifactId>
             <version>${testcontainers.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.rabbitmq.jms</groupId>
             <artifactId>rabbitmq-jms</artifactId>
-            <version>2.8.0</version>
+            <version>3.1.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -760,12 +784,17 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
             <version>${mysql.connector.version}</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+            <version>${mssql.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
@@ -775,7 +804,7 @@
 
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
-            <artifactId>wiremock</artifactId>
+            <artifactId>wiremock-standalone</artifactId>
             <version>${wiremock.version}</version>
             <scope>test</scope>
         </dependency>
@@ -797,6 +826,19 @@
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-server-mock</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit</artifactId>
+                    <groupId>junit</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
-    </dependencies>
+
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-resolver-provider</artifactId>
+            <version>3.9.5</version>
+            <scope>test</scope>
+        </dependency>
+	</dependencies>
 </project>

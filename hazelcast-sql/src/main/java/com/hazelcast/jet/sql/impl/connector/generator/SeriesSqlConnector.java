@@ -37,6 +37,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.singletonList;
 
@@ -90,6 +91,7 @@ class SeriesSqlConnector implements SqlConnector {
             @Nonnull DagBuildContext context,
             @Nullable HazelcastRexNode predicate,
             @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {

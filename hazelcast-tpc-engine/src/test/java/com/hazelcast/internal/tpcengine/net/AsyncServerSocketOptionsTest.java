@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotWindows;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEADDR;
@@ -71,78 +72,88 @@ public abstract class AsyncServerSocketOptionsTest {
 
     @Test
     public void test_set() {
-        AsyncServerSocket serverSocket = newServerSocket();
-        AsyncSocketOptions options = serverSocket.options();
-        assertTrue(options.set(SUPPORTED_OPTION, true));
+        assumeNotWindows();
+        try (AsyncServerSocket serverSocket = newServerSocket()) {
+            AsyncSocketOptions options = serverSocket.options();
+            assertTrue(options.set(SUPPORTED_OPTION, true));
+        }
     }
 
     @Test
     public void test_set_nullOption() {
-        AsyncServerSocket serverSocket = newServerSocket();
-        AsyncSocketOptions options = serverSocket.options();
-        assertThrows(NullPointerException.class, () -> options.set(null, 1));
+        try (AsyncServerSocket serverSocket = newServerSocket()) {
+            AsyncSocketOptions options = serverSocket.options();
+            assertThrows(NullPointerException.class, () -> options.set(null, 1));
+        }
     }
 
     @Test
     public void test_set_nullValue() {
-        AsyncServerSocket serverSocket = newServerSocket();
-        AsyncSocketOptions options = serverSocket.options();
-        assertThrows(NullPointerException.class, () -> options.set(SO_RCVBUF, null));
+        try (AsyncServerSocket serverSocket = newServerSocket()) {
+            AsyncSocketOptions options = serverSocket.options();
+            assertThrows(NullPointerException.class, () -> options.set(SO_RCVBUF, null));
+        }
     }
 
     @Test
     public void test_set_unsupportedOption() {
-        AsyncServerSocket serverSocket = newServerSocket();
-        AsyncSocketOptions options = serverSocket.options();
-        // SO_SNDBUF is not supported for server sockets.
-        assertFalse(options.set(SO_SNDBUF, 64 * 1024));
+        try (AsyncServerSocket serverSocket = newServerSocket()) {
+            AsyncSocketOptions options = serverSocket.options();
+            // SO_SNDBUF is not supported for server sockets.
+            assertFalse(options.set(SO_SNDBUF, 64 * 1024));
+        }
     }
 
     @Test
     public void test_get_unsupportedOption() {
-        AsyncServerSocket serverSocket = newServerSocket();
-        AsyncSocketOptions options = serverSocket.options();
-        // SO_SNDBUF is not supported for server sockets.
-        assertNull(options.get(SO_SNDBUF));
+        try (AsyncServerSocket serverSocket = newServerSocket()) {
+            AsyncSocketOptions options = serverSocket.options();
+            // SO_SNDBUF is not supported for server sockets.
+            assertNull(options.get(SO_SNDBUF));
+        }
     }
 
     @Test
     public void test_get_nullOption() {
-        AsyncServerSocket serverSocket = newServerSocket();
-        AsyncSocketOptions options = serverSocket.options();
-        assertThrows(NullPointerException.class, () -> options.get(null));
+        try (AsyncServerSocket serverSocket = newServerSocket()) {
+            AsyncSocketOptions options = serverSocket.options();
+            assertThrows(NullPointerException.class, () -> options.get(null));
+        }
     }
 
     @Test
     public void test_SO_RCVBUF() {
-        AsyncServerSocket serverSocket = newServerSocket();
-        AsyncSocketOptions options = serverSocket.options();
-        options.set(SO_RCVBUF, 64 * 1024);
-        assertEquals(Integer.valueOf(64 * 1024), options.get(SO_RCVBUF));
+        try (AsyncServerSocket serverSocket = newServerSocket()) {
+            AsyncSocketOptions options = serverSocket.options();
+            options.set(SO_RCVBUF, 64 * 1024);
+            assertEquals(Integer.valueOf(64 * 1024), options.get(SO_RCVBUF));
+        }
     }
 
     @Test
     public void test_SO_REUSEADDR() {
-        AsyncServerSocket serverSocket = newServerSocket();
-        AsyncSocketOptions options = serverSocket.options();
-        options.set(SO_REUSEADDR, true);
-        assertEquals(Boolean.TRUE, options.get(SO_REUSEADDR));
-        options.set(SO_REUSEADDR, false);
-        assertEquals(Boolean.FALSE, options.get(SO_REUSEADDR));
+        try (AsyncServerSocket serverSocket = newServerSocket()) {
+            AsyncSocketOptions options = serverSocket.options();
+            options.set(SO_REUSEADDR, true);
+            assertEquals(Boolean.TRUE, options.get(SO_REUSEADDR));
+            options.set(SO_REUSEADDR, false);
+            assertEquals(Boolean.FALSE, options.get(SO_REUSEADDR));
+        }
     }
 
     @Test
     public void test_SO_REUSE_PORT() {
-        AsyncServerSocket serverSocket = newServerSocket();
-        AsyncSocketOptions options = serverSocket.options();
-        if (options.isSupported(SO_REUSEPORT)) {
-            options.set(SO_REUSEPORT, true);
-            assertEquals(Boolean.TRUE, options.get(SO_REUSEPORT));
-            options.set(SO_REUSEPORT, false);
-            assertEquals(Boolean.FALSE, options.get(SO_REUSEPORT));
-        } else {
-            assertFalse(options.set(SO_REUSEPORT, true));
-            assertNull(options.get(SO_REUSEPORT));
+        try (AsyncServerSocket serverSocket = newServerSocket()) {
+            AsyncSocketOptions options = serverSocket.options();
+            if (options.isSupported(SO_REUSEPORT)) {
+                options.set(SO_REUSEPORT, true);
+                assertEquals(Boolean.TRUE, options.get(SO_REUSEPORT));
+                options.set(SO_REUSEPORT, false);
+                assertEquals(Boolean.FALSE, options.get(SO_REUSEPORT));
+            } else {
+                assertFalse(options.set(SO_REUSEPORT, true));
+                assertNull(options.get(SO_REUSEPORT));
+            }
         }
     }
 }

@@ -25,6 +25,7 @@ import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.util.HostnameUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
+import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -45,6 +46,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.UNKNOWN;
 import static java.util.Arrays.asList;
@@ -63,6 +66,9 @@ class KubernetesClient {
     private static final int HTTP_GONE = 410;
     private static final int HTTP_UNAUTHORIZED = 401;
     private static final int HTTP_FORBIDDEN = 403;
+
+    private static final int CONNECTION_TIMEOUT_SECONDS = 10;
+    private static final int READ_TIMEOUT_SECONDS = 10;
 
     private static final List<String> NON_RETRYABLE_KEYWORDS = asList(
             "\"reason\":\"Forbidden\"",
@@ -91,6 +97,7 @@ class KubernetesClient {
 
     private boolean isNoPublicIpAlreadyLogged;
     private boolean isKnownExceptionAlreadyLogged;
+    private boolean isNodePortWarningAlreadyLogged;
 
     KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
                      String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
@@ -168,12 +175,12 @@ class KubernetesClient {
     }
 
     public void destroy() {
-        // It's important we shut down the StsMonitorThread first, as the ClusterTopologyIntentTracker
+        // It's important we interrupt the StsMonitorThread first, as the ClusterTopologyIntentTracker
         // receives messages from this thread, and we want to let it process all available messages
         // before the intent tracker is shutdown
         if (stsMonitorThread != null) {
-            LOGGER.info("Shutting down StatefulSet monitor thread");
-            stsMonitorThread.shutdown();
+            LOGGER.info("Interrupting StatefulSet monitor thread");
+            stsMonitorThread.interrupt();
         }
 
         if (clusterTopologyIntentTracker != null) {
@@ -447,7 +454,6 @@ class KubernetesClient {
             Map<String, Integer> publicPorts = new HashMap<>();
             Map<String, String> cachedNodePublicIps = new HashMap<>();
 
-
             for (Map.Entry<EndpointAddress, String> serviceEntry : services.entrySet()) {
                 EndpointAddress privateAddress = serviceEntry.getKey();
                 String service = serviceEntry.getValue();
@@ -471,6 +477,12 @@ class KubernetesClient {
                     }
                     publicIps.put(privateAddress.getIp(), nodePublicAddress);
                     publicPorts.put(privateAddress.getIp(), nodePort);
+                    // Log warning only once.
+                    if (!isNodePortWarningAlreadyLogged && exposeExternallyMode == ExposeExternallyMode.ENABLED) {
+                        LOGGER.warning("Using NodePort service type for public addresses may lead to connection issues from "
+                                + "outside of the Kubernetes cluster. Ensure external accessibility of the NodePort IPs.");
+                        isNodePortWarningAlreadyLogged = true;
+                    }
                 }
             }
 
@@ -483,9 +495,8 @@ class KubernetesClient {
             LOGGER.finest(e);
             // Log warning only once.
             if (!isNoPublicIpAlreadyLogged) {
-                LOGGER.warning(
-                        "Cannot fetch public IPs of Hazelcast Member PODs, you won't be able to use Hazelcast Smart Client from "
-                                + "outside of the Kubernetes network");
+                LOGGER.warning("Cannot fetch public IPs of Hazelcast Member PODs, you won't be able to use "
+                        + "Hazelcast Smart Client from outside of the Kubernetes network");
                 isNoPublicIpAlreadyLogged = true;
             }
             return endpoints;
@@ -589,6 +600,7 @@ class KubernetesClient {
                 .parse((caCertificate == null ? RestClient.create(urlString)
                         : RestClient.createWithSSL(urlString, caCertificate))
                         .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
+                        .withTimeoutSeconds(CONNECTION_TIMEOUT_SECONDS)
                         .get()
                         .getBody())
                 .asObject(), retries, NON_RETRYABLE_KEYWORDS);

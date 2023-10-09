@@ -26,6 +26,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.ReadManyOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -79,7 +80,7 @@ public class RingbufferReadManyMessageTask
 
     @Override
     public String getMethodName() {
-        return "readMany";
+        return SecurityInterceptorConstants.READ_MANY;
     }
 
     @Override

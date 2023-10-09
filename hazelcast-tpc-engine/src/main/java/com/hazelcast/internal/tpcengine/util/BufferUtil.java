@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.tpcengine.util;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 public final class BufferUtil {
@@ -32,41 +31,11 @@ public final class BufferUtil {
         if (bb.hasRemaining()) {
             bb.compact();
         } else {
-            upcast(bb).clear();
+            bb.clear();
         }
     }
 
-    /**
-     * Explicit cast to {@link Buffer} parent buffer type. It resolves issues with covariant return types in Java 9+ for
-     * {@link ByteBuffer} and {@link java.nio.CharBuffer}. Explicit casting resolves the NoSuchMethodErrors (e.g
-     * java.lang.NoSuchMethodError: java.nio.ByteBuffer.limit(I)Ljava/nio/ByteBuffer) when the project is compiled with newer
-     * Java version and run on Java 8.
-     * <p/>
-     * <a href="https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html">Java 8</a> doesn't provide override the
-     * following Buffer methods in subclasses:
-     *
-     * <pre>
-     * Buffer clear​()
-     * Buffer flip​()
-     * Buffer limit​(int newLimit)
-     * Buffer mark​()
-     * Buffer position​(int newPosition)
-     * Buffer reset​()
-     * Buffer rewind​()
-     * </pre>
-     *
-     * <a href="https://docs.oracle.com/javase/9/docs/api/java/nio/ByteBuffer.html">Java 9</a> introduces the overrides in child
-     * classes (e.g the ByteBuffer), but the return type is the specialized one and not the abstract {@link Buffer}. So the code
-     * compiled with newer Java is not working on Java 8 unless a workaround with explicit casting is used.
-     *
-     * @param buf buffer to cast to the abstract {@link Buffer} parent type
-     * @return the provided buffer
-     */
-    public static Buffer upcast(Buffer buf) {
-        return buf;
-    }
-
-    public static void put(ByteBuffer dst, ByteBuffer src) {
+     public static void put(ByteBuffer dst, ByteBuffer src) {
         if (src.remaining() <= dst.remaining()) {
             // there is enough space in the dst buffer to copy the src
             dst.put(src);
@@ -74,9 +43,9 @@ public final class BufferUtil {
             // there is not enough space in the dst buffer, so we need to
             // copy as much as we can.
             int srcOldLimit = src.limit();
-            upcast(src).limit(src.position() + dst.remaining());
+            src.limit(src.position() + dst.remaining());
             dst.put(src);
-            upcast(src).limit(srcOldLimit);
+            src.limit(srcOldLimit);
         }
     }
 

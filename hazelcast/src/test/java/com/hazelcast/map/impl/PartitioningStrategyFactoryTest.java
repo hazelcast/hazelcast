@@ -30,12 +30,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
@@ -43,6 +41,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -53,9 +53,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Rule
     public TestName testName = new TestName();
@@ -119,9 +116,9 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
         cfg.setPartitioningStrategyClass("NonExistentPartitioningStrategy");
 
         // while attempting to get partitioning strategy, ClassNotFound exception will be thrown and wrapped in HazelcastException
-        expectedException.expect(new RootCauseMatcher(ClassNotFoundException.class));
         // use a random UUID as map name, to avoid obtaining the PartitioningStrategy from cache.
-        partitioningStrategyFactory.getPartitioningStrategy(UUID.randomUUID().toString(), cfg, null);
+        assertThatThrownBy(() -> partitioningStrategyFactory.getPartitioningStrategy(UUID.randomUUID().toString(), cfg, null))
+                .has(rootCause(ClassNotFoundException.class));
     }
 
     @Test

@@ -26,7 +26,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertThat;
+import static com.hazelcast.internal.adapter.MethodAvailableMatcher.methodAvailable;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -35,28 +37,28 @@ public class MethodAvailableMatcherTest {
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    private Class<? extends DataStructureAdapter> adapterClass = ReplicatedMapDataStructureAdapter.class;
+    private final Class<? extends DataStructureAdapter> adapterClass = ReplicatedMapDataStructureAdapter.class;
 
     @Test
     public void assertThat_withAvailableMethod() {
-        assertThat(adapterClass, new MethodAvailableMatcher(DataStructureMethods.CLEAR));
+        assertThat(adapterClass).is(methodAvailable(DataStructureMethods.CLEAR));
     }
 
     @Test
     public void assertThat_withAvailableMethod_withParameter() {
-        assertThat(adapterClass, new MethodAvailableMatcher(DataStructureMethods.GET));
+        assertThat(adapterClass).is(methodAvailable(DataStructureMethods.GET));
     }
 
     @Test
     public void assertThat_withAvailableMethod_withMultipleParameters() {
-        assertThat(adapterClass, new MethodAvailableMatcher(DataStructureMethods.PUT));
+        assertThat(adapterClass).is(methodAvailable(DataStructureMethods.PUT));
     }
 
     @Test
     public void assertThat_withAvailableMethod_withParameterMismatch() {
         expected.expect(AssertionError.class);
         expected.expectMessage("Could not find method " + adapterClass.getSimpleName() + ".put(Integer, String)");
-        assertThat(adapterClass, new MethodAvailableMatcher(new DataStructureAdapterMethod() {
+        assertThat(adapterClass).is(methodAvailable(new DataStructureAdapterMethod() {
             @Override
             public String getMethodName() {
                 return "put";
@@ -78,20 +80,21 @@ public class MethodAvailableMatcherTest {
     public void assertThat_withUnavailableMethod_withParameter() {
         expected.expect(AssertionError.class);
         expected.expectMessage("removeAsync(Object) to be available");
-        assertThat(adapterClass, new MethodAvailableMatcher(DataStructureMethods.REMOVE_ASYNC));
+        assertThat(adapterClass).is(methodAvailable(DataStructureMethods.REMOVE_ASYNC));
     }
 
     @Test
     public void assertThat_withUnavailableMethod_withMultipleParameters() {
         expected.expect(AssertionError.class);
         expected.expectMessage("putIfAbsentAsync(Object, Object) to be available");
-        assertThat(adapterClass, new MethodAvailableMatcher(DataStructureMethods.PUT_IF_ABSENT_ASYNC));
+        assertThat(adapterClass).is(methodAvailable(DataStructureMethods.PUT_IF_ABSENT_ASYNC));
     }
 
     @Test
     public void assertThat_withNull() {
-        expected.expect(AssertionError.class);
-        expected.expectMessage("clear() to be available");
-        assertThat(null, new MethodAvailableMatcher(DataStructureMethods.CLEAR));
+        var ex = assertThrows(AssertionError.class, () -> {
+            methodAvailable(DataStructureMethods.CLEAR).matches(null);
+        });
+        assertThat(ex).hasMessageContaining("clear() to be available");
     }
 }

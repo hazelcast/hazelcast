@@ -20,12 +20,13 @@ import classloading.domain.Person;
 import classloading.domain.PersonCacheLoaderFactory;
 import classloading.domain.PersonEntryProcessor;
 import classloading.domain.PersonExpiryPolicyFactory;
+import com.hazelcast.cache.impl.CacheProxy;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -33,10 +34,8 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
@@ -46,9 +45,9 @@ import java.util.List;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
-import com.hazelcast.cache.impl.CacheProxy;
-import com.hazelcast.cache.impl.CacheService;
 import static com.hazelcast.config.UserCodeDeploymentConfig.ClassCacheMode.OFF;
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -57,9 +56,6 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheTypesConfigTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expect = ExpectedException.none();
 
     protected String cacheName;
     protected TestHazelcastInstanceFactory factory;
@@ -88,9 +84,9 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
         // a simple put will work as hz2 will just receive a Data value blob
         cache.put(key, new Person());
 
-        expect.expectCause(new RootCauseMatcher(ClassNotFoundException.class, "classloading.domain.PersonEntryProcessor - "
-                + "Package excluded explicitly"));
-        cache.invoke(key, new PersonEntryProcessor());
+        assertThatThrownBy(() -> cache.invoke(key, new PersonEntryProcessor()))
+                .has(rootCause(ClassNotFoundException.class, "classloading.domain.PersonEntryProcessor - "
+                        + "Package excluded explicitly"));
     }
 
     @Test
@@ -155,9 +151,9 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
 
         ICache<String, Person> cache = hz2.getCacheManager().getCache(cacheName);
         String key = generateKeyOwnedBy(hz2);
-        expect.expectCause(new RootCauseMatcher(ClassNotFoundException.class, "classloading.domain.PersonCacheLoaderFactory - "
-                + "Package excluded explicitly"));
-        cache.invoke(key, new PersonEntryProcessor());
+        assertThatThrownBy(() -> cache.invoke(key, new PersonEntryProcessor()))
+                .has(rootCause(ClassNotFoundException.class, "classloading.domain.PersonCacheLoaderFactory - "
+                        + "Package excluded explicitly"));
     }
 
     // tests deferred resolution of factories, with context class loader set correctly
@@ -180,11 +176,12 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
             Thread.currentThread().setContextClassLoader(hz2.getConfig().getClassLoader());
             CacheProxy<String, Person> cacheProxy = (CacheProxy<String, Person>) cache;
             CacheService cacheService = (CacheService) cacheProxy.getService();
-            expect.expectCause(new RootCauseMatcher(ClassNotFoundException.class, "classloading.domain.PersonCacheLoaderFactory - "
+            assertThatThrownBy(() -> {
+                cacheService.getCacheConfig(cache.getPrefixedName()).getCacheLoaderFactory();
+                String key = generateKeyOwnedBy(hz2);
+                cache.invoke(key, new PersonEntryProcessor());
+            }).has(rootCause(ClassNotFoundException.class, "classloading.domain.PersonCacheLoaderFactory - "
                     + "Package excluded explicitly"));
-            cacheService.getCacheConfig(cache.getPrefixedName()).getCacheLoaderFactory();
-            String key = generateKeyOwnedBy(hz2);
-            cache.invoke(key, new PersonEntryProcessor());
         } finally {
             Thread.currentThread().setContextClassLoader(oldClassLoader);
         }
@@ -203,9 +200,9 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
 
         ICache<String, Person> cache = hz2.getCacheManager().getCache(cacheName);
         String key = generateKeyOwnedBy(hz2);
-        expect.expectCause(new RootCauseMatcher(ClassNotFoundException.class, "classloading.domain.PersonExpiryPolicyFactory - "
-                + "Package excluded explicitly"));
-        cache.invoke(key, new PersonEntryProcessor());
+        assertThatThrownBy(() -> cache.invoke(key, new PersonEntryProcessor()))
+                .has(rootCause(ClassNotFoundException.class, "classloading.domain.PersonExpiryPolicyFactory - "
+                        + "Package excluded explicitly"));
     }
 
     // overridden in another context

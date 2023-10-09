@@ -27,7 +27,6 @@ import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.ObjectTestUtils;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -39,6 +38,7 @@ import org.junit.runners.Parameterized;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
 import static java.util.Arrays.asList;
@@ -89,7 +89,7 @@ public class CompositeEqualPredicateTest extends HazelcastTestSupport {
             assertPredicate(new Predicate<Integer, Person>() {
                 @Override
                 public boolean apply(Map.Entry<Integer, Person> mapEntry) {
-                    return ObjectTestUtils.equals(mapEntry.getValue().age, age) && ObjectTestUtils.equals(
+                    return Objects.equals(mapEntry.getValue().age, age) && Objects.equals(
                             mapEntry.getValue().height, height);
                 }
             }, predicate(indexConfig.getName(), value(age, height), "age", "height"));
@@ -112,7 +112,7 @@ public class CompositeEqualPredicateTest extends HazelcastTestSupport {
             assertPredicate(new Predicate<Integer, Person>() {
                 @Override
                 public boolean apply(Map.Entry<Integer, Person> mapEntry) {
-                    return ObjectTestUtils.equals(mapEntry.getValue().age, age) && ObjectTestUtils.equals(
+                    return Objects.equals(mapEntry.getValue().age, age) && Objects.equals(
                             mapEntry.getValue().height, height);
                 }
             }, predicate(indexConfig.getName(), value(age, height), "age", "height"));

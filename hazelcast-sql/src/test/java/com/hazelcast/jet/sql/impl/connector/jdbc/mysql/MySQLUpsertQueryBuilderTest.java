@@ -19,10 +19,11 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.MysqlSqlDialect;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 
@@ -30,24 +31,23 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-public class MySQLUpsertQueryBuilderTest {
+@ExtendWith(MockitoExtension.class)
+class MySQLUpsertQueryBuilderTest {
 
     @Mock
     JdbcTable jdbcTable;
 
     SqlDialect dialect = MysqlSqlDialect.DEFAULT;
 
-    @Before
+    @BeforeEach
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
-
-        when(jdbcTable.getExternalName()).thenReturn(new String[]{"table1"});
         when(jdbcTable.getExternalNameList()).thenReturn(singletonList("table1"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
     }
 
+
     @Test
-    public void appendInsertClause() {
+    void appendInsertClause() {
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendInsertClause(sb);
@@ -57,7 +57,7 @@ public class MySQLUpsertQueryBuilderTest {
     }
 
     @Test
-    public void appendValuesClause() {
+    void appendValuesClause() {
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendValuesClause(sb);
@@ -67,7 +67,7 @@ public class MySQLUpsertQueryBuilderTest {
     }
 
     @Test
-    public void appendOnDuplicateClause() {
+    void appendOnDuplicateClause() {
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendOnDuplicateClause(sb);
@@ -80,7 +80,7 @@ public class MySQLUpsertQueryBuilderTest {
     }
 
     @Test
-    public void query() {
+    void query() {
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
         String result = builder.query();
         assertThat(result).isEqualTo(

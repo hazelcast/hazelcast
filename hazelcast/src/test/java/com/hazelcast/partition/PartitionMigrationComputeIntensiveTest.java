@@ -19,11 +19,12 @@ package com.hazelcast.partition;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,28 +35,39 @@ import static com.hazelcast.partition.PartitionMigrationListenerTest.MigrationEv
 import static com.hazelcast.partition.PartitionMigrationListenerTest.assertMigrationEventsConsistentWithResult;
 import static com.hazelcast.partition.PartitionMigrationListenerTest.assertMigrationProcessCompleted;
 import static com.hazelcast.partition.PartitionMigrationListenerTest.assertMigrationProcessEventsConsistent;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
+@Category({NightlyTest.class})
 public class PartitionMigrationComputeIntensiveTest extends HazelcastTestSupport {
+
+    private static final ILogger LOGGER = Logger.getLogger(PartitionMigrationComputeIntensiveTest.class);
 
     @Test
     public void testMigrationStats_afterPartitionsLost_when_NO_MIGRATION() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        Config config = new Config().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2000");
+        Config config = new Config().setProperty(PARTITION_COUNT.getName(), "2000")
+                                    .setProperty(SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED.getName(), "true");
         HazelcastInstance[] instances = factory.newInstances(config, 10);
+
         assertClusterSizeEventually(instances.length, instances);
+
+        LOGGER.info("Cluster formed and in safe state, warming up partitions...");
         warmUpPartitions(instances);
 
+        LOGGER.info("Adding migration listener");
         EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
         instances[0].getPartitionService().addMigrationListener(listener);
 
+        LOGGER.info("Changing cluster state to PASSIVE");
         changeClusterStateEventually(instances[0], ClusterState.PASSIVE);
 
         for (int i = 3; i < instances.length; i++) {
             instances[i].getLifecycleService().terminate();
         }
 
+        LOGGER.info("Changing cluster state to NO_MIGRATION");
         changeClusterStateEventually(instances[0], ClusterState.NO_MIGRATION);
 
         // 3 promotions on each remaining node + 1 to assign owners for lost partitions

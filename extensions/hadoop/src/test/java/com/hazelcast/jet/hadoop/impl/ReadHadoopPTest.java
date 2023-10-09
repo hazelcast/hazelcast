@@ -21,7 +21,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.hadoop.HadoopSources;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.test.HazelcastParametrizedRunner;

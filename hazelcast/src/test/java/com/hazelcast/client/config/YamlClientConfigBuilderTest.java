@@ -33,7 +33,6 @@ import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -41,10 +40,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -59,6 +56,7 @@ import java.util.Properties;
 import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
 import static com.hazelcast.config.PersistentMemoryMode.SYSTEM_MEMORY;
 import static com.hazelcast.internal.nio.IOUtil.delete;
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static com.hazelcast.memory.MemoryUnit.GIGABYTES;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -76,9 +74,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest {
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @Before
     public void init() throws Exception {
@@ -114,7 +109,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
         File file = File.createTempFile("foo", ".yaml");
         file.deleteOnExit();
-        PrintWriter writer = new PrintWriter(file, "UTF-8");
+        PrintWriter writer = new PrintWriter(file, StandardCharsets.UTF_8);
         writer.println(yaml);
         writer.close();
 
@@ -352,8 +347,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "  group:\n"
                 + "  name: instanceName";
 
-        expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group"));
-        buildConfig(yaml);
+        assertThatThrownBy(() -> buildConfig(yaml)).has(rootCause(InvalidConfigurationException.class, "hazelcast-client/group"));
     }
 
     @Test
@@ -364,8 +358,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "    - admin\n"
                 + "    -\n";
 
-        expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/client-labels"));
-        buildConfig(yaml);
+        assertThatThrownBy(() -> buildConfig(yaml)).has(rootCause(InvalidConfigurationException.class, "hazelcast-client/client-labels"));
     }
 
     @Test
@@ -375,8 +368,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "  group:\n"
                 + "   name: !!null";
 
-        expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
-        buildConfig(yaml);
+        assertThatThrownBy(() -> buildConfig(yaml)).has(rootCause(InvalidConfigurationException.class, "hazelcast-client/group/name"));
     }
 
     @Override

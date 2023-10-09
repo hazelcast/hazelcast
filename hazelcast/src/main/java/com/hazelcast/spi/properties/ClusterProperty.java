@@ -543,7 +543,7 @@ public final class ClusterProperty {
      * This parameter defines time that the master node will wait since the last
      * received join request (a pre-join window) before it starts processing the
      * join requests and forming a cluster.
-     * Alternatively, if the pre-join phase has laster for over
+     * Alternatively, if the pre-join phase has lasted for over
      * {@link #MAX_WAIT_SECONDS_BEFORE_JOIN} seconds, the master node will proceed
      * with processing the join requests and forming the cluster, regardless of the
      * time elapsed since the last join request.
@@ -737,7 +737,8 @@ public final class ClusterProperty {
 
     /**
      * Class name implementing {@link com.hazelcast.partition.PartitioningStrategy}, which
-     * defines key to partition mapping.
+     * defines key to partition mapping. Member-side equivalent of client property
+     * {@link com.hazelcast.client.properties.ClientProperty#PARTITIONING_STRATEGY_CLASS}.
      */
     public static final HazelcastProperty PARTITIONING_STRATEGY_CLASS
             = new HazelcastProperty("hazelcast.partitioning.strategy.class", "");
@@ -1628,8 +1629,10 @@ public final class ClusterProperty {
     /**
      * Hazelcast IMDG Enterprise license key.
      */
-    public static final HazelcastProperty ENTERPRISE_LICENSE_KEY
-            = new HazelcastProperty("hazelcast.enterprise.license.key");
+    public static final HazelcastProperty ENTERPRISE_LICENSE_KEY = new HazelcastProperty("hazelcast.enterprise.license.key")
+            // Print a warning when British spelling of "License" is used
+            // https://github.com/hazelcast/hazelcast/issues/13161
+            .setDeprecatedName("hazelcast.enterprise.licence.key");
 
     /**
      * Hazelcast serialization version. This is single byte value between 1 and
@@ -1883,6 +1886,44 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty JAR_UPLOAD_DIR_PATH
             = new HazelcastProperty("hazelcast.cluster.jarupload.dirpath");
+
+    /**
+     * Defines whether WAN replication events should be fired when values are evicted
+     * from {@link IMap} objects.
+     * <p>
+     * The default value is {@code false}.
+     * <p>
+     * NOTE: The expected use-case for this property to be enabled is very specific, namely where
+     * an exact copy of a source is wanted on a target with no evictions enabled; however in this
+     * scenario, the target cluster would need to have evictions enabled if it were to become the
+     * active cluster - failing to do so could lead to Out Of Memory or data inconsistency issues.
+     * The reverse would also be necessary if returning back to the original cluster. Ensure you
+     * have a plan for handling these scenarios (such as using Management Centre to configure
+     * evictions manually) before enabling this property and changing between active clusters.
+     *
+     * @since 5.4
+     */
+    public static final HazelcastProperty WAN_REPLICATE_IMAP_EVICTIONS
+            = new HazelcastProperty("hazelcast.wan.replicate.imap.evictions", false);
+
+    /**
+     * Defines whether WAN replication events should be fired when values are evicted
+     * from {@link com.hazelcast.cache.ICache} objects.
+     * <p>
+     * The default value is {@code false}.
+     * <p>
+     * NOTE: The expected use-case for this property to be enabled is very specific, namely where
+     * an exact copy of a source is wanted on a target with no evictions enabled; however in this
+     * scenario, the target cluster would need to have evictions enabled if it were to become the
+     * active cluster - failing to do so could lead to Out Of Memory or data inconsistency issues.
+     * The reverse would also be necessary if returning back to the original cluster. Ensure you
+     * have a plan for handling these scenarios (such as using Management Centre to configure
+     * evictions manually) before enabling this property and changing between active clusters.
+     *
+     * @since 5.4
+     */
+    public static final HazelcastProperty WAN_REPLICATE_ICACHE_EVICTIONS
+            = new HazelcastProperty("hazelcast.wan.replicate.icache.evictions", false);
 
     private ClusterProperty() {
     }

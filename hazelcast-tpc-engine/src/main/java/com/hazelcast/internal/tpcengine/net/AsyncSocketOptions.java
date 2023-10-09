@@ -46,11 +46,6 @@ public interface AsyncSocketOptions {
     Option<Boolean> SO_REUSEPORT = new Option<>("SO_REUSEPORT", Boolean.class);
 
     /**
-     * See {@link java.net.SocketOptions#SO_TIMEOUT}
-     */
-    Option<Integer> SO_TIMEOUT = new Option<>("SO_TIMEOUT", Integer.class);
-
-    /**
      * See {@link java.net.SocketOptions#SO_REUSEADDR}
      */
     Option<Boolean> SO_REUSEADDR = new Option<>("SO_REUSEADDR", Boolean.class);

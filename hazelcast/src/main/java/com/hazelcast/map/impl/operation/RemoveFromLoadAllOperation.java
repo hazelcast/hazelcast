@@ -17,14 +17,14 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,7 +41,8 @@ import java.util.List;
  *
  * @see IMap#loadAll(java.util.Set, boolean)
  */
-public class RemoveFromLoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
+public class RemoveFromLoadAllOperation extends MapOperation
+        implements PartitionAwareOperation, MutatingOperation {
 
     private List<Data> keys;
 

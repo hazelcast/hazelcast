@@ -21,31 +21,23 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import static com.hazelcast.internal.json.Json.parse;
-import static com.hazelcast.internal.json.TestUtil.assertException;
-import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.junit.Assert.*;
+import com.hazelcast.internal.json.Json.DefaultHandler;
+import com.hazelcast.internal.json.TestUtil.RunnableEx;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonHandler;
-import com.hazelcast.internal.json.JsonNumber;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonParser;
-import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.json.Location;
-import com.hazelcast.internal.json.ParseException;
-import com.hazelcast.internal.json.Json.DefaultHandler;
-import com.hazelcast.internal.json.TestUtil.RunnableEx;
-import com.hazelcast.test.annotation.QuickTest;
+import static com.hazelcast.internal.json.Json.parse;
+import static com.hazelcast.internal.json.TestUtil.assertException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 public class JsonParser_Test {
@@ -93,7 +85,7 @@ public class JsonParser_Test {
     });
 
     assertEquals(0, exception.getLocation().offset);
-    assertThat(exception.getMessage(), startsWith("Unexpected end of input at"));
+    assertThat(exception.getMessage()).startsWith("Unexpected end of input at");
   }
 
   @Test
@@ -749,13 +741,9 @@ public class JsonParser_Test {
   }
 
   private void assertParseException(int offset, String message, final String json) {
-    ParseException exception = assertException(ParseException.class, new Runnable() {
-      public void run() {
-        parser.parse(json);
-      }
-    });
+    ParseException exception = assertException(ParseException.class, (Runnable) () -> parser.parse(json));
     assertEquals(offset, exception.getLocation().offset);
-    assertThat(exception.getMessage(), startsWith(message + " at"));
+    assertThat(exception.getMessage()).startsWith(message + " at");
   }
 
   private static String join(String... strings) {

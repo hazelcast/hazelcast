@@ -689,6 +689,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         assert clusterServiceLock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         joined.getAndUpdate(holder -> new JoinHolder(val)).latch.countDown();
         joinedBefore.compareAndSet(false, val);
+        if (!node.getNodeExtension().getInternalHotRestartService().isStartCompleted()) {
+            // Hot restart can reset join state. We should allow it to reset joinBefore
+            // because a member which didn't complete hot restart is more similar to a
+            // member which never joined before. Because that member's nodeEngine can't
+            // return true to nodeEngine.isStartCompleted() call.
+            joinedBefore.set(val);
+        }
     }
 
     @Override

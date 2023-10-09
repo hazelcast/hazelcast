@@ -42,9 +42,9 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.JobStatusEvent;
 import com.hazelcast.jet.JobStatusListener;
-import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
@@ -85,8 +85,8 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
             boolean isLightJob,
             @Nonnull Object jobDefinition,
             @Nonnull JobConfig config
-    ) {
-        super(client, jobId, isLightJob, jobDefinition, config);
+            ) {
+        super(client, jobId, isLightJob, jobDefinition, config, null);
     }
 
     @Nonnull

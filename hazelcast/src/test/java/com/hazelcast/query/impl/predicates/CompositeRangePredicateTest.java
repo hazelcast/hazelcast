@@ -27,7 +27,6 @@ import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.ObjectTestUtils;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -39,6 +38,7 @@ import org.junit.runners.Parameterized;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
@@ -107,7 +107,7 @@ public class CompositeRangePredicateTest extends HazelcastTestSupport {
                     expected = new Predicate<Integer, Person>() {
                         @Override
                         public boolean apply(Map.Entry<Integer, Person> mapEntry) {
-                            return ObjectTestUtils.equals(mapEntry.getValue().age, age);
+                            return Objects.equals(mapEntry.getValue().age, age);
                         }
                     };
                     break;
@@ -117,7 +117,7 @@ public class CompositeRangePredicateTest extends HazelcastTestSupport {
                     expected = new Predicate<Integer, Person>() {
                         @Override
                         public boolean apply(Map.Entry<Integer, Person> mapEntry) {
-                            return ObjectTestUtils.equals(mapEntry.getValue().age, age) && ObjectTestUtils.equals(
+                            return Objects.equals(mapEntry.getValue().age, age) && Objects.equals(
                                     mapEntry.getValue().height, height);
                         }
                     };
@@ -171,7 +171,7 @@ public class CompositeRangePredicateTest extends HazelcastTestSupport {
                         public boolean apply(Map.Entry<Integer, Person> mapEntry) {
                             Person value = mapEntry.getValue();
 
-                            if (!ObjectTestUtils.equals(value.age, age)) {
+                            if (!Objects.equals(value.age, age)) {
                                 return false;
                             }
 
@@ -225,11 +225,11 @@ public class CompositeRangePredicateTest extends HazelcastTestSupport {
                             Person value = mapEntry.getValue();
                             int key = mapEntry.getKey();
 
-                            if (!ObjectTestUtils.equals(value.age, age)) {
+                            if (!Objects.equals(value.age, age)) {
                                 return false;
                             }
 
-                            if (!ObjectTestUtils.equals(value.height, height)) {
+                            if (!Objects.equals(value.height, height)) {
                                 return false;
                             }
 

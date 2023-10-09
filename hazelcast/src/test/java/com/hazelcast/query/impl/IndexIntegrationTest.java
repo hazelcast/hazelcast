@@ -58,10 +58,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.test.Accessors.getNode;
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -162,7 +161,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         Predicate predicate = Predicates.greaterEqual("limbArray[any].fingerCount", 0);
         Collection<Body> values = map.values(predicate);
 
-        assertThat(values, hasSize(1));
+        assertThat(values).hasSize(1);
     }
 
     @Test
@@ -175,7 +174,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         Predicate predicate = Predicates.equal("payload[any]", 3);
         Collection<SillySequence> result = map.values(predicate);
-        assertThat(result, hasSize(1));
+        assertThat(result).hasSize(1);
     }
 
     @Test
@@ -188,7 +187,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         Predicate predicate = Predicates.equal("payloadField[any]", 3);
         Collection<SillySequence> result = map.values(predicate);
-        assertThat(result, hasSize(1));
+        assertThat(result).hasSize(1);
     }
 
     @Test
@@ -211,11 +210,11 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         Predicate predicate = Predicates.sql("limbArray[any].fingerCount = '1'");
         Collection<Body> values = map.values(predicate);
-        assertThat(values, hasSize(1));
+        assertThat(values).hasSize(1);
 
         predicate = Predicates.sql("limbCollection[any].fingerCount = '1'");
         values = map.values(predicate);
-        assertThat(values, hasSize(1));
+        assertThat(values).hasSize(1);
     }
 
     private static List<Index> getIndexOfAttributeForMap(HazelcastInstance instance, String mapName, String attribute) {
@@ -226,7 +225,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         List<Index> result = new ArrayList<>();
         for (int partitionId : mapServiceContext.getCachedOwnedPartitions()) {
-            Indexes indexes = mapContainer.getIndexes(partitionId);
+            IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(partitionId);
 
             for (InternalIndex index : indexes.getIndexes()) {
                 for (String component : index.getComponents()) {

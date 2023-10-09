@@ -23,6 +23,8 @@ import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl.DataConnectio
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.DataConnectionsTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.Table;
@@ -34,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.BiFunction;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_INFORMATION_SCHEMA;
@@ -50,28 +51,32 @@ public class DataConnectionResolver implements TableResolver {
     );
 
     @SuppressWarnings("checkstyle:LineLength")
-    private static final List<BiFunction<List<DataConnectionCatalogEntry>, Boolean, Table>> ADDITIONAL_TABLE_PRODUCERS = singletonList(
-            (dl, securityEnabled) -> new DataConnectionsTable(
+    private static final List<TriFunction<List<DataConnectionCatalogEntry>, SqlConnectorCache, Boolean, Table>> ADDITIONAL_TABLE_PRODUCERS = singletonList(
+            (dl, connectorCache, securityEnabled) -> new DataConnectionsTable(
                     CATALOG,
                     SCHEMA_NAME_INFORMATION_SCHEMA,
                     SCHEMA_NAME_PUBLIC,
                     dl,
+                    connectorCache,
                     securityEnabled
             ));
 
     private final DataConnectionStorage dataConnectionStorage;
     private final DataConnectionServiceImpl dataConnectionService;
+    private final SqlConnectorCache connectorCache;
     private final boolean isSecurityEnabled;
     private final CopyOnWriteArrayList<TableListener> listeners;
 
     public DataConnectionResolver(
             InternalDataConnectionService dataConnectionService,
+            SqlConnectorCache connectorCache,
             DataConnectionStorage dataConnectionStorage,
             boolean isSecurityEnabled
     ) {
         Preconditions.checkInstanceOf(DataConnectionServiceImpl.class, dataConnectionService);
         this.dataConnectionService = (DataConnectionServiceImpl) dataConnectionService;
         this.dataConnectionStorage = dataConnectionStorage;
+        this.connectorCache = connectorCache;
         this.isSecurityEnabled = isSecurityEnabled;
 
         // See comment in TableResolverImpl regarding local events processing.
@@ -133,8 +138,11 @@ public class DataConnectionResolver implements TableResolver {
         List<Table> tables = new ArrayList<>();
 
         ADDITIONAL_TABLE_PRODUCERS.forEach(producer -> tables.add(
-                producer.apply(getAllDataConnectionEntries(dataConnectionService, dataConnectionStorage), isSecurityEnabled)
-        ));
+                producer.apply(
+                        getAllDataConnectionEntries(dataConnectionService, dataConnectionStorage),
+                        connectorCache,
+                        isSecurityEnabled
+                )));
         return tables;
     }
 

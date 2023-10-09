@@ -166,16 +166,8 @@ public class MapLiteMemberTest
         }
     }
 
-    private static class DummyMapInterceptor implements MapInterceptor {
-
-        @Override
-        public Object interceptGet(Object value) {
-            return null;
-        }
-
-        @Override
-        public void afterGet(Object value) {
-        }
+    private static class DummyMapInterceptor extends MapInterceptorAdaptor {
+        private static final long serialVersionUID = 1L;
 
         @Override
         public Object interceptPut(Object oldValue, Object newValue) {
@@ -184,19 +176,6 @@ public class MapLiteMemberTest
             } else {
                 throw new RuntimeException("no put");
             }
-        }
-
-        @Override
-        public void afterPut(Object value) {
-        }
-
-        @Override
-        public Object interceptRemove(Object removedValue) {
-            return null;
-        }
-
-        @Override
-        public void afterRemove(Object value) {
         }
     }
 

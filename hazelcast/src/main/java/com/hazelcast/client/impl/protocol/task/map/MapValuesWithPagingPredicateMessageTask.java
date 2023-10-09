@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 import java.util.List;
 import java.util.Map;
@@ -71,6 +72,6 @@ public class MapValuesWithPagingPredicateMessageTask
 
     @Override
     public String getMethodName() {
-        return "values";
+        return SecurityInterceptorConstants.VALUES;
     }
 }

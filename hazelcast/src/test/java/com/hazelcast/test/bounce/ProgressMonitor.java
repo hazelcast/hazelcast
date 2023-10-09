@@ -81,7 +81,7 @@ public class ProgressMonitor {
             if (lastProgressLoggedNanos > 0) {
                 sb.append("Maximum latency: ")
                         .append(TimeUnit.NANOSECONDS.toMillis(maxLatencyNanos))
-                        .append(" ms.");
+                        .append(" ms. ");
 
                 long timeInNanos = now - lastProgressLoggedNanos;
                 double timeInSeconds = (double) timeInNanos / 1000000000;

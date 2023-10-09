@@ -59,7 +59,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.jet.core.test.JetAssert.assertEquals;
 import static com.hazelcast.jet.core.test.JetAssert.assertFalse;
 import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;

@@ -19,7 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,15 +29,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapPutAllWithBatchingTest extends HazelcastTestSupport {
 
@@ -45,6 +51,17 @@ public class MapPutAllWithBatchingTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance[] instances;
+
+    @Parameterized.Parameter
+    public boolean async;
+
+    @Parameterized.Parameters(name = "async={0}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(
+                new Object[]{false},
+                new Object[]{true}
+        );
+    }
 
     @Before
     public void setUp() {
@@ -63,21 +80,21 @@ public class MapPutAllWithBatchingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAll() {
+    public void testPutAll() throws Exception {
         testPutAll(1 + BATCH_SIZE * INSTANCE_COUNT * 2);
     }
 
     @Test
-    public void testPutAll_withSingleMapEntry() {
+    public void testPutAll_withSingleMapEntry() throws Exception {
         testPutAll(1);
     }
 
     @Test
-    public void testPutAll_withEmptyMap() {
+    public void testPutAll_withEmptyMap() throws Exception {
         testPutAll(0);
     }
 
-    private void testPutAll(int expectedEntryCount) {
+    private void testPutAll(int expectedEntryCount) throws Exception {
         String mapName = randomMapName();
         HazelcastInstance hz = instances[0];
 
@@ -90,7 +107,11 @@ public class MapPutAllWithBatchingTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = hz.getMap(mapName);
         assertEquals("Expected an empty map", 0, map.size());
 
-        map.putAll(inputMap);
+        if (async) {
+            map.putAllAsync(inputMap).toCompletableFuture().get(15, TimeUnit.SECONDS);
+        } else {
+            map.putAll(inputMap);
+        }
 
         // assert that all entries have been written
         assertEquals(format("Expected %d entries in the map", expectedEntryCount), expectedEntryCount, map.size());

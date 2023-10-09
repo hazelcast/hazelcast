@@ -1,27 +1,17 @@
 # Hazelcast
 
 [![Slack](https://img.shields.io/badge/slack-chat-green.svg)](https://slack.hazelcast.com/) 
-[![javadoc](https://javadoc.io/badge2/com.hazelcast/hazelcast/5.0/javadoc.svg)](https://javadoc.io/doc/com.hazelcast/hazelcast/5.0)
-[![Docker pulls](https://img.shields.io/docker/pulls/hazelcast/hazelcast)](https://img.shields.io/docker/pulls/hazelcast/hazelcast)
-[![Total Alerts](https://img.shields.io/lgtm/alerts/g/hazelcast/hazelcast.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/hazelcast/hazelcast/alerts)
-[![Code Quality: Java](https://img.shields.io/lgtm/grade/java/g/hazelcast/hazelcast.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/hazelcast/hazelcast/context:java)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=hz-os-master&metric=alert_status)](https://sonarcloud.io/dashboard?id=hz-os-master)
+[![javadoc](https://javadoc.io/badge2/com.hazelcast/hazelcast/latest/javadoc.svg)](https://javadoc.io/doc/com.hazelcast/hazelcast/latest)
+[![Docker pulls](https://img.shields.io/docker/pulls/hazelcast/hazelcast)](https://hub.docker.com/r/hazelcast/hazelcast)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=hazelcast_hazelcast&metric=alert_status)](https://sonarcloud.io/dashboard?id=hazelcast_hazelcast)
 
 ----
 
 ## What is Hazelcast
 
-Hazelcast is a distributed computation and storage platform for consistently
-low-latency querying, aggregation and stateful computation against event streams
-and traditional data sources. It allows you to quickly build resource-efficient,
-real-time applications. You can deploy it at any scale from small edge devices
-to a large cluster of cloud instances. 
+The world’s leading companies trust Hazelcast to modernize applications and take instant action on data in motion to create new revenue streams, mitigate risk, and operate more efficiently. Businesses use Hazelcast’s unified **real-time data platform** to process **streaming** data, enrich it with historical context and take instant action with standard or **ML/AI-driven automation** - before it is stored in a database or data lake. 
 
-A cluster of Hazelcast nodes share both the data storage and computational load
-which can dynamically scale up and down. When you add new nodes to the cluster,
-the data is automatically rebalanced across the cluster, and currently running
-computational tasks (known as jobs) snapshot their state and scale with
-processing guarantees.
+Hazelcast is named in the Gartner Market Guide to Event Stream Processing and a leader in the GigaOm Radar Report for Streaming Data Platforms. To join our community of CXOs, architects and developers at brands such as Lowe’s, HSBC, JPMorgan Chase, Volvo, New York Life, and others, visit [hazelcast.com](https://hazelcast.com).
 
 ## When to use Hazelcast
 
@@ -305,13 +295,17 @@ marked as good first issue for some guidance.
 
 ### Building From Source
 
-Building Hazelcast requires at minimum JDK 1.8. Pull the latest source from the
+Building Hazelcast requires at minimum JDK 11. Pull the latest source from the
 repository and use Maven install (or package) to build:
 
 ```bash
 $ git pull origin master
-$ mvn clean package -Dtests
+$ ./mvnw clean package -DskipTests
 ```
+
+It is recommended to use the included Maven wrapper script.
+It is also possible to use local Maven distribution with the same 
+version that is used in the Maven wrapper script.
 
 Additionally, there is a `quick` build activated by setting the `-Dquick` system
 property that skips tests, checkstyle validation, javadoc and source plugins and
@@ -322,14 +316,18 @@ does not build `extensions` and `distribution` modules.
 Take into account that the default build executes thousands of tests which may
 take a considerable amount of time. Hazelcast has 3 testing profiles:
 
-* Default: Type `mvn test` to run quick/integration tests (those can be run
-  in parallel without using network).
-* Slow Tests: Type `mvn test -P slow-test` to run tests that are either slow
+* Default: Type `./mvnw test` to run quick/integration tests (those can be run
+  in parallel without using network by using `-P parallelTest` profile).
+* Slow Tests: Type `./mvnw test -P nightly-build` to run tests that are either slow
   or cannot be run in parallel.
-* All Tests: Type `mvn test -P all-tests` to run all tests serially using
+* All Tests: Type `./mvnw test -P all-tests` to run all tests serially using
   network.
 
 Some tests require Docker to run. Set `-Dhazelcast.disable.docker.tests` system property to ignore them.
+
+When developing a PR it is sufficient to run your new tests and some 
+related subset of tests locally. Our PR builder will take care of running
+the full test suite.
 
 ## Trigger Phrases in the Pull Request Conversation
 
@@ -356,10 +354,11 @@ see used in the comments on your PR:
 * *`run-nightly-tests` - run nightly (slow) tests. WARNING: Use with care as this is a resource consuming task.*
 * *`run-ee-nightly-tests` - run nightly (slow) tests from hazelcast-enterprise. WARNING: Use with care as this is a resource consuming task.*
 * `run-sql-only` - run default tests in `hazelcast-sql`, `hazelcast-distribution`, and `extensions/mapstore` modules
+* `run-docs-only` - do not run any tests, check that only files with `.md` or `.adoc` suffix are added in the PR
 * `run-sonar` - run SonarCloud analysis
 * `run-arm64` - run the tests on arm64 machine
 
-Where not indicated, the builds run on a Linux machine with Oracle JDK 8.
+Where not indicated, the builds run on a Linux machine with Oracle JDK 11.
 
 ### Creating PRs for Hazelcast SQL
 
@@ -368,6 +367,12 @@ you can label your PR with `SQL-only`. This will change the standard PR builder 
 will only run tests related to SQL (see `run-sql-only` above), which will significantly shorten
 the build time vs. the default PR builder. **NOTE**: this job will fail if you've made changes
 anywhere other than `hazelcast-sql`.
+
+### Creating PRs which contain only documentation
+
+When creating a PR which changes only documentation (files with suffix `.md` or `.adoc`) it 
+makes no sense to run tests. For that case the label `docs-only` can be used. The job will fail 
+in case you've made other changes than in `.md` or `.adoc` files.
 
 ## License
 

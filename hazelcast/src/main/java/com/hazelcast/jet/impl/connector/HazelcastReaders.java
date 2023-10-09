@@ -173,10 +173,7 @@ public final class HazelcastReaders {
 
     @Nonnull
     public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName) {
-        return new LocalProcessorMetaSupplier<
-                InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>(
-                new LocalMapReaderFunction(mapName)
-        ) {
+        return new LocalProcessorMetaSupplier<>(new LocalMapReaderFunction(mapName)) {
             @Override
             public Permission getRequiredPermission() {
                 return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
