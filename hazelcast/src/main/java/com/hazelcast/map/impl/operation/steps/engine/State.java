@@ -86,7 +86,7 @@ public class State {
     private volatile Collection<Data> keysToLoad = Collections.emptyList();
     private volatile Map loadedKeyValuePairs = Collections.emptyMap();
     private volatile Collection<Data> keys;
-    private volatile ArrayList<Record> records;
+    private volatile List<Record> records;
     private volatile EntryProcessor entryProcessor;
     private volatile EntryOperator operator;
     private volatile List<State> toStore;
@@ -330,7 +330,7 @@ public class State {
         return keys;
     }
 
-    public void setRecords(ArrayList<Record> records) {
+    public void setRecords(List<Record> records) {
         this.records = records;
     }
 
@@ -352,7 +352,7 @@ public class State {
         return loadedKeyValuePairs;
     }
 
-    public ArrayList<Record> getRecords() {
+    public List<Record> getRecords() {
         return records;
     }
 
