@@ -533,7 +533,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             if (!infiniteRows) {
                 SqlPlanImpl.ensureNoneGuaranteesForBatchJob(jobConfig);
             }
-            return planExecutor.execute(this, arguments);
+            return planExecutor.execute(this, arguments, ssc);
         }
     }
 

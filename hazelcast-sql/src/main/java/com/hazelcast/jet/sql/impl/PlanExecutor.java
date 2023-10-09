@@ -283,7 +283,7 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(CreateJobPlan plan, List<Object> arguments) {
+    SqlResult execute(CreateJobPlan plan, List<Object> arguments, SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         boolean isStreamingJob = plan.isInfiniteRows();
         JobConfig jobConfig = plan.getJobConfig()
@@ -293,10 +293,13 @@ public class PlanExecutor {
         if (!jobConfig.isSuspendOnFailure()) {
             jobConfig.setSuspendOnFailure(isStreamingJob);
         }
+
+        AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
+
         if (plan.isIfNotExists()) {
-            hazelcastInstance.getJet().newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
+            jet.newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig, ssc.subject());
         } else {
-            hazelcastInstance.getJet().newJob(plan.getExecutionPlan().getDag(), jobConfig);
+            jet.newJob(plan.getExecutionPlan().getDag(), jobConfig, ssc.subject());
         }
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }

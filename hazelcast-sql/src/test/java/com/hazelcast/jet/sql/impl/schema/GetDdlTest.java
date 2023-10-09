@@ -31,6 +31,7 @@ import java.util.Collections;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 
 public class GetDdlTest extends SqlTestSupport {
     private static final String LE = System.lineSeparator();
@@ -200,5 +201,22 @@ public class GetDdlTest extends SqlTestSupport {
         createMapping("a", int.class, String.class);
         instance().getMap("a").put(1, "a");
         assertRowsAnyOrder("SELECT * FROM a WHERE GET_DDL('relation', this) = 'a'", emptyList());
+    }
+
+    @Test
+    public void when_queryDataConnectionWithCreateJob_then_success() {
+        String createDataConnectionQuery = "CREATE OR REPLACE DATA CONNECTION \"hazelcast\".\"public\".\"dl\"" + LE
+                + "TYPE \"dummy\"" + LE + "SHARED";
+        String createJobQuery = "CREATE JOB j AS SINK INTO map "
+                + "SELECT v, v FROM (SELECT GET_DDL('dataconnection', 'dl') AS v)";
+
+        IMap<String, String> map = instance().getMap("map");
+        createMapping("map", String.class, String.class);
+
+        instance().getSql().execute(createDataConnectionQuery);
+        instance().getSql().execute(createJobQuery);
+
+        assertEqualsEventually(map::size, 1);
+        assertEquals(map.values().iterator().next(), createDataConnectionQuery);
     }
 }
