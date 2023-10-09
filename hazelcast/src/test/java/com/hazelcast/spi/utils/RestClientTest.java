@@ -250,10 +250,10 @@ public class RestClientTest {
     private void assertTls13SupportInternal(String caFileName) throws IOException {
         try (Tls13CipherCheckingServer server = new Tls13CipherCheckingServer()) {
             new Thread(server).start();
-            RestClient restClient = RestClient.create("https://127.0.0.1:" + server.getPort());
-            if (caFileName != null) {
-                restClient.withCaCertificates(readFile(caFileName));
-            }
+            RestClient restClient = caFileName != null
+                    ? RestClient.create("https://127.0.0.1:" + server.getPort())
+                    : RestClient.createWithSSL("https://127.0.0.1:" + server.serverSocket.getLocalPort(),
+                    readFile("src/test/resources/kubernetes/ca.crt"));
             try {
                 restClient.get();
             } catch (Exception e) {
@@ -261,17 +261,6 @@ public class RestClientTest {
             }
             assertTrueEventually(() -> assertTrue("No TLS 1.3 cipher used", server.tls13CipherFound.get()), 8);
         }
-        /*
-        try {
-            new Thread(server).start();
-            RestClient.createWithSSL("https://127.0.0.1:" + server.serverSocket.getLocalPort(),
-                    readFile("src/test/resources/kubernetes/ca.crt")).get();
-        } catch (Exception e) {
-            // whatever
-        } finally {
-            server.shutdownRequested = true;
-        }
-         */
     }
 
     private String readFile(String fileName) throws IOException {
