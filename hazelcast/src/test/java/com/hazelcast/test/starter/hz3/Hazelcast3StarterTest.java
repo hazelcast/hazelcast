@@ -65,14 +65,9 @@ public class Hazelcast3StarterTest {
         HazelcastInstance instance = Hazelcast3Starter.newHazelcastInstance(HZ3_MEMBER_CONFIG);
         ITopic<String> topic = instance.getTopic("my-topic");
         List<String> result = new ArrayList<>();
-        topic.addMessageListener(message -> {
-            result.add(message.getMessageObject());
-        });
+        topic.addMessageListener(message -> result.add(message.getMessageObject()));
         topic.publish("value");
-        assertTrueEventually(
-                () -> assertThat(result).contains("value"),
-                5
-        );
+        assertTrueEventually(() -> assertThat(result).contains("value"));
 
         instance.shutdown();
     }
