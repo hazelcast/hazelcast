@@ -27,6 +27,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.SetUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -250,7 +251,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
             throws InterruptedException, ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
-            if (queryResult.getPartitionIds() != null && queryResult.getPartitionIds().size() > 0
+            if (!CollectionUtil.isEmpty(queryResult.getPartitionIds())
                     && !finishedPartitions.intersects(queryResult.getPartitionIds())) {
                 extractAndAppendResult(result, queryResult);
                 finishedPartitions.addAll(queryResult.getPartitionIds());

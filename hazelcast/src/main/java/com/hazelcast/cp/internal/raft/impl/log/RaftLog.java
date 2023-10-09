@@ -200,7 +200,7 @@ public final class RaftLog {
             truncated.add(logs.read(ix));
         }
         logs.setTailSequence(startSequence - 1);
-        if (truncated.size() > 0) {
+        if (!truncated.isEmpty()) {
             dirty = true;
             try {
                 store.deleteEntriesFrom(entryIndex);

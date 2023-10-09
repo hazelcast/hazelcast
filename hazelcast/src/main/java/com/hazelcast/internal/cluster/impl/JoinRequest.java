@@ -161,7 +161,7 @@ public class JoinRequest extends JoinMessage {
                 + ", credentials=" + credentials
                 + ", memberCount=" + getMemberCount()
                 + ", tryCount=" + tryCount
-                + (excludedMemberUuids.size() > 0 ? ", excludedMemberUuids=" + excludedMemberUuids : "")
+                + (excludedMemberUuids.isEmpty() ? "" : ", excludedMemberUuids=" + excludedMemberUuids)
                 + '}';
     }
 
