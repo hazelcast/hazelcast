@@ -93,7 +93,7 @@ public final class Preconditions {
     }
 
     /**
-     * Tests if a argument is not null.
+     * Tests if an argument is not null.
      *
      * @param argument the argument tested to see if it is not null.
      * @param argName  the argument name (used in message if an error is thrown).
