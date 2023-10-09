@@ -19,6 +19,7 @@ package com.hazelcast.internal.util;
 import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Properties;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
@@ -57,10 +58,7 @@ public final class Preconditions {
      * @throws java.lang.NullPointerException if argument is null
      */
     public static <T> T checkNotNull(T argument, String errorMessage) {
-        if (argument == null) {
-            throw new NullPointerException(errorMessage);
-        }
-        return argument;
+        return Objects.requireNonNull(argument, errorMessage);
     }
 
     /**
@@ -91,17 +89,14 @@ public final class Preconditions {
      */
     @Nonnull
     public static <T> T checkNotNull(T argument) {
-        if (argument == null) {
-            throw new NullPointerException();
-        }
-        return argument;
+        return Objects.requireNonNull(argument);
     }
 
     /**
-     * Tests if a string is not null.
+     * Tests if a argument is not null.
      *
-     * @param argument the string tested to see if it is not null.
-     * @param argName  the string name (used in message if an error is thrown).
+     * @param argument the argument tested to see if it is not null.
+     * @param argName  the argument name (used in message if an error is thrown).
      * @return the string argument that was tested.
      * @throws java.lang.IllegalArgumentException if the string is null.
      */
