@@ -757,7 +757,7 @@ class KubernetesClient {
 
         // used only for tests
         volatile boolean running = true;
-        volatile boolean finished = false;
+        volatile boolean finished;
         volatile boolean shuttingDown;
 
         String latestResourceVersion;
