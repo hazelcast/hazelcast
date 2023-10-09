@@ -47,10 +47,13 @@ import java.util.Collections;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 // test interaction of KubernetesClient with Kubernetes mock API server
 @RunWith(HazelcastSerialClassRunner.class)
@@ -183,6 +186,37 @@ public class StsMonitorTest {
                 stsMonitor.idleCount > 0);
     }
 
+    @Test
+    public void testStsMonitorThread_TerminatedPromptlyOnClientShutdown() {
+        expectAndReturnStsList("1", "2").always();
+        kubernetesServer.expect().get()
+                        .withPath("/apis/apps/v1/namespaces/" + namespace
+                                + "/statefulsets?fieldSelector=metadata.name%3D" + DEFAULT_STS_NAME
+                                + "&watch=1&resourceVersion=1")
+                        .andReturn(200, new WatchEvent(buildDefaultSts("4"), "MODIFIED"))
+                        .always();
+        kubernetesServer.expect().get()
+                        .withPath("/apis/discovery.k8s.io/v1/namespaces/" + namespace + "/endpointslices")
+                        .andReturn(200, "{}")
+                        .once();
+
+        // Create new client instance which uses the topology intent tracker
+        ClusterTopologyIntentTracker tracker = Mockito.mock(ClusterTopologyIntentTracker.class);
+        when(tracker.isEnabled()).thenReturn(true);
+        KubernetesClient client = buildKubernetesClient(namespace, apiServerBaseUrl, token, tracker);
+        client.start();
+
+        // Make sure the sts monitor thread exists within the client
+        assertNotNull(client.stsMonitorThread);
+
+        // Wait until we've received some watch data (to ensure our thread is reading connections)
+        assertTrueEventually(() -> assertNotNull(client.stsMonitorThread.watchResponse));
+
+        // Trigger shutdown of the sts monitor thread and assert it has finished after call completion
+        client.destroy();
+        assertTrue(client.stsMonitorThread.finished);
+    }
+
     // respond with 200 OK and statefulset list
     private TimesOnceableOrHttpHeaderable expectAndReturnStsList(String listResourceVersion, String stsResourceVersion) {
         return expectStsList().andReturn(200, buildDefaultStsList(listResourceVersion, stsResourceVersion));
@@ -247,10 +281,15 @@ public class StsMonitorTest {
 
     KubernetesClient.StsMonitorThread buildStsMonitor(String namespace, String masterUrl,
                                                       String oauthToken, ClusterTopologyIntentTracker tracker) {
+        return buildKubernetesClient(namespace, masterUrl, oauthToken, tracker).new StsMonitorThread();
+    }
+
+    KubernetesClient buildKubernetesClient(String namespace, String masterUrl,
+                                                      String oauthToken, ClusterTopologyIntentTracker tracker) {
         StaticTokenProvider tokenProvider = new StaticTokenProvider(oauthToken);
         return new KubernetesClient(namespace, masterUrl,
                 tokenProvider, null, 3,
                 KubernetesConfig.ExposeExternallyMode.DISABLED, false,
-                null, null, tracker, DEFAULT_STS_NAME).new StsMonitorThread();
+                null, null, tracker, DEFAULT_STS_NAME);
     }
 }

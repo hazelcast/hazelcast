@@ -181,8 +181,10 @@ public final class RestClient {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             checkResponseCode(request.method(), response);
             return new Response(response.statusCode(), response.body());
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             throw new RestClientException("Failure in executing REST call", e);
+        } catch (InterruptedException e) {
+            throw new RestClientException("REST call interrupted", e);
         }
     }
 
@@ -192,7 +194,7 @@ public final class RestClient {
      * in this class, it is the responsibility of the consumer to disconnect the connection
      * (by invoking {@link WatchResponse#disconnect()}) once the watch is no longer required.
      */
-    public WatchResponse watch(String resourceVersion) {
+    public WatchResponse watch(String resourceVersion) throws RestClientException {
         try {
             String appendWatchParameter = (url.contains("?") ? "&" : "?") + String.format(WATCH_FORMAT, resourceVersion);
             String completeUrl = url + appendWatchParameter;
@@ -220,8 +222,10 @@ public final class RestClient {
 
             checkResponseCode(request.method(), response);
             return new WatchResponse(response);
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Failure in executing REST call", e);
+        } catch (IOException e) {
+            throw new RestClientException("Failure in executing REST call", e);
+        } catch (InterruptedException e) {
+            throw new RestClientException("REST call interrupted", e);
         }
     }
 
