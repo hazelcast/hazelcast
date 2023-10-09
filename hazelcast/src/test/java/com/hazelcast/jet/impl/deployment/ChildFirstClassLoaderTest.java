@@ -86,9 +86,15 @@ public class ChildFirstClassLoaderTest {
 
     @Test
     public void urlsMustNotBeNullNorEmpty() {
-        assertThatThrownBy(() -> new ChildFirstClassLoader(null, ClassLoader.getSystemClassLoader()))
+        assertThatThrownBy(() -> {
+            try (ChildFirstClassLoader ignored = new ChildFirstClassLoader(null, ClassLoader.getSystemClassLoader())) {
+            }
+        })
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> new ChildFirstClassLoader(new URL[0], ClassLoader.getSystemClassLoader()))
+        assertThatThrownBy(() -> {
+            try (ChildFirstClassLoader ignored = new ChildFirstClassLoader(new URL[0], ClassLoader.getSystemClassLoader())) {
+            }
+        })
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
