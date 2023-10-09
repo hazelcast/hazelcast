@@ -51,12 +51,6 @@ public class AddCPGroupAvailabilityListenerMessageTask extends AbstractAsyncMess
         EventService eventService = clientEngine.getEventService();
         CPGroupAvailabilityListener listener = new ClientCPGroupAvailabilityListener(endpoint);
 
-        boolean local = parameters;
-        if (local) {
-            UUID id = eventService.registerListener(getServiceName(), TOPIC, listener).getId();
-            return CompletableFuture.completedFuture(id);
-        }
-
         return eventService.registerListenerAsync(getServiceName(), TOPIC, listener)
                 .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
