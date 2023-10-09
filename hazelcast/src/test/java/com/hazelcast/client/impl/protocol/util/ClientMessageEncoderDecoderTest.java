@@ -238,7 +238,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(clusterId, parameters.clusterId);
         assertEquals(true, parameters.failoverSupported);
         assertEquals(tpcPorts, parameters.tpcPorts);
-        assertEquals(tpcToken, parameters.tpcToken);
+        assertArrayEquals(tpcToken, parameters.tpcToken);
     }
 
     class EventHandler extends MapAddEntryListenerCodec.AbstractEventHandler {
