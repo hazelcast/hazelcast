@@ -34,7 +34,6 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
