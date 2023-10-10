@@ -25,6 +25,8 @@ import java.util.List;
 
 import static com.hazelcast.internal.util.collection.ArrayUtils.createCopy;
 
+import com.hazelcast.internal.util.CollectionUtil;
+
 /**
  * Rewrites predicates:
  *
@@ -106,7 +108,7 @@ public class FlatteningVisitor extends AbstractVisitor {
     }
 
     private Predicate[] createNewInners(Predicate[] predicates, List<Predicate> toBeAdded) {
-        if (toBeAdded == null || toBeAdded.size() == 0) {
+        if (CollectionUtil.isEmpty(toBeAdded)) {
             return predicates;
         }
 

@@ -202,7 +202,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         Long2ObjectHashMap<Object> completedWaitKeys = new Long2ObjectHashMap<>();
         registry.closeSession(sessionId, expiredWaitKeys, completedWaitKeys);
 
-        if (logger.isFineEnabled() && (expiredWaitKeys.size() > 0 || completedWaitKeys.size() > 0)) {
+        if (logger.isFineEnabled() && !(expiredWaitKeys.isEmpty() && completedWaitKeys.isEmpty())) {
             logger.fine("Closed Session[" + sessionId + "] in " + groupId + " expired wait key commit indices: "
                     + expiredWaitKeys + " completed wait keys: " + completedWaitKeys);
         }
@@ -393,7 +393,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
             long now = Clock.currentTimeMillis();
             for (ResourceRegistry<W, R> registry : registries.values()) {
                 Collection<BiTuple<String, UUID>> t = registry.getWaitKeysToExpire(now);
-                if (t.size() > 0) {
+                if (!t.isEmpty()) {
                     timeouts.put(registry.getGroupId(), t);
                 }
             }

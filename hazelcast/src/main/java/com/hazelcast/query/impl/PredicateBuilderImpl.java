@@ -147,7 +147,7 @@ public class PredicateBuilderImpl
 
     @Override
     public String toString() {
-        return "PredicateBuilder{\n" + (lsPredicates.size() == 0 ? "" : lsPredicates.get(0)) + "\n}";
+        return "PredicateBuilder{\n" + (lsPredicates.isEmpty() ? "" : lsPredicates.get(0)) + "\n}";
     }
 
     @Override
