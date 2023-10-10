@@ -228,7 +228,7 @@ public final class SecuredFunctions {
             boolean ignoreFileNotFound,
             FunctionEx<? super Path, ? extends Stream<T>> readFileFn) {
 
-        return new SupplierEx<>() {
+        return new SupplierEx<Processor>() {
             @Override
             public Processor getEx() {
                 return new ReadFilesP<>(directory, glob, sharedFileSystem, ignoreFileNotFound, readFileFn);
