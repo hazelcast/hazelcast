@@ -48,7 +48,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * Contains all indexes for a data-structure, e.g. an IMap.
+ * Registry which contains all indexes of a data-structure, e.g. an IMap.
  */
 @SuppressWarnings("rawtypes")
 public class IndexRegistry {
@@ -306,7 +306,7 @@ public class IndexRegistry {
      */
     public boolean haveAtLeastOneIndexOrDefinition() {
         boolean haveAtLeastOneIndexOrDefinition = haveAtLeastOneIndex() || !definitions.isEmpty();
-        // for local indexes assert that indexes and definitions are exclusive
+        // for partitioned indexes assert that indexes and definitions are exclusive
         assert isGlobal() || !haveAtLeastOneIndexOrDefinition || !haveAtLeastOneIndex() || definitions.isEmpty();
         return haveAtLeastOneIndexOrDefinition;
     }

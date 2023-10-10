@@ -191,8 +191,8 @@ public class MergeOperation extends MapOperation
 
     public Queue<InternalIndex> beginIndexMarking() {
         int partitionId = getPartitionId();
-        IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(partitionId);
-        InternalIndex[] indexesSnapshot = indexes.getIndexes();
+        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
+        InternalIndex[] indexesSnapshot = indexRegistry.getIndexes();
 
         Queue<InternalIndex> notIndexedPartitions = new LinkedList<>();
         for (InternalIndex internalIndex : indexesSnapshot) {

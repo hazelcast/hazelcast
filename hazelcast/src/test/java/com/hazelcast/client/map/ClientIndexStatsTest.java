@@ -21,7 +21,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.monitor.impl.LocalIndexStatsImpl;
+import com.hazelcast.internal.monitor.impl.PartitionedIndexStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.map.IMap;
@@ -148,13 +148,13 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         combinedStats.setIndexedQueryCount(stats1.getIndexedQueryCount());
 
         assertEquals(stats1.getIndexStats().size(), stats2.getIndexStats().size());
-        Map<String, LocalIndexStatsImpl> combinedIndexStatsMap = new HashMap<String, LocalIndexStatsImpl>();
+        Map<String, PartitionedIndexStatsImpl> combinedIndexStatsMap = new HashMap<String, PartitionedIndexStatsImpl>();
         for (Map.Entry<String, LocalIndexStats> indexEntry : stats1.getIndexStats().entrySet()) {
             LocalIndexStats indexStats1 = indexEntry.getValue();
             LocalIndexStats indexStats2 = stats2.getIndexStats().get(indexEntry.getKey());
             assertNotNull(indexStats2);
 
-            LocalIndexStatsImpl combinedIndexStats = new LocalIndexStatsImpl();
+            PartitionedIndexStatsImpl combinedIndexStats = new PartitionedIndexStatsImpl();
             assertEquals(indexStats1.getHitCount(), indexStats2.getHitCount());
             combinedIndexStats.setHitCount(indexStats1.getHitCount());
 

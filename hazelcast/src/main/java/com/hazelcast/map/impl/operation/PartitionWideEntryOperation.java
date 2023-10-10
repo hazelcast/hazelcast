@@ -151,8 +151,8 @@ public class PartitionWideEntryOperation extends MapOperation
         }
 
         // we use the partitioned-index to operate on the selected keys only
-        IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(getPartitionId());
-        Iterable<QueryableEntry> entries = indexes.query(queryOptimizer.optimize(predicate, indexes), 1);
+        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(getPartitionId());
+        Iterable<QueryableEntry> entries = indexRegistry.query(queryOptimizer.optimize(predicate, indexRegistry), 1);
         if (entries == null) {
             return false;
         }
