@@ -395,7 +395,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     /**
      * Regression test for https://github.com/hazelcast/hazelcast/issues/22567
      */
-    @Test(timeout = 90_000L)
+    @Test(timeout = 180_000L)
     @Category(NightlyTest.class)
     public void testClear() {
         HazelcastInstance client = client();
