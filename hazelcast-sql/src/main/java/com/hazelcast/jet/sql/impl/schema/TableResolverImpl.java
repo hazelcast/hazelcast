@@ -34,8 +34,10 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.view.View;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import javax.annotation.Nonnull;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -102,8 +104,8 @@ public class TableResolverImpl implements TableResolver {
 
     // region mapping
 
-    public void createMapping(Mapping mapping, boolean replace, boolean ifNotExists) {
-        Mapping resolved = resolveMapping(mapping);
+    public void createMapping(Mapping mapping, boolean replace, boolean ifNotExists, SqlSecurityContext securityContext) {
+        Mapping resolved = resolveMapping(mapping, securityContext);
 
         String name = resolved.name();
         if (ifNotExists) {
@@ -116,11 +118,17 @@ public class TableResolverImpl implements TableResolver {
         }
     }
 
-    private Mapping resolveMapping(Mapping mapping) {
+    private Mapping resolveMapping(Mapping mapping, SqlSecurityContext securityContext) {
         String type = mapping.type();
         Map<String, String> options = mapping.options();
 
         SqlConnector connector = connectorCache.forType(type);
+
+        List<Permission> permissions = connector.permissionsForResolve(mapping.options(), nodeEngine);
+        for (Permission permission : permissions) {
+            securityContext.checkPermission(permission);
+        }
+
         List<MappingField> resolvedFields = connector.resolveAndValidateFields(nodeEngine, options, mapping.fields());
         return new Mapping(
                 mapping.name(),
