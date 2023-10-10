@@ -154,6 +154,17 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void getItemAtPositionOrNull_whenNegative_thenReturNull() {
+        Object obj = new Object();
+        Object[] src = new Object[1];
+        src[0] = obj;
+
+        Object result = ArrayUtils.getItemAtPositionOrNull(src, -1);
+
+        assertNull(result);
+    }
+
+    @Test
     public void replace_whenInMiddle() {
         Integer[] result = replaceFirst(new Integer[]{1, 6, 4}, 6, new Integer[]{2, 3});
         System.out.println(Arrays.toString(result));
