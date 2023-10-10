@@ -20,7 +20,12 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.impl.NodeEngine;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
+import java.security.Permission;
 import java.util.List;
+import java.util.Objects;
 
 public class MockExpressionEvalContext implements ExpressionEvalContext {
     InternalSerializationService ss;
@@ -45,7 +50,24 @@ public class MockExpressionEvalContext implements ExpressionEvalContext {
     }
 
     @Override
+    public ExpressionEvalContext withSerializationService(@Nonnull InternalSerializationService newService) {
+        MockExpressionEvalContext newCtx = new MockExpressionEvalContext();
+        newCtx.ss = Objects.requireNonNull(newService);
+        return newCtx;
+    }
+
+    @Override
     public NodeEngine getNodeEngine() {
         throw new UnsupportedOperationException("getNodeEngine operation is not supported for Mock EEC");
+    }
+
+    @Override
+    public void checkPermission(Permission permission) {
+    }
+
+    @Nullable
+    @Override
+    public Subject subject() {
+        return null;
     }
 }

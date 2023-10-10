@@ -66,7 +66,6 @@ import static com.hazelcast.internal.nio.IOUtil.decompress;
 import static com.hazelcast.internal.nio.IOUtil.delete;
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.internal.nio.IOUtil.getFileFromResources;
-import static com.hazelcast.internal.nio.IOUtil.getPath;
 import static com.hazelcast.internal.nio.IOUtil.newInputStream;
 import static com.hazelcast.internal.nio.IOUtil.newOutputStream;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
@@ -81,7 +80,6 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.create
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static java.lang.Integer.min;
-import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -92,7 +90,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -467,42 +464,6 @@ public class IOUtilTest extends HazelcastTestSupport {
         fail("Expected a IllegalArgumentException thrown by copy()");
     }
 
-    @Test
-    public void testCopy_withInputStream() throws Exception {
-        InputStream inputStream = null;
-        try {
-            File source = createFile("source");
-            File target = createFile("target");
-
-            writeTo(source, "test content");
-            inputStream = new FileInputStream(source);
-
-            copy(inputStream, target);
-
-            assertTrue("source and target should have the same content", isEqualsContents(source, target));
-        } finally {
-            closeResource(inputStream);
-        }
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testCopy_withInputStream_failsWhenTargetNotExist() {
-        InputStream source = mock(InputStream.class);
-        File target = mock(File.class);
-        when(target.exists()).thenReturn(false);
-
-        copy(source, target);
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testCopy_withInputStream_failsWhenSourceCannotBeRead() throws Exception {
-        InputStream source = mock(InputStream.class);
-        when(source.read(any(byte[].class))).thenThrow(new IOException("expected"));
-        File target = createFile("target");
-
-        copy(source, target);
-    }
-
     @Test(expected = HazelcastException.class)
     public void testCopyFile_failsWhenTargetDoesntExistAndCannotBeCreated() throws Exception {
         File source = newFile("newFile");
@@ -794,16 +755,6 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetPath_shouldFormat() {
-        String root = "root";
-        String parent = "parent";
-        String child = "child";
-        String expected = format("%s%s%s%s%s", root, File.separator, parent, File.separator, child);
-        String actual = getPath(root, parent, child);
-        assertEquals(expected, actual);
-    }
-
-    @Test
     public void testMove_targetDoesntExist() throws IOException {
         Path src = tempFolder.newFile("source.txt").toPath();
         Path target = src.resolveSibling("target.txt");
@@ -828,11 +779,6 @@ public class IOUtilTest extends HazelcastTestSupport {
         Files.delete(src);
         Path target = src.resolveSibling("target.txt");
         Assert.assertThrows(NoSuchFileException.class, () -> IOUtil.move(src, target));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetPath_whenPathsInvalid() {
-        getPath();
     }
 
     private File newFile(String filename) {

@@ -26,6 +26,7 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.operations.GetStatisticsOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -80,7 +81,7 @@ public class ScheduledExecutorTaskGetStatisticsFromPartitionMessageTask
 
     @Override
     public String getMethodName() {
-        return "getStatistics";
+        return SecurityInterceptorConstants.GET_STATISTICS;
     }
 
     @Override

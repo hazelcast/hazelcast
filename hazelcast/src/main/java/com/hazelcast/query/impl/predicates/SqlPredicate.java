@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -345,10 +345,10 @@ public class SqlPredicate
             predicates = new Predicate[]{predicateLeft, predicateRight};
         }
         try {
-            T compoundPredicate = klass.newInstance();
+            T compoundPredicate = klass.getDeclaredConstructor().newInstance();
             compoundPredicate.setPredicates(predicates);
             return compoundPredicate;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (ReflectiveOperationException e) {
             throw new IllegalArgumentException(String.format("%s must have a public default constructor", klass.getName()));
         }
     }
@@ -386,7 +386,7 @@ public class SqlPredicate
     }
 
     @Override
-    public Predicate accept(Visitor visitor, Indexes indexes) {
+    public Predicate accept(Visitor visitor, IndexRegistry indexes) {
         Predicate target = predicate;
         if (predicate instanceof VisitablePredicate) {
             target = ((VisitablePredicate) predicate).accept(visitor, indexes);

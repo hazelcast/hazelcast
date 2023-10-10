@@ -66,17 +66,13 @@ public final class ExtractorHelper {
     private static ValueExtractor instantiateExtractorWithConfigClassLoader(AttributeConfig config, ClassLoader classLoader) {
         try {
             Class<?> clazz = classLoader.loadClass(config.getExtractorClassName());
-            Object extractor = clazz.newInstance();
+            Object extractor = clazz.getDeclaredConstructor().newInstance();
             if (extractor instanceof ValueExtractor) {
                 return (ValueExtractor) extractor;
             } else {
                 throw new IllegalArgumentException("Extractor does not extend ValueExtractor class " + config);
             }
-        } catch (IllegalAccessException ex) {
-            throw new IllegalArgumentException("Could not initialize extractor " + config, ex);
-        } catch (InstantiationException ex) {
-            throw new IllegalArgumentException("Could not initialize extractor " + config, ex);
-        } catch (ClassNotFoundException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw new IllegalArgumentException("Could not initialize extractor " + config, ex);
         }
     }
@@ -84,17 +80,13 @@ public final class ExtractorHelper {
     private static ValueExtractor instantiateExtractorWithClassForName(AttributeConfig config) {
         try {
             Class<?> clazz = Class.forName(config.getExtractorClassName());
-            Object extractor = clazz.newInstance();
+            Object extractor = clazz.getDeclaredConstructor().newInstance();
             if (extractor instanceof ValueExtractor) {
                 return (ValueExtractor) extractor;
             } else {
                 throw new IllegalArgumentException("Extractor does not extend ValueExtractor class " + config);
             }
-        } catch (IllegalAccessException ex) {
-            throw new IllegalArgumentException("Could not initialize extractor " + config, ex);
-        } catch (InstantiationException ex) {
-            throw new IllegalArgumentException("Could not initialize extractor " + config, ex);
-        } catch (ClassNotFoundException ex) {
+        } catch (ReflectiveOperationException ex) {
             throw new IllegalArgumentException("Could not initialize extractor " + config, ex);
         }
     }

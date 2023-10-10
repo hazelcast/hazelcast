@@ -38,6 +38,8 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.util.List;
 import java.util.Map;
 
@@ -195,8 +197,12 @@ public abstract class BootstrappedJetServiceDecorator<M> extends AbstractJetInst
     }
 
     @Override
-    public Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
-        return jetInstance.newJobProxy(jobId, isLightJob, jobDefinition, config);
+    public Job newJobProxy(long jobId,
+                           boolean isLightJob,
+                           @Nonnull Object jobDefinition,
+                           @Nonnull JobConfig config,
+                           @Nullable Subject subject) {
+        return jetInstance.newJobProxy(jobId, isLightJob, jobDefinition, config, subject);
     }
 
     @Override

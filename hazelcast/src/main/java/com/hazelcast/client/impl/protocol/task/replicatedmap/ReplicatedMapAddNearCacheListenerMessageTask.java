@@ -17,12 +17,12 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddNearCacheEntryListenerCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 import java.util.UUID;
 
@@ -68,12 +68,17 @@ public class ReplicatedMapAddNearCacheListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapAddEntryListenerWithPredicateCodec.encodeResponse((UUID) response);
+        return ReplicatedMapAddNearCacheEntryListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return SecurityInterceptorConstants.ADD_NEAR_CACHE_INVALIDATION_LISTENER;
     }
 }
 

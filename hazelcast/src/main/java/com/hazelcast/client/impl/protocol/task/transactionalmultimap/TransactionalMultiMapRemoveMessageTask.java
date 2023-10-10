@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.transactionalmultimap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapRemoveCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -84,7 +85,7 @@ public class TransactionalMultiMapRemoveMessageTask
 
     @Override
     public String getMethodName() {
-        return "remove";
+        return SecurityInterceptorConstants.REMOVE;
     }
 
     @Override

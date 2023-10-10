@@ -37,11 +37,11 @@ import static com.hazelcast.internal.metrics.ProbeUnit.NS;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
 
 /**
- * Implementation of local index stats that backs the stats exposed through the
+ * Implementation of partitioned index stats that backs the stats exposed through the
  * public API.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class LocalIndexStatsImpl implements LocalIndexStats {
+public class PartitionedIndexStatsImpl implements LocalIndexStats {
 
     @Probe(name = MAP_METRIC_INDEX_CREATION_TIME, unit = MS)
     private volatile long creationTime;

@@ -21,16 +21,19 @@ import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.map.helpers.GenericEvent;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.MapStoreAdapter;
+import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.multimap.MultiMap;
@@ -50,6 +53,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,18 +61,27 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
+import static org.assertj.core.util.Lists.newArrayList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -387,6 +400,79 @@ public class ClientMapTest extends HazelcastTestSupport {
         assertEqualsEventually(() -> future.isDone(), true);
         assertEquals(map.size(), tmpMap.size());
         assertEquals(tmpMap, new HashMap<>(map));
+    }
+
+    @Test
+    public void testPutAllWithMetadata() {
+        String mapName = randomMapName();
+        client.getConfig().addMapConfig(new MapConfig(mapName).setPerEntryStatsEnabled(true));
+        IMap<String, String> map = client.getMap(mapName);
+        ClientMapProxy<String, String> mapProxy = (ClientMapProxy<String, String>) map;
+
+        // The times are in milliseconds, but have second precision
+        long now = Duration.ofSeconds(Instant.now().getEpochSecond()).toMillis();
+        SimpleEntryView<String, String> entryView = new SimpleEntryView<String, String>()
+                .withKey("key")
+                .withValue("value")
+                .withCreationTime(now)
+                .withHits(42)
+                .withExpirationTime(now + Duration.ofMinutes(1).toMillis())
+                .withLastAccessTime(now)
+                .withLastUpdateTime(now)
+                .withVersion(5)
+                .withTtl(60_000)
+                .withMaxIdle(60_000);
+
+        CompletableFuture<Void> future = mapProxy.putAllWithMetadataAsync(newArrayList(entryView));
+        assertEqualsEventually(() -> future.isDone(), true);
+        EntryView<String, String> actual = map.getEntryView("key");
+
+        SoftAssertions sa = new SoftAssertions();
+
+        sa.assertThat(actual.getCreationTime()).describedAs("creationTime").isEqualTo(entryView.getCreationTime());
+        sa.assertThat(actual.getExpirationTime()).describedAs("expirationTime").isEqualTo(entryView.getExpirationTime());
+        sa.assertThat(actual.getLastAccessTime()).describedAs("lastAccessTime").isEqualTo(entryView.getLastAccessTime());
+        sa.assertThat(actual.getLastUpdateTime()).describedAs("lastUpdateTime").isEqualTo(entryView.getLastUpdateTime());
+        sa.assertThat(actual.getTtl()).describedAs("ttl").isEqualTo(entryView.getTtl());
+        sa.assertThat(actual.getMaxIdle()).describedAs("maxIdle").isEqualTo(entryView.getMaxIdle());
+
+        sa.assertAll();
+
+        assertThat((Map) map).hasSize(1);
+    }
+
+    @Test
+    public void testWithMetadataMultipleEntries() {
+        String mapName = randomMapName();
+        client.getConfig().addMapConfig(new MapConfig(mapName).setPerEntryStatsEnabled(true));
+        IMap<String, String> map = client.getMap(mapName);
+        ClientMapProxy<String, String> mapProxy = (ClientMapProxy<String, String>) map;
+
+        List<EntryView<String, String>> entries = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            entries.add(new SimpleEntryView<>("key-" + i, "value-" + i));
+        }
+
+        CompletableFuture<Void> future = mapProxy.putAllWithMetadataAsync(entries);
+        assertEqualsEventually(() -> future.isDone(), true);
+
+        assertThat((Map<String, String>) map).hasSize(1000);
+        for (int i = 0; i < 1000; i++) {
+            assertThat((Map<String, String>) map).contains(entry("key-" + i, "value-" + i));
+        }
+    }
+
+    @Test
+    public void testPutAllWithMetadataEmpty() {
+        String mapName = randomMapName();
+        client.getConfig().addMapConfig(new MapConfig(mapName).setPerEntryStatsEnabled(true));
+        IMap<String, String> map = client.getMap(mapName);
+        ClientMapProxy<String, String> mapProxy = (ClientMapProxy<String, String>) map;
+
+        CompletableFuture<Void> future = mapProxy.putAllWithMetadataAsync(emptyList());
+        assertEqualsEventually(() -> future.isDone(), true);
+
+        assertThat((Map<String, String>) map).isEmpty();
     }
 
     @Test

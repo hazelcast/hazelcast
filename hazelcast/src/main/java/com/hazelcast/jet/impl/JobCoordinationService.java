@@ -106,6 +106,8 @@ import java.util.stream.StreamSupport;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
@@ -119,8 +121,6 @@ import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.spi.properties.ClusterProperty.JOB_SCAN_PERIOD;
@@ -196,7 +196,7 @@ public class JobCoordinationService {
         this.nodeEngine = nodeEngine;
         this.jetServiceBackend = jetServiceBackend;
         this.config = config;
-        this.pipelineToDagContext = () -> this.config.getCooperativeThreadCount();
+        this.pipelineToDagContext = this.config::getCooperativeThreadCount;
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRepository = jobRepository;
 
@@ -964,7 +964,7 @@ public class JobCoordinationService {
         if (nodeEngine.getNode().isClusterStateManagementAutomatic()
                 && !nodeEngine.getNode().isManagedClusterStable()) {
             LoggingUtil.logFine(logger, "Not starting jobs because cluster is running in managed context "
-                            + "and is not yet stable. Current cluster topology intentL %s, "
+                            + "and is not yet stable. Current cluster topology intent: %s, "
                             + "expected cluster size: %d, current: %d.",
                     nodeEngine.getNode().getClusterTopologyIntent(),
                     nodeEngine.getNode().currentSpecifiedReplicaCount(), nodeEngine.getClusterService().getSize());

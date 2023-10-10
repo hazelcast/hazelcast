@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.PutOperation;
 import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -66,7 +67,7 @@ public class ReplicatedMapPutMessageTask
 
     @Override
     public String getMethodName() {
-        return "put";
+        return SecurityInterceptorConstants.PUT;
     }
 
     @Override

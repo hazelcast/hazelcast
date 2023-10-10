@@ -154,8 +154,9 @@ public final class ArrayUtils {
         return false;
     }
 
+    /** Avoids the overhead of throwing {@link ArrayIndexOutOfBoundsException} */
     public static <T> T getItemAtPositionOrNull(T[] array, int position) {
-        if (array.length > position) {
+        if (position >= 0 && array.length > position) {
             return array[position];
         }
         return null;

@@ -44,6 +44,8 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -54,9 +56,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
@@ -141,7 +143,15 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return new ClientJobProxy(client, jobId, lightJobCoordinator);
     }
 
-    public Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
+    @Override
+    public Job newJobProxy(long jobId,
+                           boolean isLightJob,
+                           @Nonnull Object jobDefinition,
+                           @Nonnull JobConfig config,
+                           @Nullable Subject subject) {
+        if (subject != null) {
+            throw new UnsupportedOperationException("Submitting a job with subject is not allowed for client");
+        }
         return new ClientJobProxy(client, jobId, isLightJob, jobDefinition, config);
     }
 
