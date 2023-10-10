@@ -34,7 +34,7 @@ public class ClientCachePartitionIterator<K, V> extends ClientCacheIterator<K, V
             return false;
         }
         result = fetch();
-        if (!CollectionUtil.isEmpty(result)) {
+        if (CollectionUtil.isNotEmpty(result)) {
             index = 0;
             return true;
         }

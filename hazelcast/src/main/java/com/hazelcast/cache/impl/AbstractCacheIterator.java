@@ -164,7 +164,7 @@ public abstract class AbstractCacheIterator<K, V> implements Iterator<Cache.Entr
                 }
             }
             result = fetch();
-            if (!CollectionUtil.isEmpty(result)) {
+            if (CollectionUtil.isNotEmpty(result)) {
                 index = 0;
                 return true;
             }
@@ -219,7 +219,7 @@ public abstract class AbstractCacheIterator<K, V> implements Iterator<Cache.Entr
      * @param pointers the pointers defining the state of iteration
      */
     protected void setIterationPointers(List response, IterationPointer[] pointers) {
-        if (!CollectionUtil.isEmpty(response)) {
+        if (CollectionUtil.isNotEmpty(response)) {
             this.pointers = pointers;
         }
     }

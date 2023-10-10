@@ -251,7 +251,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
             throws InterruptedException, ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
-            if (!CollectionUtil.isEmpty(queryResult.getPartitionIds())
+            if (CollectionUtil.isNotEmpty(queryResult.getPartitionIds())
                     && !finishedPartitions.intersects(queryResult.getPartitionIds())) {
                 extractAndAppendResult(result, queryResult);
                 finishedPartitions.addAll(queryResult.getPartitionIds());

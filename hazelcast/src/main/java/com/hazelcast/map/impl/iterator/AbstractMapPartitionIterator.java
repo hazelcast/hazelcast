@@ -153,7 +153,7 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
             return false;
         }
         result = fetch();
-        if (!CollectionUtil.isEmpty(result)) {
+        if (CollectionUtil.isNotEmpty(result)) {
             index = 0;
             return true;
         }
@@ -175,7 +175,7 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
      * @param pointers the pointers defining the state of iteration
      */
     protected void setIterationPointers(List response, IterationPointer[] pointers) {
-        if (!CollectionUtil.isEmpty(response)) {
+        if (CollectionUtil.isNotEmpty(response)) {
             this.pointers = pointers;
         }
     }

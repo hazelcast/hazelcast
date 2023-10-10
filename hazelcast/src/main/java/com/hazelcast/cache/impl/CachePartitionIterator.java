@@ -43,7 +43,7 @@ public class CachePartitionIterator<K, V> extends CacheIterator<K, V> {
             return false;
         }
         result = fetch();
-        if (!CollectionUtil.isEmpty(result)) {
+        if (CollectionUtil.isNotEmpty(result)) {
             index = 0;
             return true;
         }
