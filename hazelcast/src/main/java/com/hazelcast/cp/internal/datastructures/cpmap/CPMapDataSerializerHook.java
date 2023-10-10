@@ -33,11 +33,11 @@ public final class CPMapDataSerializerHook implements DataSerializerHook {
     public static final int F_ID
             = FactoryIdHelper.getFactoryId(RAFT_CPMAP_DS_FACTORY, RAFT_CPMAP_DS_FACTORY_ID);
 
-    public static final int GET_OP = 1;
-    public static final int SET_OP = 2;
-    public static final int REMOVE_OP = 3;
-    public static final int CLEAR_OP = 4;
-    public static final int SNAPSHOT = 5;
+    public static final int SNAPSHOT = 1;
+    public static final int GET_OP = 2;
+    public static final int SET_OP = 3;
+    public static final int REMOVE_OP = 4;
+    public static final int CLEAR_OP = 5;
 
     @Override
     public int getFactoryId() {
@@ -48,6 +48,8 @@ public final class CPMapDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
         return typeId -> {
             switch (typeId) {
+                case SNAPSHOT:
+                    return new CPMapSnapshot();
                 case GET_OP:
                     return new GetOp();
                 case SET_OP:
@@ -56,8 +58,6 @@ public final class CPMapDataSerializerHook implements DataSerializerHook {
                     return new RemoveOp();
                 case CLEAR_OP:
                     return new ClearOp();
-                case SNAPSHOT:
-                    return new CPMapSnapshot();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }
