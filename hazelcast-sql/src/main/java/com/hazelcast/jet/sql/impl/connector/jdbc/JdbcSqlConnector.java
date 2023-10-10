@@ -507,7 +507,7 @@ public class JdbcSqlConnector implements SqlConnector {
      */
     @SuppressWarnings("ReturnCount")
     private static QueryDataType resolveType(String columnTypeName) {
-        switch (columnTypeName.toUpperCase(Locale.ROOT)) {
+        switch (columnTypeName.toUpperCase()) {
             case "BOOLEAN":
             case "BOOL":
             case "BIT":
