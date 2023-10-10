@@ -109,7 +109,7 @@ public class TableResolverImplTest {
 
         // when
         // then
-        assertThatThrownBy(() -> catalog.createMapping(mapping, true, true))
+        assertThatThrownBy(() -> catalog.createMapping(mapping, true, true, null))
                 .hasMessageContaining("expected test exception");
         verify(relationsStorage, never()).putIfAbsent(anyString(), (Mapping) any());
         verify(relationsStorage, never()).put(anyString(), (Mapping) any());
@@ -133,7 +133,7 @@ public class TableResolverImplTest {
 
         // when
         // then
-        assertThatThrownBy(() -> catalog.createMapping(mapping, false, false))
+        assertThatThrownBy(() -> catalog.createMapping(mapping, false, false, null))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Mapping or view already exists: name");
         verifyNoInteractions(listener);
@@ -155,7 +155,7 @@ public class TableResolverImplTest {
         given(relationsStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
-        catalog.createMapping(mapping, false, true);
+        catalog.createMapping(mapping, false, true, null);
 
         // then
         verifyNoInteractions(listener);
@@ -176,7 +176,7 @@ public class TableResolverImplTest {
                 .willReturn(singletonList(new MappingField("field_name", INT)));
 
         // when
-        catalog.createMapping(mapping, true, false);
+        catalog.createMapping(mapping, true, false, null);
 
         // then
         verify(relationsStorage).put(eq(mapping.name()), isA(Mapping.class));
@@ -204,7 +204,7 @@ public class TableResolverImplTest {
         given(connector.defaultObjectType()).willReturn("MyDummyType");
 
         // when
-        catalog.createMapping(mapping, true, false);
+        catalog.createMapping(mapping, true, false, null);
 
         // then
         verify(relationsStorage).put(eq(mapping.name()), isA(Mapping.class));
