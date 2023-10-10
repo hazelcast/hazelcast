@@ -148,9 +148,8 @@ public class ExceptionUtilTest extends JetTestSupport {
         Exception exception1 = new Exception("exception1");
         Exception exception2 = new Exception("exception2", exception1);
         Exception exception3 = new Exception("exception3", exception2);
-        Throwable cause = exception3.getCause();
 
-        String stackTrace = ExceptionUtil.stackTraceToString(cause);
-        assertThat(stackTrace).contains("exception2", "exception1");
+        String stackTrace = ExceptionUtil.stackTraceToString(exception3);
+        assertThat(stackTrace).contains("exception3", "exception2", "exception1");
     }
 }
