@@ -34,7 +34,7 @@ public class SqlPermission extends InstancePermission {
             | CREATE_VIEW | DROP_VIEW
             | CREATE_TYPE | DROP_TYPE
             | VIEW_DATACONNECTION | CREATE_DATACONNECTION | DROP_DATACONNECTION
-            // Note: added to the tail for backward compatibility
+            // Note: added to the tail for backward compatibility.
             | VIEW_MAPPING;
 
     public SqlPermission(String name, String... actions) {
