@@ -17,7 +17,9 @@ package com.hazelcast.rest.service;
 
 import com.hazelcast.internal.ascii.rest.InternalRestService;
 import com.hazelcast.rest.HazelcastRestSpringApplication;
+import com.hazelcast.rest.security.CustomSecurityContext;
 import com.hazelcast.rest.util.NodeEngineImplHolder;
+import com.hazelcast.security.impl.SecurityContextImpl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -31,5 +33,9 @@ public class RestServiceImpl implements InternalRestService {
 
         NodeEngineImplHolder nodeEngineImplHolder = context.getBean(NodeEngineImplHolder.class);
         nodeEngineImplHolder.setNodeEngine(nodeEngine);
+
+        CustomSecurityContext securityContext = context.getBean(CustomSecurityContext.class);
+        SecurityContextImpl securityContextImpl = new SecurityContextImpl(nodeEngine.getNode());
+        securityContext.setSecurityContext(securityContextImpl);
     }
 }
