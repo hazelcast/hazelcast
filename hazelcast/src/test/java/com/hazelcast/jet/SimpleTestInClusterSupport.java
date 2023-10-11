@@ -65,18 +65,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     protected static void initialize(int memberCount, @Nullable Config config) {
         assertNoRunningInstances();
 
-        assert factory == null : "already initialized";
-        factory = new TestHazelcastFactory();
-        instances = new HazelcastInstance[memberCount];
-        if (config == null) {
-            config = smallInstanceConfig();
-        }
-        SimpleTestInClusterSupport.config = config;
-        // create members
-        for (int i = 0; i < memberCount; i++) {
-            instances[i] = factory.newHazelcastInstance(config);
-        }
-        assertEqualsEventually(() -> instance().getLifecycleService().isRunning(), true);
+      initializeWitSupplier(memberCount, () -> config == null ? smallInstanceConfig() : config);
     }
 
     protected static void initializeWitSupplier(int memberCount, Supplier<Config> configSupplier) {
@@ -85,6 +74,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         assert factory == null : "already initialized";
         factory = new TestHazelcastFactory();
         instances = new HazelcastInstance[memberCount];
+        SimpleTestInClusterSupport.config = configSupplier.get();
         // create members
         for (int i = 0; i < memberCount; i++) {
             instances[i] = factory.newHazelcastInstance(configSupplier.get());
