@@ -192,7 +192,7 @@ public class BatchInvalidator extends Invalidator {
                 }
                 String name = entry.getKey();
                 InvalidationQueue<Invalidation> invalidationQueue = entry.getValue();
-                if (invalidationQueue.size() > 0) {
+                if (!invalidationQueue.isEmpty()) {
                     pollAndSendInvalidations(name, invalidationQueue);
                 }
             }

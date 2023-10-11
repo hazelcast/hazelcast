@@ -165,7 +165,7 @@ public class SqlPredicate
         SqlParser parser = new SqlParser();
         List<String> sqlTokens = parser.toPrefix(paramSql);
         List<Object> tokens = new ArrayList<>(sqlTokens);
-        if (tokens.size() == 0) {
+        if (tokens.isEmpty()) {
             throw new IllegalArgumentException("Invalid SQL: [" + paramSql + "]");
         }
         if (tokens.size() == 1) {
@@ -306,7 +306,7 @@ public class SqlPredicate
     }
 
     private void setOrAdd(List tokens, int position, Predicate predicate) {
-        if (tokens.size() == 0) {
+        if (tokens.isEmpty()) {
             tokens.add(predicate);
         } else {
             tokens.set(position, predicate);
