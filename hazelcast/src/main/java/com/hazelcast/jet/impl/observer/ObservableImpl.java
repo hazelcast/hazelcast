@@ -118,7 +118,7 @@ public class ObservableImpl<T> implements Observable<T> {
                 return this;
             } catch (InvalidConfigurationException e) {
                 logger.warning("Configuration for ringbuffer " + name + " already exists. "
-                        + "Maybe the ringbuffer was missed due to unreliableHazelcastInstance#getDistributedObjects");
+                        + "Maybe the ringbuffer was missed due to unreliable HazelcastInstance#getDistributedObjects");
                 if (i == 2) {
                     throw new RuntimeException("Failed configuring capacity: " + e, e);
                 }
