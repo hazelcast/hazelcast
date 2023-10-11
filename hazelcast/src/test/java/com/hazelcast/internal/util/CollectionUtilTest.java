@@ -108,6 +108,17 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetItemAtPositionOrNull_whenNegativePosition_thenReturnNull() {
+        Object obj = new Object();
+        Collection<Object> src = new ArrayList<>();
+        src.add(obj);
+
+        Object result = getItemAtPositionOrNull(src, -1);
+
+        assertNull(result);
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     public void testGetItemAsPositionOrNull_whenInputImplementsList_thenDoNotUserIterator() {
         Object obj = new Object();
