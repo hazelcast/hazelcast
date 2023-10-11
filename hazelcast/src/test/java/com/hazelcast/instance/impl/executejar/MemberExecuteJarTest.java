@@ -17,15 +17,15 @@
 package com.hazelcast.instance.impl.executejar;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.executejar.instancedecorator.BootstrappedInstanceDecorator;
-import com.hazelcast.instance.impl.executejar.jetservicedecorator.BootstrappedJetServiceDecorator;
+import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
+import com.hazelcast.instance.impl.BootstrappedJetProxy;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 
-import static com.hazelcast.instance.impl.executejar.instancedecorator.BootstrappedInstanceDecoratorFactory.createWithMemberJetProxy;
+import static com.hazelcast.instance.impl.BootstrappedInstanceProxyFactory.createWithMemberJetProxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -44,7 +44,7 @@ public class MemberExecuteJarTest {
         when(abstractJetInstance.getHazelcastInstance()).thenReturn(hazelcastInstance);
 
         // Parameter for test
-        BootstrappedInstanceDecorator instanceDecorator = createWithMemberJetProxy(hazelcastInstance);
+        BootstrappedInstanceProxy instanceProxy = createWithMemberJetProxy(hazelcastInstance);
 
         // Parameter for test. Empty main method
         MainMethodFinder mainMethodFinder = new MainMethodFinder();
@@ -59,14 +59,14 @@ public class MemberExecuteJarTest {
 
         // Test that invokeMain removes thread local values in BootstrappedInstanceProxy
         MemberExecuteJar memberExecuteJar = new MemberExecuteJar();
-        memberExecuteJar.invokeMain(instanceDecorator,
+        memberExecuteJar.invokeMain(instanceProxy,
                 executeJobParameters,
                 mainMethodFinder.mainMethod,
                 Collections.singletonList("jobArgs")
         );
 
-        BootstrappedJetServiceDecorator bootstrappedJetServiceDecorator = instanceDecorator.getJet();
-        ExecuteJobParameters parameters = bootstrappedJetServiceDecorator.getExecuteJobParameters();
+        BootstrappedJetProxy bootstrappedJetProxy = instanceProxy.getJet();
+        ExecuteJobParameters parameters = bootstrappedJetProxy.getExecuteJobParameters();
 
         assertThat(parameters.getJarPath()).isNull();
         assertThat(parameters.getSnapshotName()).isNull();

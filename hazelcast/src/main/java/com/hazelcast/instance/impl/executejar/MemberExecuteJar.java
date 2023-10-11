@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance.impl.executejar;
 
-import com.hazelcast.instance.impl.executejar.instancedecorator.BootstrappedInstanceDecorator;
+import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -39,7 +39,7 @@ public class MemberExecuteJar {
      * <p>
      * The startup of the job is not awaited
      */
-    public void executeJar(@Nonnull BootstrappedInstanceDecorator instanceDecorator,
+    public void executeJar(@Nonnull BootstrappedInstanceProxy instanceProxy,
                            ExecuteJobParameters executeJobParameters,
                            @Nullable String mainClassName,
                            @Nonnull List<String> args
@@ -57,22 +57,22 @@ public class MemberExecuteJar {
 
             LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
 
-            invokeMain(instanceDecorator, executeJobParameters, mainMethod, args);
+            invokeMain(instanceProxy, executeJobParameters, mainMethod, args);
         }
     }
 
-    void invokeMain(BootstrappedInstanceDecorator instanceDecorator, ExecuteJobParameters executeJobParameters,
+    void invokeMain(BootstrappedInstanceProxy instanceProxy, ExecuteJobParameters executeJobParameters,
                     Method mainMethod, List<String> args)
             throws IllegalAccessException, InvocationTargetException {
         try {
-            instanceDecorator.setExecuteJobParameters(executeJobParameters);
+            instanceProxy.setExecuteJobParameters(executeJobParameters);
 
             String[] jobArgs = args.toArray(new String[0]);
 
             // upcast args to Object, so it's passed as a single array-typed argument
             mainMethod.invoke(null, (Object) jobArgs);
         } finally {
-            instanceDecorator.removeExecuteJobParameters();
+            instanceProxy.removeExecuteJobParameters();
         }
     }
 }

@@ -90,7 +90,6 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
         assertJobIsRunning(jetService);
     }
 
-
     @Test
     public void test_jarUpload_withJobParameters() throws IOException {
         createCluster();

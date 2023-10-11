@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl.executejar.instancedecorator;
+package com.hazelcast.instance.impl;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.client.ClientService;
@@ -34,7 +34,6 @@ import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.instance.impl.executejar.jetservicedecorator.BootstrappedJetServiceDecorator;
 import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
 import com.hazelcast.jet.Job;
 import com.hazelcast.logging.ILogger;
@@ -63,37 +62,37 @@ import java.util.concurrent.ConcurrentMap;
 
 // A special HazelcastInstance that has a BootstrappedJetProxy
 @SuppressWarnings({"checkstyle:methodcount"})
-public final class BootstrappedInstanceDecorator implements HazelcastInstance {
+public final class BootstrappedInstanceProxy implements HazelcastInstance {
 
-    private static final ILogger LOGGER = Logger.getLogger(BootstrappedInstanceDecorator.class);
+    private static final ILogger LOGGER = Logger.getLogger(BootstrappedInstanceProxy.class);
 
     private final HazelcastInstance instance;
 
-    private final BootstrappedJetServiceDecorator jetServiceDecorator;
+    private final BootstrappedJetProxy jetProxy;
 
     private boolean shutDownAllowed = true;
 
-    BootstrappedInstanceDecorator(HazelcastInstance instance, BootstrappedJetServiceDecorator jetServiceDecorator) {
+    BootstrappedInstanceProxy(HazelcastInstance instance, BootstrappedJetProxy jetProxy) {
         this.instance = instance;
-        this.jetServiceDecorator = jetServiceDecorator;
+        this.jetProxy = jetProxy;
     }
 
     public List<Job> getSubmittedJobs() {
-        ExecuteJobParameters executeJobParameters = jetServiceDecorator.getExecuteJobParameters();
+        ExecuteJobParameters executeJobParameters = jetProxy.getExecuteJobParameters();
         return executeJobParameters.getSubmittedJobs();
     }
 
-    public BootstrappedInstanceDecorator setShutDownAllowed(boolean shutDownAllowed) {
+    public BootstrappedInstanceProxy setShutDownAllowed(boolean shutDownAllowed) {
         this.shutDownAllowed = shutDownAllowed;
         return this;
     }
 
     public void setExecuteJobParameters(ExecuteJobParameters executeJobParameters) {
-        jetServiceDecorator.setExecuteJobParameters(executeJobParameters);
+        jetProxy.setExecuteJobParameters(executeJobParameters);
     }
 
     public void removeExecuteJobParameters() {
-        jetServiceDecorator.removeExecuteJobParameters();
+        jetProxy.removeExecuteJobParameters();
     }
 
     @Nonnull
@@ -313,8 +312,8 @@ public final class BootstrappedInstanceDecorator implements HazelcastInstance {
 
     @Nonnull
     @Override
-    public BootstrappedJetServiceDecorator getJet() {
-        return jetServiceDecorator;
+    public BootstrappedJetProxy getJet() {
+        return jetProxy;
     }
 
     @Override

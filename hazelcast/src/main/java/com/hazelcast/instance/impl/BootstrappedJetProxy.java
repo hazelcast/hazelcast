@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl.executejar.jetservicedecorator;
+package com.hazelcast.instance.impl;
 
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
@@ -48,13 +48,13 @@ import java.util.Map;
  * Implementors of this class provides a strategy pattern to access ExecuteJobParameters to launch a new jet job
  */
 @SuppressWarnings({"checkstyle:methodcount"})
-public abstract class BootstrappedJetServiceDecorator<M> extends AbstractJetInstance<M> {
+public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
 
-    private static final ILogger LOGGER = Logger.getLogger(BootstrappedJetServiceDecorator.class);
+    private static final ILogger LOGGER = Logger.getLogger(BootstrappedJetProxy.class);
 
     private final AbstractJetInstance<M> jetInstance;
 
-    protected BootstrappedJetServiceDecorator(@Nonnull JetService jetService) {
+    protected BootstrappedJetProxy(@Nonnull JetService jetService) {
         super(((AbstractJetInstance) jetService).getHazelcastInstance());
         this.jetInstance = (AbstractJetInstance<M>) jetService;
     }

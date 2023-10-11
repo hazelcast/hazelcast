@@ -35,120 +35,119 @@ import java.util.concurrent.CompletableFuture;
  * This class decorates a Job and changes behavior.
  * For example, it does not allow a blocking join() method
  */
-public class MemberJobDecorator implements Job {
+public class BootstrapJobDecorator implements Job {
 
-    private final Job delegateJob;
+    private final Job job;
 
-    public MemberJobDecorator(Job delegateJob) {
-        this.delegateJob = delegateJob;
+    public BootstrapJobDecorator(Job job) {
+        this.job = job;
     }
 
     @Override
     public boolean isLightJob() {
-        return delegateJob.isLightJob();
+        return job.isLightJob();
     }
 
     @Override
     public long getId() {
-        return delegateJob.getId();
+        return job.getId();
     }
 
     @Nonnull
     @Override
     public CompletableFuture<Void> getFuture() {
-        return delegateJob.getFuture();
+        return job.getFuture();
     }
 
     @Override
     public void cancel() {
-        delegateJob.cancel();
+        job.cancel();
     }
 
     @Override
     public long getSubmissionTime() {
-        return delegateJob.getSubmissionTime();
+        return job.getSubmissionTime();
     }
 
     @Nullable
     @Override
     public String getName() {
-        return delegateJob.getName();
+        return job.getName();
     }
 
     @Nonnull
     @Override
     public JobStatus getStatus() {
-        return delegateJob.getStatus();
+        return job.getStatus();
     }
 
     @Override
     public boolean isUserCancelled() {
-        return delegateJob.isUserCancelled();
+        return job.isUserCancelled();
     }
 
     @Override
     public UUID addStatusListener(@Nonnull JobStatusListener listener) {
-        return delegateJob.addStatusListener(listener);
+        return job.addStatusListener(listener);
     }
 
     @Override
     public boolean removeStatusListener(@Nonnull UUID id) {
-        return delegateJob.removeStatusListener(id);
+        return job.removeStatusListener(id);
     }
 
     @Nonnull
     @Override
     public JobConfig getConfig() {
-        return delegateJob.getConfig();
+        return job.getConfig();
     }
 
     @Override
     public JobConfig updateConfig(@Nonnull DeltaJobConfig deltaConfig) {
-        return delegateJob.updateConfig(deltaConfig);
+        return job.updateConfig(deltaConfig);
     }
 
     @Nonnull
     @Override
     public JobSuspensionCause getSuspensionCause() {
-        return delegateJob.getSuspensionCause();
+        return job.getSuspensionCause();
     }
 
     @Nonnull
     @Override
     public JobMetrics getMetrics() {
-        return delegateJob.getMetrics();
+        return job.getMetrics();
     }
 
     @Override
     public void restart() {
-        delegateJob.restart();
+        job.restart();
     }
 
     @Override
     public void suspend() {
-        delegateJob.suspend();
+        job.suspend();
     }
 
     @Override
     public void resume() {
-        delegateJob.resume();
+        job.resume();
     }
 
     @Override
     public JobStateSnapshot cancelAndExportSnapshot(String name) {
-        return delegateJob.cancelAndExportSnapshot(name);
+        return job.cancelAndExportSnapshot(name);
     }
 
     @Override
     public JobStateSnapshot exportSnapshot(String name) {
-        return delegateJob.exportSnapshot(name);
+        return job.exportSnapshot(name);
     }
-
 
     @Nonnull
     @Override
     public String getIdString() {
-        return delegateJob.getIdString();
+        return job.getIdString();
     }
 
     @Override

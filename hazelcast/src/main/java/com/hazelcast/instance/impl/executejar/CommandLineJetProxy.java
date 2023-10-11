@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl.executejar.jetservicedecorator.clientside;
+package com.hazelcast.instance.impl.executejar;
 
-import com.hazelcast.instance.impl.executejar.jetservicedecorator.BootstrappedJetServiceDecorator;
-import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
+import com.hazelcast.instance.impl.BootstrappedJetProxy;
 import com.hazelcast.jet.JetService;
 
 import javax.annotation.Nonnull;
@@ -25,11 +24,11 @@ import javax.annotation.Nonnull;
 /**
  * This class uses a member field to return an ExecuteJobParameters object.
  */
-public class CommandLineJetServiceDecorator<M> extends BootstrappedJetServiceDecorator<M> {
+public class CommandLineJetProxy<M> extends BootstrappedJetProxy<M> {
 
     private ExecuteJobParameters executeJobParameters;
 
-    public CommandLineJetServiceDecorator(@Nonnull JetService jetService) {
+    public CommandLineJetProxy(@Nonnull JetService jetService) {
         super(jetService);
     }
 

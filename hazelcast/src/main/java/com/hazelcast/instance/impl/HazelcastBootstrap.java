@@ -25,7 +25,6 @@ import com.hazelcast.instance.impl.executejar.CommandLineExecuteJar;
 import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
 import com.hazelcast.instance.impl.executejar.MemberExecuteJar;
 import com.hazelcast.instance.impl.executejar.ResettableSingleton;
-import com.hazelcast.instance.impl.executejar.instancedecorator.BootstrappedInstanceDecorator;
 import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -43,8 +42,8 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 
-import static com.hazelcast.instance.impl.executejar.instancedecorator.BootstrappedInstanceDecoratorFactory.createWithCLIJetProxy;
-import static com.hazelcast.instance.impl.executejar.instancedecorator.BootstrappedInstanceDecoratorFactory.createWithMemberJetProxy;
+import static com.hazelcast.instance.impl.BootstrappedInstanceProxyFactory.createWithCLIJetProxy;
+import static com.hazelcast.instance.impl.BootstrappedInstanceProxyFactory.createWithMemberJetProxy;
 import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
 
 /**
@@ -61,7 +60,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
  **/
 public final class HazelcastBootstrap {
 
-    private static final ResettableSingleton<BootstrappedInstanceDecorator> SINGLETON = new ResettableSingleton<>();
+    private static final ResettableSingleton<BootstrappedInstanceProxy> SINGLETON = new ResettableSingleton<>();
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastBootstrap.class);
 
@@ -109,7 +108,7 @@ public final class HazelcastBootstrap {
             throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
         // Set the singleton, so that it can be accessed within the jar
         // Do not allow the singleton to be shutdown. Otherwise, the member will shut down
-        BootstrappedInstanceDecorator hazelcastInstance =
+        BootstrappedInstanceProxy hazelcastInstance =
                 SINGLETON.get(() -> createWithMemberJetProxy(supplierOfInstance.get())
                         .setShutDownAllowed(false));
 

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl.executejar.jetservicedecorator.memberside;
+package com.hazelcast.instance.impl.executejar;
 
-import com.hazelcast.instance.impl.executejar.jetservicedecorator.BootstrappedJetServiceDecorator;
-import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
+import com.hazelcast.instance.impl.BootstrappedJetProxy;
+import com.hazelcast.instance.impl.executejar.jetservicedecorator.memberside.BootstrapJobDecorator;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -30,11 +30,11 @@ import javax.annotation.Nonnull;
  * This class uses a ThreadLocal field to return an ExecuteJobParameters object.
  * So that this decorator can be used by multiple threads
  */
-public class MemberJetServiceDecorator<M> extends BootstrappedJetServiceDecorator<M> {
+public class MemberJetProxy<M> extends BootstrappedJetProxy<M> {
     private final ThreadLocal<ExecuteJobParameters> executeJobParametersThreadLocal =
             ThreadLocal.withInitial(ExecuteJobParameters::new);
 
-    public MemberJetServiceDecorator(@Nonnull JetService jetService) {
+    public MemberJetProxy(@Nonnull JetService jetService) {
         super(jetService);
     }
 
@@ -61,27 +61,27 @@ public class MemberJetServiceDecorator<M> extends BootstrappedJetServiceDecorato
     @Override
     public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
         Job job = super.newJob(pipeline, config);
-        return new MemberJobDecorator(job);
+        return new BootstrapJobDecorator(job);
     }
 
     @Nonnull
     @Override
     public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
         Job job = super.newJob(dag, config);
-        return new MemberJobDecorator(job);
+        return new BootstrapJobDecorator(job);
     }
 
     @Nonnull
     @Override
     public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
         Job job = super.newJobIfAbsent(pipeline, config);
-        return new MemberJobDecorator(job);
+        return new BootstrapJobDecorator(job);
     }
 
     @Nonnull
     @Override
     public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
         Job job = super.newJobIfAbsent(dag, config);
-        return new MemberJobDecorator(job);
+        return new BootstrapJobDecorator(job);
     }
 }
