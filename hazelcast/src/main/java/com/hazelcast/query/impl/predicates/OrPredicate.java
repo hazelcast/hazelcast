@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 import static com.hazelcast.query.impl.IndexRegistry.SKIP_PARTITIONS_COUNT_CHECK;
 
 /**
