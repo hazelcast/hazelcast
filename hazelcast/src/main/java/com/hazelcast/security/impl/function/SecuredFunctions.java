@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier.Context;
 import com.hazelcast.jet.function.ToResultSetFunction;
+import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.ReadJdbcP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
@@ -211,6 +212,26 @@ public final class SecuredFunctions {
                 String fileName = path.getFileName().toString();
                 return Files.lines(path, Charset.forName(charsetName))
                         .map(l -> mapOutputFn.apply(fileName, l));
+            }
+
+            @Override
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.file(directory, ACTION_READ));
+            }
+        };
+    }
+
+    public static <T> SupplierEx<Processor> readFilesProcessorFn(
+            String directory,
+            String glob,
+            boolean sharedFileSystem,
+            boolean ignoreFileNotFound,
+            FunctionEx<? super Path, ? extends Stream<T>> readFileFn) {
+
+        return new SupplierEx<>() {
+            @Override
+            public Processor getEx() {
+                return new ReadFilesP<>(directory, glob, sharedFileSystem, ignoreFileNotFound, readFileFn);
             }
 
             @Override

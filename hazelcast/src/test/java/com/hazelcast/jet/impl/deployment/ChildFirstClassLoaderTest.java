@@ -20,7 +20,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.JarUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -87,9 +86,15 @@ public class ChildFirstClassLoaderTest {
 
     @Test
     public void urlsMustNotBeNullNorEmpty() {
-        assertThatThrownBy(() -> new ChildFirstClassLoader(null, ClassLoader.getSystemClassLoader()))
+        assertThatThrownBy(() -> {
+            try (ChildFirstClassLoader ignored = new ChildFirstClassLoader(null, ClassLoader.getSystemClassLoader())) {
+            }
+        })
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> new ChildFirstClassLoader(new URL[0], ClassLoader.getSystemClassLoader()))
+        assertThatThrownBy(() -> {
+            try (ChildFirstClassLoader ignored = new ChildFirstClassLoader(new URL[0], ClassLoader.getSystemClassLoader())) {
+            }
+        })
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -248,7 +253,7 @@ public class ChildFirstClassLoaderTest {
                 throw new IllegalArgumentException("Resource with name " + name +
                         " could not be found in classloader " + cl);
             }
-            return IOUtils.toString(is, UTF_8);
+            return new String(is.readAllBytes(), UTF_8);
         }
     }
 }

@@ -118,7 +118,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         sqlService.execute("SELECT * FROM map ORDER BY id");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        mapContainer(map).getIndexes().destroyIndexes();
+        mapContainer(map).getGlobalIndexRegistry().destroyIndexes();
         map.addIndex(new IndexConfig(IndexType.HASH, "__key.id").setName(indexName));
 
         assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());

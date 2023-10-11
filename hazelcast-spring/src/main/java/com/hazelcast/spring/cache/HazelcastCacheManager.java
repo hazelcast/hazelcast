@@ -18,6 +18,7 @@ package com.hazelcast.spring.cache;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.map.IMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -110,7 +111,7 @@ public class HazelcastCacheManager implements CacheManager {
     }
 
     private void parseOptions(String options) {
-        if (null == options || options.trim().isEmpty()) {
+        if (StringUtil.isNullOrEmptyAfterTrim(options)) {
             return;
         }
         for (String option : options.split(",")) {

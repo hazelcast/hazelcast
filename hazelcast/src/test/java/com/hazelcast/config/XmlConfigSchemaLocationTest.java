@@ -20,11 +20,6 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,7 +36,11 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -59,7 +58,7 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
     private static final String XML_SCHEMA_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance";
     private static final String XML_SCHEMA_LOCATION_ATTRIBUTE = "schemaLocation";
 
-    private CloseableHttpClient httpClient;
+    private HttpClient httpClient;
     private DocumentBuilderFactory documentBuilderFactory;
     private Set<String> validUrlsCache;
 
@@ -68,14 +67,11 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() throws ParserConfigurationException {
-        httpClient = HttpClients.createDefault();
+        httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
         documentBuilderFactory = getNsAwareDocumentBuilderFactory();
         validUrlsCache = new HashSet<>();
-    }
-
-    @After
-    public void tearDown() {
-        IOUtil.closeResource(httpClient);
     }
 
     @Test
@@ -157,13 +153,11 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
     }
 
     private int getResponseCode(String url) throws Exception {
-        HttpGet httpGet = new HttpGet(url);
-        CloseableHttpResponse response = null;
-        try {
-            response = httpClient.execute(httpGet);
-            return response.getStatusLine().getStatusCode();
-        } finally {
-            IOUtil.closeResource(response);
-        }
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .build();
+
+        return httpClient.send(request, HttpResponse.BodyHandlers.discarding())
+                .statusCode();
     }
 }

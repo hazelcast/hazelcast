@@ -32,6 +32,11 @@ public interface SqlCatalogObject extends IdentifiedDataSerializable {
     @Nonnull
     String unparse();
 
+    /**
+     * @return name of sql catalog object.
+     */
+    String name();
+
     @Override
     default int getFactoryId() {
         return SqlDataSerializerHook.F_ID;

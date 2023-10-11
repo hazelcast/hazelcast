@@ -23,6 +23,7 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.AddAllOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -31,7 +32,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_ADDLISTENER}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec#REQUEST_MESSAGE_TYPE}
  */
 public class QueueAddAllMessageTask
         extends AbstractPartitionMessageTask<QueueAddAllCodec.RequestParameters> {
@@ -68,7 +69,7 @@ public class QueueAddAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "addAll";
+        return SecurityInterceptorConstants.ADD_ALL;
     }
 
     @Override

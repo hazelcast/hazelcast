@@ -22,6 +22,7 @@ import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
@@ -115,7 +116,7 @@ public final class IndexUtils {
         // Construct final index.
         String name = config.getName();
 
-        if (name != null && name.trim().isEmpty()) {
+        if (StringUtil.isNullOrEmptyAfterTrim(name)) {
             name = null;
         }
 

@@ -93,7 +93,7 @@ public class SqlBasicTest extends SqlTestSupport {
     private static final int IDS_KEY_CLASS_ID = 2;
     private static final int IDS_VALUE_CLASS_ID = 3;
     static final int PORTABLE_FACTORY_ID = 1;
-    private static final int PORTABLE_KEY_CLASS_ID = 2;
+    static final int PORTABLE_KEY_CLASS_ID = 2;
     static final int PORTABLE_VALUE_CLASS_ID = 3;
     private static final int PORTABLE_NESTED_CLASS_ID = 4;
 

@@ -31,6 +31,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -132,7 +133,7 @@ public class MapExecuteWithPredicateMessageTask
 
     @Override
     public String getMethodName() {
-        return "executeOnEntries";
+        return SecurityInterceptorConstants.EXECUTE_ON_ENTRIES;
     }
 
     @Override

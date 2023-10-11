@@ -23,12 +23,13 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.impl.IndexUtils;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -187,7 +188,7 @@ public class IndexCreateTest extends HazelcastTestSupport {
             MapServiceContext mapServiceContext = service.getMapServiceContext();
             MapContainer mapContainer = mapServiceContext.getMapContainer(MAP_NAME);
 
-            Indexes indexes = mapContainer.getIndexes();
+            IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
 
             assertEquals(indexConfigs.length, indexes.getIndexes().length);
 
@@ -239,7 +240,7 @@ public class IndexCreateTest extends HazelcastTestSupport {
     }
 
     private static String getExpectedName(IndexConfig config) {
-        if (config.getName() != null && !config.getName().trim().isEmpty()) {
+        if (!StringUtil.isNullOrEmptyAfterTrim(config.getName())) {
             return config.getName();
         }
 

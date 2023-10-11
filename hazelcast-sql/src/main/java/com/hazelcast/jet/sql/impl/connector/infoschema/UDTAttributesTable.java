@@ -90,7 +90,7 @@ public class UDTAttributesTable extends InfoSchemaTable {
                 rows.add(new Object[]{
                         catalog(),
                         schema,
-                        type.getName(),
+                        type.name(),
                         field.getName(),
                         i + 1,
                         null, // attribute_default

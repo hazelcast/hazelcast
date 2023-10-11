@@ -110,6 +110,7 @@ public class CompactSerializationTest {
                 .hasMessageContaining("Invalid field name");
     }
 
+    @Test
     public void testSerializerRegistration_withDuplicateClasses() {
         SerializationConfig config = new SerializationConfig();
         assertThatThrownBy(() -> {

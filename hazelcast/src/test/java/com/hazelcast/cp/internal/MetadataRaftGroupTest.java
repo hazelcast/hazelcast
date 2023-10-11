@@ -550,7 +550,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
                 LINEARIZABLE);
 
         List<CPMember> activeEndpoints = f1.get();
-        assertThat(activeEndpoints).doesNotContain(endpoint);
+        assertThat(activeEndpoints).isNotEmpty().doesNotContain(endpoint);
 
         InternalCompletableFuture<CPGroup> f2 = invocationService.query(metadataGroupId, new GetRaftGroupOp(metadataGroupId),
                 LINEARIZABLE);
@@ -597,8 +597,8 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         HazelcastInstance leader = getInstance(leaderNode.getLocalMember());
         CPGroup group3 = queryRaftGroupLocally(leader, groupId3);
         assertNotNull(group3);
-        assertThat(group3.members()).doesNotContain(endpoint3);
-        assertThat(group3.members()).doesNotContain(endpoint4);
+        assertThat(group3.members()).isNotEmpty().doesNotContain(endpoint3);
+        assertThat(group3.members()).isNotEmpty().doesNotContain(endpoint4);
 
         CPGroup group4 = queryRaftGroupLocally(leader, groupId4);
         assertNotNull(group4);

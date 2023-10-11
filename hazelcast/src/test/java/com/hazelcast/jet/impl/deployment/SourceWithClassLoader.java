@@ -38,11 +38,4 @@ public class SourceWithClassLoader {
         return source;
     }
 
-    public static BatchSource<String> sourceMetaSupplier(String name) {
-        BatchSource<String> source = Sources.batchFromProcessor(name, new ProcessorMetaSupplierUsingClassloader(
-                TestProcessor.ResourceReader::new
-        ));
-        return source;
-    }
-
 }

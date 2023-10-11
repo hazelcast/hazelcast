@@ -31,6 +31,7 @@ import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -105,7 +106,7 @@ public class MapFetchWithQueryMessageTask extends AbstractMapPartitionMessageTas
 
     @Override
     public String getMethodName() {
-        return "iterator";
+        return SecurityInterceptorConstants.ITERATOR_FETCH_WITH_QUERY;
     }
 
     @Override

@@ -35,7 +35,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.http.NoHttpResponseException;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -44,7 +43,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.SocketException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -254,10 +252,8 @@ public class RestClusterTest {
         String clusterName = config.getClusterName();
         try {
             assertJsonContains(communicator.shutdownMember(clusterName, getPassword()).response, "status", "success");
-        } catch (SocketException ignored) {
-            // if the node shuts down before response is received, a `SocketException` (or instance of its subclass) is expected
-        } catch (NoHttpResponseException ignored) {
-            // `NoHttpResponseException` is also a possible outcome when a node shut down before it has a chance
+        } catch (IOException ignored) {
+            // exception is also a possible outcome when a node shut down before it has a chance
             // to send a response back to a client.
         }
 

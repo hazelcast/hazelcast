@@ -108,7 +108,7 @@ public final class LinkedAddresses {
     public boolean intersects(LinkedAddresses other) {
         Set<Address> tmp = new HashSet<>(allLinkedAddresses);
         tmp.retainAll(other.getAllAddresses());
-        return tmp.size() > 0;
+        return !tmp.isEmpty();
     }
 
     @Override

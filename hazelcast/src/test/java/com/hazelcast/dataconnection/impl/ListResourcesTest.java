@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
@@ -40,6 +41,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import static com.hazelcast.dataconnection.impl.JdbcDataConnection.OBJECT_TYPE_TABLE;
 import static com.hazelcast.test.DockerTestUtil.assumeTestDatabaseProviderCanLaunch;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,22 +56,29 @@ public class ListResourcesTest {
                 {
                         new H2DatabaseProvider(),
                         new DataConnectionResource[]{
-                                new DataConnectionResource("TABLE", "testdb", "PUBLIC", "my_table"),
-                                new DataConnectionResource("TABLE", "testdb", "my_schema", "my_table")
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "testdb", "PUBLIC", "my_table"),
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "testdb", "my_schema", "my_table")
                         }
                 },
                 {
                         new PostgresDatabaseProvider(),
                         new DataConnectionResource[]{
-                                new DataConnectionResource("TABLE", "public", "my_table"),
-                                new DataConnectionResource("TABLE", "my_schema", "my_table")
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "public", "my_table"),
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "my_schema", "my_table")
                         }
                 },
                 {
                         new MySQLDatabaseProvider(),
                         new DataConnectionResource[]{
-                                new DataConnectionResource("TABLE", "testdb", "my_table"),
-                                new DataConnectionResource("TABLE", "my_schema", "my_table")
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "testdb", "my_table"),
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "my_schema", "my_table")
+                        }
+                },
+                {
+                        new MSSQLDatabaseProvider(),
+                        new DataConnectionResource[]{
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "master", "dbo", "my_table"),
+                                new DataConnectionResource(OBJECT_TYPE_TABLE, "master", "my_schema", "my_table")
                         }
                 },
         };
@@ -101,7 +110,7 @@ public class ListResourcesTest {
         executeJdbc(jdbcUrl, "CREATE TABLE my_schema.my_table (id INTEGER, name VARCHAR(255) )");
 
         List<DataConnectionResource> dataConnectionResources = dataConnection.listResources();
-        assertThat(dataConnectionResources).contains(expectedResources);
+        assertThat(dataConnectionResources).containsExactlyInAnyOrder(expectedResources);
     }
 
     public static void executeJdbc(String url, String sql) throws SQLException {

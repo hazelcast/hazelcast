@@ -31,6 +31,7 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.services.ListenerWrapperEventFilter;
 import com.hazelcast.internal.services.NotifiableEventListener;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -46,7 +47,7 @@ import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFutur
  * Client request which registers an event listener on behalf of the client and delegates the received events
  * back to client.
  *
- * @see CacheService#registerListener(String, CacheEventListener, boolean localOnly)
+ * @see CacheService#registerListener(String, CacheEventListener)
  */
 public class CacheAddEntryListenerMessageTask
         extends AbstractAddListenerMessageTask<CacheAddEntryListenerCodec.RequestParameters> {
@@ -165,7 +166,7 @@ public class CacheAddEntryListenerMessageTask
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return SecurityInterceptorConstants.ICACHE_SERVICE;
     }
 
     @Override
@@ -175,7 +176,7 @@ public class CacheAddEntryListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "registerCacheEntryListener";
+        return SecurityInterceptorConstants.ADD_ENTRY_LISTENER;
     }
 
 }

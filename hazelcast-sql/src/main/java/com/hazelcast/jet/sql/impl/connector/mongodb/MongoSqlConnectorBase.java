@@ -17,11 +17,13 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.mongodb.impl.DbCheckingPMetaSupplier;
+import com.hazelcast.jet.mongodb.impl.DbCheckingPMetaSupplierBuilder;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -33,10 +35,11 @@ import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 import org.apache.calcite.rex.RexNode;
-import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -50,6 +53,7 @@ import java.util.Set;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static java.util.Collections.singletonList;
@@ -181,27 +185,53 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         Document filter = translateFilter(predicate, visitor);
         List<ProjectionData> projections = translateProjections(projection, context, visitor);
 
-        ProcessorMetaSupplier supplier;
+        DbCheckingPMetaSupplier supplier;
+        final boolean forceReadTotalParallelismOne = table.isforceReadTotalParallelismOne();
         if (table.isStreaming()) {
-            BsonTimestamp startAt = Options.startAt(table.getOptions());
-            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projections, startAt, eventTimePolicyProvider));
+            var startAt = Options.startAtTimestamp(table.getOptions());
+            var ps = new SelectProcessorSupplier(table, filter, projections, startAt, eventTimePolicyProvider);
+            supplier = wrap(context, ps, forceReadTotalParallelismOne);
         } else {
-            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projections));
+            var ps = new SelectProcessorSupplier(table, filter, projections);
+            supplier = wrap(context, ps, forceReadTotalParallelismOne);
         }
 
         DAG dag = context.getDag();
         Vertex sourceVertex = dag.newUniqueVertex(
                 "Select (" + table.getSqlName() + ")", supplier
         );
+        if (forceReadTotalParallelismOne) {
+            sourceVertex.localParallelism(1);
+        }
 
         return sourceVertex;
     }
 
-    protected static ProcessorMetaSupplier wrap(DagBuildContext ctx, ProcessorSupplier supplier) {
+    protected static DbCheckingPMetaSupplier wrap(DagBuildContext ctx, ProcessorSupplier supplier) {
+        return wrap(ctx, supplier, false);
+    }
+
+    protected static DbCheckingPMetaSupplier wrapWithParallelismOne(DagBuildContext ctx, ProcessorSupplier supplier) {
+        return wrap(ctx, supplier, true);
+    }
+
+    protected static DbCheckingPMetaSupplier wrap(DagBuildContext ctx, ProcessorSupplier supplier, boolean forceParallelismOne) {
         MongoTable table = ctx.getTable();
-        return table.isForceMongoParallelismOne()
-                ? ProcessorMetaSupplier.forceTotalParallelismOne(supplier)
-                : ProcessorMetaSupplier.of(supplier);
+        String connectionString = table.connectionString;
+        SupplierEx<MongoClient> clientSupplier = connectionString == null
+                ? null
+                : () -> MongoClients.create(connectionString);
+        return new DbCheckingPMetaSupplierBuilder()
+                .withRequiredPermission(null)
+                .withCheckResourceExistence(table.checkExistenceOnEachCall())
+                .withForceTotalParallelismOne(table.isforceReadTotalParallelismOne())
+                .withDatabaseName(table.databaseName)
+                .withCollectionName(table.collectionName)
+                .withClientSupplier(clientSupplier)
+                .withDataConnectionRef(dataConnectionRef(table.dataConnectionName))
+                .withProcessorSupplier(supplier)
+                .withForceTotalParallelismOne(forceParallelismOne)
+                .build();
     }
 
     private static Document translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {

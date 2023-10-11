@@ -1128,7 +1128,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         }
 
         checkNotNull(members);
-        checkTrue(members.size() > 0, "Active CP members list cannot be empty");
+        checkFalse(members.isEmpty(), "Active CP members list cannot be empty");
         if (members.size() == 1) {
             logger.fine("There is one active CP member left: " + members);
             return;

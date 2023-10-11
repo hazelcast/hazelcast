@@ -452,7 +452,7 @@ public class SqlClientService implements SqlService {
             return null;
         }
 
-        if (statement.getParameters().size() == 0) {
+        if (statement.getParameters().isEmpty()) {
             return null;
         }
 
