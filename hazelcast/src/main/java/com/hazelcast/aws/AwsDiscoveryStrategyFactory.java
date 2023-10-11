@@ -124,8 +124,8 @@ public class AwsDiscoveryStrategyFactory
     }
 
     static boolean isEndpointAvailable(String url) {
-        return !RestClient.create(url)
-                .withTimeoutSeconds(1)
+        return !RestClient.create(url, 1)
+                .withRequestTimeoutSeconds(1)
                 .withRetries(1)
                 .get()
                 .getBody()

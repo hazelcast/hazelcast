@@ -19,6 +19,7 @@ package com.hazelcast.spi.utils;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.spi.exception.RestClientException;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.BufferedReader;
@@ -56,6 +57,7 @@ public final class RestClient {
      * HTTP status code 404 NOT FOUND
      */
     public static final int HTTP_NOT_FOUND = 404;
+    public static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = 10;
 
     private static final String WATCH_FORMAT = "watch=1&resourceVersion=%s";
 
@@ -64,39 +66,46 @@ public final class RestClient {
     private final HttpClient httpClient;
     private Set<Integer> expectedResponseCodes;
     private String body;
-    private int timeoutSeconds;
+    private int requestTimeoutSeconds;
     private int retries;
 
     /**
-     * Build a new RestClient, backed by an {@link HttpClient} without {@link SSLContext}
-     * @param url the URL to connect to
-     */
-    private RestClient(String url) {
-        this.url = url;
-        this.httpClient = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .build();
-    }
-
-    /**
      * Build a new RestClient, backed by an {@link HttpClient} using {@link SSLContext}
-     * @param url           the URL to connect to
-     * @param caCertificate the SSL certificate to use
+     * if a {@code non-null} caCertificate is provided. Initial connection attempt will
+     * be made with the provided connection timeout if greater than zero.
+     *
+     * @param url                   the URL to connect to
+     * @param caCertificate         the SSL certificate to use, or null
+     * @param connectTimeoutSeconds the timeout used during initial connection attempt, or
+     *                              0 if no connection timeout should be defined
      */
-    private RestClient(String url, String caCertificate) {
+    private RestClient(String url, @Nullable String caCertificate, int connectTimeoutSeconds) {
         this.url = url;
-        this.httpClient = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .sslContext(buildSslContext(caCertificate))
-                .build();
+        HttpClient.Builder builder = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
+                                               .sslContext(buildSslContext(caCertificate));
+        if (connectTimeoutSeconds > 0) {
+            builder.connectTimeout(Duration.ofSeconds(connectTimeoutSeconds));
+        }
+        if (caCertificate != null) {
+            builder.sslContext(buildSslContext(caCertificate));
+        }
+        this.httpClient = builder.build();
     }
 
     public static RestClient create(String url) {
-        return new RestClient(url);
+        return create(url, DEFAULT_CONNECT_TIMEOUT_SECONDS);
+    }
+
+    public static RestClient create(String url, int connectTimeoutSeconds) {
+        return new RestClient(url, null, connectTimeoutSeconds);
     }
 
     public static RestClient createWithSSL(String url, String caCertificate) {
-        return new RestClient(url, caCertificate);
+        return createWithSSL(url, caCertificate, DEFAULT_CONNECT_TIMEOUT_SECONDS);
+    }
+
+    public static RestClient createWithSSL(String url, String caCertificate, int connectTimeoutSeconds) {
+        return new RestClient(url, caCertificate, connectTimeoutSeconds);
     }
 
     public RestClient withHeaders(Map<String, String> headers) {
@@ -116,14 +125,8 @@ public final class RestClient {
         return this;
     }
 
-    public RestClient withTimeoutSeconds(int timeoutSeconds) {
-        this.timeoutSeconds = timeoutSeconds;
-        return this;
-    }
-
-    // Select the preferred timeout based on 2 inputs (legacy support)
-    public RestClient withPreferredTimeoutSeconds(int timeoutSeconds1, int timeoutSeconds2) {
-        this.timeoutSeconds = Math.max(timeoutSeconds1, timeoutSeconds2);
+    public RestClient withRequestTimeoutSeconds(int timeoutSeconds) {
+        this.requestTimeoutSeconds = timeoutSeconds;
         return this;
     }
 
@@ -156,8 +159,8 @@ public final class RestClient {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url));
 
-        if (timeoutSeconds > 0) {
-            builder.timeout(Duration.ofSeconds(timeoutSeconds));
+        if (requestTimeoutSeconds > 0) {
+            builder.timeout(Duration.ofSeconds(requestTimeoutSeconds));
         }
         headers.forEach(parameter -> builder.header(parameter.getKey(), parameter.getValue()));
 
@@ -202,8 +205,8 @@ public final class RestClient {
                     .uri(URI.create(completeUrl))
                     .GET();
 
-            if (timeoutSeconds > 0) {
-                requestBuilder.timeout(Duration.ofSeconds(timeoutSeconds));
+            if (requestTimeoutSeconds > 0) {
+                requestBuilder.timeout(Duration.ofSeconds(requestTimeoutSeconds));
             }
 
             for (Parameter header : headers) {

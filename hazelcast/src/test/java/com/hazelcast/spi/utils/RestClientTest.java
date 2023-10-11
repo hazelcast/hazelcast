@@ -119,8 +119,8 @@ public class RestClientTest {
             .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
-        String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-            .withTimeoutSeconds(1200)
+        String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT), 1200)
+            .withRequestTimeoutSeconds(1200)
             .withRetries(1)
             .get()
             .getBody();

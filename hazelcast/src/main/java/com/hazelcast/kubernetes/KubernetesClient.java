@@ -65,6 +65,7 @@ class KubernetesClient {
     private static final int HTTP_FORBIDDEN = 403;
 
     private static final int CONNECTION_TIMEOUT_SECONDS = 10;
+    private static final int READ_TIMEOUT_SECONDS = 10;
 
     private static final List<String> NON_RETRYABLE_KEYWORDS = asList(
             "\"reason\":\"Forbidden\"",
@@ -594,10 +595,10 @@ class KubernetesClient {
      */
     private JsonObject callGet(final String urlString) {
         return RetryUtils.retry(() -> Json
-                .parse((caCertificate == null ? RestClient.create(urlString)
-                        : RestClient.createWithSSL(urlString, caCertificate))
+                .parse((caCertificate == null ? RestClient.create(urlString, CONNECTION_TIMEOUT_SECONDS)
+                        : RestClient.createWithSSL(urlString, caCertificate, CONNECTION_TIMEOUT_SECONDS))
                         .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
-                        .withTimeoutSeconds(CONNECTION_TIMEOUT_SECONDS)
+                        .withRequestTimeoutSeconds(READ_TIMEOUT_SECONDS)
                         .get()
                         .getBody())
                 .asObject(), retries, NON_RETRYABLE_KEYWORDS);

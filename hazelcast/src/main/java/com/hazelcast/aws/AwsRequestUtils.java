@@ -46,9 +46,9 @@ final class AwsRequestUtils {
     }
 
     static RestClient createRestClient(String url, AwsConfig awsConfig) {
-        return RestClient.create(url)
-            .withPreferredTimeoutSeconds(awsConfig.getConnectionTimeoutSeconds(), awsConfig.getReadTimeoutSeconds())
-            .withRetries(awsConfig.getConnectionRetries());
+        return RestClient.create(url, awsConfig.getConnectionTimeoutSeconds())
+                         .withRequestTimeoutSeconds(awsConfig.getReadTimeoutSeconds())
+                         .withRetries(awsConfig.getConnectionRetries());
     }
 
     static String canonicalQueryString(Map<String, String> attributes) {
