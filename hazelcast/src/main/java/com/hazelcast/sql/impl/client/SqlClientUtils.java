@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.CoreQueryUtils;
 
@@ -30,6 +31,7 @@ public final class SqlClientUtils {
         // No-op.
     }
 
+    // Encode the exception as SqlError
     public static SqlError exceptionToClientError(Exception exception, UUID localMemberId) {
         HazelcastSqlException sqlException = CoreQueryUtils.toPublicException(exception, localMemberId);
 
@@ -38,7 +40,9 @@ public final class SqlClientUtils {
                 sqlException.getMessage(),
                 sqlException.getOriginatingMemberId(),
                 sqlException.getSuggestion() != null,
-                sqlException.getSuggestion()
+                sqlException.getSuggestion(),
+                true,
+                ExceptionUtil.stackTraceToString(exception)
         );
     }
 }
