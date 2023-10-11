@@ -57,7 +57,9 @@ public final class RestClient {
      * HTTP status code 404 NOT FOUND
      */
     public static final int HTTP_NOT_FOUND = 404;
-    // Value of -1 results in connection timeout not being explicitly defined
+    /**
+     * Default value of -1 results in connection timeout not being explicitly defined
+     */
     public static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = -1;
 
     private static final String WATCH_FORMAT = "watch=1&resourceVersion=%s";
