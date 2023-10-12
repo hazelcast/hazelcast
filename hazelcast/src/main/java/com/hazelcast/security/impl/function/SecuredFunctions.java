@@ -18,18 +18,14 @@ package com.hazelcast.security.impl.function;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier.Context;
-import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
-import com.hazelcast.jet.impl.connector.ReadJdbcP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.jet.impl.connector.UpdateMapP;
@@ -48,8 +44,6 @@ import com.hazelcast.security.permission.ReliableTopicPermission;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.topic.ITopic;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
@@ -57,14 +51,9 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Permission;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.LongSupplier;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
@@ -295,62 +284,7 @@ public final class SecuredFunctions {
         };
     }
 
-    public static <T> ProcessorSupplier readJdbcProcessorFn(
-            String connectionUrl,
-            FunctionEx<ProcessorSupplier.Context, ? extends Connection> newConnectionFn,
-            ToResultSetFunction resultSetFn,
-            FunctionEx<? super ResultSet, ? extends T> mapOutputFn
-    ) {
-        return new ProcessorSupplier() {
 
-            private transient Context context;
-
-            @Override
-            public void init(@Nonnull ProcessorSupplier.Context context) {
-                this.context = context;
-            }
-
-            @Nonnull
-            @Override
-            public Collection<? extends Processor> get(int count) {
-                return IntStream.range(0, count)
-                        .mapToObj(i -> new ReadJdbcP<T>(() -> newConnectionFn.apply(context), resultSetFn, mapOutputFn))
-                        .collect(Collectors.toList());
-            }
-        };
-    }
-
-    public static <T> ProcessorSupplier readJdbcProcessorFn(
-            String dataConnectionName,
-            ToResultSetFunction resultSetFn,
-            FunctionEx<? super ResultSet, ? extends T> mapOutputFn
-    ) {
-        return new ProcessorSupplier() {
-
-            private transient JdbcDataConnection dataConnection;
-
-            @Override
-            public void init(@Nonnull ProcessorSupplier.Context context) {
-                dataConnection = context.dataConnectionService()
-                                        .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);
-            }
-
-            @Nonnull
-            @Override
-            public Collection<? extends Processor> get(int count) {
-                return IntStream.range(0, count)
-                        .mapToObj(i -> new ReadJdbcP<T>(() -> dataConnection.getConnection(), resultSetFn, mapOutputFn))
-                        .collect(Collectors.toList());
-            }
-
-            @Override
-            public void close(@Nullable Throwable error) {
-                if (dataConnection != null) {
-                    dataConnection.release();
-                }
-            }
-        };
-    }
 
     public static FunctionEx<? super Processor.Context, ? extends BufferedWriter> createBufferedWriterFn(
             String host, int port, String charsetName

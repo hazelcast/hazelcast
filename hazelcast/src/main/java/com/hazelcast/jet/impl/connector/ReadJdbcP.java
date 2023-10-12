@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
@@ -28,9 +30,9 @@ import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.JdbcPropertyKeys;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.security.impl.function.SecuredFunctions;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -38,7 +40,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.StringUtil.isBoolean;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
@@ -104,7 +109,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         // Additional permission check with URL retrieved from the JDBC connection metadata
         // is performed in #init(Context) method.
         return ProcessorMetaSupplier.preferLocalParallelismOne(
-                SecuredFunctions.readJdbcProcessorFn(null, newConnectionFn, resultSetFn, mapOutputFn));
+                readJdbcProcessorFn(newConnectionFn, resultSetFn, mapOutputFn));
     }
 
     public static <T> ProcessorMetaSupplier supplier(
@@ -116,7 +121,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(
-                SecuredFunctions.readJdbcProcessorFn(connectionURL,
+                readJdbcProcessorFn(
                         // Return a new connection. Connection will be closed by ReadJdbcP processor
                         context -> DriverManager.getConnection(connectionURL),
                         // Create a ResultSet. ResultSet will be closed by ReadJdbcP processor
@@ -142,7 +147,55 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn) {
 
         return ProcessorMetaSupplier.preferLocalParallelismOne(
-                SecuredFunctions.readJdbcProcessorFn(dataConnectionRef.getName(), resultSetFn, mapOutputFn));
+                new ProcessorSupplier() {
+
+                    private transient JdbcDataConnection dataConnection;
+
+                    @Override
+                    public void init(@Nonnull Context context) {
+                        dataConnection = context.dataConnectionService()
+                                .getAndRetainDataConnection(dataConnectionRef.getName(), JdbcDataConnection.class);
+                    }
+
+                    @Nonnull
+                    @Override
+                    public Collection<? extends Processor> get(int count) {
+                        return IntStream.range(0, count)
+                                .mapToObj(i -> new ReadJdbcP<T>(() -> dataConnection.getConnection(), resultSetFn, mapOutputFn))
+                                .collect(Collectors.toList());
+                    }
+
+                    @Override
+                    public void close(@Nullable Throwable error) {
+                        if (dataConnection != null) {
+                            dataConnection.release();
+                        }
+                    }
+                });
+    }
+
+    private static <T> ProcessorSupplier readJdbcProcessorFn(
+            FunctionEx<ProcessorSupplier.Context, ? extends Connection> newConnectionFn,
+            ToResultSetFunction resultSetFn,
+            FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        return new ProcessorSupplier() {
+
+            private transient Context context;
+
+            @Override
+            public void init(@Nonnull ProcessorSupplier.Context context) {
+                this.context = context;
+            }
+
+            @Nonnull
+            @Override
+            public Collection<? extends Processor> get(int count) {
+                return IntStream.range(0, count)
+                        .mapToObj(i -> new ReadJdbcP<T>(() -> newConnectionFn.apply(context), resultSetFn, mapOutputFn))
+                        .collect(Collectors.toList());
+            }
+        };
     }
 
     @Override
