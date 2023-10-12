@@ -591,9 +591,11 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_AVG = "tstore.hlog.pageWriteDuration.avg";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MIN = "tstore.hlog.pageWriteDuration.min";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MAX = "tstore.hlog.pageWriteDuration.max";
+    public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_TOTAL = "tstore.hlog.pageWriteDuration.total";
     public static final String TSTORE_HLOG_READ_RECORD_DURATION_AVG = "tstore.hlog.readRecordDuration.avg";
     public static final String TSTORE_HLOG_READ_RECORD_DURATION_MIN = "tstore.hlog.readRecordDuration.min";
     public static final String TSTORE_HLOG_READ_RECORD_DURATION_MAX = "tstore.hlog.readRecordDuration.max";
+    public static final String TSTORE_HLOG_READ_RECORD_DURATION_TOTAL = "tstore.hlog.readRecordDuration.total";
     public static final String TSTORE_HLOG_READ_RECORD_HITS = "tstore.hlog.readRecord.hits";
     public static final String TSTORE_HLOG_READ_RECORD_MISSES = "tstore.hlog.readRecord.misses";
     public static final String TSTORE_HLOG_READ_RECORD_HIT_PERCENT = "tstore.hlog.readRecord.hit.percent";
