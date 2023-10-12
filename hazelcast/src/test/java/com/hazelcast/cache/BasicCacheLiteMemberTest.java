@@ -165,14 +165,7 @@ public class BasicCacheLiteMemberTest
         final Cache c2 = cacheManager2.getCache("c1");
         c1.put("key", "value");
         cacheManager.destroyCache("c1");
-        assertTrueEventually(() -> {
-            try {
-                c2.get("key");
-                fail("get should throw IllegalStateException");
-            } catch (IllegalStateException e) {
-                //ignored as expected
-            }
-        });
+        assertTrueEventually(() -> assertThrows(IllegalStateException.class, () -> c2.get("key")));
     }
 
     @Test
