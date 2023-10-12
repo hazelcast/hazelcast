@@ -46,8 +46,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
 public class MapMemoryUsageStressTest extends HazelcastTestSupport {
-
-    private final ILogger logger = Logger.getLogger(MapMemoryUsageStressTest.class);
+    private static final ILogger LOGGER = Logger.getLogger(MapMemoryUsageStressTest.class);
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private HazelcastInstance client;
@@ -112,7 +111,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
                     map.destroy();
 
                     if (index % 1000 == 0) {
-                        logger.info("At: " + index);
+                        LOGGER.info("At: " + index);
                     }
                 }
             } catch (Throwable t) {

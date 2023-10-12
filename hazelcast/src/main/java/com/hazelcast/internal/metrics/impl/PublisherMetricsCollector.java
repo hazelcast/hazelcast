@@ -28,7 +28,7 @@ import com.hazelcast.logging.Logger;
  * publishers.
  */
 public class PublisherMetricsCollector implements MetricsCollector {
-    private final ILogger logger = Logger.getLogger(PublisherMetricsCollector.class);
+    private static final ILogger LOGGER = Logger.getLogger(PublisherMetricsCollector.class);
 
     private final MetricsPublisher[] publishers;
 
@@ -43,7 +43,7 @@ public class PublisherMetricsCollector implements MetricsCollector {
             } catch (OutOfMemoryError e) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory(e);
             } catch (Throwable throwable) {
-                logger.severe("Error completing publication for publisher "
+                LOGGER.severe("Error completing publication for publisher "
                         + publishers[i].name(), throwable);
             }
         }
@@ -56,7 +56,7 @@ public class PublisherMetricsCollector implements MetricsCollector {
             } catch (OutOfMemoryError e) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory(e);
             } catch (Throwable throwable) {
-                logger.severe("Error shutting down metrics publisher "
+                LOGGER.severe("Error shutting down metrics publisher "
                         + publishers[i].name(), throwable);
             }
         }
@@ -90,7 +90,7 @@ public class PublisherMetricsCollector implements MetricsCollector {
 
     @Override
     public void collectException(MetricDescriptor descriptor, Exception e) {
-        logger.warning("Error when collecting '" + descriptor.toString() + '\'', e);
+        LOGGER.warning("Error when collecting '" + descriptor.toString() + '\'', e);
     }
 
     @Override
@@ -100,7 +100,7 @@ public class PublisherMetricsCollector implements MetricsCollector {
 
     private void logError(MetricDescriptor descriptor, Object value,
                           MetricsPublisher publisher, Throwable throwable) {
-        logger.fine("Error publishing metric to: " + publisher.name() + ", metric=" + descriptor.toString()
+        LOGGER.fine("Error publishing metric to: " + publisher.name() + ", metric=" + descriptor.toString()
                 + ", value=" + value, throwable);
     }
 

@@ -33,8 +33,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JCacheDetectorTest extends HazelcastTestSupport {
-
-    private final ILogger logger = Logger.getLogger(JCacheDetectorTest.class);
+    private static final ILogger LOGGER = Logger.getLogger(JCacheDetectorTest.class);
 
     @Test
     public void testConstructor() {
@@ -52,7 +51,7 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
     public void testIsJCacheAvailable_withCorrectVersion_withLogger() {
         JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (className) -> true;
 
-        assertTrue(isJCacheAvailable(logger, classAvailabilityChecker));
+        assertTrue(isJCacheAvailable(LOGGER, classAvailabilityChecker));
     }
 
     @Test
@@ -66,7 +65,7 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
     public void testIsJCacheAvailable_notFound_withLogger() {
         JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (className) -> false;
 
-        assertFalse(isJCacheAvailable(logger, classAvailabilityChecker));
+        assertFalse(isJCacheAvailable(LOGGER, classAvailabilityChecker));
     }
 
     @Test
@@ -80,6 +79,6 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
     public void testIsJCacheAvailable_withWrongJCacheVersion_withLogger() {
         JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (className) -> className.equals("javax.cache.Caching");
 
-        assertFalse(isJCacheAvailable(logger, classAvailabilityChecker));
+        assertFalse(isJCacheAvailable(LOGGER, classAvailabilityChecker));
     }
 }

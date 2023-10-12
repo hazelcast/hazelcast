@@ -43,8 +43,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class ReliableTopicStressTest extends HazelcastTestSupport {
-
-    private final ILogger logger = Logger.getLogger(ReliableTopicStressTest.class);
+    private static final ILogger LOGGER = Logger.getLogger(ReliableTopicStressTest.class);
     private final AtomicBoolean stop = new AtomicBoolean();
     private ITopic<Long> topic;
 
@@ -74,13 +73,13 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
         final ProduceThread produceThread = new ProduceThread();
         produceThread.start();
 
-        logger.info("Starting test");
+        LOGGER.info("Starting test");
         sleepAndStop(stop, MINUTES.toSeconds(5));
-        logger.info("Waiting for completion");
+        LOGGER.info("Waiting for completion");
 
         produceThread.assertSucceedsEventually();
 
-        logger.info("Number of items produced: " + produceThread.send);
+        LOGGER.info("Number of items produced: " + produceThread.send);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -127,7 +126,7 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
             final long receivedMessageId = message.getMessageObject();
             if (receivedMessageId != nextExpectedMessageId) {
                 if (listenerWasSlow) {
-                    logger.info(toString() + " was slow, jumping from " + received + " to " + receivedMessageId);
+                    LOGGER.info(toString() + " was slow, jumping from " + received + " to " + receivedMessageId);
                     lost += receivedMessageId - nextExpectedMessageId;
                     nextExpectedMessageId = receivedMessageId;
                     listenerWasSlow = false;
@@ -137,7 +136,7 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
             }
 
             if (received % 100000 == 0) {
-                logger.info(toString() + " is at: " + received);
+                LOGGER.info(toString() + " is at: " + received);
             }
 
             received++;

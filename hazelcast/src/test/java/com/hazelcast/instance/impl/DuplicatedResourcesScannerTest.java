@@ -49,10 +49,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DuplicatedResourcesScannerTest {
-
+    private static final ILogger LOGGER = mock(ILogger.class);
     private static final byte[] SOME_CONTENT = "some-content".getBytes(UTF_8);
     private static final String SOME_EXISTING_RESOURCE_FILE = "META-INF/some-resource-file";
-    private final ILogger logger = mock(ILogger.class);
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -69,19 +68,19 @@ public class DuplicatedResourcesScannerTest {
     public void should_NOT_log_warning_when_single_occurrence() throws Exception {
         URLClassLoader classLoader = classLoaderWithJars(dummyJarFile);
 
-        DuplicatedResourcesScanner.checkForDuplicates(classLoader, logger, SOME_EXISTING_RESOURCE_FILE);
+        DuplicatedResourcesScanner.checkForDuplicates(classLoader, LOGGER, SOME_EXISTING_RESOURCE_FILE);
 
-        verifyNoInteractions(logger);
+        verifyNoInteractions(LOGGER);
     }
 
     @Test
     public void should_log_warning_when_duplicate_found() throws Exception {
         URLClassLoader classLoader = classLoaderWithJars(dummyJarFile, duplicateJar(dummyJarFile));
 
-        DuplicatedResourcesScanner.checkForDuplicates(classLoader, logger, SOME_EXISTING_RESOURCE_FILE);
+        DuplicatedResourcesScanner.checkForDuplicates(classLoader, LOGGER, SOME_EXISTING_RESOURCE_FILE);
 
         ArgumentCaptor<String> logCaptor = ArgumentCaptor.forClass(String.class);
-        verify(logger).warning(logCaptor.capture());
+        verify(LOGGER).warning(logCaptor.capture());
         assertThat(logCaptor.getValue()).contains("WARNING: Classpath misconfiguration: found multiple " + SOME_EXISTING_RESOURCE_FILE);
     }
 
@@ -101,9 +100,9 @@ public class DuplicatedResourcesScannerTest {
 
     @Test
     public void should_NOT_log_warning_when_no_occurrence() {
-        DuplicatedResourcesScanner.checkForDuplicates(getClass().getClassLoader(), logger, "META-INF/some-non-existing-file");
+        DuplicatedResourcesScanner.checkForDuplicates(getClass().getClassLoader(), LOGGER, "META-INF/some-non-existing-file");
 
-        verifyNoInteractions(logger);
+        verifyNoInteractions(LOGGER);
     }
 
 }

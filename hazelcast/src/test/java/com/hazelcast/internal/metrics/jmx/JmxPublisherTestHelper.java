@@ -39,12 +39,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class JmxPublisherTestHelper {
+    private static final ILogger LOGGER = Logger.getLogger(JmxPublisherTestHelper.class);
     private static final String MODULE_NAME = "moduleA";
 
     private final MBeanServer platformMBeanServer;
     private final ObjectName objectNameNoModule;
     private final ObjectName objectNameWithModule;
-    private final ILogger logger = Logger.getLogger(JmxPublisherTestHelper.class);
 
     public JmxPublisherTestHelper(String domainPrefix) throws Exception {
         objectNameNoModule = new ObjectName(domainPrefix + ":*");
@@ -70,7 +70,7 @@ public class JmxPublisherTestHelper {
         Set<ObjectInstance> instances = queryOurInstances();
         if (instances.size() > 0) {
             String jvmName = ManagementFactory.getRuntimeMXBean().getName();
-            logger.info("Dangling metrics MBeans created by " + jvmName + ": " + instances);
+            LOGGER.info("Dangling metrics MBeans created by " + jvmName + ": " + instances);
         }
         assertEquals(0, instances.size());
     }

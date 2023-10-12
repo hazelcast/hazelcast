@@ -52,17 +52,17 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DefaultAddressPickerHostnameTest {
+    private static final ILogger LOGGER = Logger.getLogger(AddressPicker.class);
 
     @Rule
     public final OverridePropertyRule ruleSysPropPreferIpv4 = set(PREFER_IPV4_STACK, "true");
     @Rule
     public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear("hazelcast.local.localAddress");
 
-    private final ILogger logger = Logger.getLogger(AddressPicker.class);
     private final Config config = new Config();
     private final String theHostname = "hazelcast.istanbul";
     private final String theAddress = "10.34.34.0";
-    private final DefaultAddressPicker addressPicker = new DefaultAddressPicker(config, logger);
+    private final DefaultAddressPicker addressPicker = new DefaultAddressPicker(config, LOGGER);
     private final HostnameResolver hostnameResolver = new MockHostnameResolver();
 
     @Before

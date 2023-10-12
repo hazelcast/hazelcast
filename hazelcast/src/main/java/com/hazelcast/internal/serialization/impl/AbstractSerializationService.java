@@ -70,7 +70,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 
 public abstract class AbstractSerializationService implements InternalSerializationService {
-
+    private static final ILogger LOGGER = Logger.getLogger(InternalSerializationService.class);
     protected final ManagedContext managedContext;
     protected final InputOutputFactory inputOutputFactory;
     protected final PartitioningStrategy globalPartitioningStrategy;
@@ -100,7 +100,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private final int outputBufferSize;
     private volatile boolean active = true;
     private final byte version;
-    private final ILogger logger = Logger.getLogger(InternalSerializationService.class);
     private boolean isCompatibility;
     private final boolean allowOverrideDefaultSerializers;
 
@@ -673,7 +672,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private SerializerAdapter lookupGlobalSerializer(Class type) {
         SerializerAdapter serializer = global.get();
         if (serializer != null) {
-            logger.fine("Registering global serializer for: " + type.getName());
+            LOGGER.fine("Registering global serializer for: " + type.getName());
             safeRegister(type, serializer);
         }
         return serializer;
@@ -682,7 +681,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private SerializerAdapter lookupJavaSerializer(Class type) {
         if (Externalizable.class.isAssignableFrom(type)) {
             if (safeRegister(type, javaExternalizableAdapter) && !Throwable.class.isAssignableFrom(type)) {
-                logger.info("Performance Hint: Serialization service will use java.io.Externalizable for: " + type.getName()
+                LOGGER.info("Performance Hint: Serialization service will use java.io.Externalizable for: " + type.getName()
                         + ". Please consider using a faster serialization option such as DataSerializable.");
             }
             return javaExternalizableAdapter;
@@ -690,7 +689,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
         if (Serializable.class.isAssignableFrom(type)) {
             if (safeRegister(type, javaSerializerAdapter) && !Throwable.class.isAssignableFrom(type)) {
-                logger.info("Performance Hint: Serialization service will use java.io.Serializable for: " + type.getName()
+                LOGGER.info("Performance Hint: Serialization service will use java.io.Serializable for: " + type.getName()
                         + ". Please consider using a faster serialization option such as DataSerializable.");
             }
             return javaSerializerAdapter;

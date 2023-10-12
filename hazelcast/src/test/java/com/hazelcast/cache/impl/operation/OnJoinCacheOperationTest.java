@@ -48,14 +48,13 @@ import static org.mockito.Mockito.when;
  */
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OnJoinCacheOperationTest {
-
+    private static final ILogger LOGGER = mock(ILogger.class);
     private static MockedStatic<JCacheDetector> mockedStatic;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
     private final NodeEngine nodeEngine = mock(NodeEngine.class);
-    private final ILogger logger = mock(ILogger.class);
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -70,7 +69,7 @@ public class OnJoinCacheOperationTest {
     @Before
     public void setUp() {
         when(nodeEngine.getConfigClassLoader()).thenReturn(getClass().getClassLoader());
-        when(nodeEngine.getLogger(any(Class.class))).thenReturn(logger);
+        when(nodeEngine.getLogger(any(Class.class))).thenReturn(LOGGER);
     }
 
     @Test
@@ -89,7 +88,7 @@ public class OnJoinCacheOperationTest {
         verify(nodeEngine).getConfigClassLoader();
         verify(nodeEngine).getService(CacheService.SERVICE_NAME);
         // verify logger was not invoked
-        verify(logger, never()).warning(anyString());
+        verify(LOGGER, never()).warning(anyString());
 
     }
 
@@ -104,7 +103,7 @@ public class OnJoinCacheOperationTest {
 
         verify(nodeEngine).getConfigClassLoader();
         // verify a warning was logged
-        verify(logger).warning(anyString());
+        verify(LOGGER).warning(anyString());
         // verify CacheService instance was not requested in OnJoinCacheOperation.run
         verify(nodeEngine, never()).getService(CacheService.SERVICE_NAME);
     }
@@ -126,6 +125,6 @@ public class OnJoinCacheOperationTest {
 
         verify(nodeEngine).getConfigClassLoader();
         verify(nodeEngine).getService(CacheService.SERVICE_NAME);
-        verify(logger, never()).warning(anyString());
+        verify(LOGGER, never()).warning(anyString());
     }
 }

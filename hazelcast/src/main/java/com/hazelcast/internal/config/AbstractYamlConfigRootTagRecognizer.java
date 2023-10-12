@@ -47,8 +47,8 @@ import java.util.Optional;
  * configuration and doesn't look further into the provided configuration.
  */
 public abstract class AbstractYamlConfigRootTagRecognizer implements ConfigRecognizer {
+    private static final ILogger LOGGER = Logger.getLogger(AbstractYamlConfigRootTagRecognizer.class);
     private final String expectedRootNode;
-    private final ILogger logger = Logger.getLogger(AbstractYamlConfigRootTagRecognizer.class);
 
     public AbstractYamlConfigRootTagRecognizer(String expectedRootNode) {
         this.expectedRootNode = expectedRootNode;
@@ -70,14 +70,14 @@ public abstract class AbstractYamlConfigRootTagRecognizer implements ConfigRecog
     }
 
     private void handleParseException(YamlException ex) {
-        if (logger.isFineEnabled()) {
-            logger.fine("An exception is encountered while processing the provided YAML configuration", ex);
+        if (LOGGER.isFineEnabled()) {
+            LOGGER.fine("An exception is encountered while processing the provided YAML configuration", ex);
         }
     }
 
     private void handleUnexpectedException(Exception ex) {
-        if (logger.isFineEnabled()) {
-            logger.fine("An unexpected exception is encountered while processing the provided YAML configuration", ex);
+        if (LOGGER.isFineEnabled()) {
+            LOGGER.fine("An unexpected exception is encountered while processing the provided YAML configuration", ex);
         }
     }
 }

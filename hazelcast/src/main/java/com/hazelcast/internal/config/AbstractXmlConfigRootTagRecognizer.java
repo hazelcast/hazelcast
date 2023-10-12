@@ -49,9 +49,9 @@ import static java.util.Objects.requireNonNull;
  * configuration and doesn't look further into the provided configuration.
  */
 public class AbstractXmlConfigRootTagRecognizer implements ConfigRecognizer {
+    private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigRootTagRecognizer.class);
     private final SAXParser saxParser;
     private final String expectedRootNode;
-    private final ILogger logger = Logger.getLogger(AbstractXmlConfigRootTagRecognizer.class);
 
     public AbstractXmlConfigRootTagRecognizer(String expectedRootNode) throws Exception {
         this.expectedRootNode = expectedRootNode;
@@ -79,14 +79,14 @@ public class AbstractXmlConfigRootTagRecognizer implements ConfigRecognizer {
     }
 
     private void handleParseException(SAXParseException ex) {
-        if (logger.isFineEnabled()) {
-            logger.fine("An exception is encountered while processing the provided XML configuration", ex);
+        if (LOGGER.isFineEnabled()) {
+            LOGGER.fine("An exception is encountered while processing the provided XML configuration", ex);
         }
     }
 
     private void handleUnexpectedException(Exception ex) {
-        if (logger.isFineEnabled()) {
-            logger.fine("An unexpected exception is encountered while processing the provided XML configuration", ex);
+        if (LOGGER.isFineEnabled()) {
+            LOGGER.fine("An unexpected exception is encountered while processing the provided XML configuration", ex);
         }
     }
 

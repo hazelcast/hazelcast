@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 class KinesisTestHelper {
-
+    private static final ILogger LOGGER = Logger.getLogger(KinesisIntegrationTest.class);
     static final RetryStrategy RETRY_STRATEGY = RetryStrategies.custom()
             .maxAttempts(30)
             .intervalFunction(IntervalFunction.exponentialBackoffWithCap(250L, 2.0, 2000L))
@@ -64,8 +64,6 @@ class KinesisTestHelper {
 
     private final AmazonKinesisAsync kinesis;
     private final String stream;
-
-    private final ILogger logger = Logger.getLogger(KinesisIntegrationTest.class);
 
     KinesisTestHelper(AmazonKinesisAsync kinesis, String stream) {
         this.kinesis = kinesis;
@@ -189,14 +187,14 @@ class KinesisTestHelper {
             } catch (LimitExceededException lee) {
                 String message = "The requested resource exceeds the maximum number allowed, or the number of " +
                         "concurrent stream requests exceeds the maximum number allowed. Will retry.";
-                logger.warning(message, lee);
+                LOGGER.warning(message, lee);
             } catch (ExpiredNextTokenException ente) {
                 String message = "The pagination token passed to the operation is expired. Will retry.";
-                logger.warning(message, ente);
+                LOGGER.warning(message, ente);
             } catch (ResourceInUseException riue) {
                 String message = "The resource is not available for this operation. For successful operation, the " +
                         "resource must be in the ACTIVE state. Will retry.";
-                logger.warning(message, riue);
+                LOGGER.warning(message, riue);
             } catch (ResourceNotFoundException rnfe) {
                 String message = "The requested resource could not be found. The stream might not be specified correctly.";
                 throw new JetException(message, rnfe);
@@ -205,7 +203,7 @@ class KinesisTestHelper {
                 throw new JetException(message, iae);
             } catch (SdkClientException sce) {
                 String message = "Amazon SDK failure, ignoring and retrying.";
-                logger.warning(message, sce);
+                LOGGER.warning(message, sce);
             } catch (Exception e) {
                 throw rethrow(e);
             }
@@ -219,7 +217,7 @@ class KinesisTestHelper {
             throw new JetException(String.format("Abort waiting for %s, too many attempts", action));
         }
 
-        logger.info(String.format("Waiting for %s ...", action));
+        LOGGER.info(String.format("Waiting for %s ...", action));
         long duration = RETRY_STRATEGY.getIntervalFunction().waitAfterAttempt(attempt);
         try {
             TimeUnit.MILLISECONDS.sleep(duration);

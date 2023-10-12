@@ -68,7 +68,7 @@ import static org.junit.Assume.assumeNotNull;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class DefaultAddressPickerTest {
-
+    private static final ILogger LOGGER = Logger.getLogger(AddressPicker.class);
     private static final String PUBLIC_HOST = "www.hazelcast.org";
     private static final String HAZELCAST_LOCAL_ADDRESS_PROP = "hazelcast.local.localAddress";
 
@@ -84,7 +84,6 @@ public class DefaultAddressPickerTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
-    private final ILogger logger = Logger.getLogger(AddressPicker.class);
     private final Config config = new Config();
     private AddressPicker addressPicker;
     private InetAddress loopback;
@@ -196,7 +195,7 @@ public class DefaultAddressPickerTest {
     }
 
     private void testBindAddress(InetAddress address) throws Exception {
-        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker = new DefaultAddressPicker(config, LOGGER);
         addressPicker.pickAddress();
 
         int port = config.getNetworkConfig().getPort();
@@ -209,7 +208,7 @@ public class DefaultAddressPickerTest {
         config.setProperty(HAZELCAST_LOCAL_ADDRESS_PROP, loopback.getHostAddress());
         config.getNetworkConfig().setPort(0);
 
-        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker = new DefaultAddressPicker(config, LOGGER);
         addressPicker.pickAddress();
 
         int port = addressPicker.getServerSocketChannel(null).socket().getLocalPort();
@@ -224,11 +223,11 @@ public class DefaultAddressPickerTest {
         config.getNetworkConfig().setPort(port);
         config.getNetworkConfig().setPortAutoIncrement(false);
 
-        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker = new DefaultAddressPicker(config, LOGGER);
         addressPicker.pickAddress();
 
         try {
-            new DefaultAddressPicker(config, logger).pickAddress();
+            new DefaultAddressPicker(config, LOGGER).pickAddress();
             fail("Should fail with 'java.net.BindException: Address already in use'");
         } catch (Exception expected) {
             // expected exception
@@ -241,10 +240,10 @@ public class DefaultAddressPickerTest {
         config.getNetworkConfig().setPort(port);
         config.getNetworkConfig().setPortAutoIncrement(true);
 
-        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker = new DefaultAddressPicker(config, LOGGER);
         addressPicker.pickAddress();
 
-        new DefaultAddressPicker(config, logger).pickAddress();
+        new DefaultAddressPicker(config, LOGGER).pickAddress();
     }
 
     @Test
@@ -270,7 +269,7 @@ public class DefaultAddressPickerTest {
     private void testPublicAddress(String host, int port) throws Exception {
         NetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.setPublicAddress(port < 0 ? host : (host + ":" + port));
-        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker = new DefaultAddressPicker(config, LOGGER);
         addressPicker.pickAddress();
 
         if (port < 0) {
@@ -289,7 +288,7 @@ public class DefaultAddressPickerTest {
         int port = 6789;
         config.setProperty("hazelcast.local.publicAddress", host + ":" + port);
 
-        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker = new DefaultAddressPicker(config, LOGGER);
         addressPicker.pickAddress();
 
         assertEquals(new Address(host, port), addressPicker.getPublicAddress(null));
@@ -300,7 +299,7 @@ public class DefaultAddressPickerTest {
     public void testPublicAddress_whenBlankViaProperty() throws Exception {
         config.setProperty("hazelcast.local.publicAddress", " ");
 
-        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker = new DefaultAddressPicker(config, LOGGER);
         assertThrows(IllegalArgumentException.class, () -> addressPicker.pickAddress());
     }
 
@@ -308,7 +307,7 @@ public class DefaultAddressPickerTest {
     public void testPublicAddress_withInvalidAddress() throws Exception {
         config.getNetworkConfig().setPublicAddress("invalid");
 
-        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker = new DefaultAddressPicker(config, LOGGER);
         assertThrows(UnknownHostException.class, () -> addressPicker.pickAddress());
     }
 
@@ -316,7 +315,7 @@ public class DefaultAddressPickerTest {
     public void testPublicAddress_withBlankAddress() throws Exception {
         config.getNetworkConfig().setPublicAddress(" ");
 
-        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker = new DefaultAddressPicker(config, LOGGER);
         assertThrows(IllegalArgumentException.class, () -> addressPicker.pickAddress());
     }
 
@@ -328,7 +327,7 @@ public class DefaultAddressPickerTest {
         System.setProperty(DefaultAddressPicker.PREFER_IPV6_ADDRESSES, "true");
         config.setProperty(ClusterProperty.PREFER_IPv4_STACK.getName(), "false");
 
-        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker = new DefaultAddressPicker(config, LOGGER);
         addressPicker.pickAddress();
 
         Address bindAddress = addressPicker.getBindAddress(null);

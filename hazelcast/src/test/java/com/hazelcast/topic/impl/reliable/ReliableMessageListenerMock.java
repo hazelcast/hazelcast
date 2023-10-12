@@ -25,8 +25,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ReliableMessageListenerMock implements ReliableMessageListener<String> {
-
-    private final ILogger logger = Logger.getLogger(ReliableMessageListenerMock.class);
+    private static final ILogger LOGGER = Logger.getLogger(ReliableMessageListenerMock.class);
     public final List<String> objects = new CopyOnWriteArrayList<String>();
     public final List<Message<String>> messages = new CopyOnWriteArrayList<Message<String>>();
     public volatile long storedSequence;
@@ -38,7 +37,7 @@ public class ReliableMessageListenerMock implements ReliableMessageListener<Stri
     public void onMessage(Message<String> message) {
         objects.add(message.getMessageObject());
         messages.add(message);
-        logger.info("Received: " + message.getMessageObject());
+        LOGGER.info("Received: " + message.getMessageObject());
     }
 
     @Override

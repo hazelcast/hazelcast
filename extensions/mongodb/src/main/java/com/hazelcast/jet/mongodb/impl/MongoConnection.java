@@ -44,6 +44,7 @@ import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap
  * Manages connection to MongoDB, reconnects if necessary.
  */
 class MongoConnection implements Closeable {
+    private static final ILogger LOGGER = Logger.getLogger(MongoConnection.class);
     @SuppressWarnings("checkstyle:MagicNumber")
     private static final RetryStrategy RETRY_STRATEGY =
             RetryStrategies.custom()
@@ -55,7 +56,6 @@ class MongoConnection implements Closeable {
     private final DataConnectionRef dataConnectionRef;
     private final Consumer<MongoClient> afterConnection;
     private final RetryTracker connectionRetryTracker;
-    private final ILogger logger = Logger.getLogger(MongoConnection.class);
 
     private MongoClient mongoClient;
     private MongoDataConnection dataConnection;
@@ -98,14 +98,14 @@ class MongoConnection implements Closeable {
                     throw new JetException("NonResumableChangeStreamError thrown by Mongo", e);
                 }
                 connectionRetryTracker.attemptFailed();
-                logger.warning("Could not connect to MongoDB." + willRetryMessage(), e);
+                LOGGER.warning("Could not connect to MongoDB." + willRetryMessage(), e);
                 lastException = e;
                 return false;
             } catch (MongoClientException | MongoSocketException e) {
                 lastException = e;
 
                 connectionRetryTracker.attemptFailed();
-                logger.warning("Could not connect to MongoDB due to client/socket error."
+                LOGGER.warning("Could not connect to MongoDB due to client/socket error."
                         + willRetryMessage(), e);
                 return false;
             } catch (Exception e) {

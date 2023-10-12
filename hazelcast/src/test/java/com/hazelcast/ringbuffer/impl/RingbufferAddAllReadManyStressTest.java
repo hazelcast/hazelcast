@@ -52,10 +52,9 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
-
+    private static final ILogger LOGGER = getLogger(RingbufferAddAllReadManyStressTest.class);
     private static final int MAX_BATCH = 100;
 
-    private final ILogger logger = getLogger(RingbufferAddAllReadManyStressTest.class);
     private final AtomicBoolean stop = new AtomicBoolean();
 
     private Ringbuffer<Long> ringbuffer;
@@ -128,13 +127,13 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         producer.start();
 
         sleepAndStop(stop, 60);
-        logger.info("Waiting for completion");
+        LOGGER.info("Waiting for completion");
 
         producer.assertSucceedsEventually();
         consumer1.assertSucceedsEventually();
         consumer2.assertSucceedsEventually();
 
-        logger.info(producer.getName() + " produced:" + producer.produced);
+        LOGGER.info(producer.getName() + " produced:" + producer.produced);
 
         assertEquals(producer.produced, consumer1.seq);
         assertEquals(producer.produced, consumer2.seq);

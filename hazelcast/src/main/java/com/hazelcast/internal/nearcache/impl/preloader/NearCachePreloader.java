@@ -66,6 +66,8 @@ public class NearCachePreloader<K> {
         INTERLEAVED_LENGTH_FIELD
     }
 
+    private static final ILogger LOGGER = Logger.getLogger(NearCachePreloader.class);
+
     /**
      * Magic bytes for the file header.
      */
@@ -85,7 +87,6 @@ public class NearCachePreloader<K> {
      */
     private static final int LOAD_BATCH_SIZE = 100;
 
-    private final ILogger logger = Logger.getLogger(NearCachePreloader.class);
     private final byte[] tmpBytes = new byte[INT_SIZE_IN_BYTES];
 
     private final String nearCacheName;
@@ -107,7 +108,7 @@ public class NearCachePreloader<K> {
         this.serializationService = serializationService;
 
         String filename = getFilename(preloaderConfig.getDirectory(), nearCacheName);
-        this.lock = new NearCachePreloaderLock(logger, filename + ".lock");
+        this.lock = new NearCachePreloaderLock(LOGGER, filename + ".lock");
         this.storeFile = new File(filename);
         this.tmpStoreFile = new File(filename + "~");
     }
@@ -123,7 +124,7 @@ public class NearCachePreloader<K> {
      */
     public void loadKeys(DataStructureAdapter<Object, ?> adapter) {
         if (!storeFile.exists()) {
-            logger.info(format("Skipped loading keys of Near Cache %s since storage file doesn't exist (%s)", nearCacheName,
+            LOGGER.info(format("Skipped loading keys of Near Cache %s since storage file doesn't exist (%s)", nearCacheName,
                     storeFile.getAbsolutePath()));
             return;
         }
@@ -139,9 +140,9 @@ public class NearCachePreloader<K> {
             int loadedKeys = loadKeySet(bis, adapter);
 
             long elapsedMillis = Timer.millisElapsed(startedNanos);
-            logger.info(format("Loaded %d keys of Near Cache %s in %d ms", loadedKeys, nearCacheName, elapsedMillis));
+            LOGGER.info(format("Loaded %d keys of Near Cache %s in %d ms", loadedKeys, nearCacheName, elapsedMillis));
         } catch (Exception e) {
-            logger.warning(format("Could not pre-load Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()), e);
+            LOGGER.warning(format("Could not pre-load Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()), e);
         } finally {
             closeResource(bis);
         }
@@ -150,12 +151,12 @@ public class NearCachePreloader<K> {
     private boolean checkHeader(BufferingInputStream bis) throws IOException {
         int magicBytes = readInt(bis);
         if (magicBytes != MAGIC_BYTES) {
-            logger.warning(format("Found invalid header for Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()));
+            LOGGER.warning(format("Found invalid header for Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()));
             return false;
         }
         int fileFormat = readInt(bis);
         if (fileFormat < 0 || fileFormat > FileFormat.values().length - 1) {
-            logger.warning(format("Found invalid file format for Near Cache %s (%s)", nearCacheName,
+            LOGGER.warning(format("Found invalid file format for Near Cache %s (%s)", nearCacheName,
                     storeFile.getAbsolutePath()));
             return false;
         }
@@ -195,7 +196,7 @@ public class NearCachePreloader<K> {
 
             updatePersistenceStats(startedNanos);
         } catch (Exception e) {
-            logger.warning(format("Could not store keys of Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()), e);
+            LOGGER.warning(format("Could not store keys of Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()), e);
 
             nearCacheStats.addPersistenceFailure(e);
         } finally {
@@ -208,7 +209,7 @@ public class NearCachePreloader<K> {
         long elapsedMillis = Timer.millisElapsed(startedNanos);
         nearCacheStats.addPersistence(elapsedMillis, lastWrittenBytes, lastKeyCount);
 
-        logger.info(format("Stored %d keys of Near Cache %s in %d ms (%d kB)", lastKeyCount, nearCacheName, elapsedMillis,
+        LOGGER.info(format("Stored %d keys of Near Cache %s in %d ms (%d kB)", lastKeyCount, nearCacheName, elapsedMillis,
                 MemoryUnit.BYTES.toKiloBytes(lastWrittenBytes)));
     }
 

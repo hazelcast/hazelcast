@@ -39,17 +39,16 @@ import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.tryIncrement;
 
 public abstract class AsyncHazelcastWriterP implements Processor {
-
+    private static final ILogger LOGGER = Logger.getLogger(AsyncHazelcastWriterP.class);
     protected static final int MAX_PARALLEL_ASYNC_OPS_DEFAULT = 1000;
 
-    private final ILogger logger = Logger.getLogger(AsyncHazelcastWriterP.class);
     private final int maxParallelAsyncOps;
     private final AtomicInteger numConcurrentOps = new AtomicInteger();
     private final AtomicReference<Throwable> firstError = new AtomicReference<>();
     private final HazelcastInstance instance;
     private final boolean isLocal;
 
-    private final BiConsumer callback = withTryCatch(logger, (response, t) -> {
+    private final BiConsumer callback = withTryCatch(LOGGER, (response, t) -> {
         numConcurrentOps.decrementAndGet();
         if (t != null) {
             firstError.compareAndSet(null, t);

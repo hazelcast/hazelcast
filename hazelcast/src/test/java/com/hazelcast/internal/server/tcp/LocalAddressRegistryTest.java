@@ -41,13 +41,12 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalAddressRegistryTest extends HazelcastTestSupport {
-
-    private final ILogger logger = Logger.getLogger(LocalAddressRegistry.class);
+    private static final ILogger LOGGER = Logger.getLogger(LocalAddressRegistry.class);
     private LocalAddressRegistry addressRegistry;
 
     @Before
     public void setUp() {
-        addressRegistry = new LocalAddressRegistry(logger);
+        addressRegistry = new LocalAddressRegistry(LOGGER);
     }
 
     @Test

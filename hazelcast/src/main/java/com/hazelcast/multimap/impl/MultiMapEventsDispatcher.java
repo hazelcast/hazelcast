@@ -33,8 +33,7 @@ import com.hazelcast.map.impl.event.MapEventData;
  * Dispatches multiMapEvents to appropriate methods of given listener
  */
 class MultiMapEventsDispatcher {
-
-    private final ILogger logger = Logger.getLogger(MultiMapEventsDispatcher.class);
+    private static final ILogger LOGGER = Logger.getLogger(MultiMapEventsDispatcher.class);
 
     private final ClusterService clusterService;
     private final MultiMapService multiMapService;
@@ -86,8 +85,8 @@ class MultiMapEventsDispatcher {
     private Member getMemberOrNull(EventData eventData) {
         Member member = clusterService.getMember(eventData.getCaller());
         if (member == null) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Dropping event " + eventData + " from unknown address:" + eventData.getCaller());
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Dropping event " + eventData + " from unknown address:" + eventData.getCaller());
             }
         }
         return member;

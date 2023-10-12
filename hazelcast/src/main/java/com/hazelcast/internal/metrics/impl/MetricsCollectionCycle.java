@@ -44,6 +44,7 @@ import static com.hazelcast.internal.metrics.impl.MetricsUtil.extractExcludedTar
  * @see MetricsRegistry#collect(MetricsCollector)
  */
 class MetricsCollectionCycle {
+    private static final ILogger LOGGER = Logger.getLogger(MetricsCollectionCycle.class);
     private static final MetricValueCatcher NOOP_CATCHER = new NoOpMetricValueCatcher();
 
     private final PoolingMetricDescriptorSupplier descriptorSupplier;
@@ -53,7 +54,6 @@ class MetricsCollectionCycle {
     private final ProbeLevel minimumLevel;
     private final MetricsContext metricsContext = new MetricsContext();
     private final long collectionId = System.nanoTime();
-    private final ILogger logger = Logger.getLogger(MetricsCollectionCycle.class);
 
     MetricsCollectionCycle(Function<Class, SourceMetadata> lookupMetadataFn,
                            Function<MetricDescriptor, MetricValueCatcher> lookupMetricValueCatcherFn,
@@ -93,7 +93,7 @@ class MetricsCollectionCycle {
             try {
                 metricsSource.provideDynamicMetrics(descriptorSupplier.get(), metricsContext);
             } catch (Throwable t) {
-                logger.warning("Collecting metrics from source " + metricsSource.getClass().getName() + " failed", t);
+                LOGGER.warning("Collecting metrics from source " + metricsSource.getClass().getName() + " failed", t);
                 assert false : "Collecting metrics from source " + metricsSource.getClass().getName() + " failed\n"
                         + ExceptionUtil.toString(t);
             }

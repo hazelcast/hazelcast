@@ -54,8 +54,7 @@ import static org.junit.Assert.assertNull;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DefaultAddressPickerInterfacesTest {
-
-    private final ILogger logger = Logger.getLogger(AddressPicker.class);
+    private static final ILogger LOGGER = Logger.getLogger(AddressPicker.class);
     private final Config config = new Config();
 
     @Rule
@@ -309,7 +308,7 @@ public class DefaultAddressPickerInterfacesTest {
      * or {@code null} if the result was {@code null}.
      */
     private InetAddress getInetAddressFromDefaultAddressPicker() throws Exception {
-        DefaultAddressPicker picker = new DefaultAddressPicker(config, logger);
+        DefaultAddressPicker picker = new DefaultAddressPicker(config, LOGGER);
         picker.setNetworkInterfacesEnumerator(networkInterfacesEnumerator);
         DefaultAddressPicker.AddressDefinition addressDefinition = picker.pickMatchingAddress(null);
         return addressDefinition == null ? null : addressDefinition.inetAddress;
