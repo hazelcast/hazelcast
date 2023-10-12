@@ -219,7 +219,7 @@ public class BasicCacheLiteMemberTest
         @Override
         public void onUpdated(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
+            for (CacheEntryEvent<? extends K, ? extends V> ignored : cacheEntryEvents) {
                 updated.incrementAndGet();
             }
         }
