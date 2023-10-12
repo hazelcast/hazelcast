@@ -15,29 +15,25 @@
  */
 package com.hazelcast.rest.security;
 
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.annotation.Nonnull;
-import javax.security.auth.Subject;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.security.AccessControlException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 public class JWTAuthorizationFilter extends OncePerRequestFilter {
@@ -46,8 +42,6 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
     private final String header = "Authorization";
     private final String prefix = "Bearer ";
 
-    @Autowired
-    CustomSecurityContext customSecurityContext;
 
     public static void setSecret(String secret) {
         JWTAuthorizationFilter.secret = secret;
@@ -61,7 +55,16 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
             if (checkJWTToken(request, response)) {
                 Claims claims = validateToken(request);
                 if (claims.get("authorities") != null) {
-                    setUpSpringAuthentication(claims);
+                    List<GrantedAuthority> grantedAuthorities = AuthorityUtils
+                            .commaSeparatedStringToAuthorityList(claims.get("authorities").toString());
+
+                    if (grantedAuthorities.contains(new SimpleGrantedAuthority("ADMIN"))) {
+                        setUpSpringAuthentication(claims, grantedAuthorities);
+                    } else if (isAuthorized(request, grantedAuthorities)) {
+                        setUpSpringAuthentication(claims, grantedAuthorities);
+                    } else {
+                        SecurityContextHolder.clearContext();
+                    }
                 } else {
                     SecurityContextHolder.clearContext();
                 }
@@ -69,11 +72,8 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.clearContext();
             }
 
-            customSecurityContext.getSecurityContext().checkPermission(new Subject(),
-                    new MapPermission("test", ActionConstants.ACTION_PUT));
-
             chain.doFilter(request, response);
-        } catch (ExpiredJwtException | UnsupportedJwtException | MalformedJwtException | ServletException | AccessControlException e) {
+        } catch (ExpiredJwtException | UnsupportedJwtException | MalformedJwtException | ServletException e) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
         }
@@ -84,17 +84,10 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
         return Jwts.parser().setSigningKey(secret.getBytes()).parseClaimsJws(jwtToken).getBody();
     }
 
-    /**
-     * Authentication method in Spring flow
-     *
-     * @param claims
-     */
-    private void setUpSpringAuthentication(Claims claims) {
-        @SuppressWarnings("unchecked")
-        List<String> authorities = (List) claims.get("authorities");
-
+    private void setUpSpringAuthentication(Claims claims, List<GrantedAuthority> grantedAuthorities) {
+        String authorities = claims.get("authorities").toString();
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(claims.getSubject(), null,
-                authorities.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
+                grantedAuthorities);
         SecurityContextHolder.getContext().setAuthentication(auth);
 
     }
@@ -102,5 +95,16 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
     private boolean checkJWTToken(HttpServletRequest request, HttpServletResponse res) {
         String authenticationHeader = request.getHeader(header);
         return authenticationHeader != null && authenticationHeader.startsWith(prefix);
+    }
+
+    private boolean isAuthorized(HttpServletRequest request, List<GrantedAuthority> grantedAuthorities) {
+        String requestURI = request.getRequestURI();
+        System.out.println("requestURI: " + requestURI);
+        if (requestURI.contains("/maps/test") && grantedAuthorities.contains(new SimpleGrantedAuthority("USER"))) {
+            return true;
+        } else if (requestURI.contains("/cluster") && grantedAuthorities.contains(new SimpleGrantedAuthority("CLUSTER"))) {
+            return true;
+        }
+        return false;
     }
 }

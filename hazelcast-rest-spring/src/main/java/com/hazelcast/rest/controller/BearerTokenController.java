@@ -15,11 +15,16 @@
  */
 package com.hazelcast.rest.controller;
 
+import com.hazelcast.rest.model.User;
 import com.hazelcast.rest.service.BearerTokenService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -30,7 +35,7 @@ public class BearerTokenController {
         this.bearerTokenService = bearerTokenService;
     }
 
-    @GetMapping(value = "/token")
+    @PostMapping(value = "/token")
     @Operation(summary = "Get bearer token",
             tags = {"Bearer Token Controller"},
             description = "Get bearer token",
@@ -38,7 +43,11 @@ public class BearerTokenController {
                     @ApiResponse(responseCode = "200", description = "OK"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             })
-    ResponseEntity<String> getToken() {
-        return ResponseEntity.ok().body(bearerTokenService.getJWTToken());
+    ResponseEntity<String> getToken(
+            @Parameter(in = ParameterIn.DEFAULT, description = "", required = true,
+                    schema = @Schema()) @RequestBody User user
+    ) {
+        String token = bearerTokenService.getJWTToken(user);
+        return ResponseEntity.ok().body(token);
     }
 }

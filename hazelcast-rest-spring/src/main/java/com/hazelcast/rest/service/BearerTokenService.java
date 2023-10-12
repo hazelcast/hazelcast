@@ -15,53 +15,31 @@
  */
 package com.hazelcast.rest.service;
 
+import com.hazelcast.rest.model.User;
 import com.hazelcast.rest.security.JWTAuthorizationFilter;
-import com.hazelcast.rest.util.NodeEngineImplHolder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class BearerTokenService {
-    @Autowired
-    NodeEngineImplHolder nodeEngineImplHolder;
 
     private final int expirationTimeMillis = 600000;
 
-    public String getJWTToken() {
-        List<GrantedAuthority> grantedAuthorities = AuthorityUtils
-                .commaSeparatedStringToAuthorityList("ROLE_USER");
-
+    public String getJWTToken(User user) {
         String token = Jwts
                 .builder()
-                .setId(getSecret())
-                .setSubject(getSecret())
-                .claim("authorities",
-                        grantedAuthorities.stream()
-                                .map(GrantedAuthority::getAuthority)
-                                .collect(Collectors.toList()))
+                .setId(user.getName())
+                .setSubject(user.getName())
+                .claim("authorities", user.getAuthorities())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTimeMillis))
                 .signWith(SignatureAlgorithm.HS256,
-                        getSecret().getBytes()).compact();
+                        (user.getName() + user.getPassword()).getBytes()).compact();
+        JWTAuthorizationFilter.setSecret(user.getName() + user.getPassword());
 
         return "Bearer " + token;
-    }
-
-    private String getSecret() {
-        String secret = nodeEngineImplHolder.getNodeEngine().getHazelcastInstance().getConfig().getSecurityConfig()
-                .getRealmConfig(nodeEngineImplHolder.getNodeEngine().getHazelcastInstance().getConfig()
-                        .getSecurityConfig().getMemberRealm())
-                .getUsernamePasswordIdentityConfig().toString();
-        JWTAuthorizationFilter.setSecret(secret);
-
-        return secret;
     }
 }
