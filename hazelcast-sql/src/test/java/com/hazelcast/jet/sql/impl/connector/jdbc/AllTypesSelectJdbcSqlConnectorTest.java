@@ -86,7 +86,7 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     public void selectRowWithAllTypes() throws Exception {
         String tableName = randomTableName();
 
-        createTable(quote(tableName), quote("table_column") + type);
+        createTable(tableName, "table_column " + type);
         executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(" + value + ")");
 
         String mappingName = "mapping_" + randomName();

@@ -34,7 +34,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Before
     public void setUp() throws Exception {
-        tableName = quote(randomTableName());
+        tableName = randomTableName();
     }
 
     @Test
@@ -186,10 +186,10 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableSetUsingExpressionWithTableColumnNoPushDown() throws Exception {
-        createTable(tableName, quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(10)", quote("data") + " VARCHAR(100)");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', '{\"value\":0}')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', '{\"value\":1}')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(2, 'name-2', '{\"value\":2}')");
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)", "data VARCHAR(100)");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 'name-0', '{\"value\":0}')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 'name-1', '{\"value\":1}')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(2, 'name-2', '{\"value\":2}')");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -201,7 +201,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("UPDATE " + tableName + " SET name = 'updated-'||id WHERE JSON_QUERY(data, '$.value') = '2'");
 
-        assertJdbcQueryRowsAnyOrder("SELECT " + quote("id") + ", " + quote("name") + " FROM " + tableName,
+        assertJdbcQueryRowsAnyOrder("SELECT " + quote("id") + ", " + quote("name") + " FROM " + quote(tableName),
                 newArrayList(Integer.class, String.class),
                 new Row(0, "name-0"),
                 new Row(1, "name-1"),
@@ -252,9 +252,9 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableWhereOnNonPKColumnWithExternalName() throws Exception {
-        createTable(tableName, quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(10)", quote("age") + " INT");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', 20)");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', 20)");
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)", "age INT");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 'name-0', 20)");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 'name-1', 20)");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -275,9 +275,9 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableWhereAndSetUsingQueryParameter() throws Exception {
-        createTable(tableName, quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(10)", quote("age") + " INT");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', 20)");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', 20)");
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)", "age INT");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 'name-0', 20)");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 'name-1', 20)");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -298,9 +298,9 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableWhereOnPKAndSetUsingQueryParameter() throws Exception {
-        createTable(tableName, quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(10)", quote("age") + " INT");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', 20)");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', 20)");
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)", "age INT");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 'name-0', 20)");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 'name-1', 20)");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -338,10 +338,13 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableWithMultiplePKColumns() throws Exception {
-        createTable(tableName, quote("id") + " INT", quote("id2") + " INT", quote("name") + " VARCHAR(10)", "PRIMARY KEY(" + quote("id") + ", " + quote("id2") + ")");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 0, 'name-0')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 0, 'name-1')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 1, 'name-2')");
+        createTableNoQuote(quote(tableName),
+                quote("id") + " INT", quote("id2") + " INT", quote("name") + " VARCHAR(10)",
+                "PRIMARY KEY(" + quote("id") + ", " + quote("id2") + ")"
+        );
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 0, 'name-0')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 0, 'name-1')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 1, 'name-2')");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -363,10 +366,14 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableWithMultiplePKColumnsNoPredicatePushDown() throws Exception {
-        createTable(tableName, quote("id") + " INT", quote("id2") + " INT", quote("name") + " VARCHAR(10)", "PRIMARY KEY(" + quote("id") + ", " + quote("id2") + ")", quote("data") + " VARCHAR(100)");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 0, 'name-0', '{\"value\":0}')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 0, 'name-1', '{\"value\":1}')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 1, 'name-2', '{\"value\":2}')");
+        createTableNoQuote(quote(tableName),
+                quote("id") + " INT", quote("id2") + " INT", quote("name") + " VARCHAR(10)",
+                "PRIMARY KEY(" + quote("id") + ", " + quote("id2") + ")", quote("data") + " VARCHAR(100)"
+        );
+
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 0, 'name-0', '{\"value\":0}')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 0, 'name-1', '{\"value\":1}')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 1, 'name-2', '{\"value\":2}')");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -379,7 +386,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE JSON_QUERY(data, '$.value') = '2'");
 
-        assertJdbcQueryRowsAnyOrder("SELECT " + quote("name") + " FROM " + tableName,
+        assertJdbcQueryRowsAnyOrder("SELECT " + quote("name") + " FROM " + quote(tableName),
                 newArrayList(String.class),
                 new Row("name-0"),
                 new Row("name-1"),
@@ -389,9 +396,9 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableWithReverseColumnOrder() throws Exception {
-        createTable(tableName, quote("name") + " VARCHAR(10)", quote("id") + " INT PRIMARY KEY");
-        executeJdbc("INSERT INTO " + tableName + " VALUES('name-0', 0)");
-        executeJdbc("INSERT INTO " + tableName + " VALUES('name-1', 1)");
+        createTable(tableName, "name VARCHAR(10)", "id INT PRIMARY KEY");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES('name-0', 0)");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES('name-1', 1)");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " name VARCHAR, "
@@ -425,7 +432,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateMappingWithQuotedColumnInWhere() throws Exception {
-        createTable(tableName, quote("person-id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)");
+        createTable(tableName, "person-id INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(tableName, 1);
 
         execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);
@@ -439,7 +446,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateMappingWithQuotedColumnInSet() throws Exception {
-        createTable(tableName, quote("id") + " INT PRIMARY KEY", quote("full-name") + " VARCHAR(100)");
+        createTable(tableName, "id INT PRIMARY KEY", "full-name VARCHAR(100)");
         insertItems(tableName, 1);
 
         execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);

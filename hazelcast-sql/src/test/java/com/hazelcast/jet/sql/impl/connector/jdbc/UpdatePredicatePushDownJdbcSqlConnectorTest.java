@@ -35,11 +35,11 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
 
     @Before
     public void setUp() throws Exception {
-        tableName = quote(randomTableName());
+        tableName = randomTableName();
 
-        createTable(tableName, quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)", quote("age") + " INT", quote("data") + " VARCHAR(100)");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', 0, '{\"value\":42}')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', 1, '{\"value\":42}')");
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT", "data VARCHAR(100)");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 'name-0', 0, '{\"value\":42}')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 'name-1', 1, '{\"value\":42}')");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "

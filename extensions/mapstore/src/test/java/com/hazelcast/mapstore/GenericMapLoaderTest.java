@@ -89,7 +89,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenMapLoaderInit_thenCreateMappingForMapStoreConfig() throws Exception {
-        createTable(quote(mapName));
+        createTable(mapName);
 
         mapLoader = createMapLoader();
         assertMappingCreated();
@@ -97,8 +97,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenMapLoaderInitCalledOnNonMaster_thenInitAndLoadValue() throws Exception {
-        createTable(quote(mapName));
-        insertItems(quote(mapName), 1);
+        createTable(mapName);
+        insertItems(mapName, 1);
 
         mapLoader = createMapLoader(instances()[1]);
         GenericRecord record = mapLoader.load(0);
@@ -107,8 +107,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenValidMappingExists_whenMapLoaderInit_thenInitAndLoadRecord() throws Exception {
-        createTable(quote(mapName));
-        insertItems(quote(mapName), 1);
+        createTable(mapName);
+        insertItems(mapName, 1);
         createMapping(mapName, MAPPING_PREFIX + mapName);
 
         mapLoader = createMapLoader();
@@ -118,7 +118,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenMapLoaderDestroyOnMaster_thenDropMapping() throws Exception {
-        createTable(quote(mapName));
+        createTable(mapName);
 
         mapLoader = createMapLoader();
         assertMappingCreated();
@@ -129,7 +129,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenMapLoaderDestroyOnNonMaster_thenDropMapping() throws Exception {
-        createTable(quote(mapName));
+        createTable(mapName);
 
         mapLoader = createMapLoader();
         assertMappingCreated();
@@ -141,8 +141,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenMapLoaderInitOnNonMaster_thenLoadWaitsForSuccessfulInit() throws Exception {
-        createTable(quote(mapName));
-        insertItems(quote(mapName), 1);
+        createTable(mapName);
+        insertItems(mapName, 1);
 
         GenericMapLoader<Object> mapLoaderNonMaster = createMapLoader(instances()[1]);
         mapLoader = createMapLoader();
@@ -153,8 +153,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRow_whenLoad_thenReturnGenericRecord() throws Exception {
-        createTable(quote(mapName));
-        insertItems(quote(mapName), 1);
+        createTable(mapName);
+        insertItems(mapName, 1);
 
         mapLoader = createMapLoader();
         GenericRecord record = mapLoader.load(0);
@@ -165,8 +165,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenTableMultipleColumns_whenLoad_thenReturnGenericRecord() throws Exception {
-        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)",
-                quote("age") + " INT", quote("address") + " VARCHAR(100)");
+        createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT", "address VARCHAR(100)");
         executeJdbc("INSERT INTO " + quote(mapName) + " VALUES(0, 'name-0', 42, 'Palo Alto, CA 94306')");
 
         mapLoader = createMapLoader();
@@ -180,7 +179,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenTableVarcharPKColumn_whenLoad_thenReturnGenericRecordWithCorrectType() throws Exception {
-        createTable(quote(mapName), quote("id") + " VARCHAR(100)", quote("name") + " VARCHAR(100)");
+        createTable(mapName, "id VARCHAR(100)", "name VARCHAR(100)");
         executeJdbc("INSERT INTO " + quote(mapName) + " VALUES('0', 'name-0')");
 
         GenericMapLoader<String> mapLoader = createMapLoader();
@@ -193,8 +192,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenTable_whenSetColumns_thenGenericRecordHasSetColumns() throws Exception {
-        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY",
-                quote("name") + " VARCHAR(100)", quote("age") + " INT", quote("address") + "VARCHAR(100)");
+        createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT", "address VARCHAR(100)");
         executeJdbc("INSERT INTO " + quote(mapName) + " VALUES(0, 'name-0', 42, 'Palo Alto, CA 94306')");
 
         Properties properties = new Properties();
@@ -212,8 +210,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenSetNonExistingColumnOnSecondMapStore_thenFailToInitialize() throws Exception {
-        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY",
-                quote("name") + " VARCHAR(100)", quote("age") + " INT");
+        createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT");
         executeJdbc("INSERT INTO " + quote(mapName) + " VALUES(0, 'name-0', 42)");
         createMapping(mapName, MAPPING_PREFIX + mapName);
         assertMappingCreated();
@@ -232,8 +229,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenSetNonExistingColumn_thenFailToInitialize() throws Exception {
-        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)");
-        insertItems(quote(mapName), 1);
+        createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 1);
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -248,8 +245,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenSetNonExistingColumnOnSecondMapLoader_thenFailToInitialize() throws Exception {
-        createTable(quote(mapName), quote("id") + " INT PRIMARY KEY",
-                quote("name") + " VARCHAR(100)", quote("age") + " INT");
+        createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT");
         executeJdbc("INSERT INTO " + quote(mapName) + " VALUES(0, 'name-0', 42)");
         createMapping(mapName, MAPPING_PREFIX + mapName);
         assertMappingCreated();
@@ -268,8 +264,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenDefaultTypeName_whenLoad_thenReturnGenericRecordMapNameAsTypeName() throws Exception {
-        createTable(quote(mapName));
-        insertItems(quote(mapName), 1);
+        createTable(mapName);
+        insertItems(mapName, 1);
 
         mapLoader = createMapLoader();
 
@@ -279,8 +275,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenTypeName_whenLoad_thenReturnGenericRecordWithCorrectTypeName() throws Exception {
-        createTable(quote(mapName));
-        insertItems(quote(mapName), 1);
+        createTable(mapName);
+        insertItems(mapName, 1);
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -293,8 +289,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowAndIdColumn_whenLoad_thenReturnGenericRecord() throws Exception {
-        createTable(quote(mapName), quote("person-id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)");
-        insertItems(quote(mapName), 1);
+        createTable(mapName, "person-id INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 1);
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -308,8 +304,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowAndColumnsWithoutId_whenLoadAndLoadAll_thenReturnGenericRecordWithoutId() throws Exception {
-        createTable(quote(mapName));
-        insertItems(quote(mapName), 1);
+        createTable(mapName);
+        insertItems(mapName, 1);
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -325,7 +321,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowDoesNotExist_whenLoad_thenReturnNull() throws Exception {
-        createTable(quote(mapName));
+        createTable(mapName);
         mapLoader = createMapLoader();
 
         GenericRecord record = mapLoader.load(0);
@@ -334,10 +330,10 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRow_whenLoadAll_thenReturnMapWithGenericRecord() throws Exception {
-        createTable(quote(mapName));
+        createTable(mapName);
         mapLoader = createMapLoader();
 
-        insertItems(quote(mapName), 1);
+        insertItems(mapName, 1);
 
         Map<Integer, GenericRecord> records = mapLoader.loadAll(newArrayList(0));
 
@@ -351,8 +347,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowAndIdColumn_whenLoadAll_thenReturnGenericRecord() throws Exception {
-        createTable(quote(mapName), quote("person-id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)");
-        insertItems(quote(mapName), 1);
+        createTable(mapName, "person-id INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 1);
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -366,8 +362,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowAndIdColumn_whenLoadAllMultipleItems_thenReturnGenericRecords() throws Exception {
-        createTable(quote(mapName), quote("person-id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)");
-        insertItems(quote(mapName), 2);
+        createTable(mapName, "person-id INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 2);
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -380,7 +376,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowDoesNotExist_whenLoadAll_thenReturnEmptyMap() throws Exception {
-        createTable(quote(mapName));
+        createTable(mapName);
         mapLoader = createMapLoader();
 
         Map<Integer, GenericRecord> records = mapLoader.loadAll(newArrayList(0));
@@ -389,10 +385,10 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRow_whenLoadAllKeys_thenReturnKeys() throws Exception {
-        createTable(quote(mapName));
+        createTable(mapName);
         mapLoader = createMapLoader();
 
-        insertItems(quote(mapName), 1);
+        insertItems(mapName, 1);
 
         List<Integer> ids = newArrayList(mapLoader.loadAllKeys());
         assertThat(ids).contains(0);
@@ -400,8 +396,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowAndIdColumn_whenLoadAllKeys_thenReturnKeys() throws Exception {
-        createTable(quote(mapName), quote("person-id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)");
-        insertItems(quote(mapName), 1);
+        createTable(mapName, "person-id INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 1);
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -415,7 +411,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenFalse_whenLoadAllKeys_thenReturnNull() throws Exception {
-        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, "person-id INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
@@ -431,8 +427,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenTrue_whenLoadAllKeys_thenReturnKeys() throws Exception {
-        createTable(quote(mapName), quote("person-id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)");
-        insertItems(quote(mapName), 1);
+        createTable(mapName, "person-id INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 1);
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -447,7 +443,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenInvalid_whenLoadAllKeys_thenReturnKeys() throws Exception {
-        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, "person-id INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
@@ -464,7 +460,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenNoRows_whenLoadAllKeys_thenEmptyIterable() throws Exception {
-        createTable(quote(mapName));
+        createTable(mapName);
         mapLoader = createMapLoader();
 
         Iterable<Integer> ids = mapLoader.loadAllKeys();
@@ -511,8 +507,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     public void givenTableNameProperty_whenCreateMapLoader_thenUseTableName() throws Exception {
         String tableName = randomTableName();
 
-        createTable(quote(tableName));
-        insertItems(quote(tableName), 1);
+        createTable(tableName);
+        insertItems(tableName, 1);
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -525,13 +521,13 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenTableNameProperty_whenCreateMapLoader_thenUseTableNameWithCustomSchema() throws Exception {
-        String schemaName = quote("custom_schema");
+        String schemaName = "custom_schema";
         createSchema(schemaName);
         String tableName = randomTableName() + "-with-hyphen";
-        String fullTableName = schemaName + "." + quote(tableName);
+        String fullTableName = quote(schemaName) + "." + quote(tableName);
 
-        createTable(fullTableName);
-        insertItems(fullTableName, 1);
+        createTableNoQuote(fullTableName);
+        insertItemsNoQuote(fullTableName, 1);
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -548,13 +544,13 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         // See MySQLSchemaJdbcSqlConnectorTest
         assumeFalse(MySQLDatabaseProvider.TEST_MYSQL_VERSION.startsWith("5"));
 
-        String schemaName = quote("custom_schema2");
+        String schemaName = "custom_schema2";
         createSchema(schemaName);
         String tableName = randomTableName() + ".with_dot";
-        String fullTableName = schemaName + "." + quote(tableName);
+        String fullTableName = quote(schemaName) + "." + quote(tableName);
 
-        createTable(fullTableName);
-        insertItems(fullTableName, 1);
+        createTableNoQuote(fullTableName);
+        insertItemsNoQuote(fullTableName, 1);
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
@@ -565,10 +561,10 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         assertThat(record).isNotNull();
     }
 
-    private static void createSchema(String schemaName) throws SQLException {
-        executeJdbc(databaseProvider.createSchemaQuery(schemaName));
+    protected static void createSchema(String schemaName) throws SQLException {
+        executeJdbc(databaseProvider.createSchemaQuery(quote(schemaName)));
         if (databaseProvider instanceof OracleDatabaseProvider) {
-            executeJdbc("GRANT UNLIMITED TABLESPACE TO " + schemaName);
+            executeJdbc("GRANT UNLIMITED TABLESPACE TO " + quote(schemaName));
         }
     }
 

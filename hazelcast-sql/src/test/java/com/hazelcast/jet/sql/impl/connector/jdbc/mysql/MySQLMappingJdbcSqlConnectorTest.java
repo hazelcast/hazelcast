@@ -39,7 +39,7 @@ public class MySQLMappingJdbcSqlConnectorTest extends MappingJdbcSqlConnectorTes
 
     @Test
     public void createMappingFails_invalid_externalNameFullName() throws SQLException {
-        createTableNoQuotation(tableName);
+        createTable(tableName);
 
         // Create invalid mapping
         assertThatThrownBy(() -> execute(

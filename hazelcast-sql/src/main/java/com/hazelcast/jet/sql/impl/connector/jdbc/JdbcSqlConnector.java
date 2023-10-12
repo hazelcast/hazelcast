@@ -298,7 +298,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 return new HazelcastMySqlDialect(SqlDialects.createContext(databaseMetaData));
             case MICROSOFT_SQL_SERVER:
                 return new HazelcastMSSQLDialect(SqlDialects.createContext(databaseMetaData));
-            case "ORACLE":
+            case ORACLE:
                 return new HazelcastOracleDialect(SqlDialects.createContext(databaseMetaData));
             default:
                 return SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);

@@ -92,7 +92,7 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Test
     public void insertRowWithAllTypes() throws Exception {
         String tableName = randomTableName();
-        createTable(quote(tableName), quote("id") + " INT", quote("table_column") + type);
+        createTable(tableName, "id INT", "table_column " + type);
 
         String mappingName = "mapping_" + randomName();
         execute("CREATE MAPPING " + mappingName
@@ -107,7 +107,7 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");
         execute("INSERT INTO " + mappingName + " VALUES(1, ?)", javaValue);
 
-        assertJdbcRowsAnyOrder(quote(tableName),
+        assertJdbcRowsAnyOrder(tableName,
                 newArrayList(Integer.class, jdbcValue.getClass()),
                 new Row(0, jdbcValue),
                 new Row(1, jdbcValue)

@@ -41,8 +41,8 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     @Before
     public void setUp() throws Exception {
         tableName = randomTableName();
-        createTable(quote(tableName));
-        insertItems(quote(tableName), ITEM_COUNT);
+        createTable(tableName);
+        insertItems(tableName, ITEM_COUNT);
 
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -56,8 +56,8 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     @Test
     public void test_stream2BatchJoinAsNestedLoopJoinIsNotSupported() throws Exception {
         String tableName = randomTableName();
-        createTable(quote(tableName));
-        insertItems(quote(tableName), 5);
+        createTable(tableName);
+        insertItems(tableName, 5);
 
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -70,7 +70,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
         assertThatThrownBy(() ->
                 sqlService.execute("SELECT n.name, t.v FROM " +
                         "TABLE(GENERATE_STREAM(2)) t " +
-                        "JOIN " + quote(tableName) + " n ON n.id = t.v;")
+                        "JOIN " + tableName + " n ON n.id = t.v;")
         ).hasMessageContaining("JDBC connector doesn't support stream-to-batch JOIN");
     }
 
@@ -78,8 +78,8 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     public void joinWithOtherJdbc() throws SQLException {
 
         String otherTableName = randomTableName();
-        createTable(quote(otherTableName));
-        insertItems(quote(otherTableName), ITEM_COUNT);
+        createTable(otherTableName);
+        insertItems(otherTableName, ITEM_COUNT);
 
         execute(
                 "CREATE MAPPING " + otherTableName + " ("
@@ -91,8 +91,8 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
-                        "FROM " + quote(tableName) + " t1 " +
-                        "JOIN " + quote(otherTableName) + " t2 " +
+                        "FROM " + tableName + " t1 " +
+                        "JOIN " + otherTableName + " t2 " +
                         "   ON t1.id = t2.id",
                 newArrayList(
                         new Row(0, "name-0"),
@@ -108,8 +108,8 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     public void leftJoinWithOtherJdbc() throws SQLException {
 
         String otherTableName = randomTableName();
-        createTable(quote(otherTableName));
-        insertItems(quote(otherTableName), 3);
+        createTable(otherTableName);
+        insertItems(otherTableName, 3);
 
         execute(
                 "CREATE MAPPING " + otherTableName + " ("
@@ -121,8 +121,8 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
-                        "FROM " + quote(tableName) + " t1 " +
-                        "LEFT JOIN " + quote(otherTableName) + " t2 " +
+                        "FROM " + tableName + " t1 " +
+                        "LEFT JOIN " + otherTableName + " t2 " +
                         "   ON t1.id = t2.id",
                 newArrayList(
                         new Row(0, "name-0"),
@@ -138,8 +138,8 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     public void rightJoinWithOtherJdbc() throws SQLException {
 
         String otherTableName = randomTableName();
-        createTable(quote(otherTableName));
-        insertItems(quote(otherTableName), 7);
+        createTable(otherTableName);
+        insertItems(otherTableName, 7);
 
         execute(
                 "CREATE MAPPING " + otherTableName + " ("
@@ -151,8 +151,8 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
-                        "FROM " + quote(tableName) + " t1 " +
-                        "RIGHT JOIN " + quote(otherTableName) + " t2 " +
+                        "FROM " + tableName + " t1 " +
+                        "RIGHT JOIN " + otherTableName + " t2 " +
                         "   ON t1.id = t2.id",
                 newArrayList(
                         new Row(0, "name-0"),
@@ -188,7 +188,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
-                        "FROM " + quote(tableName) + " t1 " +
+                        "FROM " + tableName + " t1 " +
                         "JOIN " + mapName + " t2 " +
                         "   ON t1.id = t2.id",
                 newArrayList(
@@ -203,21 +203,21 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
     @Test
     public void joinWithOtherJdbcNonDefaultSchema() throws SQLException {
-        String schemaName = quote(randomName());
+        String schemaName = randomName();
         executeJdbc(databaseProvider.createSchemaQuery(schemaName));
         if (databaseProvider instanceof OracleDatabaseProvider) {
-            executeJdbc("GRANT UNLIMITED TABLESPACE TO " + schemaName);
+            executeJdbc("GRANT UNLIMITED TABLESPACE TO " + quote(schemaName));
         }
-        String fullyQualifiedTable = schemaName + "." + quote(tableName);
-        createTable(fullyQualifiedTable);
-        insertItems(fullyQualifiedTable, ITEM_COUNT);
+        String fullyQualifiedTable = quote(schemaName, tableName);
+        createTableNoQuote(fullyQualifiedTable);
+        insertItemsNoQuote(fullyQualifiedTable, ITEM_COUNT);
         String mappingName = randomTableName();
         createMapping(fullyQualifiedTable, mappingName);
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
-                        "FROM " + quote(tableName) + " t1 " +
-                        "JOIN \"" + mappingName + "\" t2 " +
+                        "FROM " + tableName + " t1 " +
+                        "JOIN " + mappingName + " t2 " +
                         "   ON t1.id = t2.id",
                 newArrayList(
                         new Row(0, "name-0"),

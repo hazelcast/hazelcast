@@ -40,11 +40,11 @@ public class OracleSchemaJdbcSqlConnectorTest extends SchemaJdbcConnectorTest {
                 .isNotEqualTo("schema_with_quote\"");
         tableFull = quote(schema, table);
         try {
-            executeJdbc(databaseProvider.createSchemaQuery(quote(schema)));
+            executeJdbc(databaseProvider.createSchemaQuery(schema));
             executeJdbc("GRANT UNLIMITED TABLESPACE TO " + quote(schema));
         } catch (Exception e) {
             logger.info("Could not create schema", e);
         }
-        createTable(tableFull);
+        createTableNoQuote(tableFull);
     }
 }

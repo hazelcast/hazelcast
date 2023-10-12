@@ -20,7 +20,6 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
-import com.hazelcast.test.jdbc.OracleDatabaseProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -101,11 +100,11 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
     public void setUp() throws Exception {
         tableFull = quote(schema, table);
         try {
-            executeJdbc(databaseProvider.createSchemaQuery(quote(schema)));
+            executeJdbc(databaseProvider.createSchemaQuery(schema));
         } catch (Exception e) {
             logger.info("Could not create schema", e);
         }
-        createTable(tableFull);
+        createTableNoQuote(tableFull);
     }
 
     @After
@@ -131,7 +130,7 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void selectFromTableWithSchema() throws Exception {
-        insertItems(tableFull, 1);
+        insertItemsNoQuote(tableFull, 1);
 
         String mappingName = "mapping_" + randomName();
         myCreateMapping(mappingName);
@@ -151,32 +150,32 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
 
         execute("INSERT INTO " + mappingName + " VALUES (0, 'name-0')");
 
-        assertJdbcRowsAnyOrder(tableFull,
+        assertJdbcRowsAnyOrderNoQuote(tableFull,
                 newArrayList(Integer.class, String.class),
                 new Row(0, "name-0"));
     }
 
     @Test
     public void updateTableWithSchema() throws Exception {
-        insertItems(tableFull, 1);
+        insertItemsNoQuote(tableFull, 1);
         String mappingName = "mapping_" + randomName();
         myCreateMapping(mappingName);
 
         execute("UPDATE " + mappingName + " SET name = 'updated'");
 
-        assertJdbcRowsAnyOrder(tableFull,
+        assertJdbcRowsAnyOrderNoQuote(tableFull,
                 newArrayList(Integer.class, String.class),
                 new Row(0, "updated"));
     }
 
     @Test
     public void deleteFromTableWithSchema() throws Exception {
-        insertItems(tableFull, 1);
+        insertItemsNoQuote(tableFull, 1);
         String mappingName = "mapping_" + randomName();
         myCreateMapping(mappingName);
 
         execute("DELETE FROM " + mappingName);
-        assertJdbcRowsAnyOrder(tableFull);
+        assertJdbcRowsAnyOrderNoQuote(tableFull, newArrayList(Integer.class, String.class));
     }
 
     @Test
@@ -186,7 +185,7 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
 
         execute("SINK INTO " + mappingName + " VALUES (0, 'name-0')");
 
-        assertJdbcRowsAnyOrder(tableFull,
+        assertJdbcRowsAnyOrderNoQuote(tableFull,
                 newArrayList(Integer.class, String.class),
                 new Row(0, "name-0"));
     }

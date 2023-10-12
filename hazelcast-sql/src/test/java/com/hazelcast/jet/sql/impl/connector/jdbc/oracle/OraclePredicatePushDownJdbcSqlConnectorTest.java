@@ -36,21 +36,21 @@ public class OraclePredicatePushDownJdbcSqlConnectorTest extends PredicatePushDo
     private static void initializePredicatePushDownTestOracle(TestDatabaseProvider provider) throws SQLException {
         initialize(provider);
 
-        tableName = "\"people\"";
+        tableName = "people";
 
         createTable(tableName,
-                "\"id\" INT PRIMARY KEY",
-                "\"name\" VARCHAR(100)",
-                "\"age\" INT",
-                "\"data\" VARCHAR(100)",
-                "\"a\" INT", "\"b\" INT", "\"c\" INT", "\"d\" INT",
-                "\"nullable_column\" VARCHAR(100)",
-                "\"nullable_column_reverse\" VARCHAR(100)"
+                "id INT PRIMARY KEY",
+                "name VARCHAR(100)",
+                "age INT",
+                "data VARCHAR(100)",
+                "a INT", "b INT", "c INT", "d INT",
+                "nullable_column VARCHAR(100)",
+                "nullable_column_reverse VARCHAR(100)"
         );
 
-        executeJdbc("INSERT INTO " + tableName + " VALUES (1, 'John Doe', 30, '{\"value\":42}', 1, 1, 0, " +
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES (1, 'John Doe', 30, '{\"value\":42}', 1, 1, 0, " +
                 "1, null, 'not null reverse')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES (2, 'Jane Doe', 35, '{\"value\":0}', 0, 0, 1, " +
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES (2, 'Jane Doe', 35, '{\"value\":0}', 0, 0, 1, " +
                 "1, 'not null', null)");
     }
 }

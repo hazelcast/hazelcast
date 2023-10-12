@@ -37,7 +37,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     public void setUp() throws Exception {
         tableName = randomTableName();
 
-        createTable(quote(tableName), quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)", quote("age") + " INT", quote("data") + " VARCHAR(100)");
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT", "data VARCHAR(100)");
         executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 'name-0', 0, '{\"value\":42}')");
         executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 'name-1', 1, '{\"value\":42}')");
         execute(
@@ -55,14 +55,14 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     public void noParameterNoPredicate() throws Exception {
         execute("DELETE FROM " + tableName);
 
-        assertJdbcRowsAnyOrder(quote(tableName)); // no rows
+        assertJdbcRowsAnyOrder(tableName); // no rows
     }
 
     @Test
     public void noParameterPredicateCanPushDown() throws Exception {
         execute("DELETE FROM " + tableName + " WHERE age = 0");
 
-        assertJdbcRowsAnyOrder(quote(tableName),
+        assertJdbcRowsAnyOrder(tableName,
                 newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -72,7 +72,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     public void noParameterPredicateCanNotPushDown() throws Exception {
         execute("DELETE FROM " + tableName + " WHERE age = 0 AND JSON_QUERY(data, '$.value') = '42'");
 
-        assertJdbcRowsAnyOrder(quote(tableName),
+        assertJdbcRowsAnyOrder(tableName,
                 newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -82,7 +82,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     public void parameterInWhereClausePredicateCanPushDown() throws Exception {
         execute("DELETE FROM " + tableName + " WHERE age = ?", 0);
 
-        assertJdbcRowsAnyOrder(quote(tableName),
+        assertJdbcRowsAnyOrder(tableName,
                 newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -92,7 +92,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     public void parameterInWhereClausePredicateCanPushDownCastColumn() throws Exception {
         execute("DELETE FROM " + tableName + " WHERE CAST(age as VARCHAR(100)) = ?", "0");
 
-        assertJdbcRowsAnyOrder(quote(tableName),
+        assertJdbcRowsAnyOrder(tableName,
                 newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -102,7 +102,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     public void parameterInWhereClausePredicateCanPushDownCastParameter() throws Exception {
         execute("DELETE FROM " + tableName + " WHERE age = CAST(? as INTEGER)", "0");
 
-        assertJdbcRowsAnyOrder(quote(tableName),
+        assertJdbcRowsAnyOrder(tableName,
                 newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -115,7 +115,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
                 0
         );
 
-        assertJdbcRowsAnyOrder(quote(tableName),
+        assertJdbcRowsAnyOrder(tableName,
                 newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );
@@ -128,7 +128,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
                 0, "42"
         );
 
-        assertJdbcRowsAnyOrder(quote(tableName),
+        assertJdbcRowsAnyOrder(tableName,
                 newArrayList(Integer.class, String.class, Integer.class, String.class),
                 new Row(1, "name-1", 1, JSON)
         );

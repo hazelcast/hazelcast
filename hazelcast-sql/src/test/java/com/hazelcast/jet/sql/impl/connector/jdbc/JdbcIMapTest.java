@@ -35,7 +35,7 @@ public class JdbcIMapTest extends JdbcSqlTestSupport {
     @Test
     public void insertIntoIMapSelectFromJdbc() throws Exception {
         String tableName = randomTableName();
-        createTableNoQuotation(tableName);
+        createTable(tableName);
         insertItems(tableName, 5);
 
         execute(
