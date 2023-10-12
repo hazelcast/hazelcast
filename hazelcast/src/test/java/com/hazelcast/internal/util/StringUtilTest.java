@@ -16,17 +16,6 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import java.util.HashMap;
-import java.util.Locale;
-
 import static com.hazelcast.internal.util.StringUtil.VERSION_PATTERN;
 import static com.hazelcast.internal.util.StringUtil.isAllNullOrEmptyAfterTrim;
 import static com.hazelcast.internal.util.StringUtil.isAnyNullOrEmptyAfterTrim;
@@ -37,31 +26,35 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.runner.RunWith;
+
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+
+import java.util.HashMap;
+import java.util.Locale;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class StringUtilTest extends HazelcastTestSupport {
+class StringUtilTest extends HazelcastTestSupport {
+    @ParameterizedTest
+    @ValueSource(strings = {"3.1", "3.1-SNAPSHOT", "3.1-RC", "3.1-RC1-SNAPSHOT", "3.1.1", "3.1.1-RC", "3.1.1-SNAPSHOT",
+            "3.1.1-RC1-SNAPSHOT"})
+    void testVersionPatternMatches(String input) {
+        assertTrue(VERSION_PATTERN.matcher(input).matches());
+    }
 
-    @Test
-    public void testVersionPattern() {
-        assertTrue(VERSION_PATTERN.matcher("3.1").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1-SNAPSHOT").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1-RC").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1-RC1-SNAPSHOT").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1.1").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1.1-SNAPSHOT").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC1-SNAPSHOT").matches());
-
-        assertFalse(VERSION_PATTERN.matcher("${project.version}").matches());
-        assertFalse(VERSION_PATTERN.matcher("project.version").matches());
-        assertFalse(VERSION_PATTERN.matcher("3").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.RC").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.SNAPSHOT").matches());
-        assertFalse(VERSION_PATTERN.matcher("3-RC").matches());
-        assertFalse(VERSION_PATTERN.matcher("3-SNAPSHOT").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.1.RC").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.1.SNAPSHOT").matches());
+    @ParameterizedTest
+    @ValueSource(strings = {"${project.version}", "project.version", "3", "3.RC", "3.SNAPSHOT", "3-RC", "3-SNAPSHOT", "3.",
+            "3.1.RC", "3.1.SNAPSHOT"})
+    void testVersionPatternNotMatches(String input) {
+        assertFalse(VERSION_PATTERN.matcher(input).matches());
     }
 
     @Test
