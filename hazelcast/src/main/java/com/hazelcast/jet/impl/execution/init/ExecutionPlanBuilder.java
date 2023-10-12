@@ -54,12 +54,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -301,12 +302,12 @@ public final class ExecutionPlanBuilder {
 
     private static List<EdgeDef> toEdgeDefs(
             List<Edge> edges, EdgeConfig defaultEdgeConfig,
-            Function<Edge, Integer> oppositeVtxId, boolean isJobDistributed
+            ToIntFunction<Edge> oppositeVtxId, boolean isJobDistributed
     ) {
         List<EdgeDef> list = new ArrayList<>(edges.size());
         for (Edge edge : edges) {
             list.add(new EdgeDef(edge, edge.getConfig() == null ? defaultEdgeConfig : edge.getConfig(),
-                    oppositeVtxId.apply(edge), isJobDistributed));
+                    oppositeVtxId.applyAsInt(edge), isJobDistributed));
         }
         return list;
     }

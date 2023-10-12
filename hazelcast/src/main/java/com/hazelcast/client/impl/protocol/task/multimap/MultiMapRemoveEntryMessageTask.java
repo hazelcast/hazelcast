@@ -22,6 +22,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.multimap.impl.operations.RemoveOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -30,7 +31,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_REMOVEENTRY}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapRemoveEntryCodec#REQUEST_MESSAGE_TYPE}
  */
 public class MultiMapRemoveEntryMessageTask
         extends AbstractMultiMapPartitionMessageTask<MultiMapRemoveEntryCodec.RequestParameters> {
@@ -81,7 +82,7 @@ public class MultiMapRemoveEntryMessageTask
 
     @Override
     public String getMethodName() {
-        return "remove";
+        return SecurityInterceptorConstants.REMOVE;
     }
 
     @Override

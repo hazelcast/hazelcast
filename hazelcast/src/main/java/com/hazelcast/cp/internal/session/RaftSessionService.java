@@ -278,7 +278,7 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
             }
         }
 
-        if (expired.size() > 0) {
+        if (!expired.isEmpty()) {
             if (logger.isFineEnabled()) {
                 logger.fine("Sessions: " + expired + " are expired in " + groupId);
             }
@@ -302,7 +302,7 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
             registry.closeSession(sessionId);
         }
 
-        if (closed.size() > 0) {
+        if (!closed.isEmpty()) {
             if (logger.isFineEnabled()) {
                 logger.fine("Inactive sessions: " + closed + " are closed in " + groupId);
             }
@@ -391,7 +391,7 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
                     }
                 }
 
-                if (inactiveSessionIds.size() > 0) {
+                if (!inactiveSessionIds.isEmpty()) {
                     response.put(groupId, inactiveSessionIds);
                 }
 

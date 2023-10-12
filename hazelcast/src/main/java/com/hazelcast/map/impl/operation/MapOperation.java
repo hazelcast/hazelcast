@@ -55,6 +55,7 @@ import com.hazelcast.wan.impl.CallerProvenance;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -81,6 +82,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     protected transient MapContainer mapContainer;
     protected transient MapServiceContext mapServiceContext;
     protected transient MapEventPublisher mapEventPublisher;
+    protected transient Consumer backupOpAfterRun;
 
     protected transient boolean createRecordStoreOnDemand = true;
     protected transient boolean disposeDeferredBlocks = true;
@@ -122,16 +124,16 @@ public abstract class MapOperation extends AbstractNamedOperation
         MapConfig mapConfig = mapContainer.getMapConfig();
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
 
+        boolean metWithCommonOffloadConditions = recordStore != null && getStartingStep() != null;
         // check if mapStoreOffloadEnabled is true for this operation
-        mapStoreOffloadEnabled = recordStore != null
+        mapStoreOffloadEnabled = metWithCommonOffloadConditions
                 && (mapServiceContext.isForceOffloadEnabled()
-                || (mapStoreConfig.isOffload() && hasMapStoreImplementation()))
-                && getStartingStep() != null;
+                || (mapStoreConfig.isOffload() && hasMapStoreImplementation()));
 
         // check if tieredStoreOffloadEnabled for this operation
-        tieredStoreOffloadEnabled = recordStore != null
-                && supportsSteppedRun()
-                && getStartingStep() != null;
+        tieredStoreOffloadEnabled = metWithCommonOffloadConditions
+                && (mapServiceContext.isForceOffloadEnabled() || supportsSteppedRun());
+
 
         assertNativeMapOnPartitionThread();
 
@@ -238,7 +240,13 @@ public abstract class MapOperation extends AbstractNamedOperation
                 .setPartitionId(getPartitionId())
                 .setCallerAddress(getCallerAddress())
                 .setCallerProvenance(getCallerProvenance())
-                .setDisableWanReplicationEvent(disableWanReplicationEvent());
+                .setDisableWanReplicationEvent(disableWanReplicationEvent())
+                .setBackupOpAfterRun(backupOpAfterRun);
+    }
+
+    @Override
+    public void setBackupOpAfterRun(Consumer backupOpAfterRun) {
+        this.backupOpAfterRun = backupOpAfterRun;
     }
 
     protected void runInternal() {

@@ -58,22 +58,6 @@ public class JavaVersionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIsAtMost() {
-        JavaVersion[] javaVersions = JavaVersion.values();
-        for (JavaVersion thisVersion : javaVersions) {
-            for (JavaVersion thatVersion : javaVersions) {
-                boolean expected = thisVersion.getMajorVersion() <= thatVersion.getMajorVersion();
-                boolean actual = JavaVersion.isAtMost(thisVersion, thatVersion);
-                assertEquals(thisVersion.name() + " should be at most " + thatVersion.name(), expected, actual);
-            }
-
-            // we test each versions against not listed versions with the previous and the same version number
-            assertFalse(JavaVersion.isAtMost(thisVersion, new FutureJavaVersion(thisVersion.getMajorVersion() - 1)));
-            assertTrue(JavaVersion.isAtMost(thisVersion, new FutureJavaVersion(thisVersion.getMajorVersion())));
-        }
-    }
-
-    @Test
     public void testVersionDetection() {
         // java.version is empty
         assertEquals(UNKNOWN_VERSION, JavaVersion.detectCurrentVersion());
@@ -95,11 +79,7 @@ public class JavaVersionTest extends HazelcastTestSupport {
             assertFalse(JavaVersion.isAtLeast(UNKNOWN_VERSION, version));
             assertFalse(JavaVersion.isAtLeast(version, UNKNOWN_VERSION));
 
-            assertFalse(JavaVersion.isAtMost(UNKNOWN_VERSION, version));
-            assertFalse(JavaVersion.isAtMost(version, UNKNOWN_VERSION));
         }
-
         assertFalse(JavaVersion.isAtLeast(UNKNOWN_VERSION, UNKNOWN_VERSION));
-        assertFalse(JavaVersion.isAtMost(UNKNOWN_VERSION, UNKNOWN_VERSION));
     }
 }

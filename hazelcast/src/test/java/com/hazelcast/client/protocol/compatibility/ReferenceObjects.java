@@ -936,11 +936,15 @@ public class ReferenceObjects {
     public static SqlSummary aSqlSummary = CustomTypeFactory.createSqlSummary(aString, aBoolean);
     public static JobAndSqlSummary aJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, 2, aLong, aLong, aString, aSqlSummary, true, aString, true, false);
     public static List<JobAndSqlSummary> aListJobAndSqlSummary = Collections.singletonList(aJobAndSqlSummary);
-    public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
+    public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
     public static HazelcastJsonValue aHazelcastJsonValue = new HazelcastJsonValue("{'value': ''}");
     public static List<PartitioningAttributeConfig> aListOfPartitioningAttributeConfigs = Collections.singletonList(
             new PartitioningAttributeConfig(aString)
+    );
+
+    public static List<SimpleEntryView<Data, Data>> aListOfSimpleEntryViews = Collections.singletonList(
+            aSimpleEntryView
     );
 
     public static WanConsumerConfigHolder aWanConsumerConfigHolder =

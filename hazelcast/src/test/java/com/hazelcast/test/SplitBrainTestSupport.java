@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Supplier;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
@@ -95,9 +96,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         brains = brains();
         validateBrainsConfig(brains);
 
-        Config config = config();
         int clusterSize = getClusterSize();
-        instances = startInitialCluster(config, clusterSize);
+        instances = startInitialCluster(() -> config(), clusterSize);
     }
 
     @After
@@ -207,11 +207,11 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         onAfterSplitBrainHealed(instances);
     }
 
-    protected HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {
+    protected HazelcastInstance[] startInitialCluster(Supplier<Config> configSupplier, int clusterSize) {
         HazelcastInstance[] hazelcastInstances = new HazelcastInstance[clusterSize];
         factory = createHazelcastInstanceFactory(clusterSize);
         for (int i = 0; i < clusterSize; i++) {
-            HazelcastInstance hz = factory.newHazelcastInstance(config);
+            HazelcastInstance hz = factory.newHazelcastInstance(configSupplier.get());
             hazelcastInstances[i] = hz;
         }
         return hazelcastInstances;

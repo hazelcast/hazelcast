@@ -23,6 +23,7 @@ import com.hazelcast.durableexecutor.impl.operations.RetrieveAndDisposeResultOpe
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.DurableExecutorServicePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -71,7 +72,7 @@ public class DurableExecutorRetrieveAndDisposeResultMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.RETRIEVE_AND_DISPOSE_RESULT;
     }
 
     @Override

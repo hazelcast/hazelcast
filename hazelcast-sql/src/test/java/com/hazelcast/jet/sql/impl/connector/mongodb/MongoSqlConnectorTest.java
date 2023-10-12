@@ -59,14 +59,17 @@ public class MongoSqlConnectorTest extends MongoSqlTest {
     public void readsFromMongo_withoutId_withUnsupportedExpr() {
        readsFromMongo(false, true, true);
     }
+
     @Test
     public void readsFromMongo_withoutId_withoutUnsupportedExpr() {
        readsFromMongo(false, false, false);
     }
+
     @Test
     public void readsFromMongo_withtId_withUnsupportedExprInProjection_withoutUnsupportedExprInPredicate() {
        readsFromMongo(true, true, false);
-    }    @Test
+    }
+    @Test
     public void readsFromMongo_withouttId_withUnsupportedExprInProjection_withUnsupportedExprInPredicate() {
        readsFromMongo(true, false, true);
     }
@@ -176,8 +179,9 @@ public class MongoSqlConnectorTest extends MongoSqlTest {
         execute("CREATE MAPPING " + collectionName + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
                 + "DATA CONNECTION testMongo "
                 + "OPTIONS ("
-                + "    'forceMongoReadParallelismOne' = 'true' "
-                + ")");
+                + "    'forceReadTotalParallelismOne' = 'true' "
+                + ")"
+        );
 
         assertRowsAnyOrder("select firstName, lastName, jedi from " + collectionName + " where lastName = ?",
                 singletonList("Skywalker"),

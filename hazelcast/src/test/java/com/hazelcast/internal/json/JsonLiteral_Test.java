@@ -21,20 +21,26 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import static com.hazelcast.internal.json.Json.*;
-import static com.hazelcast.internal.json.TestUtil.serializeAndDeserialize;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
-import java.io.IOException;
+import static com.hazelcast.internal.json.Json.FALSE;
+import static com.hazelcast.internal.json.Json.NULL;
+import static com.hazelcast.internal.json.Json.TRUE;
+import static com.hazelcast.test.TestJavaSerializationUtils.serializeAndDeserialize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonWriter;
 import com.hazelcast.test.annotation.QuickTest;
+
+import java.io.IOException;
 
 @Category(QuickTest.class)
 public class JsonLiteral_Test {
@@ -118,32 +124,32 @@ public class JsonLiteral_Test {
 
   @Test
   public void NULL_equals() {
-    assertTrue(NULL.equals(NULL));
+    assertEquals(NULL, NULL);
 
-    assertFalse(NULL.equals(null));
-    assertFalse(NULL.equals(TRUE));
-    assertFalse(NULL.equals(FALSE));
-    assertFalse(NULL.equals(Json.value("null")));
+    assertNotEquals(NULL, null);
+    assertNotEquals(NULL, TRUE);
+    assertNotEquals(NULL, FALSE);
+    assertNotEquals(NULL, Json.value("null"));
   }
 
   @Test
   public void TRUE_equals() {
-    assertTrue(TRUE.equals(TRUE));
+    assertEquals(TRUE, TRUE);
 
-    assertFalse(TRUE.equals(null));
-    assertFalse(TRUE.equals(FALSE));
-    assertFalse(TRUE.equals(Boolean.TRUE));
-    assertFalse(NULL.equals(Json.value("true")));
+    assertNotEquals(TRUE, null);
+    assertNotEquals(TRUE, FALSE);
+    assertNotEquals(TRUE, Boolean.TRUE);
+    assertNotEquals(NULL, Json.value("true"));
   }
 
   @Test
   public void FALSE_equals() {
-    assertTrue(FALSE.equals(FALSE));
+    assertEquals(FALSE, FALSE);
 
-    assertFalse(FALSE.equals(null));
-    assertFalse(FALSE.equals(TRUE));
-    assertFalse(FALSE.equals(Boolean.FALSE));
-    assertFalse(NULL.equals(Json.value("false")));
+    assertNotEquals(FALSE, null);
+    assertNotEquals(FALSE, TRUE);
+    assertNotEquals(FALSE, Boolean.FALSE);
+    assertNotEquals(NULL, Json.value("false"));
   }
 
   @Test

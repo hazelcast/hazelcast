@@ -110,7 +110,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         } else if (clientSerializationVersion != serializationService.getVersion()) {
             return SERIALIZATION_VERSION_MISMATCH;
         } else if (credentials == null) {
-            logger.severe("Could not retrieve Credentials object!");
+            logger.warning("Could not retrieve Credentials object!");
             return CREDENTIALS_FAILED;
         } else if (clientEngine.getSecurityContext() != null) {
             // security is enabled, let's do full JAAS authentication
@@ -119,7 +119,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
             // security is disabled let's verify that the username and password are null and the cluster names match
             return verifyEmptyCredentialsAndClusterName((PasswordCredentials) credentials);
         } else {
-            logger.severe("Hazelcast security is disabled.\n"
+            logger.warning("Hazelcast security is disabled.\n"
                     + "Null username and password values are expected.\n"
                     + "Only the cluster name is verified in this case!\n"
                     + "Current credentials type is: " + credentials.getClass().getName());
@@ -142,7 +142,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
             passed = Boolean.TRUE;
             return AUTHENTICATED;
         } catch (LoginException e) {
-            logger.warning(e);
+            logger.fine(e);
             return CREDENTIALS_FAILED;
         } finally {
             nodeEngine.getNode().getNodeExtension().getAuditlogService()
@@ -157,7 +157,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     private AuthenticationStatus verifyEmptyCredentialsAndClusterName(PasswordCredentials passwordCredentials) {
         if (passwordCredentials.getName() != null || passwordCredentials.getPassword() != null) {
-            logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid
+            logger.fine("Received auth from " + connection + " with clientUuid " + clientUuid
                     + " and clientName " + clientName + ", authentication rejected because security"
                     + " is disabled on the member, and client sends not-null username or password.");
             return CREDENTIALS_FAILED;
@@ -170,8 +170,10 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     private ClientMessage prepareUnauthenticatedClientMessage() {
         boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         Connection connection = endpoint.getConnection();
-        logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid
-                + " and clientName " + clientName + ", authentication failed");
+        if (logger.isFineEnabled()) {
+            logger.fine("Received auth from " + connection + " with clientUuid " + clientUuid + " and clientName " + clientName
+                    + ", authentication failed");
+        }
         byte status = CREDENTIALS_FAILED.getId();
         return encodeAuth(status, null, null, (byte) -1, "", -1, null, failoverSupported, null, null);
     }

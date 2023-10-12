@@ -36,7 +36,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -320,39 +320,31 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         assertEquals("removeIntercepted", map.remove("key3"));
     }
 
-    private static class MapInterceptorImpl implements MapInterceptor {
+    private static class MapInterceptorImpl extends MapInterceptorAdaptor {
+        private static final long serialVersionUID = 1L;
 
-        MapInterceptorImpl() {
-        }
-
+        @Override
         public Object interceptGet(Object value) {
             if ("value1".equals(value)) {
                 return "getIntercepted";
             }
-            return null;
+            return super.interceptGet(value);
         }
 
-        public void afterGet(Object value) {
-        }
-
+        @Override
         public Object interceptPut(Object oldValue, Object newValue) {
             if ("oldValue".equals(oldValue) && "newValue".equals(newValue)) {
                 return "putIntercepted";
             }
-            return null;
+            return super.interceptPut(oldValue, newValue);
         }
 
-        public void afterPut(Object value) {
-        }
-
+        @Override
         public Object interceptRemove(Object removedValue) {
             if ("value2".equals(removedValue)) {
                 return "removeIntercepted";
             }
-            return null;
-        }
-
-        public void afterRemove(Object value) {
+            return super.interceptRemove(removedValue);
         }
     }
 

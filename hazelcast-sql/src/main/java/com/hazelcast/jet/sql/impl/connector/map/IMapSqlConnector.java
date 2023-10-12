@@ -298,8 +298,8 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull List<HazelcastRexNode> projection,
             @Nullable IndexFilter indexFilter,
             @Nullable ComparatorEx<JetSqlRow> comparator,
-            boolean descending
-    ) {
+            boolean descending,
+            boolean requiresSort) {
         PartitionedMapTable table = context.getTable();
         MapIndexScanMetadata indexScanMetadata = new MapIndexScanMetadata(
                 table.getMapName(),
@@ -319,11 +319,11 @@ public class IMapSqlConnector implements SqlConnector {
                 "Index(" + toString(table) + ")",
                 readMapIndexSupplier(indexScanMetadata)
         );
-        // LP must be 1 - one local index contains all local partitions, if there are 2 local processors,
+        // LP must be 1 - one partitioned index contains all local partitions, if there are 2 local processors,
         // the index will be scanned twice and each time half of the partitions will be thrown out.
         scanner.localParallelism(1);
 
-        if (tableIndex.getType() == IndexType.SORTED) {
+        if (tableIndex.getType() == IndexType.SORTED && requiresSort) {
             Vertex sorter = context.getDag().newUniqueVertex(
                     "SortCombine",
                     ProcessorMetaSupplier.forceTotalParallelismOne(

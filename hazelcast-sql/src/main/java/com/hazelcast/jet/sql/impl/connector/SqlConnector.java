@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.kafka.impl.AbstractHazelcastAvroSerde;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -38,6 +39,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.security.Permission;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +48,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 
@@ -136,18 +139,28 @@ public interface SqlConnector {
     String OPTION_VALUE_COMPACT_TYPE_NAME = "valueCompactTypeName";
 
     /**
-     * Key record name for in generated Avro schema if {@value
-     * #OPTION_KEY_FORMAT} is {@value AVRO_FORMAT}. If not specified, defaults
-     * to {@code "jet.sql"}.
+     * Key record name in generated Avro schema if {@value #OPTION_KEY_FORMAT}
+     * is {@value AVRO_FORMAT}. If not specified, defaults to {@code "jet.sql"}.
      */
     String OPTION_KEY_AVRO_RECORD_NAME = "keyAvroRecordName";
 
     /**
-     * Value record name for in generated Avro schema if {@value
-     * #OPTION_KEY_FORMAT} is {@value AVRO_FORMAT}. If not specified, defaults
-     * to {@code "jet.sql"}.
+     * Value record name in generated Avro schema if {@value #OPTION_VALUE_FORMAT}
+     * is {@value AVRO_FORMAT}. If not specified, defaults to {@code "jet.sql"}.
      */
     String OPTION_VALUE_AVRO_RECORD_NAME = "valueAvroRecordName";
+
+    /**
+     * Inline Avro schema for key if {@value #OPTION_KEY_FORMAT} is
+     * {@value AVRO_FORMAT}.
+     */
+    String OPTION_KEY_AVRO_SCHEMA = AbstractHazelcastAvroSerde.OPTION_KEY_AVRO_SCHEMA;
+
+    /**
+     * Inline Avro schema for value if {@value #OPTION_VALUE_FORMAT} is
+     * {@value AVRO_FORMAT}.
+     */
+    String OPTION_VALUE_AVRO_SCHEMA = AbstractHazelcastAvroSerde.OPTION_VALUE_AVRO_SCHEMA;
 
     /**
      * The class name of the Custom Type's underlying Java Class
@@ -246,6 +259,22 @@ public interface SqlConnector {
             @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> userFields
     );
+
+    /**
+     * Returns the required permissions to execute
+     * {@link #resolveAndValidateFields(NodeEngine, SqlExternalResource, List)} method.
+     * <p>
+     * Implementors of {@link SqlConnector} don't need to override this method when {@code resolveAndValidateFields}
+     * doesn't support field resolution or when validation doesn't access the external resource.
+     * <p>
+     * The permissions are usually the same as required permissions to read from the external resource.
+     *
+     * @return list of permissions required to run {@link #resolveAndValidateFields}
+     */
+    @Nonnull
+    default List<Permission> permissionsForResolve(SqlExternalResource resource, NodeEngine nodeEngine) {
+        return emptyList();
+    }
 
     /**
      * Creates a {@link Table} object with the given fields. Should return
@@ -522,6 +551,8 @@ public interface SqlConnector {
         options.add(OPTION_VALUE_COMPACT_TYPE_NAME);
         options.add(OPTION_KEY_AVRO_RECORD_NAME);
         options.add(OPTION_VALUE_AVRO_RECORD_NAME);
+        options.add(OPTION_KEY_AVRO_SCHEMA);
+        options.add(OPTION_VALUE_AVRO_SCHEMA);
         options.add(OPTION_TYPE_JAVA_CLASS);
         options.add(OPTION_TYPE_COMPACT_TYPE_NAME);
         options.add(OPTION_TYPE_PORTABLE_FACTORY_ID);

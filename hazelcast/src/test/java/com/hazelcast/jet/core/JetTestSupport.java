@@ -98,6 +98,9 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     /**
      * This is needed to finish tests which got stuck in @Before, @BeforeClass, @After or @AfterClass method.
+     * Note that this rule applies to entire test execution (all methods with all parameters),
+     * not only to individual methods contrary to what might be expected from {@link Timeout} javadoc.
+     * This is caused by ordering of standard rules with respect to our custom rules.
      */
     @ClassRule
     public static Timeout globalTimeout = Timeout.seconds(15 * 60);

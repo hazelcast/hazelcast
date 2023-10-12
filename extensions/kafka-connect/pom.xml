@@ -60,6 +60,26 @@
                     </filters>
                 </configuration>
             </plugin>
+            <!--version 1.7.1 is buggy and does not use the cache properly-->
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.7.1</version>
+                <executions>
+                    <execution>
+                        <id>download-zip-file</id>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-datagen-0.6.0.zip</url>
+                            <unpack>false</unpack>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+
+            </plugin>
         </plugins>
     </build>
 
@@ -102,7 +122,7 @@
         <dependency>
             <groupId>com.couchbase.client</groupId>
             <artifactId>java-client</artifactId>
-            <version>3.4.9</version>
+            <version>3.4.11</version>
             <scope>test</scope>
         </dependency>
          <dependency>
@@ -119,5 +139,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>

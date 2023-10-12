@@ -73,9 +73,15 @@ public final class SqlConsole {
     private static final int EXPLAIN_ROWS_INITIAL_CAPACITY = 100;
     private static final List<SqlRow> ROWS_BUFFER = new ArrayList<>(EXPLAIN_ROWS_INITIAL_CAPACITY);
 
-    private SqlConsole() { }
+    private final HazelcastCommandLine.GlobalMixin globalMixin;
+    private final HazelcastInstance hzClient;
 
-    public static void run(HazelcastInstance hzClient) {
+    public SqlConsole(HazelcastCommandLine.GlobalMixin globalMixin, HazelcastInstance hzClient) {
+        this.globalMixin = globalMixin;
+        this.hzClient = hzClient;
+    }
+
+    public void run() {
         LineReader reader = LineReaderBuilder.builder().parser(new MultilineParser())
                 .variable(LineReader.SECONDARY_PROMPT_PATTERN, new AttributedStringBuilder()
                         .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR)).append("%M%P > ").toAnsi())
@@ -94,7 +100,7 @@ public final class SqlConsole {
         });
 
         PrintWriter writer = reader.getTerminal().writer();
-        writer.println(sqlStartingPrompt(hzClient));
+        writer.println(sqlStartingPrompt());
         writer.flush();
 
         for (; ; ) {
@@ -165,7 +171,7 @@ public final class SqlConsole {
                 writer.flush();
                 break;
             }
-            executeSqlCmd(hzClient, command, reader.getTerminal(), activeSqlResult);
+            executeSqlCmd(command, reader.getTerminal(), activeSqlResult);
         }
     }
 
@@ -177,14 +183,13 @@ public final class SqlConsole {
         }
     }
 
-    private static void executeSqlCmd(
-            HazelcastInstance hz,
+    private void executeSqlCmd(
             String command,
             Terminal terminal,
             AtomicReference<SqlResult> activeSqlResult
     ) {
         PrintWriter out = terminal.writer();
-        try (SqlResult sqlResult = hz.getSql().execute(command)) {
+        try (SqlResult sqlResult = hzClient.getSql().execute(command)) {
             activeSqlResult.set(sqlResult);
 
             // if it's a result with an update count, just print it
@@ -225,10 +230,7 @@ public final class SqlConsole {
             out.println(message);
         } catch (HazelcastSqlException e) {
             // the query failed to execute with HazelcastSqlException
-            String errorPrompt = new AttributedStringBuilder()
-                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
-                    .append(e.getMessage())
-                    .toAnsi();
+            String errorPrompt = getErrorPrompt(e);
             out.println(errorPrompt);
         } catch (Exception e) {
             // the query failed to execute with an unexpected exception
@@ -242,6 +244,24 @@ public final class SqlConsole {
         }
     }
 
+    private String getErrorPrompt(HazelcastSqlException hazelcastSqlException) {
+        Throwable cause = hazelcastSqlException.getCause();
+        String errorPrompt;
+        if (globalMixin.isVerbose() && cause != null) {
+            errorPrompt = new AttributedStringBuilder()
+                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                    .append(hazelcastSqlException.getMessage())
+                    .append("\nStack trace:\n")
+                    .append(cause.getMessage())
+                    .toAnsi();
+        } else {
+            errorPrompt = new AttributedStringBuilder()
+                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                    .append(hazelcastSqlException.getMessage())
+                    .toAnsi();
+        }
+        return errorPrompt;
+    }
     private static int printExplain(
             SqlRowMetadata rowMetadata,
             SqlResult sqlResult,
@@ -273,8 +293,8 @@ public final class SqlConsole {
         return ROWS_BUFFER.size();
     }
 
-    private static String sqlStartingPrompt(HazelcastInstance hz) {
-        HazelcastClientInstanceImpl hazelcastClientImpl = getHazelcastClientInstanceImpl(hz);
+    private String sqlStartingPrompt() {
+        HazelcastClientInstanceImpl hazelcastClientImpl = getHazelcastClientInstanceImpl(hzClient);
         ClientClusterService clientClusterService = hazelcastClientImpl.getClientClusterService();
         String versionString = "Hazelcast " + clientClusterService.getMasterMember().getVersion().toString();
         Cluster cluster = hazelcastClientImpl.getCluster();

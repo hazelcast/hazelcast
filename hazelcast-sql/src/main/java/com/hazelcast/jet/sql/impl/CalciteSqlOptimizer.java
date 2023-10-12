@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.core.DAG;
@@ -236,6 +235,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final IMapResolver iMapResolver;
     private final List<TableResolver> tableResolvers;
+    private final List<QueryPlanListener> queryPlanListeners;
     private final PlanExecutor planExecutor;
     private final RelationsStorage relationsStorage;
 
@@ -257,6 +257,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 nodeEngine.getHazelcastInstance().getConfig().getSecurityConfig().isEnabled()
         );
         this.tableResolvers = Arrays.asList(tableResolverImpl, dataConnectionResolver);
+        this.queryPlanListeners = new ArrayList<>();
         this.planExecutor = new PlanExecutor(
                 nodeEngine,
                 tableResolverImpl,
@@ -307,14 +308,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     @Override
     public SqlPlan prepare(OptimizationTask task) {
         // 1. Prepare context.
-        int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 
         OptimizerContext context = OptimizerContext.create(
                 task.getSchema(),
                 task.getSearchPaths(),
                 task.getArguments(),
-                memberCount,
-                iMapResolver);
+                iMapResolver,
+                task.getSecurityContext());
 
         try {
             OptimizerContext.setThreadContext(context);
@@ -456,7 +456,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlPlan toDropIndexPlan(PlanKey planKey, SqlDropIndex sqlDropIndex) {
-        return new DropIndexPlan(planKey, sqlDropIndex.indexName(), sqlDropIndex.ifExists(), planExecutor);
+        return new DropIndexPlan(planKey, sqlDropIndex.indexName(), sqlDropIndex.ifExists());
     }
 
     private SqlPlan toCreateJobPlan(PlanKey planKey, QueryParseResult parseResult, OptimizerContext context, String query) {
@@ -558,7 +558,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 false
         );
 
-        return new ExplainStatementPlan(planKey, physicalRel, planExecutor);
+        List<Permission> permissions = extractPermissions(physicalRel);
+
+        return new ExplainStatementPlan(planKey, physicalRel, permissions, planExecutor);
     }
 
     private SqlPlan toCreateTypePlan(PlanKey planKey, SqlCreateType sqlNode) {
@@ -740,7 +742,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
-    private List<Permission> extractPermissions(PhysicalRel physicalRel) {
+    static List<Permission> extractPermissions(PhysicalRel physicalRel) {
         List<Permission> permissions = new ArrayList<>();
 
         physicalRel.accept(new RelShuttleImpl() {
@@ -801,6 +803,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
         }
+
+        PhysicalRel finalPhysicalRel = physicalRel;
+        queryPlanListeners.forEach(l -> l.onQueryPlanBuilt(finalPhysicalRel));
         return physicalRel;
     }
 
@@ -951,6 +956,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);
         final Map<String, List<Map<String, RexNode>>> prunabilityMap = query.extractPrunability(root);
 
+        // Note: by the idea, it's safe to use non-secure context here (it is used by ourself).
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
 
         final Map<String, List<Map<String, Expression<?>>>> result = new HashMap<>();

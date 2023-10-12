@@ -17,13 +17,16 @@
 package com.hazelcast.spi.impl.operationexecutor;
 
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.map.impl.operation.steps.engine.StepAwareOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
 
@@ -178,22 +181,29 @@ public abstract class OperationRunner {
         }
     }
 
-    public static void runDirect(Operation op, NodeEngineImpl nodeEngine,
-                                 Set<Operation> asyncOperations) throws Exception {
+    public static CallStatus runDirect(Operation op, NodeEngineImpl nodeEngine,
+                                       Set<Operation> asyncOperations,
+                                       Consumer<Operation> backupOpAfterRun) throws Exception {
+        CallStatus callStatus;
         try {
             op.pushThreadContext();
             op.beforeRun();
-            CallStatus callStatus = op.call();
+            callStatus = op.call();
             op.afterRun();
 
             if (callStatus.ordinal() == OFFLOAD_ORDINAL) {
                 Offload offload = (Offload) callStatus;
                 offload.init(nodeEngine, asyncOperations);
+                if (op instanceof StepAwareOperation && op instanceof BackupOperation) {
+                    ((StepAwareOperation<?>) op).setBackupOpAfterRun(backupOpAfterRun);
+                }
                 offload.start();
             }
         } finally {
             op.popThreadContext();
             op.afterRunFinal();
         }
+
+        return callStatus;
     }
 }

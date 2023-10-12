@@ -75,8 +75,7 @@ public final class StepResponseUtil {
             if (operation instanceof Notifier) {
                 final Notifier notifier = (Notifier) operation;
                 if (notifier.shouldNotify()) {
-                    ((NodeEngineImpl) state.getRecordStore().getMapContainer().getMapServiceContext().getNodeEngine())
-                            .getOperationParker().unpark(notifier);
+                    getNodeEngine(state).getOperationParker().unpark(notifier);
                 }
             }
         } catch (Throwable e) {
@@ -84,6 +83,10 @@ public final class StepResponseUtil {
         }
     }
 
+    private static NodeEngineImpl getNodeEngine(State state) {
+        return (NodeEngineImpl) state.getRecordStore()
+                .getMapContainer().getMapServiceContext().getNodeEngine();
+    }
 
     private static void logOperationError(Operation op, Throwable e) {
         if (e instanceof OutOfMemoryError) {
@@ -104,8 +107,6 @@ public final class StepResponseUtil {
     private static OperationService getOperationService(State state) {
         MapContainer mapContainer = state.getOperation().getMapContainer();
         MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
-        OperationService operationService = mapServiceContext.getNodeEngine().getOperationService();
-        return operationService;
+        return mapServiceContext.getNodeEngine().getOperationService();
     }
-
 }

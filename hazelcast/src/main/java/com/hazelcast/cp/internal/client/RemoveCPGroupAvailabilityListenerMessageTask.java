@@ -66,7 +66,7 @@ public class RemoveCPGroupAvailabilityListenerMessageTask extends AbstractAsyncM
 
     @Override
     public String getMethodName() {
-        return null;
+        return "removeCPGroupAvailabilityListener";
     }
 
     @Override

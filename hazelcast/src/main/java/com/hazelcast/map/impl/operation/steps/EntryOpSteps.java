@@ -110,6 +110,8 @@ public enum EntryOpSteps implements IMapOpStep {
             ExecutorStats executorStats = mapContainer.getMapServiceContext()
                     .getOffloadedEntryProcessorExecutorStats();
 
+            EntryOpSteps.interceptGet(state);
+
             if (statisticsEnabled) {
                 // When stats are enabled, to update
                 // the stats wrap execution inside a
@@ -163,6 +165,7 @@ public enum EntryOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
+            EntryOpSteps.interceptGet(state);
 
             EntryOperator entryOperator = state.getOperator();
             entryOperator.init(state.getKey(), state.getOldValue(),
@@ -218,7 +221,7 @@ public enum EntryOpSteps implements IMapOpStep {
                         }
                         Object newValue = entryOperator.extractNewValue();
                         newValue = mapServiceContext.interceptPut(mapContainer.getInterceptorRegistry(),
-                                state.getOldValue(), newValue);
+                                entryOperator.getOldValueClone(), newValue);
                         state.setNewValue(newValue);
                         state.setTtl(entryOperator.getEntry().getNewTtl());
                         state.setChangeExpiryOnUpdate(entryOperator.getEntry().isChangeExpiryOnUpdate());
@@ -348,5 +351,12 @@ public enum EntryOpSteps implements IMapOpStep {
         EntryOperation operation = (EntryOperation) state.getOperation();
         Object oldValueByInMemoryFormat = operation.convertOldValueToHeapData(state.getOldValue());
         state.setOldValue(oldValueByInMemoryFormat);
+    }
+
+    private static void interceptGet(State state) {
+        MapContainer mapContainer = state.getRecordStore().getMapContainer();
+        MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
+        Object value = mapServiceContext.interceptGet(mapContainer.getInterceptorRegistry(), state.getOldValue());
+        state.setOldValue(value);
     }
 }

@@ -137,7 +137,7 @@ public class SqlCreateType extends SqlCreate {
         SqlPrettyWriter writer = new SqlPrettyWriter(SqlPrettyWriter.config());
 
         SqlCreateType t = new SqlCreateType(
-                identifier(CATALOG, SCHEMA_NAME_PUBLIC, type.getName()),
+                identifier(CATALOG, SCHEMA_NAME_PUBLIC, type.name()),
                 nodeList(type.getFields(), f -> new SqlTypeColumn(
                         identifier(f.getName()), new SqlDataType(f.getQueryDataType(), SqlParserPos.ZERO), SqlParserPos.ZERO)),
                 reconstructOptions(type.options()),

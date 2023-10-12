@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,7 +76,7 @@ public class MapEntriesWithPredicateMessageTask
 
     @Override
     public String getMethodName() {
-        return "entrySet";
+        return SecurityInterceptorConstants.ENTRY_SET;
     }
 
 }

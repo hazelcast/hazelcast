@@ -20,7 +20,6 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.impl.util.IOUtil;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.JsonFileFormat;
@@ -172,7 +171,7 @@ public class LocalFileSourceFactory implements FileSourceFactory {
         @Nonnull @Override
         @SuppressWarnings("unchecked")
         <T> FunctionEx<InputStream, Stream<T>> mapInputStreamFn(FileFormat<T> format) {
-            return is -> (Stream<T>) Stream.of(IOUtil.readFully(is));
+            return is -> (Stream<T>) Stream.of(is.readAllBytes());
         }
 
         @Nonnull @Override
@@ -188,7 +187,7 @@ public class LocalFileSourceFactory implements FileSourceFactory {
         <T> FunctionEx<InputStream, Stream<T>> mapInputStreamFn(FileFormat<T> format) {
             TextFileFormat textFileFormat = (TextFileFormat) format;
             String thisCharset = textFileFormat.charset().name();
-            return is -> (Stream<T>) Stream.of(new String(IOUtil.readFully(is), Charset.forName(thisCharset)));
+            return is -> (Stream<T>) Stream.of(new String(is.readAllBytes(), Charset.forName(thisCharset)));
         }
 
         @Nonnull @Override

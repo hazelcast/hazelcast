@@ -39,7 +39,7 @@ import java.util.concurrent.ScheduledFuture;
 
 import static com.hazelcast.internal.nio.Packet.FLAG_JET_FLOW_CONTROL;
 import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataInput;
 import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataOutput;
 import static com.hazelcast.jet.impl.util.ImdgUtil.getMemberConnection;
@@ -144,7 +144,7 @@ public class Networking {
             }
             for (Entry<SenderReceiverKey, ReceiverTasklet> en : receiverMap.entrySet()) {
                 assert !en.getKey().address.equals(nodeEngine.getThisAddress());
-                MemberData md = res.computeIfAbsent(en.getKey().address, address -> new MemberData(address));
+                MemberData md = res.computeIfAbsent(en.getKey().address, MemberData::new);
                 if (md.startedExecutionId == null) {
                     md.startedExecutionId = execCtx.executionId();
                     md.output.writeLong(md.startedExecutionId);

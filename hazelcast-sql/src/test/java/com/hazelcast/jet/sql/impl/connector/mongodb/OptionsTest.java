@@ -44,7 +44,7 @@ public class OptionsTest {
         LocalDateTime timeDate = LocalDateTime.ofEpochSecond(time / 1000, 0, UTC);
 
         // when
-        BsonTimestamp startAt = Options.startAt(ImmutableMap.of(Options.START_AT_OPTION, String.valueOf(time)));
+        BsonTimestamp startAt = Options.startAtTimestamp(ImmutableMap.of(Options.START_AT_OPTION, String.valueOf(time)));
 
         // then
         LocalDateTime instant = LocalDateTime.ofEpochSecond(startAt.getTime(), 0, UTC);
@@ -59,7 +59,7 @@ public class OptionsTest {
         LocalDateTime timeDate = LocalDateTime.ofEpochSecond(time / 1000, 0, UTC);
 
         // when
-        BsonTimestamp startAt = Options.startAt(ImmutableMap.of(Options.START_AT_OPTION, "now"));
+        BsonTimestamp startAt = Options.startAtTimestamp(ImmutableMap.of(Options.START_AT_OPTION, "now"));
 
         // then
         LocalDateTime instant = LocalDateTime.ofEpochSecond(startAt.getTime(), 0, UTC);
@@ -75,7 +75,7 @@ public class OptionsTest {
         String dateAsString = timeDate.format(DateTimeFormatter.ISO_DATE_TIME) + "Z";
 
         // when
-        BsonTimestamp startAt = Options.startAt(ImmutableMap.of(Options.START_AT_OPTION, dateAsString));
+        BsonTimestamp startAt = Options.startAtTimestamp(ImmutableMap.of(Options.START_AT_OPTION, dateAsString));
 
         // then
         LocalDateTime instant = LocalDateTime.ofEpochSecond(startAt.getTime(), 0, UTC);
@@ -91,7 +91,7 @@ public class OptionsTest {
 
         // when
         QueryException queryException = assertThrows(QueryException.class, () ->
-                Options.startAt(ImmutableMap.of(Options.START_AT_OPTION, dateAsString)));
+                Options.startAtTimestamp(ImmutableMap.of(Options.START_AT_OPTION, dateAsString)));
 
         // then
         assertThat(queryException).hasMessageContaining("Invalid startAt value:");

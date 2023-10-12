@@ -105,7 +105,7 @@ public class MemberSchemaService implements
      * @param schemas to replicate, if necessary
      */
     public InternalCompletableFuture<Void> putAllAsync(List<Schema> schemas) {
-        if (schemas.size() == 0) {
+        if (schemas.isEmpty()) {
             return InternalCompletableFuture.newCompletedFuture(null);
         }
         if (logger.isFinestEnabled()) {

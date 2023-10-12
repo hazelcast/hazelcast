@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.impl.Comparison;
@@ -151,7 +151,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         MapService mapService = getNodeEngineImpl(hz2).getService(MapService.SERVICE_NAME);
         MapContainer mapContainerOnNode2 = mapService.getMapServiceContext().getMapContainer("map");
 
-        assertEquals(1, mapContainerOnNode2.getIndexes().getIndexes().length);
+        assertEquals(1, mapContainerOnNode2.getGlobalIndexRegistry().getIndexes().length);
         assertEquals(1, mapContainerOnNode2.getInterceptorRegistry().getInterceptors().size());
         assertEquals(Person.class,
                 mapContainerOnNode2.getInterceptorRegistry().getInterceptors().get(0).interceptGet("anything").getClass());
@@ -228,7 +228,8 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
 
     private static final Person RETURNED_FROM_INTERCEPTOR = new Person("THE_PERSON", 100);
 
-    public static class FixedReturnInterceptor implements MapInterceptor {
+    public static class FixedReturnInterceptor extends MapInterceptorAdaptor {
+        private static final long serialVersionUID = 1L;
 
         @Override
         public Object interceptGet(Object value) {
@@ -236,29 +237,8 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void afterGet(Object value) {
-
-        }
-
-        @Override
-        public Object interceptPut(Object oldValue, Object newValue) {
-            // allow put operations to proceed
-            return null;
-        }
-
-        @Override
-        public void afterPut(Object value) {
-
-        }
-
-        @Override
         public Object interceptRemove(Object removedValue) {
             return RETURNED_FROM_INTERCEPTOR;
-        }
-
-        @Override
-        public void afterRemove(Object value) {
-
         }
     }
 

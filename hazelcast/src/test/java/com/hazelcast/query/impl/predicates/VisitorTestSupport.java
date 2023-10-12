@@ -17,15 +17,15 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.test.ObjectTestUtils;
+import com.hazelcast.query.impl.IndexRegistry;
 
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 
-import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 import static com.hazelcast.internal.util.collection.ArrayUtils.createCopy;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertArrayEquals;
@@ -46,7 +46,7 @@ public abstract class VisitorTestSupport {
     /**
      * @return the indexes available to the visitor being tested.
      */
-    protected abstract Indexes getIndexes();
+    protected abstract IndexRegistry getIndexes();
 
     protected static void assertEqualPredicate(EqualPredicate expected, Predicate actual) {
         assertTrue(actual instanceof EqualPredicate);
@@ -238,15 +238,15 @@ public abstract class VisitorTestSupport {
     }
 
     private static boolean compositeRangePredicatesAreEqual(CompositeRangePredicate lhs, CompositeRangePredicate rhs) {
-        return ObjectTestUtils.equals(lhs.indexName, rhs.indexName)
-            && ObjectTestUtils.equals(lhs.components, rhs.components)
+        return Objects.equals(lhs.indexName, rhs.indexName)
+            && Objects.equals(lhs.components, rhs.components)
             && lhs.from.equals(rhs.from) && lhs.fromInclusive == rhs.fromInclusive && lhs.to.equals(rhs.to)
             && lhs.toInclusive == rhs.toInclusive;
     }
 
     private static boolean compositeEqualPredicatesAreEqual(CompositeEqualPredicate lhs, CompositeEqualPredicate rhs) {
-        return ObjectTestUtils.equals(lhs.indexName, rhs.indexName)
-            && ObjectTestUtils.equals(lhs.components, rhs.components) && lhs.value.equals(rhs.value);
+        return Objects.equals(lhs.indexName, rhs.indexName)
+            && Objects.equals(lhs.components, rhs.components) && lhs.value.equals(rhs.value);
     }
 
     private static class ReferencePredicate implements Predicate {
