@@ -1460,7 +1460,7 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>n
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
