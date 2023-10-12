@@ -59,7 +59,7 @@ public class ClientStatisticsService {
 
     private final MetricsRegistry metricsRegistry;
     private final boolean enabled;
-    private final ILogger logger = Logger.getLogger(this.getClass());
+    private final ILogger logger = Logger.getLogger(getClass());
 
     private final HazelcastClientInstanceImpl client;
 
