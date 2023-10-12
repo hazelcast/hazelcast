@@ -39,8 +39,8 @@ import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.tryIncrement;
 
 public abstract class AsyncHazelcastWriterP implements Processor {
-    private static final ILogger LOGGER = Logger.getLogger(AsyncHazelcastWriterP.class);
     protected static final int MAX_PARALLEL_ASYNC_OPS_DEFAULT = 1000;
+    private static final ILogger LOGGER = Logger.getLogger(AsyncHazelcastWriterP.class);
 
     private final int maxParallelAsyncOps;
     private final AtomicInteger numConcurrentOps = new AtomicInteger();

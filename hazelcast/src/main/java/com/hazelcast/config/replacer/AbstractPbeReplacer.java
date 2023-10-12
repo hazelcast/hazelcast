@@ -38,8 +38,6 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
  * {@link #getPassword()} implementation - the password will be used to generate a secret key.
  */
 public abstract class AbstractPbeReplacer implements ConfigReplacer {
-    private static final ILogger LOGGER = Logger.getLogger(AbstractPbeReplacer.class);
-
     /**
      * Replacer property name to configure {@link Cipher} algorithm name.
      */
@@ -74,6 +72,8 @@ public abstract class AbstractPbeReplacer implements ConfigReplacer {
      * Default value for {@value #PROPERTY_SECRET_KEY_FACTORY_ALGORITHM} property.
      */
     public static final String DEFAULT_SECRET_KEY_FACTORY_ALGORITHM = "PBKDF2WithHmacSHA256";
+
+    private static final ILogger LOGGER = Logger.getLogger(AbstractPbeReplacer.class);
 
     private String cipherAlgorithm;
     private String secretKeyFactoryAlgorithm;
