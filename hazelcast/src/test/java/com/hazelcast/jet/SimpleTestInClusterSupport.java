@@ -65,7 +65,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     protected static void initialize(int memberCount, @Nullable Config config) {
         assertNoRunningInstances();
 
-      initializeWitSupplier(memberCount, () -> config == null ? smallInstanceConfig() : config);
+        initializeWitSupplier(memberCount, () -> config == null ? smallInstanceConfig() : config);
     }
 
     protected static void initializeWitSupplier(int memberCount, Supplier<Config> configSupplier) {
@@ -82,15 +82,21 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         assertEqualsEventually(() -> instance().getLifecycleService().isRunning(), true);
     }
 
-    protected static void initializeWithClient(
-            int memberCount,
-            @Nullable Config config,
-            @Nullable ClientConfig clientConfig
-    ) {
+    protected static void initializeWithClient(int memberCount,
+                                               @Nullable Config config,
+                                               @Nullable ClientConfig clientConfig) {
+
+        Supplier<Config> configSupplier = () -> config == null ? smallInstanceConfig() : config;
+        initializeWithClientAndConfigSupplier(memberCount, configSupplier, clientConfig);
+    }
+
+    protected static void initializeWithClientAndConfigSupplier(int memberCount,
+                                                                Supplier<Config> configSupplier,
+                                                                @Nullable ClientConfig clientConfig) {
         if (clientConfig == null) {
             clientConfig = new ClientConfig();
         }
-        initialize(memberCount, config);
+        initializeWitSupplier(memberCount, configSupplier);
         client = factory.newHazelcastClient(clientConfig);
     }
 
@@ -141,7 +147,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         SUPPORT_LOGGER.info("Destroying " + objects.size()
                 + " distributed objects in SimpleTestInClusterSupport.@After: "
                 + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())
-                         .collect(Collectors.joining(", ", "[", "]")));
+                .collect(Collectors.joining(", ", "[", "]")));
         for (DistributedObject o : objects) {
             o.destroy();
         }
