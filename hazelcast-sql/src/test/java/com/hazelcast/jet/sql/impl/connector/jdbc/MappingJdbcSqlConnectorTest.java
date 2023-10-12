@@ -74,7 +74,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingWithExternalTableName() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
 
         String mappingName = "mapping_" + randomName();
         createMapping(tableName, mappingName);
@@ -91,7 +91,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         if (databaseProvider instanceof OracleDatabaseProvider) {
             executeJdbc("GRANT UNLIMITED TABLESPACE TO " + schemaName);
         }
-        createTableWithQuotation(quote("schema1")+ "." + quote(tableName));
+        createTable(quote("schema1")+ "." + quote(tableName));
 
         String mappingName = "mapping_" + randomName();
         createMapping("\"schema1\".\"" + tableName + '\"', mappingName);
@@ -114,7 +114,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingWithExternalTableNameTooManyComponents() throws Exception {
-        createTable(tableName);
+        createTableNoQuotation(tableName);
 
         assertThatThrownBy(() ->
                 execute("CREATE MAPPING " + tableName
@@ -131,7 +131,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingWithExternalTableNameTooManyComponentsNoQuotes() throws Exception {
-        createTable(tableName);
+        createTableNoQuotation(tableName);
 
         assertThatThrownBy(() ->
                 execute("CREATE MAPPING " + tableName
@@ -195,7 +195,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingWithExternalFieldName() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
 
         execute("CREATE MAPPING " + tableName
                 + " ("
@@ -218,7 +218,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingFieldDoesNotExist() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
 
         assertThatThrownBy(() ->
                 execute("CREATE MAPPING " + tableName
@@ -263,7 +263,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingFieldTypesDoNotMatch() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
 
         assertThatThrownBy(() ->
                 execute("CREATE MAPPING " + tableName
@@ -283,7 +283,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void when_createMappingWithImplicitFieldTypesDefinition_then_orderIsPreserved() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         insertItems(quote(tableName), 2);
 
         execute("CREATE MAPPING " + tableName
@@ -302,7 +302,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // given
         String dcName = randomName();
         String name = randomName();
-        createTableWithQuotation(quote(name));
+        createTable(quote(name));
         Map<String, String> options = new HashMap<>();
         options.put("jdbcUrl", dbConnectionUrl);
 
@@ -332,7 +332,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // given
         String dcName = randomName();
         String mappingName = randomName();
-        createTableWithQuotation(quote(mappingName));
+        createTable(quote(mappingName));
         Map<String, String> options = new HashMap<>();
         options.put("jdbcUrl", dbConnectionUrl);
 
@@ -364,7 +364,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // given
         String dcName = randomName();
         String mappingName = randomName();
-        createTableWithQuotation(quote(mappingName));
+        createTable(quote(mappingName));
 
         // when
         createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
@@ -392,7 +392,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // given
         String dcName = randomName();
         String mappingName = randomName();
-        createTableWithQuotation(quote(mappingName));
+        createTable(quote(mappingName));
 
         createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
         createJdbcMappingUsingDataConnection(mappingName, dcName);
@@ -419,7 +419,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // given
         String dcName = randomName();
         String mappingName = randomName();
-        createTableWithQuotation(quote(mappingName));
+        createTable(quote(mappingName));
 
         createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
         createJdbcMappingUsingDataConnection(mappingName, dcName);
@@ -447,7 +447,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void createMappingAutoResolveColumns() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
 
         execute("CREATE MAPPING " + tableName
                 + " DATA CONNECTION " + TEST_DATABASE_REF
@@ -505,7 +505,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         Config config = instance.getConfig();
 
         // Create table on first DB
-        createTable(tableName);
+        createTableNoQuotation(tableName);
 
         String newDBName = "db1";
         executeJdbc("CREATE DATABASE " + newDBName);
@@ -549,7 +549,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         Config config = instance.getConfig();
 
         // Create table on first DB
-        createTable(tableName);
+        createTableNoQuotation(tableName);
 
         String newDBName = "db2";
         executeJdbc("CREATE DATABASE " + newDBName);

@@ -39,7 +39,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void sinkIntoTable() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         createMapping(tableName);
 
         execute("SINK INTO " + tableName + " VALUES (0, 'name-0')");
@@ -51,7 +51,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void sinkIntoTableWithExternalName() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         String mappingName = "mapping_" + randomName();
         createMapping(tableName, mappingName);
 
@@ -64,7 +64,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void sinkIntoTableColumnHasExternalName() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -82,7 +82,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void sinkIntoTableWithColumns() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         createMapping(tableName);
 
         execute("SINK INTO " + tableName + " (name, id) VALUES ('name-0', 0), ('name-1', 1)");
@@ -96,7 +96,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void sinkIntoTableWithColumnsColumnHasExternalName() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -116,7 +116,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void sinkIntoTableMultipleValues() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         createMapping(tableName);
 
         execute("SINK INTO " + tableName + " SELECT v,'name-' || v FROM TABLE(generate_series(0,4))");
@@ -147,7 +147,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableWithColumns() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         createMapping(tableName);
 
         // Insert items with JDBC to make sure DB is populated without using Jet

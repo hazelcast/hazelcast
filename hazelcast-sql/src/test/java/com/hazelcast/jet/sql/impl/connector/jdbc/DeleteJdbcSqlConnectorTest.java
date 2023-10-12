@@ -39,7 +39,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void deleteFromTable() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         insertItems(quote(tableName), 2);
         createMapping(tableName);
 
@@ -50,7 +50,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void deleteFromTableWhereId() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         insertItems(quote(tableName), 2);
         createMapping(tableName);
 
@@ -63,7 +63,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void deleteFromTableWhereIdColumnWithExternalName() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         insertItems(quote(tableName), 2);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -82,7 +82,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void deleteFromTableWhereOnNonPKColumn() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         insertItems(quote(tableName), 2);
         createMapping(tableName);
 
@@ -95,7 +95,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void deleteFromTableWhereOnNonPKColumnWithExternalNme() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         insertItems(quote(tableName), 2);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -114,7 +114,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void deleteFromTableUsingMappingName() throws Exception {
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         insertItems(quote(tableName), 2);
 
         String mappingName = "mapping_" + randomName();

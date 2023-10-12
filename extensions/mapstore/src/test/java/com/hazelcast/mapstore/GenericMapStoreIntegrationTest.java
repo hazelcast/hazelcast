@@ -110,7 +110,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     @Before
     public void setUp() throws Exception {
         tableName = prefix + testName.getMethodName().toLowerCase(Locale.ROOT);
-        createTable(tableName);
+        createTableNoQuotation(tableName);
         insertItems(tableName, 1);
 
         MapConfig mapConfig = new MapConfig(tableName);
@@ -202,7 +202,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     public void testDynamicDataConnectionConfig() throws Exception {
         String randomTableName = randomTableName();
 
-        createTable(randomTableName);
+        createTableNoQuotation(randomTableName);
         assertThat(jdbcRowsTable(randomTableName)).isEmpty();
 
         HazelcastInstance client = client();

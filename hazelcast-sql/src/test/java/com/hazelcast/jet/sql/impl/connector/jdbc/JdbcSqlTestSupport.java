@@ -100,11 +100,11 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     /**
      * Creates table with id INT, name VARCHAR columns
      */
-    public static void createTable(String tableName) throws SQLException {
+    public static void createTableNoQuotation(String tableName) throws SQLException {
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)");
     }
 
-    protected void createTableWithQuotation(String tableName) throws SQLException {
+    protected void createTable(String tableName) throws SQLException {
         createTable(tableName, quote("id") + " INT PRIMARY KEY", quote("name") + "VARCHAR(100)");
     }
     public static void createTable(String tableName, String... columns) throws SQLException {

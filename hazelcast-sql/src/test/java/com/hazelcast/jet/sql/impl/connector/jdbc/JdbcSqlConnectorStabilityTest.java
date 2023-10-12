@@ -39,7 +39,7 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
         initialize(provider);
 
         tableName = randomTableName();
-        createTable(tableName);
+        createTableNoQuotation(tableName);
         insertItems(tableName, 5);
 
         execute(

@@ -89,7 +89,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenMapLoaderInit_thenCreateMappingForMapStoreConfig() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
 
         mapLoader = createMapLoader();
         assertMappingCreated();
@@ -97,7 +97,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenMapLoaderInitCalledOnNonMaster_thenInitAndLoadValue() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 1);
 
         mapLoader = createMapLoader(instances()[1]);
@@ -107,7 +107,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenValidMappingExists_whenMapLoaderInit_thenInitAndLoadRecord() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 1);
         createMapping(mapName, MAPPING_PREFIX + mapName);
 
@@ -118,7 +118,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenMapLoaderDestroyOnMaster_thenDropMapping() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
 
         mapLoader = createMapLoader();
         assertMappingCreated();
@@ -129,7 +129,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenMapLoaderDestroyOnNonMaster_thenDropMapping() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
 
         mapLoader = createMapLoader();
         assertMappingCreated();
@@ -141,7 +141,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void whenMapLoaderInitOnNonMaster_thenLoadWaitsForSuccessfulInit() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 1);
 
         GenericMapLoader<Object> mapLoaderNonMaster = createMapLoader(instances()[1]);
@@ -153,7 +153,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRow_whenLoad_thenReturnGenericRecord() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 1);
 
         mapLoader = createMapLoader();
@@ -268,7 +268,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenDefaultTypeName_whenLoad_thenReturnGenericRecordMapNameAsTypeName() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 1);
 
         mapLoader = createMapLoader();
@@ -279,7 +279,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenTypeName_whenLoad_thenReturnGenericRecordWithCorrectTypeName() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 1);
 
         Properties properties = new Properties();
@@ -308,7 +308,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowAndColumnsWithoutId_whenLoadAndLoadAll_thenReturnGenericRecordWithoutId() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 1);
 
         Properties properties = new Properties();
@@ -325,7 +325,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowDoesNotExist_whenLoad_thenReturnNull() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         mapLoader = createMapLoader();
 
         GenericRecord record = mapLoader.load(0);
@@ -334,7 +334,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRow_whenLoadAll_thenReturnMapWithGenericRecord() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         mapLoader = createMapLoader();
 
         insertItems(quote(mapName), 1);
@@ -380,7 +380,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRowDoesNotExist_whenLoadAll_thenReturnEmptyMap() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         mapLoader = createMapLoader();
 
         Map<Integer, GenericRecord> records = mapLoader.loadAll(newArrayList(0));
@@ -389,7 +389,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenRow_whenLoadAllKeys_thenReturnKeys() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         mapLoader = createMapLoader();
 
         insertItems(quote(mapName), 1);
@@ -464,7 +464,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenNoRows_whenLoadAllKeys_thenEmptyIterable() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         mapLoader = createMapLoader();
 
         Iterable<Integer> ids = mapLoader.loadAllKeys();
@@ -511,7 +511,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     public void givenTableNameProperty_whenCreateMapLoader_thenUseTableName() throws Exception {
         String tableName = randomTableName();
 
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         insertItems(quote(tableName), 1);
 
         Properties properties = new Properties();
@@ -530,7 +530,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         String tableName = randomTableName() + "-with-hyphen";
         String fullTableName = schemaName + "." + quote(tableName);
 
-        createTableWithQuotation(fullTableName);
+        createTable(fullTableName);
         insertItems(fullTableName, 1);
 
         Properties properties = new Properties();
@@ -553,7 +553,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         String tableName = randomTableName() + ".with_dot";
         String fullTableName = schemaName + "." + quote(tableName);
 
-        createTableWithQuotation(fullTableName);
+        createTable(fullTableName);
         insertItems(fullTableName, 1);
 
         Properties properties = new Properties();

@@ -68,7 +68,7 @@ public class MySqlDownTest extends JdbcSqlTestSupport {
 
     @Test
     public void showDataConnectionsShouldReturnQuickly() throws Exception {
-        createTable("my_table");
+        createTableNoQuotation("my_table");
 
         final ToxiproxyClient toxiproxyClient = new ToxiproxyClient(toxiproxy.getHost(), toxiproxy.getControlPort());
         final Proxy proxy = toxiproxyClient.createProxy("mysql", "0.0.0.0:8666", "mysql:3306");

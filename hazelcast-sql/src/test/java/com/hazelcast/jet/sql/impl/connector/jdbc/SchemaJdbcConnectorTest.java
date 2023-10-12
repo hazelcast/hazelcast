@@ -105,7 +105,7 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
         } catch (Exception e) {
             logger.info("Could not create schema", e);
         }
-        createTableWithQuotation(tableFull);
+        createTable(tableFull);
     }
 
     @After

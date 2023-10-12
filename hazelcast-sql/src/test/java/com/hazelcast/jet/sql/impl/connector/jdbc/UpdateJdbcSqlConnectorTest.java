@@ -39,7 +39,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTable() throws Exception {
-        createTableWithQuotation(tableName);
+        createTable(tableName);
         insertItems(tableName, 2);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -60,7 +60,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableWhereId() throws Exception {
-        createTableWithQuotation(tableName);
+        createTable(tableName);
         insertItems(tableName, 2);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -81,7 +81,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableWhereIdUsingQueryParameter() throws Exception {
-        createTableWithQuotation(tableName);
+        createTable(tableName);
         insertItems(tableName, 2);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -102,7 +102,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableWhereOnNonPKColumn() throws Exception {
-        createTableWithQuotation(tableName);
+        createTable(tableName);
         insertItems(tableName, 2);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -123,7 +123,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableWhereColumnWithExternalName() throws Exception {
-        createTableWithQuotation(tableName);
+        createTable(tableName);
         insertItems(tableName, 2);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -144,7 +144,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableSetColumnWithExternalName() throws Exception {
-        createTableWithQuotation(tableName);
+        createTable(tableName);
         insertItems(tableName, 2);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -165,7 +165,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableSetUsingExpressionWithTableColumn() throws Exception {
-        createTableWithQuotation(tableName);
+        createTable(tableName);
         insertItems(tableName, 2);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -211,7 +211,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableSetUsingQueryParameter() throws Exception {
-        createTableWithQuotation(tableName);
+        createTable(tableName);
         insertItems(tableName, 1);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -231,7 +231,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableSetUsingTableColumnWithExternalName() throws Exception {
-        createTableWithQuotation(tableName);
+        createTable(tableName);
         insertItems(tableName, 2);
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -321,7 +321,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateTableWithExternalName() throws Exception {
-        createTableWithQuotation(tableName);
+        createTable(tableName);
         insertItems(tableName, 2);
 
         String mappingName = "mapping_" + randomName();
@@ -411,7 +411,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateMappingWithResolvedFields() throws Exception {
-        createTableWithQuotation(tableName);
+        createTable(tableName);
         insertItems(tableName, 1);
 
         execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);

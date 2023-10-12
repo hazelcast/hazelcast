@@ -41,7 +41,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     @Before
     public void setUp() throws Exception {
         tableName = randomTableName();
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         insertItems(quote(tableName), ITEM_COUNT);
 
         execute(
@@ -56,7 +56,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     @Test
     public void test_stream2BatchJoinAsNestedLoopJoinIsNotSupported() throws Exception {
         String tableName = randomTableName();
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         insertItems(quote(tableName), 5);
 
         execute(
@@ -78,7 +78,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     public void joinWithOtherJdbc() throws SQLException {
 
         String otherTableName = randomTableName();
-        createTableWithQuotation(quote(otherTableName));
+        createTable(quote(otherTableName));
         insertItems(quote(otherTableName), ITEM_COUNT);
 
         execute(
@@ -108,7 +108,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     public void leftJoinWithOtherJdbc() throws SQLException {
 
         String otherTableName = randomTableName();
-        createTableWithQuotation(quote(otherTableName));
+        createTable(quote(otherTableName));
         insertItems(quote(otherTableName), 3);
 
         execute(
@@ -138,7 +138,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     public void rightJoinWithOtherJdbc() throws SQLException {
 
         String otherTableName = randomTableName();
-        createTableWithQuotation(quote(otherTableName));
+        createTable(quote(otherTableName));
         insertItems(quote(otherTableName), 7);
 
         execute(
@@ -209,7 +209,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
             executeJdbc("GRANT UNLIMITED TABLESPACE TO " + schemaName);
         }
         String fullyQualifiedTable = schemaName + "." + quote(tableName);
-        createTableWithQuotation(fullyQualifiedTable);
+        createTable(fullyQualifiedTable);
         insertItems(fullyQualifiedTable, ITEM_COUNT);
         String mappingName = randomTableName();
         createMapping(fullyQualifiedTable, mappingName);

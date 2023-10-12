@@ -86,7 +86,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void whenMapStoreInit_thenCreateMappingForMapStoreConfig() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
 
         mapStore = createMapStore();
         assertMappingCreated();
@@ -94,7 +94,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void whenMapStoreInitCalledOnNonMaster_thenInitAndLoadValue() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 1);
 
         mapStore = createMapStore(instances()[1]);
@@ -104,7 +104,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void givenValidMappingExists_whenMapStoreInit_thenInitAndLoadRecord() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 1);
         createMapping(mapName, MAPPING_PREFIX + mapName);
 
@@ -115,7 +115,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void whenMapStoreDestroyOnMaster_thenDropMapping() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
 
         mapStore = createMapStore();
         assertMappingCreated();
@@ -126,7 +126,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void whenMapStoreDestroyOnNonMaster_thenDropMapping() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
 
         mapStore = createMapStore();
         assertMappingCreated();
@@ -138,7 +138,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void whenMapStoreInitOnNonMaster_thenLoadWaitsForSuccessfulInit() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 1);
 
         GenericMapStore<Object> mapStoreNonMaster = createMapStore(instances()[1]);
@@ -172,7 +172,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void givenIdColumn_whenStore_thenTableContainsRow() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         mapStore = createMapStore();
 
         GenericRecord person = GenericRecordBuilder.compact("Person")
@@ -189,7 +189,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void givenRow_whenStore_thenRowIsUpdated() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 1);
 
         mapStore = createMapStore();
@@ -230,7 +230,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void whenStoreAll_thenTableContainsRow() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         mapStore = createMapStore();
 
         Map<Integer, GenericRecord> people = new HashMap<>();
@@ -255,7 +255,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void whenStoreAllWithNoRecords_thenDoNothing() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         mapStore = createMapStore();
 
         mapStore.storeAll(emptyMap());
@@ -265,7 +265,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void whenDelete_thenRowRemovedFromTable() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 2);
 
         mapStore = createMapStore();
@@ -297,7 +297,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void whenDeleteAll_thenRowsRemovedFromTable() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 3);
 
         mapStore = createMapStore();
@@ -329,7 +329,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void whenDeleteAllWithNoIds_thenDoNothing() throws Exception {
-        createTableWithQuotation(quote(mapName));
+        createTable(quote(mapName));
         insertItems(quote(mapName), 1);
 
         mapStore = createMapStore();
@@ -345,7 +345,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
     public void givenTableNameProperty_whenCreateMapStore_thenUseTableName() throws Exception {
         String tableName = randomTableName();
 
-        createTableWithQuotation(quote(tableName));
+        createTable(quote(tableName));
         insertItems(quote(tableName), 1);
 
         Properties properties = new Properties();
