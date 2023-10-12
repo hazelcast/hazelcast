@@ -56,11 +56,11 @@ import java.util.stream.Collectors;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 class KinesisTestHelper {
-    private static final ILogger LOGGER = Logger.getLogger(KinesisIntegrationTest.class);
     static final RetryStrategy RETRY_STRATEGY = RetryStrategies.custom()
             .maxAttempts(30)
             .intervalFunction(IntervalFunction.exponentialBackoffWithCap(250L, 2.0, 2000L))
             .build();
+    private static final ILogger LOGGER = Logger.getLogger(KinesisIntegrationTest.class);
 
     private final AmazonKinesisAsync kinesis;
     private final String stream;
