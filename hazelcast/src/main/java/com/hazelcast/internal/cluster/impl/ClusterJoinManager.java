@@ -57,6 +57,7 @@ import com.hazelcast.version.Version;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -69,7 +70,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -763,7 +763,7 @@ public class ClusterJoinManager {
                 MemberMap memberMap = clusterService.getMembershipManager().getMemberMap();
 
                 MembersView newMembersView = MembersView.cloneAdding(memberMap.toMembersView(),
-                    syncJoinStrategy == null ? Stream.of(memberInfo).collect(Collectors.toList())
+                    syncJoinStrategy == null ? Collections.singletonList(memberInfo)
                             : joiningMembers.values().stream().map(BiTuple::element1).collect(Collectors.toList()));
 
                 long time = clusterClock.getClusterTime();
@@ -798,7 +798,7 @@ public class ClusterJoinManager {
                 // this is the current partition assignment state, not taking into account the
                 // currently joining members
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
-                migrationPaused &= shouldTriggerRepartitionSyncStrategyOnly(memberMap);
+                migrationPaused &= shouldTriggerRepartition(memberMap, memberInfo);
                 if (syncJoinStrategy != null) {
                     for (BiTuple<MemberInfo, OnJoinOp> tuple : joiningMembers.values()) {
                         MemberInfo member = tuple.element1();
@@ -821,19 +821,30 @@ public class ClusterJoinManager {
         }
     }
 
-    private boolean shouldTriggerRepartitionSyncStrategyOnly(MemberMap memberMap) {
+    private boolean shouldTriggerRepartition(MemberMap memberMap, MemberInfo joiningMemberInfo) {
         if (syncJoinStrategy != null) {
             for (BiTuple<MemberInfo, OnJoinOp> tuple : joiningMembers.values()) {
                 MemberInfo member = tuple.element1();
-                if (isMemberRestartingWithPersistence(member.getAttributes())
-                    && isMemberRejoining(memberMap, member.getAddress(), member.getUuid())) {
-                    logger.info(member + " is rejoining the cluster");
-                    // do not trigger repartition immediately, wait for joining member to load hot-restart data
+                if (delayRepartitionForHotRestartRecovery(memberMap, member)) {
                     return false;
                 }
             }
+        } else {
+            if (delayRepartitionForHotRestartRecovery(memberMap, joiningMemberInfo)) {
+                return false;
+            }
         }
         return true;
+    }
+
+    private boolean delayRepartitionForHotRestartRecovery(MemberMap memberMap, MemberInfo member) {
+        if (isMemberRestartingWithPersistence(member.getAttributes())
+                && isMemberRejoining(memberMap, member.getAddress(), member.getUuid())) {
+            logger.info(member + " is rejoining the cluster");
+            // do not trigger repartition immediately, wait for joining member to load hot-restart data
+            return true;
+        }
+        return false;
     }
 
     private void sendFinalizeJoinOp(MemberInfo member, UUID thisUuid, MembersView newMembersView,
