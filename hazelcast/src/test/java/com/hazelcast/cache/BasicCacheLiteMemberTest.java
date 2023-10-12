@@ -20,7 +20,6 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -51,7 +50,6 @@ import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -178,13 +176,7 @@ public class BasicCacheLiteMemberTest
         c1.put("key", "value");
         c2.put("key", "value");
         cacheManager.close();
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                c2.get("key");
-            }
-        }, 10);
+        assertTrueAllTheTime(() -> c2.get("key"), 10);
     }
 
 
