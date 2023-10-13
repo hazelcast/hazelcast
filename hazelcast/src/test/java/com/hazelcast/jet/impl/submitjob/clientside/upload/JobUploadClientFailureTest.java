@@ -62,15 +62,21 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doAnswer;
 
-// Tests to upload jar to member
+/**
+ * Tests to upload jar to member
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class JobUploadClientFailureTest extends JetTestSupport {
 
-    // The newJob() is called from main thread
+    /**
+     * The newJob() is called from main thread
+     */
     private static final String SIMPLE_JAR = "simplejob-1.0.0.jar";
 
-    // The newJob() is called from another thread
+    /**
+     * The newJob() is called from another thread
+     */
     private static final String PARALLEL_JAR = "paralleljob-1.0.0.jar";
     private static final String JOINING_JAR = "joiningjob-1.0.0.jar";
     private static final String NO_MANIFEST_SIMPLE_JAR = "nomanifestsimplejob-1.0.0.jar";

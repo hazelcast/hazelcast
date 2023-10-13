@@ -61,10 +61,14 @@ public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
 
     public abstract boolean hasExecuteJobParameters();
 
-    // The strategy to get ExecuteJobParameters on client and member side
+    /**
+     * The strategy to get ExecuteJobParameters on client and member side
+     */
     public abstract ExecuteJobParameters getExecuteJobParameters();
 
-    // The strategy to set ExecuteJobParameters on client and member side
+    /**
+     * The strategy to set ExecuteJobParameters on client and member side
+     */
     public abstract void setExecuteJobParameters(ExecuteJobParameters executeJobParameters);
 
     public void removeExecuteJobParameters() {

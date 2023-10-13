@@ -27,7 +27,8 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import javax.annotation.Nonnull;
 
 /**
- * This class' state holds {@link ExecuteJobParameters parameters} used by Jet jobs. State is thread-local, so this proxy can be used by mutiple threads.
+ * This class' state holds {@link ExecuteJobParameters parameters} used by Jet jobs.
+ * State is thread-local,so this proxy can be used by multiple threads.
  */
 public class MemberJetProxy<M> extends BootstrappedJetProxy<M> {
     private final ThreadLocal<ExecuteJobParameters> executeJobParametersThreadLocal =
