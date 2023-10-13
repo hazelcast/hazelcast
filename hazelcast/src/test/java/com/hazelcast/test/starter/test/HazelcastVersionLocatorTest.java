@@ -25,13 +25,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.starter.HazelcastVersionLocator;
 import com.hazelcast.test.starter.HazelcastVersionLocator.Artifact;
 
@@ -45,7 +43,6 @@ import java.util.stream.Stream;
  * TODO This test doesn't force a re-download, so if an artifact is cached in the local repository, the download won't be
  * exercised. It's difficult to modify the local Maven repository as it's not encapsulated for the scope of testing
  */
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 public class HazelcastVersionLocatorTest {
     private static HashFunction hashFunction;
     private static Map<HazelcastVersionLocator.Artifact, File> files;
