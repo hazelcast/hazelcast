@@ -46,7 +46,6 @@ import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkDatabaseExists;
  */
 public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
 
-    private final Permission requiredPermission;
     private final boolean shouldCheckOnEachCall;
     private ProcessorMetaSupplier standardForceOnePMS;
     private final boolean forceTotalParallelismOne;
@@ -60,8 +59,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
     /**
      * Creates a new instance of this meta supplier.
      */
-    public DbCheckingPMetaSupplier(@Nullable Permission requiredPermission,
-                                   boolean shouldCheckOnEachCall,
+    public DbCheckingPMetaSupplier(boolean shouldCheckOnEachCall,
                                    boolean forceTotalParallelismOne,
                                    @Nullable String databaseName,
                                    @Nullable String collectionName,
@@ -70,7 +68,6 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
                                    @Nonnull ProcessorSupplier processorSupplier,
                                    int preferredLocalParallelism
     ) {
-        this.requiredPermission = requiredPermission;
         this.shouldCheckOnEachCall = shouldCheckOnEachCall;
         this.forceTotalParallelismOne = forceTotalParallelismOne;
         this.databaseName = databaseName;
@@ -84,12 +81,6 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
     @Override
     public int preferredLocalParallelism() {
         return preferredLocalParallelism;
-    }
-
-    @Nullable
-    @Override
-    public Permission getRequiredPermission() {
-        return requiredPermission;
     }
 
     @Override

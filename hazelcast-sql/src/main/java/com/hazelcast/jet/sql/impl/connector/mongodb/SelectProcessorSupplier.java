@@ -104,13 +104,6 @@ public class SelectProcessorSupplier extends MongoProcessorSupplier implements D
         this(table, predicate, projection, null, false, null);
     }
 
-    @Nullable
-    @Override
-    public List<Permission> permissions() {
-        String connDetails = connectionString == null ? dataConnectionName : connectionString;
-        return singletonList(ConnectorPermission.mongo(connDetails, databaseName, collectionName, ACTION_READ));
-    }
-
     @Override
     public void init(@Nonnull Context context) {
         if (connectionString != null) {

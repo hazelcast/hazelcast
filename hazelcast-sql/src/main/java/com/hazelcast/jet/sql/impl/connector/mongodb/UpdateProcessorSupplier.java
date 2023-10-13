@@ -86,13 +86,6 @@ public class UpdateProcessorSupplier extends MongoProcessorSupplier implements D
         this.afterScan = hasInput;
     }
 
-    @Nullable
-    @Override
-    public List<Permission> permissions() {
-        String connDetails = connectionString == null ? dataConnectionName : connectionString;
-        return singletonList(ConnectorPermission.mongo(connDetails, databaseName, collectionName, ACTION_WRITE));
-    }
-
     @Override
     public void init(@Nonnull Context context) throws Exception {
         if (connectionString != null) {
