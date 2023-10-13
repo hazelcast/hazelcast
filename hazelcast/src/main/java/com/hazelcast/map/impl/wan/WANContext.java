@@ -38,11 +38,11 @@ import static java.lang.Boolean.TRUE;
 
 public class WANContext {
 
+    protected volatile SplitBrainMergePolicy wanMergePolicy;
+    protected ConcurrentMemoizingSupplier<DelegatingWanScheme> wanReplicationDelegateSupplier;
     private final MapConfig mapConfig;
     private final String name;
     private final MapServiceContext mapServiceContext;
-    protected volatile SplitBrainMergePolicy wanMergePolicy;
-    protected ConcurrentMemoizingSupplier<DelegatingWanScheme> wanReplicationDelegateSupplier;
     private volatile boolean persistWanReplicatedData;
 
     public WANContext(MapContainer mapContainer) {
