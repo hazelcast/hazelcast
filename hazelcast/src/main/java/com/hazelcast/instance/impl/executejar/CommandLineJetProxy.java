@@ -22,7 +22,7 @@ import com.hazelcast.jet.JetService;
 import javax.annotation.Nonnull;
 
 /**
- * The state is about running a jet job, and it stored in a local member
+ * This class' state holds {@link ExecuteJobParameters parameters} used by Jet jobs invoked via command line.
  */
 public class CommandLineJetProxy<M> extends BootstrappedJetProxy<M> {
 
