@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -29,12 +29,13 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * This class iterates over the given leftRowsList and the ResultSet at the same time
  * During the iteration it generates JetSqlRow according to given SQL Join information.
  */
-public class JoinPredicateScanRowMapper implements FunctionEx<ResultSet, JetSqlRow> {
+public class JoinPredicateScanRowMapper implements Function<ResultSet, JetSqlRow> {
 
     private final ExpressionEvalContext expressionEvalContext;
 
@@ -81,38 +82,41 @@ public class JoinPredicateScanRowMapper implements FunctionEx<ResultSet, JetSqlR
                 moveResultSetForward = false;
                 joinPredicateProcessingResult.jetSqlRow = processMismatchingQueryNumber();
                 leftRowIndex++;
-                joinPredicateProcessingResult.isResultSetProcessed = true;
             } else {
                 // We are still at the same queryNumber
                 moveResultSetForward = true;
                 joinPredicateProcessingResult.jetSqlRow = processMatchingQueryNumber();
-                joinPredicateProcessingResult.isResultSetProcessed = true;
             }
+            joinPredicateProcessingResult.isResultSetProcessed = true;
         }
         return joinPredicateProcessingResult;
     }
 
     @Override
-    public JetSqlRow applyEx(ResultSet resultSet) throws SQLException {
-        createValuesArrayIfNecessary(resultSet);
+    public JetSqlRow apply(ResultSet resultSet) {
+        try {
+            createValuesArrayIfNecessary(resultSet);
 
-        // Start iterating over left rows
-        while (leftRowIndex < leftRowsList.size()) {
-            JoinPredicateProcessingResult joinPredicateProcessingResult = processResultSet(resultSet);
-            if (joinPredicateProcessingResult.isResultSetProcessed) {
-                if (joinPredicateProcessingResult.jetSqlRow != null) {
-                    return joinPredicateProcessingResult.jetSqlRow;
-                }
-            } else {
-                // End of ResultSet
-                JetSqlRow jetSqlRow = processMismatchingQueryNumber();
-                leftRowIndex++;
-                if (jetSqlRow != null) {
-                    return jetSqlRow;
+            // Start iterating over left rows
+            while (leftRowIndex < leftRowsList.size()) {
+                JoinPredicateProcessingResult joinPredicateProcessingResult = processResultSet(resultSet);
+                if (joinPredicateProcessingResult.isResultSetProcessed) {
+                    if (joinPredicateProcessingResult.jetSqlRow != null) {
+                        return joinPredicateProcessingResult.jetSqlRow;
+                    }
+                } else {
+                    // End of ResultSet
+                    JetSqlRow jetSqlRow = processMismatchingQueryNumber();
+                    leftRowIndex++;
+                    if (jetSqlRow != null) {
+                        return jetSqlRow;
+                    }
                 }
             }
+            return null;
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
         }
-        return null;
     }
 
     private void createValuesArrayIfNecessary(ResultSet resultSet) throws SQLException {

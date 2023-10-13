@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -27,8 +27,9 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.function.Function;
 
-public class FullScanRowMapper implements FunctionEx<ResultSet, JetSqlRow> {
+public class FullScanRowMapper implements Function<ResultSet, JetSqlRow> {
 
     private final ExpressionEvalContext expressionEvalContext;
 
@@ -50,33 +51,37 @@ public class FullScanRowMapper implements FunctionEx<ResultSet, JetSqlRow> {
     }
 
     @Override
-    public JetSqlRow applyEx(ResultSet resultSet) throws SQLException {
-        if (values == null) {
-            values = createValueArray(resultSet);
-        }
-        fillValueArray(resultSet, values);
-
-        JetSqlRow jetSqlRowFromDB = new JetSqlRow(
-                expressionEvalContext.getSerializationService(),
-                values);
-
-        // Join the leftRow with the row from DB
-        JetSqlRow joinedRow = ExpressionUtil.join(leftRow,
-                jetSqlRowFromDB,
-                joinInfo.nonEquiCondition(),
-                expressionEvalContext);
-
-        if (joinedRow != null) {
-            // The DB row evaluated as true
-            return joinedRow;
-        } else {
-            // The DB row evaluated as false
-            if (!joinInfo.isInner()) {
-                // This is not an inner join, so return a null padded JetSqlRow
-                return createExtendedRow(leftRow);
+    public JetSqlRow apply(ResultSet resultSet) {
+        try {
+            if (values == null) {
+                values = createValueArray(resultSet);
             }
+            fillValueArray(resultSet, values);
+
+            JetSqlRow jetSqlRowFromDB = new JetSqlRow(
+                    expressionEvalContext.getSerializationService(),
+                    values);
+
+            // Join the leftRow with the row from DB
+            JetSqlRow joinedRow = ExpressionUtil.join(leftRow,
+                    jetSqlRowFromDB,
+                    joinInfo.nonEquiCondition(),
+                    expressionEvalContext);
+
+            if (joinedRow != null) {
+                // The DB row evaluated as true
+                return joinedRow;
+            } else {
+                // The DB row evaluated as false
+                if (!joinInfo.isInner()) {
+                    // This is not an inner join, so return a null padded JetSqlRow
+                    return createExtendedRow(leftRow);
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
         }
-        return null;
     }
 
     protected static Object[] createValueArray(ResultSet resultSet) throws SQLException {

@@ -16,15 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
-import com.hazelcast.function.ConsumerEx;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.function.Consumer;
 
-public class JoinPredicatePreparedStatementSetter implements ConsumerEx<PreparedStatement> {
+public class JoinPredicatePreparedStatementSetter implements Consumer<PreparedStatement> {
 
     private final JetJoinInfo joinInfo;
 
@@ -36,8 +37,12 @@ public class JoinPredicatePreparedStatementSetter implements ConsumerEx<Prepared
     }
 
     @Override
-    public void acceptEx(PreparedStatement preparedStatement) throws SQLException {
-        setObjectsToPreparedStatement(preparedStatement);
+    public void accept(PreparedStatement preparedStatement) {
+        try {
+            setObjectsToPreparedStatement(preparedStatement);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
     }
 
     private void setObjectsToPreparedStatement(PreparedStatement preparedStatement)

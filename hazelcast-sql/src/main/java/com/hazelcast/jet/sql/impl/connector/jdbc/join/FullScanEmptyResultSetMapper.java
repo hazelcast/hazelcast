@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * This class is used when the ResultSet is empty. Similar to a Row Mapper this class also
  * knows SQL Join information.
  */
-public class FullScanEmptyResultSetMapper implements SupplierEx<JetSqlRow> {
+public class FullScanEmptyResultSetMapper implements Supplier<JetSqlRow> {
 
     private final JetJoinInfo joinInfo;
 
@@ -41,7 +41,7 @@ public class FullScanEmptyResultSetMapper implements SupplierEx<JetSqlRow> {
     }
 
     @Override
-    public JetSqlRow getEx() {
+    public JetSqlRow get() {
         return createExtendedRowIfNecessary();
     }
 

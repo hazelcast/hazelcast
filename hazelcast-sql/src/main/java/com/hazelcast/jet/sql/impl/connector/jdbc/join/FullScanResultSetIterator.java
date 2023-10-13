@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -29,6 +28,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class FullScanResultSetIterator<T> implements Iterator<T> {
 
@@ -36,7 +36,7 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
     private Connection connection;
     private final String sql;
     private final Function<ResultSet, T> rowMapper;
-    private final SupplierEx<T> emptyResultSetMapper;
+    private final Supplier<T> emptyResultSetMapper;
     private boolean hasNext;
     private ResultSet resultSet;
     private PreparedStatement preparedStatement;
@@ -47,7 +47,7 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
     public FullScanResultSetIterator(Connection connection,
                                      String sql,
                                      Function<ResultSet, T> rowMapper,
-                                     SupplierEx<T> emptyResultSetMapper
+                                     Supplier<T> emptyResultSetMapper
     ) {
         this.connection = connection;
         this.sql = sql;
