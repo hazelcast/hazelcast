@@ -23,7 +23,6 @@ import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClients;
@@ -36,10 +35,8 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -49,9 +46,7 @@ import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPT
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.UPDATE_ALL_PREDICATE;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.DynamicallyReplacedPlaceholder.replacePlaceholdersInPredicate;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
 /**
