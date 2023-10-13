@@ -153,7 +153,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
         this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         this.interceptorRegistry = mapContainer.getInterceptorRegistry();
-        this.wanReplicateEvictions = mapContainer.isWanReplicationEnabled()
+        this.wanReplicateEvictions = mapContainer.getWanContext().isWanReplicationEnabled()
                 && mapServiceContext.getNodeEngine().getProperties().getBoolean(ClusterProperty.WAN_REPLICATE_IMAP_EVICTIONS);
         initJsonMetadataStore();
     }

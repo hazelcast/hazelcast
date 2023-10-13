@@ -267,7 +267,8 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
             return;
         }
 
-        mapServiceContext.getEventListenerCounter().incCounter(mapName);
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        mapContainer.increaseInvalidationListenerCount();
     }
 
     @Override
@@ -277,7 +278,8 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
             return;
         }
 
-        mapServiceContext.getEventListenerCounter().decCounter(mapName);
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        mapContainer.decreaseInvalidationListenerCount();
     }
 
     public int getMigrationStamp() {

@@ -355,11 +355,11 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     private boolean canPublishWanEvent(MapContainer mapContainer) {
-        boolean canPublishWanEvent = mapContainer.isWanReplicationEnabled()
+        boolean canPublishWanEvent = mapContainer.getWanContext().isWanReplicationEnabled()
                 && !disableWanReplicationEvent();
 
         if (canPublishWanEvent) {
-            mapContainer.getWanReplicationDelegate().doPrepublicationChecks();
+            mapContainer.getWanContext().getWanReplicationDelegate().doPrepublicationChecks();
         }
         return canPublishWanEvent;
     }
