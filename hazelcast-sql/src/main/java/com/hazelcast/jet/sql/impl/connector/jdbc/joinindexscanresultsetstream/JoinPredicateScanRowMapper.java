@@ -30,13 +30,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class JoinIndexScanRowMapper implements FunctionEx<ResultSet, JetSqlRow> {
+/**
+ * This class iterates over the given leftRowsList and the ResultSet at the same time
+ * During the iteration it generates JetSqlRow according to given SQL Join information.
+ */
+public class JoinPredicateScanRowMapper implements FunctionEx<ResultSet, JetSqlRow> {
 
     private final ExpressionEvalContext expressionEvalContext;
 
     private final JetJoinInfo joinInfo;
 
     private final List<Expression<?>> projections;
+
     private final List<JetSqlRow> leftRowsList;
 
     private Object[] values;
@@ -49,12 +54,12 @@ public class JoinIndexScanRowMapper implements FunctionEx<ResultSet, JetSqlRow> 
 
     private boolean hasNext;
 
-    private Set<Integer> processedQueryNumbers = new HashSet<>();
+    private final Set<Integer> processedQueryNumbers = new HashSet<>();
 
-    public JoinIndexScanRowMapper(ExpressionEvalContext expressionEvalContext,
-                                  List<Expression<?>> projections,
-                                  JetJoinInfo joinInfo,
-                                  List<JetSqlRow> leftRowsList) {
+    public JoinPredicateScanRowMapper(ExpressionEvalContext expressionEvalContext,
+                                      List<Expression<?>> projections,
+                                      JetJoinInfo joinInfo,
+                                      List<JetSqlRow> leftRowsList) {
         this.expressionEvalContext = expressionEvalContext;
         this.projections = projections;
         this.joinInfo = joinInfo;
@@ -172,5 +177,4 @@ public class JoinIndexScanRowMapper implements FunctionEx<ResultSet, JetSqlRow> 
         processedQueryNumbers.add(leftRowIndex);
         return result;
     }
-
 }

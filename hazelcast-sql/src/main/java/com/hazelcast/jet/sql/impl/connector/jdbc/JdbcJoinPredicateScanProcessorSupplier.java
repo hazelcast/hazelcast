@@ -19,8 +19,8 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream.JoinIndexScanResultSetIterator;
-import com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream.JoinIndexScanRowMapper;
+import com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream.JoinPredicateScanResultSetIterator;
+import com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream.JoinPredicateScanRowMapper;
 import com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream.PreparedStatementSetter;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunction;
@@ -48,16 +48,16 @@ import java.util.stream.StreamSupport;
  * <p>
  * For a visual explanation, refer to {@link IndexScanSelectQueryBuilder}.
  */
-public class JdbcJoinIndexScanProcessorSupplier
+public class JdbcJoinPredicateScanProcessorSupplier
         extends AbstractJoinProcessorSupplier
         implements DataSerializable, SecuredFunction {
 
     // Classes conforming to DataSerializable should provide a no-arguments constructor.
     @SuppressWarnings("unused")
-    public JdbcJoinIndexScanProcessorSupplier() {
+    public JdbcJoinPredicateScanProcessorSupplier() {
     }
 
-    public JdbcJoinIndexScanProcessorSupplier(
+    public JdbcJoinPredicateScanProcessorSupplier(
             @Nonnull String dataConnectionName,
             @Nonnull String query,
             @NonNull JetJoinInfo joinInfo,
@@ -90,10 +90,10 @@ public class JdbcJoinIndexScanProcessorSupplier
     }
 
     private Stream<JetSqlRow> joinUnionAll(List<JetSqlRow> leftRowsList, String unionAllSql) {
-        JoinIndexScanResultSetIterator<JetSqlRow> iterator = new JoinIndexScanResultSetIterator<>(
+        JoinPredicateScanResultSetIterator<JetSqlRow> iterator = new JoinPredicateScanResultSetIterator<>(
                 dataConnection.getConnection(),
                 unionAllSql,
-                new JoinIndexScanRowMapper(expressionEvalContext, projections, joinInfo, leftRowsList),
+                new JoinPredicateScanRowMapper(expressionEvalContext, projections, joinInfo, leftRowsList),
                 new PreparedStatementSetter(joinInfo, leftRowsList)
         );
         Spliterator<JetSqlRow> spliterator = Spliterators.spliteratorUnknownSize(iterator,

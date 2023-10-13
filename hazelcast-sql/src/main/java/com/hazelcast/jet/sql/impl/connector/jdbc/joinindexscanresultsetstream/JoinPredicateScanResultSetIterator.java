@@ -30,8 +30,12 @@ import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class JoinIndexScanResultSetIterator<T> implements Iterator<T> {
-    private static final ILogger LOGGER = Logger.getLogger(JoinIndexScanResultSetIterator.class);
+/**
+ * This class adapts the internally fetched ResultSet and the specified rowMapper into an iterator
+ * The rowMapper has the SQL Join logic. As long as it returns an item, we can traverse this iterator
+ */
+public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
+    private static final ILogger LOGGER = Logger.getLogger(JoinPredicateScanResultSetIterator.class);
     private Connection connection;
     private final String sql;
     private final Function<ResultSet, T> rowMapper;
@@ -41,10 +45,10 @@ public class JoinIndexScanResultSetIterator<T> implements Iterator<T> {
     private PreparedStatement preparedStatement;
     private T nextItem;
 
-    public JoinIndexScanResultSetIterator(Connection connection,
-                                          String sql,
-                                          Function<ResultSet, T> rowMapper,
-                                          Consumer<PreparedStatement> preparedStatementSetter) {
+    public JoinPredicateScanResultSetIterator(Connection connection,
+                                              String sql,
+                                              Function<ResultSet, T> rowMapper,
+                                              Consumer<PreparedStatement> preparedStatementSetter) {
         this.connection = connection;
         this.sql = sql;
         this.rowMapper = rowMapper;
@@ -87,7 +91,7 @@ public class JoinIndexScanResultSetIterator<T> implements Iterator<T> {
         IOUtil.closeResource(connection);
         connection = null;
     }
-    private boolean getNextItemFromRowMapper() throws SQLException {
+    private boolean getNextItemFromRowMapper() {
         boolean result = false;
         nextItem = rowMapper.apply(resultSet);
         if (nextItem != null) {

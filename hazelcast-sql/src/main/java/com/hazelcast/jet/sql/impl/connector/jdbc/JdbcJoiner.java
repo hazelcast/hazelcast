@@ -73,7 +73,7 @@ public final class JdbcJoiner {
                     joinInfo
             );
             String selectQueryForRightSide = queryBuilder.query();
-            return new JdbcJoinIndexScanProcessorSupplier(
+            return new JdbcJoinPredicateScanProcessorSupplier(
                     jdbcTable.getDataConnectionName(),
                     selectQueryForRightSide,
                     joinInfo,
