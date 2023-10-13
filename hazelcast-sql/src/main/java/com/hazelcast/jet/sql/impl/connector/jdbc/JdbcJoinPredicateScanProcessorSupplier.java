@@ -30,9 +30,8 @@ import com.mongodb.lang.NonNull;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -69,9 +68,9 @@ public class JdbcJoinPredicateScanProcessorSupplier
         List<JetSqlRow> leftRowsList = convertIterableToArrayList(leftRows);
         String unionAllSql = generateSql(leftRowsList);
 
-        Stream<JetSqlRow> stream = joinUnionAll(leftRowsList, unionAllSql);
+        Iterator<JetSqlRow> iterator = joinUnionAll(leftRowsList, unionAllSql);
 
-        return Traversers.traverseStream(stream);
+        return Traversers.traverseIterator(iterator);
     }
 
     private <T> ArrayList<T> convertIterableToArrayList(Iterable<T> iterable) {
@@ -89,15 +88,13 @@ public class JdbcJoinPredicateScanProcessorSupplier
         return sql;
     }
 
-    private Stream<JetSqlRow> joinUnionAll(List<JetSqlRow> leftRowsList, String unionAllSql) {
-        JoinPredicateScanResultSetIterator<JetSqlRow> iterator = new JoinPredicateScanResultSetIterator<>(
+    // Return an iterator that can traverse leftRowsList and ResultSet of unionAllSql
+    private Iterator<JetSqlRow> joinUnionAll(List<JetSqlRow> leftRowsList, String unionAllSql) {
+        return new JoinPredicateScanResultSetIterator<>(
                 dataConnection.getConnection(),
                 unionAllSql,
                 new JoinPredicateScanRowMapper(expressionEvalContext, projections, joinInfo, leftRowsList),
                 new PreparedStatementSetter(joinInfo, leftRowsList)
         );
-        Spliterator<JetSqlRow> spliterator = Spliterators.spliteratorUnknownSize(iterator,
-                Spliterator.IMMUTABLE | Spliterator.ORDERED);
-        return StreamSupport.stream(spliterator, false);
     }
 }
