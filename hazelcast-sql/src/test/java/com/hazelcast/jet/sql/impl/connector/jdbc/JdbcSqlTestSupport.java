@@ -222,13 +222,13 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
-    protected static void assertJdbcRowsAnyOrder(String tableName, List<Class<?>> columnType, Row... rows) {
-        List<Row> actualRows = jdbcRowsTable(tableName, columnType);
+    protected static void assertJdbcRowsAnyOrder(String tableName, List<Class<?>> columnTypes, Row... rows) {
+        List<Row> actualRows = jdbcRowsTable(tableName, columnTypes);
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
-    protected static void assertJdbcQueryRowsAnyOrder(String query, List<Class<?>> columnType, Row... rows) {
-        List<Row> actualRows = jdbcRows(query, columnType);
+    protected static void assertJdbcQueryRowsAnyOrder(String query, List<Class<?>> columnTypes, Row... rows) {
+        List<Row> actualRows = jdbcRows(query, columnTypes);
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
@@ -240,8 +240,8 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         return jdbcRows("SELECT * FROM " + quote(tableName), columnType);
     }
 
-    protected static void assertJdbcRowsAnyOrderNoQuote(String tableName, List<Class<?>> columnType, Row... rows) {
-        List<Row> actualRows = jdbcRowsTableNoQuote(tableName, columnType);
+    protected static void assertJdbcRowsAnyOrderNoQuote(String tableName, List<Class<?>> columnTypes, Row... rows) {
+        List<Row> actualRows = jdbcRowsTableNoQuote(tableName, columnTypes);
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
@@ -262,7 +262,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         return jdbcRows(query, connectionUrl, null);
     }
 
-    public static List<Row> jdbcRows(String query, String connectionUrl, List<Class<?>> columnType) {
+    public static List<Row> jdbcRows(String query, String connectionUrl, List<Class<?>> columnTypes) {
         List<Row> rows = new ArrayList<>();
         try (Connection connection = DriverManager.getConnection(connectionUrl);
              Statement statement = connection.createStatement();
@@ -270,10 +270,10 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
             while (resultSet.next()) {
                 Object[] values = new Object[resultSet.getMetaData().getColumnCount()];
                 for (int i = 0; i < values.length; i++) {
-                    if (columnType == null) {
+                    if (columnTypes == null) {
                         values[i] = resultSet.getObject(i + 1);
                     } else {
-                        values[i] = resultSet.getObject(i + 1, columnType.get(i));
+                        values[i] = resultSet.getObject(i + 1, columnTypes.get(i));
                     }
                 }
                 rows.add(new Row(values));

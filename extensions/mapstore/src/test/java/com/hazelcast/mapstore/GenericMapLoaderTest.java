@@ -562,7 +562,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     }
 
     protected static void createSchema(String schemaName) throws SQLException {
-        executeJdbc(databaseProvider.createSchemaQuery(quote(schemaName)));
+        executeJdbc(databaseProvider.createSchemaQuery(schemaName));
         if (databaseProvider instanceof OracleDatabaseProvider) {
             executeJdbc("GRANT UNLIMITED TABLESPACE TO " + quote(schemaName));
         }
