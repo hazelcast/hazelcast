@@ -22,20 +22,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunction;
-import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
-import java.security.Permission;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
-import static java.util.Collections.singletonList;
 
 public class InsertProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
@@ -75,15 +69,6 @@ public class InsertProcessorSupplier
             processors.add(processor);
         }
         return processors;
-    }
-
-    @SuppressWarnings("BooleanExpressionComplexity")
-
-
-    @Nullable
-    @Override
-    public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(dataConnectionName, ACTION_WRITE));
     }
 
     @Override
