@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc.fullscanresultsetstream;
+package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;

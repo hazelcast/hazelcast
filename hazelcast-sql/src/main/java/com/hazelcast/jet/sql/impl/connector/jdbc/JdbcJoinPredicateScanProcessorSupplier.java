@@ -19,9 +19,9 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream.JoinPredicateScanResultSetIterator;
-import com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream.JoinPredicateScanRowMapper;
-import com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream.PreparedStatementSetter;
+import com.hazelcast.jet.sql.impl.connector.jdbc.join.JoinPredicateScanResultSetIterator;
+import com.hazelcast.jet.sql.impl.connector.jdbc.join.JoinPredicateScanRowMapper;
+import com.hazelcast.jet.sql.impl.connector.jdbc.join.JoinPredicatePreparedStatementSetter;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -94,7 +94,7 @@ public class JdbcJoinPredicateScanProcessorSupplier
                 dataConnection.getConnection(),
                 unionAllSql,
                 new JoinPredicateScanRowMapper(expressionEvalContext, projections, joinInfo, leftRowsList),
-                new PreparedStatementSetter(joinInfo, leftRowsList)
+                new JoinPredicatePreparedStatementSetter(joinInfo, leftRowsList)
         );
     }
 }

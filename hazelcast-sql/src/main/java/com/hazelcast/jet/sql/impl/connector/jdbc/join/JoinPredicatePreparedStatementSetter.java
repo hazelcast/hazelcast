@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream;
+package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -24,13 +24,13 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 
-public class PreparedStatementSetter implements ConsumerEx<PreparedStatement> {
+public class JoinPredicatePreparedStatementSetter implements ConsumerEx<PreparedStatement> {
 
     private final JetJoinInfo joinInfo;
 
     private final List<JetSqlRow> leftRowsList;
 
-    public PreparedStatementSetter(JetJoinInfo joinInfo, List<JetSqlRow> leftRowsList) {
+    public JoinPredicatePreparedStatementSetter(JetJoinInfo joinInfo, List<JetSqlRow> leftRowsList) {
         this.joinInfo = joinInfo;
         this.leftRowsList = leftRowsList;
     }

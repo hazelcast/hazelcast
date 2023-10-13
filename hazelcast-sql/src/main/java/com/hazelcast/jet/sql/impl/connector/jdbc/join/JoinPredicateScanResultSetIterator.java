@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream;
+package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;

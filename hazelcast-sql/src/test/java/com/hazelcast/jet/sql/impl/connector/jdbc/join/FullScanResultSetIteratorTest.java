@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc.fullscanresultsetstream;
+package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.function.SupplierEx;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ class FullScanResultSetIteratorTest {
 
 
     @Test
-    void testEmptyResultSetMapper() throws SQLException {
+    void testEmptyResultSetMapperIsCalled() throws SQLException {
         Integer expectedEmptyResult = 1;
 
         FullScanResultSetIterator<Integer> fullScanResultSetIterator = new FullScanResultSetIterator<>(

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream;
+package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
-public class ProcessingResult {
+public class JoinPredicateProcessingResult {
 
-    boolean result;
+    boolean isResultSetProcessed;
     JetSqlRow jetSqlRow;
 }

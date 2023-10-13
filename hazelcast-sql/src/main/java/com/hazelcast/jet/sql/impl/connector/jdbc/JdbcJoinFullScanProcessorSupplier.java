@@ -19,9 +19,9 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.connector.jdbc.fullscanresultsetstream.EmptyResultSetMapper;
-import com.hazelcast.jet.sql.impl.connector.jdbc.fullscanresultsetstream.FullScanResultSetIterator;
-import com.hazelcast.jet.sql.impl.connector.jdbc.fullscanresultsetstream.FullScanRowMapper;
+import com.hazelcast.jet.sql.impl.connector.jdbc.join.FullScanEmptyResultSetMapper;
+import com.hazelcast.jet.sql.impl.connector.jdbc.join.FullScanResultSetIterator;
+import com.hazelcast.jet.sql.impl.connector.jdbc.join.FullScanRowMapper;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -75,7 +75,7 @@ public class JdbcJoinFullScanProcessorSupplier
                 dataConnection.getConnection(),
                 query,
                 new FullScanRowMapper(expressionEvalContext, projections, joinInfo, leftRow),
-                new EmptyResultSetMapper(projections, joinInfo, leftRow)
+                new FullScanEmptyResultSetMapper(projections, joinInfo, leftRow)
         );
         Spliterator<JetSqlRow> spliterator = Spliterators.spliteratorUnknownSize(iterator,
                 Spliterator.IMMUTABLE | Spliterator.ORDERED);

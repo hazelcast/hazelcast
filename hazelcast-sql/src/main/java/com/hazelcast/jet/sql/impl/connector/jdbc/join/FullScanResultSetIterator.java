@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc.fullscanresultsetstream;
+package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.nio.IOUtil;
@@ -109,7 +109,7 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
         }
         return result;
     }
-    private boolean getNextItemFromEmptyResultSetMapper() throws SQLException {
+    private boolean getNextItemFromEmptyResultSetMapper() {
         boolean result = false;
         if (callEmptyResultMapper) {
             callEmptyResultMapper = false;

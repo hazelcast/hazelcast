@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc.fullscanresultsetstream;
+package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -23,14 +23,18 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import java.util.List;
 
-public class EmptyResultSetMapper implements SupplierEx<JetSqlRow> {
+/**
+ * This class is used when the ResultSet is empty. Similar to a Row Mapper this class also
+ * knows SQL Join information.
+ */
+public class FullScanEmptyResultSetMapper implements SupplierEx<JetSqlRow> {
 
     private final JetJoinInfo joinInfo;
 
     private final List<Expression<?>> projections;
     private final JetSqlRow leftRow;
 
-    public EmptyResultSetMapper(List<Expression<?>> projections, JetJoinInfo joinInfo, JetSqlRow leftRow) {
+    public FullScanEmptyResultSetMapper(List<Expression<?>> projections, JetJoinInfo joinInfo, JetSqlRow leftRow) {
         this.joinInfo = joinInfo;
         this.projections = projections;
         this.leftRow = leftRow;

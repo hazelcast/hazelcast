@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc.joinindexscanresultsetstream;
+package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
@@ -66,8 +66,8 @@ public class JoinPredicateScanRowMapper implements FunctionEx<ResultSet, JetSqlR
         this.leftRowsList = leftRowsList;
     }
 
-    private ProcessingResult processResultSet(ResultSet resultSet) throws SQLException {
-        ProcessingResult processingResult = new ProcessingResult();
+    private JoinPredicateProcessingResult processResultSet(ResultSet resultSet) throws SQLException {
+        JoinPredicateProcessingResult joinPredicateProcessingResult = new JoinPredicateProcessingResult();
 
         if (moveResultSetForward) {
             hasNext = resultSet.next();
@@ -79,17 +79,17 @@ public class JoinPredicateScanRowMapper implements FunctionEx<ResultSet, JetSqlR
             if (leftRowIndex != queryNumberFromResultSet) {
                 // No need to move the ResultSet forward
                 moveResultSetForward = false;
-                processingResult.jetSqlRow = processMismatchingQueryNumber();
+                joinPredicateProcessingResult.jetSqlRow = processMismatchingQueryNumber();
                 leftRowIndex++;
-                processingResult.result = true;
+                joinPredicateProcessingResult.isResultSetProcessed = true;
             } else {
                 // We are still at the same queryNumber
                 moveResultSetForward = true;
-                processingResult.jetSqlRow = processMatchingQueryNumber();
-                processingResult.result = true;
+                joinPredicateProcessingResult.jetSqlRow = processMatchingQueryNumber();
+                joinPredicateProcessingResult.isResultSetProcessed = true;
             }
         }
-        return processingResult;
+        return joinPredicateProcessingResult;
     }
 
     @Override
@@ -98,12 +98,13 @@ public class JoinPredicateScanRowMapper implements FunctionEx<ResultSet, JetSqlR
 
         // Start iterating over left rows
         while (leftRowIndex < leftRowsList.size()) {
-            ProcessingResult processingResult = processResultSet(resultSet);
-            if (processingResult.result) {
-                if (processingResult.jetSqlRow != null) {
-                    return processingResult.jetSqlRow;
+            JoinPredicateProcessingResult joinPredicateProcessingResult = processResultSet(resultSet);
+            if (joinPredicateProcessingResult.isResultSetProcessed) {
+                if (joinPredicateProcessingResult.jetSqlRow != null) {
+                    return joinPredicateProcessingResult.jetSqlRow;
                 }
             } else {
+                // End of ResultSet
                 JetSqlRow jetSqlRow = processMismatchingQueryNumber();
                 leftRowIndex++;
                 if (jetSqlRow != null) {
