@@ -21,8 +21,6 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.mongodb.client.MongoClient;
 
-import java.security.Permission;
-
 public class DbCheckingPMetaSupplierBuilder {
     private boolean checkResourceExistence;
     private boolean forceTotalParallelismOne;
