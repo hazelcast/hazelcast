@@ -28,6 +28,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.SubmitJobParameters;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -61,12 +62,23 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doAnswer;
 
+/**
+ * Tests to upload jar to member
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class JobUploadClientFailureTest extends JetTestSupport {
 
+    /**
+     * The newJob() is called from main thread
+     */
     private static final String SIMPLE_JAR = "simplejob-1.0.0.jar";
+
+    /**
+     * The newJob() is called from another thread
+     */
     private static final String PARALLEL_JAR = "paralleljob-1.0.0.jar";
+    private static final String JOINING_JAR = "joiningjob-1.0.0.jar";
     private static final String NO_MANIFEST_SIMPLE_JAR = "nomanifestsimplejob-1.0.0.jar";
 
     @After
@@ -190,6 +202,8 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
         JetClientInstanceImpl jetService = getClientJetService();
 
+        // upload the jar to member and call and within the jar start the job from another thread
+        // It fails because member uses ThreadLocal to find ExecuteJobParameters
         SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
                 .setJarPath(getParalleJarPath())
                 .setJobName("parallel_job");
@@ -333,6 +347,28 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     }
 
 
+    @Test
+    public void test_jarUpload_whenJobIsJoining() {
+        createCluster();
+        JetClientInstanceImpl jetService = getClientJetService();
+
+        String jobName = "joiningJob";
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
+                .setJarPath(getJoiningJarPath())
+                .setJobName(jobName);
+
+        assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
+                .isInstanceOf(JetException.class)
+                .hasStackTraceContaining("The job has started successfully. However the job should not call the join() method.\n" +
+                                         "Please remove the join() call");
+
+        assertTrueEventually(() -> {
+            List<Job> jobs = jetService.getJobs();
+            assertEquals(1, jobs.size());
+            assertTrue(containsName(jobs, jobName));
+        });
+    }
+
     private void createCluster() {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
@@ -399,6 +435,9 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         return getPath(PARALLEL_JAR);
     }
 
+    public static Path getJoiningJarPath() {
+        return getPath(JOINING_JAR);
+    }
     static Path copyJar(String newJarPath) throws IOException {
         // Copy as new jar
         Path jarPath = getJarPath();
@@ -461,5 +500,17 @@ public class JobUploadClientFailureTest extends JetTestSupport {
     private static void assertJobIsNotRunning(JetService jetService) {
         // Assert job size
         assertEqualsEventually(() -> jetService.getJobs().size(), 0);
+    }
+
+    public static void assertJobIsRunning(JetService jetService) throws IOException {
+        // Assert job size
+        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+
+        // Assert job status
+        Job job = jetService.getJobs().get(0);
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+
+        // Assert job jar does is deleted
+        jarDoesNotExistInTempDirectory();
     }
 }

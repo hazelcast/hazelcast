@@ -32,7 +32,6 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -41,14 +40,12 @@ import javax.sql.DataSource;
 import javax.sql.PooledConnection;
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
-import java.security.Permission;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -56,8 +53,6 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
-import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -135,7 +130,6 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         // the JDBC connection metadata is performed in the
         // #connectAndPrepareStatement() instance method.
         return ProcessorMetaSupplier.preferLocalParallelismOne(
-                ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE),
                 new ProcessorSupplier() {
                     private transient CommonDataSource dataSource;
 
@@ -159,11 +153,6 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                                                 exactlyOnce, batchLimit))
                                         .collect(Collectors.toList());
                     }
-
-                    @Override
-                    public List<Permission> permissions() {
-                        return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
-                    }
                 });
     }
 
@@ -182,7 +171,6 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         checkPositive(batchLimit, "batchLimit");
 
         return ProcessorMetaSupplier.preferLocalParallelismOne(
-                ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE),
                 new WriteJdbcSupplier(dataConnectionName, updateQuery, bindFn, exactlyOnce, batchLimit, jdbcUrl));
     }
 
@@ -276,9 +264,6 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                 throw new JetException("The dataSource implements neither " + DataSource.class.getName() + " nor "
                         + XADataSource.class.getName());
             }
-
-            String url = connection.getMetaData().getURL();
-            context.checkPermission(ConnectorPermission.jdbc(url, ACTION_WRITE));
 
             supportsBatch = connection.getMetaData().supportsBatchUpdates();
 
@@ -403,11 +388,6 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                             .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
                                     exactlyOnce, batchLimit))
                             .collect(Collectors.toList());
-        }
-
-        @Override
-        public List<Permission> permissions() {
-            return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
         }
     }
 }
