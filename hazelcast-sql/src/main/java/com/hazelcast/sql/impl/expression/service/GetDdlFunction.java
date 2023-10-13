@@ -87,7 +87,7 @@ public class GetDdlFunction extends TriExpression<String> {
             } else if (catalogObject instanceof DataConnectionCatalogEntry) {
                 context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_DATACONNECTION));
             }
-            // Note: bpoth view and type can't contain sensitive information -> we don't check them
+            // Note: both view and type can't contain sensitive information -> we don't check them
             ddl = ((SqlCatalogObject) obj).unparse();
         } else {
             throw new AssertionError("Object must not be present in information_schema");
