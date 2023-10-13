@@ -52,14 +52,6 @@ public class ConnectorPermission extends InstancePermission {
         return new ConnectorPermission(SOCKET_PREFIX + host + ':' + port, action);
     }
 
-    public static ConnectorPermission jms(@Nullable String destination, String action) {
-        return new ConnectorPermission(JMS_PREFIX + (destination == null ? "" : destination), action);
-    }
-
-    public static ConnectorPermission jdbc(@Nullable String connectionUrl, String action) {
-        return new ConnectorPermission(JDBC_PREFIX + (connectionUrl == null ? "" : connectionUrl), action);
-    }
-
     /**
      * @param connectionDescription connection string or data connection name
      * @param databaseName database name this permission is about, null if permission is granted to all databases
