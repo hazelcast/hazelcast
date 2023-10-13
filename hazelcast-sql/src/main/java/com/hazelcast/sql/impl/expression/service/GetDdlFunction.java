@@ -32,8 +32,8 @@ import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_VIEW_DATACONNECTION;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_VIEW_MAPPING;
 import static com.hazelcast.sql.impl.expression.string.StringFunctionUtils.asVarchar;
 
 public class GetDdlFunction extends TriExpression<String> {
@@ -83,11 +83,11 @@ public class GetDdlFunction extends TriExpression<String> {
         } else if (obj instanceof SqlCatalogObject) {
             SqlCatalogObject catalogObject = (SqlCatalogObject) obj;
             if (catalogObject instanceof Mapping) {
-                context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_READ));
+                context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_MAPPING));
             } else if (catalogObject instanceof DataConnectionCatalogEntry) {
                 context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_DATACONNECTION));
             }
-            // Note: 'view' view and 'view' type can't contain sensitive information -> we don't check them
+            // Note: bpoth view and type can't contain sensitive information -> we don't check them
             ddl = ((SqlCatalogObject) obj).unparse();
         } else {
             throw new AssertionError("Object must not be present in information_schema");

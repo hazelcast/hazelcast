@@ -70,7 +70,7 @@ public class SqlPermission extends InstancePermission {
                     mask |= CREATE_DATACONNECTION;
                 } else if (ActionConstants.ACTION_DROP_DATACONNECTION.equals(action)) {
                     mask |= DROP_DATACONNECTION;
-                } else if (ActionConstants.ACTION_READ.equals(action)) {
+                } else if (ActionConstants.ACTION_VIEW_MAPPING.equals(action)) {
                     mask |= VIEW_MAPPING;
                 }
                 // Note: DROP INDEX is not implemented yet, no need to have separate permission.
