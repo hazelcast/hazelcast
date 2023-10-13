@@ -2,6 +2,7 @@ target/
 .clover/
 .idea/
 !.idea/icon.png
+!.idea/icon.svg
 .settings/
 .attach_pid*
 .classpath

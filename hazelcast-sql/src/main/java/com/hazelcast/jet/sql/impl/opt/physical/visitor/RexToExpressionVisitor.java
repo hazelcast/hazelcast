@@ -50,7 +50,9 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
     private final PlanNodeFieldTypeProvider fieldTypeProvider;
     private final QueryParameterMetadata parameterMetadata;
 
-    public RexToExpressionVisitor(PlanNodeFieldTypeProvider fieldTypeProvider, QueryParameterMetadata parameterMetadata) {
+    public RexToExpressionVisitor(
+            PlanNodeFieldTypeProvider fieldTypeProvider,
+            QueryParameterMetadata parameterMetadata) {
         this.fieldTypeProvider = fieldTypeProvider;
         this.parameterMetadata = parameterMetadata;
     }

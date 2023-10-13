@@ -29,42 +29,60 @@ import javax.annotation.Nullable;
  * </li>
  * </lu>
  * <p>
- * So with this delegator Step, stepToAppend becomes 1st step in step
- * chain and current step becomes 2nd.
+ * So with this delegator Step, append becomes 1st step in step
+ * chain and current becomes 2nd.
  */
-public class AppendAsHeadStep<S> implements Step<S> {
+class AppendAsNewHeadStep<S> implements Step<S> {
 
-    private final Step appended;
-    private final Step current;
+    private final Step<S> append;
+    private final Step<S> current;
 
-    public AppendAsHeadStep(Step appended, Step current) {
-        this.appended = appended;
+    AppendAsNewHeadStep(Step<S> current, Step<S> append) {
+        this.append = append;
         this.current = current;
     }
 
     @Override
     public boolean isOffloadStep(S state) {
-        return appended.isOffloadStep(state);
+        return append.isOffloadStep(state);
     }
 
     @Override
     public void runStep(S state) {
-        appended.runStep(state);
+        append.runStep(state);
     }
 
     @Override
     public String getExecutorName(S state) {
-        return appended.getExecutorName(state);
+        return append.getExecutorName(state);
     }
 
     @Nullable
     @Override
-    public Step nextStep(S state) {
+    public Step<S> nextStep(S state) {
         return current;
     }
 
     // only used for testing
-    Step getAppendedStep() {
-        return appended;
+    Step<S> getAppendedStep() {
+        return append;
+    }
+
+
+    /**
+     * Appends newStep before current head step.
+     * <p>
+     * After append, new step order:
+     * <p>1st step will be newStep,
+     * <p>2nd step will be second to execute,
+     * <p>3rd step will be 3rd to execute...
+     * <p>then other existing steps will be executed in order.
+     *
+     * @param currentHead current head
+     * @param newStep    step to append before current head.
+     * @return current head step.
+     */
+    static Step appendAsNewHeadStep(Step currentHead, Step newStep) {
+        return new AppendAsNewHeadStep(currentHead, newStep);
     }
 }

@@ -55,7 +55,8 @@ public class Type implements Serializable, SqlCatalogObject {
     public Type() {
     }
 
-    public String getName() {
+    @Override
+    public String name() {
         return name;
     }
 

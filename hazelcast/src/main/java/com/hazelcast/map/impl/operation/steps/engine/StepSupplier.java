@@ -17,20 +17,21 @@
 package com.hazelcast.map.impl.operation.steps.engine;
 
 import com.hazelcast.core.Offloadable;
-import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.map.impl.recordstore.StepAwareStorage;
+import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 
-import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 import static com.hazelcast.map.impl.operation.ForcedEviction.runStepWithForcedEvictionStrategies;
+import static com.hazelcast.map.impl.operation.steps.engine.AppendAsNewHeadStep.appendAsNewHeadStep;
 
 /**
  * <lu>
@@ -39,7 +40,7 @@ import static com.hazelcast.map.impl.operation.ForcedEviction.runStepWithForcedE
  * <li>Must be thread safe</li>
  * </lu>
  */
-public class StepSupplier implements Supplier<Runnable> {
+public class StepSupplier implements Supplier<Runnable>, Consumer<Step> {
 
     private final State state;
     private final OperationRunnerImpl operationRunner;
@@ -57,36 +58,34 @@ public class StepSupplier implements Supplier<Runnable> {
         this(operation, true);
     }
 
-    public StepSupplier(MapOperation operation, boolean checkCurrentThread) {
-        this(operation,
-            operation.getRecordStore().getStorage() instanceof StepAwareStorage
-                ? ((StepAwareStorage) (operation.getRecordStore().getStorage())).headSteps()
-                : List.of(),
-            checkCurrentThread);
-    }
-
-    // package private for testing purposes.
-    StepSupplier(MapOperation operation, List<Step> headSteps,
+    // package-private for testing purposes
+    StepSupplier(MapOperation operation,
                  boolean checkCurrentThread) {
         assert operation != null;
 
         this.state = operation.createState();
         this.currentStep = operation.getStartingStep();
-
-        if (!CollectionUtil.isEmpty(headSteps)) {
-            // Append order: 1st from append list will be first,
-            // 2nd step will be second, 3rd will be 3rd...
-            // then other ordinary steps will be executed.
-            for (int i = headSteps.size() - 1; i >= 0; i--) {
-                this.currentStep = new AppendAsHeadStep(headSteps.get(i), currentStep);
-            }
-        }
-
+        collectAndUpdateHeadSteps(operation);
         this.operationRunner = UtilSteps.getPartitionOperationRunner(state);
         this.checkCurrentThread = checkCurrentThread;
 
-        assert state != null;
         assert this.currentStep != null;
+    }
+
+    @Override
+    public void accept(Step headStep) {
+        if (headStep == null) {
+            return;
+        }
+
+        this.currentStep = appendAsNewHeadStep(currentStep, headStep);
+    }
+
+    private void collectAndUpdateHeadSteps(MapOperation operation) {
+        Storage storage = operation.getRecordStore().getStorage();
+        if (storage instanceof StepAwareStorage) {
+            ((StepAwareStorage) storage).addAsHeadStep(this);
+        }
     }
 
     // used only for testing
@@ -119,9 +118,7 @@ public class StepSupplier implements Supplier<Runnable> {
 
                 @Override
                 public void run() {
-                    if (checkCurrentThread) {
-                        assert !isRunningOnPartitionThread();
-                    }
+                    assert !checkCurrentThread || !isRunningOnPartitionThread();
 
                     runStepWithState(step, state);
                 }
@@ -223,7 +220,7 @@ public class StepSupplier implements Supplier<Runnable> {
      */
     private Step nextStep(Step step) {
         if (state.getThrowable() != null
-            && currentStep != UtilSteps.HANDLE_ERROR) {
+                && currentStep != UtilSteps.HANDLE_ERROR) {
             return UtilSteps.HANDLE_ERROR;
         }
         return step.nextStep(state);

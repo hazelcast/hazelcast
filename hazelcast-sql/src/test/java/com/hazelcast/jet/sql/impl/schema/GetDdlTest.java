@@ -19,18 +19,22 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 
 public class GetDdlTest extends SqlTestSupport {
-    private static String LE = System.lineSeparator();
+    private static final String LE = System.lineSeparator();
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -96,6 +100,21 @@ public class GetDdlTest extends SqlTestSupport {
 
         instance().getSql().execute(createDataConnectionQuery);
         assertRowsAnyOrder("SELECT GET_DDL('dataconnection', 'dl')", ImmutableList.of(new Row(createDataConnectionQuery)));
+    }
+
+    @Test
+    public void when_queryDataConnectionWithByKeyPlan_then_success() {
+        createMapping("a", Integer.class, String.class);
+        createDataConnection(instance(), "dl", "DUMMY", true, Collections.emptyMap());
+        IMap<Object, Object> map = instance().getMap("a");
+        map.put(1, "dl");
+
+        String ddl = "CREATE OR REPLACE DATA CONNECTION \"hazelcast\".\"public\".\"dl\"" + LE
+                + "TYPE \"dummy\"" + LE + "SHARED";
+
+        assertRowsAnyOrder("SELECT __key, GET_DDL('dataconnection', this) FROM a WHERE __key = 1",
+                ImmutableList.of(new Row(1, ddl))
+        );
     }
 
     @Test
@@ -175,5 +194,29 @@ public class GetDdlTest extends SqlTestSupport {
                                 "  'valueFormat'='java'," + LE +
                                 "  'valueJavaClass'='java.lang.String'" + LE +
                                 ")")));
+    }
+
+    @Test
+    public void when_queryDdlWithInputInPredicate_then_success() {
+        createMapping("a", int.class, String.class);
+        instance().getMap("a").put(1, "a");
+        assertRowsAnyOrder("SELECT * FROM a WHERE GET_DDL('relation', this) = 'a'", emptyList());
+    }
+
+    @Test
+    public void when_queryDataConnectionWithCreateJob_then_success() {
+        String createDataConnectionQuery = "CREATE OR REPLACE DATA CONNECTION \"hazelcast\".\"public\".\"dl\"" + LE
+                + "TYPE \"dummy\"" + LE + "SHARED";
+        String createJobQuery = "CREATE JOB j AS SINK INTO map "
+                + "SELECT v, v FROM (SELECT GET_DDL('dataconnection', 'dl') AS v)";
+
+        IMap<String, String> map = instance().getMap("map");
+        createMapping("map", String.class, String.class);
+
+        instance().getSql().execute(createDataConnectionQuery);
+        instance().getSql().execute(createJobQuery);
+
+        assertEqualsEventually(map::size, 1);
+        assertEquals(map.values().iterator().next(), createDataConnectionQuery);
     }
 }

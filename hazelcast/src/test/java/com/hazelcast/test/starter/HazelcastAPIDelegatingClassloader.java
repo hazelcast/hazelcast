@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Set;
 
-import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static com.hazelcast.test.compatibility.SamplingSerializationService.isTestClass;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static java.util.Collections.enumeration;
@@ -131,7 +130,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
             if (classInputStream != null) {
                 byte[] classBytes = null;
                 try {
-                    classBytes = toByteArray(classInputStream);
+                    classBytes = classInputStream.readAllBytes();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -161,6 +160,11 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
             return true;
         }
         if (!name.startsWith("com.hazelcast")) {
+            return false;
+        }
+        if (name.startsWith("com.hazelcast.shaded")) {
+            // test deps are not shaded but some of them might contain classes
+            // matching checks in isTestClass.
             return false;
         }
         return isTestClass(name);

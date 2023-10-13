@@ -23,6 +23,7 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.ClearOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -31,7 +32,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_CLEAR}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueClearCodec#REQUEST_MESSAGE_TYPE}
  */
 public class QueueClearMessageTask
         extends AbstractPartitionMessageTask<String> {
@@ -62,7 +63,7 @@ public class QueueClearMessageTask
 
     @Override
     public String getMethodName() {
-        return "clear";
+        return SecurityInterceptorConstants.CLEAR;
     }
 
     @Override

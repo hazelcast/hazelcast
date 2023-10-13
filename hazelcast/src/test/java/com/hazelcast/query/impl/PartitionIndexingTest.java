@@ -201,7 +201,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         Map<String, BitSet> indexToPartitions = new HashMap<String, BitSet>();
 
         for (IMap map : maps) {
-            for (Indexes indexes : getAllIndexes(map)) {
+            for (IndexRegistry indexes : getAllIndexes(map)) {
                 for (InternalIndex index : indexes.getIndexes()) {
                     String indexName = index.getName();
                     BitSet indexPartitions = indexToPartitions.get(indexName);

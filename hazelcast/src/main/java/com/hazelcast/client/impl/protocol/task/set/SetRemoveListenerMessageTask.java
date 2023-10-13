@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.impl.eventservice.EventService;
@@ -73,7 +74,7 @@ public class SetRemoveListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "removeItemListener";
+        return SecurityInterceptorConstants.REMOVE_ITEM_LISTENER;
     }
 
     @Override

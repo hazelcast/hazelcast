@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.AddAllOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -34,7 +35,7 @@ import java.util.List;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.RingbufferMessageType#RINGBUFFER_ADDALL}
+ * {@link com.hazelcast.client.impl.protocol.codec.RingbufferAddAllCodec#REQUEST_MESSAGE_TYPE}
  */
 public class RingbufferAddAllMessageTask
         extends AbstractPartitionMessageTask<RingbufferAddAllCodec.RequestParameters> {
@@ -76,7 +77,7 @@ public class RingbufferAddAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "addAll";
+        return SecurityInterceptorConstants.ADD_ALL;
     }
 
     @Override

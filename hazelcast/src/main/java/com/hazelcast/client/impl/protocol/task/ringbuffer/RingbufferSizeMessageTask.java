@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.GenericOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -67,7 +68,7 @@ public class RingbufferSizeMessageTask
 
     @Override
     public String getMethodName() {
-        return "size";
+        return SecurityInterceptorConstants.SIZE;
     }
 
     @Override

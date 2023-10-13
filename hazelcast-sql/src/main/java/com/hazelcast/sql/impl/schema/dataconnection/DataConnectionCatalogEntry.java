@@ -63,6 +63,7 @@ public class DataConnectionCatalogEntry implements SqlCatalogObject {
         this.source = source;
     }
 
+    @Override
     public String name() {
         return name;
     }

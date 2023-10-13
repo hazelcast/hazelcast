@@ -25,13 +25,13 @@ import com.hazelcast.internal.nio.Connection;
 import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class AddBackupListenerMessageTask
         extends AbstractAddListenerMessageTask<Void>
-        implements Consumer<Long> {
+        implements LongConsumer {
 
     public AddBackupListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -59,7 +59,7 @@ public class AddBackupListenerMessageTask
     }
 
     @Override
-    public void accept(Long backupCorrelationId) {
+    public void accept(long backupCorrelationId) {
         ClientMessage eventMessage = ClientLocalBackupListenerCodec.encodeBackupEvent(backupCorrelationId);
         eventMessage.getStartFrame().flags |= ClientMessage.BACKUP_EVENT_FLAG;
         sendClientMessage(eventMessage);

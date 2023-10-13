@@ -172,12 +172,12 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
-    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending) {
         if (converter == null) {
             return emptyIterator();
         }
 
-        return indexStore.getSqlRecordIteratorBatch(convert(value));
+        return indexStore.getSqlRecordIteratorBatch(convert(value), descending);
     }
 
     @Override

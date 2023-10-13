@@ -16,6 +16,7 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hazelcast.jet.mongodb.ResourceChecks;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -36,9 +37,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkDatabaseAndCollectionExists;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.getBsonType;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.readExistenceChecksFlag;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.Objects.requireNonNull;
@@ -168,6 +171,11 @@ class FieldResolver {
         Map<String, DocumentField> fields = new HashMap<>();
         try (MongoClient client = connect(dataConnectionName, options)) {
             requireNonNull(client);
+
+            ResourceChecks resourceChecks = readExistenceChecksFlag(options);
+            if (resourceChecks.isEverPerformed()) {
+                checkDatabaseAndCollectionExists(client, databaseName, collectionName);
+            }
 
             MongoDatabase database = client.getDatabase(databaseName);
             List<Document> collections = database.listCollections()

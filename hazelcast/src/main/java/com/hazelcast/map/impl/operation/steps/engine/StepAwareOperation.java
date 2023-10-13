@@ -16,6 +16,10 @@
 
 package com.hazelcast.map.impl.operation.steps.engine;
 
+import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+
+import java.util.function.Consumer;
+
 /**
  * Contract to create a chain of steps from an operation
  *
@@ -42,5 +46,16 @@ public interface StepAwareOperation<S> {
      */
     default Step getStartingStep() {
         return null;
+    }
+
+    /**
+     * This method is used to inject {@link Backup#afterRun()} to {@link Step} engine.
+     * <p>
+     * Its goal is to call it on completion of offloaded backup operation.
+     *
+     * @param backupOpAfterRun {@link Backup#afterRun()}
+     */
+    default void setBackupOpAfterRun(Consumer backupOpAfterRun) {
+
     }
 }

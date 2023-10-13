@@ -130,8 +130,9 @@ public class MongoSourceTest extends AbstractMongoTest {
         Batch<?> sourceBuilder = batch(() -> mongoClient(connectionString))
                                                .database(defaultDatabase())
                                                .collection(testName.getMethodName())
+                                               .forceReadTotalParallelismOne(true)
                                                .sort(ascending("key"))
-                                               .throwOnNonExisting(false);
+                                               .checkResourceExistence(ResourceChecks.ONCE_PER_JOB);
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())
                 .setLocalParallelism(2)
@@ -298,7 +299,8 @@ public class MongoSourceTest extends AbstractMongoTest {
         String connectionString = mongoContainer.getConnectionString();
 
         Stream<?> builder = MongoSourceBuilder.stream(() -> MongoClients.create(connectionString));
-        builder = streamFilters(builder);
+        builder = streamFilters(builder)
+                .checkResourceExistence(ResourceChecks.ON_EACH_CONNECT);
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(builder.build())
