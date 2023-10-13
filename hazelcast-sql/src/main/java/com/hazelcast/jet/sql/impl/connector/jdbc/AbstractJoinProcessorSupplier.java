@@ -24,21 +24,16 @@ import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
-import java.security.Permission;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 abstract class AbstractJoinProcessorSupplier
@@ -51,7 +46,7 @@ abstract class AbstractJoinProcessorSupplier
     //Expression is Serializable.
     protected List<Expression<?>> projections;
 
-    // Transient members are received when ProcessorSupplier is initialized.
+    // Transient members are set when ProcessorSupplier is initialized.
     // No need to serialize them
     protected transient ExpressionEvalContext expressionEvalContext;
 
@@ -78,20 +73,14 @@ abstract class AbstractJoinProcessorSupplier
     @Nonnull
     @Override
     public Collection<? extends Processor> get(int count) {
-
-        // Return count number of Processors
+        // Return a collection having count number of Processors
         return IntStream.range(0, count)
-                        .mapToObj(i -> new TransformBatchedP<>(this::joinRows)).
-                        collect(toList());
+                // The processor is not cooperative due to blocking in joinRows
+                .mapToObj(i -> new TransformBatchedP<>(this::joinRows).setCooperative(false)).
+                collect(toList());
     }
 
     protected abstract Traverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows);
-
-    @Nullable
-    @Override
-    public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(dataConnectionName, ACTION_READ));
-    }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -108,5 +97,4 @@ abstract class AbstractJoinProcessorSupplier
         joinInfo = in.readObject();
         projections = in.readObject();
     }
-
 }

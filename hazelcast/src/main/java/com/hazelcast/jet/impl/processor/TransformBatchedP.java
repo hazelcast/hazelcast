@@ -37,6 +37,8 @@ public class TransformBatchedP<T, R> extends AbstractProcessor {
 
     private Traverser<? extends R> outputTraverser;
 
+    private boolean isCooperative = true;
+
     public TransformBatchedP(Function<? super Iterable<T>, ? extends Traverser<? extends R>> mapper) {
         this.mapper = mapper;
     }
@@ -52,6 +54,16 @@ public class TransformBatchedP<T, R> extends AbstractProcessor {
             inbox.clear();
             outputTraverser = null;
         }
+    }
+
+    @Override
+    public boolean isCooperative() {
+        return isCooperative;
+    }
+
+    public TransformBatchedP<T, R> setCooperative(boolean cooperative) {
+        isCooperative = cooperative;
+        return this;
     }
 
     @Override
