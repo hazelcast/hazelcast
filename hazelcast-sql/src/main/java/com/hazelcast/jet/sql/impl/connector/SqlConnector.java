@@ -33,9 +33,12 @@ import com.hazelcast.sql.impl.schema.Table;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
+import java.security.Permission;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import static java.util.Collections.emptyList;
 
 /**
  * An API to bridge Jet connectors and SQL. Allows the use of a Jet
@@ -200,6 +203,22 @@ public interface SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields
     );
+
+    /**
+     * Returns the required permissions to execute
+     * {@link #resolveAndValidateFields} method.
+     * <p>
+     * Implementors of {@link SqlConnector} don't need to override this method when {@code resolveAndValidateFields}
+     * doesn't support field resolution or when validation doesn't access the external resource.
+     * <p>
+     * The permissions are usually the same as required permissions to read from the external resource.
+     *
+     * @return list of permissions required to run {@link #resolveAndValidateFields}
+     */
+    @Nonnull
+    default List<Permission> permissionsForResolve(@Nonnull Map<String, String> options, NodeEngine nodeEngine) {
+        return emptyList();
+    }
 
     /**
      * Creates a {@link Table} object with the given fields. Should return

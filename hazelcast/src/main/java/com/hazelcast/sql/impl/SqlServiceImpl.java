@@ -249,7 +249,7 @@ public class SqlServiceImpl implements SqlService {
         }
 
         // TODO: pageSize ?
-        return plan.execute(queryId, args0, timeout);
+        return plan.execute(queryId, args0, timeout, securityContext);
     }
 
     private SqlPlan prepare(String schema, String sql, List<Object> arguments, SqlExpectedResultType expectedResultType) {
