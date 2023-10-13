@@ -263,7 +263,6 @@ public final class MongoSinkBuilder<T> {
 
         ConnectorPermission permission = params.buildPermission();
         return Sinks.fromProcessor(name, new DbCheckingPMetaSupplierBuilder()
-                .withRequiredPermission(permission)
                 .withCheckResourceExistence(localParams.isCheckExistenceOnEachConnect())
                 .withForceTotalParallelismOne(false)
                 .withDatabaseName(localParams.getDatabaseName())
