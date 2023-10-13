@@ -84,8 +84,7 @@ public final class RestClient {
      */
     private RestClient(String url, @Nullable String caCertificate, int connectTimeoutSeconds) {
         this.url = url;
-        HttpClient.Builder builder = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
-                                               .sslContext(buildSslContext(caCertificate));
+        HttpClient.Builder builder = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1);
         if (connectTimeoutSeconds > 0) {
             builder.connectTimeout(Duration.ofSeconds(connectTimeoutSeconds));
         }
