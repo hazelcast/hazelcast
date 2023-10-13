@@ -107,8 +107,9 @@ public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<Lis
                 if (proxyService.existsDistributedObject(serviceName, objectName)) {
                     continue;
                 }
-                Permission permission = ActionConstants.getPermission(objectName, serviceName, ActionConstants.ACTION_CREATE);
                 try {
+                    Permission permission = ActionConstants.getPermission(objectName, serviceName,
+                            ActionConstants.ACTION_CREATE);
                     securityContext.checkPermission(endpoint.getSubject(), permission);
                     filteredProxies.add(proxy);
                 } catch (AccessControlException ace) {
@@ -117,6 +118,9 @@ public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<Lis
                     if (logger.isFineEnabled()) {
                         logger.fine("Skipping proxy creation due to AccessControlException", ace);
                     }
+                } catch (Exception e) {
+                    // unknown serviceName or another unexpected issue
+                    logger.warning("Proxy won't be created for type '" + serviceName + "': " + objectName, e);
                 }
             }
         } else {
