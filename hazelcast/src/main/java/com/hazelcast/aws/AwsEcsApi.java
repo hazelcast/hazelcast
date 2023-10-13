@@ -154,7 +154,8 @@ class AwsEcsApi {
         if (!StringUtil.isNullOrEmptyAfterTrim(credentials.getToken())) {
             headers.put("X-Amz-Security-Token", credentials.getToken());
         }
-        headers.put("Host", endpoint);
+        // "Host" header is restricted with HttpClient in J11 - when we send our request,
+        //  it is automatically set to the URL host (which in this case is `endpoint` still)
         headers.put("X-Amz-Target", String.format("AmazonEC2ContainerServiceV20141113.%s", awsTargetAction));
         headers.put("Content-Type", "application/x-amz-json-1.1");
         headers.put("Accept-Encoding", "identity");
