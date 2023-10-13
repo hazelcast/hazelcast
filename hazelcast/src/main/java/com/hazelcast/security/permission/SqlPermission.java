@@ -28,8 +28,14 @@ public class SqlPermission extends InstancePermission {
     private static final int VIEW_DATACONNECTION = DROP_TYPE << 1;
     private static final int CREATE_DATACONNECTION = VIEW_DATACONNECTION << 1;
     private static final int DROP_DATACONNECTION = CREATE_DATACONNECTION << 1;
-    private static final int ALL = CREATE_MAPPING | DROP_MAPPING | CREATE_INDEX | CREATE_VIEW | DROP_VIEW
-            | CREATE_TYPE | DROP_TYPE | VIEW_DATACONNECTION | CREATE_DATACONNECTION | DROP_DATACONNECTION;
+    private static final int VIEW_MAPPING = DROP_DATACONNECTION << 1;
+    private static final int ALL = CREATE_MAPPING | DROP_MAPPING
+            | CREATE_INDEX
+            | CREATE_VIEW | DROP_VIEW
+            | CREATE_TYPE | DROP_TYPE
+            | VIEW_DATACONNECTION | CREATE_DATACONNECTION | DROP_DATACONNECTION
+            // Note: added to the tail for backward compatibility.
+            | VIEW_MAPPING;
 
     public SqlPermission(String name, String... actions) {
         super(name, actions);
@@ -43,6 +49,7 @@ public class SqlPermission extends InstancePermission {
             if (ActionConstants.ACTION_ALL.equals(action)) {
                 return ALL;
             } else {
+                // Note: mappings permission are mapped to the standard ACTION_* permissions
                 if (ActionConstants.ACTION_CREATE.equals(action)) {
                     mask |= CREATE_MAPPING;
                 } else if (ActionConstants.ACTION_DESTROY.equals(action)) {
@@ -63,6 +70,8 @@ public class SqlPermission extends InstancePermission {
                     mask |= CREATE_DATACONNECTION;
                 } else if (ActionConstants.ACTION_DROP_DATACONNECTION.equals(action)) {
                     mask |= DROP_DATACONNECTION;
+                } else if (ActionConstants.ACTION_VIEW_MAPPING.equals(action)) {
+                    mask |= VIEW_MAPPING;
                 }
                 // Note: DROP INDEX is not implemented yet, no need to have separate permission.
             }
