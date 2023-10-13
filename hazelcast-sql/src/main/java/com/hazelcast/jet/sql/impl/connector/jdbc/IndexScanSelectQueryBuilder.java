@@ -31,8 +31,9 @@ import java.util.stream.Collectors;
  * Builds an SQL query that uses the given projection and predicate for the right side of a Join operation.
  * This SQL query also includes a hidden column, which is used by the processor to determine the correspondence
  * between rows on the left side and the right side.
- *
+ * <p>
  * For example:
+ * <pre>
  * Left Side Row Position   |   Right Side
  * -------------------------|--------------
  * 0                        |   0
@@ -42,7 +43,8 @@ import java.util.stream.Collectors;
  * 2                        |   2
  *                          |   2
  *                          |   2
- *
+ * </pre>
+ * <p>
  * In this scenario, we have received 3 rows from the left side. Then we execute an SQL query for each left row
  * with the UNION ALL clause. It's important to note that the UNION ALL clause does not guarantee the result to be
  * in order. Therefore, we sort the result by a secret column used as ROW_NUMBER_ALIAS to maintain order.
