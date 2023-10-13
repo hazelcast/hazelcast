@@ -30,7 +30,6 @@ import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
-import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
@@ -261,7 +260,6 @@ public final class MongoSinkBuilder<T> {
         final WriteMongoParams<T> localParams = this.params;
         localParams.setCheckExistenceOnEachConnect(existenceChecks == ResourceChecks.ON_EACH_CONNECT);
 
-        ConnectorPermission permission = params.buildPermission();
         return Sinks.fromProcessor(name, new DbCheckingPMetaSupplierBuilder()
                 .withCheckResourceExistence(localParams.isCheckExistenceOnEachConnect())
                 .withForceTotalParallelismOne(false)
