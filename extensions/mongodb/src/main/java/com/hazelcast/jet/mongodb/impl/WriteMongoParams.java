@@ -21,8 +21,6 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.retry.RetryStrategy;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.ConnectorPermission;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.ReplaceOptions;
