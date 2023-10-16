@@ -39,26 +39,21 @@ public class JoinPredicatePreparedStatementSetter implements Consumer<PreparedSt
     @Override
     public void accept(PreparedStatement preparedStatement) {
         try {
-            setObjectsToPreparedStatement(preparedStatement);
-        } catch (Exception e) {
-            throw ExceptionUtil.sneakyThrow(e);
-        }
-    }
+            int[] leftEquiJoinIndices = joinInfo.leftEquiJoinIndices();
 
-    private void setObjectsToPreparedStatement(PreparedStatement preparedStatement)
-            throws SQLException {
-        int[] leftEquiJoinIndices = joinInfo.leftEquiJoinIndices();
+            // PreparedStatement parameter index starts from 1
+            int parameterIndex = 1;
 
-        // PreparedStatement parameter index starts from 1
-        int parameterIndex = 1;
-
-        // leftRow contains all left table columns used in the select statement
-        // leftEquiJoinIndices contains index of columns used in the JOIN clause
-        for (JetSqlRow leftRow : leftRowsList) {
-            for (int leftEquiJoinIndexValue : leftEquiJoinIndices) {
-                Object value = leftRow.get(leftEquiJoinIndexValue);
-                preparedStatement.setObject(parameterIndex++, value);
+            // leftRow contains all left table columns used in the select statement
+            // leftEquiJoinIndices contains index of columns used in the JOIN clause
+            for (JetSqlRow leftRow : leftRowsList) {
+                for (int leftEquiJoinIndexValue : leftEquiJoinIndices) {
+                    Object value = leftRow.get(leftEquiJoinIndexValue);
+                    preparedStatement.setObject(parameterIndex++, value);
+                }
             }
+        } catch (SQLException sqlException) {
+            throw ExceptionUtil.sneakyThrow(sqlException);
         }
     }
 }
