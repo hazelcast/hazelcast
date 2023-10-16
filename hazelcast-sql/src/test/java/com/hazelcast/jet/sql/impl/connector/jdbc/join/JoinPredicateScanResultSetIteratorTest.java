@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -28,6 +27,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +38,8 @@ class JoinPredicateScanResultSetIteratorTest {
     private static final H2DatabaseProvider h2DatabaseProvider = new H2DatabaseProvider();
 
     private static String dbConnectionUrl;
+
+    private static final List<String> EXPECTED_TABLES = List.of("VIEWS", "TABLES", "ROLES", "USERS");
 
     @BeforeAll
     public static void beforeAll() {
@@ -53,11 +55,11 @@ class JoinPredicateScanResultSetIteratorTest {
     void testHasNext() throws SQLException {
         try (Connection connection = DriverManager.getConnection(dbConnectionUrl)) {
             JoinPredicateScanResultSetIterator<String> iterator = createIterator(connection);
-            ArrayList<String> tableList = new ArrayList<>();
+            ArrayList<String> tableNameList = new ArrayList<>();
             while (iterator.hasNext()) {
-                tableList.add(iterator.next());
+                tableNameList.add(iterator.next());
             }
-            assertThat(tableList).isNotEmpty();
+            assertThat(tableNameList).containsAll(EXPECTED_TABLES);
 
             // Call hasNext() and next() methods one more time after the loop to test their behavior
             assertThat(iterator.hasNext()).isFalse();
@@ -69,15 +71,15 @@ class JoinPredicateScanResultSetIteratorTest {
     void testNext() throws SQLException {
         try (Connection connection = DriverManager.getConnection(dbConnectionUrl)) {
             JoinPredicateScanResultSetIterator<String> iterator = createIterator(connection);
-            ArrayList<String> tableList = new ArrayList<>();
+            ArrayList<String> tableNameList = new ArrayList<>();
             while (true) {
                 try {
-                    tableList.add(iterator.next());
+                    tableNameList.add(iterator.next());
                 } catch (NoSuchElementException exception) {
                     break;
                 }
             }
-            assertThat(tableList).isNotEmpty();
+            assertThat(tableNameList).containsAll(EXPECTED_TABLES);
 
             // Call hasNext() and next() methods one more time after the loop to test their behavior
             assertThat(iterator.hasNext()).isFalse();
@@ -85,7 +87,38 @@ class JoinPredicateScanResultSetIteratorTest {
         }
     }
 
-    @NotNull
+    @Test
+    void testHasNextAndNext_mixed() throws SQLException {
+        try (Connection connection = DriverManager.getConnection(dbConnectionUrl)) {
+            JoinPredicateScanResultSetIterator<String> iterator = createIterator(connection);
+            ArrayList<String> tableNameList = new ArrayList<>();
+            for (int index = 0; ; index++) {
+                if (isEven(index)) {
+                    if (iterator.hasNext()) {
+                        tableNameList.add(iterator.next());
+                    } else {
+                        break;
+                    }
+                } else {
+                    try {
+                        tableNameList.add(iterator.next());
+                    } catch (NoSuchElementException exception) {
+                        break;
+                    }
+                }
+            }
+            assertThat(tableNameList).containsAll(EXPECTED_TABLES);
+
+            // Call hasNext() and next() methods one more time after the loop to test their behavior
+            assertThat(iterator.hasNext()).isFalse();
+            assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);
+        }
+    }
+
+    private boolean isEven(int value) {
+        return value % 2 == 0;
+    }
+
     private JoinPredicateScanResultSetIterator<String> createIterator(Connection connection) {
         return new JoinPredicateScanResultSetIterator<>(connection,
                 "SELECT * FROM INFORMATION_SCHEMA.TABLES",
@@ -94,7 +127,8 @@ class JoinPredicateScanResultSetIteratorTest {
         );
     }
 
-    private void preparedStatementSetter(PreparedStatement preparedStatement) {
+    private void preparedStatementSetter(PreparedStatement ignored) {
+        // Do nothing with the PreparedStatement
     }
 
     private String rowMapper(ResultSet resultSet) {

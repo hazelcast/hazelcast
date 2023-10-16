@@ -17,9 +17,9 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.sql.HazelcastSqlException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,13 +31,14 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class FullScanResultSetIterator<T> implements Iterator<T> {
-
     private static final ILogger LOGGER = Logger.getLogger(FullScanResultSetIterator.class);
-    private Connection connection;
+    private final Connection connection;
     private final String sql;
     private final Function<ResultSet, T> rowMapper;
     private final Supplier<T> emptyResultSetMapper;
     private boolean hasNext;
+    private boolean hasNextMethodCalled;
+    private boolean iteratorClosed;
     private ResultSet resultSet;
     private PreparedStatement preparedStatement;
     private boolean callEmptyResultMapper = true;
@@ -58,72 +59,81 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
     @Override
     public boolean hasNext() {
         try {
-            lazyInit();
-            hasNext = false;
-            if (getNextItemFromRowMapper()) {
-                callEmptyResultMapper = false;
-                hasNext = true;
-            } else {
-                if (getNextItemFromEmptyResultSetMapper()) {
-                    hasNext = true;
-                }
+            if (iteratorClosed) {
+                return false;
             }
+            getNextItem();
             if (!hasNext) {
                 close();
             }
+            hasNextMethodCalled = true;
             return hasNext;
         } catch (SQLException sqlException) {
             close();
-            throw new HazelcastSqlException("Error occurred while iterating ResultSet", sqlException);
+            throw ExceptionUtil.sneakyThrow(sqlException);
         }
     }
 
     @Override
     public T next() {
-        if (!hasNext) {
-            throw new NoSuchElementException();
+        try {
+            if (iteratorClosed) {
+                throw new NoSuchElementException();
+            }
+            // If hasNext() has not been called, get the next item here
+            if (!hasNextMethodCalled) {
+                getNextItem();
+            }
+            // If there is no next item, throw NoSuchElementException to comply with the Iterator interface
+            if (!hasNext) {
+                close();
+                throw new NoSuchElementException();
+            }
+            hasNextMethodCalled = false;
+            return nextItem;
+        } catch (SQLException sqlException) {
+            close();
+            throw ExceptionUtil.sneakyThrow(sqlException);
         }
-        return nextItem;
     }
 
-    void lazyInit() throws SQLException {
+    private void lazyInit() throws SQLException {
         if (preparedStatement == null) {
             preparedStatement = connection.prepareStatement(sql);
             resultSet = preparedStatement.executeQuery();
         }
     }
 
-    void close() {
+    private void close() {
         LOGGER.info("Close is called");
+        iteratorClosed = true;
+
         IOUtil.closeResource(resultSet);
-        resultSet = null;
         IOUtil.closeResource(preparedStatement);
-        preparedStatement = null;
         IOUtil.closeResource(connection);
-        connection = null;
     }
 
-    boolean getNextItemFromRowMapper() throws SQLException {
-        boolean result = false;
+    private void getNextItem() throws SQLException {
+        lazyInit();
+        hasNext = getNextItemFromEither();
+    }
+
+    private boolean getNextItemFromEither() throws SQLException {
+        // Classical RowMapper logic.
+        // Iterate over the ResultSet and call the RowMapper
         while (resultSet.next()) {
             nextItem = rowMapper.apply(resultSet);
             if (nextItem != null) {
-                result = true;
-                break;
+                callEmptyResultMapper = false;
+                return true;
             }
         }
-        return result;
-    }
-
-    private boolean getNextItemFromEmptyResultSetMapper() {
-        boolean result = false;
+        // ResultSet has finished. Checkout if the emptyResultSetMapper should be called
         if (callEmptyResultMapper) {
             callEmptyResultMapper = false;
             nextItem = emptyResultSetMapper.get();
-            if (nextItem != null) {
-                result = true;
-            }
+            return nextItem != null;
         }
-        return result;
+        return false;
     }
 }

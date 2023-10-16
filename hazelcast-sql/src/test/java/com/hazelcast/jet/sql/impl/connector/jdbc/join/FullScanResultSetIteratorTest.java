@@ -16,55 +16,116 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
-import com.hazelcast.function.SupplierEx;
+import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@ExtendWith(MockitoExtension.class)
+
 class FullScanResultSetIteratorTest {
-    @Mock
-    Connection mockConnection;
-    @Mock
-    Function<ResultSet, Integer> mockRowMapper;
 
+    private static final String EMPTY_RESULT = "EMPTY_RESULT";
+
+    private static final H2DatabaseProvider h2DatabaseProvider = new H2DatabaseProvider();
+
+    private static String dbConnectionUrl;
+
+    @BeforeAll
+    public static void beforeAll() {
+        dbConnectionUrl = h2DatabaseProvider.createDatabase(FullScanResultSetIteratorTest.class.getName());
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        h2DatabaseProvider.shutdown();
+    }
 
     @Test
     void testEmptyResultSetMapperIsCalled() throws SQLException {
-        Integer expectedEmptyResult = 1;
+        try (Connection connection = DriverManager.getConnection(dbConnectionUrl)) {
+            String sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'table_does_not_exist'";
+            FullScanResultSetIterator<String> iterator = new FullScanResultSetIterator<>(connection,
+                    sql,
+                    this::rowMapper,
+                    () -> EMPTY_RESULT
+            );
+            ArrayList<String> tableNameList = new ArrayList<>();
+            while (iterator.hasNext()) {
+                tableNameList.add(iterator.next());
+            }
+            assertThat(tableNameList).containsExactly(EMPTY_RESULT);
 
-        FullScanResultSetIterator<Integer> fullScanResultSetIterator = new FullScanResultSetIterator<>(
-                mockConnection,
-                "",
-                mockRowMapper,
-                (SupplierEx<Integer>) () -> expectedEmptyResult
+            // Call hasNext() and next() methods one more time after the loop to test their behavior
+            assertThat(iterator.hasNext()).isFalse();
+            assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);
+        }
+    }
+
+    @Test
+    void testEmptyResultSetMapperReturnsNull() throws SQLException {
+        try (Connection connection = DriverManager.getConnection(dbConnectionUrl)) {
+            String sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'table_does_not_exist'";
+            FullScanResultSetIterator<String> iterator = new FullScanResultSetIterator<>(connection,
+                    sql,
+                    this::rowMapper,
+                    () -> null
+            );
+            ArrayList<String> tableNameList = new ArrayList<>();
+            while (iterator.hasNext()) {
+                tableNameList.add(iterator.next());
+            }
+            assertThat(tableNameList).isEmpty();
+
+            // Call hasNext() and next() methods one more time after the loop to test their behavior
+            assertThat(iterator.hasNext()).isFalse();
+            assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);
+        }
+    }
+
+    @Test
+    void testRowMapperIsCalled() throws SQLException {
+        List<String> expectedTables = List.of("VIEWS", "TABLES", "ROLES", "USERS");
+
+        try (Connection connection = DriverManager.getConnection(dbConnectionUrl)) {
+            String sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES";
+            FullScanResultSetIterator<String> iterator = createIterator(connection, sql);
+            ArrayList<String> tableNameList = new ArrayList<>();
+            while (iterator.hasNext()) {
+                tableNameList.add(iterator.next());
+            }
+            assertThat(tableNameList).containsAll(expectedTables);
+
+            // Call hasNext() and next() methods one more time after the loop to test their behavior
+            assertThat(iterator.hasNext()).isFalse();
+            assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);
+        }
+    }
+
+    private FullScanResultSetIterator<String> createIterator(Connection connection, String sql) {
+        return new FullScanResultSetIterator<>(connection,
+                sql,
+                this::rowMapper,
+                () -> EMPTY_RESULT
         );
-        FullScanResultSetIterator<Integer> spy = Mockito.spy(fullScanResultSetIterator);
-        // lazyInit should do nothing
-        doNothing().when(spy).lazyInit();
-        // getNextItemFromRowMapper should return false to call emptyResultSetMapper
-        doReturn(false).when(spy).getNextItemFromRowMapper();
+    }
 
-        // hasNext() is true because emptyResultSetMapper has a value
-        assertThat(spy.hasNext()).isTrue();
-        assertThat(spy.next()).isEqualTo(expectedEmptyResult);
 
-        // Now hasNext() is false because emptyResultSetMapper is consumed
-        assertThat(spy.hasNext()).isFalse();
-
-        // After all is consumed iterator must be closed
-        verify(spy).close();
+    private String rowMapper(ResultSet resultSet) {
+        try {
+            return resultSet.getString("TABLE_NAME");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

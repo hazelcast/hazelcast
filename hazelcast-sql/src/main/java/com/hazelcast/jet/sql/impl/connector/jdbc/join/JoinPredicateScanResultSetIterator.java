@@ -36,11 +36,12 @@ import java.util.function.Function;
  */
 public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
     private static final ILogger LOGGER = Logger.getLogger(JoinPredicateScanResultSetIterator.class);
-    private Connection connection;
+    private final Connection connection;
     private final String sql;
     private final Function<ResultSet, T> rowMapper;
     private final Consumer<PreparedStatement> preparedStatementSetter;
     private boolean hasNext;
+    private boolean hasNextMethodCalled;
     private boolean iteratorClosed;
     private ResultSet resultSet;
     private PreparedStatement preparedStatement;
@@ -66,6 +67,7 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
             if (!hasNext) {
                 close();
             }
+            hasNextMethodCalled = true;
             return hasNext;
         } catch (SQLException sqlException) {
             close();
@@ -79,16 +81,17 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
             if (iteratorClosed) {
                 throw new NoSuchElementException();
             }
-            if (nextItem == null) {
+            // If hasNext() has not been called, get the next item here
+            if (!hasNextMethodCalled) {
                 getNextItem();
             }
+            // If there is no next item, throw NoSuchElementException to comply with the Iterator interface
             if (!hasNext) {
                 close();
                 throw new NoSuchElementException();
             }
-            T result = nextItem;
-            nextItem = null;
-            return result;
+            hasNextMethodCalled = false;
+            return nextItem;
         } catch (SQLException sqlException) {
             close();
             throw ExceptionUtil.sneakyThrow(sqlException);
@@ -108,13 +111,8 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
         iteratorClosed = true;
 
         IOUtil.closeResource(resultSet);
-        resultSet = null;
-
         IOUtil.closeResource(preparedStatement);
-        preparedStatement = null;
-
         IOUtil.closeResource(connection);
-        connection = null;
     }
 
     private void getNextItem() throws SQLException {
@@ -123,6 +121,8 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
     }
 
     private boolean getNextItemFromRowMapper() {
+        // We can not iterate over the ResultSet because we don't know how to merge leftRows with the ResultSet
+        // Therefore rowMapper should iterate over the ResultSet
         nextItem = rowMapper.apply(resultSet);
         return (nextItem != null);
     }
