@@ -212,4 +212,19 @@ public class CPGroupAvailabilityListenerTest extends HazelcastRaftTestSupport {
 
         assertEquals(expectedShutdownInstanceUuids, listener.membersShutdown);
     }
+
+    @Test
+    public void whenMemberExitsNormally_thenReceiveEventsCommunityTest() throws Exception {
+        GracefulShutdownAvailabilityListener listener = new GracefulShutdownAvailabilityListener();
+
+        HazelcastInstance[] instances = newInstances(3);
+        instances[1].getCPSubsystem().addGroupAvailabilityListener(listener);
+
+        instances[0].shutdown();
+        assertEqualsEventually(1, listener.availabilityDecreased);
+
+        instances[2].shutdown();
+        assertEqualsEventually(1, listener.majorityLost);
+        assertEquals(1, listener.availabilityDecreased.get());
+    }
 }
