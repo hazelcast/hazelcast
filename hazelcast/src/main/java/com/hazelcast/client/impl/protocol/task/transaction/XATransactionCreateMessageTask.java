@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.XATransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.impl.xa.TransactionAccessor;
@@ -68,7 +69,7 @@ public class XATransactionCreateMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.START;
     }
 
     @Override

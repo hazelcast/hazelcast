@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.transactionalmap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMapReplaceCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
@@ -76,7 +77,7 @@ public class TransactionalMapReplaceMessageTask
 
     @Override
     public String getMethodName() {
-        return "replace";
+        return SecurityInterceptorConstants.REPLACE;
     }
 
     @Override

@@ -16,22 +16,6 @@
 
 package com.hazelcast.client.protocol;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.assertj.core.api.Assertions;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.reflections.Reflections;
-
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.client.impl.protocol.task.AddBackupListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.AddClusterViewListenerMessageTask;
@@ -70,15 +54,27 @@ import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
 import com.hazelcast.sql.impl.client.SqlFetchMessageTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-
 import javassist.ClassPool;
-import javassist.NotFoundException;
-import javassist.bytecode.BadBytecode;
 import javassist.bytecode.ClassFile;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
+import org.assertj.core.api.Assertions;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.reflections.Reflections;
+
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Verifies the {@code getRequiredPermission()} method doesn't simply return null in client {@link MessageTask} instances.
@@ -152,7 +148,7 @@ public class MessageTaskSecurityTest {
         assertFalse(clsname + " returns null in getRequiredPermission()", returnsNull);
     }
 
-    private boolean doesGetRequiredPermissionSimpleReturnNull(String clsname) throws NotFoundException, Exception, BadBytecode {
+    private boolean doesGetRequiredPermissionSimpleReturnNull(String clsname) throws Exception {
         if (clsname == null) {
             fail("Class with getRequiredPermission() method implementation not found");
         }

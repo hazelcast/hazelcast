@@ -94,7 +94,7 @@ class SqlParser {
                     while (openParanthesesFound(stack)) {
                         output.add(stack.remove(stack.size() - 1));
                     }
-                    if (stack.size() > 0) {
+                    if (!stack.isEmpty()) {
                         // temporarily fix for issue #189
                         stack.remove(stack.size() - 1);
                     }
@@ -108,7 +108,7 @@ class SqlParser {
                 output.add(token);
             }
         }
-        while (stack.size() > 0) {
+        while (!stack.isEmpty()) {
             output.add(stack.remove(stack.size() - 1));
         }
         return output;
@@ -179,7 +179,7 @@ class SqlParser {
     }
 
     private boolean openParanthesesFound(List<String> stack) {
-        return stack.size() > 0 && !stack.get(stack.size() - 1).equals("(");
+        return !stack.isEmpty() && !stack.get(stack.size() - 1).equals("(");
     }
 
     /*

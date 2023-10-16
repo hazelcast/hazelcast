@@ -26,7 +26,7 @@ import com.hazelcast.internal.partition.IPartitionService;
 
 import java.util.Collection;
 import java.util.UUID;
-import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -43,9 +43,9 @@ public abstract class Invalidator {
     protected final EventService eventService;
     protected final MetaDataGenerator metaDataGenerator;
     protected final IPartitionService partitionService;
-    protected final Function<EventRegistration, Boolean> eventFilter;
+    protected final Predicate<EventRegistration> eventFilter;
 
-    public Invalidator(String serviceName, Function<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
+    public Invalidator(String serviceName, Predicate<EventRegistration> eventFilter, NodeEngine nodeEngine) {
         this.serviceName = serviceName;
         this.eventFilter = eventFilter;
         this.nodeEngine = nodeEngine;
@@ -123,7 +123,7 @@ public abstract class Invalidator {
 
         Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, dataStructureName);
         for (EventRegistration registration : registrations) {
-            if (eventFilter.apply(registration)) {
+            if (eventFilter.test(registration)) {
                 eventService.publishEvent(serviceName, registration, invalidation, orderKey);
             }
         }

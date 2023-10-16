@@ -25,6 +25,7 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.operations.IsCanceledOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -75,7 +76,7 @@ public class ScheduledExecutorTaskIsCancelledFromPartitionMessageTask
 
     @Override
     public String getMethodName() {
-        return "isCancelled";
+        return SecurityInterceptorConstants.IS_CANCELLED;
     }
 
     @Override

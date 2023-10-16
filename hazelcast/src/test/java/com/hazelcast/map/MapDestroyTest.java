@@ -32,9 +32,9 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -99,7 +99,7 @@ public class MapDestroyTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(SlowTest.class)
+    @Category(NightlyTest.class)
     public void destroyRepeatedly() {
         for (int rep = 0; rep < 1_000; ++rep) {
             createFillAndDestroyMap();

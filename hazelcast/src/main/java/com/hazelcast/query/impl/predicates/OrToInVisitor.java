@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.internal.util.collection.InternalListMultiMap;
 
 import java.util.List;
@@ -48,7 +48,7 @@ public class OrToInVisitor extends AbstractVisitor {
     private static final int MINIMUM_NUMBER_OF_OR_TO_REPLACE = 5;
 
     @Override
-    public Predicate visit(OrPredicate orPredicate, Indexes indexes) {
+    public Predicate visit(OrPredicate orPredicate, IndexRegistry indexes) {
         Predicate[] originalInnerPredicates = orPredicate.predicates;
         if (originalInnerPredicates == null || originalInnerPredicates.length < MINIMUM_NUMBER_OF_OR_TO_REPLACE) {
             return orPredicate;

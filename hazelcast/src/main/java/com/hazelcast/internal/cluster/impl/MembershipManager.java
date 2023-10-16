@@ -729,6 +729,7 @@ public class MembershipManager {
             }
 
             logger.info("Removing " + member);
+            // the following is only used when sync join strategy is used
             clusterService.getClusterJoinManager().removeJoin(address);
             clusterService.getClusterJoinManager().addLeftMember(member);
             clusterService.getClusterHeartbeatManager().removeMember(member);
@@ -1296,7 +1297,7 @@ public class MembershipManager {
         if (!partialDisconnectionDetectionEnabled) {
             return false;
         } else if (!clusterService.isMaster()) {
-            if (suspectedMemberInfos.size() > 0) {
+            if (!suspectedMemberInfos.isEmpty()) {
                 logger.warning("This not is not master but received suspected members: " + suspectedMemberInfos + " from "
                         + sender);
             }
@@ -1308,7 +1309,7 @@ public class MembershipManager {
             logger.warning("Received suspected members: " + suspectedMemberInfos + " from " + sender + " contains this member!");
             return false;
         } else if (clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
-            if (suspectedMemberInfos.size() > 0 && logger.isFineEnabled()) {
+            if (!suspectedMemberInfos.isEmpty() && logger.isFineEnabled()) {
                 logger.warning("Ignoring received suspected members: " + suspectedMemberInfos + " from " + sender
                         + " because mastership claim is in progress...");
             }
@@ -1436,7 +1437,7 @@ public class MembershipManager {
                 clusterServiceLock.lock();
                 try {
                     if (!clusterService.isMaster()) {
-                        if (suspectedMembers.size() > 0) {
+                        if (!suspectedMembers.isEmpty()) {
                             logger.warning("Won't remove partially disconnected members: " + membersToRemove
                                     + " because I am no longer the master!");
                         }

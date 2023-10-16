@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TransactionalSetAddCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.set.SetService;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -75,7 +76,7 @@ public class TransactionalSetAddMessageTask
 
     @Override
     public String getMethodName() {
-        return "set";
+        return SecurityInterceptorConstants.SET;
     }
 
     @Override

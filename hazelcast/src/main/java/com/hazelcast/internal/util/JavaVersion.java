@@ -44,7 +44,8 @@ public enum JavaVersion implements JavaMajorVersion {
     JAVA_17(17),
     JAVA_18(18),
     JAVA_19(19),
-    JAVA_20(20)
+    JAVA_20(20),
+    JAVA_21(21)
     ;
 
     public static final JavaMajorVersion UNKNOWN_VERSION = new UnknownVersion();

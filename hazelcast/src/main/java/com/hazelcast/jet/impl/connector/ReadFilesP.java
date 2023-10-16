@@ -28,6 +28,7 @@ import com.hazelcast.jet.pipeline.file.impl.FileProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.file.impl.FileTraverser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
@@ -74,7 +75,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
 
     private LocalFileTraverser<T> traverser;
 
-    private ReadFilesP(
+    public ReadFilesP(
             @Nonnull String directory,
             @Nonnull String glob,
             boolean sharedFileSystem,
@@ -174,8 +175,9 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         @Nonnull
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> ProcessorSupplier.of(() -> new ReadFilesP<>(directory, glob, sharedFileSystem,
-                    ignoreFileNotFound, readFileFn));
+            return address -> ProcessorSupplier.of(SecuredFunctions.readFilesProcessorFn(
+                    directory, glob, sharedFileSystem, ignoreFileNotFound, readFileFn
+            ));
         }
 
         @Override
@@ -238,7 +240,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
             this.delegate = traverseIterator(uncheckCall(this::paths))
                     .filter(path -> !Files.isDirectory(path))
                     .peek(path -> hasResults = true)
-                    .filter(path -> pathFilterFn.test(path))
+                    .filter(pathFilterFn::test)
                     .flatMap(this::processFile);
         }
 

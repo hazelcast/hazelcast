@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -444,6 +445,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         Random random = new Random();
 
         IMap<String, String> map = getInstance().getMap("testMapClear");
+        map.addIndex(IndexType.HASH, "this");
         for (int i = 0; i < entryCount; i++) {
             map.put("key" + i, toRandomStringValue(random));
         }
@@ -462,6 +464,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         Random random = new Random();
 
         IMap<String, String> map = getInstance().getMap("testMap_evictAll_nonEmptyMap");
+        map.addIndex(IndexType.HASH, "this");
         for (int i = 0; i < entryCount; i++) {
             map.put("key" + i, toRandomStringValue(random));
         }

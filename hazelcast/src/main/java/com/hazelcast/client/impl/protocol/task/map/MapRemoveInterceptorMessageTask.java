@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.RemoveInterceptorOperationSupplier;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -93,7 +94,7 @@ public class MapRemoveInterceptorMessageTask
 
     @Override
     public String getMethodName() {
-        return "removeInterceptor";
+        return SecurityInterceptorConstants.REMOVE_INTERCEPTOR;
     }
 
     @Override

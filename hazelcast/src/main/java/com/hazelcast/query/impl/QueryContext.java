@@ -21,16 +21,16 @@ package com.hazelcast.query.impl;
  */
 public class QueryContext {
 
-    protected Indexes indexes;
+    protected IndexRegistry indexRegistry;
     protected int ownedPartitionCount = -1;
 
     /**
      * Creates a new query context with the given available indexes.
      *
-     * @param indexes the indexes available for the query context.
+     * @param indexRegistry the indexes available for the query context.
      */
-    public QueryContext(Indexes indexes, int ownedPartitionCount) {
-        this.indexes = indexes;
+    public QueryContext(IndexRegistry indexRegistry, int ownedPartitionCount) {
+        this.indexRegistry = indexRegistry;
         this.ownedPartitionCount = ownedPartitionCount;
     }
 
@@ -63,8 +63,8 @@ public class QueryContext {
      *                            Negative value indicates that the value is not defined.
      *
      */
-    void attachTo(Indexes indexes, int ownedPartitionCount) {
-        this.indexes = indexes;
+    void attachTo(IndexRegistry indexes, int ownedPartitionCount) {
+        this.indexRegistry = indexes;
         this.ownedPartitionCount = ownedPartitionCount;
     }
 
@@ -97,7 +97,7 @@ public class QueryContext {
      * @see QueryContext.IndexMatchHint
      */
     public Index matchIndex(String pattern, IndexMatchHint matchHint) {
-        return indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
+        return indexRegistry.matchIndex(pattern, matchHint, ownedPartitionCount);
     }
 
     /**

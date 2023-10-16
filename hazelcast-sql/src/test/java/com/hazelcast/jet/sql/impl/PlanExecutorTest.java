@@ -112,11 +112,11 @@ public class PlanExecutorTest extends SimpleTestInClusterSupport {
         CreateMappingPlan plan = new CreateMappingPlan(planKey(), mapping, replace, ifNotExists, planExecutor);
 
         // when
-        SqlResult result = planExecutor.execute(plan);
+        SqlResult result = planExecutor.execute(plan, null);
 
         // then
         assertThat(result.updateCount()).isEqualTo(0);
-        verify(catalog).createMapping(mapping, replace, ifNotExists);
+        verify(catalog).createMapping(mapping, replace, ifNotExists, null);
     }
 
     @Test

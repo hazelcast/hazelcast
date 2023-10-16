@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Comparables;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 
 import java.io.IOException;
 import java.util.Map;
@@ -52,7 +52,7 @@ public class NotEqualPredicate extends AbstractPredicate implements NegatablePre
     }
 
     @Override
-    public Predicate accept(Visitor visitor, Indexes indexes) {
+    public Predicate accept(Visitor visitor, IndexRegistry indexes) {
         return visitor.visit(this, indexes);
     }
 

@@ -48,10 +48,10 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * Contains all indexes for a data-structure, e.g. an IMap.
+ * Registry which contains all indexes of a data-structure, e.g. an IMap.
  */
 @SuppressWarnings("rawtypes")
-public class Indexes {
+public class IndexRegistry {
 
     /**
      * The partitions count check detects a race condition when a
@@ -90,26 +90,26 @@ public class Indexes {
     private volatile InternalIndex[] compositeIndexes = EMPTY_INDEXES;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private Indexes(Node node,
-                    String mapName,
-                    InternalSerializationService ss,
-                    IndexCopyBehavior indexCopyBehavior,
-                    Extractors extractors,
-                    IndexProvider indexProvider,
-                    boolean usesCachedQueryableEntries,
-                    boolean statisticsEnabled,
-                    boolean global,
-                    InMemoryFormat inMemoryFormat,
-                    int partitionCount,
-                    int partitionId,
-                    Supplier<java.util.function.Predicate<QueryableEntry>> resultFilterFactory) {
+    private IndexRegistry(Node node,
+                          String mapName,
+                          InternalSerializationService ss,
+                          IndexCopyBehavior indexCopyBehavior,
+                          Extractors extractors,
+                          IndexProvider indexProvider,
+                          boolean usesCachedQueryableEntries,
+                          boolean statisticsEnabled,
+                          boolean global,
+                          InMemoryFormat inMemoryFormat,
+                          int partitionCount,
+                          int partitionId,
+                          Supplier<java.util.function.Predicate<QueryableEntry>> resultFilterFactory) {
         this.node = node;
         this.mapName = mapName;
         this.global = global;
         this.indexCopyBehavior = indexCopyBehavior;
         this.ss = ss;
         this.usesCachedQueryableEntries = usesCachedQueryableEntries;
-        this.stats = createStats(node, mapName, global, inMemoryFormat, statisticsEnabled);
+        this.stats = createStats(global, inMemoryFormat, statisticsEnabled);
         this.extractors = extractors == null ? Extractors.newBuilder(ss).build() : extractors;
         this.indexProvider = indexProvider == null ? new DefaultIndexProvider() : indexProvider;
         this.queryContextProvider = createQueryContextProvider(this, global, statisticsEnabled);
@@ -240,14 +240,6 @@ public class Indexes {
         });
     }
 
-    /**
-     * Returns all the indexes known to this indexes instance.
-     */
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    public InternalIndex[] getIndexes() {
-        return indexes;
-    }
-
     public void getStepAwareStorages(Consumer<Step> stepCollector) {
         for (int i = 0; i < indexes.length; i++) {
             indexes[i].getStepAwareStorage().addAsHeadStep(stepCollector);
@@ -274,7 +266,7 @@ public class Indexes {
      * Destroys and then removes all the indexes from this indexes instance.
      */
     public void destroyIndexes() {
-        InternalIndex[] indexesSnapshot = getIndexes();
+        InternalIndex[] indexesCopy = indexes;
 
         indexes = EMPTY_INDEXES;
         compositeIndexes = EMPTY_INDEXES;
@@ -283,18 +275,19 @@ public class Indexes {
         evaluateOnlyAttributeIndexRegistry.clear();
         converterCache.clear();
 
-        for (InternalIndex index : indexesSnapshot) {
+        for (InternalIndex index : indexesCopy) {
             index.destroy();
         }
+        CACHED_ENTRIES.remove();
     }
 
     /**
      * Clears contents of indexes managed by this instance.
      */
     public void clearAll() {
-        InternalIndex[] indexesSnapshot = getIndexes();
+        InternalIndex[] indexesCopy = indexes;
 
-        for (InternalIndex index : indexesSnapshot) {
+        for (InternalIndex index : indexesCopy) {
             index.clear();
         }
     }
@@ -313,7 +306,7 @@ public class Indexes {
      */
     public boolean haveAtLeastOneIndexOrDefinition() {
         boolean haveAtLeastOneIndexOrDefinition = haveAtLeastOneIndex() || !definitions.isEmpty();
-        // for local indexes assert that indexes and definitions are exclusive
+        // for partitioned indexes assert that indexes and definitions are exclusive
         assert isGlobal() || !haveAtLeastOneIndexOrDefinition || !haveAtLeastOneIndex() || definitions.isEmpty();
         return haveAtLeastOneIndexOrDefinition;
     }
@@ -374,12 +367,12 @@ public class Indexes {
      */
     public void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
                          Index.OperationSource operationSource) {
-        InternalIndex[] indexes = getIndexes();
         Throwable exception = null;
-        for (InternalIndex index : indexes) {
+        InternalIndex[] indexesCopy = indexes;
+        for (InternalIndex index : indexesCopy) {
             try {
                 index.putEntry(newEntry, oldEntry, entryToStore, operationSource);
-            } catch (Throwable t) {
+            } catch (Exception t) {
                 if (exception == null) {
                     exception = t;
                 }
@@ -387,7 +380,7 @@ public class Indexes {
         }
 
         if (exception != null) {
-            rethrow(exception);
+            throw rethrow(exception);
         }
     }
 
@@ -416,8 +409,8 @@ public class Indexes {
      * @param operationSource the operation source.
      */
     public void removeEntry(CachedQueryEntry entry, Index.OperationSource operationSource) {
-        InternalIndex[] indexes = getIndexes();
-        for (InternalIndex index : indexes) {
+        InternalIndex[] indexesCopy = indexes;
+        for (InternalIndex index : indexesCopy) {
             index.removeEntry(entry, operationSource);
         }
     }
@@ -444,6 +437,14 @@ public class Indexes {
      */
     public InternalIndex getIndex(String name) {
         return indexesByName.get(name);
+    }
+
+    /**
+     * Returns all the indexes known to this indexes instance.
+     */
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public InternalIndex[] getIndexes() {
+        return indexes;
     }
 
     /**
@@ -572,15 +573,18 @@ public class Indexes {
         return stats;
     }
 
-    private static QueryContextProvider createQueryContextProvider(Indexes indexes, boolean global, boolean statisticsEnabled) {
+    private static QueryContextProvider createQueryContextProvider(IndexRegistry indexes,
+                                                                   boolean global, boolean statisticsEnabled) {
         if (statisticsEnabled) {
-            return global ? new GlobalQueryContextProviderWithStats() : new PartitionQueryContextProviderWithStats(indexes);
+            return global ? new GlobalQueryContextProviderWithStats()
+                    : new PartitionQueryContextProviderWithStats(indexes);
         } else {
-            return global ? new GlobalQueryContextProvider() : new PartitionQueryContextProvider(indexes);
+            return global ? new GlobalQueryContextProvider()
+                    : new PartitionQueryContextProvider(indexes);
         }
     }
 
-    private static IndexesStats createStats(Node node, String mapName, boolean global, InMemoryFormat inMemoryFormat,
+    private static IndexesStats createStats(boolean global, InMemoryFormat inMemoryFormat,
                                             boolean statisticsEnabled) {
         if (statisticsEnabled) {
             if (global) {
@@ -701,8 +705,8 @@ public class Indexes {
         /**
          * @return a new instance of Indexes
          */
-        public Indexes build() {
-            return new Indexes(node, mapName, serializationService, indexCopyBehavior, extractors,
+        public IndexRegistry build() {
+            return new IndexRegistry(node, mapName, serializationService, indexCopyBehavior, extractors,
                     indexProvider, usesCachedQueryableEntries, statsEnabled, global,
                     inMemoryFormat, partitionCount, partitionId, resultFilterFactory);
         }

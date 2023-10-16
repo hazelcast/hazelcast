@@ -57,7 +57,7 @@ class CRDTReplicationTask implements Runnable {
         }
         try {
             final Collection<Member> viableTargets = getNonLocalReplicaAddresses();
-            if (viableTargets.size() == 0) {
+            if (viableTargets.isEmpty()) {
                 return;
             }
             final Member[] targets = pickTargets(viableTargets, lastTargetIndex, maxTargets);
