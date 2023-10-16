@@ -549,7 +549,9 @@ public class PlanExecutor {
         assert oldValue == null : oldValue;
         try {
             sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-            Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig, ssc.subject());
+            Job job = plan.isAnalyzed()
+                    ? jet.newJob(jobId, plan.getDag(), jobConfig, ssc.subject())
+                    : jet.newLightJob(jobId, plan.getDag(), jobConfig, ssc.subject());
 
             job.getFuture().whenComplete((r, t) -> {
                 // make sure the queryResultProducer is cleaned up after the job completes. This normally

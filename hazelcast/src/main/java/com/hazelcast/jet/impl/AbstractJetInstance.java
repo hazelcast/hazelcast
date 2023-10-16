@@ -137,6 +137,11 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
         return newJobInt(jobId, pipeline, config, false);
     }
 
+    @Nonnull
+    public Job newJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config, @Nullable Subject subject) {
+        return newJobInt(jobId, dag, config, subject, false);
+    }
+
     private Job newJobInt(long jobId, @Nonnull Object jobDefinition, @Nonnull JobConfig config, boolean isLightJob) {
         return newJobInt(jobId, jobDefinition, config, null, isLightJob);
     }

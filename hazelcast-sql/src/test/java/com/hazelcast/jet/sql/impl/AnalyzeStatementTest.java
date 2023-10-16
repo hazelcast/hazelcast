@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.jet.Job;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -24,8 +25,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Objects;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 
@@ -47,5 +51,17 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         assertTrue(plan.isAnalyzed());
         assertEquals("opt1val", plan.getAnalyzeOptions().get("opt1"));
         assertEquals("opt2val", plan.getAnalyzeOptions().get("opt2"));
+
+        instance().getSql().execute("INSERT INTO test VALUES (1, 'testVal')");
+        assertRowsAnyOrder("ANALYZE SELECT * FROM test WHERE TRUE", rows(2, 1L, "testVal"));
+        final Job job = instance().getJet().getJobs()
+                .stream()
+                .filter(j -> Objects.equals(
+                        j.getConfig().getArgument("__sql.queryText"),
+                        "ANALYZE SELECT * FROM test WHERE TRUE"
+                ))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(job);
     }
 }
