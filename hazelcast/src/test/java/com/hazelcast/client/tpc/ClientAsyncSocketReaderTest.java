@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalTpcAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientTpcAuthenticationCodec;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -72,7 +72,7 @@ public class ClientAsyncSocketReaderTest {
             ClientMessage request = encodeAuthRequest(getUuid(client), getTpcToken(server));
             ClientTestUtil.writeClientMessage(os, request);
             ClientMessage response = ClientTestUtil.readResponse(is);
-            assertEquals(ExperimentalTpcAuthenticationCodec.RESPONSE_MESSAGE_TYPE, response.getMessageType());
+            assertEquals(ClientTpcAuthenticationCodec.RESPONSE_MESSAGE_TYPE, response.getMessageType());
         }
     }
 
@@ -106,7 +106,7 @@ public class ClientAsyncSocketReaderTest {
             ClientMessage request = encodeAuthRequest(getUuid(client), getTpcToken(server));
             ClientTestUtil.writeClientMessage(os, request);
             ClientMessage response = ClientTestUtil.readResponse(is);
-            assertEquals(ExperimentalTpcAuthenticationCodec.RESPONSE_MESSAGE_TYPE, response.getMessageType());
+            assertEquals(ClientTpcAuthenticationCodec.RESPONSE_MESSAGE_TYPE, response.getMessageType());
         }
     }
 
@@ -139,12 +139,12 @@ public class ClientAsyncSocketReaderTest {
             ClientMessage request = encodeAuthRequest(getUuid(client), getTpcToken(server));
             ClientTestUtil.writeClientMessage(os, request);
             ClientMessage response = ClientTestUtil.readResponse(is);
-            assertEquals(ExperimentalTpcAuthenticationCodec.RESPONSE_MESSAGE_TYPE, response.getMessageType());
+            assertEquals(ClientTpcAuthenticationCodec.RESPONSE_MESSAGE_TYPE, response.getMessageType());
 
             ClientMessage largeRequest = encodeAuthRequest(getUuid(client), new byte[UNVERIFIED_MESSAGE_LENGTH_LIMIT + 1]);
             ClientTestUtil.writeClientMessage(os, largeRequest);
             ClientMessage largeResponse = ClientTestUtil.readResponse(is);
-            assertEquals(ExperimentalTpcAuthenticationCodec.RESPONSE_MESSAGE_TYPE, largeResponse.getMessageType());
+            assertEquals(ClientTpcAuthenticationCodec.RESPONSE_MESSAGE_TYPE, largeResponse.getMessageType());
         }
     }
 
@@ -216,7 +216,7 @@ public class ClientAsyncSocketReaderTest {
     }
 
     private ClientMessage encodeAuthRequest(UUID uuid, byte[] token) {
-        return ExperimentalTpcAuthenticationCodec.encodeRequest(uuid, token);
+        return ClientTpcAuthenticationCodec.encodeRequest(uuid, token);
     }
 
     private UUID getUuid(HazelcastInstance client) {

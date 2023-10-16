@@ -93,6 +93,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListene
 import com.hazelcast.client.impl.protocol.codec.ClientSendAllSchemasCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientSendSchemaCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientTpcAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientTriggerPartitionAssignmentCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryAddListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryDestroyCacheCodec;
@@ -135,9 +136,6 @@ import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCustomCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalTpcAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockGetLockOwnershipCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockLockCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockTryLockCodec;
@@ -440,13 +438,11 @@ import com.hazelcast.client.impl.protocol.task.AddPartitionLostListenerMessageTa
 import com.hazelcast.client.impl.protocol.task.AuthenticationCustomCredentialsMessageTask;
 import com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.ClientStatisticsMessageTask;
+import com.hazelcast.client.impl.protocol.task.ClientTpcAuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxiesMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxyMessageTask;
 import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
 import com.hazelcast.client.impl.protocol.task.DestroyProxyMessageTask;
-import com.hazelcast.client.impl.protocol.task.ExperimentalAuthenticationCustomCredentialsMessageTask;
-import com.hazelcast.client.impl.protocol.task.ExperimentalAuthenticationMessageTask;
-import com.hazelcast.client.impl.protocol.task.ExperimentalTpcAuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetDistributedObjectsMessageTask;
 import com.hazelcast.client.impl.protocol.task.PingMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemoveDistributedObjectListenerMessageTask;
@@ -1533,12 +1529,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new AddBackupListenerMessageTask(cm, node, con));
         factories.put(ClientTriggerPartitionAssignmentCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TriggerPartitionAssignmentMessageTask(cm, node, con));
-        factories.put(ExperimentalAuthenticationCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ExperimentalAuthenticationMessageTask(cm, node, con));
-        factories.put(ExperimentalAuthenticationCustomCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ExperimentalAuthenticationCustomCredentialsMessageTask(cm, node, con));
-        factories.put(ExperimentalTpcAuthenticationCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ExperimentalTpcAuthenticationMessageTask(cm, node, con));
+        factories.put(ClientTpcAuthenticationCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ClientTpcAuthenticationMessageTask(cm, node, con));
     }
 
     private void initializeQueueTaskFactories() {
