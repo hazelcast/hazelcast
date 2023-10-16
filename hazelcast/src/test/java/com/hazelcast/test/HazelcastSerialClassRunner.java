@@ -16,8 +16,8 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.internal.util.collection.ArrayUtils;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.commons.lang3.ArrayUtils;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
