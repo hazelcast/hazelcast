@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -496,6 +497,22 @@ public final class StringUtil {
         return Arrays.stream(arr)
                 .map(Objects::toString)
                 .collect(Collectors.joining(LINE_SEPARATOR));
+    }
+
+    /**
+     * Formats given XML String with the given indentation used. If the {@code input} XML string is {@code null}, or
+     * {@code indent} parameter is negative, or XML transformation fails, then the original value is returned unchanged. The
+     * {@link IllegalArgumentException} is thrown when {@code indent==0}.
+     *
+     * @param input the XML String
+     * @param indent indentation (number of spaces used for one indentation level)
+     * @return formatted XML String or the original String if the formatting fails.
+     * @throws IllegalArgumentException when indentation is equal to zero
+     * @deprecated Use directly {@link XmlUtil#format(String, int)}
+     */
+    @Deprecated
+    public static String formatXml(@Nullable String input, int indent) throws IllegalArgumentException {
+        return XmlUtil.format(input, indent);
     }
 
     /**
