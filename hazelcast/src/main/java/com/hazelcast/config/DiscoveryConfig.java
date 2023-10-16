@@ -93,7 +93,7 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
     }
 
     public boolean isEnabled() {
-        return discoveryStrategyConfigs.size() > 0;
+        return !discoveryStrategyConfigs.isEmpty();
     }
 
     /**

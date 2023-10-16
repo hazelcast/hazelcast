@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.util.List;
@@ -56,6 +57,11 @@ public class MapAddNearCacheInvalidationListenerMessageTask
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    public String getMethodName() {
+        return SecurityInterceptorConstants.ADD_NEAR_CACHE_INVALIDATION_LISTENER;
     }
 
     @Override

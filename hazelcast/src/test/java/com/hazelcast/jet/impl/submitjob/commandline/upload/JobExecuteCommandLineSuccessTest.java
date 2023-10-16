@@ -39,9 +39,10 @@ import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClient
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.jarDoesNotExistInTempDirectory;
 import static org.junit.Assert.assertFalse;
 
+// Test for HazelcastCommandLine
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class JobUploadCommandLineSuccessTest extends JetTestSupport {
+public class JobExecuteCommandLineSuccessTest extends JetTestSupport {
 
     @After
     public void resetSingleton() {
@@ -55,8 +56,10 @@ public class JobUploadCommandLineSuccessTest extends JetTestSupport {
         HazelcastInstance member = createCluster();
 
         HazelcastInstance hazelcastClient = createHazelcastClient();
+
+        // newJob() is called from another thread, but it succeeds
+        // because CLI does not use ThreadLocal to store ExecuteJobParameters
         HazelcastBootstrap.executeJarOnCLI(() -> hazelcastClient,
-                //getJarPath().toString(),
                 getParalleJarPath().toString(),
                 null,
                 null,

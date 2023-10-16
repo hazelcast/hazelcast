@@ -20,6 +20,7 @@ import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -152,7 +153,7 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
             return false;
         }
         result = fetch();
-        if (result != null && result.size() > 0) {
+        if (CollectionUtil.isNotEmpty(result)) {
             index = 0;
             return true;
         }
@@ -174,7 +175,7 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
      * @param pointers the pointers defining the state of iteration
      */
     protected void setIterationPointers(List response, IterationPointer[] pointers) {
-        if (response != null && response.size() > 0) {
+        if (CollectionUtil.isNotEmpty(response)) {
             this.pointers = pointers;
         }
     }

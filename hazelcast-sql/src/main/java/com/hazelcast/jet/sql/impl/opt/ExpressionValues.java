@@ -107,8 +107,7 @@ public abstract class ExpressionValues implements Serializable {
                 List<RexNode> project,
                 RelDataType tuplesType,
                 List<ExpressionValues> values,
-                QueryParameterMetadata parameterMetadata
-        ) {
+                QueryParameterMetadata parameterMetadata) {
             PlanNodeSchema schema = OptUtils.schema(tuplesType);
             RexVisitor<Expression<?>> converter =
                     OptUtils.createRexToExpressionVisitor(schema, parameterMetadata);

@@ -66,7 +66,7 @@ public class RemoveCPMembershipListenerMessageTask extends AbstractAsyncMessageT
 
     @Override
     public String getMethodName() {
-        return null;
+        return "removeCPMembershipListener";
     }
 
     @Override

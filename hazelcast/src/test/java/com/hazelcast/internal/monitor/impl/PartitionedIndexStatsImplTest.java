@@ -29,13 +29,13 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LocalIndexStatsImplTest {
+public class PartitionedIndexStatsImplTest {
 
-    private LocalIndexStatsImpl stats;
+    private PartitionedIndexStatsImpl stats;
 
     @Before
     public void setUp() {
-        stats = new LocalIndexStatsImpl();
+        stats = new PartitionedIndexStatsImpl();
 
         stats.setCreationTime(1234);
         stats.setHitCount(20);

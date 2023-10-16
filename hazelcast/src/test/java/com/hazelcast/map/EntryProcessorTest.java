@@ -34,6 +34,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -42,6 +43,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
+import com.hazelcast.map.listener.NoopMapListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -90,6 +92,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -115,17 +118,24 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     @Parameter
     public InMemoryFormat inMemoryFormat;
 
-    @Parameters(name = "{index}: {0}")
+    @Parameter(1)
+    public boolean offload;
+
+    @Parameters(name = "{index}: {0}, offload: {1}")
     public static Collection<Object[]> data() {
         return asList(new Object[][]{
-                {BINARY},
-                {OBJECT},
+                {BINARY, true},
+                {BINARY, false},
+                {OBJECT, true},
+                {OBJECT, false},
         });
     }
 
     @Override
     public Config getConfig() {
-        return smallInstanceConfig().addMapConfig(new MapConfig(MAP_NAME).setInMemoryFormat(inMemoryFormat));
+        return smallInstanceConfigWithoutJetAndMetrics()
+                .setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(), String.valueOf(offload))
+                .addMapConfig(new MapConfig(MAP_NAME).setInMemoryFormat(inMemoryFormat));
     }
 
     boolean globalIndex() {
@@ -675,6 +685,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         AtomicInteger updateKey1Sum = new AtomicInteger(0);
         AtomicInteger removeKey1Sum = new AtomicInteger(0);
         CountDownLatch latch = new CountDownLatch(6);
+
         map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> {
             addCount.incrementAndGet();
             if (event.getKey() == 1) {
@@ -682,6 +693,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             }
             latch.countDown();
         }, true);
+
         map.addEntryListener((EntryRemovedListener<Integer, Integer>) event -> {
             removeCount.incrementAndGet();
             if (event.getKey() == 1) {
@@ -689,6 +701,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             }
             latch.countDown();
         }, true);
+
         map.addEntryListener((EntryUpdatedListener<Integer, Integer>) event -> {
             updateCount.incrementAndGet();
             if (event.getKey() == 1) {
@@ -1203,7 +1216,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         AtomicBoolean indexCalled = new AtomicBoolean(false);
-        map.executeOnEntries(entry -> null, new IndexedTestPredicate<>(indexCalled));
+        map.executeOnEntries(new NoOpEntryProcessor<>(), new IndexedTestPredicate<>(indexCalled));
 
         assertTrue("isIndexed method of IndexAwarePredicate should be called", indexCalled.get());
     }
@@ -1217,7 +1230,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         AtomicBoolean indexCalled = new AtomicBoolean(false);
-        map.executeOnEntries(entry -> null, new IndexedTestPredicate<>(indexCalled));
+        map.executeOnEntries(new NoOpEntryProcessor<>(), new IndexedTestPredicate<>(indexCalled));
 
         assertFalse("isIndexed method of IndexAwarePredicate should not be called", indexCalled.get());
     }
@@ -1437,6 +1450,32 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(1, executionCounter.get());
     }
 
+    @Test
+    public void testEntryProcessorCallsMapInterceptorGetOnlyOnce() {
+        final HazelcastInstance instance = createHazelcastInstance();
+
+        final IMap<Object, Object> map = instance.getMap(MAP_NAME);
+
+        map.addEntryListener(new NoopMapListener<Object, Object>(), false);
+
+        final LongAdder interceptGetCallCounter = new LongAdder();
+        map.addInterceptor(new MapInterceptorAdaptor() {
+            @Override
+            public Object interceptGet(final Object value) {
+                interceptGetCallCounter.add(1);
+                return super.interceptGet(value);
+            }
+        });
+
+        map.set(Void.TYPE, Void.TYPE);
+
+        map.executeOnEntries(new NoOpEntryProcessor<>());
+
+        assertEqualsStringFormat(
+                "For a map with a single entry, expected MapInterceptor.interceptGet to be called only %d time(s), but was called %d time(s)",
+                1L, interceptGetCallCounter.sum());
+    }
+
     private void testEntryProcessorWithPredicate_updatesLastAccessTime(boolean accessExpected) {
         Config config = withoutNetworkJoin(getConfig());
         config.getMetricsConfig().setEnabled(false);
@@ -1449,7 +1488,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.put("testKey", "testValue");
         EntryView<String, String> evStart = map.getEntryView("testKey");
         sleepAtLeastSeconds(2);
-        map.executeOnEntries(entry -> null, entry -> accessExpected);
+        map.executeOnEntries(new NoOpEntryProcessor<>(), entry -> accessExpected);
         EntryView<String, String> evEnd = map.getEntryView("testKey");
 
         if (accessExpected) {

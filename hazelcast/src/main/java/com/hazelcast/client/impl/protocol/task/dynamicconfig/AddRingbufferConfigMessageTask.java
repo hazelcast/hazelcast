@@ -26,6 +26,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 public class AddRingbufferConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddRingbufferConfigCodec.RequestParameters> {
@@ -63,7 +64,7 @@ public class AddRingbufferConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "addRingbufferConfig";
+        return SecurityInterceptorConstants.ADD_RINGBUFFER_CONFIG;
     }
 
     @Override

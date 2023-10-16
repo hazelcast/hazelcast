@@ -54,6 +54,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -301,12 +302,12 @@ public final class ExecutionPlanBuilder {
 
     private static List<EdgeDef> toEdgeDefs(
             List<Edge> edges, EdgeConfig defaultEdgeConfig,
-            Function<Edge, Integer> oppositeVtxId, boolean isJobDistributed
+            ToIntFunction<Edge> oppositeVtxId, boolean isJobDistributed
     ) {
         List<EdgeDef> list = new ArrayList<>(edges.size());
         for (Edge edge : edges) {
             list.add(new EdgeDef(edge, edge.getConfig() == null ? defaultEdgeConfig : edge.getConfig(),
-                    oppositeVtxId.apply(edge), isJobDistributed));
+                    oppositeVtxId.applyAsInt(edge), isJobDistributed));
         }
         return list;
     }

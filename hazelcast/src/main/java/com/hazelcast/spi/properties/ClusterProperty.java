@@ -582,6 +582,21 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.max.wait.seconds.before.join", 20, SECONDS);
 
     /**
+     * Controls how {@link #WAIT_SECONDS_BEFORE_JOIN} and {@link #MAX_WAIT_SECONDS_BEFORE_JOIN} behave.
+     * If async is true, the joining member's {@link HazelcastInstance} constructor returns right away without blocking.
+     * Cluster remains in the same state as before until the configured timeouts have expired, and the new member
+     * will behave as if it was a lite member until they expire.
+     * After the timeouts expire and no other joining members are in the queue,
+     * cluster repartitioning will be performed in the background.
+     * <p>
+     * Async reduces latency significantly when new members join clusters, often reducing startup time.
+     *
+     * @since 5.4.0
+     */
+    public static final HazelcastProperty ASYNC_JOIN_STRATEGY_ENABLED
+            = new HazelcastProperty("hazelcast.async.join.strategy.enabled", true);
+
+    /**
      * Join timeout, maximum time to try to join before giving up.
      */
     public static final HazelcastProperty MAX_JOIN_SECONDS
@@ -1629,8 +1644,10 @@ public final class ClusterProperty {
     /**
      * Hazelcast IMDG Enterprise license key.
      */
-    public static final HazelcastProperty ENTERPRISE_LICENSE_KEY
-            = new HazelcastProperty("hazelcast.enterprise.license.key");
+    public static final HazelcastProperty ENTERPRISE_LICENSE_KEY = new HazelcastProperty("hazelcast.enterprise.license.key")
+            // Print a warning when British spelling of "License" is used
+            // https://github.com/hazelcast/hazelcast/issues/13161
+            .setDeprecatedName("hazelcast.enterprise.licence.key");
 
     /**
      * Hazelcast serialization version. This is single byte value between 1 and

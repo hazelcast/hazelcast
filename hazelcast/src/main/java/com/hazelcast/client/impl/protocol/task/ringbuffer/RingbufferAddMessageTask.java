@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.AddOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -68,7 +69,7 @@ public class RingbufferAddMessageTask
 
     @Override
     public String getMethodName() {
-        return "add";
+        return SecurityInterceptorConstants.ADD;
     }
 
     @Override

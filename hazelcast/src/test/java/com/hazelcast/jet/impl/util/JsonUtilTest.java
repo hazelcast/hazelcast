@@ -57,24 +57,17 @@ public class JsonUtilTest extends JetTestSupport {
     @BeforeClass
     public static void setup() throws Exception {
         Path file = Paths.get(JsonUtilTest.class.getResource("file.json").toURI());
-        jsonString = Files.lines(file)
-                          .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                          .toString();
+        jsonString = Files.readString(file);
 
         Path fileList = Paths.get(JsonUtilTest.class.getResource("file_list.json").toURI());
-        jsonStringList = Files.lines(fileList)
-                              .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                              .toString();
+        jsonStringList = Files.readString(fileList);
 
         Path filePrettyPrinted = Paths.get(JsonUtilTest.class.getResource("file_pretty_printed.json").toURI());
-        jsonStringPrettyPrinted = Files.lines(filePrettyPrinted)
-                                       .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                                       .toString();
+        jsonStringPrettyPrinted = Files.readString(filePrettyPrinted);
 
         Path fileListPrettyPrinted = Paths.get(JsonUtilTest.class.getResource("file_list_pretty_printed.json").toURI());
-        jsonStringListPrettyPrinted = Files.lines(fileListPrettyPrinted)
-                                           .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                                           .toString();
+        jsonStringListPrettyPrinted = Files.readString(fileListPrettyPrinted);
+
         testJsonObject = TestJsonObject.withDefaults();
     }
 

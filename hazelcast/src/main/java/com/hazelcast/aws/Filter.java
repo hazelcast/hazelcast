@@ -36,7 +36,7 @@ final class Filter {
     }
 
     void addMulti(String name, Collection<String> values) {
-        if (values.size() > 0) {
+        if (!values.isEmpty()) {
             filters.put("Filter." + index + ".Name", name);
             int valueIndex = 1;
             for (String value : values) {

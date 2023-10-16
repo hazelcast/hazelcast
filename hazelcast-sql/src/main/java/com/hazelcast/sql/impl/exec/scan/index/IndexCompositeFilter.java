@@ -17,25 +17,15 @@
 package com.hazelcast.sql.impl.exec.scan.index;
 
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
-import com.hazelcast.internal.util.AbstractCompositeIterator;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NavigableMap;
-import java.util.TreeMap;
-
-import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 /**
  * Filter that is composed of several equality and range filters.
@@ -69,46 +59,6 @@ public class IndexCompositeFilter implements IndexFilter, IdentifiedDataSerializ
 
     public IndexCompositeFilter(List<IndexFilter> filters) {
         this.filters = filters;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public Iterator<QueryableEntry> getEntries(InternalIndex index, boolean descending, ExpressionEvalContext evalContext) {
-
-        // Sort the filter Comparables, NULLs are less than any other value
-        NavigableMap<Comparable, IndexFilter> canonicalFilters = new TreeMap<>((o1, o2) -> {
-            if (o1 == NULL) {
-                return o2 == NULL ? 0 : (descending ? 1 : -1);
-            }
-
-            if (o2 == NULL) {
-                return descending ? -1 : 1;
-            }
-            return descending ? o2.compareTo(o1) : o1.compareTo(o2);
-        });
-
-        for (IndexFilter filter : filters) {
-            Comparable filterComparable = filter.getComparable(evalContext);
-
-            if (filterComparable == null) {
-                // One of disjunctive components produced NULL, ignore it.
-                // E.g. {WHERE a=NULL OR a=2} => {WHERE a=2}
-                continue;
-            }
-
-            // Avoid duplicates. E.g. {WHERE a=? OR a=?} for parameters {1, 1}.
-            filterComparable = index.canonicalizeQueryArgumentScalar(filterComparable);
-
-            canonicalFilters.put(filterComparable, filter);
-        }
-
-        if (canonicalFilters.isEmpty()) {
-            // There are no non-NULL values, the result set is empty.
-            return Collections.emptyIterator();
-        }
-
-        Collection<IndexFilter> filters = canonicalFilters.values();
-        return new LazyIterator(index, descending, evalContext, filters);
     }
 
     @Override
@@ -173,37 +123,5 @@ public class IndexCompositeFilter implements IndexFilter, IdentifiedDataSerializ
     @Override
     public String toString() {
         return "IndexCompositeFilter {filters=" + filters + '}';
-    }
-
-    private static final class LazyIterator extends AbstractCompositeIterator<QueryableEntry> {
-
-        private final InternalIndex index;
-        private final ExpressionEvalContext evalContext;
-        private final Iterator<IndexFilter> filterIterator;
-        private final boolean descending;
-
-        private LazyIterator(InternalIndex index, boolean descending, ExpressionEvalContext evalContext,
-                             Collection<IndexFilter> filters) {
-            this.index = index;
-            this.evalContext = evalContext;
-            this.descending = descending;
-
-            filterIterator = filters.iterator();
-        }
-
-        @Override
-        protected Iterator<QueryableEntry> nextIterator() {
-            while (filterIterator.hasNext()) {
-                IndexFilter filter = filterIterator.next();
-
-                Iterator<QueryableEntry> iterator = filter.getEntries(index, descending, evalContext);
-
-                if (iterator.hasNext()) {
-                    return iterator;
-                }
-            }
-
-            return null;
-        }
     }
 }

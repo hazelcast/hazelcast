@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -246,7 +247,7 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
 
     private static int parseInt(String name, int defaultValue, QueueStoreConfig storeConfig) {
         String val = storeConfig.getProperty(name);
-        if (val == null || val.trim().isEmpty()) {
+        if (StringUtil.isNullOrEmptyAfterTrim(val)) {
             return defaultValue;
         }
         try {

@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -56,7 +56,7 @@ public class EqualPredicate extends AbstractIndexAwarePredicate
     }
 
     @Override
-    public Predicate accept(Visitor visitor, Indexes indexes) {
+    public Predicate accept(Visitor visitor, IndexRegistry indexes) {
         return visitor.visit(this, indexes);
     }
 

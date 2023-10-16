@@ -27,7 +27,7 @@ jobs:
       CL_IMG: ${{ steps.get-cl-image-tag.outputs.CL_IMG }}
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3.0.0
+        uses: aws-actions/configure-aws-credentials@v4.0.1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -41,7 +41,7 @@ jobs:
             GCP_SA_KEY,CN/GKE_SA_KEY
 
       - name: Checkout Auto Discovery Test Suite
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: hazelcast/auto-discovery-test-suite
           token: ${{ env.DEVOPS_GITHUB_TOKEN }}
@@ -57,7 +57,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{steps.decide-ref.outputs.ref}}
           path: ${{steps.decide-ref.outputs.ref}}
@@ -119,7 +119,7 @@ jobs:
           path: aws-discovery-suite/terraform/tools/client/aws-discovery-client.jar
 
       - name: Authenticate to GAR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: us-east1-docker.pkg.dev
           username: _json_key
