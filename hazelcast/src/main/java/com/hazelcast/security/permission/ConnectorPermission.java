@@ -25,7 +25,6 @@ public class ConnectorPermission extends InstancePermission {
 
     public static final String FILE_PREFIX = "file:";
     public static final String SOCKET_PREFIX = "socket:";
-    public static final String JMS_PREFIX = "jms:";
 
     private static final int READ = 1;
     private static final int WRITE = 2;
@@ -50,10 +49,6 @@ public class ConnectorPermission extends InstancePermission {
 
     public static ConnectorPermission socket(String host, int port, String action) {
         return new ConnectorPermission(SOCKET_PREFIX + host + ':' + port, action);
-    }
-
-    public static ConnectorPermission jms(@Nullable String destination, String action) {
-        return new ConnectorPermission(JMS_PREFIX + (destination == null ? "" : destination), action);
     }
 
     @Override
