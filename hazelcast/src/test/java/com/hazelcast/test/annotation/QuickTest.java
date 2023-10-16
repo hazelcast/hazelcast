@@ -31,11 +31,6 @@ import java.time.Duration;
 public final class QuickTest {
     public static final Duration EXPECTED_RUNTIME_THRESHOLD = Duration.ofMinutes(1);
 
-    /**
-     * TODO Remove and add to PR
-     * Prints output like "testMigrationStats_whenMigrationProcessCompletes is annotated as a QuickTest, expected to complete
-     * within 60 seconds - but took 120 seconds"
-     */
     public static void logMessageIfTestOverran(FrameworkMethod method, float tookSeconds) {
         if (tookSeconds > QuickTest.EXPECTED_RUNTIME_THRESHOLD.getSeconds()) {
             System.err.println(MessageFormat.format(
