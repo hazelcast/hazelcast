@@ -16,6 +16,9 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.test.annotation.QuickTest;
+import org.apache.commons.lang3.ArrayUtils;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -48,8 +51,14 @@ public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
             long start = System.currentTimeMillis();
             System.out.println("Started Running Test: " + testName);
             super.runChild(method, notifier);
-            float took = (float) (System.currentTimeMillis() - start) / 1000;
-            System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
+            float tookSeconds = (float) (System.currentTimeMillis() - start) / 1000;
+            System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, tookSeconds));
+
+            Category classAnnotations = method.getDeclaringClass().getAnnotation(Category.class);
+
+            if (classAnnotations != null && ArrayUtils.contains(classAnnotations.value(), QuickTest.class)) {
+                QuickTest.logMessageIfTestOverran(method, tookSeconds);
+            }
         } finally {
             removeThreadLocalTestMethodName();
             // restore the system properties

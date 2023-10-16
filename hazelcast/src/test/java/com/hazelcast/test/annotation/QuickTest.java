@@ -16,10 +16,31 @@
 
 package com.hazelcast.test.annotation;
 
+import org.junit.runners.model.FrameworkMethod;
+
+import java.text.MessageFormat;
+import java.time.Duration;
+
 /**
- * Annotates quick tests which are fast enough for the PR builder.
+ * Annotates quick tests which are fast enough (i.e. execution sub-{@link #EXPECTED_RUNTIME_THRESHOLD} per test) for the PR builder.
  * <p>
  * Will be executed in the PR builder and for code coverage measurements.
+ * <p>
+ * The opposite of a {@link SlowTest}
  */
 public final class QuickTest {
+    public static final Duration EXPECTED_RUNTIME_THRESHOLD = Duration.ofMinutes(1);
+
+    /**
+     * TODO Remove and add to PR
+     * Prints output like "testMigrationStats_whenMigrationProcessCompletes is annotated as a QuickTest, expected to complete
+     * within 60 seconds - but took 120 seconds"
+     */
+    public static void logMessageIfTestOverran(FrameworkMethod method, float tookSeconds) {
+        if (tookSeconds > QuickTest.EXPECTED_RUNTIME_THRESHOLD.getSeconds()) {
+            System.err.println(MessageFormat.format(
+                    "{0} is annotated as a {1}, expected to complete within {2} seconds - but took {3} seconds",
+                    method.getName(), QuickTest.class.getSimpleName(), EXPECTED_RUNTIME_THRESHOLD.getSeconds(), tookSeconds));
+        }
+    }
 }
