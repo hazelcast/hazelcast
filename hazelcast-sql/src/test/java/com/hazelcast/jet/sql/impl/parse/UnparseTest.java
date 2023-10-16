@@ -25,6 +25,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.pretty.SqlPrettyWriter;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,13 +33,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static java.util.Collections.emptyList;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class UnparseTest extends SqlTestSupport {
-    private static final String LE = System.lineSeparator();
 
     private OptimizerContext context;
 
@@ -85,10 +84,10 @@ public class UnparseTest extends SqlTestSupport {
     @Test
     public void test_ANALYZE() {
         checkQuery("ANALYZE SELECT JSON_ARRAY()");
-        checkQuery("ANALYZE" + LE
-                + "WITH OPTIONS (" + LE
-                + "  'testOpt1'='testOpt1Val'," + LE
-                + "  'testOpt2'='testOpt2Val'" + LE
+        checkQuery("ANALYZE\n"
+                + "WITH OPTIONS (\n"
+                + "  'testOpt1'='testOpt1Val',\n"
+                + "  'testOpt2'='testOpt2Val'\n"
                 + ") SELECT JSON_ARRAY()");
     }
 
@@ -98,7 +97,7 @@ public class UnparseTest extends SqlTestSupport {
         node.unparse(writer, 0, 0);
         final String result = writer.toSqlString().toString();
 
-        assertEquals(query, result);
+        Assertions.assertThat(result).isEqualToNormalizingNewlines(query);
         assertNotNull(context.parse(result).getNode());
     }
 
