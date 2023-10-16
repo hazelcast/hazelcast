@@ -54,6 +54,7 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
         this.rowMapper = rowMapper;
         this.emptyResultSetMapper = emptyResultSetMapper;
     }
+
     @Override
     public boolean hasNext() {
         try {
@@ -76,6 +77,7 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
             throw new HazelcastSqlException("Error occurred while iterating ResultSet", sqlException);
         }
     }
+
     @Override
     public T next() {
         if (!hasNext) {
@@ -83,12 +85,14 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
         }
         return nextItem;
     }
+
     void lazyInit() throws SQLException {
         if (preparedStatement == null) {
             preparedStatement = connection.prepareStatement(sql);
             resultSet = preparedStatement.executeQuery();
         }
     }
+
     void close() {
         LOGGER.info("Close is called");
         IOUtil.closeResource(resultSet);
@@ -98,6 +102,7 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
         IOUtil.closeResource(connection);
         connection = null;
     }
+
     boolean getNextItemFromRowMapper() throws SQLException {
         boolean result = false;
         while (resultSet.next()) {
@@ -109,6 +114,7 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
         }
         return result;
     }
+
     private boolean getNextItemFromEmptyResultSetMapper() {
         boolean result = false;
         if (callEmptyResultMapper) {

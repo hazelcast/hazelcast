@@ -17,9 +17,9 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.sql.HazelcastSqlException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -41,6 +41,7 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
     private final Function<ResultSet, T> rowMapper;
     private final Consumer<PreparedStatement> preparedStatementSetter;
     private boolean hasNext;
+    private boolean iteratorClosed;
     private ResultSet resultSet;
     private PreparedStatement preparedStatement;
     private T nextItem;
@@ -58,24 +59,40 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
     @Override
     public boolean hasNext() {
         try {
-            lazyInit();
-            hasNext = getNextItemFromRowMapper();
+            if (iteratorClosed) {
+                return false;
+            }
+            getNextItem();
             if (!hasNext) {
                 close();
             }
             return hasNext;
         } catch (SQLException sqlException) {
             close();
-            throw new HazelcastSqlException("Error occurred while iterating ResultSet", sqlException);
+            throw ExceptionUtil.sneakyThrow(sqlException);
         }
     }
 
     @Override
     public T next() {
-        if (!hasNext) {
-            throw new NoSuchElementException();
+        try {
+            if (iteratorClosed) {
+                throw new NoSuchElementException();
+            }
+            if (nextItem == null) {
+                getNextItem();
+            }
+            if (!hasNext) {
+                close();
+                throw new NoSuchElementException();
+            }
+            T result = nextItem;
+            nextItem = null;
+            return result;
+        } catch (SQLException sqlException) {
+            close();
+            throw ExceptionUtil.sneakyThrow(sqlException);
         }
-        return nextItem;
     }
 
     private void lazyInit() throws SQLException {
@@ -88,20 +105,25 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
 
     private void close() {
         LOGGER.info("Close is called");
+        iteratorClosed = true;
+
         IOUtil.closeResource(resultSet);
         resultSet = null;
+
         IOUtil.closeResource(preparedStatement);
         preparedStatement = null;
+
         IOUtil.closeResource(connection);
         connection = null;
     }
 
+    private void getNextItem() throws SQLException {
+        lazyInit();
+        hasNext = getNextItemFromRowMapper();
+    }
+
     private boolean getNextItemFromRowMapper() {
-        boolean result = false;
         nextItem = rowMapper.apply(resultSet);
-        if (nextItem != null) {
-            result = true;
-        }
-        return result;
+        return (nextItem != null);
     }
 }
