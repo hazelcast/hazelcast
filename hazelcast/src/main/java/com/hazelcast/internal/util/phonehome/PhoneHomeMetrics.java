@@ -213,9 +213,8 @@ public enum PhoneHomeMetrics {
     DMT_MIGRATION_COMPLETED("cmp"),
     DMT_SOURCE_VERSION("sv"),
     DMT_TARGET_VERSION("tv"),
-    DMT_TARGET_VIRIDIAN("tvrd");
-
-
+    DMT_TARGET_VIRIDIAN("tvrd"),
+    DMT_DS_INFO("dsdata");
 
     private final String query;
 
