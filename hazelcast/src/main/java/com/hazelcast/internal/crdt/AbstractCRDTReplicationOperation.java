@@ -17,6 +17,7 @@
 package com.hazelcast.internal.crdt;
 
 import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -24,9 +25,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Map.Entry;
-
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Base class for CRDT replication operations. It supports replicating a
@@ -78,21 +76,11 @@ public abstract class AbstractCRDTReplicationOperation<T extends IdentifiedDataS
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeInt(replicationData.size());
-        for (Entry<String, T> entry : replicationData.entrySet()) {
-            out.writeString(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
+        SerializationUtil.writeMapStringKey(replicationData, out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        final int mapSize = in.readInt();
-        replicationData = createHashMap(mapSize);
-        for (int i = 0; i < mapSize; i++) {
-            final String name = in.readString();
-            final T crdt = in.readObject();
-            replicationData.put(name, crdt);
-        }
+        replicationData = SerializationUtil.readMap(in);
     }
 }

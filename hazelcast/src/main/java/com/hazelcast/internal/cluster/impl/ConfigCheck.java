@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -28,7 +29,6 @@ import java.util.Map;
 
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Contains enough information about Hazelcast Config to do a validation check so that clusters with different configurations
@@ -170,17 +170,8 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             out.writeString(entry.getValue());
         }
 
-        out.writeInt(maps.size());
-        for (Map.Entry<String, Object> entry : maps.entrySet()) {
-            out.writeString(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
-
-        out.writeInt(queues.size());
-        for (Map.Entry<String, Object> entry : queues.entrySet()) {
-            out.writeString(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
+        SerializationUtil.writeMapStringKey(maps, out);
+        SerializationUtil.writeMapStringKey(queues, out);
     }
 
     @Override
@@ -196,13 +187,8 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
                 ignore(ignored);
             }
         }
-        int propSize = in.readInt();
-        properties = createHashMap(propSize);
-        for (int k = 0; k < propSize; k++) {
-            String key = in.readString();
-            String value = in.readString();
-            properties.put(key, value);
-        }
+
+        properties = SerializationUtil.readMap(in);
 
         int mapSize = in.readInt();
         for (int k = 0; k < mapSize; k++) {
