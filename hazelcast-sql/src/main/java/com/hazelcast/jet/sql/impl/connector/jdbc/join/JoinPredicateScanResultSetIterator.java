@@ -54,6 +54,7 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
         this.rowMapper = rowMapper;
         this.preparedStatementSetter = preparedStatementSetter;
     }
+
     @Override
     public boolean hasNext() {
         try {
@@ -68,6 +69,7 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
             throw new HazelcastSqlException("Error occurred while iterating ResultSet", sqlException);
         }
     }
+
     @Override
     public T next() {
         if (!hasNext) {
@@ -75,6 +77,7 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
         }
         return nextItem;
     }
+
     private void lazyInit() throws SQLException {
         if (preparedStatement == null) {
             preparedStatement = connection.prepareStatement(sql);
@@ -82,6 +85,7 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
             resultSet = preparedStatement.executeQuery();
         }
     }
+
     private void close() {
         LOGGER.info("Close is called");
         IOUtil.closeResource(resultSet);
@@ -91,6 +95,7 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
         IOUtil.closeResource(connection);
         connection = null;
     }
+
     private boolean getNextItemFromRowMapper() {
         boolean result = false;
         nextItem = rowMapper.apply(resultSet);
