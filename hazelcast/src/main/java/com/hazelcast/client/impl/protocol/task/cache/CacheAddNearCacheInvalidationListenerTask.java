@@ -26,6 +26,8 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 
 import java.security.Permission;
 import java.util.List;
@@ -118,7 +120,7 @@ public class CacheAddNearCacheInvalidationListenerTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(parameters.name, ActionConstants.ACTION_LISTEN);
     }
 
 }
