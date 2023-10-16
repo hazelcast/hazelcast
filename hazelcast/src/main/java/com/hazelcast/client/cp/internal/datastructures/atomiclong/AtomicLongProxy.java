@@ -235,6 +235,6 @@ public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
     }
 
     private String getCombinedObjectName() {
-        return objectName + "@" + objectUUID;
+        return objectUUID == null ? objectName : objectName + "@" + objectUUID;
     }
 }

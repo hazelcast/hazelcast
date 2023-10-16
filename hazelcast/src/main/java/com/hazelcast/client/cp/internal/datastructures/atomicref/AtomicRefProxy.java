@@ -200,7 +200,7 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
     }
 
     private String getCombinedObjectName() {
-        return objectName + "@" + objectUUID;
+        return objectUUID == null ? objectName : objectName + "@" + objectUUID;
     }
 
     public CPGroupId getGroupId() {

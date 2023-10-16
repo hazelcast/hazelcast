@@ -38,6 +38,7 @@ import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchSer
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;
@@ -129,9 +130,17 @@ public class ClientRaftProxyFactory {
     }
 
     private UUID getObjectId(RaftGroupId groupId, String serviceName, String objectName) {
-        ClientMessage request = CPGroupCreateCPObjectCodec.encodeRequest(groupId, serviceName, objectName);
-        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        return CPGroupCreateCPObjectCodec.decodeResponse(response);
+        try {
+            ClientMessage request = CPGroupCreateCPObjectCodec.encodeRequest(groupId, serviceName, objectName);
+            ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
+            return CPGroupCreateCPObjectCodec.decodeResponse(response);
+        } catch (UnsupportedOperationException e) {
+            // Since we have no way to call Cluster#getClusterVersion() let's use exception based logic
+            ILogger logger = context.getLoggingService().getLogger(getClass());
+            logger.warning("Switching to pre 5.4 compatibility mode since: " + e.getMessage());
+            return null;
+        }
+
     }
 
 }

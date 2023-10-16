@@ -87,6 +87,13 @@ if (atomicValue == null) {
 Thus, if an object was destroyed, a new object will be created.
 
 --Sequence diagram--
+```mermaid
+  graph TBD;
+      A-->B;
+      A-->C;
+      B-->D;
+      C-->D;
+```
 
 ### POC Functional design
 
@@ -158,7 +165,7 @@ Let's analyze each of those options
 
 The name-mangling scheme has been implemented in a POC
 
-To minimize the number of changes on a client/server side, and do not recreate/update dozens of codecs, messages and Raft operations, object UUID and object name are concatenated on the Client side (the name-mangling scheme). This combined object name passes via existing API during each operation call:
+To minimize the number of changes on a client/server side, and do not recreate/update dozens of codecs, messages and Raft operations, object UUID and object name are concatenated on the Client side (the name-mangling scheme). This combined object name (name-mangling scheme) passes via existing API during each operation call:
 
 ```java
 public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
@@ -180,6 +187,8 @@ public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
     ...
 }
 ```
+
+Because the `@` delimiter character is the same as the CP group delimiter, as an alternative the `+` symbol can be used instead. The fully qualified CP object name in this case, will be `cp_object_name+uuid@cp_group`
 
 On the Server side, the combined object name is decoded (split), and we check if an object with such name and UUID exists:
 
@@ -317,3 +326,11 @@ For 5.3 Client -> 5.4 Server compatibility, an existing "get-or-create" semantic
 ```
 
 In that case as a new object with `ZERO_UUID` UUID will be created. This provides compatibility with 5.4 version. 
+
+### Linearizability guaranties 
+
+With any client connected to cluster <= 5.3 (without ability to wipe or recreate destroyed objects) --> linearizability is maintained.
+
+With a 5.4 cluster:
+- client <= 5.3 -> linearizability is maintained as long as destroyed objects are not wiped from cluster, otherwise can be lost
+- client >= 5.4 -> linearizability is maintained
