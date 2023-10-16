@@ -25,6 +25,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -78,7 +79,7 @@ public class CacheDestroyMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.DESTROY;
     }
 
     @Override

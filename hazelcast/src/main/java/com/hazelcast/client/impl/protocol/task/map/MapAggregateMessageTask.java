@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.MapAggregateCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
@@ -61,7 +62,7 @@ public class MapAggregateMessageTask
 
     @Override
     public String getMethodName() {
-        return "aggregate";
+        return SecurityInterceptorConstants.AGGREGATE;
     }
 
     @Override

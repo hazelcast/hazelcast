@@ -24,6 +24,7 @@ import com.hazelcast.internal.locksupport.operations.LockOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.internal.services.ObjectNamespace;
@@ -81,7 +82,7 @@ public class MapLockMessageTask
 
     @Override
     public String getMethodName() {
-        return "lock";
+        return SecurityInterceptorConstants.LOCK;
     }
 
     @Override

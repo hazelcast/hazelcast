@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -25,10 +25,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -81,8 +81,8 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
                 .replace("\r", "")
                 .replace("import:\n    - your-configuration-YAML-file", "");
 
-        // create file to the working directory needed for the EncryptionReplacer
-        createPasswordFile("password.txt", "h4z3lc4$t");
+        fullExampleXml = replacePasswordFileWithTemporaryFile(fullExampleXml);
+        fullExampleYaml = replacePasswordFileWithTemporaryFile(fullExampleYaml);
 
         Config xmlConfig = new InMemoryXmlConfig(fullExampleXml);
         Config yamlConfig = new InMemoryYamlConfig(fullExampleYaml);
@@ -107,8 +107,8 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
                 .replace("\r", "")
                 .replace("import:\n    - your-configuration-YAML-file", "");
 
-        // create file to the working directory needed for the EncryptionReplacer
-        createPasswordFile("password.txt", "h4z3lc4$t");
+        fullExampleXml = replacePasswordFileWithTemporaryFile(fullExampleXml);
+        fullExampleYaml = replacePasswordFileWithTemporaryFile(fullExampleYaml);
 
         Config xmlConfig = new InMemoryXmlConfig(fullExampleXml);
         Config yamlConfig = new InMemoryYamlConfig(fullExampleYaml);
@@ -134,20 +134,20 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         }
     }
 
-    static File createPasswordFile(String passwordFileName, String passwordFileContent) throws IOException {
-        File workDir = new File(".");
-        File file = new File(workDir, passwordFileName);
-        file.deleteOnExit();
+    /**
+     * The supplied config files contain a {@value EncryptionReplacer#PROPERTY_PASSWORD_FILE} reference to a path of
+     * {@code password.txt}, which is resolved at load-time by {@link EncryptionReplacer} - if missing, an exception is thrown.
+     * <p>
+     * This file doesn't exist within the scope of the test, especially not in the working directory - so create a temporary
+     * file, and update the reference to use that instead.
+     */
+    private static String replacePasswordFileWithTemporaryFile(String str) throws IOException {
+        final Path file = Files.createTempFile("password", ".txt");
+        file.toFile().deleteOnExit();
 
-        if (passwordFileContent != null && passwordFileContent.length() > 0) {
-            PrintWriter out = new PrintWriter(file);
-            try {
-                out.print(passwordFileContent);
-            } finally {
-                IOUtil.closeResource(out);
-            }
-        }
-        return file;
+        Files.writeString(file, "h4z3lc4$t");
+
+        return str.replace("password.txt", file.toString());
     }
 
     private void assertXmlYamlFileEquals(String filenameBase) {
@@ -166,7 +166,7 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
     private void sortClientPermissionConfigs(Config config) {
         SecurityConfig securityConfig = config.getSecurityConfig();
         Set<PermissionConfig> unsorted = securityConfig.getClientPermissionConfigs();
-        Set<PermissionConfig> sorted = new TreeSet<PermissionConfig>(new PermissionConfigComparator());
+        Set<PermissionConfig> sorted = new TreeSet<>(new PermissionConfigComparator());
         sorted.addAll(unsorted);
         securityConfig.setClientPermissionConfigs(sorted);
     }

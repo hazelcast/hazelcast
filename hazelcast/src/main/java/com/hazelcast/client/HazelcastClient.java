@@ -31,6 +31,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory.InstanceFuture;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -492,7 +493,7 @@ public final class HazelcastClient {
         } else {
             instanceName = failoverConfig.getClientConfigs().get(0).getInstanceName();
         }
-        if (instanceName == null || instanceName.trim().length() == 0) {
+        if (StringUtil.isNullOrEmptyAfterTrim(instanceName)) {
             instanceName = "hz.client_" + instanceNum;
         }
         return instanceName;

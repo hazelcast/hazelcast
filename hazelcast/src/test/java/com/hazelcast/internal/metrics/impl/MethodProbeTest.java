@@ -100,7 +100,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         Probe probe = method.getAnnotation(Probe.class);
         MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
-        LongMethodProbe longMethodProbe = assertInstanceOf(LongMethodProbe.class, methodProbe);
+        LongMethodProbe<SomeSource> longMethodProbe = assertInstanceOf(LongMethodProbe.class, methodProbe);
 
         long value = longMethodProbe.get(source);
 
@@ -124,7 +124,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         Probe probe = method.getAnnotation(Probe.class);
         MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
-        MethodProbe.DoubleMethodProbe doubleMethodProbe = assertInstanceOf(MethodProbe.DoubleMethodProbe.class, methodProbe);
+        MethodProbe.DoubleMethodProbe<SomeSource> doubleMethodProbe = assertInstanceOf(MethodProbe.DoubleMethodProbe.class, methodProbe);
         double value = doubleMethodProbe.get(source);
 
         assertEquals(expected, value, 0.1);
@@ -194,22 +194,22 @@ public class MethodProbeTest extends HazelcastTestSupport {
         }
 
         @Probe(name = "collectionMethod")
-        private Collection collectionMethod() {
+        private Collection<Integer> collectionMethod() {
             return Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         }
 
         @Probe(name = "nullCollectionMethod")
-        private Collection nullCollectionMethod() {
+        private Collection<?> nullCollectionMethod() {
             return null;
         }
 
         @Probe(name = "mapMethod")
-        private Map mapMethod() {
+        private Map<?, ?> mapMethod() {
             return MetricsUtils.createMap(10);
         }
 
         @Probe(name = "nullMapMethod")
-        private Map nullMapMethod() {
+        private Map<?, ?> nullMapMethod() {
             return null;
         }
 

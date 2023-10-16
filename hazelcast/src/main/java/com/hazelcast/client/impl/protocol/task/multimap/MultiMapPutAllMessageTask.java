@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.DataCollection;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.PutAllOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -79,7 +80,7 @@ public class MultiMapPutAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "putAll";
+        return SecurityInterceptorConstants.PUT_ALL;
     }
 
     @Override

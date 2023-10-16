@@ -23,6 +23,7 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ExecutorServicePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -81,7 +82,7 @@ public class ExecutorServiceCancelOnAddressMessageTask
 
     @Override
     public String getMethodName() {
-        return "cancel";
+        return SecurityInterceptorConstants.CANCEL;
     }
 
     @Override

@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.test.Accessors.getNode;
@@ -58,7 +58,7 @@ public class BackupListenerLeakTest {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         client.shutdown();
-        Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
+        Map<UUID, LongConsumer> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
         assertTrueEventually(() -> assertEquals(0, backupListeners.size()));
     }
 
@@ -74,7 +74,7 @@ public class BackupListenerLeakTest {
 
         connectionManager.reset();
 
-        Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
+        Map<UUID, LongConsumer> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
         assertTrueEventually(() -> assertEquals(1, backupListeners.size()));
     }
 }

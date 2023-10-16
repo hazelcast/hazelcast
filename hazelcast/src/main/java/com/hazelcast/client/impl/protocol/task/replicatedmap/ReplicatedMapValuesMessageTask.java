@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.DataCollection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.ValuesOperation;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -69,7 +70,7 @@ public class ReplicatedMapValuesMessageTask
 
     @Override
     public String getMethodName() {
-        return "values";
+        return SecurityInterceptorConstants.VALUES;
     }
 
     @Override
