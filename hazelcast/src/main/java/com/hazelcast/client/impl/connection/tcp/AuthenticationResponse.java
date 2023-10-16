@@ -19,8 +19,6 @@ package com.hazelcast.client.impl.connection.tcp;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCustomCodec;
 import com.hazelcast.cluster.Address;
 
 import javax.annotation.Nullable;
@@ -156,10 +154,6 @@ public final class AuthenticationResponse {
                 return fromAuthenticationCodec(message);
             case ClientAuthenticationCustomCodec.RESPONSE_MESSAGE_TYPE:
                 return fromAuthenticationCustomCodec(message);
-            case ExperimentalAuthenticationCodec.RESPONSE_MESSAGE_TYPE:
-                return fromExperimentalAuthenticationCodec(message);
-            case ExperimentalAuthenticationCustomCodec.RESPONSE_MESSAGE_TYPE:
-                return fromExperimentalAuthenticationCustomCodec(message);
             default:
                 throw new IllegalStateException("Unexpected response message type");
         }
@@ -176,47 +170,13 @@ public final class AuthenticationResponse {
                 parameters.partitionCount,
                 parameters.clusterId,
                 parameters.failoverSupported,
-                null,
-                null
-        );
-    }
-
-    private static AuthenticationResponse fromAuthenticationCustomCodec(ClientMessage message) {
-        ClientAuthenticationCustomCodec.ResponseParameters parameters = ClientAuthenticationCustomCodec.decodeResponse(message);
-        return new AuthenticationResponse(
-                parameters.status,
-                parameters.address,
-                parameters.memberUuid,
-                parameters.serializationVersion,
-                parameters.serverHazelcastVersion,
-                parameters.partitionCount,
-                parameters.clusterId,
-                parameters.failoverSupported,
-                null,
-                null
-        );
-    }
-
-    private static AuthenticationResponse fromExperimentalAuthenticationCodec(ClientMessage message) {
-        ExperimentalAuthenticationCodec.ResponseParameters parameters
-                = ExperimentalAuthenticationCodec.decodeResponse(message);
-        return new AuthenticationResponse(
-                parameters.status,
-                parameters.address,
-                parameters.memberUuid,
-                parameters.serializationVersion,
-                parameters.serverHazelcastVersion,
-                parameters.partitionCount,
-                parameters.clusterId,
-                parameters.failoverSupported,
                 parameters.tpcPorts,
                 parameters.tpcToken
         );
     }
 
-    private static AuthenticationResponse fromExperimentalAuthenticationCustomCodec(ClientMessage message) {
-        ExperimentalAuthenticationCustomCodec.ResponseParameters parameters
-                = ExperimentalAuthenticationCustomCodec.decodeResponse(message);
+    private static AuthenticationResponse fromAuthenticationCustomCodec(ClientMessage message) {
+        ClientAuthenticationCustomCodec.ResponseParameters parameters = ClientAuthenticationCustomCodec.decodeResponse(message);
         return new AuthenticationResponse(
                 parameters.status,
                 parameters.address,

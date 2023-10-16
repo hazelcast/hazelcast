@@ -16,7 +16,8 @@ Clients will continue to use the classic Hazelcast ports for the
 initial authentication.
 
 If the TPC is enabled on the client-side, clients will make use of the two 
-newly added codecs to authenticate with the cluster.
+newly added codecs to authenticate with the cluster. (note: these codecs were removed later on and 
+`tpcPorts` and `tpcToken` fields were added to the stable codecs. This was done as part of making Alto stable)
 
 - `ExperimentalAuthenticationCodec`
   - Counterpart of `ClientAuthenticationCodec`
@@ -67,7 +68,8 @@ classic ports.
 First, 3-bytes long protocol identifier is sent. (bytearray representation of `CP2`).
 
 Then, the client authenticates to the TPC event loop using the new 
-`ExperimentalTpcAuthenticationCodec`, which has the following definition.
+`ExperimentalTpcAuthenticationCodec`, which has the following definition. (note: this codec was later removed and 
+replaced by the new `ClientTpcAuthenticationCodec` when the TPC was promoted to stable status.)
 
 ```yaml
 - id: 3

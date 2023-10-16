@@ -26,9 +26,7 @@ import com.hazelcast.client.impl.protocol.task.AuthenticationCustomCredentialsMe
 import com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.ClientStatisticsMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxiesMessageTask;
-import com.hazelcast.client.impl.protocol.task.ExperimentalAuthenticationCustomCredentialsMessageTask;
-import com.hazelcast.client.impl.protocol.task.ExperimentalAuthenticationMessageTask;
-import com.hazelcast.client.impl.protocol.task.ExperimentalTpcAuthenticationMessageTask;
+import com.hazelcast.client.impl.protocol.task.ClientTpcAuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetDistributedObjectsMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.NoSuchMessageTask;
@@ -95,7 +93,6 @@ public class MessageTaskSecurityTest {
         skip(AddPartitionLostListenerMessageTask.class, "Adds an internal listener");
         skip(CacheFetchNearCacheInvalidationMetadataTask.class, "Internal task used by RepairingTask");
         skip(ClientStatisticsMessageTask.class, "Client statistics collection task");
-        skip(ExperimentalAuthenticationMessageTask.class, "Beta-mode of TPC authentication");
         skip(GetDistributedObjectsMessageTask.class, "Gets proxies");
         skip(MapAddListenerMessageTask.class, "Permissions checked by subsequent MapPublisherCreate* tasks");
         skip(MapFetchNearCacheInvalidationMetadataTask.class, "Internal task used by RepairingTask");
@@ -119,8 +116,7 @@ public class MessageTaskSecurityTest {
         skip(SqlFetchMessageTask.class, "Follow up SQL message where queryId is present");
         skip(AuthenticationMessageTask.class, "Authentication message processing");
         skip(AuthenticationCustomCredentialsMessageTask.class, "Authentication message processing");
-        skip(ExperimentalTpcAuthenticationMessageTask.class, "Authentication message processing");
-        skip(ExperimentalAuthenticationCustomCredentialsMessageTask.class, "Authentication message processing");
+        skip(ClientTpcAuthenticationMessageTask.class, "Authentication message processing");
         skip(CreateProxiesMessageTask.class, "Permissions handled in beforeProcess() method");
     }
 
