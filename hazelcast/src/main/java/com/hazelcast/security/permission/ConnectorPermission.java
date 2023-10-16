@@ -19,8 +19,6 @@ package com.hazelcast.security.permission;
 import com.hazelcast.jet.impl.util.IOUtil;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
 
-import javax.annotation.Nullable;
-
 public class ConnectorPermission extends InstancePermission {
 
     public static final String FILE_PREFIX = "file:";
