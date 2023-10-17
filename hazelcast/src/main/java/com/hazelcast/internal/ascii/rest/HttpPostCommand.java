@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.StringUtil;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_100;
@@ -168,7 +169,7 @@ public class HttpPostCommand extends HttpCommand {
         if (bb.position() == 0) {
             result = "";
         } else {
-            result = StringUtil.bytesToString(bb.array(), 0, bb.position());
+            result = new String(bb.array(), 0, bb.position(), StandardCharsets.UTF_8);
         }
         upcast(bb).clear();
         return result;

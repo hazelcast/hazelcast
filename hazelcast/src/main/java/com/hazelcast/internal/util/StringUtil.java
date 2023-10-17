@@ -57,26 +57,9 @@ public final class StringUtil {
     public static final Pattern VERSION_PATTERN
             = Pattern.compile("^(\\d+)\\.(\\d+)(\\.(\\d+))?(-\\w+(?:-\\d+)?)?(-SNAPSHOT)?$");
 
-    /**
-     * Empty String.
-     */
-    public static final String EMPTY_STRING = "";
-
     private static final String GETTER_PREFIX = "get";
 
     private StringUtil() {
-    }
-
-    /**
-     * Creates a UTF8_CHARSET string from a byte array.
-     *
-     * @param bytes  the byte array.
-     * @param offset the index of the first byte to decode
-     * @param length the number of bytes to decode
-     * @return the string created from the byte array.
-     */
-    public static String bytesToString(byte[] bytes, int offset, int length) {
-        return new String(bytes, offset, length, StandardCharsets.UTF_8);
     }
 
     /**
