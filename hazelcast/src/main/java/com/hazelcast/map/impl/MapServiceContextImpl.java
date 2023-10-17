@@ -461,6 +461,10 @@ class MapServiceContextImpl implements MapServiceContext {
 
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
+        if (mapContainer.isGlobalIndexEnabled()) {
+            mapContainer.getGlobalIndexRegistry().destroyIndexes();
+        }
+
         localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
     }
 

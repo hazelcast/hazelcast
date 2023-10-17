@@ -58,7 +58,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -311,29 +310,6 @@ public class MapContainer {
     // Only used for testing
     public ConcurrentMap<Integer, IndexRegistry> getPartitionedIndexRegistry() {
         return partitionedIndexRegistry;
-    }
-
-    @SuppressWarnings("squid:S1751")
-    public void consumeIndexConfigs(Consumer<IndexConfig> consumer) {
-        // 1. Add from global-indexes
-        if (globalIndexRegistry != null) {
-            add(consumer, globalIndexRegistry);
-            return;
-        }
-
-        // 2. Add from partitioned-indexes
-        for (IndexRegistry entry : partitionedIndexRegistry.values()) {
-            add(consumer, entry);
-            break;
-        }
-    }
-
-    private void add(Consumer<IndexConfig> consumer, IndexRegistry indexRegistry) {
-        InternalIndex[] indexes = indexRegistry.getIndexes();
-        for (int i = 0; i < indexes.length; i++) {
-            IndexConfig config = indexes[i].getConfig();
-            consumer.accept(config);
-        }
     }
 
     // Only used for testing
