@@ -148,7 +148,7 @@ public class RaftInvocationManager {
 
     private long generateRandomGroupIndex(Collection<RaftGroupId> groupIds) {
         long groupIndex = RandomPicker.getInt(RANDOM_RAFT_GROUP_INDEX_RANGE);
-        if (groupIds.size() > 0) {
+        if (!groupIds.isEmpty()) {
             groupIndex += groupIds.stream().mapToLong(RaftGroupId::getId).max().getAsLong();
         }
 

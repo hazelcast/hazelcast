@@ -27,7 +27,6 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.Aggregates;
@@ -413,10 +412,8 @@ public final class MongoSourceBuilder {
             final ReadMongoParams<T> localParams = params;
             localParams.setCheckExistenceOnEachConnect(existenceChecks == ResourceChecks.ON_EACH_CONNECT);
 
-            ConnectorPermission permission = params.buildPermissions();
             boolean checkResourceExistence = existenceChecks == ResourceChecks.ONCE_PER_JOB;
             return Sources.batchFromProcessor(name, new DbCheckingPMetaSupplierBuilder()
-                    .withRequiredPermission(permission)
                     .withCheckResourceExistence(checkResourceExistence)
                     .withForceTotalParallelismOne(false)
                     .withDatabaseName(localParams.getDatabaseName())
@@ -560,10 +557,8 @@ public final class MongoSourceBuilder {
 
             localParams.setCheckExistenceOnEachConnect(checkExistenceOnEachConnect);
 
-            ConnectorPermission permission = params.buildPermissions();
             return Sources.streamFromProcessorWithWatermarks(name, true,
                     eventTimePolicy -> new DbCheckingPMetaSupplierBuilder()
-                            .withRequiredPermission(permission)
                             .withCheckResourceExistence(checkExistenceOncePerJob)
                             .withForceTotalParallelismOne(forceReadTotalParallelismOneLocal)
                             .withDatabaseName(localParams.getDatabaseName())

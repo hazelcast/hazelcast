@@ -22,7 +22,6 @@ import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClients;
@@ -30,17 +29,12 @@ import org.bson.BsonType;
 import org.bson.Document;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
-import java.security.Permission;
 import java.util.Collection;
-import java.util.List;
 
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 
 /**
  * ProcessorSupplier that creates {@linkplain WriteMongoP} processors on each instance
@@ -63,13 +57,6 @@ public class InsertProcessorSupplier extends MongoProcessorSupplier implements D
         this.externalTypes = table.externalTypes();
         this.writeMode = writeMode;
         this.idField = table.primaryKeyExternalName();
-    }
-
-    @Nullable
-    @Override
-    public List<Permission> permissions() {
-        String connDetails = connectionString == null ? dataConnectionName : connectionString;
-        return singletonList(ConnectorPermission.mongo(connDetails, databaseName, collectionName, ACTION_WRITE));
     }
 
     @Override

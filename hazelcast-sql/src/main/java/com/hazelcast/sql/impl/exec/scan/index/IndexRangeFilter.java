@@ -26,7 +26,8 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Filter the is used for range requests. Could have either lower bound, upper bound or both.
+ * Filter the is used for range requests. Could have either lower bound, upper bound, both
+ * or none ({@code IS NOT NULL}).
  * <p>
  * For non-composite index: matches only NOT NULL values. If any of the bounds
  * is {@link com.hazelcast.query.impl.AbstractIndex#NULL}, matches nothing.
@@ -61,7 +62,6 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
     }
 
     public IndexRangeFilter(IndexFilterValue from, boolean fromInclusive, IndexFilterValue to, boolean toInclusive) {
-        assert from != null || to != null;
         assert from != null || !fromInclusive : "Unspecified from end must not be inclusive";
         assert to != null || !toInclusive : "Unspecified to end must not be inclusive";
 

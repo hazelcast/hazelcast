@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.proxyservice.impl.operations;
 
 import com.hazelcast.cache.CacheNotExistsException;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -49,7 +50,7 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
 
     @Override
     public void run() throws Exception {
-        if (proxies == null || proxies.size() <= 0) {
+        if (CollectionUtil.isEmpty(proxies)) {
             return;
         }
 

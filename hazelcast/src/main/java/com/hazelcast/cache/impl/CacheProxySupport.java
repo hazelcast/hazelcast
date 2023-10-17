@@ -541,7 +541,7 @@ abstract class CacheProxySupport<K, V>
 
         List<Throwable> throwables = FutureUtil.waitUntilAllResponded(futures);
 
-        if (throwables.size() > 0) {
+        if (!throwables.isEmpty()) {
             throw rethrow(throwables.get(0));
         }
     }

@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.TpcToken;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageReader;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalTpcAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientTpcAuthenticationCodec;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Protocols;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
@@ -97,12 +97,12 @@ public class ClientAsyncSocketReader extends AsyncSocketReader {
     }
 
     private void loadConnection(ClientMessage message) {
-        if (message.getMessageType() != ExperimentalTpcAuthenticationCodec.REQUEST_MESSAGE_TYPE) {
+        if (message.getMessageType() != ClientTpcAuthenticationCodec.REQUEST_MESSAGE_TYPE) {
             throw new IllegalStateException("Illegal attempt to use " + socket + " before authentication");
         }
 
-        ExperimentalTpcAuthenticationCodec.RequestParameters request
-                = ExperimentalTpcAuthenticationCodec.decodeRequest(message);
+        ClientTpcAuthenticationCodec.RequestParameters request
+                = ClientTpcAuthenticationCodec.decodeRequest(message);
 
         ClientEndpoint endpoint = findClientEndpoint(request.uuid);
         if (endpoint == null) {

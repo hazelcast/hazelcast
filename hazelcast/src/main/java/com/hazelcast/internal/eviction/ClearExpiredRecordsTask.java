@@ -283,7 +283,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     }
 
     private BiFunction<S, Collection<ExpiredKey>, Operation> newBackupExpiryOpSupplier() {
-        return (recordStore, expiredKeys) -> newBackupExpiryOp(recordStore, expiredKeys);
+        return this::newBackupExpiryOp;
     }
 
     public final void sendQueuedExpiredKeys(T container) {

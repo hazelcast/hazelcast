@@ -538,15 +538,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return definedExpirationTime - System.currentTimeMillis();
     }
 
-    public int removeBulk(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean backup) {
+    public int removeBulk(List<Data> dataKeys, List<Record> records, boolean backup) {
         return removeOrEvictEntries(dataKeys, records, false, backup);
     }
 
-    public int evictBulk(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean backup) {
+    public int evictBulk(List<Data> dataKeys, List<Record> records, boolean backup) {
         return removeOrEvictEntries(dataKeys, records, true, backup);
     }
 
-    private int removeOrEvictEntries(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean eviction,
+    private int removeOrEvictEntries(List<Data> dataKeys, List<Record> records, boolean eviction,
                                      boolean backup) {
         for (int i = 0; i < dataKeys.size(); i++) {
             Data dataKey = dataKeys.get(i);
@@ -1078,8 +1078,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     @SuppressWarnings("unchecked")
     public MapMergeResponse merge(MapMergeTypes<Object, Object> mergingEntry,
-                               SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
-                               CallerProvenance provenance) {
+                                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
+                                  CallerProvenance provenance) {
         checkIfLoaded();
         long now = getNow();
 
@@ -1118,7 +1118,18 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
-                if (mergeRecordExpiration(key, record, mergingEntry, now)) {
+                // When receiving WAN replicated data, it is possible that the merge policy rejects an incoming
+                //  value, which would result in the above condition being true (merge policy selects the existing
+                //  value as the outcome). However, we do not want to apply metadata changes if we are rejecting
+                //  the merge and sticking with our original data. Due to current limitations of the
+                //  SplitBrainMergePolicy, we have no view on whether the merge policy modified the outcome or not,
+                //  only the resultant value. Long-term we need to address this shortfall in merge policies, but
+                //  for now the additional check below allows us to make an educated guess about whether the merge
+                //  changed data and use that. Since this only matters for WAN-received merge events, we can avoid
+                //  additional overhead by checking provenance. Fixes HZ-3392, Backlog for merge changes: HZ-3397
+                boolean shouldMergeExpiration = provenance != CallerProvenance.WAN
+                        || valueComparator.isEqual(oldValue, mergingEntry.getValue(), serializationService);
+                if (shouldMergeExpiration && mergeRecordExpiration(key, record, mergingEntry, now)) {
                     return MapMergeResponse.RECORD_EXPIRY_UPDATED;
                 }
                 return MapMergeResponse.RECORDS_ARE_EQUAL;
@@ -1547,7 +1558,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() == POOLED;
     }
 
-    public void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
+    public void destroyStorageImmediate(boolean isDuringShutdown,
+                                        boolean internal) {
         mutationObserver.onDestroy(isDuringShutdown, internal);
         expirySystem.destroy();
         destroyMetadataStore();
@@ -1557,7 +1569,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     /**
      * Calls also {@link #clearStorage(boolean)} to release allocated HD memory
-     * of key+value pairs because {@link #destroyStorageImmediate(boolean, boolean)}
+     * of key+value pairs because
      * only releases internal resources of backing data structure.
      *
      * @param isDuringShutdown {@link Storage#clear(boolean)}

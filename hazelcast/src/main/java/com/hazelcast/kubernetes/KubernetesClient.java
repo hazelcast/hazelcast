@@ -79,7 +79,6 @@ class KubernetesClient {
 
     private final String stsName;
     private final String namespace;
-    private final String serviceAccount;
     private final String kubernetesMaster;
     private final String caCertificate;
     private final int retries;
@@ -100,12 +99,11 @@ class KubernetesClient {
     private boolean isKnownExceptionAlreadyLogged;
     private boolean isNodePortWarningAlreadyLogged;
 
-    KubernetesClient(String namespace, String serviceAccount, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
+    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
                      String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
                      boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
                      String servicePerPodLabelValue, @Nullable ClusterTopologyIntentTracker clusterTopologyIntentTracker) {
         this.namespace = namespace;
-        this.serviceAccount = serviceAccount;
         this.kubernetesMaster = kubernetesMaster;
         this.tokenProvider = tokenProvider;
         this.caCertificate = caCertificate;
@@ -126,13 +124,12 @@ class KubernetesClient {
 
     // constructor that allows overriding detected statefulset name for usage in tests
     @SuppressWarnings("checkstyle:parameternumber")
-    KubernetesClient(String namespace, String serviceAccount, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
+    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
                      String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
                      boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
                      String servicePerPodLabelValue, @Nullable ClusterTopologyIntentTracker clusterTopologyIntentTracker,
                      String stsName) {
         this.namespace = namespace;
-        this.serviceAccount = serviceAccount;
         this.kubernetesMaster = kubernetesMaster;
         this.tokenProvider = tokenProvider;
         this.caCertificate = caCertificate;
@@ -152,12 +149,11 @@ class KubernetesClient {
     }
 
     // test usage only
-    KubernetesClient(String namespace, String serviceAccount, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
+    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
                      String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
                      boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
                      String servicePerPodLabelValue, KubernetesApiProvider apiProvider) {
         this.namespace = namespace;
-        this.serviceAccount = serviceAccount;
         this.kubernetesMaster = kubernetesMaster;
         this.tokenProvider = tokenProvider;
         this.caCertificate = caCertificate;
@@ -621,9 +617,12 @@ class KubernetesClient {
         } else if (e.getHttpErrorCode() == HTTP_FORBIDDEN) {
             if (!isKnownExceptionAlreadyLogged) {
                 LOGGER.warning("Kubernetes API access is forbidden! Starting standalone. To use Hazelcast Kubernetes discovery,"
-                        + " configure the required RBAC. For '"+serviceAccount+"' service account in '"+namespace+"' namespace."
-                        + " Example to execute: "
-                        + "`kubectl apply -f https://raw.githubusercontent.com/hazelcast/hazelcast/master/kubernetes-rbac.yaml`");
+				 + " configure the required RBAC. For 'default' service account in 'default' namespace execute: "
+				 + "`kubectl apply -f https://raw.githubusercontent.com/hazelcast/hazelcast/master/kubernetes-rbac.yaml`" 
+				 + "If you want to use different service account and different namespace, you can update the mentioned rbac.yaml file accordingly and use it");
+				LOGGER.warning("Error Kubernetes API Cause: ", e.getCause());
+				LOGGER.warning("Error Kubernetes API Cause message: "+ e.getCause().getMessage());
+				
                 isKnownExceptionAlreadyLogged = true;
             }
         } else {

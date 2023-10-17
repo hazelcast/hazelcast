@@ -44,8 +44,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class is a stateful proxy that delegates calls to given JetService.
- * The state is about running a jet job
+ * This class is a decorator that delegates most of the calls to given JetService.
+ * Implementors of this class provides a strategy pattern to access ExecuteJobParameters to launch a new jet job
  */
 @SuppressWarnings({"checkstyle:methodcount"})
 public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
@@ -61,8 +61,14 @@ public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
 
     public abstract boolean hasExecuteJobParameters();
 
+    /**
+     * The strategy to get ExecuteJobParameters on client and member side
+     */
     public abstract ExecuteJobParameters getExecuteJobParameters();
 
+    /**
+     * The strategy to set ExecuteJobParameters on client and member side
+     */
     public abstract void setExecuteJobParameters(ExecuteJobParameters executeJobParameters);
 
     public void removeExecuteJobParameters() {
