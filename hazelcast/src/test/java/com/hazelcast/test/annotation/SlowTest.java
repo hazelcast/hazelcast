@@ -21,7 +21,7 @@ package com.hazelcast.test.annotation;
  * <p>
  * Will be executed in nightly builds and for code coverage measurements.
  * <p>
- * The opposite of a {@link QuickTest}
+ * @see {@link QuickTest}
  */
 public final class SlowTest {
 }

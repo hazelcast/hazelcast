@@ -26,7 +26,7 @@ import java.time.Duration;
  * <p>
  * Will be executed in the PR builder and for code coverage measurements.
  * <p>
- * The opposite of a {@link SlowTest}
+ * @see {@link SlowTest}
  */
 public final class QuickTest {
     public static final Duration EXPECTED_RUNTIME_THRESHOLD = Duration.ofMinutes(1);
