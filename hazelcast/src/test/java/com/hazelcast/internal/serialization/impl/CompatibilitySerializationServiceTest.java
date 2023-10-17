@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -95,7 +94,7 @@ public class CompatibilitySerializationServiceTest {
         try (InputStream is = new FileInputStream(useBigEndian
                 ? "src/test/resources/testHz3Object"
                 : "src/test/resources/testHz3ObjectLittleEndian")) {
-            byte[] payload = IOUtils.toByteArray(is);
+            byte[] payload = is.readAllBytes();
             return new HeapData(payload);
         }
     }

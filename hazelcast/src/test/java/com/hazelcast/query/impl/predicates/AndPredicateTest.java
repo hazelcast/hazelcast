@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -75,7 +75,7 @@ public class AndPredicateTest {
     @Test
     public void accept_whenEmptyPredicate_thenReturnItself() {
         Visitor mockVisitor = createPassthroughVisitor();
-        Indexes mockIndexes = mock(Indexes.class);
+        IndexRegistry mockIndexes = mock(IndexRegistry.class);
 
         AndPredicate andPredicate = new AndPredicate(new Predicate[0]);
         AndPredicate result = (AndPredicate) andPredicate.accept(mockVisitor, mockIndexes);
@@ -86,7 +86,7 @@ public class AndPredicateTest {
     @Test
     public void accept_whenInnerPredicateChangedOnAccept_thenReturnAndNewAndPredicate() {
         Visitor mockVisitor = createPassthroughVisitor();
-        Indexes mockIndexes = mock(Indexes.class);
+        IndexRegistry mockIndexes = mock(IndexRegistry.class);
 
         Predicate transformed = mock(Predicate.class);
         Predicate innerPredicate = createMockVisitablePredicate(transformed);
@@ -106,7 +106,7 @@ public class AndPredicateTest {
     public void accept_whenVisitorReturnsNewInstance_thenReturnTheNewInstance() {
         Predicate delegate = mock(Predicate.class);
         Visitor mockVisitor = createDelegatingVisitor(delegate);
-        Indexes mockIndexes = mock(Indexes.class);
+        IndexRegistry mockIndexes = mock(IndexRegistry.class);
         Predicate innerPredicate = mock(Predicate.class);
         Predicate[] innerPredicates = new Predicate[1];
         innerPredicates[0] = innerPredicate;

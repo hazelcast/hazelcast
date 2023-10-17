@@ -368,13 +368,13 @@ class MapServiceContextImpl implements MapServiceContext {
 
         Iterator<RecordStore> partitionIterator = container.getMaps().values().iterator();
         while (partitionIterator.hasNext()) {
-            RecordStore partition = partitionIterator.next();
-            if (predicate.test(partition)) {
-                partition.beforeOperation();
+            RecordStore recordStore = partitionIterator.next();
+            if (predicate.test(recordStore)) {
+                recordStore.beforeOperation();
                 try {
-                    partition.clearPartition(onShutdown, onRecordStoreDestroy);
+                    recordStore.clearPartition(onShutdown, onRecordStoreDestroy);
                 } finally {
-                    partition.afterOperation();
+                    recordStore.afterOperation();
                 }
                 partitionIterator.remove();
             }

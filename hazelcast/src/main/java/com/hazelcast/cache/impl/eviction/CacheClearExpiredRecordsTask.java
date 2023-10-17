@@ -152,7 +152,7 @@ public class CacheClearExpiredRecordsTask
         Iterator<ICacheRecordStore> iterator = container.recordStoreIterator();
         while (iterator.hasNext()) {
             ICacheRecordStore store = iterator.next();
-            if (store.getExpiredKeysQueue().size() > 0) {
+            if (!store.getExpiredKeysQueue().isEmpty()) {
                 return true;
             }
         }

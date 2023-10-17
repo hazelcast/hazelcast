@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,11 +38,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class OrToInVisitorTest {
 
     private OrToInVisitor visitor;
-    private Indexes indexes;
+    private IndexRegistry indexes;
 
     @Before
     public void setUp() {
-        indexes = mock(Indexes.class);
+        indexes = mock(IndexRegistry.class);
         visitor = new OrToInVisitor();
     }
 

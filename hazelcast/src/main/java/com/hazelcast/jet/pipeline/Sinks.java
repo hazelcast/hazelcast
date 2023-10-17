@@ -594,6 +594,8 @@ public final class Sinks {
      * Convenience for {@link #remoteMapWithUpdating} with {@link Entry} as
      * input item.
      */
+    // squid:S1612 Convert2MethodRef (provokes a javac 9 bug)
+    @SuppressWarnings("squid:S1612")
     @Nonnull
     public static <K, V, E extends Entry<K, V>> Sink<E> remoteMapWithUpdating(
             @Nonnull String mapName,

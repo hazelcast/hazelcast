@@ -22,6 +22,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
@@ -102,11 +103,11 @@ public class DestroyProxyMessageTask extends AbstractMultiTargetMessageTask<Clie
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.DESTROY;
     }
 
     @Override
     public Object[] getParameters() {
-        return null;
+        return new Object[]{parameters.name};
     }
 }

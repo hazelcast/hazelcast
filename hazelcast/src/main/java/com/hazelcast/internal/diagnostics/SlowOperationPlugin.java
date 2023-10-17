@@ -83,7 +83,7 @@ public class SlowOperationPlugin extends DiagnosticsPlugin {
         List<SlowOperationDTO> slowOperations = operationService.getSlowOperationDTOs();
         writer.startSection("SlowOperations");
 
-        if (slowOperations.size() > 0) {
+        if (!slowOperations.isEmpty()) {
             for (SlowOperationDTO slowOperation : slowOperations) {
                 render(writer, slowOperation);
             }

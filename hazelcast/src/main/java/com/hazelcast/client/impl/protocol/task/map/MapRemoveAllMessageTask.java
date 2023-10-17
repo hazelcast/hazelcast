@@ -23,6 +23,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -112,7 +113,7 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
 
     @Override
     public String getMethodName() {
-        return "removeAll";
+        return SecurityInterceptorConstants.REMOVE_ALL;
     }
 
     @Override

@@ -21,9 +21,9 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.UnmodifiableIterator;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +91,7 @@ public final class MapKeyLoaderUtil {
      */
     static Iterator<Map<Integer, List<Data>>> toBatches(final Iterator<Entry<Integer, Data>> entries,
                                                         final int maxBatch, Semaphore nodeWideLoadedKeyLimiter) {
-        return new UnmodifiableIterator<Map<Integer, List<Data>>>() {
+        return new UnmodifiableIterator<>() {
             @Override
             public boolean hasNext() {
                 return entries.hasNext();
@@ -126,8 +126,8 @@ public final class MapKeyLoaderUtil {
             }
 
             Entry<Integer, Data> e = entries.next();
-            List<Data> partitionKeys = CollectionUtil.addToValueList(batch, e.getKey(), e.getValue());
-
+            List<Data> partitionKeys = batch.computeIfAbsent(e.getKey(), k -> new ArrayList<>());
+            partitionKeys.add(e.getValue());
             if (partitionKeys.size() >= maxBatch) {
                 break;
             }

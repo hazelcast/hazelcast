@@ -35,7 +35,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -45,7 +44,6 @@ import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.Accessors;
@@ -818,10 +816,12 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             args = new Object[0];
         }
 
-        return new ExpressionEvalContextImpl(
+        return ExpressionEvalContext.createContext(
                 Arrays.asList(args),
+                instances() != null ? Util.getNodeEngine(instance()) : mock(NodeEngineImpl.class),
                 TEST_SS,
-                instances() != null ? Util.getNodeEngine(instance()) : mock(NodeEngine.class));
+                null
+        );
     }
 
     public static JetSqlRow jetRow(Object... values) {

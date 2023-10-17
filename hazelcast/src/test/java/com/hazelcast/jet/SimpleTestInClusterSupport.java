@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.management.ThreadDumpGenerator.dumpAllThreads;
@@ -64,29 +65,38 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     protected static void initialize(int memberCount, @Nullable Config config) {
         assertNoRunningInstances();
 
+        initializeWitSupplier(memberCount, () -> config == null ? smallInstanceConfig() : config);
+    }
+
+    protected static void initializeWitSupplier(int memberCount, Supplier<Config> configSupplier) {
+        assertNoRunningInstances();
+
         assert factory == null : "already initialized";
         factory = new TestHazelcastFactory();
         instances = new HazelcastInstance[memberCount];
-        if (config == null) {
-            config = smallInstanceConfig();
-        }
-        SimpleTestInClusterSupport.config = config;
+        SimpleTestInClusterSupport.config = configSupplier.get();
         // create members
         for (int i = 0; i < memberCount; i++) {
-            instances[i] = factory.newHazelcastInstance(config);
+            instances[i] = factory.newHazelcastInstance(configSupplier.get());
         }
         assertEqualsEventually(() -> instance().getLifecycleService().isRunning(), true);
     }
 
-    protected static void initializeWithClient(
-            int memberCount,
-            @Nullable Config config,
-            @Nullable ClientConfig clientConfig
-    ) {
+    protected static void initializeWithClient(int memberCount,
+                                               @Nullable Config config,
+                                               @Nullable ClientConfig clientConfig) {
+
+        Supplier<Config> configSupplier = () -> config == null ? smallInstanceConfig() : config;
+        initializeWithClientAndConfigSupplier(memberCount, configSupplier, clientConfig);
+    }
+
+    protected static void initializeWithClientAndConfigSupplier(int memberCount,
+                                                                Supplier<Config> configSupplier,
+                                                                @Nullable ClientConfig clientConfig) {
         if (clientConfig == null) {
             clientConfig = new ClientConfig();
         }
-        initialize(memberCount, config);
+        initializeWitSupplier(memberCount, configSupplier);
         client = factory.newHazelcastClient(clientConfig);
     }
 
@@ -137,7 +147,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         SUPPORT_LOGGER.info("Destroying " + objects.size()
                 + " distributed objects in SimpleTestInClusterSupport.@After: "
                 + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())
-                         .collect(Collectors.joining(", ", "[", "]")));
+                .collect(Collectors.joining(", ", "[", "]")));
         for (DistributedObject o : objects) {
             o.destroy();
         }

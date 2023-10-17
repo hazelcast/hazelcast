@@ -147,7 +147,10 @@ public class HazelcastCommandLine implements Runnable {
 
     @Command(description = "Starts the SQL shell [BETA]")
     public void sql(@Mixin GlobalMixin global) {
-        runWithHazelcast(global, true, SqlConsole::run);
+        runWithHazelcast(global, true, hz -> {
+            SqlConsole sqlConsole = new SqlConsole(this.global, hz);
+            sqlConsole.run();
+        });
     }
 
     @Command(description = "Submits a job to the cluster")
@@ -655,6 +658,10 @@ public class HazelcastCommandLine implements Runnable {
                 paramLabel = "[<cluster-name>@]<hostname>:<port>[,<hostname>:<port>]",
                 converter = TargetsConverter.class)
         private Targets targets;
+
+        public boolean isVerbose() {
+            return isVerbose;
+        }
 
         private Targets getTargets() {
             return targets;

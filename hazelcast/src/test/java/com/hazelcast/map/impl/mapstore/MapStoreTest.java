@@ -574,11 +574,10 @@ public class MapStoreTest extends AbstractMapStoreTest {
         for (int i = 0; i < size; i++) {
             store.put(i, "value" + i);
         }
-        Config config = newConfig(testMapStore, 2);
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(newConfig(testMapStore, 2));
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(newConfig(testMapStore, 2));
 
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
@@ -592,7 +591,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
 
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(newConfig(testMapStore, 2));
         IMap map3 = h3.getMap("default");
         //checkIfMapLoaded("default", h3);
 

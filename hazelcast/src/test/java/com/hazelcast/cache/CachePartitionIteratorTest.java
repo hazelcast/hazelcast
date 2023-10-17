@@ -38,9 +38,9 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -72,7 +72,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
     private <K, V> CacheProxy<K, V> getCacheProxy() {
         String cacheName = randomString();
         CacheManager cacheManager = cachingProvider.getCacheManager();
-        CacheConfig<K, V> config = new CacheConfig<K, V>();
+        CacheConfig<K, V> config = new CacheConfig<>();
         config.getEvictionConfig().setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT).setSize(10000000);
         return (CacheProxy<K, V>) cacheManager.createCache(cacheName, config);
 
@@ -83,14 +83,14 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_HasNext_Returns_False_On_EmptyPartition() throws Exception {
+    public void test_HasNext_Returns_False_On_EmptyPartition() {
         CacheProxy<Integer, Integer> cache = getCacheProxy();
         Iterator<Cache.Entry<Integer, Integer>> iterator = getIterator(cache);
         assertFalse(iterator.hasNext());
     }
 
     @Test
-    public void test_HasNext_Returns_True_On_NonEmptyPartition() throws Exception {
+    public void test_HasNext_Returns_True_On_NonEmptyPartition() {
         CacheProxy<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -102,7 +102,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition() {
         CacheProxy<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -110,12 +110,12 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
         cache.put(key, value);
 
         Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
-        Cache.Entry entry = iterator.next();
+        Cache.Entry<String, String> entry = iterator.next();
         assertEquals(value, entry.getValue());
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() {
         CacheProxy<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -123,14 +123,14 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
         cache.put(key, value);
 
         Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
-        Cache.Entry entry = iterator.next();
+        Cache.Entry<String, String> entry = iterator.next();
         assertEquals(value, entry.getValue());
         boolean hasNext = iterator.hasNext();
         assertFalse(hasNext);
     }
 
     @Test
-    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() {
         CacheProxy<String, String> cache = getCacheProxy();
         String value = randomString();
         int count = 1000;
@@ -140,7 +140,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
         }
         Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
         for (int i = 0; i < count; i++) {
-            Cache.Entry entry = iterator.next();
+            Cache.Entry<String, String> entry = iterator.next();
             assertEquals(value, entry.getValue());
 
         }

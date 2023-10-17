@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -74,7 +75,7 @@ public class MapSubmitToKeyMessageTask
 
     @Override
     public String getMethodName() {
-        return "submitToKey";
+    return SecurityInterceptorConstants.SUBMIT_TO_KEY;
     }
 
     @Override

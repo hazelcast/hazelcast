@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ExecutorServicePermission;
 
@@ -68,7 +69,7 @@ public class ExecutorServiceShutdownMessageTask
 
     @Override
     public String getMethodName() {
-        return "shutdown";
+        return SecurityInterceptorConstants.SHUTDOWN;
     }
 
     @Override

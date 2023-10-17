@@ -1105,7 +1105,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         }
 
         List<Throwable> throwables = FutureUtil.waitUntilAllResponded(futures);
-        if (throwables.size() > 0) {
+        if (!throwables.isEmpty()) {
             throw rethrow(throwables.get(0));
         }
     }

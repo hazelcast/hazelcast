@@ -70,6 +70,10 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
         // we want to make sure the hazelcast system properties are added
         assertContains(FAKE_PROPERTY + "=" + FAKE_PROPERTY_VALUE);
 
+        // java.vm.args doesn't work under windows
+        // https://github.com/hazelcast/hazelcast/issues/11610
+        assertContains(SystemPropertiesPlugin.JVM_ARGS + "=");
+
         // we don't want to have awt
         assertNotContains("java.awt");
     }

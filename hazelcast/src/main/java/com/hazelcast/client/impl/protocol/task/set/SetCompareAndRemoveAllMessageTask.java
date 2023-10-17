@@ -24,6 +24,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -75,7 +76,7 @@ public class SetCompareAndRemoveAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "removeAll";
+        return SecurityInterceptorConstants.REMOVE_ALL;
     }
 
     @Override

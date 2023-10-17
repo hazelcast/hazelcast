@@ -24,6 +24,7 @@ import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
 import com.hazelcast.internal.metrics.managementcenter.ReadMetricsOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -93,7 +94,7 @@ public class ReadMetricsMessageTask extends AbstractInvocationMessageTask<MCRead
 
     @Override
     public String getMethodName() {
-        return "readMetrics";
+        return SecurityInterceptorConstants.READ_METRICS;
     }
 
     @Override

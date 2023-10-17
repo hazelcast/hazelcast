@@ -33,7 +33,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
@@ -64,7 +64,7 @@ public class BatchInvalidator extends Invalidator {
     private final AtomicBoolean runningBackgroundTask = new AtomicBoolean();
 
     public BatchInvalidator(String serviceName, int batchSize, int batchFrequencySeconds,
-                            Function<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
+                            Predicate<EventRegistration> eventFilter, NodeEngine nodeEngine) {
         super(serviceName, eventFilter, nodeEngine);
 
         this.batchSize = batchSize;
@@ -140,7 +140,7 @@ public class BatchInvalidator extends Invalidator {
 
         Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, dataStructureName);
         for (EventRegistration registration : registrations) {
-            if (eventFilter.apply(registration)) {
+            if (eventFilter.test(registration)) {
                 // find worker queue of striped executor by using subscribers' address.
                 // we want to send all batch invalidations belonging to same subscriber go into
                 // the same workers queue.
@@ -192,7 +192,7 @@ public class BatchInvalidator extends Invalidator {
                 }
                 String name = entry.getKey();
                 InvalidationQueue<Invalidation> invalidationQueue = entry.getValue();
-                if (invalidationQueue.size() > 0) {
+                if (!invalidationQueue.isEmpty()) {
                     pollAndSendInvalidations(name, invalidationQueue);
                 }
             }

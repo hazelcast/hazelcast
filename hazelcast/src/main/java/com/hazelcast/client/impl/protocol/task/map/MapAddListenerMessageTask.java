@@ -29,6 +29,7 @@ import com.hazelcast.map.impl.querycache.event.BatchEventData;
 import com.hazelcast.map.impl.querycache.event.BatchIMapEvent;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.SingleIMapEvent;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 
 import java.security.Permission;
@@ -119,7 +120,7 @@ public class MapAddListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return SecurityInterceptorConstants.ADD_ENTRY_LISTENER;
     }
 
     @Override

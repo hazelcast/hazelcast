@@ -19,24 +19,22 @@ package com.hazelcast.internal.management.operation;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.config.MapConfigReadOnly;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 /**
  * Operation to fetch Map configuration.
  */
-public class GetMapConfigOperation extends AbstractLocalOperation {
+public class GetMapConfigOperation
+        extends AbstractLocalOperation {
 
     private final String mapName;
+
     private MapConfig mapConfig;
 
     public GetMapConfigOperation(String mapName) {
@@ -48,30 +46,30 @@ public class GetMapConfigOperation extends AbstractLocalOperation {
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        MapConfig readOnlyMapConfig = mapContainer.getMapConfig();
-        List<IndexConfig> indexConfigs = getIndexConfigsFromContainer(mapContainer);
-        if (indexConfigs.isEmpty()) {
-            mapConfig = readOnlyMapConfig;
-        } else {
-            MapConfig enrichedConfig = new MapConfig(readOnlyMapConfig);
-            enrichedConfig.setIndexConfigs(indexConfigs);
-            mapConfig = new MapConfigReadOnly(enrichedConfig);
+        mapConfig = mapContainer.getMapConfig();
+        mapConfig = addIndexConfig(mapConfig, mapContainer.getIndexDefinitions());
+    }
+
+    private static MapConfig addIndexConfig(MapConfig mapConfig,
+                                            Map<String, IndexConfig> indexDefinitions) {
+        // 1. If there is no index-config  to add
+        if (MapUtil.isNullOrEmpty(indexDefinitions)) {
+            return mapConfig;
         }
+
+        // 2. We have index-configs to add
+        MapConfig mapConfigWithIndexes = new MapConfig(mapConfig);
+        // first clear all existing index-configs
+        // here, not to have duplicate index-configs
+        mapConfigWithIndexes.getIndexConfigs().clear();
+        for (IndexConfig indexConfig : indexDefinitions.values()) {
+            mapConfigWithIndexes.addIndexConfig(indexConfig);
+        }
+        return new MapConfigReadOnly(mapConfigWithIndexes);
     }
 
     @Override
     public Object getResponse() {
         return mapConfig;
-    }
-
-    private List<IndexConfig> getIndexConfigsFromContainer(MapContainer mapContainer) {
-        Indexes indexes = mapContainer.getIndexes();
-        if (indexes != null) {
-            return Arrays.stream(indexes.getIndexes())
-                    .map(InternalIndex::getConfig)
-                    .collect(Collectors.toList());
-        } else {
-            return Collections.emptyList();
-        }
     }
 }
