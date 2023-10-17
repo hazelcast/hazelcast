@@ -25,7 +25,7 @@ import java.time.Duration;
  * Annotates quick tests which are fast enough (i.e. execution sub-{@link #EXPECTED_RUNTIME_THRESHOLD} per test) for the PR builder.
  * <p>
  * Will be executed in the PR builder and for code coverage measurements.
- * <p>
+ *
  * @see {@link SlowTest}
  */
 public final class QuickTest {
