@@ -127,7 +127,7 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
 
     // This method was extracted in order to capture the wildcard parameter A.
     @SuppressWarnings("rawtypes")
-    private <T1, T2, K, A, R> StreamStage<WindowResult<R>> attachAggregate3(
+    private <T1, T2, A, R> StreamStage<WindowResult<R>> attachAggregate3(
             @Nonnull StreamStage<T1> stage1,
             @Nonnull StreamStage<T2> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, ? extends R> aggrOp
