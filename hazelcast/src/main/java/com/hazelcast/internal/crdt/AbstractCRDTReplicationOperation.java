@@ -81,6 +81,6 @@ public abstract class AbstractCRDTReplicationOperation<T extends IdentifiedDataS
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        replicationData = SerializationUtil.readMap(in);
+        replicationData = SerializationUtil.readMapStringKey(in);
     }
 }
