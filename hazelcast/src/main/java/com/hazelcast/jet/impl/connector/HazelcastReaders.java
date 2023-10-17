@@ -355,7 +355,7 @@ public final class HazelcastReaders {
      */
     @Nonnull
     public static <K, V, T> ProcessorSupplier readRemoteMapSupplier(RemoteMapSourceParams<K, V, T> params) {
-        if (params.isQuery()) {
+        if (params.hasPredicate()) {
             checkSerializable(Objects.requireNonNull(params.getPredicate()), "predicate");
             checkSerializable(Objects.requireNonNull(params.getProjection()), "projection");
 

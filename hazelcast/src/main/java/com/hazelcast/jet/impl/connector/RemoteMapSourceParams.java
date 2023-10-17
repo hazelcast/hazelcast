@@ -31,7 +31,7 @@ public class RemoteMapSourceParams<K, V, T> {
 
     private Projection<? super Map.Entry<K, V>, T> projection;
 
-    public boolean isQuery() {
+    public boolean hasPredicate() {
         return predicate != null;
     }
 

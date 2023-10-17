@@ -608,30 +608,8 @@ public final class Sources {
      * <p>
      * The DataConnectionConfig caches the connection to remote cluster, so that it
      * can be re-used
-     * <p>
-     * (Prerequisite) External dataConnection configuration:
-     * Use {@link HazelcastDataConnection#CLIENT_XML} for XML or
-     * use {@link HazelcastDataConnection#CLIENT_YML} for YAML string.
-     * <pre>{@code
-     * Config config = ...;
-     * String xmlString = ...;
-     * DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
-     *     .setName("my-hzclient-data-connection")
-     *     .setType("Hz")
-     *     .setProperty(HzClientDataConnectionFactory.CLIENT_XML, xmlString);
-     * config.addDataConnectionConfig(dataConnectionConfig);
-     *  }</pre>
-     * <p>
-     * Pipeline configuration
-     * <pre>{@code
-     * PredicateEx<EventJournalMapEvent<String, Integer>> predicate = ...;
-     * p.readFrom(Sources.remoteMap(
-     *     mapName,
-     *     DataConnectionRef.dataConnectionRef("my-hzclient-data-connection")
-     *  ));
-     *  }</pre>
      *
-     * @param mapName the name of the map
+     * @param mapName           the name of the map
      * @param dataConnectionRef the reference to DataConnectionConfig
      * @since 5.4
      */
@@ -653,32 +631,8 @@ public final class Sources {
      * <p>
      * The DataConnectionConfig caches the connection to remote cluster, so that it
      * can be re-used
-     * <p>
-     * (Prerequisite) External dataConnection configuration:
-     * Use {@link HazelcastDataConnection#CLIENT_XML} for XML or
-     * use {@link HazelcastDataConnection#CLIENT_YML} for YAML string.
-     * <pre>{@code
-     * Config config = ...;
-     * String xmlString = ...;
-     * DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
-     *     .setName("my-hzclient-data-connection")
-     *     .setType("Hz")
-     *     .setProperty(HzClientDataConnectionFactory.CLIENT_XML, xmlString);
-     * config.addDataConnectionConfig(dataConnectionConfig);
-     *  }</pre>
-     * <p>
-     * Pipeline configuration
-     * <pre>{@code
-     * PredicateEx<EventJournalMapEvent<String, Integer>> predicate = ...;
-     * p.readFrom(Sources.remoteMap(
-     *     mapName,
-     *     DataConnectionRef.dataConnectionRef("my-hzclient-data-connection")
-     *     entry -> ...,
-     *     entry -> ...
-     *  ));
-     *  }</pre>
      *
-     * @param mapName the name of the map
+     * @param mapName           the name of the map
      * @param dataConnectionRef the reference to DataConnectionConfig
      * @since 5.4
      */
