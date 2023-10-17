@@ -63,7 +63,6 @@ public class StsMonitorTest {
 
     String apiServerBaseUrl;
     String namespace;
-    String serviceAccount;
     NamespacedKubernetesClient mockServerClient;
     String token;
 
@@ -71,7 +70,6 @@ public class StsMonitorTest {
     public void setup() {
         mockServerClient = kubernetesServer.getClient();
         namespace = mockServerClient.getNamespace();
-        serviceAccount = "sample-service-account";
         token = mockServerClient.getConfiguration().getOauthToken();
         apiServerBaseUrl = mockServerClient.getMasterUrl().toString();
         if (apiServerBaseUrl.endsWith("/")) {
@@ -249,7 +247,7 @@ public class StsMonitorTest {
     KubernetesClient.StsMonitorThread buildStsMonitor(String namespace, String masterUrl,
                                                       String oauthToken, ClusterTopologyIntentTracker tracker) {
         StaticTokenProvider tokenProvider = new StaticTokenProvider(oauthToken);
-        return new KubernetesClient(namespace,serviceAccount, masterUrl,
+        return new KubernetesClient(namespace, masterUrl,
                 tokenProvider, null, 3,
                 KubernetesConfig.ExposeExternallyMode.DISABLED, false,
                 null, null, tracker, DEFAULT_STS_NAME).new StsMonitorThread();
