@@ -429,11 +429,11 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public void addIndex(IndexConfig config) {
         checkNotNull(config, "Index config cannot be null.");
 
-        assert indexRegistry.isGlobal();
+        assert indexes.isGlobal();
 
         IndexConfig config0 = getNormalizedIndexConfig(config);
 
-        indexRegistry.addOrGetIndex(config0);
+        indexes.addOrGetIndex(config0);
 
         InternalSerializationService serializationService = context.getSerializationService();
 
@@ -447,7 +447,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             Data keyData = toData(queryCacheKey);
             QueryEntry queryable = new QueryEntry(serializationService, keyData, value, extractors);
             newEntry.init(keyData, value);
-            indexRegistry.putEntry(newEntry, null, queryable, Index.OperationSource.USER);
+            indexes.putEntry(newEntry, null, queryable, Index.OperationSource.USER);
         }
     }
 

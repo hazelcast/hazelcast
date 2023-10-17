@@ -43,13 +43,13 @@ public class ConverterResolutionTest {
 
     private InternalSerializationService serializationService;
     private Extractors extractors;
-    private IndexRegistry indexes;
+    private Indexes indexes;
 
     @Before
     public void before() {
         serializationService = new DefaultSerializationServiceBuilder().build();
         extractors = Extractors.newBuilder(serializationService).build();
-        indexes = IndexRegistry.newBuilder(null, "test", serializationService,
+        indexes = Indexes.newBuilder(null, "test", serializationService,
                 IndexCopyBehavior.COPY_ON_READ, DEFAULT_IN_MEMORY_FORMAT).extractors(extractors).build();
     }
 

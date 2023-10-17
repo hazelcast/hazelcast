@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 
 /**
  * Optimizes predicate for faster execution.
@@ -25,5 +25,5 @@ import com.hazelcast.query.impl.IndexRegistry;
  * if no optimization has been performed.
 */
 public interface QueryOptimizer {
-    <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, IndexRegistry indexes);
+    <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, Indexes indexes);
 }

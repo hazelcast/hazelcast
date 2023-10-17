@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.observer;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -106,26 +105,16 @@ public class ObservableImpl<T> implements Observable<T> {
     @Override
     public Observable<T> configureCapacity(int capacity) {
         String ringbufferName = ringbufferName(name);
-        int i = 0;
-        while (true) {
-            i++;
-            if (ringbufferExists(ringbufferName)) {
-                throw new IllegalStateException("Underlying buffer for observable '" + name + "' is already created.");
-            }
-            Config config = hzInstance.getConfig();
-            try {
-                config.addRingBufferConfig(new RingbufferConfig(ringbufferName).setCapacity(capacity));
-                return this;
-            } catch (InvalidConfigurationException e) {
-                logger.warning("Configuration for ringbuffer " + name + " already exists. "
-                        + "Maybe the ringbuffer was missed due to unreliable HazelcastInstance#getDistributedObjects");
-                if (i == 2) {
-                    throw new RuntimeException("Failed configuring capacity: " + e, e);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Failed configuring capacity: " + e, e);
-            }
+        if (ringbufferExists(ringbufferName)) {
+            throw new IllegalStateException("Underlying buffer for observable '" + name + "' is already created.");
         }
+        Config config = hzInstance.getConfig();
+        try {
+            config.addRingBufferConfig(new RingbufferConfig(ringbufferName).setCapacity(capacity));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed configuring capacity: " + e, e);
+        }
+        return this;
     }
 
     @Override

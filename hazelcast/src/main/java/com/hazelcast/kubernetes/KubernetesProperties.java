@@ -86,6 +86,12 @@ public final class KubernetesProperties {
     public static final PropertyDefinition NAMESPACE = property("namespace", STRING);
 
     /**
+     * <p>Configuration key: <code>service-account</code></p>
+     * Defines the service-account of the application POD through the Service Discovery REST API of Kubernetes.
+     */
+    public static final PropertyDefinition SERVICE_ACCOUNT = property("service-account", STRING);
+
+    /**
      * <p>Configuration key: <code>pod-label-name</code></p>
      * Defines the comma separated pod labels to lookup through the Service Discovery REST API of Kubernetes.
      */

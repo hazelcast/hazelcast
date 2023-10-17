@@ -55,7 +55,6 @@ import org.mockito.ArgumentCaptor;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -114,10 +113,8 @@ public class HazelcastCommandLineTest extends JetTestSupport {
 
     public static void createJarFile() throws IOException {
         testJobJarFile = Files.createTempFile("testjob-", ".jar");
-        try (InputStream inputStream = HazelcastCommandLineTest.class.getResourceAsStream("testjob-with-hz-bootstrap.jar")) {
-            assert inputStream != null;
-            Files.copy(inputStream, testJobJarFile, StandardCopyOption.REPLACE_EXISTING);
-        }
+        IOUtil.copy(HazelcastCommandLineTest.class.getResourceAsStream("testjob-with-hz-bootstrap.jar"),
+                testJobJarFile.toFile());
     }
 
     @AfterClass
@@ -160,13 +157,13 @@ public class HazelcastCommandLineTest extends JetTestSupport {
     @After
     public void after() {
         String stdOutput = captureOut();
-        if (!stdOutput.isEmpty()) {
+        if (stdOutput.length() > 0) {
             System.out.println("--- Captured standard output");
             System.out.println(stdOutput);
             System.out.println("--- End of captured standard output");
         }
         String errOutput = captureErr();
-        if (!errOutput.isEmpty()) {
+        if (errOutput.length() > 0) {
             System.out.println("--- Captured error output");
             System.out.println(errOutput);
             System.out.println("--- End of captured error output");
@@ -513,10 +510,8 @@ public class HazelcastCommandLineTest extends JetTestSupport {
     @Test
     public void test_submit_with_JetBootstrap() throws IOException {
         Path testJarWithJetBootstrap = Files.createTempFile("testjob-with-jet-bootstrap-", ".jar");
-        try (InputStream inputStream = HazelcastCommandLineTest.class.getResourceAsStream("testjob-with-jet-bootstrap.jar")) {
-            assert inputStream != null;
-            Files.copy(inputStream, testJarWithJetBootstrap, StandardCopyOption.REPLACE_EXISTING);
-        }
+        IOUtil.copy(HazelcastCommandLineTest.class.getResourceAsStream("testjob-with-jet-bootstrap.jar"),
+                testJarWithJetBootstrap.toFile());
         run("submit", testJarWithJetBootstrap.toString());
         assertTrueEventually(() -> assertEquals(1, hz.getJet().getJobs().size()));
         Job job = hz.getJet().getJobs().get(0);
@@ -536,10 +531,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         PrintStream oldErr = System.err;
         System.setErr(new PrintStream(err));
         Path testJarFile = Files.createTempFile("testjob-with-hazelcast-codebase-", ".jar");
-        try (InputStream inputStream = HazelcastCommandLineTest.class.getResourceAsStream("testjob-with-hazelcast-codebase.jar")) {
-            assert inputStream != null;
-            Files.copy(inputStream, testJarFile, StandardCopyOption.REPLACE_EXISTING);
-        }
+        IOUtil.copy(HazelcastCommandLineTest.class.getResourceAsStream("testjob-with-hazelcast-codebase.jar"), testJarFile.toFile());
         try {
             run("submit", testJarFile.toString());
 

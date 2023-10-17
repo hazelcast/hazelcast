@@ -864,7 +864,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             return false;
         }
 
-        if (!schedule.getChanges().isEmpty()) {
+        if (schedule.getChanges().size() > 0) {
             return false;
         }
 
@@ -1028,7 +1028,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         logger.info("Added new " + member + ". New active CP members list: " + newMembers);
 
         List<CPGroupMembershipChange> changes = getGroupMembershipChangesForNewMember(member);
-        if (!changes.isEmpty()) {
+        if (changes.size() > 0) {
             membershipChangeSchedule = MembershipChangeSchedule.forJoiningMember(singletonList(commitIndex), member, changes);
             if (logger.isFineEnabled()) {
                 logger.fine("CP group rebalancing is triggered for " + member + ", changes: " + membershipChangeSchedule);

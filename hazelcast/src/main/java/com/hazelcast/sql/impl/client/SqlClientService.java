@@ -295,15 +295,11 @@ public class SqlClientService implements SqlService {
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
         SqlError sqlError = response.error;
         if (sqlError != null) {
-            Throwable cause = null;
-            if (sqlError.isCauseStackTraceExists()) {
-                cause = new Exception(sqlError.getCauseStackTrace());
-            }
             throw new HazelcastSqlException(
                     sqlError.getOriginatingMemberId(),
                     sqlError.getCode(),
                     sqlError.getMessage(),
-                    cause,
+                    null,
                     sqlError.getSuggestion()
             );
         } else {
@@ -456,7 +452,7 @@ public class SqlClientService implements SqlService {
             return null;
         }
 
-        if (statement.getParameters().isEmpty()) {
+        if (statement.getParameters().size() == 0) {
             return null;
         }
 

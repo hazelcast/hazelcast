@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import org.apache.commons.io.IOUtils;
 import org.example.jet.impl.deployment.ResourceCollector;
 
 import javax.annotation.Nonnull;
@@ -71,8 +72,7 @@ public class TestProcessor extends AbstractProcessor {
         @Override
         public String getEx() throws Exception {
             try (InputStream is = ResourceReader.class.getClassLoader().getResourceAsStream("childfirstclassloader/resource_test.txt")) {
-                assert is != null;
-                return new String(is.readAllBytes(), UTF_8);
+                return IOUtils.toString(is, UTF_8);
             }
         }
     }

@@ -21,7 +21,6 @@ import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 
 /**
@@ -41,7 +40,7 @@ public final class ExecutorStats {
     public ExecutorStats() {
     }
 
-    public ConcurrentMap<String, LocalExecutorStatsImpl> getStatsMap() {
+    public ConcurrentHashMap<String, LocalExecutorStatsImpl> getStatsMap() {
         return statsMap;
     }
 

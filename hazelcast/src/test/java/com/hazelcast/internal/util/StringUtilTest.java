@@ -16,84 +16,91 @@
 
 package com.hazelcast.internal.util;
 
-import static com.hazelcast.internal.util.StringUtil.VERSION_PATTERN;
-import static com.hazelcast.internal.util.StringUtil.isAllNullOrEmptyAfterTrim;
-import static com.hazelcast.internal.util.StringUtil.isAnyNullOrEmptyAfterTrim;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.junit.experimental.categories.Category;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.runner.RunWith;
-
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.Locale;
 
+import static com.hazelcast.internal.util.StringUtil.VERSION_PATTERN;
+import static com.hazelcast.internal.util.StringUtil.isAllNullOrEmptyAfterTrim;
+import static com.hazelcast.internal.util.StringUtil.isAnyNullOrEmptyAfterTrim;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-class StringUtilTest extends HazelcastTestSupport {
-    @ParameterizedTest
-    @ValueSource(strings = {"3.1", "3.1-SNAPSHOT", "3.1-RC", "3.1-RC1-SNAPSHOT", "3.1.1", "3.1.1-RC", "3.1.1-SNAPSHOT",
-            "3.1.1-RC1-SNAPSHOT"})
-    void testVersionPatternMatches(String input) {
-        assertTrue(VERSION_PATTERN.matcher(input).matches());
-    }
+public class StringUtilTest extends HazelcastTestSupport {
 
-    @ParameterizedTest
-    @ValueSource(strings = {"${project.version}", "project.version", "3", "3.RC", "3.SNAPSHOT", "3-RC", "3-SNAPSHOT", "3.",
-            "3.1.RC", "3.1.SNAPSHOT"})
-    void testVersionPatternNotMatches(String input) {
-        assertFalse(VERSION_PATTERN.matcher(input).matches());
+    @Test
+    public void testVersionPattern() {
+        assertTrue(VERSION_PATTERN.matcher("3.1").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1-SNAPSHOT").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1-RC").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1-RC1-SNAPSHOT").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1-SNAPSHOT").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC1-SNAPSHOT").matches());
+
+        assertFalse(VERSION_PATTERN.matcher("${project.version}").matches());
+        assertFalse(VERSION_PATTERN.matcher("project.version").matches());
+        assertFalse(VERSION_PATTERN.matcher("3").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.RC").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.SNAPSHOT").matches());
+        assertFalse(VERSION_PATTERN.matcher("3-RC").matches());
+        assertFalse(VERSION_PATTERN.matcher("3-SNAPSHOT").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.1.RC").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.1.SNAPSHOT").matches());
     }
 
     @Test
-    void getterIntoProperty_whenNull_returnNull() throws Exception {
+    public void getterIntoProperty_whenNull_returnNull() throws Exception {
         assertEquals("", StringUtil.getterIntoProperty(""));
     }
 
     @Test
-    void getterIntoProperty_whenEmpty_returnEmptyString() throws Exception {
+    public void getterIntoProperty_whenEmpty_returnEmptyString() throws Exception {
         assertEquals("", StringUtil.getterIntoProperty(""));
     }
 
     @Test
-    void getterIntoProperty_whenGet_returnUnchanged() throws Exception {
+    public void getterIntoProperty_whenGet_returnUnchanged() throws Exception {
         assertEquals("get", StringUtil.getterIntoProperty("get"));
     }
 
     @Test
-    void getterIntoProperty_whenGetFoo_returnFoo() throws Exception {
+    public void getterIntoProperty_whenGetFoo_returnFoo() throws Exception {
         assertEquals("foo", StringUtil.getterIntoProperty("getFoo"));
     }
 
     @Test
-    void getterIntoProperty_whenGetF_returnF() throws Exception {
+    public void getterIntoProperty_whenGetF_returnF() throws Exception {
         assertEquals("f", StringUtil.getterIntoProperty("getF"));
     }
 
     @Test
-    void getterIntoProperty_whenGetNumber_returnNumber() throws Exception {
+    public void getterIntoProperty_whenGetNumber_returnNumber() throws Exception {
         assertEquals("8", StringUtil.getterIntoProperty("get8"));
     }
 
     @Test
-    void getterIntoProperty_whenPropertyIsLowerCase_DoNotChange() throws Exception {
+    public void getterIntoProperty_whenPropertyIsLowerCase_DoNotChange() throws Exception {
         assertEquals("getfoo", StringUtil.getterIntoProperty("getfoo"));
     }
 
     @Test
-    void test_lowerCaseFirstChar() {
+    public void test_lowerCaseFirstChar() {
         assertEquals("", StringUtil.lowerCaseFirstChar(""));
         assertEquals(".", StringUtil.lowerCaseFirstChar("."));
         assertEquals(" ", StringUtil.lowerCaseFirstChar(" "));
@@ -104,7 +111,7 @@ class StringUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    void testSplitByComma() throws Exception {
+    public void testSplitByComma() throws Exception {
         assertNull(StringUtil.splitByComma(null, true));
         assertArrayEquals(arr(""), StringUtil.splitByComma("", true));
         assertArrayEquals(arr(""), StringUtil.splitByComma(" ", true));
@@ -117,14 +124,14 @@ class StringUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    void testArrayIntersection() throws Exception {
+    public void testArrayIntersection() throws Exception {
         assertArrayEquals(arr("test"), StringUtil.intersection(arr("x", "test", "y", "z"), arr("a", "b", "test")));
         assertArrayEquals(arr(""), StringUtil.intersection(arr("", "z"), arr("a", "")));
         assertArrayEquals(arr(), StringUtil.intersection(arr("", "z"), arr("a")));
     }
 
     @Test
-    void testArraySubraction() throws Exception {
+    public void testArraySubraction() throws Exception {
         assertNull(StringUtil.subtraction(null, arr("a", "test", "b", "a")));
         assertArrayEquals(arr("a", "test", "b", "a"), StringUtil.subtraction(arr("a", "test", "b", "a"), null));
         assertArrayEquals(arr("test"), StringUtil.subtraction(arr("a", "test", "b", "a"), arr("a", "b")));
@@ -134,7 +141,7 @@ class StringUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    void testEqualsIgnoreCase() throws Exception {
+    public void testEqualsIgnoreCase() throws Exception {
         assertFalse(StringUtil.equalsIgnoreCase(null, null));
         assertFalse(StringUtil.equalsIgnoreCase(null, "a"));
         assertFalse(StringUtil.equalsIgnoreCase("a", null));
@@ -153,7 +160,7 @@ class StringUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    void testStripTrailingSlash() throws Exception {
+    public void testStripTrailingSlash() throws Exception {
         assertEquals(null, StringUtil.stripTrailingSlash(null));
         assertEquals("", StringUtil.stripTrailingSlash(""));
         assertEquals("a", StringUtil.stripTrailingSlash("a"));
@@ -163,7 +170,7 @@ class StringUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    void testResolvePlaceholders() throws Exception {
+    public void testResolvePlaceholders() throws Exception {
         assertResolvePlaceholder(
                 "noPlaceholders",
                 "noPlaceholders",
@@ -207,7 +214,7 @@ class StringUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    void isNotBlank() {
+    public void isNotBlank() {
         assertFalse(StringUtil.isNullOrEmptyAfterTrim("string"));
         // null unicode character
         assertFalse(StringUtil.isNullOrEmptyAfterTrim("\u0000"));
@@ -225,21 +232,21 @@ class StringUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    void isAllFilledTest() {
+    public void isAllFilledTest() {
         assertTrue(isAllNullOrEmptyAfterTrim("test-string-1", "test-string-2"));
         assertFalse(isAllNullOrEmptyAfterTrim("test-string-1", ""));
         assertFalse(isAllNullOrEmptyAfterTrim("", "", null));
     }
 
     @Test
-    void isAnyFilledTest() {
+    public void isAnyFilledTest() {
         assertTrue(isAnyNullOrEmptyAfterTrim("test-string-1", "test-string-2"));
         assertTrue(isAnyNullOrEmptyAfterTrim("test-string-1", ""));
         assertFalse(isAnyNullOrEmptyAfterTrim("", "", null));
     }
 
     @Test
-    void when_removingCharactersFromString_then_properValue() {
+    public void when_removingCharactersFromString_then_properValue() {
         assertEquals("", StringUtil.removeCharacter("-------", '-'));
         assertEquals("-------", StringUtil.removeCharacter("-------", '0'));
         assertEquals("-------", StringUtil.removeCharacter("-0-0-0-0-0-0-", '0'));
@@ -247,7 +254,7 @@ class StringUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    void when_removingNotExistingCharactersFromString_then_sameInstanceIsReturned() {
+    public void when_removingNotExistingCharactersFromString_then_sameInstanceIsReturned() {
         assertSame("-------", StringUtil.removeCharacter("-------", '0'));
     }
 

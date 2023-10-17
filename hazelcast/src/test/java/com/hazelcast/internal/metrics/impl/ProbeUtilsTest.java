@@ -16,22 +16,22 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
-import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.starter.ReflectionUtils;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.stream.Stream;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COLLECTION;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COUNTER;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_NUMBER;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_PRIMITIVE;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_LONG_NUMBER;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_MAP;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_PRIMITIVE_LONG;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -42,20 +42,15 @@ public class ProbeUtilsTest extends HazelcastTestSupport {
         assertUtilityConstructor(ProbeUtils.class);
     }
 
-    /** Prints the types that a @Probe has been attached to in the codebase, and where they can be found */
-    public static void main(final String[] args) {
-        final Multimap<String, String> probeTypeToClassesFoundIn = TreeMultimap.create();
+    @Test
+    public void isDouble() {
+        assertTrue(ProbeUtils.isDouble(TYPE_DOUBLE_NUMBER));
+        assertTrue(ProbeUtils.isDouble(TYPE_DOUBLE_PRIMITIVE));
 
-        ReflectionUtils.getReflectionsForTestPackage("com.hazelcast").getSubTypesOf(Object.class).forEach(clazz -> {
-            final Stream<Class<?>> methodTypes = Arrays.stream(clazz.getDeclaredMethods())
-                    .filter(method -> method.getAnnotation(Probe.class) != null).map(Method::getReturnType);
-            final Stream<Class<?>> fieldTypes = Arrays.stream(clazz.getDeclaredFields())
-                    .filter(field -> field.getAnnotation(Probe.class) != null).map(Field::getType);
-
-            Stream.concat(methodTypes, fieldTypes)
-                    .forEach(probeType -> probeTypeToClassesFoundIn.put(probeType.getName(), clazz.getName()));
-        });
-
-        probeTypeToClassesFoundIn.asMap().entrySet().forEach(System.out::println);
+        assertFalse(ProbeUtils.isDouble(TYPE_PRIMITIVE_LONG));
+        assertFalse(ProbeUtils.isDouble(TYPE_LONG_NUMBER));
+        assertFalse(ProbeUtils.isDouble(TYPE_COLLECTION));
+        assertFalse(ProbeUtils.isDouble(TYPE_MAP));
+        assertFalse(ProbeUtils.isDouble(TYPE_COUNTER));
     }
 }

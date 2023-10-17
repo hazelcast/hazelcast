@@ -38,7 +38,7 @@ Non-goals are:
 - support any kind of pruning for streaming jobs. It may be considered to do later, but now it is not a case.
 - special support migration-tolerance for member and processor pruning. If the migration happens when the job is starting,
   it will be running suboptimally, because it may fetch data from other members - same behavior as we have currently.
-- support partitioned index scan. Index scan is not supported in pure Jet, only SQL has dedicated processor for that.
+- support local index scan. Index scan is not supported in pure Jet, only SQL has dedicated processor for that.
 
 ## Technical Design
 

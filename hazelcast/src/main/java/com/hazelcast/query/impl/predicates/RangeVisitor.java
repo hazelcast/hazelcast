@@ -20,7 +20,7 @@ import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Comparables;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.TypeConverters;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -45,7 +45,7 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 public class RangeVisitor extends AbstractVisitor {
 
     @Override
-    public Predicate visit(AndPredicate predicate, IndexRegistry indexes) {
+    public Predicate visit(AndPredicate predicate, Indexes indexes) {
         Predicate[] predicates = predicate.predicates;
         Ranges ranges = null;
 
@@ -60,7 +60,7 @@ public class RangeVisitor extends AbstractVisitor {
     }
 
     @Override
-    public Predicate visit(BetweenPredicate predicate, IndexRegistry indexes) {
+    public Predicate visit(BetweenPredicate predicate, Indexes indexes) {
         TypeConverter converter = indexes.getConverter(predicate.attributeName);
         if (converter == null) {
             return predicate;
@@ -82,7 +82,7 @@ public class RangeVisitor extends AbstractVisitor {
         }
     }
 
-    private static Ranges intersect(Predicate[] predicates, int predicateIndex, Ranges ranges, IndexRegistry indexes) {
+    private static Ranges intersect(Predicate[] predicates, int predicateIndex, Ranges ranges, Indexes indexes) {
         Predicate predicate = predicates[predicateIndex];
 
         if (predicate instanceof FalsePredicate) {
@@ -120,7 +120,7 @@ public class RangeVisitor extends AbstractVisitor {
         return !rangePredicate.getAttribute().contains("[any]");
     }
 
-    private static Range intersect(RangePredicate predicate, Range range, IndexRegistry indexes) {
+    private static Range intersect(RangePredicate predicate, Range range, Indexes indexes) {
         if (range == null) {
             TypeConverter converter = indexes.getConverter(predicate.getAttribute());
             if (converter == null) {

@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.jet.impl.exception.JetDisabledException;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlStatement;
@@ -29,12 +27,10 @@ import java.util.UUID;
 
 public class MissingSqlService implements InternalSqlService {
 
-    private final UUID localMemberId;
-    private final boolean isJetEnabled;
+    private UUID localMemberId;
 
-    public MissingSqlService(UUID localMemberId, boolean isJetEnabled) {
+    public MissingSqlService(UUID localMemberId) {
         this.localMemberId = localMemberId;
-        this.isJetEnabled = isJetEnabled;
     }
 
     @Nonnull
@@ -97,9 +93,6 @@ public class MissingSqlService implements InternalSqlService {
     }
 
     private RuntimeException throwDisabled() {
-        if (!isJetEnabled) {
-            throw new JetDisabledException(Util.JET_IS_DISABLED_MESSAGE);
-        }
         throw new HazelcastSqlException(
                 localMemberId,
                 SqlErrorCode.GENERIC,

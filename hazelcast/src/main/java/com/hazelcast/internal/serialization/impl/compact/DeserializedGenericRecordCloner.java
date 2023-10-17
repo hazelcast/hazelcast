@@ -24,18 +24,18 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * Builder that will be used when cloning {@link DeserializedGenericRecord}s.
  */
 public class DeserializedGenericRecordCloner extends AbstractGenericRecordBuilder {
-    private final SortedMap<String, Object> objects;
+    private final TreeMap<String, Object> objects;
     private final Schema schema;
     private final Set<String> overwrittenFields;
     private boolean built;
 
-    public DeserializedGenericRecordCloner(Schema schema, SortedMap<String, Object> objects) {
+    public DeserializedGenericRecordCloner(Schema schema, TreeMap<String, Object> objects) {
         this.objects = objects;
         this.overwrittenFields = new HashSet<>();
         this.schema = schema;

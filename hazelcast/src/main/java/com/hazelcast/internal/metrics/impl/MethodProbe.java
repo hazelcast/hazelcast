@@ -16,140 +16,59 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import static com.hazelcast.internal.metrics.impl.ProbeType.getType;
-import static java.lang.String.format;
-
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.counters.Counter;
 
-import java.lang.invoke.LambdaMetafactory;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
-import java.util.function.Function;
-import java.util.function.Supplier;
+
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COLLECTION;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COUNTER;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_NUMBER;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_PRIMITIVE;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_LONG_NUMBER;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_MAP;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_PRIMITIVE_LONG;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_SEMAPHORE;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.isDouble;
+import static java.lang.String.format;
 
 /**
- * A {@link MethodProbe} is a {@link ProbeFunction} that invokes a method that is annotated with {@link Probe}.
- * <p>
- * Internally accesses the method using reflection via one of these mechanisms (as a pose to a simple {@link Method#invoke} for
- * <a href="https://github.com/hazelcast/hazelcast/pull/25279">performance reasons</a>):
- * <ul>
- * <li>{@link #methodHandle}
- * <li>{@link #staticAccessor}
- * <li>{@link #nonStaticAccessor}
- * </ul>
+ * A MethodProbe is a {@link ProbeFunction} that invokes a method that is annotated with {@link Probe}.
  */
 abstract class MethodProbe implements ProbeFunction {
-    private static final Lookup LOOKUP = MethodHandles.lookup();
 
-    /**
-     * {@link MethodHandle} used to access primitives to avoid boxing, specifically to reduce redundant object creation.
-     * <p>
-     * E.G. for a method that returns {@link long}, when typically invoked via reflection, an {@link Object} would instead be
-     * returned. The {@link long} would be boxed to {@link Long}, and then immediately unboxed again back to a {@link long} for
-     * returning from {@link LongProbeFunction#get(S)}.
-     * <p>
-     * Faster than basic reflection, but slower than a {@link LambdaMetafactory} generated accessor.
-     */
-    final MethodHandle methodHandle;
+    private static final Object[] EMPTY_ARGS = new Object[0];
 
-    /**
-     * A {@link Supplier} used to access static methods returning objects (reference types).
-     * <p>
-     * Generated via a {@link LambdaMetafactory}, bound to a {@link MethodHandle} derived from {@link #methodHandle}.
-     * <p>
-     * Faster than basic reflection and {@link MethodHandle#invokeExact()}, but only applicable for reference types.
-     *
-     * @see <a href= "https://www.optaplanner.org/blog/2018/01/09/JavaReflectionButMuchFaster.html"> Further reading</a>
-     */
-    final Supplier<?> staticAccessor;
-    /**
-     * A {@link Function} used to access instance methods returning objects (reference types)
-     * <p>
-     * {@link Function#apply(T)}'s parameter is the instance to retrieve the value from.
-     *
-     * @see #staticAccessor
-     */
-    final Function<Object, ?> nonStaticAccessor;
-
-    final boolean isMethodStatic;
+    final Method method;
     final CachedProbe probe;
-    final ProbeType type;
+    final int type;
     final SourceMetadata sourceMetadata;
     final String probeName;
 
-    @SuppressWarnings("checkstyle:executablestatementcount")
-    MethodProbe(Method method, Probe probe, ProbeType type, SourceMetadata sourceMetadata) {
-        try {
-            method.setAccessible(true);
-            final MethodHandle unreflected = LOOKUP.unreflect(method);
+    MethodProbe(Method method, Probe probe, int type, SourceMetadata sourceMetadata) {
+        this.method = method;
+        this.probe = new CachedProbe(probe);
+        this.type = type;
+        this.sourceMetadata = sourceMetadata;
+        this.probeName = probe.name();
+        assert probeName != null;
+        assert probeName.length() > 0;
+        method.setAccessible(true);
 
-            isMethodStatic = Modifier.isStatic(method.getModifiers());
-
-            if (type.isPrimitive()) {
-                // Modify return types to support invokeExact
-                MethodType methodType = unreflected.type().changeReturnType(type.getMapsTo());
-
-                if (!isMethodStatic) {
-                    methodType = methodType.changeParameterType(0, Object.class);
-                }
-
-                methodHandle = unreflected.asType(methodType);
-                staticAccessor = null;
-                nonStaticAccessor = null;
-            } else {
-                methodHandle = null;
-
-                final Lookup privateLookup = MethodHandles.privateLookupIn(method.getDeclaringClass(), LOOKUP);
-                final MethodType methodReturnType = MethodType.methodType(method.getReturnType());
-                final MethodHandle implementation;
-                final MethodType dynamicMethodType = unreflected.type();
-
-                if (isMethodStatic) {
-                    implementation = privateLookup.findStatic(method.getDeclaringClass().getClass(), method.getName(),
-                            methodReturnType);
-
-                    staticAccessor = (Supplier<?>) LambdaMetafactory
-                            .metafactory(privateLookup, "get", MethodType.methodType(Supplier.class),
-                                    MethodType.methodType(Object.class, new Class<?>[0]), implementation, dynamicMethodType)
-                            .getTarget().invokeExact();
-                    nonStaticAccessor = null;
-                } else {
-                    implementation = privateLookup.findVirtual(method.getDeclaringClass(), method.getName(), methodReturnType);
-
-                    staticAccessor = null;
-                    nonStaticAccessor = (Function<Object, ?>) LambdaMetafactory
-                            .metafactory(privateLookup, "apply", MethodType.methodType(Function.class),
-                                    MethodType.methodType(Object.class, Object.class), implementation, dynamicMethodType)
-                            .getTarget().invokeExact();
-                }
-            }
-
-            this.probe = new CachedProbe(probe);
-            this.type = type;
-            this.sourceMetadata = sourceMetadata;
-            probeName = probe.name();
-            assert probeName != null;
-            assert probeName.length() > 0;
-        } catch (final Throwable t) {
-            throw new RuntimeException(t);
-        }
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        final MetricDescriptor descriptor = metricsRegistry.newMetricDescriptor().withPrefix(namePrefix)
+        MetricDescriptor descriptor = metricsRegistry
+                .newMetricDescriptor()
+                .withPrefix(namePrefix)
                 .withMetric(getProbeName());
         metricsRegistry.registerInternal(source, descriptor, probe.level(), this);
     }
@@ -163,8 +82,8 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     static <S> MethodProbe createMethodProbe(Method method, Probe probe, SourceMetadata sourceMetadata) {
-        final ProbeType type = getType(method.getReturnType());
-        if (type == null) {
+        int type = getType(method.getReturnType());
+        if (type == -1) {
             throw new IllegalArgumentException(format("@Probe method '%s.%s() has an unsupported return type'",
                     method.getDeclaringClass().getName(), method.getName()));
         }
@@ -174,80 +93,61 @@ abstract class MethodProbe implements ProbeFunction {
                     method.getDeclaringClass().getName(), method.getName()));
         }
 
-        if (type.getMapsTo() == double.class) {
+        if (isDouble(type)) {
             return new DoubleMethodProbe<S>(method, probe, type, sourceMetadata);
-        } else if (type.getMapsTo() == long.class) {
-            return new LongMethodProbe<S>(method, probe, type, sourceMetadata);
         } else {
-            throw new IllegalArgumentException(type.toString());
+            return new LongMethodProbe<S>(method, probe, type, sourceMetadata);
         }
     }
 
     static class LongMethodProbe<S> extends MethodProbe implements LongProbeFunction<S> {
-        LongMethodProbe(Method method, Probe probe, ProbeType type, SourceMetadata sourceMetadata) {
+
+        LongMethodProbe(Method method, Probe probe, int type, SourceMetadata sourceMetadata) {
             super(method, probe, type, sourceMetadata);
         }
 
-        @SuppressWarnings("checkstyle:CyclomaticComplexity")
         @Override
-        public long get(final S source) throws Exception {
-            try {
-                switch (type) {
-                    case TYPE_LONG_PRIMITIVE:
-                        return isMethodStatic ? (long) methodHandle.invokeExact() : (long) methodHandle.invokeExact(source);
-                    case TYPE_LONG_NUMBER:
-                        final Number longNumber = invoke(source);
-                        return longNumber == null ? 0 : longNumber.longValue();
-                    case TYPE_MAP:
-                        final Map<?, ?> map = invoke(source);
-                        return map == null ? 0 : map.size();
-                    case TYPE_COLLECTION:
-                        final Collection<?> collection = invoke(source);
-                        return collection == null ? 0 : collection.size();
-                    case TYPE_COUNTER:
-                        final Counter counter = invoke(source);
-                        return counter == null ? 0 : counter.get();
-                    case TYPE_SEMAPHORE:
-                        final Semaphore semaphore = invoke(source);
-                        return semaphore == null ? 0 : semaphore.availablePermits();
-                    default:
-                        throw new IllegalStateException("Unrecognized type: " + type);
-                }
-            } catch (final Exception e) {
-                throw e;
-            } catch (final Throwable t) {
-                throw ExceptionUtil.sneakyThrow(t);
+        public long get(S source) throws Exception {
+            switch (type) {
+                case TYPE_PRIMITIVE_LONG:
+                    return ((Number) method.invoke(source, EMPTY_ARGS)).longValue();
+                case TYPE_LONG_NUMBER:
+                    Number longNumber = (Number) method.invoke(source, EMPTY_ARGS);
+                    return longNumber == null ? 0 : longNumber.longValue();
+                case TYPE_MAP:
+                    Map<?, ?> map = (Map<?, ?>) method.invoke(source, EMPTY_ARGS);
+                    return map == null ? 0 : map.size();
+                case TYPE_COLLECTION:
+                    Collection<?> collection = (Collection<?>) method.invoke(source, EMPTY_ARGS);
+                    return collection == null ? 0 : collection.size();
+                case TYPE_COUNTER:
+                    Counter counter = (Counter) method.invoke(source, EMPTY_ARGS);
+                    return counter == null ? 0 : counter.get();
+                case TYPE_SEMAPHORE:
+                    Semaphore semaphore = (Semaphore) method.invoke(source, EMPTY_ARGS);
+                    return semaphore == null ? 0 : semaphore.availablePermits();
+                default:
+                    throw new IllegalStateException("Unrecognized type:" + type);
             }
         }
     }
 
     static class DoubleMethodProbe<S> extends MethodProbe implements DoubleProbeFunction<S> {
-        DoubleMethodProbe(Method method, Probe probe, ProbeType type, SourceMetadata sourceMetadata) {
+
+        DoubleMethodProbe(Method method, Probe probe, int type, SourceMetadata sourceMetadata) {
             super(method, probe, type, sourceMetadata);
         }
 
         @Override
-        public double get(final S source) throws Exception {
-            try {
-                switch (type) {
-                    case TYPE_DOUBLE_PRIMITIVE:
-                        return isMethodStatic ? (double) methodHandle.invokeExact() : (double) methodHandle.invokeExact(source);
-                    case TYPE_DOUBLE_NUMBER:
-                        final Number result = invoke(source);
-                        return result == null ? 0 : result.doubleValue();
-                    default:
-                        throw new IllegalStateException("Unrecognized type: " + type);
-                }
-            } catch (final Exception e) {
-                throw e;
-            } catch (final Throwable t) {
-                throw ExceptionUtil.sneakyThrow(t);
+        public double get(S source) throws Exception {
+            switch (type) {
+                case TYPE_DOUBLE_PRIMITIVE:
+                case TYPE_DOUBLE_NUMBER:
+                    Number result = (Number) method.invoke(source, EMPTY_ARGS);
+                    return result == null ? 0 : result.doubleValue();
+                default:
+                    throw new IllegalStateException("Unrecognized type:" + type);
             }
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    protected <T> T invoke(final Object source) {
-        return isMethodStatic ? (T) staticAccessor.get() : (T) nonStaticAccessor.apply(source);
     }
 }

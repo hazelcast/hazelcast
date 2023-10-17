@@ -36,7 +36,7 @@ class MonkeyMigrationStrategy implements MigrationStrategy {
     public boolean imbalanceDetected(LoadImbalance imbalance) {
         Set<? extends MigratablePipeline> candidates = imbalance.getPipelinesOwnedBy(imbalance.srcOwner);
         //only attempts to migrate if at least 1 pipeline exists
-        return !candidates.isEmpty();
+        return candidates.size() > 0;
     }
 
     @Override

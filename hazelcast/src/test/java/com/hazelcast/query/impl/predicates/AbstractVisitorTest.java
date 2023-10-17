@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -47,7 +47,7 @@ public class AbstractVisitorTest {
         for (Method method : methods) {
             Class<?> predicateType = method.getParameterTypes()[0];
             Predicate predicate = (Predicate) predicateType.newInstance();
-            IndexRegistry indexes = mock(IndexRegistry.class);
+            Indexes indexes = mock(Indexes.class);
             Object result = method.invoke(visitor, predicate, indexes);
 
             assertSame("Method " + method + " does not return identity of the original predicate."

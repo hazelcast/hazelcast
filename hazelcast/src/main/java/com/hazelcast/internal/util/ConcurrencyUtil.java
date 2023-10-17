@@ -148,28 +148,6 @@ public final class ConcurrencyUtil {
         return value;
     }
 
-    /**
-     * Returns the {@code value} corresponding to {@code key} in the {@code map}. If {@code key} is not mapped in {@link map},
-     * then a {@code value} is computed using {@code func}, inserted into the map and returned.
-     * <p>
-     * The behavior is equivalent to {@link ConcurrentMap#computeIfAbsent(K, Function)}, with the following exceptions:
-     * <ul>
-     * <li>If no mapping, the value of {@code func.createNew(K)} will be inserted into the {@link map} - even if {@code null}
-     * <li>Instances of {@link ConcurrentMap} can override their implementation, but here the implementation can be assured
-     * </ul>
-     * <p>
-     * The typical use case of this function over {@link ConcurrentMap#computeIfAbsent(K, Function)} would be in the case of a
-     * {@link ConcurrentHashMap}, where the implementation is overridden with the following guarantee:<br>
-     * "The supplied function is invoked exactly once per invocation of this method if the key is absent, else not at all. Some
-     * attempted update operations on this map by other threads may be blocked while computation is in progress"
-     * <p>
-     * By comparison, this implementation cannot guarantee {@code func.createNew(K)} will be executed a maximum of once, because
-     * no blocking if performed - if the {@code key} is absent from the {@code map}, and this method is called concurrently,
-     * {@code func.createNew(K)} may be invoked multiple times before any new value is inserted.
-     * <p>
-     * This is a performance tradeoff - improve {@code map} throughput and reduce deadlocks, at the expense of redundant object
-     * instantiation.
-     */
     public static <K, V> V getOrPutIfAbsent(ConcurrentMap<K, V> map, K key, ConstructorFunction<K, V> func) {
         V value = map.get(key);
         if (value == null) {

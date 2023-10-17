@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,7 +36,7 @@ public class EmptyOptimizerTest {
     public void optimize_returnsOriginalPredicate() {
         EmptyOptimizer emptyOptimizer = new EmptyOptimizer();
         Predicate predicate = mock(Predicate.class);
-        IndexRegistry indexes = mock(IndexRegistry.class);
+        Indexes indexes = mock(Indexes.class);
 
         Predicate result = emptyOptimizer.optimize(predicate, indexes);
         assertSame(predicate, result);

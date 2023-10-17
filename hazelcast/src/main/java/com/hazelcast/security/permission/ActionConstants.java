@@ -80,7 +80,6 @@ public final class ActionConstants {
     public static final String LISTENER_MIGRATION = "migration";
 
     // SQL-specific actions
-    public static final String ACTION_VIEW_MAPPING = "view-mapping";
     public static final String ACTION_CREATE_VIEW = "create-view";
     public static final String ACTION_DROP_VIEW = "drop-view";
     public static final String ACTION_CREATE_TYPE = "create-type";

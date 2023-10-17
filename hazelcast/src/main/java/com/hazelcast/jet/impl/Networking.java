@@ -144,7 +144,7 @@ public class Networking {
             }
             for (Entry<SenderReceiverKey, ReceiverTasklet> en : receiverMap.entrySet()) {
                 assert !en.getKey().address.equals(nodeEngine.getThisAddress());
-                MemberData md = res.computeIfAbsent(en.getKey().address, MemberData::new);
+                MemberData md = res.computeIfAbsent(en.getKey().address, address -> new MemberData(address));
                 if (md.startedExecutionId == null) {
                     md.startedExecutionId = execCtx.executionId();
                     md.output.writeLong(md.startedExecutionId);

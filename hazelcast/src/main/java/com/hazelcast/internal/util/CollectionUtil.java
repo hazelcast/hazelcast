@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -57,6 +58,26 @@ public final class CollectionUtil {
         return !isEmpty(collection);
     }
 
+    /**
+     * Adds a value to a list of values in the map.
+     * <p>
+     * Creates a new list if no list is found for the key.
+     *
+     * @param map   the given map of lists
+     * @param key   the key of the target list
+     * @param value the value to add to the target list
+     * @return the updated list of values
+     */
+    public static <K, V> List<V> addToValueList(Map<K, List<V>> map, K key, V value) {
+        List<V> valueList = map.get(key);
+        if (valueList == null) {
+            valueList = new ArrayList<V>();
+            map.put(key, valueList);
+        }
+        valueList.add(value);
+
+        return valueList;
+    }
 
     /**
      * Returns the n-th item or {@code null} if collection is smaller.
@@ -67,7 +88,7 @@ public final class CollectionUtil {
      * @throws NullPointerException if collection is {@code null}
      */
     public static <T> T getItemAtPositionOrNull(Collection<T> collection, int position) {
-        if (position >= collection.size() || position < 0) {
+        if (position >= collection.size()) {
             return null;
         }
         if (collection instanceof List) {
@@ -124,6 +145,22 @@ public final class CollectionUtil {
         int[] collectionArray = new int[collection.size()];
         int index = 0;
         for (Integer item : collection) {
+            collectionArray[index++] = item;
+        }
+        return collectionArray;
+    }
+
+    /**
+     * Converts a {@link Collection} of {@link Long} to a primitive {@code long[]} array.
+     *
+     * @param collection the given collection
+     * @return a primitive long[] array
+     * @throws NullPointerException if collection is {@code null}
+     */
+    public static long[] toLongArray(Collection<Long> collection) {
+        long[] collectionArray = new long[collection.size()];
+        int index = 0;
+        for (Long item : collection) {
             collectionArray[index++] = item;
         }
         return collectionArray;

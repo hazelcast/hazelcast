@@ -42,7 +42,6 @@ import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
-import static com.hazelcast.test.HazelcastTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -142,7 +141,7 @@ public class ClientInvocationFutureTest {
             thisThread.interrupt();
         });
         t.start();
-        assertThatThrownBy(() -> invocationFuture.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS))
+        assertThatThrownBy(() -> invocationFuture.get(30, TimeUnit.SECONDS))
                 .isInstanceOf(InterruptedException.class);
     }
 
@@ -177,7 +176,7 @@ public class ClientInvocationFutureTest {
         });
         invocationFuture.complete(response);
 
-        assertEquals(response, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(response, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -189,7 +188,7 @@ public class ClientInvocationFutureTest {
         });
         invocationFuture.complete(response);
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -199,7 +198,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture nextStage = invocationFuture.thenCompose((v) -> newCompletedFuture(v));
         invocationFuture.complete(response);
 
-        assertEquals(response, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(response, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -209,7 +208,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture nextStage = invocationFuture.thenApply((v) -> v);
         invocationFuture.complete(response);
 
-        assertEquals(response, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(response, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -219,7 +218,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture nextStage = invocationFuture.thenAccept((v) -> ignore(null));
         invocationFuture.complete(response);
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -230,7 +229,7 @@ public class ClientInvocationFutureTest {
                 (t, u) -> ignore(null));
         invocationFuture.complete(null);
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -241,7 +240,7 @@ public class ClientInvocationFutureTest {
                 (t, u) -> t);
         invocationFuture.complete(response);
 
-        assertEquals(response, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(response, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -251,7 +250,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture nextStage = invocationFuture.exceptionally((t) -> response);
         invocationFuture.completeExceptionally(new IllegalStateException());
 
-        assertEquals(response, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(response, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -261,7 +260,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture nextStage = invocationFuture.handle((t, u) -> t);
         invocationFuture.complete(response);
 
-        assertEquals(response, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(response, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -271,7 +270,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture nextStage = invocationFuture.acceptEither(newCompletedFuture(null),
                 t -> ignore(null));
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(1)).complete();
     }
@@ -280,7 +279,7 @@ public class ClientInvocationFutureTest {
     public void test_applyEither() throws Exception {
         CompletableFuture nextStage = invocationFuture.applyToEither(newCompletedFuture(null), (t) -> t);
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(1)).complete();
     }
@@ -290,7 +289,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture<Void> nextStage = invocationFuture.runAfterBoth(newCompletedFuture(null), () -> ignore(null));
         invocationFuture.complete(null);
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -300,7 +299,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture<Void> nextStage = invocationFuture.runAfterEither(newCompletedFuture(null),
                 () -> ignore(null));
 
-        assertEquals(null, nextStage.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(1)).complete();
     }

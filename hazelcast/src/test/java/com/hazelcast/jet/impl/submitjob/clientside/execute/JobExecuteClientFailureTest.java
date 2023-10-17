@@ -51,7 +51,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 
-// Tests to execute existing jar on the member
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class JobExecuteClientFailureTest extends JetTestSupport {

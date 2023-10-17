@@ -28,6 +28,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -50,15 +52,15 @@ public class MemberCompatibilityNullTest_2_0 {
 
     @Before
     public void setUp() throws IOException {
-        try (InputStream inputStream = getClass().getResourceAsStream("/2.0.protocol.compatibility.null.binary")) {
-            assert inputStream != null;
-            byte[] data = inputStream.readAllBytes();
-            ByteBuffer buffer = ByteBuffer.wrap(data);
-            ClientMessageReader reader = new ClientMessageReader(0);
-            while (reader.readFrom(buffer, true)) {
-                clientMessages.add(reader.getClientMessage());
-                reader.reset();
-            }
+        File file = new File(getClass().getResource("/2.0.protocol.compatibility.null.binary").getFile());
+        InputStream inputStream = new FileInputStream(file);
+        byte[] data = new byte[(int) file.length()];
+        inputStream.read(data);
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+        ClientMessageReader reader = new ClientMessageReader(0);
+        while (reader.readFrom(buffer, true)) {
+            clientMessages.add(reader.getClientMessage());
+            reader.reset();
         }
     }
 
@@ -81,7 +83,7 @@ public class MemberCompatibilityNullTest_2_0 {
     @Test
     public void test_ClientAuthenticationCodec_encodeResponse() {
         int fileClientMessageIndex = 1;
-        ClientMessage encoded = ClientAuthenticationCodec.encodeResponse(aByte, null, null, aByte, aString, anInt, aUUID, aBoolean, null, null);
+        ClientMessage encoded = ClientAuthenticationCodec.encodeResponse(aByte, null, null, aByte, aString, anInt, aUUID, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -104,7 +106,7 @@ public class MemberCompatibilityNullTest_2_0 {
     @Test
     public void test_ClientAuthenticationCustomCodec_encodeResponse() {
         int fileClientMessageIndex = 3;
-        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeResponse(aByte, null, null, aByte, aString, anInt, aUUID, aBoolean, null, null);
+        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeResponse(aByte, null, null, aByte, aString, anInt, aUUID, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

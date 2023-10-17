@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 
 /**
  * Optimizer which just returns the original predicate.
@@ -26,7 +26,7 @@ import com.hazelcast.query.impl.IndexRegistry;
  */
 public class EmptyOptimizer implements QueryOptimizer {
     @Override
-    public <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, IndexRegistry indexes) {
+    public <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, Indexes indexes) {
         return predicate;
     }
 }

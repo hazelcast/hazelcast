@@ -29,6 +29,7 @@ import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.map.impl.operation.MapClearExpiredOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -38,6 +39,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 
@@ -50,6 +52,7 @@ public class PartitionContainer {
     private final MapService mapService;
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final ConcurrentMap<String, RecordStore> maps;
+    private final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<>();
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = name -> {
         RecordStore recordStore = createRecordStore(name);
@@ -104,7 +107,8 @@ public class PartitionContainer {
         int partitionId = getPartitionId();
 
         if (!mapContainer.isGlobalIndexEnabled()) {
-            mapContainer.createIndexRegistry(false, partitionId);
+            Indexes indexesForMap = mapContainer.createIndexes(false, partitionId);
+            indexes.putIfAbsent(name, indexesForMap);
         }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
         recordStore.init();
@@ -113,6 +117,10 @@ public class PartitionContainer {
 
     public ConcurrentMap<String, RecordStore> getMaps() {
         return maps;
+    }
+
+    public ConcurrentMap<String, Indexes> getIndexes() {
+        return indexes;
     }
 
     public Collection<RecordStore> getAllRecordStores() {
@@ -184,6 +192,9 @@ public class PartitionContainer {
             clearLockStore(name);
         }
 
+        // getting rid of Indexes object in case it has been initialized
+        indexes.remove(name);
+
         destroyMapContainer(mapContainer);
         mapService.mapServiceContext.removePartitioningStrategyFromCache(mapContainer.getName());
     }
@@ -252,5 +263,29 @@ public class PartitionContainer {
 
     protected void cleanUpMap(String mapName) {
         // overridden in enterprise
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+    // IMPORTANT: never use directly! use MapContainer.getIndex() instead.
+    // There are cases where a global index is used. In this case, the global-index is stored in the MapContainer.
+    // By using this method in the context of global index an exception will be thrown.
+    // -------------------------------------------------------------------------------------------------------------
+    Indexes getIndexes(String name) {
+        Indexes ixs = indexes.get(name);
+        if (ixs == null) {
+            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+            MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+            if (mapContainer.isGlobalIndexEnabled()) {
+                throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
+            }
+            int partitionId = getPartitionId();
+
+            Indexes indexesForMap = mapContainer.createIndexes(false, partitionId);
+            ixs = indexes.putIfAbsent(name, indexesForMap);
+            if (ixs == null) {
+                ixs = indexesForMap;
+            }
+        }
+        return ixs;
     }
 }

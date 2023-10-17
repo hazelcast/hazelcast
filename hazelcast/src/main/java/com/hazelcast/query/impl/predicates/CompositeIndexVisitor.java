@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -40,7 +40,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodlength", "checkstyle:npathcomplexity"})
     @Override
-    public Predicate visit(AndPredicate andPredicate, IndexRegistry indexes) {
+    public Predicate visit(AndPredicate andPredicate, Indexes indexes) {
         int originalSize = andPredicate.predicates.length;
         if (originalSize < 2) {
             // can't optimize further

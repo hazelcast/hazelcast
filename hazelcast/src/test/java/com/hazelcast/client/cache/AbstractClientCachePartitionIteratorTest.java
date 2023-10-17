@@ -32,8 +32,8 @@ import javax.cache.spi.CachingProvider;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractClientCachePartitionIteratorTest extends HazelcastTestSupport {
@@ -60,14 +60,14 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
     }
 
     @Test
-    public void test_HasNext_Returns_False_On_EmptyPartition() {
+    public void test_HasNext_Returns_False_On_EmptyPartition() throws Exception {
         ICacheInternal<Integer, Integer> cache = getCacheProxy();
         Iterator<Cache.Entry<Integer, Integer>> iterator = getIterator(cache);
         assertFalse(iterator.hasNext());
     }
 
     @Test
-    public void test_HasNext_Returns_True_On_NonEmptyPartition() {
+    public void test_HasNext_Returns_True_On_NonEmptyPartition() throws Exception {
         ICacheInternal<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -79,7 +79,7 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition() {
+    public void test_Next_Returns_Value_On_NonEmptyPartition() throws Exception {
         ICacheInternal<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -87,12 +87,12 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
         cache.put(key, value);
 
         Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
-        Cache.Entry<String, String> entry = iterator.next();
+        Cache.Entry entry = iterator.next();
         assertEquals(value, entry.getValue());
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() {
+    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() throws Exception {
         ICacheInternal<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -100,14 +100,14 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
         cache.put(key, value);
 
         Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
-        Cache.Entry<String, String> entry = iterator.next();
+        Cache.Entry entry = iterator.next();
         assertEquals(value, entry.getValue());
         boolean hasNext = iterator.hasNext();
         assertFalse(hasNext);
     }
 
     @Test
-    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() {
+    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() throws Exception {
         ICacheInternal<String, String> cache = getCacheProxy();
         String value = randomString();
         int count = 1000;
@@ -117,7 +117,7 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
         }
         Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
         for (int i = 0; i < count; i++) {
-            Cache.Entry<String, String> entry = iterator.next();
+            Cache.Entry entry = iterator.next();
             assertEquals(value, entry.getValue());
         }
     }
@@ -125,7 +125,7 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
     private <K, V> ICacheInternal<K, V> getCacheProxy() {
         String cacheName = randomString();
         CacheManager cacheManager = cachingProvider.getCacheManager();
-        CacheConfig<K, V> config = new CacheConfig<>();
+        CacheConfig<K, V> config = new CacheConfig<K, V>();
         config.getEvictionConfig().setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT).setSize(10000000);
         return (ICacheInternal<K, V>) cacheManager.createCache(cacheName, config);
     }

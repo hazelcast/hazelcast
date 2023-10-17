@@ -74,7 +74,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -179,7 +179,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             long jobId,
             long executionId,
             @Nonnull SnapshotContext snapshotContext,
-            ConcurrentMap<String, File> tempDirectories,
+            ConcurrentHashMap<String, File> tempDirectories,
             InternalSerializationService jobSerializationService
     ) {
         this.nodeEngine = nodeEngine;
@@ -442,7 +442,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     @SuppressWarnings("rawtypes")
     private CompletableFuture<?> initProcSuppliers(
             long jobId,
-            ConcurrentMap<String, File> tempDirectories,
+            ConcurrentHashMap<String, File> tempDirectories,
             InternalSerializationService jobSerializationService
     ) {
         CompletableFuture[] futures = new CompletableFuture[vertices.length];

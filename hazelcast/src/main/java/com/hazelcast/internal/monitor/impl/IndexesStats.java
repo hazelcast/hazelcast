@@ -16,10 +16,8 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.query.impl.IndexRegistry;
-
 /**
- * Provides internal statistics for {@link IndexRegistry
+ * Provides internal statistics for {@link com.hazelcast.query.impl.Indexes
  * Indexes}.
  */
 public interface IndexesStats {

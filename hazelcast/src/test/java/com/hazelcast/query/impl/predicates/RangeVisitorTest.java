@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,11 +46,11 @@ import static org.mockito.Mockito.when;
 public class RangeVisitorTest extends VisitorTestSupport {
 
     private RangeVisitor visitor;
-    private IndexRegistry indexes;
+    private Indexes indexes;
 
     @Before
     public void before() {
-        indexes = mock(IndexRegistry.class);
+        indexes = mock(Indexes.class);
         when(indexes.getConverter("age")).thenReturn(INTEGER_CONVERTER);
         when(indexes.getConverter("name")).thenReturn(STRING_CONVERTER);
         when(indexes.getConverter("noConverter")).thenReturn(null);
@@ -157,7 +157,7 @@ public class RangeVisitorTest extends VisitorTestSupport {
     }
 
     @Override
-    protected IndexRegistry getIndexes() {
+    protected Indexes getIndexes() {
         return indexes;
     }
 

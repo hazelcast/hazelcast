@@ -17,9 +17,9 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class PlaceholderReplacerTest extends SimpleTestInClusterSupport {
+public class PlaceholderReplacerTest {
 
     @Test
     public void replaces_dynamic_param() {
@@ -122,12 +122,7 @@ public class PlaceholderReplacerTest extends SimpleTestInClusterSupport {
     }
 
     private ExpressionEvalContext evalContext(List<Object> arguments) {
-        return ExpressionEvalContext.createContext(
-                arguments,
-                mock(NodeEngine.class),
-                getInternalSerializationService(),
-                null
-        );
+        return new ExpressionEvalContextImpl(arguments, getInternalSerializationService(), mock(NodeEngine.class));
     }
 
     private static InternalSerializationService getInternalSerializationService() {

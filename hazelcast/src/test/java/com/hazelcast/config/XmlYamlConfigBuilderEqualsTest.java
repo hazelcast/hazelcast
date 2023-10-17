@@ -166,7 +166,7 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
     private void sortClientPermissionConfigs(Config config) {
         SecurityConfig securityConfig = config.getSecurityConfig();
         Set<PermissionConfig> unsorted = securityConfig.getClientPermissionConfigs();
-        Set<PermissionConfig> sorted = new TreeSet<>(new PermissionConfigComparator());
+        Set<PermissionConfig> sorted = new TreeSet<PermissionConfig>(new PermissionConfigComparator());
         sorted.addAll(unsorted);
         securityConfig.setClientPermissionConfigs(sorted);
     }

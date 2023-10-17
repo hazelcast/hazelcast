@@ -34,6 +34,7 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -85,7 +86,7 @@ public class State {
     private volatile Collection<Data> keysToLoad = Collections.emptyList();
     private volatile Map loadedKeyValuePairs = Collections.emptyMap();
     private volatile Collection<Data> keys;
-    private volatile List<Record> records;
+    private volatile ArrayList<Record> records;
     private volatile EntryProcessor entryProcessor;
     private volatile EntryOperator operator;
     private volatile List<State> toStore;
@@ -329,7 +330,7 @@ public class State {
         return keys;
     }
 
-    public void setRecords(List<Record> records) {
+    public void setRecords(ArrayList<Record> records) {
         this.records = records;
     }
 
@@ -351,7 +352,7 @@ public class State {
         return loadedKeyValuePairs;
     }
 
-    public List<Record> getRecords() {
+    public ArrayList<Record> getRecords() {
         return records;
     }
 

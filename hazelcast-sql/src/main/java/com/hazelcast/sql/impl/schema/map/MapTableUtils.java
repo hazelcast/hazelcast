@@ -79,7 +79,7 @@ public final class MapTableUtils {
             return Collections.emptyList();
         }
 
-        InternalIndex[] indexes = mapContainer.getGlobalIndexRegistry().getIndexes();
+        InternalIndex[] indexes = mapContainer.getIndexes().getIndexes();
 
         if (indexes == null || indexes.length == 0) {
             return Collections.emptyList();

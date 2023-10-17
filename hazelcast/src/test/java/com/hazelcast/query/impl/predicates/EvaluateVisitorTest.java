@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryContext.IndexMatchHint;
 import com.hazelcast.query.impl.TypeConverters;
@@ -44,7 +44,7 @@ import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.not;
 import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.or;
-import static com.hazelcast.query.impl.IndexRegistry.SKIP_PARTITIONS_COUNT_CHECK;
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -70,12 +70,12 @@ public class EvaluateVisitorTest {
     }
 
     private EvaluateVisitor visitor = new EvaluateVisitor();
-    private IndexRegistry indexes;
+    private Indexes indexes;
 
     @SuppressWarnings("SuspiciousMethodCalls")
     @Before
     public void before() {
-        indexes = mock(IndexRegistry.class);
+        indexes = mock(Indexes.class);
 
         InternalIndex bitmapA = mock(InternalIndex.class);
         when(bitmapA.getConverter()).thenReturn(TypeConverters.INTEGER_CONVERTER);

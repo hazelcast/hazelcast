@@ -41,7 +41,7 @@ public final class GetterFactory {
     }
 
     public static Getter newMethodGetter(Object object, Getter parent, Method method, String modifier) throws Exception {
-        return newGetter(object, parent, modifier, method.getReturnType(), method::invoke,
+        return newGetter(object, parent, modifier, method.getReturnType(), o -> method.invoke(o),
                 (t, et) -> new MethodGetter(parent, method, modifier, t, et));
     }
 

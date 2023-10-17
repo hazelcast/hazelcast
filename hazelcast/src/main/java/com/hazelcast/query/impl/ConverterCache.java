@@ -25,7 +25,7 @@ import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 
 /**
  * Maintains a cache of {@link TypeConverter} instances corresponding to
- * attributes of a single {@link IndexRegistry} instance.
+ * attributes of a single {@link Indexes} instance.
  */
 public final class ConverterCache {
 
@@ -33,17 +33,17 @@ public final class ConverterCache {
     // information attached or having a null/transient converter.
     private static final int FULLY_UNRESOLVED = -1;
 
-    private final IndexRegistry indexRegistry;
+    private final Indexes indexes;
 
     private final Map<String, TypeConverter> cache = new ConcurrentHashMap<String, TypeConverter>();
 
     /**
      * Constructs a new converters cache for the given indexes.
      *
-     * @param indexRegistry the indexes to construct a cache for.
+     * @param indexes the indexes to construct a cache for.
      */
-    public ConverterCache(IndexRegistry indexRegistry) {
-        this.indexRegistry = indexRegistry;
+    public ConverterCache(Indexes indexes) {
+        this.indexes = indexes;
     }
 
     /**
@@ -60,7 +60,7 @@ public final class ConverterCache {
 
     /**
      * Invalidates this cache after the addition of the given index to the
-     * {@link IndexRegistry} for which this cache was constructed for.
+     * {@link Indexes} for which this cache was constructed for.
      *
      * @param index the index added.
      */
@@ -94,7 +94,7 @@ public final class ConverterCache {
         // and saved into the cache, so on the next invocation we don't need to
         // rescan the indexes.
 
-        InternalIndex[] indexesSnapshot = indexRegistry.getIndexes();
+        InternalIndex[] indexesSnapshot = indexes.getIndexes();
         if (indexesSnapshot.length == 0) {
             // no indexes at all
             return null;

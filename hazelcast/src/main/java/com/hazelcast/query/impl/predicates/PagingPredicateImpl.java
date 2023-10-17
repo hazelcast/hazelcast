@@ -24,7 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -158,7 +158,7 @@ public class PagingPredicateImpl<K, V>
     }
 
     @Override
-    public Predicate accept(Visitor visitor, IndexRegistry indexes) {
+    public Predicate accept(Visitor visitor, Indexes indexes) {
         if (predicate instanceof VisitablePredicate) {
             Predicate transformed = ((VisitablePredicate) predicate).accept(visitor, indexes);
             return transformed == predicate ? this : new PagingPredicateImpl(this, transformed);

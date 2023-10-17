@@ -44,10 +44,6 @@ import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 
-/**
- * Provides per-job serializers and produces user-friendly Jet-specific error message when serializer
- * is not found.
- */
 public class DelegatingSerializationService extends AbstractSerializationService {
 
     private final Map<Class<?>, SerializerAdapter> serializersByClass;

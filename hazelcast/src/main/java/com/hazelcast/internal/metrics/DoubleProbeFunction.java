@@ -17,7 +17,7 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * A {@link ProbeFunction} that provides a {@link double} value and can be used to
+ * A {@link ProbeFunction} that provides a double value and can be used to
  * create a probe using {@link MetricsRegistry#registerStaticProbe(Object, String, ProbeLevel, LongProbeFunction)}
  *
  * @param <S> the type of the source object.
@@ -26,6 +26,8 @@ package com.hazelcast.internal.metrics;
 public interface DoubleProbeFunction<S> extends ProbeFunction {
 
     /**
+     * Gets the current value of the source object.
+     *
      * @param source the source object.
      * @return the current value of the source object.
      * @throws Exception if something fails while getting the value.

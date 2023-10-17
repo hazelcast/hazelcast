@@ -32,7 +32,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.MapIndexInfo;
 
 import java.util.HashSet;
@@ -146,19 +146,19 @@ public class MapChunkContext {
         Set<IndexConfig> indexConfigs = new HashSet<>();
         if (mapContainer.isGlobalIndexEnabled()) {
             // global-index
-            final IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
-            for (Index index : indexRegistry.getIndexes()) {
+            final Indexes indexes = mapContainer.getIndexes();
+            for (Index index : indexes.getIndexes()) {
                 indexConfigs.add(index.getConfig());
             }
-            indexConfigs.addAll(indexRegistry.getIndexDefinitions());
+            indexConfigs.addAll(indexes.getIndexDefinitions());
         } else {
             // partitioned-index
-            final IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
-            if (indexRegistry != null && indexRegistry.haveAtLeastOneIndexOrDefinition()) {
-                for (Index index : indexRegistry.getIndexes()) {
+            final Indexes indexes = mapContainer.getIndexes(partitionId);
+            if (indexes != null && indexes.haveAtLeastOneIndexOrDefinition()) {
+                for (Index index : indexes.getIndexes()) {
                     indexConfigs.add(index.getConfig());
                 }
-                indexConfigs.addAll(indexRegistry.getIndexDefinitions());
+                indexConfigs.addAll(indexes.getIndexDefinitions());
             }
         }
         return new MapIndexInfo(mapName)

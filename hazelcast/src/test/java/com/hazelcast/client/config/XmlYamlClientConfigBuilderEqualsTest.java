@@ -123,12 +123,12 @@ public class XmlYamlClientConfigBuilderEqualsTest {
     }
 
     private static ClientConfig buildConfigFromXml(String xml) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes(UTF_8));
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         return new XmlClientConfigBuilder(bis).build();
     }
 
     private static ClientConfig buildConfigFromYaml(String yaml) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes(UTF_8));
+        ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
         return new YamlClientConfigBuilder(bis).build();
     }
 }

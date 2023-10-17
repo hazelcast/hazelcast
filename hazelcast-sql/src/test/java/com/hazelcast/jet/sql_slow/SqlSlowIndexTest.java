@@ -21,9 +21,7 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.ClassRule;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -35,12 +33,6 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlSlowIndexTest extends SqlIndexAbstractTest {
-
-    // override default global timeout
-    // this test takes very long time, especially in code coverage builds
-    @ClassRule
-    public static Timeout globalTimeout = Timeout.seconds(30 * 60);
-
     @Parameterized.Parameters(name = "indexType:{0}, composite:{1}, field1:{2}, field2:{3}")
     public static Collection<Object[]> parameters() {
         return parametersSlow();

@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 
 import java.io.IOException;
 import java.util.Map;
@@ -71,7 +71,7 @@ public final class NotPredicate
     }
 
     @Override
-    public Predicate accept(Visitor visitor, IndexRegistry indexes) {
+    public Predicate accept(Visitor visitor, Indexes indexes) {
         Predicate target = predicate;
         if (predicate instanceof VisitablePredicate) {
             target = ((VisitablePredicate) predicate).accept(visitor, indexes);

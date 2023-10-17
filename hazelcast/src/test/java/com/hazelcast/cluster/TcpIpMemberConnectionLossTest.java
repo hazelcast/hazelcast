@@ -148,11 +148,13 @@ public class TcpIpMemberConnectionLossTest {
             running = false;
             while (thread.isAlive()) {
                 //break it out of a potential accept call
-                try (Socket ignored = new Socket(host, port)) {
+                try {
+                    new Socket(host, port);
                 } catch (IOException e) {
                     //ignore
                 }
             }
         }
+
     }
 }

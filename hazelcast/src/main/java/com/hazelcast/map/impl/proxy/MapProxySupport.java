@@ -271,9 +271,9 @@ abstract class MapProxySupport<K, V>
     public void initialize() {
         initializeListeners();
         if (getNodeEngine().isStartCompleted()) {
-            indexAllNodesData();
+            initializeIndexes();
         } else {
-            indexLocalNodeData();
+            initializeLocalIndexes();
         }
         initializeMapStoreLoad();
     }
@@ -329,13 +329,13 @@ abstract class MapProxySupport<K, V>
         return null;
     }
 
-    private void indexAllNodesData() {
+    private void initializeIndexes() {
         for (IndexConfig index : mapConfig.getIndexConfigs()) {
             addIndex(index);
         }
     }
 
-    private void indexLocalNodeData() {
+    private void initializeLocalIndexes() {
         for (IndexConfig index : mapConfig.getIndexConfigs()) {
             addIndexInternal(index, true);
         }
@@ -717,7 +717,7 @@ abstract class MapProxySupport<K, V>
                         SERVICE_NAME,
                         operation,
                         partitionService.getPartitionIdSet(
-                            partitionPredicate.getPartitionKeys().stream().map(this::toDataWithStrategy)
+                            partitionPredicate.getPartitionKeys().stream().map(k -> toDataWithStrategy(k))
                         )
                 );
             } else {
@@ -1311,7 +1311,7 @@ abstract class MapProxySupport<K, V>
                         SERVICE_NAME,
                         operation,
                         partitionService.getPartitionIdSet(
-                            partitionPredicate.getPartitionKeys().stream().map(this::toDataWithStrategy)
+                            partitionPredicate.getPartitionKeys().stream().map(k -> toDataWithStrategy(k))
                         )
                 );
             } else {
@@ -1420,7 +1420,7 @@ abstract class MapProxySupport<K, V>
         if (predicate instanceof PartitionPredicate) {
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
             PartitionIdSet partitionIds = partitionService.getPartitionIdSet(
-                partitionPredicate.getPartitionKeys().stream().map(this::toDataWithStrategy)
+                partitionPredicate.getPartitionKeys().stream().map(k -> toDataWithStrategy(k))
             );
             final Target t = target;
             boolean allAlwaysFalsePredicate = partitionIds.stream().allMatch(

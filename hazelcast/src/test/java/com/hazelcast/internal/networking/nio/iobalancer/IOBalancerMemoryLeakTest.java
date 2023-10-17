@@ -84,10 +84,12 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
 
         Runnable runnable = () -> {
             for (int i = 0; i < connectionCountPerThread; i++) {
-
-                try (Socket socket = new Socket(address.getHost(), address.getPort())) {
+                Socket socket;
+                try {
+                    socket = new Socket(address.getHost(), address.getPort());
                     socket.getOutputStream().write(Protocols.CLUSTER.getBytes());
                     sleepMillis(1000);
+                    socket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

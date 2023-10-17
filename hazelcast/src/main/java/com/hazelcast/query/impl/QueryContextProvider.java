@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 /**
- * Provides query contexts for {@link IndexRegistry} to execute queries.
+ * Provides query contexts for {@link Indexes} to execute queries.
  */
 public interface QueryContextProvider {
 
@@ -32,6 +32,6 @@ public interface QueryContextProvider {
      *                            Negative value indicates that the value is not defined.
      * @return the obtained query context.
      */
-    QueryContext obtainContextFor(IndexRegistry indexes, int ownedPartitionCount);
+    QueryContext obtainContextFor(Indexes indexes, int ownedPartitionCount);
 
 }

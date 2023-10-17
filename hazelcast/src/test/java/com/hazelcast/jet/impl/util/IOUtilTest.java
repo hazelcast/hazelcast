@@ -37,7 +37,6 @@ import java.nio.file.Paths;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -89,28 +88,24 @@ public class IOUtilTest extends JetTestSupport {
 
         assertCollection(originalSet, unzippedSet);
 
-        try (Stream<Path> walk = Files.walk(unzippedPath)) {
-            boolean allMatch = walk
-                    .filter(Files::isRegularFile)
-                    .allMatch(p -> {
-                        try (Stream<String> lines = Files.lines(p)) {
-                            String line = lines.iterator().next();
-                            return line.equals(p.getFileName().toString() + " content");
-                        } catch (IOException e) {
-                            throw ExceptionUtil.rethrow(e);
-                        }
-                    });
-            JetAssert.assertTrue("File contents are not matching", allMatch);
-        }
+        boolean allMatch = Files.walk(unzippedPath)
+                                .filter(Files::isRegularFile)
+                                .allMatch(p -> {
+                                    try {
+                                        String line = Files.lines(p).iterator().next();
+                                        return line.equals(p.getFileName().toString() + " content");
+                                    } catch (IOException e) {
+                                        throw ExceptionUtil.rethrow(e);
+                                    }
+                                });
+        JetAssert.assertTrue("File contents are not matching", allMatch);
     }
 
     private Set<Path> getChildrenFromRoot(Path path) throws IOException {
-        try (Stream<Path> walk = Files.walk(path)) {
-            return walk
+        return Files.walk(path)
                     .map(path::relativize)
                     .filter(p -> !p.toString().isEmpty())
                     .collect(Collectors.toSet());
-        }
     }
 
     @Test
@@ -154,11 +149,7 @@ public class IOUtilTest extends JetTestSupport {
 
             assertThatThrownBy(() -> unzip(new ByteArrayInputStream(zipFile), tmpTargetDir))
                     .hasMessage("Entry with an illegal path: " + entryName);
-            long count;
-            try (Stream<Path> list = Files.list(tmpNonTargetDir)) {
-                count = list.count();
-            }
-            assertEquals(0, count);
+            assertEquals(0, Files.list(tmpNonTargetDir).count());
         } finally {
             com.hazelcast.internal.nio.IOUtil.delete(tmpTargetDir);
             com.hazelcast.internal.nio.IOUtil.delete(tmpNonTargetDir);

@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 
 import static com.hazelcast.internal.util.collection.ArrayUtils.createCopy;
 
@@ -36,7 +36,7 @@ public final class VisitorUtils {
      * @param visitor
      * @return
      */
-    public static Predicate[] acceptVisitor(Predicate[] predicates, Visitor visitor, IndexRegistry indexes) {
+    public static Predicate[] acceptVisitor(Predicate[] predicates, Visitor visitor, Indexes indexes) {
         Predicate[] target = predicates;
         boolean copyCreated = false;
         for (int i = 0; i < predicates.length; i++) {

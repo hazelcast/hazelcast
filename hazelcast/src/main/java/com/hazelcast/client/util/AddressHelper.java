@@ -103,7 +103,7 @@ public final class AddressHelper {
 
     private static Addresses toAddresses(List<Address> addressList) {
         Addresses result = new Addresses();
-        if (!addressList.isEmpty()) {
+        if (addressList.size() > 0) {
             result.primary().add(addressList.remove(0));
             result.secondary().addAll(addressList);
         }

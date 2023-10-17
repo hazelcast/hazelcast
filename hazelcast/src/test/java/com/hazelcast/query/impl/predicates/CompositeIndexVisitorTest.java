@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -50,7 +50,7 @@ public class CompositeIndexVisitorTest extends VisitorTestSupport {
     private static final Comparable P_INF = POSITIVE_INFINITY;
 
     private CompositeIndexVisitor visitor;
-    private IndexRegistry indexes;
+    private Indexes indexes;
 
     private InternalIndex o123;
     private InternalIndex u321;
@@ -58,7 +58,7 @@ public class CompositeIndexVisitorTest extends VisitorTestSupport {
 
     @Before
     public void before() {
-        indexes = mock(IndexRegistry.class);
+        indexes = mock(Indexes.class);
 
         o123 = mock(InternalIndex.class);
         when(o123.isOrdered()).thenReturn(true);
@@ -146,7 +146,7 @@ public class CompositeIndexVisitorTest extends VisitorTestSupport {
     }
 
     @Override
-    protected IndexRegistry getIndexes() {
+    protected Indexes getIndexes() {
         return indexes;
     }
 

@@ -222,6 +222,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                 ? null
                 : () -> MongoClients.create(connectionString);
         return new DbCheckingPMetaSupplierBuilder()
+                .withRequiredPermission(null)
                 .withCheckResourceExistence(table.checkExistenceOnEachCall())
                 .withForceTotalParallelismOne(table.isforceReadTotalParallelismOne())
                 .withDatabaseName(table.databaseName)

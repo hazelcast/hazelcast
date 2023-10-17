@@ -537,7 +537,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                         .append("\"").append(source).append("\"")
                         .append(" -> ")
                         .append("\"").append(destination).append("\"");
-                if (!attributes.isEmpty()) {
+                if (attributes.size() > 0) {
                     builder.append(attributes.stream().collect(joining(", ", " [", "]")));
                 }
                 builder.append(";\n");

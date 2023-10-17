@@ -29,7 +29,7 @@ public class GlobalQueryContextProvider implements QueryContextProvider {
     };
 
     @Override
-    public QueryContext obtainContextFor(IndexRegistry indexes, int ownedPartitionCount) {
+    public QueryContext obtainContextFor(Indexes indexes, int ownedPartitionCount) {
         QueryContext queryContext = QUERY_CONTEXT.get();
         queryContext.attachTo(indexes, ownedPartitionCount);
         return queryContext;

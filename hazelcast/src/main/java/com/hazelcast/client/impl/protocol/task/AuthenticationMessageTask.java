@@ -57,7 +57,7 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
                                        String serverVersion, int partitionCount, UUID clusterId,
                                        boolean clientFailoverSupported, List<Integer> tpcPorts, byte[] tpcToken) {
         return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, serializationVersion,
-                serverVersion, partitionCount, clusterId, clientFailoverSupported, tpcPorts, tpcToken);
+                serverVersion, partitionCount, clusterId, clientFailoverSupported);
     }
 
     @Override

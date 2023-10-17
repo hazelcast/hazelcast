@@ -286,9 +286,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             events.add(new MembershipEvent(getCluster(), member, MembershipEvent.MEMBER_ADDED, currentMembers));
         }
 
-        if (!events.isEmpty()) {
+        if (events.size() != 0) {
             MemberListSnapshot snapshot = memberListSnapshot.get();
-            if (!snapshot.members.values().isEmpty()) {
+            if (snapshot.members.values().size() != 0) {
                 logger.info(membersString(snapshot));
             }
         }

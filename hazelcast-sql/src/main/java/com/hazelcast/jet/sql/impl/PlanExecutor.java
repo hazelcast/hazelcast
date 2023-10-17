@@ -93,6 +93,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
@@ -182,8 +183,8 @@ public class PlanExecutor {
         logger = nodeEngine.getLogger(getClass());
     }
 
-    SqlResult execute(CreateMappingPlan plan, SqlSecurityContext ssc) {
-        catalog.createMapping(plan.mapping(), plan.replace(), plan.ifNotExists(), ssc);
+    SqlResult execute(CreateMappingPlan plan) {
+        catalog.createMapping(plan.mapping(), plan.replace(), plan.ifNotExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
@@ -236,8 +237,8 @@ public class PlanExecutor {
     SqlResult execute(CreateIndexPlan plan) {
         MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
         if (!mapContainer.isGlobalIndexEnabled()) {
-            // for partitioned indexes checking existence is more complicated
-            // and SQL cannot yet use partitioned indexes
+            // for local indexes checking existence is more complicated
+            // and SQL cannot yet use local indexes
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot create index \"" + plan.indexName()
                     + "\" on the IMap \"" + plan.mapName() + "\" because it would not be global "
                     + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
@@ -248,7 +249,7 @@ public class PlanExecutor {
             // If `IF NOT EXISTS` isn't specified, we do a simple check for the existence of the index. This is not
             // OK if two clients concurrently try to create the index (they could both succeed), but covers the
             // common case. There's no atomic operation to create an index in IMDG, so it's not easy to implement.
-            if (mapContainer.getGlobalIndexRegistry().getIndex(plan.indexName()) != null) {
+            if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {
                 throw QueryException.error("Can't create index: index '" + plan.indexName() + "' already exists");
             }
         }
@@ -283,7 +284,7 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(CreateJobPlan plan, List<Object> arguments, SqlSecurityContext ssc) {
+    SqlResult execute(CreateJobPlan plan, List<Object> arguments) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         boolean isStreamingJob = plan.isInfiniteRows();
         JobConfig jobConfig = plan.getJobConfig()
@@ -293,13 +294,10 @@ public class PlanExecutor {
         if (!jobConfig.isSuspendOnFailure()) {
             jobConfig.setSuspendOnFailure(isStreamingJob);
         }
-
-        AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
-
         if (plan.isIfNotExists()) {
-            jet.newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig, ssc.subject());
+            hazelcastInstance.getJet().newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
         } else {
-            jet.newJob(plan.getExecutionPlan().getDag(), jobConfig, ssc.subject());
+            hazelcastInstance.getJet().newJob(plan.getExecutionPlan().getDag(), jobConfig);
         }
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
@@ -522,12 +520,11 @@ public class PlanExecutor {
                       long timeout,
                       @Nonnull SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = ExpressionEvalContext.createContext(
+        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
-                hazelcastInstance,
-                Util.getSerializationService(hazelcastInstance),
-                ssc
-        );
+                serializationService,
+                Util.getNodeEngine(hazelcastInstance));
 
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
@@ -595,20 +592,13 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(IMapSelectPlan plan,
-                      QueryId queryId,
-                      List<Object> arguments,
-                      long timeout,
-                      @Nonnull SqlSecurityContext ssc) {
+    SqlResult execute(IMapSelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        InternalSerializationService serializationService = getSerializationService(hazelcastInstance);
-        ExpressionEvalContext evalContext = ExpressionEvalContext.createContext(
+        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
-                hazelcastInstance,
                 serializationService,
-                ssc
-        );
-
+                Util.getNodeEngine(hazelcastInstance));
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<JetSqlRow> future = hazelcastInstance.getMap(plan.mapName())
                 .getAsync(key)
@@ -632,15 +622,12 @@ public class PlanExecutor {
         );
     }
 
-    SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout, SqlSecurityContext ssc) {
+    SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = ExpressionEvalContext.createContext(
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
-                hazelcastInstance,
                 Util.getSerializationService(hazelcastInstance),
-                ssc
-        );
-
+                Util.getNodeEngine(hazelcastInstance));
         List<Entry<Object, Object>> entries = plan.entriesFn().apply(evalContext);
         if (!entries.isEmpty()) {
             assert entries.size() == 1;
@@ -659,15 +646,12 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyParamIndex());
     }
 
-    SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
+    SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = ExpressionEvalContext.createContext(
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
-                hazelcastInstance,
                 Util.getSerializationService(hazelcastInstance),
-                ssc
-        );
-
+                Util.getNodeEngine(hazelcastInstance));
         Map<Object, Object> entries = plan.entriesFn().apply(evalContext);
         CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .putAllAsync(entries)
@@ -676,33 +660,27 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
+    SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = ExpressionEvalContext.createContext(
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
-                hazelcastInstance,
                 Util.getSerializationService(hazelcastInstance),
-                ssc
-        );
-
+                Util.getNodeEngine(hazelcastInstance));
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Long> future = hazelcastInstance.getMap(plan.mapName())
-                .submitToKey(key, plan.updaterSupplier().get(evalContext))
+                .submitToKey(key, plan.updaterSupplier().get(arguments))
                 .toCompletableFuture();
         await(future, timeout);
         directIMapQueriesExecuted.getAndIncrement();
         return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
 
-    SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout, @Nonnull SqlSecurityContext ssc) {
+    SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = ExpressionEvalContext.createContext(
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
                 args,
-                hazelcastInstance,
                 Util.getSerializationService(hazelcastInstance),
-                ssc
-        );
-
+                Util.getNodeEngine(hazelcastInstance));
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
@@ -853,7 +831,7 @@ public class PlanExecutor {
                 partitions.add(partitionId);
             }
         }
-        return allVariantsValid && !partitions.isEmpty() ? partitions : emptySet();
+        return allVariantsValid && partitions.size() > 0 ? partitions : emptySet();
     }
 
     // package-private for test purposes

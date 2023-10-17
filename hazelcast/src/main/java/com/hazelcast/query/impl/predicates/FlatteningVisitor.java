@@ -18,14 +18,12 @@ package com.hazelcast.query.impl.predicates;
 
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.internal.util.collection.ArrayUtils.createCopy;
-
-import com.hazelcast.internal.util.CollectionUtil;
 
 /**
  * Rewrites predicates:
@@ -44,7 +42,7 @@ import com.hazelcast.internal.util.CollectionUtil;
 public class FlatteningVisitor extends AbstractVisitor {
 
     @Override
-    public Predicate visit(AndPredicate andPredicate, IndexRegistry indexes) {
+    public Predicate visit(AndPredicate andPredicate, Indexes indexes) {
         Predicate[] originalPredicates = andPredicate.predicates;
         List<Predicate> toBeAdded = null;
         boolean modified = false;
@@ -68,7 +66,7 @@ public class FlatteningVisitor extends AbstractVisitor {
     }
 
     @Override
-    public Predicate visit(OrPredicate orPredicate, IndexRegistry indexes) {
+    public Predicate visit(OrPredicate orPredicate, Indexes indexes) {
         Predicate[] originalPredicates = orPredicate.predicates;
         List<Predicate> toBeAdded = null;
         boolean modified = false;
@@ -108,7 +106,7 @@ public class FlatteningVisitor extends AbstractVisitor {
     }
 
     private Predicate[] createNewInners(Predicate[] predicates, List<Predicate> toBeAdded) {
-        if (CollectionUtil.isEmpty(toBeAdded)) {
+        if (toBeAdded == null || toBeAdded.size() == 0) {
             return predicates;
         }
 
@@ -122,7 +120,7 @@ public class FlatteningVisitor extends AbstractVisitor {
     }
 
     @Override
-    public Predicate visit(NotPredicate predicate, IndexRegistry indexes) {
+    public Predicate visit(NotPredicate predicate, Indexes indexes) {
         Predicate inner = predicate.predicate;
         if (inner instanceof NegatablePredicate) {
             return ((NegatablePredicate) inner).negate();

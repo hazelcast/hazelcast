@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.CollectionUtil;
 
 import javax.cache.Cache;
 import java.util.Iterator;
@@ -164,7 +163,7 @@ public abstract class AbstractCacheIterator<K, V> implements Iterator<Cache.Entr
                 }
             }
             result = fetch();
-            if (CollectionUtil.isNotEmpty(result)) {
+            if (result != null && result.size() > 0) {
                 index = 0;
                 return true;
             }
@@ -219,7 +218,7 @@ public abstract class AbstractCacheIterator<K, V> implements Iterator<Cache.Entr
      * @param pointers the pointers defining the state of iteration
      */
     protected void setIterationPointers(List response, IterationPointer[] pointers) {
-        if (CollectionUtil.isNotEmpty(response)) {
+        if (response != null && response.size() > 0) {
             this.pointers = pointers;
         }
     }

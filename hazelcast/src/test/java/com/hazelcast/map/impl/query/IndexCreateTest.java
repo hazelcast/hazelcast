@@ -29,7 +29,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.impl.IndexUtils;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -188,7 +188,7 @@ public class IndexCreateTest extends HazelcastTestSupport {
             MapServiceContext mapServiceContext = service.getMapServiceContext();
             MapContainer mapContainer = mapServiceContext.getMapContainer(MAP_NAME);
 
-            IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
+            Indexes indexes = mapContainer.getIndexes();
 
             assertEquals(indexConfigs.length, indexes.getIndexes().length);
 

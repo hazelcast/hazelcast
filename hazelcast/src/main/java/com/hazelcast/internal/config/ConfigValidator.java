@@ -58,7 +58,6 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.EvictionPolicy.LRU;
@@ -93,26 +92,26 @@ import static java.lang.String.format;
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public final class ConfigValidator {
 
-    public static final Set<EvictionPolicy> COMMONLY_SUPPORTED_EVICTION_POLICIES = EnumSet.of(LRU, LFU);
+    public static final EnumSet<EvictionPolicy> COMMONLY_SUPPORTED_EVICTION_POLICIES = EnumSet.of(LRU, LFU);
 
-    private static final Set<MaxSizePolicy> NEAR_CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
+    private static final EnumSet<MaxSizePolicy> NEAR_CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
             = EnumSet.of(MaxSizePolicy.ENTRY_COUNT);
 
-    private static final Set<EvictionPolicy> MAP_SUPPORTED_EVICTION_POLICIES
+    private static final EnumSet<EvictionPolicy> MAP_SUPPORTED_EVICTION_POLICIES
             = EnumSet.of(LRU, LFU, RANDOM, NONE);
 
-    private static final Set<MaxSizePolicy> MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
+    private static final EnumSet<MaxSizePolicy> MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
             = EnumSet.of(PER_NODE, PER_PARTITION, USED_NATIVE_MEMORY_PERCENTAGE,
             FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
 
-    private static final Set<MaxSizePolicy> MAP_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
+    private static final EnumSet<MaxSizePolicy> MAP_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
             = EnumSet.of(PER_NODE, PER_PARTITION, USED_HEAP_SIZE, USED_HEAP_PERCENTAGE,
             FREE_HEAP_SIZE, FREE_HEAP_PERCENTAGE);
 
-    private static final Set<MaxSizePolicy> CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
+    private static final EnumSet<MaxSizePolicy> CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
             = EnumSet.of(ENTRY_COUNT);
 
-    private static final Set<MaxSizePolicy> CACHE_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
+    private static final EnumSet<MaxSizePolicy> CACHE_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
             = EnumSet.of(USED_NATIVE_MEMORY_PERCENTAGE,
             FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
 
@@ -160,7 +159,7 @@ public final class ConfigValidator {
 
     private static void throwNotMatchingMaxSizePolicy(InMemoryFormat inMemoryFormat,
                                                       MaxSizePolicy maxSizePolicy,
-                                                      Set<MaxSizePolicy> policies) {
+                                                      EnumSet<MaxSizePolicy> policies) {
         String msg = "%s is not a valid max size policy to use with"
                 + " in memory format %s. Please select an appropriate one from list: %s";
         throw new InvalidConfigurationException(format(msg, maxSizePolicy, inMemoryFormat, policies));
@@ -358,7 +357,7 @@ public final class ConfigValidator {
      * @param evictionConfig the {@link EvictionConfig}
      */
     public static void checkEvictionConfig(EvictionConfig evictionConfig,
-                                           Set<EvictionPolicy> supportedEvictionPolicies) {
+                                           EnumSet<EvictionPolicy> supportedEvictionPolicies) {
         if (evictionConfig == null) {
             throw new InvalidConfigurationException("Eviction config cannot be null!");
         }
@@ -416,7 +415,7 @@ public final class ConfigValidator {
     public static void checkEvictionConfig(EvictionPolicy evictionPolicy,
                                            String comparatorClassName,
                                            Object comparator,
-                                           Set<EvictionPolicy> supportedEvictionPolicies) {
+                                           EnumSet<EvictionPolicy> supportedEvictionPolicies) {
         checkComparatorDefinedOnlyOnce(comparatorClassName, comparator);
 
         if (!supportedEvictionPolicies.contains(evictionPolicy)) {
@@ -507,7 +506,7 @@ public final class ConfigValidator {
                                         String mergePolicyClassname,
                                         Class<? extends MergingValue> mergeTypes,
                                         SplitBrainMergePolicyProvider mergePolicyProvider,
-                                        Set<EvictionPolicy> supportedEvictionPolicies) {
+                                        EnumSet<EvictionPolicy> supportedEvictionPolicies) {
         try {
             checkNotNativeWhenOpenSource(inMemoryFormat);
             checkEvictionConfig(evictionConfig, supportedEvictionPolicies);

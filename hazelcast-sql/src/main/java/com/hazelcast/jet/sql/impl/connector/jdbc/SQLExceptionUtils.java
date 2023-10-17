@@ -34,9 +34,6 @@ public final class SQLExceptionUtils {
     }
 
     private static boolean isTransientCode(String code) {
-        if (code == null) {
-            return false;
-        }
         // Full list of error codes at:
         // https://www.postgresql.org/docs/current/errcodes-appendix.html
         switch (code) {

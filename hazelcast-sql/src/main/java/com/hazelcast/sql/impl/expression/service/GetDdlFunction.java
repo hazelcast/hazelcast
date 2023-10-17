@@ -33,7 +33,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_VIEW_DATACONNECTION;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_VIEW_MAPPING;
 import static com.hazelcast.sql.impl.expression.string.StringFunctionUtils.asVarchar;
 
 public class GetDdlFunction extends TriExpression<String> {
@@ -82,12 +81,16 @@ public class GetDdlFunction extends TriExpression<String> {
             throw QueryException.error("Object '" + objectName + "' does not exist in namespace '" + namespace + "'");
         } else if (obj instanceof SqlCatalogObject) {
             SqlCatalogObject catalogObject = (SqlCatalogObject) obj;
-            if (catalogObject instanceof Mapping) {
-                context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_MAPPING));
-            } else if (catalogObject instanceof DataConnectionCatalogEntry) {
+            if (catalogObject instanceof DataConnectionCatalogEntry) {
                 context.checkPermission(new SqlPermission(catalogObject.name(), ACTION_VIEW_DATACONNECTION));
+            } else {
+                // TODO: implement mapping 'view' permission.
+                // if context.subject() != null -> HZ is able to check permissions for mapping
+                if (context.subject() != null && catalogObject instanceof Mapping) {
+                    throw new UnsupportedOperationException("GET_DDL is not available for mappings "
+                            + "in secure environment");
+                }
             }
-            // Note: both view and type can't contain sensitive information -> we don't check them
             ddl = ((SqlCatalogObject) obj).unparse();
         } else {
             throw new AssertionError("Object must not be present in information_schema");

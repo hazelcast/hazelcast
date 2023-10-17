@@ -17,37 +17,47 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc.h2;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
+import com.hazelcast.mock.MockUtil;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.H2SqlDialect;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.openMocks;
 
-@ExtendWith(MockitoExtension.class)
-class H2UpsertQueryBuilderTest {
+public class H2UpsertQueryBuilderTest {
 
     @Mock
     JdbcTable table;
 
     SqlDialect dialect = H2SqlDialect.DEFAULT;
 
-    @BeforeEach
+    private AutoCloseable openMocks;
+
+    @Before
     public void setUp() {
+        openMocks = openMocks(this);
+
+        when(table.getExternalName()).thenReturn(new String[]{"table1"});
         when(table.getExternalNameList()).thenReturn(Collections.singletonList("table1"));
         when(table.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(table.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
     }
 
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
+    }
+
     @Test
-    void appendMergeClause() {
+    public void appendMergeClause() {
         H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendMergeClause(sb);
@@ -57,7 +67,7 @@ class H2UpsertQueryBuilderTest {
     }
 
     @Test
-    void appendKeyClause() {
+    public void appendKeyClause() {
         H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendKeyClause(sb);
@@ -67,7 +77,7 @@ class H2UpsertQueryBuilderTest {
     }
 
     @Test
-    void appendValuesClause() {
+    public void appendValuesClause() {
         H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendValuesClause(sb);
@@ -77,7 +87,7 @@ class H2UpsertQueryBuilderTest {
     }
 
     @Test
-    void testQuery() {
+    public void testQuery() {
         H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
 
         String query = builder.query();

@@ -33,7 +33,6 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -71,12 +70,10 @@ public class SinkBuilderTest extends PipelineTestSupport {
         stage.writeTo(sink);
         execute();
         List<String> paths = new ArrayList<>(hz().getList(listName));
-        long count = paths.stream()
-                .map(Paths::get)
-                .flatMap(path -> uncheckCall(() -> Arrays.stream(new File(path.toString()).listFiles())
-                        .map(File::toPath)))
-                .flatMap(path -> uncheckCall(() -> Files.readAllLines(path).stream()))
-                .count();
+        long count = paths.stream().map(Paths::get)
+                          .flatMap(path -> uncheckCall(() -> Files.list(path)))
+                          .flatMap(path -> uncheckCall(() -> Files.readAllLines(path).stream()))
+                          .count();
         assertEquals(itemCount, count);
     }
 

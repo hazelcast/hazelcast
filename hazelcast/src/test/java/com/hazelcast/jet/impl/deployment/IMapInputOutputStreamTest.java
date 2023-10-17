@@ -91,20 +91,20 @@ public class IMapInputOutputStreamTest extends SimpleTestInClusterSupport {
     @Test
     public void test_writeOutOfBounds_then_throwsException() throws IOException {
         IMap<String, byte[]> map = instance().getMap(randomMapName());
-        try (IMapOutputStream outputStream = new IMapOutputStream(map, "test")) {
-            expectedException.expect(IndexOutOfBoundsException.class);
-            outputStream.write(new byte[]{1}, 5, 5);
-        }
+        IMapOutputStream outputStream = new IMapOutputStream(map, "test");
+
+        expectedException.expect(IndexOutOfBoundsException.class);
+        outputStream.write(new byte[] {1}, 5, 5);
     }
 
     @Test
     public void test_readOutOfBounds_then_throwsException() throws IOException {
         IMap<String, byte[]> map = instance().getMap(randomMapName());
         map.put("test", new byte[] {0, 0, 0, 4});
-        try (IMapInputStream inputStream = new IMapInputStream(map, "test")) {
-            expectedException.expect(IndexOutOfBoundsException.class);
-            System.out.println(inputStream.read(new byte[]{1}, 5, 5));
-        }
+        IMapInputStream inputStream = new IMapInputStream(map, "test");
+
+        expectedException.expect(IndexOutOfBoundsException.class);
+        System.out.println(inputStream.read(new byte[] {1}, 5, 5));
     }
 
     @Test

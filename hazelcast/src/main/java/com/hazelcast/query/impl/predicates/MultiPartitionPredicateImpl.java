@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
@@ -58,7 +58,7 @@ public class MultiPartitionPredicateImpl<K, V> implements PartitionPredicate<K, 
      */
     public MultiPartitionPredicateImpl(Set<? extends Object> partitionKeys, Predicate<K, V> target) {
         this.partitionKeys = checkNotNull(partitionKeys, "partitionKeys can't be null");
-        checkFalse(partitionKeys.isEmpty(), "partitionKeys must not be empty");
+        checkTrue(partitionKeys.size() > 0, "partitionKeys must not be empty");
         this.target = checkNotNull(target, "target predicate can't be null");
     }
 

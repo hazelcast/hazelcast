@@ -71,7 +71,7 @@ public enum PutAllOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            if (CollectionUtil.isNotEmpty(state.getKeysToLoad())) {
+            if (!CollectionUtil.isEmpty(state.getKeysToLoad())) {
                 return PutAllOpSteps.LOAD_ALL;
             }
             return PutAllOpSteps.STORE_ALL;

@@ -41,7 +41,7 @@ import java.util.Collection;
 
 import static com.hazelcast.config.MapConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.internal.util.IterableUtil.size;
-import static com.hazelcast.query.impl.IndexRegistry.SKIP_PARTITIONS_COUNT_CHECK;
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -66,7 +66,7 @@ public class IndexJsonTest {
     @Test
     public void testJsonIndex() {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-        IndexRegistry indexes = IndexRegistry.newBuilder(null, "test", ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).extractors(Extractors.newBuilder(ss).build()).indexProvider(
+        Indexes indexes = Indexes.newBuilder(null, "test", ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).extractors(Extractors.newBuilder(ss).build()).indexProvider(
                 new DefaultIndexProvider()).usesCachedQueryableEntries(true).statsEnabled(true).global(true).build();
         Index numberIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "age"));
         Index boolIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "active"));

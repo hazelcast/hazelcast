@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.predicates.InPredicate;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.query.impl.predicates.RuleBasedQueryOptimizer;
@@ -40,7 +40,7 @@ public class PagingPredicateOptimizationTest extends HazelcastTestSupport {
     @Test
     public void testInnerPredicateOptimization() {
         RuleBasedQueryOptimizer optimizer = new RuleBasedQueryOptimizer();
-        IndexRegistry indexes = mock(IndexRegistry.class);
+        Indexes indexes = mock(Indexes.class);
 
         Predicate[] orPredicates = new Predicate[10];
         for (int i = 0; i < orPredicates.length; ++i) {

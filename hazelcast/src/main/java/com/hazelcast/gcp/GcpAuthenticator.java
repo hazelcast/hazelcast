@@ -21,11 +21,10 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.spi.utils.RestClient;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.Reader;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.Signature;
@@ -74,10 +73,8 @@ class GcpAuthenticator {
 
     private String createBody(String privateKeyPath, long currentTimeMs)
             throws Exception {
-        JsonObject privateKeyJson;
-        try (Reader reader = Files.newBufferedReader(Paths.get(privateKeyPath))) {
-            privateKeyJson = Json.parse(reader).asObject();
-        }
+        JsonObject privateKeyJson = Json.parse(
+                new InputStreamReader(new FileInputStream(privateKeyPath), StandardCharsets.UTF_8)).asObject();
         String privateKey = privateKeyJson.get("private_key").asString();
         String clientEmail = privateKeyJson.get("client_email").asString();
 

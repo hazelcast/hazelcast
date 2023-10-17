@@ -30,7 +30,6 @@ import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyInfo;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
 
-import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,8 +41,6 @@ import java.util.function.Supplier;
 public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<List<Map.Entry<String, String>>>
         implements Supplier<Operation> {
 
-    private List<Map.Entry<String, String>> filteredProxies;
-
     public CreateProxiesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -54,8 +51,8 @@ public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<Lis
 
     @Override
     public Operation get() {
-        List<ProxyInfo> proxyInfos = new ArrayList<ProxyInfo>(filteredProxies.size());
-        for (Map.Entry<String, String> proxy : filteredProxies) {
+        List<ProxyInfo> proxyInfos = new ArrayList<ProxyInfo>(parameters.size());
+        for (Map.Entry<String, String> proxy : parameters) {
             proxyInfos.add(new ProxyInfo(proxy.getValue(), proxy.getKey(), endpoint.getUuid()));
         }
         return new PostJoinProxyOperation(proxyInfos);
@@ -99,7 +96,6 @@ public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<Lis
         // replacement for getRequiredPermission-based checks, we have to check multiple permission
         SecurityContext securityContext = clientEngine.getSecurityContext();
         if (securityContext != null) {
-            filteredProxies = new ArrayList<>(parameters.size());
             ProxyService proxyService = clientEngine.getProxyService();
             for (Map.Entry<String, String> proxy : parameters) {
                 String objectName = proxy.getKey();
@@ -107,24 +103,9 @@ public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<Lis
                 if (proxyService.existsDistributedObject(serviceName, objectName)) {
                     continue;
                 }
-                try {
-                    Permission permission = ActionConstants.getPermission(objectName, serviceName,
-                            ActionConstants.ACTION_CREATE);
-                    securityContext.checkPermission(endpoint.getSubject(), permission);
-                    filteredProxies.add(proxy);
-                } catch (AccessControlException ace) {
-                    logger.info("Insufficient client permissions. Proxy won't be created for type '" + serviceName + "': "
-                            + objectName);
-                    if (logger.isFineEnabled()) {
-                        logger.fine("Skipping proxy creation due to AccessControlException", ace);
-                    }
-                } catch (Exception e) {
-                    // unknown serviceName or another unexpected issue
-                    logger.warning("Proxy won't be created for type '" + serviceName + "': " + objectName, e);
-                }
+                Permission permission = ActionConstants.getPermission(objectName, serviceName, ActionConstants.ACTION_CREATE);
+                securityContext.checkPermission(endpoint.getSubject(), permission);
             }
-        } else {
-            filteredProxies = parameters;
         }
         super.beforeProcess();
     }

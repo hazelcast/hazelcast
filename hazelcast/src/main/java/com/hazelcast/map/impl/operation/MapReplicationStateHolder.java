@@ -47,7 +47,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
 
@@ -140,19 +140,19 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             Set<IndexConfig> indexConfigs = new HashSet<>();
             if (mapContainer.isGlobalIndexEnabled()) {
                 // global-index
-                final IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
-                for (Index index : indexRegistry.getIndexes()) {
+                final Indexes indexes = mapContainer.getIndexes();
+                for (Index index : indexes.getIndexes()) {
                     indexConfigs.add(index.getConfig());
                 }
-                indexConfigs.addAll(indexRegistry.getIndexDefinitions());
+                indexConfigs.addAll(indexes.getIndexDefinitions());
             } else {
                 // partitioned-index
-                final IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(container.getPartitionId());
-                if (indexRegistry != null && indexRegistry.haveAtLeastOneIndexOrDefinition()) {
-                    for (Index index : indexRegistry.getIndexes()) {
+                final Indexes indexes = mapContainer.getIndexes(container.getPartitionId());
+                if (indexes != null && indexes.haveAtLeastOneIndexOrDefinition()) {
+                    for (Index index : indexes.getIndexes()) {
                         indexConfigs.add(index.getConfig());
                     }
-                    indexConfigs.addAll(indexRegistry.getIndexDefinitions());
+                    indexConfigs.addAll(indexes.getIndexDefinitions());
                 }
             }
             MapIndexInfo mapIndexInfo = new MapIndexInfo(mapName);
@@ -182,21 +182,21 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                     PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
                             .getPartitionContainer(operation.getPartitionId());
                     for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
-                        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionContainer.getPartitionId());
-                        indexRegistry.addOrGetIndex(indexDefinition.getValue());
+                        Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+                        indexes.addOrGetIndex(indexDefinition.getValue());
                     }
 
-                    IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionContainer.getPartitionId());
-                    boolean populateIndexes = indexesMustBePopulated(indexRegistry, operation);
+                    final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+                    final boolean populateIndexes = indexesMustBePopulated(indexes, operation);
 
                     InternalIndex[] indexesSnapshot = null;
 
                     if (populateIndexes) {
-                        // defensively clear possible stale leftovers in non-global indexRegistry from
+                        // defensively clear possible stale leftovers in non-global indexes from
                         // the previous failed promotion attempt
-                        indexesSnapshot = indexRegistry.getIndexes();
-                        IndexRegistry.beginPartitionUpdate(indexesSnapshot);
-                        indexRegistry.clearAll();
+                        indexesSnapshot = indexes.getIndexes();
+                        Indexes.beginPartitionUpdate(indexesSnapshot);
+                        indexes.clearAll();
                     }
 
                     long nowInMillis = Clock.currentTimeMillis();
@@ -205,7 +205,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
 
                     if (populateIndexes) {
-                        IndexRegistry.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
+                        Indexes.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
                     }
                 } finally {
                     recordStore.afterOperation();
@@ -308,18 +308,18 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         if (mapContainer.isGlobalIndexEnabled()) {
             // creating global indexes on partition thread in case they do not exist
             for (IndexConfig indexConfig : indexConfigs) {
-                IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
+                Indexes indexes = mapContainer.getIndexes();
 
                 // optimisation not to synchronize each partition thread on the addOrGetIndex method
-                if (indexRegistry.getIndex(indexConfig.getName()) == null) {
-                    indexRegistry.addOrGetIndex(indexConfig);
+                if (indexes.getIndex(indexConfig.getName()) == null) {
+                    indexes.addOrGetIndex(indexConfig);
                 }
             }
         } else {
-            IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(operation.getPartitionId());
-            indexRegistry.createIndexesFromRecordedDefinitions();
+            Indexes indexes = mapContainer.getIndexes(operation.getPartitionId());
+            indexes.createIndexesFromRecordedDefinitions();
             for (IndexConfig indexConfig : indexConfigs) {
-                indexRegistry.addOrGetIndex(indexConfig);
+                indexes.addOrGetIndex(indexConfig);
             }
         }
     }
@@ -462,19 +462,19 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         return MapDataSerializerHook.MAP_REPLICATION_STATE_HOLDER;
     }
 
-    private static boolean indexesMustBePopulated(IndexRegistry indexRegistry, MapReplicationOperation operation) {
-        if (!indexRegistry.haveAtLeastOneIndex()) {
-            // no indexRegistry to populate
+    private static boolean indexesMustBePopulated(Indexes indexes, MapReplicationOperation operation) {
+        if (!indexes.haveAtLeastOneIndex()) {
+            // no indexes to populate
             return false;
         }
 
-        if (indexRegistry.isGlobal()) {
-            // global indexRegistry are populated during migration finalization
+        if (indexes.isGlobal()) {
+            // global indexes are populated during migration finalization
             return false;
         }
 
         if (operation.getReplicaIndex() != 0) {
-            // backup partitions have no indexRegistry to populate
+            // backup partitions have no indexes to populate
             return false;
         }
 

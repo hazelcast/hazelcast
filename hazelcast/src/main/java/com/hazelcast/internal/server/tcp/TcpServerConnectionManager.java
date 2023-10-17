@@ -240,7 +240,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
         connections.forEach(conn -> close(conn, "TcpServer is stopping"));
         acceptedChannels.clear();
-        stream(planes).forEach(Plane::clearConnectionsInProgress);
+        stream(planes).forEach(plane -> plane.clearConnectionsInProgress());
         stream(planes).forEach(plane -> plane.errorHandlers.clear());
 
         connections.clear();

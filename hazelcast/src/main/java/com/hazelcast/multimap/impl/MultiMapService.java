@@ -601,7 +601,7 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
                             mergeContainers = new ArrayList<>(batchSize);
                         }
                     }
-                    if (!mergeContainers.isEmpty()) {
+                    if (mergeContainers.size() > 0) {
                         sendBatch(partitionId, name, mergePolicy, mergeContainers);
                     }
                 }

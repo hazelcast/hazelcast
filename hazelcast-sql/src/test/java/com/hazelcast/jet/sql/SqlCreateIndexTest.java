@@ -93,19 +93,19 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
 
     @Test
     public void when_basicBitmapIndexCreated_then_succeeds() {
-        assertThat(mapContainer(map).getGlobalIndexRegistry().getIndex(MAP_NAME)).isNull();
+        assertThat(mapContainer(map).getIndexes().getIndex(MAP_NAME)).isNull();
 
         String indexName = SqlTestSupport.randomName();
         String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (__key) TYPE BITMAP; ";
 
         instance().getSql().execute(sql);
 
-        assertThat(mapContainer(map).getGlobalIndexRegistry().getIndex(indexName)).isNotNull();
+        assertThat(mapContainer(map).getIndexes().getIndex(indexName)).isNotNull();
     }
 
     @Test
     public void when_bitmapIndexWithOptionCreated_then_succeeds() {
-        assertThat(mapContainer(map).getGlobalIndexRegistry().getIndex(MAP_NAME)).isNull();
+        assertThat(mapContainer(map).getIndexes().getIndex(MAP_NAME)).isNull();
 
         String indexName = SqlTestSupport.randomName();
         String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (__key) TYPE BITMAP " +
@@ -113,7 +113,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
 
         instance().getSql().execute(sql);
 
-        assertThat(mapContainer(map).getGlobalIndexRegistry().getIndex(indexName)).isNotNull();
+        assertThat(mapContainer(map).getIndexes().getIndex(indexName)).isNotNull();
     }
 
     @Test
@@ -124,7 +124,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
 
         instance().getSql().execute(sql);
 
-        assertThat(mapContainer(instance().getMap(mapName)).getGlobalIndexRegistry().getIndex(indexName)).isNotNull();
+        assertThat(mapContainer(instance().getMap(mapName)).getIndexes().getIndex(indexName)).isNotNull();
     }
 
     @Test

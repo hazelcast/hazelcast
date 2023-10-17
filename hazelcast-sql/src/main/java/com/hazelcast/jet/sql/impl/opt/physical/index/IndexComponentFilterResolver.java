@@ -122,7 +122,6 @@ final class IndexComponentFilterResolver {
         boolean fromInclusive = false;
         IndexFilterValue to = null;
         boolean toInclusive = false;
-        boolean found = false;
         List<RexNode> expressions = new ArrayList<>(2);
 
         for (IndexComponentCandidate candidate : candidates) {
@@ -130,14 +129,8 @@ final class IndexComponentFilterResolver {
                 continue;
             }
 
-            found = true;
             IndexRangeFilter candidateFilter = (IndexRangeFilter) candidate.getFilter();
 
-            // Use first matching candidate to define range.
-            // We do not expect many candidates with literal values as they should be simplified by Calcite.
-            // When there are both literals and dynamic parameters, we choose one of them.
-            // Maybe we could be preferring literals, but in general it is not possible to know upfront
-            // which one would be better.
             if (from == null && candidateFilter.getFrom() != null) {
                 from = candidateFilter.getFrom();
                 fromInclusive = candidateFilter.isFromInclusive();
@@ -149,14 +142,9 @@ final class IndexComponentFilterResolver {
                 toInclusive = candidateFilter.isToInclusive();
                 expressions.add(candidate.getExpression());
             }
-
-            if (from == null && to == null && candidateFilter.getFrom() == null && candidateFilter.getTo() == null) {
-                // IS NOT NULL filter
-                expressions.add(candidate.getExpression());
-            }
         }
 
-        if (found) {
+        if (from != null || to != null) {
             IndexRangeFilter filter = new IndexRangeFilter(from, fromInclusive, to, toInclusive);
             return new IndexComponentFilter(filter, expressions, converterType);
         }

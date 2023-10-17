@@ -55,8 +55,8 @@ public class QueryCacheIndexConfigTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = instance.getMap("map");
         final DefaultQueryCache<Object, Object> cache = (DefaultQueryCache<Object, Object>) map.getQueryCache("query-cache");
 
-        assertNotNull(cache.indexRegistry.getIndex(indexConfig.getName()));
-        assertTrue(cache.indexRegistry.getIndex(indexConfig.getName()).isOrdered());
+        assertNotNull(cache.indexes.getIndex(indexConfig.getName()));
+        assertTrue(cache.indexes.getIndex(indexConfig.getName()).isOrdered());
     }
 
 }

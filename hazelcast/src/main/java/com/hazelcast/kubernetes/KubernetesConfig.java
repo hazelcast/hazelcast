@@ -46,6 +46,7 @@ import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PER_POD_LABE
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PER_POD_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PORT;
 import static com.hazelcast.kubernetes.KubernetesProperties.USE_NODE_NAME_AS_EXTERNAL_ADDRESS;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_ACCOUNT;
 
 /**
  * Responsible for fetching, parsing, and validating Hazelcast Kubernetes Discovery Strategy input properties.
@@ -54,6 +55,7 @@ import static com.hazelcast.kubernetes.KubernetesProperties.USE_NODE_NAME_AS_EXT
 final class KubernetesConfig {
     private static final String DEFAULT_MASTER_URL = "https://kubernetes.default.svc";
     private static final String DEFAULT_TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
+    private static final String DEFAULT_KUBERNETES_APPLICATION_SERVICE_ACCOUNT = "default";
     private static final int DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS = 5;
     private static final int DEFAULT_KUBERNETES_API_RETRIES = 3;
 
@@ -76,6 +78,7 @@ final class KubernetesConfig {
     private final int kubernetesApiRetries;
     private final String kubernetesMasterUrl;
     private final String kubernetesCaCertificate;
+    private final String serviceAccount;
 
     // Parameters for both DNS Lookup and Kubernetes API modes
     private final int servicePort;
@@ -113,6 +116,7 @@ final class KubernetesConfig {
         this.kubernetesCaCertificate = caCertificate(properties);
         this.servicePort = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PORT, 0);
         this.namespace = getNamespaceWithFallbacks(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE);
+        this.serviceAccount = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_ACCOUNT, DEFAULT_KUBERNETES_APPLICATION_SERVICE_ACCOUNT);
 
         validateConfig();
     }
@@ -329,6 +333,10 @@ final class KubernetesConfig {
         return namespace;
     }
 
+    String getServiceAccount() {
+        return serviceAccount;
+    }
+
     public String getPodLabelName() {
         return podLabelName;
     }
@@ -387,6 +395,7 @@ final class KubernetesConfig {
                 + "service-label: " + serviceLabelName + ", "
                 + "service-label-value: " + serviceLabelValue + ", "
                 + "namespace: " + namespace + ", "
+                + "service-account: " + serviceAccount + ", "
                 + "pod-label: " + podLabelName + ", "
                 + "pod-label-value: " + podLabelValue + ", "
                 + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "

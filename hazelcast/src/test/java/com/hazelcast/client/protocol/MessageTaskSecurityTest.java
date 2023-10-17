@@ -16,6 +16,22 @@
 
 package com.hazelcast.client.protocol;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.assertj.core.api.Assertions;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.reflections.Reflections;
+
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.client.impl.protocol.task.AddBackupListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.AddClusterViewListenerMessageTask;
@@ -26,7 +42,9 @@ import com.hazelcast.client.impl.protocol.task.AuthenticationCustomCredentialsMe
 import com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.ClientStatisticsMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxiesMessageTask;
-import com.hazelcast.client.impl.protocol.task.ClientTpcAuthenticationMessageTask;
+import com.hazelcast.client.impl.protocol.task.ExperimentalAuthenticationCustomCredentialsMessageTask;
+import com.hazelcast.client.impl.protocol.task.ExperimentalAuthenticationMessageTask;
+import com.hazelcast.client.impl.protocol.task.ExperimentalTpcAuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetDistributedObjectsMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.NoSuchMessageTask;
@@ -52,27 +70,15 @@ import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
 import com.hazelcast.sql.impl.client.SqlFetchMessageTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+
 import javassist.ClassPool;
+import javassist.NotFoundException;
+import javassist.bytecode.BadBytecode;
 import javassist.bytecode.ClassFile;
 import javassist.bytecode.CodeAttribute;
 import javassist.bytecode.CodeIterator;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.Mnemonic;
-import org.assertj.core.api.Assertions;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.reflections.Reflections;
-
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 /**
  * Verifies the {@code getRequiredPermission()} method doesn't simply return null in client {@link MessageTask} instances.
@@ -93,6 +99,7 @@ public class MessageTaskSecurityTest {
         skip(AddPartitionLostListenerMessageTask.class, "Adds an internal listener");
         skip(CacheFetchNearCacheInvalidationMetadataTask.class, "Internal task used by RepairingTask");
         skip(ClientStatisticsMessageTask.class, "Client statistics collection task");
+        skip(ExperimentalAuthenticationMessageTask.class, "Beta-mode of TPC authentication");
         skip(GetDistributedObjectsMessageTask.class, "Gets proxies");
         skip(MapAddListenerMessageTask.class, "Permissions checked by subsequent MapPublisherCreate* tasks");
         skip(MapFetchNearCacheInvalidationMetadataTask.class, "Internal task used by RepairingTask");
@@ -116,7 +123,8 @@ public class MessageTaskSecurityTest {
         skip(SqlFetchMessageTask.class, "Follow up SQL message where queryId is present");
         skip(AuthenticationMessageTask.class, "Authentication message processing");
         skip(AuthenticationCustomCredentialsMessageTask.class, "Authentication message processing");
-        skip(ClientTpcAuthenticationMessageTask.class, "Authentication message processing");
+        skip(ExperimentalTpcAuthenticationMessageTask.class, "Authentication message processing");
+        skip(ExperimentalAuthenticationCustomCredentialsMessageTask.class, "Authentication message processing");
         skip(CreateProxiesMessageTask.class, "Permissions handled in beforeProcess() method");
     }
 
@@ -144,7 +152,7 @@ public class MessageTaskSecurityTest {
         assertFalse(clsname + " returns null in getRequiredPermission()", returnsNull);
     }
 
-    private boolean doesGetRequiredPermissionSimpleReturnNull(String clsname) throws Exception {
+    private boolean doesGetRequiredPermissionSimpleReturnNull(String clsname) throws NotFoundException, Exception, BadBytecode {
         if (clsname == null) {
             fail("Class with getRequiredPermission() method implementation not found");
         }

@@ -61,8 +61,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
+import static com.hazelcast.internal.util.StringUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.internal.util.XmlUtil.format;
 
 /**
  * The ClientConfigXmlGenerator is responsible for transforming a
@@ -144,7 +144,7 @@ public final class ClientConfigXmlGenerator {
         //close HazelcastClient
         gen.close();
 
-        return format(xml.toString(), indent);
+        return formatXml(xml.toString(), indent);
     }
 
     private static void network(XmlGenerator gen, ClientNetworkConfig network) {

@@ -53,7 +53,6 @@ import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
@@ -200,15 +199,12 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     private InternalSqlService createSqlService() {
-        if (!Util.isJetEnabled(this)) {
-            return new MissingSqlService(node.getThisUuid(), false);
-        }
         Class<?> clz;
         try {
             clz = Class.forName("com.hazelcast.sql.impl.SqlServiceImpl");
         } catch (ClassNotFoundException e) {
             // this is normal if the hazelcast-sql module isn't present - return disabled service
-            return new MissingSqlService(node.getThisUuid(), true);
+            return new MissingSqlService(node.getThisUuid());
         }
 
         try {

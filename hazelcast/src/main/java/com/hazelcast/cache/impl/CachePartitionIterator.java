@@ -16,8 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.internal.util.CollectionUtil;
-
 /**
  * Iterator for iterating cache entries in a single partition.
  * The values are fetched in batches.
@@ -43,7 +41,7 @@ public class CachePartitionIterator<K, V> extends CacheIterator<K, V> {
             return false;
         }
         result = fetch();
-        if (CollectionUtil.isNotEmpty(result)) {
+        if (result != null && result.size() > 0) {
             index = 0;
             return true;
         }

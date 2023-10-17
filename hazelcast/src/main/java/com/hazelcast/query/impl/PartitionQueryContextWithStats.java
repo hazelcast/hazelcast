@@ -33,13 +33,13 @@ public class PartitionQueryContextWithStats extends QueryContext {
      *
      * @param indexes the indexes to construct the new query context for.
      */
-    public PartitionQueryContextWithStats(IndexRegistry indexes) {
+    public PartitionQueryContextWithStats(Indexes indexes) {
         super(indexes, 1);
     }
 
     @Override
-    void attachTo(IndexRegistry indexes, int ownedPartitionCount) {
-        assert indexes == this.indexRegistry;
+    void attachTo(Indexes indexes, int ownedPartitionCount) {
+        assert indexes == this.indexes;
         assert ownedPartitionCount == 1 && this.ownedPartitionCount == 1;
         for (PerIndexStats stats : trackedStats) {
             stats.resetPerQueryStats();
@@ -56,7 +56,7 @@ public class PartitionQueryContextWithStats extends QueryContext {
 
     @Override
     public Index matchIndex(String pattern, IndexMatchHint matchHint) {
-        InternalIndex index = indexRegistry.matchIndex(pattern, matchHint, ownedPartitionCount);
+        InternalIndex index = indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
         if (index == null) {
             return null;
         }

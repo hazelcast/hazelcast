@@ -38,8 +38,9 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -164,7 +165,7 @@ public class Accessors {
     }
 
     /**
-     * Obtains a list of {@link IndexRegistry} for the given map local to the node
+     * Obtains a list of {@link Indexes} for the given map local to the node
      * associated with it.
      * <p>
      * There may be more than one indexes instance associated with a map if its
@@ -173,7 +174,7 @@ public class Accessors {
      * @param map the map to obtain the indexes for.
      * @return the obtained indexes list.
      */
-    public static List<IndexRegistry> getAllIndexes(IMap map) {
+    public static List<Indexes> getAllIndexes(IMap map) {
         MapProxyImpl mapProxy = (MapProxyImpl) map;
         String mapName = mapProxy.getName();
         NodeEngine nodeEngine = mapProxy.getNodeEngine();
@@ -182,21 +183,20 @@ public class Accessors {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
 
-        IndexRegistry maybeGlobalIndexes = mapContainer.getGlobalIndexRegistry();
+        Indexes maybeGlobalIndexes = mapContainer.getIndexes();
         if (maybeGlobalIndexes != null) {
             return Collections.singletonList(maybeGlobalIndexes);
         }
 
-        List<IndexRegistry> allIndexes = new ArrayList<>();
-
-        int partitionCount = partitionService.getPartitionCount();
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            IPartition partition = partitionService.getPartition(partitionId);
+        PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
+        List<Indexes> allIndexes = new ArrayList<>();
+        for (PartitionContainer partitionContainer : partitionContainers) {
+            IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
             if (!partition.isLocal()) {
                 continue;
             }
 
-            IndexRegistry partitionIndexes = mapContainer.getOrNullPartitionedIndexRegistry(partitionId);
+            Indexes partitionIndexes = partitionContainer.getIndexes().get(mapName);
             if (partitionIndexes == null) {
                 continue;
             }

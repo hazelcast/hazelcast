@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 
 /**
  * Predicates which can be visited by optimizer.
@@ -35,5 +35,5 @@ public interface VisitablePredicate {
      * @param indexes indexes
      * @return itself or its changed copy
      */
-    Predicate accept(Visitor visitor, IndexRegistry indexes);
+    Predicate accept(Visitor visitor, Indexes indexes);
 }

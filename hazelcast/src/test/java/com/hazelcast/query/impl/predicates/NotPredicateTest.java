@@ -20,7 +20,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -89,7 +89,7 @@ public class NotPredicateTest {
     @Test
     public void accept_whenNullPredicate_thenReturnItself() {
         Visitor mockVisitor = createPassthroughVisitor();
-        IndexRegistry mockIndexes = mock(IndexRegistry.class);
+        Indexes mockIndexes = mock(Indexes.class);
 
         NotPredicate notPredicate = new NotPredicate(null);
         NotPredicate result = (NotPredicate) notPredicate.accept(mockVisitor, mockIndexes);
@@ -100,7 +100,7 @@ public class NotPredicateTest {
     @Test
     public void accept_whenPredicateChangedOnAccept_thenReturnAndNewNotPredicate() {
         Visitor mockVisitor = createPassthroughVisitor();
-        IndexRegistry mockIndexes = mock(IndexRegistry.class);
+        Indexes mockIndexes = mock(Indexes.class);
 
         Predicate transformed = mock(Predicate.class);
         Predicate predicate = createMockVisitablePredicate(transformed);

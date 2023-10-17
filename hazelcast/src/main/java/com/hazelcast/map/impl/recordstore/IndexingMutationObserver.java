@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -111,20 +111,20 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
      * Only indexed data will be removed, index info will stay.
      */
     private void clearGlobalIndexes(boolean destroy) {
-        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
-        if (!indexRegistry.isGlobal()) {
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        if (!indexes.isGlobal()) {
             return;
         }
 
         if (destroy) {
-            indexRegistry.destroyIndexes();
+            indexes.destroyIndexes();
             return;
         }
 
-        if (indexRegistry.haveAtLeastOneIndex()) {
+        if (indexes.haveAtLeastOneIndex()) {
             // clears indexed data of this partition
             // from shared global index.
-            fullScanLocalDataToClear(indexRegistry);
+            fullScanLocalDataToClear(indexes);
         }
     }
 
@@ -132,42 +132,42 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
      * Only indexed data will be removed, index info will stay.
      */
     private void clearPartitionedIndexes(boolean destroy) {
-        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
-        if (indexRegistry.isGlobal()) {
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        if (indexes.isGlobal()) {
             return;
         }
 
         if (destroy) {
-            indexRegistry.destroyIndexes();
+            indexes.destroyIndexes();
             return;
         }
 
-        indexRegistry.clearAll();
+        indexes.clearAll();
     }
 
     /**
      * Clears local data of this partition from global index by doing
      * partition full-scan.
      */
-    private void fullScanLocalDataToClear(IndexRegistry indexRegistry) {
-        InternalIndex[] indexesSnapshot = indexRegistry.getIndexes();
+    private void fullScanLocalDataToClear(Indexes indexes) {
+        InternalIndex[] indexesSnapshot = indexes.getIndexes();
 
-        IndexRegistry.beginPartitionUpdate(indexesSnapshot);
+        Indexes.beginPartitionUpdate(indexesSnapshot);
 
         CachedQueryEntry<?, ?> entry = new CachedQueryEntry<>(ss, mapContainer.getExtractors());
         recordStore.forEach((BiConsumer<Data, Record>) (dataKey, record) -> {
             Object value = getValueOrCachedValue(record, ss);
             entry.init(dataKey, value);
-            indexRegistry.removeEntry(entry, Index.OperationSource.SYSTEM);
+            indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
         }, false);
 
-        IndexRegistry.markPartitionAsUnindexed(partitionId, indexesSnapshot);
+        Indexes.markPartitionAsUnindexed(partitionId, indexesSnapshot);
     }
 
     private void saveIndex(Data dataKey, Record record, Object oldValue,
                            Index.OperationSource operationSource) {
-        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
-        if (!indexRegistry.haveAtLeastOneIndex()) {
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        if (!indexes.haveAtLeastOneIndex()) {
             return;
         }
 
@@ -175,17 +175,17 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
                 getValueOrCachedValue(record, ss));
         queryableEntry.setRecord(record);
 
-        indexRegistry.putEntry(queryableEntry, oldValue, operationSource);
+        indexes.putEntry(queryableEntry, oldValue, operationSource);
     }
 
     private void removeIndex(Data dataKey, Record record,
                              Index.OperationSource operationSource) {
-        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
-        if (!indexRegistry.haveAtLeastOneIndex()) {
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        if (!indexes.haveAtLeastOneIndex()) {
             return;
         }
 
-        indexRegistry.removeEntry(toBackingKeyFormat(dataKey), getValueOrCachedValue(record, ss), operationSource);
+        indexes.removeEntry(toBackingKeyFormat(dataKey), getValueOrCachedValue(record, ss), operationSource);
     }
 
     private Data toBackingKeyFormat(Data key) {

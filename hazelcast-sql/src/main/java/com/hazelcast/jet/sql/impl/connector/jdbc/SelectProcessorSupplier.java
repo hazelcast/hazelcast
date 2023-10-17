@@ -24,21 +24,26 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunction;
+import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
-import java.sql.PreparedStatement;
+import java.security.Permission;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.ResultSetMetaData;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
@@ -95,7 +100,7 @@ public class SelectProcessorSupplier
                         throw e;
                     }
                 },
-                rs -> {
+                (rs) -> {
                     int columnCount = rs.getMetaData().getColumnCount();
                     Object[] row = new Object[columnCount];
                     for (int j = 0; j < columnCount; j++) {
@@ -125,6 +130,11 @@ public class SelectProcessorSupplier
         return valueGetters;
     }
 
+    @Nullable
+    @Override
+    public List<Permission> permissions() {
+        return singletonList(ConnectorPermission.jdbc(dataConnectionName, ACTION_READ));
+    }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {

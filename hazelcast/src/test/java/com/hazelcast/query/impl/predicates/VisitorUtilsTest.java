@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,11 +35,11 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class VisitorUtilsTest extends HazelcastTestSupport {
 
-    private IndexRegistry mockIndexes;
+    private Indexes mockIndexes;
 
     @Before
     public void setUp() {
-        mockIndexes = mock(IndexRegistry.class);
+        mockIndexes = mock(Indexes.class);
     }
 
     @Test

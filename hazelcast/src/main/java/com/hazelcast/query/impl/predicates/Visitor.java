@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 
 /**
  * Visitor can inspect internal state of a node,
@@ -28,18 +28,18 @@ import com.hazelcast.query.impl.IndexRegistry;
  */
 public interface Visitor {
 
-    Predicate visit(EqualPredicate predicate, IndexRegistry indexes);
+    Predicate visit(EqualPredicate predicate, Indexes indexes);
 
-    Predicate visit(NotEqualPredicate predicate, IndexRegistry indexes);
+    Predicate visit(NotEqualPredicate predicate, Indexes indexes);
 
-    Predicate visit(AndPredicate predicate, IndexRegistry indexes);
+    Predicate visit(AndPredicate predicate, Indexes indexes);
 
-    Predicate visit(OrPredicate predicate, IndexRegistry indexes);
+    Predicate visit(OrPredicate predicate, Indexes indexes);
 
-    Predicate visit(NotPredicate predicate, IndexRegistry indexes);
+    Predicate visit(NotPredicate predicate, Indexes indexes);
 
-    Predicate visit(InPredicate predicate, IndexRegistry indexes);
+    Predicate visit(InPredicate predicate, Indexes indexes);
 
-    Predicate visit(BetweenPredicate predicate, IndexRegistry indexes);
+    Predicate visit(BetweenPredicate predicate, Indexes indexes);
 
 }

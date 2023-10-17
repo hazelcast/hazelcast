@@ -395,7 +395,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     /**
      * Regression test for https://github.com/hazelcast/hazelcast/issues/22567
      */
-    @Test(timeout = 180_000L)
+    @Test(timeout = 90_000L)
     @Category(NightlyTest.class)
     public void testClear() {
         HazelcastInstance client = client();
@@ -422,10 +422,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         // create another member
         logger.info("Starting third member instance");
         HazelcastInstance hz3 = factory().newHazelcastInstance(memberConfig);
-
-        HazelcastInstance[] instances = new HazelcastInstance[]{instances()[0], instances()[1], hz3};
-        assertClusterSizeEventually(3, instances);
-        waitAllForSafeState(instances);
+        assertClusterSizeEventually(3, hz3);
         logger.info("Third member instance started with name " + hz3.getName());
 
         ExceptionRecorder recorder = new ExceptionRecorder(hz3, Level.WARNING);
@@ -435,8 +432,6 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         for (int i = 1; i < itemSize; i++) {
             map.put(i, new Person(i, "name-" + i));
         }
-        logger.info("Putting data into the IMap finished");
-
         // Ensure that all put operations are inserted into the DB. Otherwise, we may get
         // HazelcastSqlException: Hazelcast instance is not active! from the SqlService
         // when we shut down the hz3 instance
@@ -465,8 +460,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         assertThat(p.getName()).isEqualTo("name-" + itemSize);
 
         for (Throwable throwable : recorder.exceptionsLogged()) {
-            assertThat(throwable).hasMessageNotContaining("HazelcastSqlException: The Jet SQL job failed: "
-                    + "Hazelcast instance is not active!");
+            assertThat(throwable).hasMessageNotContaining("is not active!");
         }
     }
 }

@@ -1844,7 +1844,7 @@ public class MigrationManager {
          * @return true if the promotions were applied on the destination
          */
         private boolean commitPromotionsToDestination(PartitionReplica destination, Collection<MigrationInfo> migrations) {
-            assert !migrations.isEmpty() : "No promotions to commit! destination=" + destination;
+            assert migrations.size() > 0 : "No promotions to commit! destination=" + destination;
 
             Member member = node.getClusterService().getMember(destination.address(), destination.uuid());
             if (member == null) {

@@ -23,7 +23,6 @@ import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
@@ -49,22 +48,12 @@ public class GetMapConfigOperationTest extends HazelcastTestSupport {
     private TestHazelcastFactory factory;
     private HazelcastClientInstanceImpl client;
 
-    @Override
-    protected Config getConfig() {
-        return smallInstanceConfig();
-    }
-
-    protected InMemoryFormat getInMemoryFormat() {
-        return InMemoryFormat.BINARY;
-    }
-
     @Before
     public void setUp() {
         factory = new TestHazelcastFactory();
 
-        Config config = getConfig();
+        Config config = smallInstanceConfig();
         MapConfig withIndex = new MapConfig("map-with-index")
-                .setInMemoryFormat(getInMemoryFormat())
                 .addIndexConfig(new IndexConfig(IndexType.SORTED, "first"));
         config.addMapConfig(withIndex);
 

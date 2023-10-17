@@ -43,7 +43,7 @@ import java.util.function.BiConsumer;
 import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
 import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertFalse;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -53,7 +53,7 @@ import static org.junit.Assert.fail;
 public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         extends HazelcastTestSupport {
 
-    private final Config liteMemberConfig = new Config().setLiteMember(true);
+    private Config liteMemberConfig = new Config().setLiteMember(true);
 
     private Operation operation;
 

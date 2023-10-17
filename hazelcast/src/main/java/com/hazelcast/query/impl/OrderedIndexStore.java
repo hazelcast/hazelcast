@@ -49,7 +49,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     public static final Comparator<Data> DATA_COMPARATOR = new DataComparator();
     public static final Comparator<Data> DATA_COMPARATOR_REVERSED = new DataComparator().reversed();
 
-    public static final Comparator<Comparable> SPECIAL_AWARE_COMPARATOR = (left, right) -> {
+    private static final Comparator<Comparable> SPECIAL_AWARE_COMPARATOR = (left, right) -> {
         // compare to explicit instances of special Comparables to avoid infinite loop
         // NEGATIVE_INFINITY should not be used in the index or queries
         // - the same result can be achieved by inclusive NULL or null.

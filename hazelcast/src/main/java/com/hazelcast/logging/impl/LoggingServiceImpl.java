@@ -262,7 +262,7 @@ public class LoggingServiceImpl implements LoggingService {
                 if (loggable) {
                     logger.log(level, message, thrown);
                 }
-                if (!listeners.isEmpty()) {
+                if (listeners.size() > 0) {
                     LogRecord logRecord = new LogRecord(level, message);
                     logRecord.setThrown(thrown);
                     logRecord.setLoggerName(name);

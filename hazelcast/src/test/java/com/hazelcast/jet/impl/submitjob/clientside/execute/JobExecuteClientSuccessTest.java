@@ -49,8 +49,6 @@ import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClient
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
-
-// Tests to execute existing jar on the member
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class JobExecuteClientSuccessTest extends JetTestSupport {

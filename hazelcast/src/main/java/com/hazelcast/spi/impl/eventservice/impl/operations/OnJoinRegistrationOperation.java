@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.eventservice.impl.operations;
 
-import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -44,7 +43,7 @@ public class OnJoinRegistrationOperation extends Operation implements Identified
 
     @Override
     public void run() throws Exception {
-        if (CollectionUtil.isEmpty(registrations)) {
+        if (registrations == null || registrations.size() <= 0) {
             return;
         }
 

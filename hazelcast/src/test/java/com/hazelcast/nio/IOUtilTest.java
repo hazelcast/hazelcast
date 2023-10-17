@@ -90,6 +90,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -462,6 +463,42 @@ public class IOUtilTest extends HazelcastTestSupport {
 
         copy(source, target);
         fail("Expected a IllegalArgumentException thrown by copy()");
+    }
+
+    @Test
+    public void testCopy_withInputStream() throws Exception {
+        InputStream inputStream = null;
+        try {
+            File source = createFile("source");
+            File target = createFile("target");
+
+            writeTo(source, "test content");
+            inputStream = new FileInputStream(source);
+
+            copy(inputStream, target);
+
+            assertTrue("source and target should have the same content", isEqualsContents(source, target));
+        } finally {
+            closeResource(inputStream);
+        }
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testCopy_withInputStream_failsWhenTargetNotExist() {
+        InputStream source = mock(InputStream.class);
+        File target = mock(File.class);
+        when(target.exists()).thenReturn(false);
+
+        copy(source, target);
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testCopy_withInputStream_failsWhenSourceCannotBeRead() throws Exception {
+        InputStream source = mock(InputStream.class);
+        when(source.read(any(byte[].class))).thenThrow(new IOException("expected"));
+        File target = createFile("target");
+
+        copy(source, target);
     }
 
     @Test(expected = HazelcastException.class)

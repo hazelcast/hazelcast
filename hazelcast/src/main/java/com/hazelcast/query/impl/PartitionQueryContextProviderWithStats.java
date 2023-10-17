@@ -29,12 +29,12 @@ public class PartitionQueryContextProviderWithStats implements QueryContextProvi
      *
      * @param indexes the indexes to construct the new query context for.
      */
-    public PartitionQueryContextProviderWithStats(IndexRegistry indexes) {
+    public PartitionQueryContextProviderWithStats(Indexes indexes) {
         queryContext = new PartitionQueryContextWithStats(indexes);
     }
 
     @Override
-    public QueryContext obtainContextFor(IndexRegistry indexes, int ownedPartitionCount) {
+    public QueryContext obtainContextFor(Indexes indexes, int ownedPartitionCount) {
         assert queryContext.ownedPartitionCount == 1 && ownedPartitionCount == 1;
         queryContext.attachTo(indexes, ownedPartitionCount);
         return queryContext;

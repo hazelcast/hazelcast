@@ -27,7 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexUtils;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
@@ -85,8 +85,8 @@ public class AddIndexOperation extends MapOperation
     public void runInternal() {
         int partitionId = getPartitionId();
 
-        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
-        InternalIndex index = indexRegistry.addOrGetIndex(config);
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        InternalIndex index = indexes.addOrGetIndex(config);
         if (index.hasPartitionIndexed(partitionId)) {
             return;
         }

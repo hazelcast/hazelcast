@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.CollectionUtil;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -83,7 +82,7 @@ public final class MapEntries implements IdentifiedDataSerializable {
     }
 
     public boolean isEmpty() {
-        return CollectionUtil.isEmpty(keys);
+        return (keys == null || keys.size() == 0);
     }
 
     public void clear() {

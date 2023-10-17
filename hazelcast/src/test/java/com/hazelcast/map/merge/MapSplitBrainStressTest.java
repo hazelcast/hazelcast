@@ -108,9 +108,9 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
                 String mapName = MAP_NAME_PREFIX + "_" + (mapIndex + 1);
                 mapNames.put(mapIndex, mapName);
 
-                IMap<Integer, MyPerson> mapOnFirstBrain = instances[0].getMap(mapName);
+                IMap<Integer, Integer> mapOnFirstBrain = instances[0].getMap(mapName);
                 for (int key = 0; key < ENTRY_COUNT; key++) {
-                    mapOnFirstBrain.put(key, new MyPerson(key));
+                    mapOnFirstBrain.put(key, key);
                 }
             }
         }
@@ -141,17 +141,17 @@ public class MapSplitBrainStressTest extends SplitBrainTestSupport {
 
         for (int mapIndex = 0; mapIndex < MAP_COUNT; mapIndex++) {
             String mapName = mapNames.get(mapIndex);
-            IMap<Integer, MyPerson> map = instances[0].getMap(mapName);
+            IMap<Integer, Integer> map = instances[0].getMap(mapName);
             int finalMapIndex = mapIndex;
             assertTrueEventually(() -> assertEquals(format("expected %d entries in map %d/%d (iteration %d)",
                             ENTRY_COUNT, finalMapIndex, MAP_COUNT, iteration),
                     ENTRY_COUNT, map.size()));
 
             for (int key = 0; key < ENTRY_COUNT; key++) {
-                MyPerson myPerson = map.get(key);
+                int value = map.get(key);
                 assertEquals(format("expected value %d for key %d in map %d/%d (iteration %d)",
-                                myPerson.personId, key, mapIndex, MAP_COUNT, iteration),
-                        key, myPerson.personId);
+                                value, key, mapIndex, MAP_COUNT, iteration),
+                        key, value);
             }
         }
 

@@ -25,6 +25,7 @@ import com.hazelcast.jet.mongodb.impl.ReadMongoParams.Aggregates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClient;
@@ -35,7 +36,9 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.security.Permission;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -46,11 +49,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonDateTimeToLocalDateTime;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonTimestampToLocalDateTime;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
 import static com.mongodb.client.model.Projections.excludeId;
 import static com.mongodb.client.model.Projections.fields;
 import static java.time.ZoneId.systemDefault;
+import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -97,6 +102,13 @@ public class SelectProcessorSupplier extends MongoProcessorSupplier implements D
     SelectProcessorSupplier(MongoTable table, Document predicate,
                             List<ProjectionData> projection) {
         this(table, predicate, projection, null, false, null);
+    }
+
+    @Nullable
+    @Override
+    public List<Permission> permissions() {
+        String connDetails = connectionString == null ? dataConnectionName : connectionString;
+        return singletonList(ConnectorPermission.mongo(connDetails, databaseName, collectionName, ACTION_READ));
     }
 
     @Override

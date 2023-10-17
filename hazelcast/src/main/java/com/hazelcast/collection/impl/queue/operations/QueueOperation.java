@@ -94,7 +94,7 @@ public abstract class QueueOperation extends AbstractNamedOperation
     public boolean hasListener() {
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
-        return !registrations.isEmpty();
+        return registrations.size() > 0;
     }
 
     public void publishEvent(ItemEventType eventType, Data data) {

@@ -28,13 +28,13 @@ public class PartitionQueryContextProvider implements QueryContextProvider {
      *
      * @param indexes the indexes to construct the new query context for.
      */
-    public PartitionQueryContextProvider(IndexRegistry indexes) {
+    public PartitionQueryContextProvider(Indexes indexes) {
         queryContext = new QueryContext(indexes, 1);
     }
 
     @Override
-    public QueryContext obtainContextFor(IndexRegistry indexes, int ownedPartitionCount) {
-        assert indexes == queryContext.indexRegistry;
+    public QueryContext obtainContextFor(Indexes indexes, int ownedPartitionCount) {
+        assert indexes == queryContext.indexes;
         assert queryContext.ownedPartitionCount == 1 && ownedPartitionCount == 1;
         return queryContext;
     }

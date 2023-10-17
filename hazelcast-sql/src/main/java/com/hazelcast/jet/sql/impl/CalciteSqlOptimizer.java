@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.core.DAG;
@@ -308,6 +309,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     @Override
     public SqlPlan prepare(OptimizationTask task) {
         // 1. Prepare context.
+        int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 
         OptimizerContext context = OptimizerContext.create(
                 task.getSchema(),
@@ -456,7 +458,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlPlan toDropIndexPlan(PlanKey planKey, SqlDropIndex sqlDropIndex) {
-        return new DropIndexPlan(planKey, sqlDropIndex.indexName(), sqlDropIndex.ifExists());
+        return new DropIndexPlan(planKey, sqlDropIndex.indexName(), sqlDropIndex.ifExists(), planExecutor);
     }
 
     private SqlPlan toCreateJobPlan(PlanKey planKey, QueryParseResult parseResult, OptimizerContext context, String query) {
@@ -558,9 +560,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 false
         );
 
-        List<Permission> permissions = extractPermissions(physicalRel);
-
-        return new ExplainStatementPlan(planKey, physicalRel, permissions, planExecutor);
+        return new ExplainStatementPlan(planKey, physicalRel, planExecutor);
     }
 
     private SqlPlan toCreateTypePlan(PlanKey planKey, SqlCreateType sqlNode) {
@@ -742,7 +742,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
-    static List<Permission> extractPermissions(PhysicalRel physicalRel) {
+    private List<Permission> extractPermissions(PhysicalRel physicalRel) {
         List<Permission> permissions = new ArrayList<>();
 
         physicalRel.accept(new RelShuttleImpl() {

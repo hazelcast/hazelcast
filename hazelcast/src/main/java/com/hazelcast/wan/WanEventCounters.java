@@ -20,7 +20,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_DROPPED_COUNT;
@@ -88,7 +87,7 @@ public class WanEventCounters {
     /**
      * Returns a map from distributed object name to {@link DistributedObjectWanEventCounters}.
      */
-    public ConcurrentMap<String, DistributedObjectWanEventCounters> getEventCounterMap() {
+    public ConcurrentHashMap<String, DistributedObjectWanEventCounters> getEventCounterMap() {
         return eventCounterMap;
     }
 

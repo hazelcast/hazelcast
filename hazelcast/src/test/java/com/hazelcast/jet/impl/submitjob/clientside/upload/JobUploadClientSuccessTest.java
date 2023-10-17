@@ -24,9 +24,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.internal.util.Sha256Util;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.SubmitJobParameters;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -52,14 +54,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.assertJobIsRunning;
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.containsName;
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
+import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.jarDoesNotExistInTempDirectory;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
-// Tests to upload jar to member
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class JobUploadClientSuccessTest extends JetTestSupport {
@@ -299,4 +300,15 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
         return (JetClientInstanceImpl) client.getJet();
     }
 
+    public static void assertJobIsRunning(JetService jetService) throws IOException {
+        // Assert job size
+        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+
+        // Assert job status
+        Job job = jetService.getJobs().get(0);
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+
+        // Assert job jar does is deleted
+        jarDoesNotExistInTempDirectory();
+    }
 }

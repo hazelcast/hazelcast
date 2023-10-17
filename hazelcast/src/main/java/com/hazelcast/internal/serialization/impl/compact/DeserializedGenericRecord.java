@@ -31,7 +31,6 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValue;
@@ -86,10 +85,10 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     private static final String METHOD_PREFIX_FOR_ERROR_MESSAGES = "get";
 
-    private final SortedMap<String, Object> objects;
+    private final TreeMap<String, Object> objects;
     private final Schema schema;
 
-    public DeserializedGenericRecord(Schema schema, SortedMap<String, Object> objects) {
+    public DeserializedGenericRecord(Schema schema, TreeMap<String, Object> objects) {
         this.schema = schema;
         this.objects = objects;
     }

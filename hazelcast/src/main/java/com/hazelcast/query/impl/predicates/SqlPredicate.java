@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -165,7 +165,7 @@ public class SqlPredicate
         SqlParser parser = new SqlParser();
         List<String> sqlTokens = parser.toPrefix(paramSql);
         List<Object> tokens = new ArrayList<>(sqlTokens);
-        if (tokens.isEmpty()) {
+        if (tokens.size() == 0) {
             throw new IllegalArgumentException("Invalid SQL: [" + paramSql + "]");
         }
         if (tokens.size() == 1) {
@@ -306,7 +306,7 @@ public class SqlPredicate
     }
 
     private void setOrAdd(List tokens, int position, Predicate predicate) {
-        if (tokens.isEmpty()) {
+        if (tokens.size() == 0) {
             tokens.add(predicate);
         } else {
             tokens.set(position, predicate);
@@ -386,7 +386,7 @@ public class SqlPredicate
     }
 
     @Override
-    public Predicate accept(Visitor visitor, IndexRegistry indexes) {
+    public Predicate accept(Visitor visitor, Indexes indexes) {
         Predicate target = predicate;
         if (predicate instanceof VisitablePredicate) {
             target = ((VisitablePredicate) predicate).accept(visitor, indexes);

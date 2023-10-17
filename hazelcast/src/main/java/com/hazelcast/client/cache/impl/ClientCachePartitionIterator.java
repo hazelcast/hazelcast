@@ -18,7 +18,6 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.impl.spi.ClientContext;
-import com.hazelcast.internal.util.CollectionUtil;
 
 public class ClientCachePartitionIterator<K, V> extends ClientCacheIterator<K, V> {
 
@@ -34,7 +33,7 @@ public class ClientCachePartitionIterator<K, V> extends ClientCacheIterator<K, V
             return false;
         }
         result = fetch();
-        if (CollectionUtil.isNotEmpty(result)) {
+        if (result != null && result.size() > 0) {
             index = 0;
             return true;
         }

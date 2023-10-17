@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,11 +40,11 @@ import static org.mockito.Mockito.withSettings;
 public class FlatteningVisitorTest {
 
     private FlatteningVisitor visitor;
-    private IndexRegistry indexes;
+    private Indexes indexes;
 
     @Before
     public void setUp() {
-        indexes = mock(IndexRegistry.class);
+        indexes = mock(Indexes.class);
         visitor = new FlatteningVisitor();
     }
 

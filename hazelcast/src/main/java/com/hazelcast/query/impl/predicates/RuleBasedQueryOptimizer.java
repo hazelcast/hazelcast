@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexRegistry;
+import com.hazelcast.query.impl.Indexes;
 
 /**
  * Rule based optimizer. It chains {@link Visitor}s to rewrite query.
@@ -31,7 +31,7 @@ public final class RuleBasedQueryOptimizer implements QueryOptimizer {
     private final Visitor evaluateVisitor = new EvaluateVisitor();
 
     @SuppressWarnings("unchecked")
-    public <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, IndexRegistry indexes) {
+    public <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, Indexes indexes) {
         Predicate optimized = predicate;
         if (optimized instanceof VisitablePredicate) {
             optimized = ((VisitablePredicate) optimized).accept(flatteningVisitor, indexes);
