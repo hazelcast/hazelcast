@@ -180,12 +180,19 @@ public class CPSubsystemImpl implements CPSubsystem {
 
         @Override
         public void handleGroupAvailabilityEventEvent(RaftGroupId groupId, Collection<CPMember> members,
-                Collection<CPMember> unavailableMembers) {
+                                                      Collection<CPMember> unavailableMembers, boolean isIsShutdownExists,
+                                                      boolean isShutdown) {
+            boolean isShutdownValue = isIsShutdownExists && isShutdown;
+            handleGroupAvailabilityEventEvent(groupId, members, unavailableMembers, isShutdownValue);
+        }
+
+        public void handleGroupAvailabilityEventEvent(RaftGroupId groupId, Collection<CPMember> members,
+                Collection<CPMember> unavailableMembers, boolean isShutdown) {
 
             long now = Clock.currentTimeMillis();
             recentEvents.values().removeIf(expirationTime -> expirationTime < now);
 
-            CPGroupAvailabilityEvent event = new CPGroupAvailabilityEventImpl(groupId, members, unavailableMembers);
+            CPGroupAvailabilityEvent event = new CPGroupAvailabilityEventImpl(groupId, members, unavailableMembers, isShutdown);
             if (recentEvents.putIfAbsent(event, now + DEDUPLICATION_PERIOD) != null) {
                 return;
             }
