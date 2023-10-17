@@ -2,8 +2,7 @@ This document lists the enhancements, fixed issues, and removed or deprecated fe
 
 ## Enhancements
 
-* Improved the permission checks by fixing the [CVE-2023-45859](https://nvd.nist.gov/vuln/detail/CVE-2023-45859) and [CVE-2023-45860](https://nvd.nist.gov/vuln/detail/CVE-2023-45860) vulnerabilities. [#25661]
-* Added permission checks to the client message types (`MessageTasks`) which were missing it. [#25539]
+* Improved the permission checks by fixing the [CVE-2023-45859](https://nvd.nist.gov/vuln/detail/CVE-2023-45859) and [CVE-2023-45860](https://nvd.nist.gov/vuln/detail/CVE-2023-45860) vulnerabilities.
 * Changed the exception type from `CancellationException` to `CancellationByUserException` in case the user cancels a job before it is initialized. [#25452]
 * Updated the versions of following dependencies
   ** gRPC to 1.57.0
