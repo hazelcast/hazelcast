@@ -26,11 +26,11 @@ import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
@@ -166,7 +166,7 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
         if (bb.position() == 0) {
             result = "";
         } else {
-            result = StringUtil.bytesToString(bb.array(), 0, bb.position());
+            result = new String(bb.array(), 0, bb.position(), StandardCharsets.UTF_8);
         }
         upcast(bb).clear();
         return result;

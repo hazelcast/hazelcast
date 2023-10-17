@@ -259,9 +259,7 @@ public final class MongoSinkBuilder<T> {
         final WriteMongoParams<T> localParams = this.params;
         localParams.setCheckExistenceOnEachConnect(existenceChecks == ResourceChecks.ON_EACH_CONNECT);
 
-        ConnectorPermission permission = params.buildPermission();
         return Sinks.fromProcessor(name, new DbCheckingPMetaSupplierBuilder()
-                .withRequiredPermission(permission)
                 .withCheckResourceExistence(localParams.isCheckExistenceOnEachConnect())
                 .withForceTotalParallelismOne(false)
                 .withDatabaseName(localParams.getDatabaseName())

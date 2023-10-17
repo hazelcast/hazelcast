@@ -41,8 +41,6 @@ import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCodec;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCustomCodec;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
@@ -1267,28 +1265,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                                                            PasswordCredentials credentials,
                                                            byte serializationVersion,
                                                            String clientVersion) {
-        if (isTpcAwareClient) {
-            return ExperimentalAuthenticationCodec.encodeRequest(clusterName, credentials.getName(),
-                    credentials.getPassword(), clientUuid, connectionType, serializationVersion,
-                    clientVersion, client.getName(), labels);
-        } else {
-            return ClientAuthenticationCodec.encodeRequest(clusterName, credentials.getName(),
-                    credentials.getPassword(), clientUuid, connectionType, serializationVersion,
-                    clientVersion, client.getName(), labels);
-        }
+        return ClientAuthenticationCodec.encodeRequest(clusterName, credentials.getName(),
+                credentials.getPassword(), clientUuid, connectionType, serializationVersion,
+                clientVersion, client.getName(), labels);
     }
 
     private ClientMessage encodeCustomCredentialsRequest(String clusterName,
                                                          byte[] secretBytes,
                                                          byte serializationVersion,
                                                          String clientVersion) {
-        if (isTpcAwareClient) {
-            return ExperimentalAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid,
-                    connectionType, serializationVersion, clientVersion, client.getName(), labels);
-        } else {
-            return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid,
-                    connectionType, serializationVersion, clientVersion, client.getName(), labels);
-        }
+        return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid,
+                connectionType, serializationVersion, clientVersion, client.getName(), labels);
     }
 
     protected void checkClientActive() {

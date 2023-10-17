@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.util;
 
-import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -58,26 +57,9 @@ public final class StringUtil {
     public static final Pattern VERSION_PATTERN
             = Pattern.compile("^(\\d+)\\.(\\d+)(\\.(\\d+))?(-\\w+(?:-\\d+)?)?(-SNAPSHOT)?$");
 
-    /**
-     * Empty String.
-     */
-    public static final String EMPTY_STRING = "";
-
     private static final String GETTER_PREFIX = "get";
 
     private StringUtil() {
-    }
-
-    /**
-     * Creates a UTF8_CHARSET string from a byte array.
-     *
-     * @param bytes  the byte array.
-     * @param offset the index of the first byte to decode
-     * @param length the number of bytes to decode
-     * @return the string created from the byte array.
-     */
-    public static String bytesToString(byte[] bytes, int offset, int length) {
-        return new String(bytes, offset, length, StandardCharsets.UTF_8);
     }
 
     /**
@@ -497,22 +479,6 @@ public final class StringUtil {
         return Arrays.stream(arr)
                 .map(Objects::toString)
                 .collect(Collectors.joining(LINE_SEPARATOR));
-    }
-
-    /**
-     * Formats given XML String with the given indentation used. If the {@code input} XML string is {@code null}, or
-     * {@code indent} parameter is negative, or XML transformation fails, then the original value is returned unchanged. The
-     * {@link IllegalArgumentException} is thrown when {@code indent==0}.
-     *
-     * @param input the XML String
-     * @param indent indentation (number of spaces used for one indentation level)
-     * @return formatted XML String or the original String if the formatting fails.
-     * @throws IllegalArgumentException when indentation is equal to zero
-     * @deprecated Use directly {@link XmlUtil#format(String, int)}
-     */
-    @Deprecated
-    public static String formatXml(@Nullable String input, int indent) throws IllegalArgumentException {
-        return XmlUtil.format(input, indent);
     }
 
     /**
