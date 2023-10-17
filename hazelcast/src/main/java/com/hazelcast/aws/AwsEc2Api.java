@@ -232,8 +232,7 @@ class AwsEc2Api {
         if (!StringUtil.isNullOrEmptyAfterTrim(credentials.getToken())) {
             headers.put("X-Amz-Security-Token", credentials.getToken());
         }
-        // "Host" header is restricted with HttpClient in J11 - when we send our request,
-        //  it is automatically set to the URL host (which in this case is `endpoint` still)
+        headers.put("Host", endpoint);
         String timestamp = currentTimestamp(clock);
         headers.put("X-Amz-Date", timestamp);
         headers.put("Authorization", requestSigner.authHeader(attributes, headers, "", credentials, timestamp, "GET"));

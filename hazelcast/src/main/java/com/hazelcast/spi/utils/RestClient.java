@@ -118,6 +118,12 @@ public final class RestClient {
     }
 
     public RestClient withHeader(String name, String value) {
+        // The `host` header cannot be set explicitly in Java 11, but it is still used
+        //  as part of request preparation (AWS signing, etc.), so the most thorough
+        //  solution is to clean it before request sending
+        if (name.equalsIgnoreCase("host")) {
+            return this;
+        }
         this.headers.add(new Parameter(name, value));
         return this;
     }
