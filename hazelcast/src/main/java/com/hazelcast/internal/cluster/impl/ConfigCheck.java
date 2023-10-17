@@ -29,6 +29,7 @@ import java.util.Map;
 
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Contains enough information about Hazelcast Config to do a validation check so that clusters with different configurations
@@ -187,8 +188,13 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
                 ignore(ignored);
             }
         }
-
-        properties = SerializationUtil.readMap(in);
+        int propSize = in.readInt();
+        properties = createHashMap(propSize);
+        for (int k = 0; k < propSize; k++) {
+            String key = in.readString();
+            String value = in.readString();
+            properties.put(key, value);
+        }
 
         int mapSize = in.readInt();
         for (int k = 0; k < mapSize; k++) {
