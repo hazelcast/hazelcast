@@ -36,6 +36,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
+import com.hazelcast.jet.impl.connector.RemoteMapSourceParams;
 import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
@@ -233,7 +234,7 @@ public final class Sources {
      * once, other keys must be emitted exactly once.
      * <p>
      * The default local parallelism for this processor is 1.
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicate} and {@code projection} need
@@ -300,7 +301,7 @@ public final class Sources {
      * once, other keys must be emitted exactly once.
      * <p>
      * The default local parallelism for this processor 1.
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      * <p>
      * The classes implementing {@code predicate} and {@code projection} need
@@ -356,7 +357,7 @@ public final class Sources {
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
@@ -423,7 +424,7 @@ public final class Sources {
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
@@ -434,7 +435,7 @@ public final class Sources {
      * requirements, use {@link #mapJournal(String, JournalInitialPosition)}
      * and add a subsequent {@link GeneralStage#map map} or
      * {@link GeneralStage#filter filter} stage.
-     *
+     * <p>
      * <h4>Issue when "catching up"</h4>
      *
      * This processor does not coalesce watermarks from partitions. It reads
@@ -448,7 +449,7 @@ public final class Sources {
      * burst. In order to not lose any events, the lag should be configured to
      * at least {@code snapshotInterval + timeToRestart + normalEventLag}. The
      * reason for this behavior that the default partition count in the cluster
-     * is pretty high and cannot by changed per object and for low-traffic maps
+     * is pretty high and cannot be changed per object and for low-traffic maps
      * it takes long until all partitions see an event to allow emitting of a
      * coalesced watermark.
      *
@@ -531,8 +532,12 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig
     ) {
+        RemoteMapSourceParams<K, V, Object> params = new RemoteMapSourceParams<>(mapName);
+        params.setClientConfig(clientConfig);
+
+        ProcessorSupplier processorSupplier = readRemoteMapP(params);
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
-                ProcessorMetaSupplier.of(readRemoteMapP(mapName, clientConfig)));
+                ProcessorMetaSupplier.of(processorSupplier));
     }
 
     /**
@@ -566,7 +571,7 @@ public final class Sources {
      * mutation is not detected at all.
      * <p>
      * The default local parallelism for this processor is 1.
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicate} and {@code projection} need
@@ -596,8 +601,14 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
+        RemoteMapSourceParams<K, V, T> params = new RemoteMapSourceParams<>(mapName);
+        params.setClientConfig(clientConfig);
+        params.setPredicate(predicate);
+        params.setProjection(projection);
+
+        ProcessorSupplier processorSupplier = readRemoteMapP(params);
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
-                ProcessorMetaSupplier.of(readRemoteMapP(mapName, clientConfig, predicate, projection)));
+                ProcessorMetaSupplier.of(processorSupplier));
     }
 
     /**
@@ -618,7 +629,10 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull DataConnectionRef dataConnectionRef
     ) {
-        ProcessorSupplier processorSupplier = readRemoteMapP(mapName, dataConnectionRef.getName());
+        RemoteMapSourceParams<K, V, Object> params = new RemoteMapSourceParams<>(mapName);
+        params.setDataConnectionName(dataConnectionRef.getName());
+
+        ProcessorSupplier processorSupplier = readRemoteMapP(params);
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
                 ProcessorMetaSupplier.of(processorSupplier));
     }
@@ -643,7 +657,12 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
-        ProcessorSupplier processorSupplier = readRemoteMapP(mapName, dataConnectionRef.getName(), predicate, projection);
+        RemoteMapSourceParams<K, V, T> params = new RemoteMapSourceParams<>(mapName);
+        params.setDataConnectionName(dataConnectionRef.getName());
+        params.setPredicate(predicate);
+        params.setProjection(projection);
+
+        ProcessorSupplier processorSupplier = readRemoteMapP(params);
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
                 ProcessorMetaSupplier.of(processorSupplier));
     }
@@ -670,7 +689,7 @@ public final class Sources {
      * {@linkplain Stage#setName name} to this source.
      * <p>
      * The default local parallelism for this processor is 1.
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
@@ -855,7 +874,7 @@ public final class Sources {
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
@@ -950,7 +969,7 @@ public final class Sources {
      * {@linkplain Stage#setName name} to this source.
      * <p>
      * The default local parallelism for this processor is 1.
-     *
+     * <p>
      * <h4>Predicate/projection class requirements</h4>
      *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
@@ -1131,7 +1150,7 @@ public final class Sources {
      * If files are appended to while being read, the addition might or might
      * not be emitted or part of a line can be emitted. If files are modified
      * in more complex ways, the behavior is undefined.
-     *
+     * <p>
      * See {@link #filesBuilder(String)}.
      */
     @Nonnull
@@ -1203,7 +1222,7 @@ public final class Sources {
      * editors write to a temp file and then rename it or append extra newline
      * character at the end which gets overwritten if more text is added in the
      * editor. The best way to append is to use {@code echo text >> yourFile}.
-     *
+     * <p>
      * See {@link #filesBuilder(String)}.
      */
     @Nonnull
@@ -1231,7 +1250,7 @@ public final class Sources {
      * editors write to a temp file and then rename it or append extra newline
      * character at the end which gets overwritten if more text is added in the
      * editor. The best way to append is to use {@code echo text >> yourFile}.
-     *
+     * <p>
      * See {@link #filesBuilder(String)}, {@link #fileWatcher(String)}.
      *
      * @since Jet 4.2

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 
@@ -23,24 +24,29 @@ import java.util.Map;
 
 public class RemoteMapSourceParams<K, V, T> {
 
-    private String mapName;
+    private final String mapName;
 
     private String dataConnectionName;
 
+    private ClientConfig clientConfig;
+
     private Predicate<K, V> predicate;
 
-    private Projection<? super Map.Entry<K, V>, T> projection;
+    private Projection<? super Map.Entry<K, V>, ? extends T> projection;
 
+    public RemoteMapSourceParams(String mapName) {
+        this.mapName = mapName;
+    }
+
+    public boolean hasDataSourceConnection() {
+        return dataConnectionName != null;
+    }
     public boolean hasPredicate() {
         return predicate != null;
     }
 
     public String getMapName() {
         return mapName;
-    }
-
-    public void setMapName(String mapName) {
-        this.mapName = mapName;
     }
 
     public String getDataConnectionName() {
@@ -51,6 +57,14 @@ public class RemoteMapSourceParams<K, V, T> {
         this.dataConnectionName = dataConnectionName;
     }
 
+    public ClientConfig getClientConfig() {
+        return clientConfig;
+    }
+
+    public void setClientConfig(ClientConfig clientConfig) {
+        this.clientConfig = clientConfig;
+    }
+
     public Predicate<K, V> getPredicate() {
         return predicate;
     }
@@ -59,11 +73,11 @@ public class RemoteMapSourceParams<K, V, T> {
         this.predicate = predicate;
     }
 
-    public Projection<? super Map.Entry<K, V>, T> getProjection() {
+    public Projection<? super Map.Entry<K, V>, ? extends T> getProjection() {
         return projection;
     }
 
-    public void setProjection(Projection<? super Map.Entry<K, V>, T> projection) {
+    public void setProjection(Projection<? super Map.Entry<K, V>, ? extends T> projection) {
         this.projection = projection;
     }
 }
