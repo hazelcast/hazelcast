@@ -31,6 +31,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.cluster.Versions;
@@ -314,7 +315,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     public static final class LocalProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier,
             IdentifiedDataSerializable, Versioned {
 
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
         private BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
 
@@ -396,25 +397,42 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
     static class RemoteProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier {
 
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
-        private final String clientXml;
-        private final FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier;
+        private String clientXml;
+
+        private String dataConnectionName;
+        private FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier;
 
         private transient HazelcastClientProxy client;
         private transient int totalParallelism;
         private transient int baseIndex;
 
-        RemoteProcessorSupplier(
+        private RemoteProcessorSupplier() {
+        }
+
+        public static <B, R> RemoteProcessorSupplier<ClientInvocationFuture, B, R> fromClientXml(
                 @Nonnull String clientXml,
-                @Nonnull FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier) {
-            this.clientXml = clientXml;
-            this.readerSupplier = readerSupplier;
+                @Nonnull FunctionEx<HazelcastInstance, Reader<ClientInvocationFuture, B, R>> readerSupplier) {
+            RemoteProcessorSupplier<ClientInvocationFuture, B, R> remoteProcessorSupplier = new RemoteProcessorSupplier<>();
+            remoteProcessorSupplier.clientXml = clientXml;
+            remoteProcessorSupplier.readerSupplier = readerSupplier;
+            return remoteProcessorSupplier;
+        }
+
+        public static <B, R> RemoteProcessorSupplier<ClientInvocationFuture, B, R> fromDataConnection(
+                @Nonnull String dataConnectionName,
+                @Nonnull FunctionEx<HazelcastInstance, Reader<ClientInvocationFuture, B, R>> readerSupplier) {
+            RemoteProcessorSupplier<ClientInvocationFuture, B, R> remoteProcessorSupplier = new RemoteProcessorSupplier<>();
+            remoteProcessorSupplier.dataConnectionName = dataConnectionName;
+            remoteProcessorSupplier.readerSupplier = readerSupplier;
+            return remoteProcessorSupplier;
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            client = (HazelcastClientProxy) newHazelcastClient(asClientConfig(clientXml));
+            client = (HazelcastClientProxy) createRemoteClient(context);
+            //client = (HazelcastClientProxy) newHazelcastClient(asClientConfig(clientXml));
             totalParallelism = context.totalParallelism();
             baseIndex = context.memberIndex() * context.localParallelism();
         }
@@ -437,6 +455,20 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
                         return new ReadMapOrCacheP<>(readerSupplier.apply(client), partitionIds);
                     })
                     .collect(Collectors.toList());
+        }
+
+        private HazelcastInstance createRemoteClient(ProcessorSupplier.Context context) {
+            // The order is important.
+            // If dataConnectionConfig is specified prefer it to clientXml
+            if (dataConnectionName != null) {
+                try (HazelcastDataConnection hazelcastDataConnection = context
+                        .dataConnectionService()
+                        .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class)) {
+                    return hazelcastDataConnection.getClient();
+                }
+            } else {
+                return newHazelcastClient(asClientConfig(clientXml));
+            }
         }
     }
 

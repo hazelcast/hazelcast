@@ -151,6 +151,12 @@ public final class SourceProcessors {
         return HazelcastReaders.readRemoteMapSupplier(mapName, clientConfig);
     }
 
+    // Orcun
+    @Nonnull
+    public static ProcessorSupplier readRemoteMapP(@Nonnull String mapName, @Nonnull String dataConnectionName) {
+        return HazelcastReaders.readRemoteMapSupplier(mapName, dataConnectionName);
+    }
+
     /**
      * Returns a supplier of processors for
      * {@link Sources#remoteMap(String, ClientConfig, Predicate, Projection)}.
@@ -163,6 +169,17 @@ public final class SourceProcessors {
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
         return HazelcastReaders.readRemoteMapSupplier(mapName, clientConfig, predicate, projection);
+    }
+
+    // Orcun
+    @Nonnull
+    public static <T, K, V> ProcessorSupplier readRemoteMapP(
+            @Nonnull String mapName,
+            @Nonnull String dataConnectionName,
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
+    ) {
+        return HazelcastReaders.readRemoteMapSupplier(mapName, dataConnectionName, predicate, projection);
     }
 
     /**

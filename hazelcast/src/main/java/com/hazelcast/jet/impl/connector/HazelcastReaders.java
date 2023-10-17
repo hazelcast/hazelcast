@@ -72,8 +72,7 @@ public final class HazelcastReaders {
 
     @Nonnull
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
-        return new LocalProcessorMetaSupplier<
-                InternalCompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>>(
+        return new LocalProcessorMetaSupplier<>(
                 new LocalCacheReaderFunction(cacheName)
         ) {
             @Override
@@ -129,7 +128,7 @@ public final class HazelcastReaders {
             @Nonnull ClientConfig clientConfig
     ) {
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteCacheReaderFunction(cacheName));
+        return RemoteProcessorSupplier.fromClientXml(clientXml, new RemoteCacheReaderFunction(cacheName));
     }
 
     public static class RemoteCacheReaderFunction implements FunctionEx<HazelcastInstance,
@@ -229,7 +228,7 @@ public final class HazelcastReaders {
         checkSerializable(Objects.requireNonNull(predicate), "predicate");
         checkSerializable(Objects.requireNonNull(projection), "projection");
 
-        return new LocalProcessorMetaSupplier<InternalCompletableFuture<ResultSegment>, ResultSegment, QueryResultRow>(
+        return new LocalProcessorMetaSupplier<>(
                 new LocalMapQueryReaderFunction<>(mapName, predicate, projection)
         ) {
             @Override
@@ -294,7 +293,15 @@ public final class HazelcastReaders {
             @Nonnull ClientConfig clientConfig
     ) {
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteMapReaderFunction(mapName));
+        return RemoteProcessorSupplier.fromClientXml(clientXml, new RemoteMapReaderFunction(mapName));
+    }
+
+    @Nonnull
+    public static ProcessorSupplier readRemoteMapSupplier(
+            @Nonnull String mapName,
+            @Nonnull String dataConnectionName
+    ) {
+        return RemoteProcessorSupplier.fromDataConnection(dataConnectionName, new RemoteMapReaderFunction(mapName));
     }
 
     public static class RemoteMapReaderFunction implements FunctionEx<HazelcastInstance,
@@ -336,6 +343,7 @@ public final class HazelcastReaders {
         }
     }
 
+    // Orcun
     @Nonnull
     public static <K, V, T> ProcessorSupplier readRemoteMapSupplier(
             @Nonnull String mapName,
@@ -347,8 +355,23 @@ public final class HazelcastReaders {
         checkSerializable(Objects.requireNonNull(projection), "projection");
 
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteMapQueryReaderFunction<>(mapName, predicate,
-                projection));
+        return RemoteProcessorSupplier.fromClientXml(clientXml,
+                new RemoteMapQueryReaderFunction<>(mapName, predicate, projection));
+    }
+
+    // Orcun
+    @Nonnull
+    public static <K, V, T> ProcessorSupplier readRemoteMapSupplier(
+            @Nonnull String mapName,
+            @Nonnull String dataConnectionName,
+            @Nonnull Predicate<? super K, ? super V> predicate,
+            @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
+    ) {
+        checkSerializable(Objects.requireNonNull(predicate), "predicate");
+        checkSerializable(Objects.requireNonNull(projection), "projection");
+
+        return RemoteProcessorSupplier.fromDataConnection(dataConnectionName,
+                new RemoteMapQueryReaderFunction<>(mapName, predicate, projection));
     }
 
     public static class RemoteMapQueryReaderFunction<K, V, T> implements FunctionEx<HazelcastInstance,

@@ -551,13 +551,10 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         // The order is important.
         // If dataConnectionConfig is specified prefer it to clientXml
         if (dataConnectionName != null) {
-            HazelcastDataConnection hazelcastDataConnection = context
+            try (HazelcastDataConnection hazelcastDataConnection = context
                     .dataConnectionService()
-                    .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
-            try {
+                    .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class)) {
                 return hazelcastDataConnection.getClient();
-            } finally {
-                hazelcastDataConnection.release();
             }
         } else {
             return newHazelcastClient(asClientConfig(clientXml));

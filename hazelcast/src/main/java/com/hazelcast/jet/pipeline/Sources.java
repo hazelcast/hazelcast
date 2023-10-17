@@ -599,6 +599,28 @@ public final class Sources {
                 ProcessorMetaSupplier.of(readRemoteMapP(mapName, clientConfig, predicate, projection)));
     }
 
+    // Orcun
+    @Nonnull
+    public static <K, V> BatchSource<Entry<K, V>> remoteMap(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef
+    ) {
+        return batchFromProcessor("remoteMapSource(" + mapName + ')',
+                ProcessorMetaSupplier.of(readRemoteMapP(mapName, dataConnectionRef.getName())));
+    }
+
+    // Orcun
+    @Nonnull
+    public static <T, K, V> BatchSource<T> remoteMap(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
+    ) {
+        return batchFromProcessor("remoteMapSource(" + mapName + ')',
+                ProcessorMetaSupplier.of(readRemoteMapP(mapName, dataConnectionRef.getName(), predicate, projection)));
+    }
+
     /**
      * Returns a source that will stream the {@link EventJournalMapEvent}
      * events of the Hazelcast {@code IMap} with the specified name from a
