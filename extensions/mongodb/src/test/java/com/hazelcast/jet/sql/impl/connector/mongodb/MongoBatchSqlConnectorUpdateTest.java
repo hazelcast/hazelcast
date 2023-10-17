@@ -151,8 +151,12 @@ public class MongoBatchSqlConnectorUpdateTest extends MongoSqlTest {
         createMapping(includeIdInMapping, idFirstInMapping);
 
         MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("age", 20).append("jedi", true));
-        collection.insertOne(new Document("firstName", "temp2").append("lastName", "temp2").append("age", 20).append("jedi", false));
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp")
+                                                              .append("age", 20)
+                                                              .append("jedi", true));
+        collection.insertOne(new Document("firstName", "temp2").append("lastName", "temp2")
+                                                               .append("age", 20)
+                                                               .append("jedi", false));
 
         execute("update " + collectionName + " set firstName = cast(jedi as varchar), lastName = ?, jedi=? " +
                 "where cast(jedi as varchar) = ?", "Solo", false, "true");
@@ -408,7 +412,8 @@ public class MongoBatchSqlConnectorUpdateTest extends MongoSqlTest {
         options.validationOptions(validationOptions);
         mongoClient.getDatabase(databaseName).createCollection(collectionName, options);
         if (idFirst) {
-            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
+            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\""
+                    + collectionName + "\" \n("
                     + (includeIdInMapping ? " id OBJECT external name _id, " : "")
                     + " firstName VARCHAR, \n"
                     + " lastName VARCHAR, \n"
@@ -421,7 +426,8 @@ public class MongoBatchSqlConnectorUpdateTest extends MongoSqlTest {
                     + ")"
             );
         } else {
-            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
+            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\""
+                    + collectionName + "\" \n("
                     + " firstName VARCHAR, \n"
                     + " lastName VARCHAR, \n"
                     + (includeIdInMapping ? " id OBJECT external name _id, " : "")

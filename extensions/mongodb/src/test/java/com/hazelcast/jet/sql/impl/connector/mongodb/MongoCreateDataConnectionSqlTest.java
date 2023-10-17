@@ -95,7 +95,7 @@ public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
     private void testCreatesConnectionEvenWhenUnreachable(boolean shared) {
         String dataConnName = randomName();
         String options = String.format("OPTIONS ('connectionString' = '%s', 'database' = 'fakeNonExisting') ",
-                "mongodb://non-existing-fake-address:1234/?connectTimeoutMS=200&socketTimeoutMS=200&serverSelectionTimeoutMS=200");
+                "mongodb://non-existing-address:1234/?connectTimeoutMS=20&socketTimeoutMS=20&serverSelectionTimeoutMS=20");
 
         String sharedString = shared ? " SHARED " : " ";
         instance().getSql().execute("CREATE DATA CONNECTION " + dataConnName + " TYPE Mongo " + sharedString + options)

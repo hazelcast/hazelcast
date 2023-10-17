@@ -38,7 +38,7 @@ import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public abstract class MongoSqlTest extends SqlTestSupport {
-    private static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
+    public static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "7.0.2");
 
     public static final MongoDBContainer mongoContainer
             = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);

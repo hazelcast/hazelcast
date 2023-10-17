@@ -50,7 +50,8 @@ public class PlaceholderReplacerTest extends SimpleTestInClusterSupport {
         List<Object> arguments = asList("jeden", "dwa");
 
         // when
-        Document result = PlaceholderReplacer.replacePlaceholders(doc, evalContext(arguments), (Object[]) null, null, false);
+        Document result = PlaceholderReplacer.replacePlaceholders(doc, evalContext(arguments), (Object[]) null,
+                null, false);
 
         // then
         assertThat(result).isInstanceOf(Document.class);
