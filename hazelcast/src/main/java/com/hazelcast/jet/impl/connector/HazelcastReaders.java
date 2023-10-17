@@ -296,14 +296,6 @@ public final class HazelcastReaders {
         return RemoteProcessorSupplier.fromClientXml(clientXml, new RemoteMapReaderFunction(mapName));
     }
 
-    @Nonnull
-    public static ProcessorSupplier readRemoteMapSupplier(
-            @Nonnull String mapName,
-            @Nonnull String dataConnectionName
-    ) {
-        return RemoteProcessorSupplier.fromDataConnection(dataConnectionName, new RemoteMapReaderFunction(mapName));
-    }
-
     public static class RemoteMapReaderFunction implements FunctionEx<HazelcastInstance,
             ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchEntriesCodec.ResponseParameters, Entry<Data, Data>>>,
             IdentifiedDataSerializable {
@@ -343,7 +335,6 @@ public final class HazelcastReaders {
         }
     }
 
-    // Orcun
     @Nonnull
     public static <K, V, T> ProcessorSupplier readRemoteMapSupplier(
             @Nonnull String mapName,
@@ -359,19 +350,24 @@ public final class HazelcastReaders {
                 new RemoteMapQueryReaderFunction<>(mapName, predicate, projection));
     }
 
-    // Orcun
+    /**
+     * Create a ProcessorSupplier for remote map in another cluster
+     */
     @Nonnull
-    public static <K, V, T> ProcessorSupplier readRemoteMapSupplier(
-            @Nonnull String mapName,
-            @Nonnull String dataConnectionName,
-            @Nonnull Predicate<? super K, ? super V> predicate,
-            @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
-    ) {
-        checkSerializable(Objects.requireNonNull(predicate), "predicate");
-        checkSerializable(Objects.requireNonNull(projection), "projection");
+    public static <K, V, T> ProcessorSupplier readRemoteMapSupplier(RemoteMapSourceParams<K, V, T> params) {
+        if (params.isQuery()) {
+            checkSerializable(Objects.requireNonNull(params.getPredicate()), "predicate");
+            checkSerializable(Objects.requireNonNull(params.getProjection()), "projection");
 
-        return RemoteProcessorSupplier.fromDataConnection(dataConnectionName,
-                new RemoteMapQueryReaderFunction<>(mapName, predicate, projection));
+            RemoteMapQueryReaderFunction<K, V, T> readerSupplier = new RemoteMapQueryReaderFunction<>(
+                    params.getMapName(), params.getPredicate(), params.getProjection());
+
+            return RemoteProcessorSupplier.fromDataConnection(params.getDataConnectionName(),
+                    readerSupplier);
+        } else {
+            RemoteMapReaderFunction readerSupplier = new RemoteMapReaderFunction(params.getMapName());
+            return RemoteProcessorSupplier.fromDataConnection(params.getDataConnectionName(), readerSupplier);
+        }
     }
 
     public static class RemoteMapQueryReaderFunction<K, V, T> implements FunctionEx<HazelcastInstance,
@@ -380,13 +376,13 @@ public final class HazelcastReaders {
 
         private String mapName;
         private Predicate<? super K, ? super V> predicate;
-        private Projection<? super Entry<K, V>, ? extends T> projection;
+        private Projection<? super Entry<K, V>, T> projection;
 
         public RemoteMapQueryReaderFunction() {
         }
 
         public RemoteMapQueryReaderFunction(String mapName, Predicate<? super K, ? super V> predicate,
-                                            Projection<? super Entry<K, V>, ? extends T> projection) {
+                                            Projection<? super Entry<K, V>, T> projection) {
             this.mapName = mapName;
             this.predicate = predicate;
             this.projection = projection;

@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.connector.StreamEventJournalP;
@@ -599,17 +600,88 @@ public final class Sources {
                 ProcessorMetaSupplier.of(readRemoteMapP(mapName, clientConfig, predicate, projection)));
     }
 
-    // Orcun
+    /**
+     * The same as the {@link #remoteMap(String, ClientConfig, Predicate, Projection)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     * <p>
+     * (Prerequisite) External dataConnection configuration:
+     * Use {@link HazelcastDataConnection#CLIENT_XML} for XML or
+     * use {@link HazelcastDataConnection#CLIENT_YML} for YAML string.
+     * <pre>{@code
+     * Config config = ...;
+     * String xmlString = ...;
+     * DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+     *     .setName("my-hzclient-data-connection")
+     *     .setType("Hz")
+     *     .setProperty(HzClientDataConnectionFactory.CLIENT_XML, xmlString);
+     * config.addDataConnectionConfig(dataConnectionConfig);
+     *  }</pre>
+     * <p>
+     * Pipeline configuration
+     * <pre>{@code
+     * PredicateEx<EventJournalMapEvent<String, Integer>> predicate = ...;
+     * p.readFrom(Sources.remoteMap(
+     *     mapName,
+     *     DataConnectionRef.dataConnectionRef("my-hzclient-data-connection")
+     *  ));
+     *  }</pre>
+     *
+     * @param mapName the name of the map
+     * @param dataConnectionRef the reference to DataConnectionConfig
+     * @since 5.4
+     */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> remoteMap(
             @Nonnull String mapName,
             @Nonnull DataConnectionRef dataConnectionRef
     ) {
+        ProcessorSupplier processorSupplier = readRemoteMapP(mapName, dataConnectionRef.getName());
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
-                ProcessorMetaSupplier.of(readRemoteMapP(mapName, dataConnectionRef.getName())));
+                ProcessorMetaSupplier.of(processorSupplier));
     }
 
-    // Orcun
+    /**
+     * The same as the {@link #remoteMap(String, ClientConfig, Predicate, Projection)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     * <p>
+     * (Prerequisite) External dataConnection configuration:
+     * Use {@link HazelcastDataConnection#CLIENT_XML} for XML or
+     * use {@link HazelcastDataConnection#CLIENT_YML} for YAML string.
+     * <pre>{@code
+     * Config config = ...;
+     * String xmlString = ...;
+     * DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+     *     .setName("my-hzclient-data-connection")
+     *     .setType("Hz")
+     *     .setProperty(HzClientDataConnectionFactory.CLIENT_XML, xmlString);
+     * config.addDataConnectionConfig(dataConnectionConfig);
+     *  }</pre>
+     * <p>
+     * Pipeline configuration
+     * <pre>{@code
+     * PredicateEx<EventJournalMapEvent<String, Integer>> predicate = ...;
+     * p.readFrom(Sources.remoteMap(
+     *     mapName,
+     *     DataConnectionRef.dataConnectionRef("my-hzclient-data-connection")
+     *     entry -> ...,
+     *     entry -> ...
+     *  ));
+     *  }</pre>
+     *
+     * @param mapName the name of the map
+     * @param dataConnectionRef the reference to DataConnectionConfig
+     * @since 5.4
+     */
     @Nonnull
     public static <T, K, V> BatchSource<T> remoteMap(
             @Nonnull String mapName,
@@ -617,8 +689,9 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
+        ProcessorSupplier processorSupplier = readRemoteMapP(mapName, dataConnectionRef.getName(), predicate, projection);
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
-                ProcessorMetaSupplier.of(readRemoteMapP(mapName, dataConnectionRef.getName(), predicate, projection)));
+                ProcessorMetaSupplier.of(processorSupplier));
     }
 
     /**

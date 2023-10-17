@@ -36,6 +36,7 @@ import com.hazelcast.jet.impl.connector.ConvenientSourceP.SourceBufferConsumerSi
 import com.hazelcast.jet.impl.connector.HazelcastReaders;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadJdbcP;
+import com.hazelcast.jet.impl.connector.RemoteMapSourceParams;
 import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamJmsP;
@@ -151,10 +152,17 @@ public final class SourceProcessors {
         return HazelcastReaders.readRemoteMapSupplier(mapName, clientConfig);
     }
 
-    // Orcun
+    /**
+     *
+     * Returns a supplier of processors for {@link Sources#remoteMap(String, DataConnectionRef)}
+     */
     @Nonnull
-    public static ProcessorSupplier readRemoteMapP(@Nonnull String mapName, @Nonnull String dataConnectionName) {
-        return HazelcastReaders.readRemoteMapSupplier(mapName, dataConnectionName);
+    public static <T, K, V> ProcessorSupplier readRemoteMapP(@Nonnull String mapName, @Nonnull String dataConnectionName) {
+        RemoteMapSourceParams<K, V, T> params = new RemoteMapSourceParams<>();
+        params.setMapName(mapName);
+        params.setDataConnectionName(dataConnectionName);
+
+        return HazelcastReaders.readRemoteMapSupplier(params);
     }
 
     /**
@@ -171,15 +179,23 @@ public final class SourceProcessors {
         return HazelcastReaders.readRemoteMapSupplier(mapName, clientConfig, predicate, projection);
     }
 
-    // Orcun
+    /**
+     *
+     * Returns a supplier of processors for {@link Sources#remoteMap(String, DataConnectionRef, Predicate, Projection)}
+     */
     @Nonnull
     public static <T, K, V> ProcessorSupplier readRemoteMapP(
             @Nonnull String mapName,
             @Nonnull String dataConnectionName,
             @Nonnull Predicate<K, V> predicate,
-            @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
+            @Nonnull Projection<? super Entry<K, V>, T> projection
     ) {
-        return HazelcastReaders.readRemoteMapSupplier(mapName, dataConnectionName, predicate, projection);
+        RemoteMapSourceParams<K, V, T> params = new RemoteMapSourceParams<>();
+        params.setMapName(mapName);
+        params.setDataConnectionName(dataConnectionName);
+        params.setPredicate(predicate);
+        params.setProjection(projection);
+        return HazelcastReaders.readRemoteMapSupplier(params);
     }
 
     /**
