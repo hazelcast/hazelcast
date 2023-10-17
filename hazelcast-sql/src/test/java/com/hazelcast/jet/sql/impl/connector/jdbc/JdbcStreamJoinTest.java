@@ -72,13 +72,9 @@ public class JdbcStreamJoinTest extends JdbcSqlTestSupport {
                 + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
-        SqlResult sqlResult = sqlService.execute("SELECT n.id, n.name, n.ssn , t.v FROM " +
-                                                 "TABLE(GENERATE_STREAM(2)) t " +
-                                                 "JOIN " + tableName + " n ON t.v = n.id LIMIT 2");
-
-        Iterator<SqlRow> iterator = sqlResult.iterator();
-        List<SqlRow> actualList = new ArrayList<>();
-        iterator.forEachRemaining(actualList::add);
+        List<SqlRow> actualList = getRows("SELECT n.id, n.name, n.ssn , t.v FROM " +
+                                          "TABLE(GENERATE_STREAM(2)) t " +
+                                          "JOIN " + tableName + " n ON t.v = n.id LIMIT 2");
 
         List<Object> ssnList = actualList.stream()
                 .map(sqlRow -> sqlRow.getObject("ssn"))
@@ -91,7 +87,7 @@ public class JdbcStreamJoinTest extends JdbcSqlTestSupport {
 
     // Left side is stream : joinInfo indices are not used
     @Test
-    public void test_stream2JoinJoinOnNonPrimaryKey() throws Exception {
+    public void test_stream2BatchJoinJoinOnNonPrimaryKey() throws Exception {
         String tableName = randomTableName();
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
         for (int index = 1; index < 3; index++) {
@@ -108,13 +104,9 @@ public class JdbcStreamJoinTest extends JdbcSqlTestSupport {
                 + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
-        SqlResult sqlResult = sqlService.execute("SELECT n.id, n.name, n.ssn , t.v FROM " +
-                                                 "TABLE(generate_stream(300)) t " +
-                                                 "JOIN " + tableName + " n ON t.v = n.ssn LIMIT 2");
-
-        Iterator<SqlRow> iterator = sqlResult.iterator();
-        List<SqlRow> actualList = new ArrayList<>();
-        iterator.forEachRemaining(actualList::add);
+        List<SqlRow> actualList = getRows("SELECT n.id, n.name, n.ssn , t.v FROM " +
+                                          "TABLE(generate_stream(300)) t " +
+                                          "JOIN " + tableName + " n ON t.v = n.ssn LIMIT 2");
 
         List<Object> ssnList = actualList.stream()
                 .map(sqlRow -> sqlRow.getObject("ssn"))
@@ -143,13 +135,9 @@ public class JdbcStreamJoinTest extends JdbcSqlTestSupport {
                 + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
-        SqlResult sqlResult = sqlService.execute("SELECT n.id, n.name, n.ssn , t.v FROM " +
-                                                 "TABLE(GENERATE_STREAM(2)) t " +
-                                                 "LEFT OUTER JOIN " + tableName + " n ON t.v = n.id LIMIT 6");
-
-        Iterator<SqlRow> iterator = sqlResult.iterator();
-        List<SqlRow> actualList = new ArrayList<>();
-        iterator.forEachRemaining(actualList::add);
+        List<SqlRow> actualList = getRows("SELECT n.id, n.name, n.ssn , t.v FROM " +
+                                          "TABLE(GENERATE_STREAM(2)) t " +
+                                          "LEFT OUTER JOIN " + tableName + " n ON t.v = n.id LIMIT 6");
 
         List<Object> ssnList = actualList.stream()
                 .map(sqlRow -> sqlRow.getObject("ssn"))
@@ -180,13 +168,9 @@ public class JdbcStreamJoinTest extends JdbcSqlTestSupport {
                 + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
-        SqlResult sqlResult = sqlService.execute("SELECT n.id, n.name, n.ssn , t.v FROM " +
-                                                 "TABLE(GENERATE_STREAM(2)) t " +
-                                                 "LEFT OUTER JOIN " + tableName + " n ON t.v = n.id LIMIT 3");
-
-        Iterator<SqlRow> iterator = sqlResult.iterator();
-        List<SqlRow> actualList = new ArrayList<>();
-        iterator.forEachRemaining(actualList::add);
+        List<SqlRow> actualList = getRows("SELECT n.id, n.name, n.ssn , t.v FROM " +
+                                          "TABLE(GENERATE_STREAM(2)) t " +
+                                          "LEFT OUTER JOIN " + tableName + " n ON t.v = n.id LIMIT 3");
 
         List<Object> ssnList = actualList.stream()
                 .map(sqlRow -> sqlRow.getObject("ssn"))
@@ -198,5 +182,15 @@ public class JdbcStreamJoinTest extends JdbcSqlTestSupport {
                         null, null,
                         null, null
                 );
+    }
+
+    private List<SqlRow> getRows(String sql) {
+        List<SqlRow> actualList = new ArrayList<>();
+        try (SqlResult sqlResult = sqlService.execute(sql)) {
+
+            Iterator<SqlRow> iterator = sqlResult.iterator();
+            iterator.forEachRemaining(actualList::add);
+        }
+        return actualList;
     }
 }

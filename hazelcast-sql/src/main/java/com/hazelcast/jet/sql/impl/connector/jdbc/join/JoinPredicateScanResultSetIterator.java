@@ -107,7 +107,7 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
     }
 
     private void close() {
-        LOGGER.info("Close is called");
+        LOGGER.info("JoinPredicateScanResultSetIterator is closing");
         iteratorClosed = true;
 
         IOUtil.closeResource(resultSet);

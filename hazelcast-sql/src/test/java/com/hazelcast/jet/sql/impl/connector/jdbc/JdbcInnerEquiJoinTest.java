@@ -103,13 +103,9 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
                 + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
-        SqlResult sqlResult = sqlService.execute("SELECT n.id, n.name, n.ssn , t.v FROM " +
-                                                 "TABLE(generate_series(207,210)) t " +
-                                                 "JOIN " + tableName + " n ON t.v = n.ssn LIMIT 2");
-
-        Iterator<SqlRow> iterator = sqlResult.iterator();
-        List<SqlRow> actualList = new ArrayList<>();
-        iterator.forEachRemaining(actualList::add);
+        List<SqlRow> actualList = getRows("SELECT n.id, n.name, n.ssn , t.v FROM " +
+                                          "TABLE(generate_series(207,210)) t " +
+                                          "JOIN " + tableName + " n ON t.v = n.ssn LIMIT 2");
 
         List<Object> ssnList = actualList.stream()
                 .map(sqlRow -> sqlRow.getObject("ssn"))
@@ -322,5 +318,15 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
                         new Row(4, "name-4")
                 )
         );
+    }
+
+    private List<SqlRow> getRows(String sql) {
+        List<SqlRow> actualList = new ArrayList<>();
+        try (SqlResult sqlResult = sqlService.execute(sql)) {
+
+            Iterator<SqlRow> iterator = sqlResult.iterator();
+            iterator.forEachRemaining(actualList::add);
+        }
+        return actualList;
     }
 }

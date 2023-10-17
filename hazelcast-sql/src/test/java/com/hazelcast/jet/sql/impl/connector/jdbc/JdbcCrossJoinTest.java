@@ -53,7 +53,7 @@ public class JdbcCrossJoinTest extends JdbcSqlTestSupport {
 
     // Left side is batch : joinInfo indices are used
     @Test
-    public void rightJoinWithOtherJdbc() throws SQLException {
+    public void crossJoinWithOtherJdbc() throws SQLException {
         String otherTableName = randomTableName();
         createTable(otherTableName);
         insertItems(otherTableName, 2);

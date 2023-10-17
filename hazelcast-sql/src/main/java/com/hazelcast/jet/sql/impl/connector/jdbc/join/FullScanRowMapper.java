@@ -53,9 +53,6 @@ public class FullScanRowMapper implements Function<ResultSet, JetSqlRow> {
     @Override
     public JetSqlRow apply(ResultSet resultSet) {
         try {
-            if (!resultSet.next()) {
-                return null;
-            }
             if (values == null) {
                 values = createValueArray(resultSet);
             }
