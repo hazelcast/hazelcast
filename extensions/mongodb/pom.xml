@@ -53,7 +53,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <excludes>
-                        <exclude>com/hazelcast/jet/sql/**</exclude>
+                        <exclude>com/hazelcast/jet/**</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -63,7 +63,7 @@
                 <version>${maven.failsafe.plugin.version}</version>
                 <configuration combine.children="append">
                     <includes>
-                        <include>com/hazelcast/jet/sql/**Test.java</include>
+                        <include>com/hazelcast/jet/**/*Test.java</include>
                     </includes>
                 </configuration>
             </plugin>
