@@ -32,7 +32,6 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 import static com.hazelcast.test.OverridePropertyRule.set;
@@ -66,7 +65,7 @@ public class InstanceTrackingServerModeTest extends HazelcastTestSupport {
 
         HazelcastMemberStarter.main(new String[]{});
 
-        String actualContents = new String(Files.readAllBytes(tempFile.toPath()), StandardCharsets.UTF_8);
+        String actualContents = Files.readString(tempFile.toPath());
         JsonObject json = Json.parse(actualContents).asObject();
         assertEquals("server", json.getString("mode", ""));
     }
