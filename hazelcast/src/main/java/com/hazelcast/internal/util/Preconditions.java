@@ -49,14 +49,8 @@ public final class Preconditions {
         return argument;
     }
 
-    /**
-     * Tests if an argument is not null.
-     *
-     * @param argument     the argument tested to see if it is not null.
-     * @param errorMessage the errorMessage
-     * @return the argument that was tested.
-     * @throws java.lang.NullPointerException if argument is null
-     */
+    /** @deprecated {@link Objects.requireNonNull(T, String) */
+    @Deprecated(since = "5.4")
     public static <T> T checkNotNull(T argument, String errorMessage) {
         return Objects.requireNonNull(argument, errorMessage);
     }
@@ -75,18 +69,13 @@ public final class Preconditions {
             return argument;
         }
         for (T element : argument) {
-            checkNotNull(element, errorMessage);
+            Objects.requireNonNull(element, errorMessage);
         }
         return argument;
     }
 
-    /**
-     * Tests if an argument is not null.
-     *
-     * @param argument the argument tested to see if it is not null.
-     * @return the argument that was tested.
-     * @throws java.lang.NullPointerException if argument is null
-     */
+    /** @deprecated {@link Objects.requireNonNull(T) */
+    @Deprecated(since = "5.4")
     @Nonnull
     public static <T> T checkNotNull(T argument) {
         return Objects.requireNonNull(argument);

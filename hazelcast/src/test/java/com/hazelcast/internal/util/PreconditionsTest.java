@@ -43,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -52,18 +53,16 @@ public class PreconditionsTest {
 
     // =====================================================
 
+    @SuppressWarnings("deprecation")
     @Test
     public void checkNotNull_whenNull() {
         String msg = "Can't be null";
 
-        try {
-            Preconditions.checkNotNull(null, msg);
-            fail();
-        } catch (NullPointerException expected) {
-            assertEquals(msg, expected.getMessage());
-        }
+        NullPointerException exception = assertThrows(NullPointerException.class, () -> Preconditions.checkNotNull(null, msg));
+        assertEquals(msg, exception.getMessage());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void checkNotNull_whenNotNull() {
         Object o = "foobar";
