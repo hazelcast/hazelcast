@@ -18,8 +18,8 @@ package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.EventJournalCacheEvent;
-import com.hazelcast.internal.journal.DeserializingEntry;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.internal.util.collection.ImmutableLazyEntry;
 
 import java.io.Serializable;
 import java.util.Map.Entry;
@@ -65,7 +65,11 @@ public final class CacheEventJournalFunctions {
         @Override
         public Entry<K, V> apply(EventJournalCacheEvent<K, V> e) {
             DeserializingEventJournalCacheEvent<K, V> casted = (DeserializingEventJournalCacheEvent<K, V>) e;
-            return new DeserializingEntry<K, V>(casted.getDataKey(), casted.getDataNewValue());
+            return new ImmutableLazyEntry<>(
+                    casted.getDataKey(),
+                    casted.getDataNewValue(),
+                    casted.getSerializationService()
+            );
         }
     }
 

@@ -16,16 +16,18 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.UnmodifiableListIterator;
+import com.hazelcast.internal.util.collection.ImmutableLazyEntry;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.AbstractList;
 import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -193,10 +195,20 @@ public class UnmodifiableLazyList extends AbstractList implements IdentifiedData
                 }
                 return item;
             } else if (o instanceof Map.Entry) {
-                Map.Entry entry = (Map.Entry) o;
-                Object key = serializationService.toObject(entry.getKey());
-                Object value = serializationService.toObject(entry.getValue());
-                AbstractMap.SimpleImmutableEntry item = new AbstractMap.SimpleImmutableEntry(key, value);
+                Map.Entry<?, ?> entry = (Map.Entry<?, ?>) o;
+                Map.Entry<?, ?> item;
+                if (entry.getKey() instanceof Data && entry.getValue() instanceof Data) {
+                    item = new ImmutableLazyEntry<>(
+                            (Data) entry.getKey(),
+                            (Data) entry.getValue(),
+                            serializationService
+                    );
+                } else {
+                    // either key or value may still be Data, so need to use serializationService
+                    Object key = serializationService.toObject(entry.getKey());
+                    Object value = serializationService.toObject(entry.getValue());
+                    item = new AbstractMap.SimpleImmutableEntry<>(key, value);
+                }
                 try {
                     listIterator.set(item);
                 } catch (Exception e) {
