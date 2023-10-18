@@ -62,6 +62,11 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven.failsafe.plugin.version}</version>
                 <configuration combine.children="append">
+                    <!--
+                    Failsafe uses the jar, but the main artifact, we shade the dependencies into a jar with jar-with-dependencies classifier
+                    Moreover this parameter name is really confusing.
+                    -->
+                    <classesDirectory>${project.build.directory}/${project.artifactId}-${project.version}-jar-with-dependencies.jar</classesDirectory>
                     <includes>
                         <include>com/hazelcast/jet/**/*Test.java</include>
                     </includes>
@@ -73,17 +78,12 @@
                 <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>fat-shaded-jar</id>
+                        <id>jar-with-dependencies</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <artifactSet>
-                                <excludes>
-                                    <exclude>org.apache:calcite</exclude>
-                                </excludes>
-                            </artifactSet>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -113,8 +113,15 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-sql</artifactId>
             <version>${project.version}</version>
-            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.calcite</groupId>
+            <artifactId>calcite-core</artifactId>
+            <version>${calcite.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-sync</artifactId>
