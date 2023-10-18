@@ -15,12 +15,16 @@
  */
 package com.hazelcast.rest.controller;
 
+import com.hazelcast.rest.security.CustomSecurityContext;
 import com.hazelcast.rest.service.MapService;
+import com.hazelcast.rest.util.LoginContextHolder;
+import com.hazelcast.security.permission.MapPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,13 +33,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+
 @RestController
 @RequestMapping("/maps")
 public class MapController {
     private final MapService mapService;
+    private final LoginContextHolder loginContextHolder;
+    private final CustomSecurityContext securityContext;
 
-    public MapController(MapService mapService) {
+    public MapController(MapService mapService, LoginContextHolder loginContextHolder, CustomSecurityContext securityContext) {
         this.mapService = mapService;
+        this.loginContextHolder = loginContextHolder;
+        this.securityContext = securityContext;
     }
 
     @GetMapping(value = "/{mapName}/{key}")
@@ -54,10 +63,19 @@ public class MapController {
             schema = @Schema()) @PathVariable("mapName") String mapName,
                                   @Parameter(in = ParameterIn.PATH, description = "The key of map", required = true,
                                           schema = @Schema()) @PathVariable("key") String key) {
+        try {
+            securityContext.getSecurityContext()
+                    .checkPermission(loginContextHolder.getLoginContext().getSubject(),
+                            new MapPermission(mapName, "read"));
+        } catch (SecurityException e) {
+            System.out.println("checkPermission security exception: " + e);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+
         Object value = mapService.getMap(mapName, key);
 
         if (value == null) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
         return ResponseEntity.ok(value.toString());
     }
@@ -77,6 +95,15 @@ public class MapController {
                                            schema = @Schema()) @PathVariable("key") String key,
                                    @Parameter(in = ParameterIn.DEFAULT, description = "", required = true,
                                            schema = @Schema()) @RequestBody String value) {
+        try {
+            securityContext.getSecurityContext()
+                    .checkPermission(loginContextHolder.getLoginContext().getSubject(),
+                            new MapPermission(mapName, "write"));
+        } catch (SecurityException e) {
+            System.out.println("checkPermission security exception: " + e);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+
         mapService.putMap(mapName, key, value);
         return ResponseEntity.ok("(" + key + " : " + value + ") is added to map " + mapName);
     }

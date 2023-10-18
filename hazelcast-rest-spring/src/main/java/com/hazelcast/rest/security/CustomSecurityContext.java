@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.rest.util;
+package com.hazelcast.rest.security;
 
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.security.impl.SecurityContextImpl;
 import org.springframework.stereotype.Component;
 
 @Component
-public class NodeEngineImplHolder {
-    private NodeEngineImpl nodeEngine;
+public class CustomSecurityContext {
 
-    public NodeEngineImpl getNodeEngine() {
-        return nodeEngine;
+    private SecurityContextImpl securityContext;
+
+    public SecurityContextImpl getSecurityContext() {
+        return securityContext;
     }
 
-    public void setNodeEngine(NodeEngineImpl nodeEngine) {
-        this.nodeEngine = nodeEngine;
+    public void setSecurityContext(SecurityContextImpl securityContext) {
+        this.securityContext = securityContext;
     }
 }

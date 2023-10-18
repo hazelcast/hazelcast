@@ -15,18 +15,19 @@
  */
 package com.hazelcast.rest.util;
 
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.springframework.stereotype.Component;
 
-@Component
-public class NodeEngineImplHolder {
-    private NodeEngineImpl nodeEngine;
+import javax.security.auth.login.LoginContext;
 
-    public NodeEngineImpl getNodeEngine() {
-        return nodeEngine;
+@Component
+public class LoginContextHolder {
+    private LoginContext loginContext;
+
+    public LoginContext getLoginContext() {
+        return loginContext;
     }
 
-    public void setNodeEngine(NodeEngineImpl nodeEngine) {
-        this.nodeEngine = nodeEngine;
+    public void setLoginContext(LoginContext loginContext) {
+        this.loginContext = loginContext;
     }
 }

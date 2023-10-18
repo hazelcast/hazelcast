@@ -21,7 +21,6 @@ import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.rest.model.ClusterStatusModel;
 import com.hazelcast.rest.model.MemberDetailModel;
 import com.hazelcast.rest.util.NodeEngineImplHolder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -31,14 +30,17 @@ import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 
 @Service
 public class ClusterService {
-    @Autowired
-    NodeEngineImplHolder nodeEngineImplHolder;
+    private final NodeEngineImplHolder nodeEngineImplHolder;
+
+    public ClusterService(NodeEngineImplHolder nodeEngineImplHolder) {
+        this.nodeEngineImplHolder = nodeEngineImplHolder;
+    }
 
     public ClusterStatusModel getClusterStatus() {
         List<MemberDetailModel> members = new ArrayList<>();
         nodeEngineImplHolder.getNodeEngine()
                 .getHazelcastInstance()
-                .getCluster().getMembers().stream().map(m -> MemberDetailModel.builder()
+                .getCluster().getMembers().stream().map(m -> new MemberDetailModel.MemberDetailModelBuilder()
                         .address(m.getAddress().toString())
                         .liteMember(m.isLiteMember())
                         .localMember(m.localMember())
@@ -48,7 +50,7 @@ public class ClusterService {
         Server server = nodeEngineImplHolder.getNodeEngine().getNode().getServer();
         ServerConnectionManager cm = server.getConnectionManager(CLIENT);
         int clientCount = cm == null ? 0 : cm.connectionCount(ServerConnection::isClient);
-        return ClusterStatusModel.builder()
+        return new ClusterStatusModel.ClusterStatusModelBuilder()
                 .members(members)
                 .connectionCount(clientCount)
                 .allConnectionCount(server.connectionCount())

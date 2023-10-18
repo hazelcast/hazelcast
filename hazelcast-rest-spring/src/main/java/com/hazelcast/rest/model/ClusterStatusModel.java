@@ -17,26 +17,49 @@ package com.hazelcast.rest.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.extern.jackson.Jacksonized;
 
 import java.util.List;
 
-@Data
-@Builder
-@Jacksonized
-@AllArgsConstructor
-@NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ClusterStatusModel {
     @JsonProperty("members")
-    private List<MemberDetailModel> members;
+    private final List<MemberDetailModel> members;
     @JsonProperty("connectionCount")
-    private int connectionCount;
+    private final int connectionCount;
     @JsonProperty("allConnectionCount")
-    private int allConnectionCount;
+    private final int allConnectionCount;
 
+    public ClusterStatusModel(List<MemberDetailModel> members, int connectionCount, int allConnectionCount) {
+        this.members = members;
+        this.connectionCount = connectionCount;
+        this.allConnectionCount = allConnectionCount;
+    }
+
+    public static class ClusterStatusModelBuilder {
+        private List<MemberDetailModel> members;
+        private int connectionCount;
+        private int allConnectionCount;
+
+        public ClusterStatusModelBuilder() {
+        }
+
+        public ClusterStatusModelBuilder members(List<MemberDetailModel> members) {
+            this.members = members;
+            return this;
+        }
+
+        public ClusterStatusModelBuilder connectionCount(int connectionCount) {
+            this.connectionCount = connectionCount;
+            return this;
+        }
+
+        public ClusterStatusModelBuilder allConnectionCount(int allConnectionCount) {
+            this.allConnectionCount = allConnectionCount;
+            return this;
+        }
+
+        public ClusterStatusModel build() {
+            return new ClusterStatusModel(this.members, this.connectionCount, this.allConnectionCount);
+        }
+    }
 }

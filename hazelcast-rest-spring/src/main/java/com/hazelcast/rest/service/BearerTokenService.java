@@ -16,11 +16,12 @@
 package com.hazelcast.rest.service;
 
 import com.hazelcast.rest.model.User;
-import com.hazelcast.rest.security.JWTAuthorizationFilter;
+import com.hazelcast.rest.security.LoggingFilter;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.stereotype.Service;
 
+import javax.security.auth.Subject;
 import java.util.Date;
 
 @Service
@@ -28,17 +29,17 @@ public class BearerTokenService {
 
     private final int expirationTimeMillis = 600000;
 
-    public String getJWTToken(User user) {
+    public String getJWTToken(Subject subject, User user) {
         String token = Jwts
                 .builder()
                 .setId(user.getName())
-                .setSubject(user.getName())
-                .claim("authorities", user.getAuthorities())
+                .setSubject(subject.toString())
+                .claim("username", user.getName())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTimeMillis))
                 .signWith(SignatureAlgorithm.HS256,
                         (user.getName() + user.getPassword()).getBytes()).compact();
-        JWTAuthorizationFilter.setSecret(user.getName() + user.getPassword());
+        LoggingFilter.setSecret(user.getName() + user.getPassword());
 
         return "Bearer " + token;
     }

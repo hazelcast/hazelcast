@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.rest.util;
+package com.hazelcast.rest.security;
 
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import org.springframework.stereotype.Component;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-@Component
-public class NodeEngineImplHolder {
-    private NodeEngineImpl nodeEngine;
+@Configuration
+public class FilterConfig {
+    @Bean
+    public FilterRegistrationBean<LoggingFilter> loggingFilter() {
+        FilterRegistrationBean<LoggingFilter> registrationBean
+                = new FilterRegistrationBean<>();
 
-    public NodeEngineImpl getNodeEngine() {
-        return nodeEngine;
-    }
+        registrationBean.setFilter(new LoggingFilter());
+        registrationBean.addUrlPatterns("/maps/*");
 
-    public void setNodeEngine(NodeEngineImpl nodeEngine) {
-        this.nodeEngine = nodeEngine;
+        return registrationBean;
     }
 }

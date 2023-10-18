@@ -17,28 +17,65 @@ package com.hazelcast.rest.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.extern.jackson.Jacksonized;
 
 
-@Data
-@Builder
-@Jacksonized
-@AllArgsConstructor
-@NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MemberDetailModel {
     @JsonProperty("address")
-    private String address;
+    private final String address;
     @JsonProperty("liteMember")
-    private Boolean liteMember;
+    private final Boolean liteMember;
     @JsonProperty("localMember")
-    private Boolean localMember;
+    private final Boolean localMember;
     @JsonProperty("uuid")
-    private String uuid;
+    private final String uuid;
     @JsonProperty("memberVersion")
-    private String memberVersion;
+    private final String memberVersion;
+
+    public MemberDetailModel(String address, Boolean liteMember, Boolean localMember, String uuid, String memberVersion) {
+        this.address = address;
+        this.liteMember = liteMember;
+        this.localMember = localMember;
+        this.uuid = uuid;
+        this.memberVersion = memberVersion;
+    }
+
+    public static class MemberDetailModelBuilder {
+        private String address;
+        private Boolean liteMember;
+        private Boolean localMember;
+        private String uuid;
+        private String memberVersion;
+        public MemberDetailModelBuilder() {
+        }
+
+        public MemberDetailModelBuilder address(String address) {
+            this.address = address;
+            return this;
+        }
+
+        public MemberDetailModelBuilder liteMember(Boolean liteMember) {
+            this.liteMember = liteMember;
+            return this;
+        }
+
+        public MemberDetailModelBuilder localMember(Boolean localMember) {
+            this.localMember = localMember;
+            return this;
+        }
+
+        public MemberDetailModelBuilder uuid(String uuid) {
+            this.uuid = uuid;
+            return this;
+        }
+
+        public MemberDetailModelBuilder memberVersion(String memberVersion) {
+            this.memberVersion = memberVersion;
+            return this;
+        }
+
+        public MemberDetailModel build() {
+            return new MemberDetailModel(this.address, this.liteMember, this.localMember, this.uuid, this.memberVersion);
+        }
+    }
 }
