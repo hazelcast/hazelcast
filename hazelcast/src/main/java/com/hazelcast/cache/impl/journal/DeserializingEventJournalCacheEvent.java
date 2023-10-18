@@ -99,4 +99,8 @@ public class DeserializingEventJournalCacheEvent<K, V>
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         serializationService = ((SerializationServiceSupport) hazelcastInstance).getSerializationService();
     }
+
+    public SerializationService getSerializationService() {
+        return serializationService;
+    }
 }
