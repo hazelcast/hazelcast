@@ -18,18 +18,27 @@ package com.hazelcast.spi.utils;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.RestClientException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -44,17 +53,6 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
@@ -264,7 +262,7 @@ public class RestClientTest {
     }
 
     private String readFile(String fileName) throws IOException {
-        return StringUtil.bytesToString(Files.readAllBytes(Paths.get(fileName)));
+        return Files.readString(Paths.get(fileName));
     }
 
     static final class Tls13CipherCheckingServer implements Runnable, AutoCloseable {
