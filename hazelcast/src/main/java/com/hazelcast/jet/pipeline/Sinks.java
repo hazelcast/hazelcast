@@ -30,6 +30,7 @@ import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.impl.connector.RemoteMapSinkParams;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EntryProcessor;
@@ -243,6 +244,24 @@ public final class Sinks {
     }
 
     /**
+     * The same as the {@link #remoteMap(String, ClientConfig)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @param mapName           the name of the map
+     * @param dataConnectionRef the reference to DataConnectionConfig
+     * @since 5.4
+     */
+    @Nonnull
+    public static <K, V> Sink<Entry<K, V>> remoteMap(@Nonnull String mapName, @Nonnull DataConnectionRef dataConnectionRef) {
+        return remoteMap(mapName, dataConnectionRef, Entry::getKey, Entry::getValue);
+    }
+
+    /**
      * Returns a sink that uses the supplied functions to extract the key
      * and value with which to put to a Hazelcast {@code IMap} in a remote
      * cluster identified by the supplied {@code ClientConfig}.
@@ -266,8 +285,45 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
+        RemoteMapSinkParams<K, V, T> params = new RemoteMapSinkParams<>(mapName);
+        params.setClientConfig(clientConfig);
+        params.setToKeyFn(toKeyFn);
+        params.setToValueFn(toValueFn);
+
+        ProcessorMetaSupplier processorMetaSupplier = writeRemoteMapP(params);
         return fromProcessor("remoteMapSink(" + mapName + ')',
-                writeRemoteMapP(mapName, clientConfig, toKeyFn, toValueFn),
+                processorMetaSupplier,
+                toKeyFn);
+    }
+
+    /**
+     * The same as the {@link #remoteMap(String, ClientConfig, FunctionEx, FunctionEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @param mapName           the name of the map
+     * @param dataConnectionRef the reference to DataConnectionConfig
+     * @since 5.4
+     */
+    @Nonnull
+    public static <T, K, V> Sink<T> remoteMap(
+            @Nonnull String mapName,
+            DataConnectionRef dataConnectionRef,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> toValueFn
+    ) {
+        RemoteMapSinkParams<K, V, T> params = new RemoteMapSinkParams<>(mapName);
+        params.setDataConnectionName(dataConnectionRef.getName());
+        params.setToKeyFn(toKeyFn);
+        params.setToValueFn(toValueFn);
+
+        ProcessorMetaSupplier processorMetaSupplier = writeRemoteMapP(params);
+        return fromProcessor("remoteMapSink(" + mapName + ')',
+                processorMetaSupplier,
                 toKeyFn);
     }
 
@@ -762,7 +818,7 @@ public final class Sinks {
     @Nonnull
     public static <T extends Entry> Sink<T> cache(@Nonnull String cacheName) {
         //noinspection Convert2MethodRef (provokes a javac 9 bug)
-        return new SinkImpl<>("cacheSink(" + cacheName + ')', writeCacheP(cacheName), en -> en.getKey());
+        return new SinkImpl<>("cacheSink(" + cacheName + ')', writeCacheP(cacheName), Entry::getKey);
     }
 
     /**
@@ -969,7 +1025,7 @@ public final class Sinks {
      * directory is used for all files, on all cluster members. That directory
      * can be a shared in a network - each processor creates globally unique
      * file names.
-     *
+     * <p>
      * <h3>Fault tolerance</h3>
      *
      * If the job is running in <i>exactly-once</i> mode, Jet writes the items
@@ -993,7 +1049,7 @@ public final class Sinks {
      * files, the job might have processed more transactions on the remaining
      * members and will not commit the temporary files on the resurrected
      * member.
-     *
+     * <p>
      * <h3>File name structure</h3>
      * <pre>{@code
      * [<date>-]<global processor index>[-<sequence>][".tmp"]

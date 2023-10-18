@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.core.Processor;
@@ -36,10 +37,15 @@ import static java.util.stream.Collectors.toList;
 
 public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSupplier {
 
-    protected final String clientXml;
+    protected String clientXml;
+
+    protected String dataConnectionName;
 
     private transient HazelcastInstance instance;
     private transient SerializationService serializationService;
+
+    AbstractHazelcastConnectorSupplier() {
+    }
 
     AbstractHazelcastConnectorSupplier(@Nullable String clientXml) {
         this.clientXml = clientXml;
@@ -66,7 +72,23 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
 
     @Override
     public void init(@Nonnull Context context) {
-        if (clientXml != null) {
+        createHzClient(context);
+    }
+
+    private void createHzClient(ProcessorSupplier.Context context) {
+        // The order is important.
+        // If dataConnectionConfig is specified prefer it to clientXml
+        if (dataConnectionName != null) {
+            HazelcastDataConnection hazelcastDataConnection = context
+                    .dataConnectionService()
+                    .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
+            try {
+                instance =  hazelcastDataConnection.getClient();
+                serializationService = ((HazelcastClientProxy) instance).getSerializationService();
+            } finally {
+                hazelcastDataConnection.release();
+            }
+        } else if (clientXml != null) {
             instance = newHazelcastClient(asClientConfig(clientXml));
             serializationService = ((HazelcastClientProxy) instance).getSerializationService();
         } else {

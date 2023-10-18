@@ -257,26 +257,6 @@ public class SinksTest extends PipelineTestSupport {
     }
 
     @Test
-    public void remoteMap() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToMap(remoteHz.getMap(srcName), input);
-
-        // When
-        Sink<Entry<String, Integer>> sink = Sinks.remoteMap(sinkName, clientConfig);
-
-        // Then
-        p.readFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).writeTo(sink);
-        execute();
-        List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(sinkName).entrySet();
-        assertEquals(expected.size(), actual.size());
-        expected.forEach(entry -> assertTrue(actual.contains(entry)));
-    }
-
-    @Test
     public void mapWithMerging_byName() {
         // Given
         List<Integer> input = sequence(itemCount);

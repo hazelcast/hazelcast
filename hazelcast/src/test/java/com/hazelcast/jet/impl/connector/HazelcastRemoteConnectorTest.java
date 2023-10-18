@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
@@ -176,7 +177,13 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex producer = dag.newVertex(SOURCE_NAME, readMapP(SOURCE_NAME));
-        Vertex consumer = dag.newVertex(SINK_NAME, writeRemoteMapP(SINK_NAME, clientConfig));
+
+        RemoteMapSinkParams<Integer, Integer, Integer> params = new RemoteMapSinkParams<>(SINK_NAME);
+        params.setClientConfig(clientConfig);
+        params.setToKeyFn(identity());
+        params.setToValueFn(identity());
+
+        Vertex consumer = dag.newVertex(SINK_NAME, writeRemoteMapP(params));
         dag.edge(between(producer, consumer));
 
         executeAndWait(dag);

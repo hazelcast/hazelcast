@@ -153,20 +153,38 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
         // the cluster with putAll operations
         private static final int MAX_PARALLELISM = 16;
 
-        private final String mapName;
-        private final FunctionEx<? super T, ? extends K> toKeyFn;
-        private final FunctionEx<? super T, ? extends V> toValueFn;
+        private String mapName;
+        private FunctionEx<? super T, ? extends K> toKeyFn;
+        private FunctionEx<? super T, ? extends V> toValueFn;
         private int maxParallelAsyncOps;
 
-        public Supplier(
-                String clientXml, String mapName,
+
+        public static <T, K, V> Supplier<T, K, V> fromClientXml(
+                String clientXml,
+                String mapName,
                 @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
                 @Nonnull FunctionEx<? super T, ? extends V> toValueFn
         ) {
-            super(clientXml);
-            this.mapName = mapName;
-            this.toKeyFn = toKeyFn;
-            this.toValueFn = toValueFn;
+            Supplier<T, K, V> supplier = new Supplier<>();
+            supplier.mapName = mapName;
+            supplier.clientXml = clientXml;
+            supplier.toKeyFn = toKeyFn;
+            supplier.toValueFn = toValueFn;
+            return supplier;
+        }
+
+        public static <T, K, V> Supplier<T, K, V> fromDataConnection(
+                String dataConnectionName,
+                String mapName,
+                @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+                @Nonnull FunctionEx<? super T, ? extends V> toValueFn
+        ) {
+            Supplier<T, K, V> supplier = new Supplier<>();
+            supplier.mapName = mapName;
+            supplier.dataConnectionName = dataConnectionName;
+            supplier.toKeyFn = toKeyFn;
+            supplier.toValueFn = toValueFn;
+            return supplier;
         }
 
         @Override

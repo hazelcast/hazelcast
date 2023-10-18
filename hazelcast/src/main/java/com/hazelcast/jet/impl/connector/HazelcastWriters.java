@@ -27,7 +27,6 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.RestartableException;
@@ -37,6 +36,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.RingBufferPermission;
 
 import javax.annotation.Nonnull;
@@ -83,8 +83,36 @@ public final class HazelcastWriters {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
         String clientXml = asXmlString(clientConfig);
+        WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.fromClientXml(
+                clientXml,
+                name,
+                toKeyFn,
+                toValueFn);
+
         return preferLocalParallelismOne(mapPutPermission(clientXml, name),
-                new WriteMapP.Supplier<>(clientXml, name, toKeyFn, toValueFn));
+                supplier);
+    }
+
+    @Nonnull
+    public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(RemoteMapSinkParams<K, V, T> params) {
+        if (params.hasDataSourceConnection()) {
+            WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.fromDataConnection(
+                    params.getDataConnectionName(),
+                    params.getMapName(),
+                    params.getToKeyFn(),
+                    params.getToValueFn());
+
+            return preferLocalParallelismOne(null, supplier);
+        } else {
+            String clientXml = asXmlString(params.getClientConfig());
+            WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.fromClientXml(
+                    clientXml,
+                    params.getMapName(),
+                    params.getToKeyFn(),
+                    params.getToValueFn());
+
+            return preferLocalParallelismOne(null, supplier);
+        }
     }
 
     @Nonnull
@@ -221,7 +249,7 @@ public final class HazelcastWriters {
 
     private static class WriteCachePSupplier<K, V> extends AbstractHazelcastConnectorSupplier {
 
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
         private final String name;
 
@@ -260,7 +288,7 @@ public final class HazelcastWriters {
 
     private static class WriteListPSupplier<T> extends AbstractHazelcastConnectorSupplier {
 
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
         private final String name;
 

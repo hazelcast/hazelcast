@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
+import com.hazelcast.jet.impl.connector.RemoteMapSinkParams;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
@@ -49,7 +50,6 @@ import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
 import java.util.Map;
 
-import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
@@ -90,28 +90,11 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processors for
-     * {@link Sinks#remoteMap(String, ClientConfig)}.
+     * Returns a supplier of processors for Sinks#remoteMap(...)
      */
     @Nonnull
-    public static ProcessorMetaSupplier writeRemoteMapP(
-            @Nonnull String mapName, @Nonnull ClientConfig clientConfig
-    ) {
-        return writeRemoteMapP(mapName, clientConfig, identity(), identity());
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link Sinks#remoteMap(String, ClientConfig, FunctionEx, FunctionEx)}.
-     */
-    @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier writeRemoteMapP(
-            @Nonnull String mapName,
-            @Nonnull ClientConfig clientConfig,
-            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull FunctionEx<? super T, ? extends V> toValueFn
-    ) {
-        return HazelcastWriters.writeMapSupplier(mapName, clientConfig, toKeyFn, toValueFn);
+    public static <T, K, V> ProcessorMetaSupplier writeRemoteMapP(RemoteMapSinkParams<K, V, T> params) {
+        return HazelcastWriters.writeMapSupplier(params);
     }
 
     /**
