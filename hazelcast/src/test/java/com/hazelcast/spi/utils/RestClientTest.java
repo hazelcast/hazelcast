@@ -119,9 +119,8 @@ public class RestClientTest {
             .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
-        String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-            .withReadTimeoutSeconds(1200)
-            .withConnectTimeoutSeconds(1200)
+        String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT), 1200)
+            .withRequestTimeoutSeconds(1200)
             .withRetries(1)
             .get()
             .getBody();
@@ -251,10 +250,10 @@ public class RestClientTest {
     private void assertTls13SupportInternal(String caFileName) throws IOException {
         try (Tls13CipherCheckingServer server = new Tls13CipherCheckingServer()) {
             new Thread(server).start();
-            RestClient restClient = RestClient.create("https://127.0.0.1:" + server.getPort());
-            if (caFileName != null) {
-                restClient.withCaCertificates(readFile(caFileName));
-            }
+            RestClient restClient = caFileName != null
+                    ? RestClient.create("https://127.0.0.1:" + server.getPort())
+                    : RestClient.createWithSSL("https://127.0.0.1:" + server.serverSocket.getLocalPort(),
+                    readFile("src/test/resources/kubernetes/ca.crt"));
             try {
                 restClient.get();
             } catch (Exception e) {
