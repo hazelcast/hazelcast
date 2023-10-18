@@ -139,11 +139,14 @@ public class ClusterWideConfigurationService implements
         CONFIG_TO_VERSION = Collections.unmodifiableMap(configToVersion);
     }
 
-    public ClusterWideConfigurationService(NodeEngine nodeEngine, DynamicConfigListener dynamicConfigListener) {
+    public ClusterWideConfigurationService(
+            NodeEngine nodeEngine,
+            DynamicConfigListener dynamicConfigListener
+    ) {
         this.nodeEngine = nodeEngine;
-        listener = dynamicConfigListener;
-        configPatternMatcher = nodeEngine.getConfig().getConfigPatternMatcher();
-        logger = nodeEngine.getLogger(getClass());
+        this.listener = dynamicConfigListener;
+        this.configPatternMatcher = nodeEngine.getConfig().getConfigPatternMatcher();
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
