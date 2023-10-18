@@ -203,7 +203,19 @@ public enum PhoneHomeMetrics {
     REST_CONFIG_RELOAD_FAILURE("restconfigreloadfail"),
 
     REST_REQUEST_COUNT("restrequestct"),
-    REST_UNIQUE_REQUEST_COUNT("restuniqrequestct");
+    REST_UNIQUE_REQUEST_COUNT("restuniqrequestct"),
+
+    // DMT metrics
+    DMT_ENABLED("dmtEnabled"),
+    DMT_TIMESTAMP("dmtTimestamp"),
+    DMT_NUMBER_OF_DS_TO_MIGRATE("dmtDsCount"),
+    DMT_NUMBER_OF_DS_MIGRATED("dmtMigratedCount"),
+    DMT_MIGRATION_COMPLETED("dmtMigrationCompleted"),
+    DMT_SOURCE_VERSION("dmtSourceVersion"),
+    DMT_TARGET_VERSION("dmtTargetVersion"),
+    DMT_TARGET_VIRIDIAN("dmtTargetViridian"),
+    DMT_DS_INFO("dmtDsInfo");
+
     private final String query;
 
     PhoneHomeMetrics(String query) {

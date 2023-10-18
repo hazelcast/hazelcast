@@ -153,6 +153,22 @@ public class PhoneHome {
         return parameterCreator.getParameters();
     }
 
+    /**
+     * Performs a phone request for {@code node} and returns the generated request
+     * parameters. If {@code pretend} is {@code true}, only returns the parameters
+     * without actually performing the request.
+     *
+     * @param pretend if {@code true}, do not perform the request
+     * @param parameterCreator the parameter creator to use
+     * @return the generated request parameters
+     */
+    public Map<String, String> phoneHome(boolean pretend, PhoneHomeParameterCreator parameterCreator) {
+        if (!pretend) {
+            postPhoneHomeData(parameterCreator.build());
+        }
+        return parameterCreator.getParameters();
+    }
+
     public PhoneHomeParameterCreator createParameters() {
         PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
         for (MetricsCollector metricsCollector : metricsCollectorList) {
