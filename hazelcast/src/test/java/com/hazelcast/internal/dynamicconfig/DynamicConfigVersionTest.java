@@ -22,51 +22,46 @@ import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.lang.reflect.Method;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Stream;
 
-import static com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService.CONFIG_TO_VERSION;
-import static java.lang.String.format;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicConfigVersionTest {
+    /** config classes not supported by dynamic data structure config */
+    private static Set<Class<?>> nonDynamicConfigClasses;
 
-    // config classes not supported by dynamic data structure config
-    private static final Set<Class<?>> NON_DYNAMIC_CONFIG_CLASSES;
-
-    static {
-        Set<Class<?>> nonDynamicConfigClasses = new HashSet<Class<?>>();
-        nonDynamicConfigClasses.add(WanReplicationConfig.class);
-        nonDynamicConfigClasses.add(SplitBrainProtectionConfig.class);
-        nonDynamicConfigClasses.add(ListenerConfig.class);
-        nonDynamicConfigClasses.add(DeviceConfig.class);
-        nonDynamicConfigClasses.add(DynamicConfigurationConfig.class);
-        NON_DYNAMIC_CONFIG_CLASSES = nonDynamicConfigClasses;
+    @BeforeAll
+    public static void setUp() {
+        nonDynamicConfigClasses = Set.of(WanReplicationConfig.class, SplitBrainProtectionConfig.class, ListenerConfig.class,
+                DeviceConfig.class, DynamicConfigurationConfig.class);
     }
 
-    @Test
-    public void test_allConfigClasses_areAssignedToVersion() {
-        Class<Config> topLevelConfigClass = Config.class;
-        Method[] allConfigMethods = topLevelConfigClass.getDeclaredMethods();
-        for (Method method : allConfigMethods) {
-            String methodName = method.getName();
-            if (methodName.startsWith("add") && methodName.endsWith("Config")) {
-                assert method.getParameterCount() == 1;
-                Class klass = method.getParameterTypes()[0];
-                boolean isMappedToVersion = CONFIG_TO_VERSION.get(klass) != null
-                        || NON_DYNAMIC_CONFIG_CLASSES.contains(klass);
-                assertTrue(format("Config class %s does not have a minimum Version set", klass.getName()), isMappedToVersion);
-            }
-        }
+    private static Stream<Method> getConfigMethods() {
+        return Arrays.stream(Config.class.getDeclaredMethods())
+                .filter(method -> method.getName().startsWith("add") && method.getName().endsWith("Config"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("getConfigMethods")
+    void test_allConfigClasses_areAssignedToVersion(Method method) {
+        assertEquals(1, method.getParameterCount(), method::toString);
+
+        Class<?> klass = method.getParameterTypes()[0];
+        boolean isMappedToVersion = (ClusterWideConfigurationService.CONFIG_TO_VERSION.get(klass) != null)
+                || nonDynamicConfigClasses.contains(klass);
+        assertTrue(isMappedToVersion,
+                () -> String.format("Config class %s does not have a minimum Version set", klass.getName()));
     }
 }

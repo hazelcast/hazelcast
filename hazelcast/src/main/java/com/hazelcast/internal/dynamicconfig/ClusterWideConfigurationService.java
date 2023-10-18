@@ -30,6 +30,7 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NamedConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
@@ -58,7 +59,6 @@ import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -80,7 +80,8 @@ import static java.lang.Boolean.getBoolean;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
 
-@SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity",
+        "checkstyle:ExecutableStatementCount"})
 public class ClusterWideConfigurationService implements
         PreJoinAwareService<DynamicConfigPreJoinOperation>,
         CoreService,
@@ -103,63 +104,46 @@ public class ClusterWideConfigurationService implements
 
     private final DynamicConfigListener listener;
 
-    private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ListConfig> listConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, SetConfig> setConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ReplicatedMapConfig> replicatedMapConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, TopicConfig> topicConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ExecutorConfig> executorConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, DurableExecutorConfig> durableExecutorConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ScheduledExecutorConfig> scheduledExecutorConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, QueueConfig> queueConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ReliableTopicConfig> reliableTopicConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, CacheSimpleConfig> cacheSimpleConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, DataConnectionConfig> dataConnectionConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<>();
+    /** Config class -> {@link NamedConfig#getName()} -> Config instances */
+    private final ConcurrentMap<Class<? extends IdentifiedDataSerializable>, ConcurrentMap<String, IdentifiedDataSerializable>>
+            allConfigurations = new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
-
-    @SuppressWarnings("unchecked")
-    private final Map<?, ? extends IdentifiedDataSerializable>[] allConfigurations = new Map[]{
-            mapConfigs,
-            multiMapConfigs,
-            cardinalityEstimatorConfigs,
-            ringbufferConfigs,
-            listConfigs,
-            setConfigs,
-            replicatedMapConfigs,
-            topicConfigs,
-            executorConfigs,
-            durableExecutorConfigs,
-            scheduledExecutorConfigs,
-            queueConfigs,
-            reliableTopicConfigs,
-            cacheSimpleConfigs,
-            flakeIdGeneratorConfigs,
-            pnCounterConfigs,
-            dataConnectionConfigs,
-            wanReplicationConfigs,
-    };
 
     private volatile Version version;
 
     static {
-        CONFIG_TO_VERSION = initializeConfigToVersionMap();
+        Map<Class<? extends IdentifiedDataSerializable>, Version> configToVersion = new HashMap<>();
+
+        configToVersion.put(MerkleTreeConfig.class, V4_0);
+        configToVersion.put(EventJournalConfig.class, V4_0);
+        configToVersion.put(MapConfig.class, V4_0);
+        configToVersion.put(MultiMapConfig.class, V4_0);
+        configToVersion.put(CardinalityEstimatorConfig.class, V4_0);
+        configToVersion.put(PNCounterConfig.class, V4_0);
+        configToVersion.put(RingbufferConfig.class, V4_0);
+        configToVersion.put(ListConfig.class, V4_0);
+        configToVersion.put(SetConfig.class, V4_0);
+        configToVersion.put(ReplicatedMapConfig.class, V4_0);
+        configToVersion.put(TopicConfig.class, V4_0);
+        configToVersion.put(ExecutorConfig.class, V4_0);
+        configToVersion.put(DurableExecutorConfig.class, V4_0);
+        configToVersion.put(ScheduledExecutorConfig.class, V4_0);
+        configToVersion.put(QueueConfig.class, V4_0);
+        configToVersion.put(ReliableTopicConfig.class, V4_0);
+        configToVersion.put(CacheSimpleConfig.class, V4_0);
+        configToVersion.put(FlakeIdGeneratorConfig.class, V4_0);
+        configToVersion.put(DataConnectionConfig.class, V5_2);
+        configToVersion.put(WanReplicationConfig.class, V5_4);
+
+        CONFIG_TO_VERSION = Collections.unmodifiableMap(configToVersion);
     }
 
-    public ClusterWideConfigurationService(
-            NodeEngine nodeEngine,
-            DynamicConfigListener dynamicConfigListener
-    ) {
+    public ClusterWideConfigurationService(NodeEngine nodeEngine, DynamicConfigListener dynamicConfigListener) {
         this.nodeEngine = nodeEngine;
-        this.listener = dynamicConfigListener;
-        this.configPatternMatcher = nodeEngine.getConfig().getConfigPatternMatcher();
-        this.logger = nodeEngine.getLogger(getClass());
+        listener = dynamicConfigListener;
+        configPatternMatcher = nodeEngine.getConfig().getConfigPatternMatcher();
+        logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
@@ -177,12 +161,8 @@ public class ClusterWideConfigurationService implements
     }
 
     private IdentifiedDataSerializable[] collectAllDynamicConfigs() {
-        List<IdentifiedDataSerializable> all = new ArrayList<>();
-        for (Map<?, ? extends IdentifiedDataSerializable> entry : allConfigurations) {
-            Collection<? extends IdentifiedDataSerializable> values = entry.values();
-            all.addAll(values);
-        }
-        return all.toArray(new IdentifiedDataSerializable[0]);
+        return allConfigurations.values().stream().map(Map::values).flatMap(Collection::stream)
+                .toArray(IdentifiedDataSerializable[]::new);
     }
 
     @Override
@@ -197,9 +177,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public void reset() {
-        for (Map<?, ?> entry : allConfigurations) {
-            entry.clear();
-        }
+        allConfigurations.values().forEach(Map::clear);
     }
 
     @Override
@@ -262,7 +240,6 @@ public class ClusterWideConfigurationService implements
         return serializationService.toObject(data);
     }
 
-
     /**
      * Register a dynamic configuration in a local member. When a dynamic configuration with the same name already
      * exists then this call has no effect.
@@ -272,81 +249,43 @@ public class ClusterWideConfigurationService implements
      * @throws UnsupportedOperationException when given configuration type is not supported
      * @throws InvalidConfigurationException when conflict is detected and configCheckMode is on THROW_EXCEPTION
      */
-    @SuppressWarnings("checkstyle:methodlength")
+    @SuppressWarnings({"checkstyle:methodlength", "checkstyle:BooleanExpressionComplexity"})
     public void registerConfigLocally(IdentifiedDataSerializable newConfig, ConfigCheckMode configCheckMode) {
         IdentifiedDataSerializable currentConfig;
-        if (newConfig instanceof MultiMapConfig) {
-            MultiMapConfig multiMapConfig = (MultiMapConfig) newConfig;
-            currentConfig = multiMapConfigs.putIfAbsent(multiMapConfig.getName(), multiMapConfig);
-        } else if (newConfig instanceof MapConfig) {
-            MapConfig newMapConfig = (MapConfig) newConfig;
-            currentConfig = mapConfigs.putIfAbsent(newMapConfig.getName(), newMapConfig);
-            if (currentConfig == null) {
-                listener.onConfigRegistered(newMapConfig);
-            }
-        } else if (newConfig instanceof CardinalityEstimatorConfig) {
-            CardinalityEstimatorConfig cardinalityEstimatorConfig = (CardinalityEstimatorConfig) newConfig;
-            currentConfig = cardinalityEstimatorConfigs.putIfAbsent(
-                    cardinalityEstimatorConfig.getName(),
-                    cardinalityEstimatorConfig
-            );
-        } else if (newConfig instanceof RingbufferConfig) {
-            RingbufferConfig ringbufferConfig = (RingbufferConfig) newConfig;
-            currentConfig = ringbufferConfigs.putIfAbsent(ringbufferConfig.getName(), ringbufferConfig);
-        } else if (newConfig instanceof ListConfig) {
-            ListConfig listConfig = (ListConfig) newConfig;
-            currentConfig = listConfigs.putIfAbsent(listConfig.getName(), listConfig);
-        } else if (newConfig instanceof SetConfig) {
-            SetConfig setConfig = (SetConfig) newConfig;
-            currentConfig = setConfigs.putIfAbsent(setConfig.getName(), setConfig);
-        } else if (newConfig instanceof ReplicatedMapConfig) {
-            ReplicatedMapConfig replicatedMapConfig = (ReplicatedMapConfig) newConfig;
-            currentConfig = replicatedMapConfigs.putIfAbsent(replicatedMapConfig.getName(), replicatedMapConfig);
-        } else if (newConfig instanceof TopicConfig) {
-            TopicConfig topicConfig = (TopicConfig) newConfig;
-            currentConfig = topicConfigs.putIfAbsent(topicConfig.getName(), topicConfig);
-        } else if (newConfig instanceof ExecutorConfig) {
-            ExecutorConfig executorConfig = (ExecutorConfig) newConfig;
-            currentConfig = executorConfigs.putIfAbsent(executorConfig.getName(), executorConfig);
-        } else if (newConfig instanceof DurableExecutorConfig) {
-            DurableExecutorConfig durableExecutorConfig = (DurableExecutorConfig) newConfig;
-            currentConfig = durableExecutorConfigs.putIfAbsent(durableExecutorConfig.getName(), durableExecutorConfig);
-        } else if (newConfig instanceof ScheduledExecutorConfig) {
-            ScheduledExecutorConfig scheduledExecutorConfig = (ScheduledExecutorConfig) newConfig;
-            currentConfig = scheduledExecutorConfigs.putIfAbsent(scheduledExecutorConfig.getName(), scheduledExecutorConfig);
-        } else if (newConfig instanceof QueueConfig) {
-            QueueConfig queueConfig = (QueueConfig) newConfig;
-            currentConfig = queueConfigs.putIfAbsent(queueConfig.getName(), queueConfig);
-        } else if (newConfig instanceof ReliableTopicConfig) {
-            ReliableTopicConfig reliableTopicConfig = (ReliableTopicConfig) newConfig;
-            currentConfig = reliableTopicConfigs.putIfAbsent(reliableTopicConfig.getName(), reliableTopicConfig);
-        } else if (newConfig instanceof CacheSimpleConfig) {
-            CacheSimpleConfig cacheSimpleConfig = (CacheSimpleConfig) newConfig;
-            currentConfig = cacheSimpleConfigs.putIfAbsent(cacheSimpleConfig.getName(), cacheSimpleConfig);
-            if (currentConfig == null) {
-                listener.onConfigRegistered(cacheSimpleConfig);
-            }
-        } else if (newConfig instanceof FlakeIdGeneratorConfig) {
-            FlakeIdGeneratorConfig config = (FlakeIdGeneratorConfig) newConfig;
-            currentConfig = flakeIdGeneratorConfigs.putIfAbsent(config.getName(), config);
-        } else if (newConfig instanceof PNCounterConfig) {
-            PNCounterConfig config = (PNCounterConfig) newConfig;
-            currentConfig = pnCounterConfigs.putIfAbsent(config.getName(), config);
-        } else if (newConfig instanceof DataConnectionConfig) {
-            DataConnectionConfig config = (DataConnectionConfig) newConfig;
-            currentConfig = dataConnectionConfigs.putIfAbsent(config.getName(), config);
-            if (currentConfig == null) {
-                nodeEngine.getDataConnectionService().createConfigDataConnection(config);
-            }
-        } else if (newConfig instanceof WanReplicationConfig) {
-            WanReplicationConfig config = (WanReplicationConfig) newConfig;
-            currentConfig = wanReplicationConfigs.putIfAbsent(config.getName(), config);
-            if (currentConfig == null) {
-                nodeEngine.getWanReplicationService().addWanReplicationConfig(config);
+        if ((newConfig instanceof MultiMapConfig) || (newConfig instanceof MapConfig)
+                || (newConfig instanceof CardinalityEstimatorConfig) || (newConfig instanceof RingbufferConfig)
+                || (newConfig instanceof ListConfig) || (newConfig instanceof SetConfig)
+                || (newConfig instanceof ReplicatedMapConfig) || (newConfig instanceof TopicConfig)
+                || (newConfig instanceof ExecutorConfig) || (newConfig instanceof DurableExecutorConfig)
+                || (newConfig instanceof ScheduledExecutorConfig) || (newConfig instanceof QueueConfig)
+                || (newConfig instanceof ReliableTopicConfig) || (newConfig instanceof CacheSimpleConfig)
+                || (newConfig instanceof FlakeIdGeneratorConfig) || (newConfig instanceof PNCounterConfig)
+                || (newConfig instanceof DataConnectionConfig) || (newConfig instanceof WanReplicationConfig)) {
+            if (newConfig instanceof NamedConfig) {
+                // Cast to allow adding to an upper-bounded wildcard
+                Map<String, IdentifiedDataSerializable> configs = (Map<String, IdentifiedDataSerializable>) getConfigs(
+                        newConfig.getClass());
+                currentConfig = configs.putIfAbsent(((NamedConfig) newConfig).getName(), newConfig);
+            } else {
+                throw new IllegalArgumentException(
+                        "Expected " + newConfig.getClass().getName() + " to be a " + NamedConfig.class.getName());
             }
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
+
+        if (currentConfig == null) {
+            if (newConfig instanceof MapConfig) {
+                listener.onConfigRegistered((MapConfig) newConfig);
+            } else if (newConfig instanceof CacheSimpleConfig) {
+                listener.onConfigRegistered((CacheSimpleConfig) newConfig);
+            } else if (newConfig instanceof DataConnectionConfig) {
+                nodeEngine.getDataConnectionService().createConfigDataConnection((DataConnectionConfig) newConfig);
+            } else if (newConfig instanceof WanReplicationConfig) {
+                nodeEngine.getWanReplicationService().addWanReplicationConfig((WanReplicationConfig) newConfig);
+            }
+        }
+
         checkCurrentConfigNullOrEqual(configCheckMode, currentConfig, newConfig);
         persist(newConfig);
     }
@@ -387,182 +326,186 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public MultiMapConfig findMultiMapConfig(String name) {
-        return lookupByPattern(configPatternMatcher, multiMapConfigs, name);
+        return lookupByPattern(configPatternMatcher, getMultiMapConfigs(), name);
     }
 
     @Override
     public ConcurrentMap<String, MultiMapConfig> getMultiMapConfigs() {
-        return multiMapConfigs;
+        return getConfigs(MultiMapConfig.class);
     }
 
     @Override
     public MapConfig findMapConfig(String name) {
-        return lookupByPattern(configPatternMatcher, mapConfigs, name);
+        return lookupByPattern(configPatternMatcher, getMapConfigs(), name);
     }
 
     @Override
     public Map<String, MapConfig> getMapConfigs() {
-        return mapConfigs;
+        return getConfigs(MapConfig.class);
     }
 
     @Override
     public TopicConfig findTopicConfig(String name) {
-        return lookupByPattern(configPatternMatcher, topicConfigs, name);
+        return lookupByPattern(configPatternMatcher, getTopicConfigs(), name);
     }
 
     @Override
     public ConcurrentMap<String, TopicConfig> getTopicConfigs() {
-        return topicConfigs;
+        return getConfigs(TopicConfig.class);
     }
 
     @Override
     public CardinalityEstimatorConfig findCardinalityEstimatorConfig(String name) {
-        return lookupByPattern(configPatternMatcher, cardinalityEstimatorConfigs, name);
+        return lookupByPattern(configPatternMatcher, getCardinalityEstimatorConfigs(), name);
     }
 
     @Override
     public ConcurrentMap<String, CardinalityEstimatorConfig> getCardinalityEstimatorConfigs() {
-        return cardinalityEstimatorConfigs;
+        return getConfigs(CardinalityEstimatorConfig.class);
     }
 
     @Override
     public PNCounterConfig findPNCounterConfig(String name) {
-        return lookupByPattern(configPatternMatcher, pnCounterConfigs, name);
+        return lookupByPattern(configPatternMatcher, getPNCounterConfigs(), name);
     }
 
     @Override
     public ConcurrentMap<String, PNCounterConfig> getPNCounterConfigs() {
-        return pnCounterConfigs;
+        return getConfigs(PNCounterConfig.class);
     }
 
     @Override
     public ExecutorConfig findExecutorConfig(String name) {
-        return lookupByPattern(configPatternMatcher, executorConfigs, name);
+        return lookupByPattern(configPatternMatcher, getExecutorConfigs(), name);
     }
 
     @Override
     public ConcurrentMap<String, ExecutorConfig> getExecutorConfigs() {
-        return executorConfigs;
+        return getConfigs(ExecutorConfig.class);
     }
 
     @Override
     public ScheduledExecutorConfig findScheduledExecutorConfig(String name) {
-        return lookupByPattern(configPatternMatcher, scheduledExecutorConfigs, name);
+        return lookupByPattern(configPatternMatcher, getScheduledExecutorConfigs(), name);
     }
 
     @Override
     public ConcurrentMap<String, ScheduledExecutorConfig> getScheduledExecutorConfigs() {
-        return scheduledExecutorConfigs;
+        return getConfigs(ScheduledExecutorConfig.class);
     }
 
     @Override
     public DurableExecutorConfig findDurableExecutorConfig(String name) {
-        return lookupByPattern(configPatternMatcher, durableExecutorConfigs, name);
+        return lookupByPattern(configPatternMatcher, getDurableExecutorConfigs(), name);
     }
 
     @Override
     public ConcurrentMap<String, DurableExecutorConfig> getDurableExecutorConfigs() {
-        return durableExecutorConfigs;
+        return getConfigs(DurableExecutorConfig.class);
     }
 
     @Override
     public RingbufferConfig findRingbufferConfig(String name) {
-        return lookupByPattern(configPatternMatcher, ringbufferConfigs, name);
+        return lookupByPattern(configPatternMatcher, getRingbufferConfigs(), name);
     }
 
     @Override
     public ConcurrentMap<String, RingbufferConfig> getRingbufferConfigs() {
-        return ringbufferConfigs;
+        return getConfigs(RingbufferConfig.class);
     }
 
     @Override
     public ListConfig findListConfig(String name) {
-        return lookupByPattern(configPatternMatcher, listConfigs, name);
+        return lookupByPattern(configPatternMatcher, getListConfigs(), name);
     }
 
     @Override
     public ConcurrentMap<String, ListConfig> getListConfigs() {
-        return listConfigs;
+        return getConfigs(ListConfig.class);
     }
 
     @Override
     public QueueConfig findQueueConfig(String name) {
-        return lookupByPattern(configPatternMatcher, queueConfigs, name);
+        return lookupByPattern(configPatternMatcher, getQueueConfigs(), name);
     }
 
     @Override
     public Map<String, QueueConfig> getQueueConfigs() {
-        return queueConfigs;
+        return getConfigs(QueueConfig.class);
     }
 
     @Override
     public SetConfig findSetConfig(String name) {
-        return lookupByPattern(configPatternMatcher, setConfigs, name);
+        return lookupByPattern(configPatternMatcher, getSetConfigs(), name);
     }
 
     @Override
     public ConcurrentMap<String, SetConfig> getSetConfigs() {
-        return setConfigs;
+        return getConfigs(SetConfig.class);
     }
 
     @Override
     public ReplicatedMapConfig findReplicatedMapConfig(String name) {
-        return lookupByPattern(configPatternMatcher, replicatedMapConfigs, name);
+        return lookupByPattern(configPatternMatcher, getReplicatedMapConfigs(), name);
     }
 
     @Override
     public ConcurrentMap<String, ReplicatedMapConfig> getReplicatedMapConfigs() {
-        return replicatedMapConfigs;
+        return getConfigs(ReplicatedMapConfig.class);
     }
 
     @Override
     public ReliableTopicConfig findReliableTopicConfig(String name) {
-        return lookupByPattern(configPatternMatcher, reliableTopicConfigs, name);
+        return lookupByPattern(configPatternMatcher, getReliableTopicConfigs(), name);
     }
 
     @Override
     public ConcurrentMap<String, ReliableTopicConfig> getReliableTopicConfigs() {
-        return reliableTopicConfigs;
+        return getConfigs(ReliableTopicConfig.class);
     }
 
     @Override
     public CacheSimpleConfig findCacheSimpleConfig(String name) {
-        return lookupByPattern(configPatternMatcher, cacheSimpleConfigs, name);
+        return lookupByPattern(configPatternMatcher, getCacheSimpleConfigs(), name);
     }
 
     @Override
     public Map<String, CacheSimpleConfig> getCacheSimpleConfigs() {
-        return cacheSimpleConfigs;
+        return getConfigs(CacheSimpleConfig.class);
     }
 
     @Override
-    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String baseName) {
-        return lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigs, baseName);
+    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name) {
+        return lookupByPattern(configPatternMatcher, getFlakeIdGeneratorConfigs(), name);
     }
 
     @Override
     public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
-        return flakeIdGeneratorConfigs;
+        return getConfigs(FlakeIdGeneratorConfig.class);
     }
 
     @Override
-    public DataConnectionConfig findDataConnectionConfig(String baseName) {
-        return lookupByPattern(configPatternMatcher, dataConnectionConfigs, baseName);
+    public DataConnectionConfig findDataConnectionConfig(String name) {
+        return lookupByPattern(configPatternMatcher, getDataConnectionConfigs(), name);
     }
 
     @Override
     public Map<String, DataConnectionConfig> getDataConnectionConfigs() {
-        return dataConnectionConfigs;
+        return getConfigs(DataConnectionConfig.class);
     }
 
     @Override
     public WanReplicationConfig findWanReplicationConfig(String name) {
-        return lookupByPattern(configPatternMatcher, wanReplicationConfigs, name);
+        return lookupByPattern(configPatternMatcher, getWanReplicationConfigs(), name);
     }
 
     @Override
     public Map<String, WanReplicationConfig> getWanReplicationConfigs() {
-        return wanReplicationConfigs;
+        return getConfigs(WanReplicationConfig.class);
+    }
+
+    private <T extends IdentifiedDataSerializable> ConcurrentMap<String, T> getConfigs(Class<T> clazz) {
+        return (ConcurrentMap<String, T>) allConfigurations.computeIfAbsent(clazz, x -> new ConcurrentHashMap<>());
     }
 
     @Override
@@ -605,33 +548,5 @@ public class ClusterWideConfigurationService implements
                 throw new HazelcastException("Error while merging configurations", e);
             }
         }
-    }
-
-    private static Map<Class<? extends IdentifiedDataSerializable>, Version> initializeConfigToVersionMap() {
-        Map<Class<? extends IdentifiedDataSerializable>, Version> configToVersion =
-                new HashMap<>();
-
-        configToVersion.put(MapConfig.class, V4_0);
-        configToVersion.put(MultiMapConfig.class, V4_0);
-        configToVersion.put(CardinalityEstimatorConfig.class, V4_0);
-        configToVersion.put(RingbufferConfig.class, V4_0);
-        configToVersion.put(ListConfig.class, V4_0);
-        configToVersion.put(SetConfig.class, V4_0);
-        configToVersion.put(ReplicatedMapConfig.class, V4_0);
-        configToVersion.put(TopicConfig.class, V4_0);
-        configToVersion.put(ExecutorConfig.class, V4_0);
-        configToVersion.put(DurableExecutorConfig.class, V4_0);
-        configToVersion.put(ScheduledExecutorConfig.class, V4_0);
-        configToVersion.put(QueueConfig.class, V4_0);
-        configToVersion.put(ReliableTopicConfig.class, V4_0);
-        configToVersion.put(CacheSimpleConfig.class, V4_0);
-        configToVersion.put(EventJournalConfig.class, V4_0);
-        configToVersion.put(FlakeIdGeneratorConfig.class, V4_0);
-        configToVersion.put(PNCounterConfig.class, V4_0);
-        configToVersion.put(MerkleTreeConfig.class, V4_0);
-        configToVersion.put(DataConnectionConfig.class, V5_2);
-        configToVersion.put(WanReplicationConfig.class, V5_4);
-
-        return Collections.unmodifiableMap(configToVersion);
     }
 }
