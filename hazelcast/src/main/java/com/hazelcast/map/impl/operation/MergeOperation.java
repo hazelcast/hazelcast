@@ -129,7 +129,7 @@ public class MergeOperation extends MapOperation
         checkMergePolicy(mapContainer, mergePolicy);
 
         hasMapListener = mapEventPublisher.hasEventListener(name);
-        hasWanReplication = mapContainer.isWanReplicationEnabled()
+        hasWanReplication = mapContainer.getWanContext().isWanReplicationEnabled()
                 && !disableWanReplicationEvent;
         hasBackups = mapContainer.getTotalBackupCount() > 0;
         hasInvalidation = mapContainer.hasInvalidationListener();
