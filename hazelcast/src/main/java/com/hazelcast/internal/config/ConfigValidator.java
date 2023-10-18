@@ -52,7 +52,6 @@ import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
-import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -126,15 +125,15 @@ public final class ConfigValidator {
      */
     public static void checkMapConfig(MapConfig mapConfig,
                                       NativeMemoryConfig nativeMemoryConfig,
-                                      SplitBrainMergePolicyProvider mergePolicyProvider,
-                                      HazelcastProperties properties, ILogger logger) {
+                                      SplitBrainMergePolicyProvider mergePolicyProvider) {
 
         checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
         checkNotBitmapIndexWhenNativeMemory(mapConfig.getInMemoryFormat(), mapConfig.getIndexConfigs());
-        checkNotTieredStoreWhenOpenSource(mapConfig.getTieredStoreConfig());
+        checkTSEnabledOnEnterpriseJar(mapConfig.getTieredStoreConfig());
 
         if (getBuildInfo().isEnterprise()) {
             checkMapNativeConfig(mapConfig, nativeMemoryConfig);
+            checkTSUnsupportedConfigs(mapConfig, nativeMemoryConfig);
         }
 
         checkMapEvictionConfig(mapConfig.getEvictionConfig());
@@ -234,7 +233,7 @@ public final class ConfigValidator {
                 && config.getNetworkConfig().getSymmetricEncryptionConfig() != null
                 && config.getNetworkConfig().getSymmetricEncryptionConfig().isEnabled()
                 && !usesAdvancedNetworkConfig) {
-                logger.warning(warn);
+            logger.warning(warn);
         }
 
         if (config.getAdvancedNetworkConfig() != null
@@ -646,10 +645,48 @@ public final class ConfigValidator {
      *
      * @param tieredStoreConfig supplied tieredStoreConfig
      */
-    private static void checkNotTieredStoreWhenOpenSource(TieredStoreConfig tieredStoreConfig) {
+    private static void checkTSEnabledOnEnterpriseJar(TieredStoreConfig tieredStoreConfig) {
         if (tieredStoreConfig.isEnabled() && !getBuildInfo().isEnterprise()) {
             throw new InvalidConfigurationException("Tiered-Store is supported in Hazelcast Enterprise only."
                     + " Please make sure you have Hazelcast Enterprise JARs on your classpath.");
+        }
+    }
+
+    /**
+     * Checks config parameters which are not
+     * supported by tiered-store feature.
+     */
+    private static void checkTSUnsupportedConfigs(MapConfig mapConfig,
+                                                  NativeMemoryConfig nativeMemoryConfig) {
+
+        TieredStoreConfig tieredStoreConfig = mapConfig.getTieredStoreConfig();
+        if (!tieredStoreConfig.isEnabled()) {
+            return;
+        }
+
+        InMemoryFormat inMemoryFormat = mapConfig.getInMemoryFormat();
+        if (NATIVE != inMemoryFormat) {
+            throw new InvalidConfigurationException(format("Only NATIVE in-memory-format "
+                    + "is supported for Tiered-Store but found [%s] for the map [%s]",
+                    inMemoryFormat, mapConfig.getName()));
+        }
+
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        if (!EvictionPolicy.NONE.equals(evictionConfig.getEvictionPolicy())) {
+            throw new InvalidConfigurationException(format("Eviction is not supported "
+                            + "for Tiered-Store map [%s]", mapConfig.getName()));
+        }
+
+        int timeToLiveSeconds = mapConfig.getTimeToLiveSeconds();
+        if (timeToLiveSeconds != MapConfig.DISABLED_TTL_SECONDS) {
+            throw new InvalidConfigurationException(format("TTL expiry is not supported "
+                            + "for Tiered-Store map [%s]", mapConfig.getName()));
+        }
+
+        int maxIdleSeconds = mapConfig.getMaxIdleSeconds();
+        if (maxIdleSeconds != MapConfig.DEFAULT_MAX_IDLE_SECONDS) {
+            throw new InvalidConfigurationException(format("MaxIdle expiry is not supported"
+                            + " for Tiered-Store map [%s]", mapConfig.getName()));
         }
     }
 

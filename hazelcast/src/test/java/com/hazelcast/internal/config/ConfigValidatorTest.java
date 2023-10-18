@@ -79,18 +79,18 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
 
     @Test
     public void checkMapConfig_BINARY() {
-        checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
+        checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider);
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void checkMapConfig_fails_with_merge_policy_which_requires_per_entry_stats_enabled() {
         checkMapConfig(getMapConfig(BINARY).setPerEntryStatsEnabled(false),
-                nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
+                nativeMemoryConfig, splitBrainMergePolicyProvider);
     }
 
     @Test
     public void checkMapConfig_OBJECT() {
-        checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
+        checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider);
     }
 
     /**
@@ -98,7 +98,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
      */
     @Test(expected = InvalidConfigurationException.class)
     public void checkMapConfig_NATIVE() {
-        checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
+        checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider);
     }
 
     /**
@@ -106,7 +106,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
      */
     @Test(expected = InvalidConfigurationException.class)
     public void checkMapConfig_TieredStore() {
-        checkMapConfig(getMapConfig(true), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
+        checkMapConfig(getMapConfig(true), nativeMemoryConfig, splitBrainMergePolicyProvider);
     }
 
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
