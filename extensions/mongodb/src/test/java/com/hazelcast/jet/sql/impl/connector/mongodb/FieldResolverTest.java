@@ -105,8 +105,8 @@ public class FieldResolverTest {
             readOpts.put("database", databaseName);
             Map<String, DocumentField> fields = resolver.readFields(new String[]{databaseName, collectionName}, null,
                     readOpts, false);
-            assertThat(fields).containsOnlyKeys("firstName", "lastName", "birthYear", "title", "unionType",
-                    "intOrString");
+            assertThat(fields)
+                    .containsOnlyKeys("firstName", "lastName", "birthYear", "title", "unionType", "intOrString");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
             assertThat(fields.get("birthYear").columnType).isEqualTo(BsonType.INT32);
             assertThat(fields.get("title").columnType).isEqualTo(BsonType.STRING);
