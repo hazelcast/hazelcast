@@ -104,8 +104,8 @@ public class WanReplicationServiceImpl implements WanReplicationService,
 
     @Override
     public boolean hasWanReplicationScheme(String wanReplicationScheme) {
-       return !(wanReplications.containsKey(wanReplicationScheme)
-                && node.getConfig().getWanReplicationConfig(wanReplicationScheme) == null);
+       return wanReplications.containsKey(wanReplicationScheme)
+               || node.getConfig().getWanReplicationConfig(wanReplicationScheme) != null;
     }
 
 

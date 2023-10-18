@@ -36,7 +36,7 @@ import static com.hazelcast.config.ConsistencyCheckStrategy.MERKLE_TREES;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
 import static java.lang.Boolean.TRUE;
 
-public class WANContext {
+public class MapWanContext {
 
     protected volatile SplitBrainMergePolicy wanMergePolicy;
     protected ConcurrentMemoizingSupplier<DelegatingWanScheme> wanReplicationDelegateSupplier;
@@ -45,7 +45,7 @@ public class WANContext {
     private final MapServiceContext mapServiceContext;
     private volatile boolean persistWanReplicatedData;
 
-    public WANContext(MapContainer mapContainer) {
+    public MapWanContext(MapContainer mapContainer) {
         this.mapConfig = mapContainer.getMapConfig();
         this.name = mapContainer.getName();
         this.mapServiceContext = mapContainer.getMapServiceContext();

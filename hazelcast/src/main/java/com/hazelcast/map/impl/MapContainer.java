@@ -41,7 +41,7 @@ import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
 import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.wan.WANContext;
+import com.hazelcast.map.impl.wan.MapWanContext;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
@@ -107,7 +107,7 @@ public class MapContainer {
     protected volatile MapConfig mapConfig;
     private volatile Evictor evictor;
 
-    private final WANContext wanContext;
+    private final MapWanContext wanContext;
 
     private volatile boolean destroyed;
 
@@ -136,7 +136,7 @@ public class MapContainer {
         this.globalIndexRegistry = shouldUseGlobalIndex()
                 ? createIndexRegistry(true, GLOBAL_INDEX_NOOP_PARTITION_ID) : null;
         this.mapStoreContext = createMapStoreContext(this);
-        this.wanContext = new WANContext(this);
+        this.wanContext = new MapWanContext(this);
     }
 
     public void init() {
@@ -348,7 +348,7 @@ public class MapContainer {
         return globalIndexRegistry != null;
     }
 
-    public WANContext getWanContext() {
+    public MapWanContext getWanContext() {
         return wanContext;
     }
 
