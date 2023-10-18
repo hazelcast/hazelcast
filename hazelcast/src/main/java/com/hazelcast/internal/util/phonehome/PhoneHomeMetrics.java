@@ -206,15 +206,15 @@ public enum PhoneHomeMetrics {
     REST_UNIQUE_REQUEST_COUNT("restuniqrequestct"),
 
     // DMT metrics
-    DMT_ENABLED("dmtenabled"),
-    DMT_TIMESTAMP("dmttimestamp"),
-    DMT_NUMBER_OF_DS_TO_MIGRATE("dmtdscount"),
-    DMT_NUMBER_OF_DS_MIGRATED("dmtmigratedcount"),
-    DMT_MIGRATION_COMPLETED("dmtmigrationcompleted"),
-    DMT_SOURCE_VERSION("dmtsourceversion"),
-    DMT_TARGET_VERSION("dmttargetversion"),
-    DMT_TARGET_VIRIDIAN("dmttargetviridian"),
-    DMT_DS_INFO("dsdsinfo");
+    DMT_ENABLED("dmtEnabled"),
+    DMT_TIMESTAMP("dmtTimestamp"),
+    DMT_NUMBER_OF_DS_TO_MIGRATE("dmtDsCount"),
+    DMT_NUMBER_OF_DS_MIGRATED("dmtMigratedCount"),
+    DMT_MIGRATION_COMPLETED("dmtMigrationCompleted"),
+    DMT_SOURCE_VERSION("dmtSourceVersion"),
+    DMT_TARGET_VERSION("dmtTargetVersion"),
+    DMT_TARGET_VIRIDIAN("dmtTargetViridian"),
+    DMT_DS_INFO("dmtDsInfo");
 
     private final String query;
 
