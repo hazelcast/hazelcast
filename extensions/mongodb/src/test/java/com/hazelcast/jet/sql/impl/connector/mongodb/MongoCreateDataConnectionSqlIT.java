@@ -111,6 +111,6 @@ public class MongoCreateDataConnectionSqlIT extends MongoSqlIT {
             instance().getSql().execute("CREATE MAPPING test_" + shared + " data connection " + dataConnName)
                     .close();
         });
-        assertThat(e.getMessage()).contains("exception={com.mongodb.MongoSocketException: non-existing");
+        assertThat(e.getMessage()).contains("address=non-existing-address:1234");
     }
 }

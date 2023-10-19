@@ -423,17 +423,13 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         // when
         sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
-        createDataConnection(instance(), dcName, "Mongo", false,
-                // create data connection that is correct enough to parse the query
-                ImmutableMap.of("connectionString", "bad:12345", "database", "db",
-                        "idColumn", "id")
-        );
+        createDataConnection(instance(), dcName, "Kafka", false, singletonMap("A", "B"));
 
         // then
         assertThatThrownBy(() -> sqlService.execute("select count(*) from " + mappingName).iterator().hasNext())
                 .as("Should detect change of data connection type")
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Mongo connector allows only object types");
+                .hasMessageContaining("Missing 'valueFormat' option");
 
         // cleanup
         sqlService.executeUpdate("DROP MAPPING " + mappingName);
