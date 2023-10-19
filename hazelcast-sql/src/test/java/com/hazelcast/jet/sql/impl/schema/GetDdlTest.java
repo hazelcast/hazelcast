@@ -75,7 +75,18 @@ public class GetDdlTest extends SqlTestSupport {
         String createTypeQuery = "CREATE OR REPLACE TYPE \"hazelcast\".\"public\".\"t\" (" + LE +
                 "  \"a\" INTEGER," + LE +
                 "  \"b\" INTEGER" + LE +
+                ")" + LE +
+                "OPTIONS (" + LE +
+                "  'typeClass'='foo'" + LE +
                 ")";
+
+        instance().getSql().execute(createTypeQuery);
+        assertRowsAnyOrder("SELECT GET_DDL('relation', 't')", List.of(new Row(createTypeQuery)));
+    }
+
+    @Test
+    public void when_queryTypeFromRelationNamespace_withoutFieldsAndOptions_then_success() {
+        String createTypeQuery = "CREATE OR REPLACE TYPE \"hazelcast\".\"public\".\"t\"";
 
         instance().getSql().execute(createTypeQuery);
         assertRowsAnyOrder("SELECT GET_DDL('relation', 't')", List.of(new Row(createTypeQuery)));
