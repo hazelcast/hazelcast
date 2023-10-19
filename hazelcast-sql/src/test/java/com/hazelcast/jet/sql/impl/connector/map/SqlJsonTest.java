@@ -37,7 +37,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -46,7 +45,7 @@ public class SqlJsonTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setup() {
-        initialize(1, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
+        initialize(1, null);
         sqlService = instance().getSql();
     }
 

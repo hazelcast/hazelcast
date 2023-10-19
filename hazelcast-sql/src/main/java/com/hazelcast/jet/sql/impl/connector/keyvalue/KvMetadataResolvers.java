@@ -27,7 +27,6 @@ import com.hazelcast.sql.impl.schema.MappingField;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,9 +54,9 @@ public class KvMetadataResolvers {
 
     // A string of characters (excluding a `.`), optionally prefixed with "__key." or "this."
     private static final Pattern EXT_NAME_PATTERN = Pattern.compile("((" + KEY + "|" + VALUE + ")\\.)?[^.]+");
-    private static final Set<String> NESTED_FIELDS_SUPPORTED_FORMATS = new HashSet<>(Set.of(
+    private static final Set<String> NESTED_FIELDS_SUPPORTED_FORMATS = Set.of(
             SqlConnector.JAVA_FORMAT, SqlConnector.PORTABLE_FORMAT,
-            SqlConnector.COMPACT_FORMAT, SqlConnector.AVRO_FORMAT));
+            SqlConnector.COMPACT_FORMAT, SqlConnector.AVRO_FORMAT);
 
     private final Map<String, KvMetadataResolver> keyResolvers;
     private final Map<String, KvMetadataResolver> valueResolvers;
@@ -81,8 +80,7 @@ public class KvMetadataResolvers {
     }
 
     /**
-     * A utility to implement {@link SqlConnector#resolveAndValidateFields} in
-     * the connector.
+     * A utility to implement {@link SqlConnector#resolveAndValidateFields} in the connector.
      */
     public List<MappingField> resolveAndValidateFields(
             List<MappingField> userFields,
@@ -139,7 +137,7 @@ public class KvMetadataResolvers {
             RelationsStorage relationsStorage
     ) {
         String format = getFormat(options, isKey);
-        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(format)) {
+        if (format != null && NESTED_FIELDS_SUPPORTED_FORMATS.contains(format)) {
             List<MappingField> fieldsWithCustomTypes = extractFields(userFields, isKey).values().stream()
                     .filter(mappingField -> mappingField.type().isCustomType()).collect(toList());
             if (!fieldsWithCustomTypes.isEmpty()) {

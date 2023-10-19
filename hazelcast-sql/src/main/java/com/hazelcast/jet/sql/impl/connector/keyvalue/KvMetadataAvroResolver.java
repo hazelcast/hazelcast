@@ -222,9 +222,13 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
 
             Schema fieldSchema = unwrapNullableType(schemaField.schema());
             Schema.Type schemaFieldType = fieldSchema.getType();
-            if (!(mappingFieldTypeFamily == QueryDataTypeFamily.OBJECT
-                    ? mappingFieldType.isCustomType() ? conversions.subList(0, 1) : conversions.subList(1, 3)
-                    : conversions).contains(schemaFieldType)) {
+
+            if (mappingFieldTypeFamily == QueryDataTypeFamily.OBJECT) {
+                conversions = mappingFieldType.isCustomType()
+                        ? List.of(Schema.Type.RECORD)  // Unwrapped, so does not include NULL
+                        : List.of(Schema.Type.UNION, Schema.Type.NULL);  // Ordinary OBJECT can be mapped to NULL
+            }
+            if (!conversions.contains(schemaFieldType)) {
                 throw new IllegalArgumentException(schemaFieldType + " schema type is incompatible with "
                         + mappingFieldType + " mapping type");
             }

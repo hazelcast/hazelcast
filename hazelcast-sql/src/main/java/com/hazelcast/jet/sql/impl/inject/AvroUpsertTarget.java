@@ -110,7 +110,7 @@ public class AvroUpsertTarget implements UpsertTarget {
                 };
             case RECORD:
                 List<Injector> injectors = type.getObjectFields().stream()
-                        .map(field -> createInjector(fieldSchema, field.getName(), field.getDataType()))
+                        .map(field -> createInjector(fieldSchema, field.getName(), field.getType()))
                         .collect(toList());
                 return (record, value) -> {
                     if (value == null) {

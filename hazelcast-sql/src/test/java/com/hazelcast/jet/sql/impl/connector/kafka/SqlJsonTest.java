@@ -21,7 +21,6 @@ import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -36,17 +35,11 @@ import static com.hazelcast.jet.pipeline.file.JsonFileFormat.FORMAT_JSON;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
-import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlJsonTest extends KafkaSqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 4;
-
-    @BeforeClass
-    public static void setup() throws Exception {
-        setup(1, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
-    }
 
     private static SqlMapping kafkaMapping(String name) {
         return new SqlMapping(name, KafkaSqlConnector.class)

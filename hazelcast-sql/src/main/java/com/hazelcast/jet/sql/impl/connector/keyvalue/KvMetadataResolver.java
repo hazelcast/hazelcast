@@ -145,7 +145,7 @@ public interface KvMetadataResolver {
 
         public Field(QueryDataTypeField field) {
             name = field.getName();
-            type = field.getDataType();
+            type = field.getType();
         }
 
         public String name() {

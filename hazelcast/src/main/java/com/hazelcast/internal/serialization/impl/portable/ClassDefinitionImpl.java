@@ -155,9 +155,7 @@ public class ClassDefinitionImpl implements ClassDefinition, DataSerializable {
 
     @Override
     public int hashCode() {
-        int result = portableId.getClassId();
-        result = 31 * result + portableId.getVersion();
-        return result;
+        return portableId.hashCode();
     }
 
     @Override

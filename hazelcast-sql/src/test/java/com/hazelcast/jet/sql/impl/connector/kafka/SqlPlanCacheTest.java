@@ -24,6 +24,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SqlPlanCacheTest extends KafkaSqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 4;
 
+    private static void createMapping(String tableName, String topicName, String valueFormat, String offset) {
+        new SqlMapping(tableName, KafkaSqlConnector.class)
+                .externalName(topicName)
+                .options(OPTION_VALUE_FORMAT, valueFormat,
+                         "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
+                         "auto.offset.reset", offset)
+                .createOrReplace();
+    }
+
     @Test
     public void test_tableName() {
         String topicName = createRandomTopic();
@@ -88,14 +97,5 @@ public class SqlPlanCacheTest extends KafkaSqlTestSupport {
 
     private static String createRandomTopic() {
         return createRandomTopic(INITIAL_PARTITION_COUNT);
-    }
-
-    private static void createMapping(String tableName, String topicName, String valueFormat, String offset) {
-        new SqlMapping(tableName, KafkaSqlConnector.class)
-                .externalName(topicName)
-                .options(OPTION_VALUE_FORMAT, valueFormat,
-                         "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
-                         "auto.offset.reset", offset)
-                .createOrReplace();
     }
 }

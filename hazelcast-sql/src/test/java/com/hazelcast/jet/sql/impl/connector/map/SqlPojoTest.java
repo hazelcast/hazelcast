@@ -519,14 +519,14 @@ public class SqlPojoTest extends SqlTestSupport {
         }
     }
 
-    @SuppressWarnings("unused")
     public static class ClassWithMapField implements Serializable {
         private Long id;
         private Map<String, String> props;
 
+        @SuppressWarnings("unused")
         public ClassWithMapField() { }
 
-        public ClassWithMapField(final Long id, String... values) {
+        public ClassWithMapField(Long id, String... values) {
             this.id = id;
             this.props = new HashMap<>();
             for (int i = 0; i < values.length; i += 2) {
@@ -538,7 +538,7 @@ public class SqlPojoTest extends SqlTestSupport {
             return id;
         }
 
-        public void setId(final Long id) {
+        public void setId(Long id) {
             this.id = id;
         }
 
@@ -546,7 +546,7 @@ public class SqlPojoTest extends SqlTestSupport {
             return props;
         }
 
-        public void setProps(final Map<String, String> props) {
+        public void setProps(Map<String, String> props) {
             this.props = props;
         }
     }

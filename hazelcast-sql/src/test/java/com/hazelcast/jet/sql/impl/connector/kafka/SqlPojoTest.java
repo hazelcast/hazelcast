@@ -291,8 +291,8 @@ public class SqlPojoTest extends KafkaSqlTestSupport {
         );
     }
 
-    @SuppressWarnings("unused")
     public static class ClzWithPerson implements Serializable {
+        @SuppressWarnings("unused")
         public int outerField;
         public Person person;
     }

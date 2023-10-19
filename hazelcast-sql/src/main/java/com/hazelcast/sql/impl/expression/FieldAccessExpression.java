@@ -76,7 +76,7 @@ public class FieldAccessExpression<T> implements Expression<T> {
     @Override
     public T eval(final Row row, final ExpressionEvalContext context, boolean useLazyDeserialization) {
         // Use lazy deserialization for nested queries. Only the last access should be eager.
-        Object result = ref.eval(row, context, true);
+        final Object result = ref.eval(row, context, true);
         if (result == null) {
             return null;
         }

@@ -16,12 +16,14 @@
 
 package com.hazelcast.sql.impl.schema.type;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateType;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -51,7 +53,7 @@ public class Type implements Serializable, SqlCatalogObject {
 
     public Type(String name, List<TypeDefinitionColumn> columns, Map<String, String> options) {
         this.name = name;
-        this.fields = columns.stream().map(column -> new TypeField(column.name(), column.dataType())).collect(toList());
+        this.fields = columns.stream().map(column -> new TypeField(column.name(), column.type())).collect(toList());
         this.options = options;
     }
 
@@ -79,17 +81,17 @@ public class Type implements Serializable, SqlCatalogObject {
     }
 
     @Override
-    public void writeData(final ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
-        out.writeObject(fields);
-        out.writeObject(options);
+        SerializationUtil.writeList(fields, out);
+        SerializationUtil.writeMap(options, out);
     }
 
     @Override
-    public void readData(final ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
-        fields = in.readObject();
-        options = in.readObject();
+        fields = SerializationUtil.readList(in);
+        options = SerializationUtil.readMap(in);
     }
 
     @Override
@@ -99,40 +101,43 @@ public class Type implements Serializable, SqlCatalogObject {
 
     public static class TypeField implements IdentifiedDataSerializable, Serializable {
         private String name;
-        private QueryDataType queryDataType;
+        /**
+         * A predefined type or a custom type without kind and metadata.
+         * <p>
+         * <em>Type kind</em> indicates the serialization format, which is inherited from
+         * mapping. <em>Type metadata</em> stores schema information, which is reconstructed
+         * from {@link Mapping} and {@link Type} options each time a new mapping is created.
+         */
+        private QueryDataType type;
 
         public TypeField() { }
 
-        public TypeField(final String name, final QueryDataType queryDataType) {
+        public TypeField(String name, QueryDataType type) {
             this.name = name;
-            this.queryDataType = queryDataType;
+            this.type = type;
         }
 
         public String getName() {
             return name;
         }
 
-        public QueryDataType getQueryDataType() {
-            return queryDataType;
+        public QueryDataType getType() {
+            return type;
         }
 
         @Override
-        public void writeData(final ObjectDataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeString(name);
-            out.writeInt(queryDataType == null ? -1 : queryDataType.getConverter().getId());
-            out.writeString(queryDataType == null ? "" : queryDataType.getObjectTypeName());
+            out.writeInt(type.getConverter().getId());
+            out.writeString(type.getObjectTypeName());
         }
 
         @Override
-        public void readData(final ObjectDataInput in) throws IOException {
-            this.name = in.readString();
-            int converterId = in.readInt();
+        public void readData(ObjectDataInput in) throws IOException {
+            name = in.readString();
+            Converter converter = Converters.getConverter(in.readInt());
             String typeName = in.readString();
-            Converter converter = Converters.getConverter(converterId);
-
-            // TODO: is this the correct type kind? (NONE). Maybe worth writing it too.
-            this.queryDataType = converter.getTypeFamily() == QueryDataTypeFamily.OBJECT
-                            && typeName != null && !typeName.isEmpty()
+            type = converter.getTypeFamily() == QueryDataTypeFamily.OBJECT && typeName != null
                     ? new QueryDataType(typeName)
                     : QueryDataTypeUtils.resolveTypeForClass(converter.getValueClass());
         }

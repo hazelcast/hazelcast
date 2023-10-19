@@ -45,9 +45,6 @@ public final class ClassDefinitionBuilder {
      * IMPORTANT: It uses a default portableVersion (0) for non-versioned classes.
      * Make sure to specify the portableVersion in the constructor if you override the default portableVersion
      * in the SerializationService
-     *
-     * @param factoryId factoryId to use
-     * @param classId   classId to use
      */
     public ClassDefinitionBuilder(int factoryId, int classId) {
         this(factoryId, classId, 0);
@@ -55,10 +52,6 @@ public final class ClassDefinitionBuilder {
 
     /**
      * IMPORTANT: Make sure that the version matches the portableVersion in the SerializationService
-     *
-     * @param factoryId factoryId to use
-     * @param classId   classId to use
-     * @param version   portableVersion to use
      */
     public ClassDefinitionBuilder(int factoryId, int classId, int version) {
         this(new PortableId(factoryId, classId, version));

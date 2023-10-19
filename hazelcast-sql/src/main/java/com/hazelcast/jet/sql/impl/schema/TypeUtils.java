@@ -287,7 +287,7 @@ public final class TypeUtils {
             seen.put(typeName, convertedType);
 
             for (TypeField field : type.getFields()) {
-                QueryDataType fieldType = field.getQueryDataType();
+                QueryDataType fieldType = field.getType();
                 String fieldTypeName = fieldType.getObjectTypeName();
 
                 if (fieldType.isCustomType()) {

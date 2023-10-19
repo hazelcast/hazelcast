@@ -530,7 +530,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
         public A() { }
 
-        public A(final String name) {
+        public A(String name) {
             this.name = name;
         }
     }
@@ -541,7 +541,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
         public B() { }
 
-        public B(final String name) {
+        public B(String name) {
             this.name = name;
         }
     }
@@ -552,26 +552,25 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
         public C() { }
 
-        public C(final String name) {
+        public C(String name) {
             this.name = name;
         }
     }
 
-    @SuppressWarnings("unused")
     public static class SelfRef implements Serializable {
         public Long id;
         public String name;
         public SelfRef other;
 
+        @SuppressWarnings("unused")
         public SelfRef() { }
 
-        public SelfRef(final Long id, final String name) {
+        public SelfRef(Long id, String name) {
             this.id = id;
             this.name = name;
         }
     }
 
-    @SuppressWarnings("unused")
     public static class User implements Serializable {
         private Long id;
         private String name;
@@ -579,7 +578,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
         public User() { }
 
-        public User(final Long id, final String name, final Organization organization) {
+        public User(Long id, String name, Organization organization) {
             this.id = id;
             this.name = name;
             this.organization = organization;
@@ -589,7 +588,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return id;
         }
 
-        public void setId(final Long id) {
+        public void setId(Long id) {
             this.id = id;
         }
 
@@ -597,7 +596,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -605,19 +604,20 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return organization;
         }
 
-        public void setOrganization(final Organization organization) {
+        @SuppressWarnings("unused")
+        public void setOrganization(Organization organization) {
             this.organization = organization;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final User user = (User) o;
+            User user = (User) o;
             return Objects.equals(id, user.id)
                     && Objects.equals(name, user.name)
                     && Objects.equals(organization, user.organization);
@@ -638,7 +638,6 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         }
     }
 
-    @SuppressWarnings("unused")
     public static class Organization implements Serializable, Comparable<Organization> {
         protected Long id;
         protected String name;
@@ -646,7 +645,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
         public Organization() { }
 
-        public Organization(final Long id, final String name, final Office office) {
+        public Organization(Long id, String name, Office office) {
             this.id = id;
             this.name = name;
             this.office = office;
@@ -656,7 +655,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return id;
         }
 
-        public void setId(final Long id) {
+        public void setId(Long id) {
             this.id = id;
         }
 
@@ -664,7 +663,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -672,19 +671,20 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return office;
         }
 
-        public void setOffice(final Office office) {
+        @SuppressWarnings("unused")
+        public void setOffice(Office office) {
             this.office = office;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final Organization that = (Organization) o;
+            Organization that = (Organization) o;
             return Objects.equals(id, that.id)
                     && Objects.equals(name, that.name)
                     && Objects.equals(office, that.office);
@@ -716,29 +716,23 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
         public NonprofitOrganization() { }
 
-        public NonprofitOrganization(final Long id, final String name, final Office office,
-                                     final Boolean governmentFunded) {
-            super(id, name, office);
-            this.governmentFunded = governmentFunded;
-        }
-
         public Boolean isGovernmentFunded() {
             return governmentFunded;
         }
 
-        public void setGovernmentFunded(final Boolean governmentFunded) {
+        public void setGovernmentFunded(Boolean governmentFunded) {
             this.governmentFunded = governmentFunded;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final NonprofitOrganization that = (NonprofitOrganization) o;
+            NonprofitOrganization that = (NonprofitOrganization) o;
             return Objects.equals(id, that.id)
                     && Objects.equals(name, that.name)
                     && Objects.equals(office, that.office)
@@ -761,14 +755,14 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         }
     }
 
-    @SuppressWarnings("unused")
     public static class Office implements Serializable, Comparable<Office> {
         private Long id;
         private String name;
 
+        @SuppressWarnings("unused")
         public Office() { }
 
-        public Office(final Long id, final String name) {
+        public Office(Long id, String name) {
             this.id = id;
             this.name = name;
         }
@@ -777,7 +771,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return id;
         }
 
-        public void setId(final Long id) {
+        public void setId(Long id) {
             this.id = id;
         }
 
@@ -785,19 +779,19 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final Office office = (Office) o;
+            Office office = (Office) o;
             return Objects.equals(id, office.id) && Objects.equals(name, office.name);
         }
 
@@ -820,14 +814,14 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         }
     }
 
-    @SuppressWarnings("unused")
     public static class RegularPOJO implements Serializable {
         private String name;
         private NestedPOJO child;
 
+        @SuppressWarnings("unused")
         public RegularPOJO() { }
 
-        public RegularPOJO(final String name, final NestedPOJO child) {
+        public RegularPOJO(String name, NestedPOJO child) {
             this.name = name;
             this.child = child;
         }
@@ -836,7 +830,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -844,19 +838,19 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return child;
         }
 
-        public void setChild(final NestedPOJO child) {
+        public void setChild(NestedPOJO child) {
             this.child = child;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final RegularPOJO that = (RegularPOJO) o;
+            RegularPOJO that = (RegularPOJO) o;
             return Objects.equals(name, that.name) && Objects.equals(child, that.child);
         }
 
@@ -866,14 +860,14 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         }
     }
 
-    @SuppressWarnings("unused")
     public static class NestedPOJO implements Serializable {
         private Long id;
         private String name;
 
+        @SuppressWarnings("unused")
         public NestedPOJO() { }
 
-        public NestedPOJO(final Long id, final String name) {
+        public NestedPOJO(Long id, String name) {
             this.id = id;
             this.name = name;
         }
@@ -882,7 +876,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return id;
         }
 
-        public void setId(final Long id) {
+        public void setId(Long id) {
             this.id = id;
         }
 
@@ -890,19 +884,19 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final NestedPOJO that = (NestedPOJO) o;
+            NestedPOJO that = (NestedPOJO) o;
             return Objects.equals(id, that.id) && Objects.equals(name, that.name);
         }
 
@@ -912,23 +906,18 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         }
     }
 
-    @SuppressWarnings("unused")
     public static class AllTypesParent implements Serializable {
         private String name;
         private AllTypesValue child;
 
+        @SuppressWarnings("unused")
         public AllTypesParent() { }
-
-        public AllTypesParent(final String name, final AllTypesValue child) {
-            this.name = name;
-            this.child = child;
-        }
 
         public String getName() {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -936,19 +925,19 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
             return child;
         }
 
-        public void setChild(final AllTypesValue child) {
+        public void setChild(AllTypesValue child) {
             this.child = child;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final AllTypesParent that = (AllTypesParent) o;
+            AllTypesParent that = (AllTypesParent) o;
             return Objects.equals(name, that.name) && Objects.equals(child, that.child);
         }
 

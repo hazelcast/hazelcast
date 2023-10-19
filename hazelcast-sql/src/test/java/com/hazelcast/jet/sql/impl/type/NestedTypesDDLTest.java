@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
 import com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.RegularPOJO;
@@ -44,10 +43,7 @@ public class NestedTypesDDLTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = smallInstanceConfig()
-                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
-
-        initialize(2, config);
+        initialize(2, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
         storage = sqlServiceImpl(instance()).getOptimizer().relationsStorage();
     }
 
@@ -63,7 +59,7 @@ public class NestedTypesDDLTest extends SqlTestSupport {
         new SqlType("FirstType").fields("a INT").create();
         new SqlType("FirstType").fields("a VARCHAR").createOrReplace();
 
-        assertEquals(VARCHAR, storage.getType("FirstType").getFields().get(0).getQueryDataType());
+        assertEquals(VARCHAR, storage.getType("FirstType").getFields().get(0).getType());
     }
 
     @Test
@@ -71,7 +67,7 @@ public class NestedTypesDDLTest extends SqlTestSupport {
         new SqlType("FirstType").fields("a INT").create();
         new SqlType("FirstType").fields("a VARCHAR").createIfNotExists();
 
-        assertEquals(INT, storage.getType("FirstType").getFields().get(0).getQueryDataType());
+        assertEquals(INT, storage.getType("FirstType").getFields().get(0).getType());
     }
 
     @Test

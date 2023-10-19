@@ -960,7 +960,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
             public Field(QueryDataTypeField field) {
                 name = field.getName();
-                type = new Type(field.getDataType());
+                type = new Type(field.getType());
             }
 
             public Field(Schema.Field field) {

@@ -371,7 +371,7 @@ public final class OptUtils {
 
         for (int i = 0; i < type.getObjectFields().size(); i++) {
             final String fieldName = type.getObjectFields().get(i).getName();
-            final QueryDataType fieldType = type.getObjectFields().get(i).getDataType();
+            final QueryDataType fieldType = type.getObjectFields().get(i).getType();
 
             RelDataType fieldRelDataType;
             if (fieldType.isCustomType()) {

@@ -198,9 +198,10 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         private FullyConnectedB b;
         private FullyConnectedC c;
 
+        @SuppressWarnings("unused")
         public FullyConnectedA() { }
 
-        public FullyConnectedA(final String name) {
+        public FullyConnectedA(String name) {
             this.name = name;
         }
 
@@ -208,7 +209,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -216,7 +217,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return b;
         }
 
-        public void setB(final FullyConnectedB b) {
+        public void setB(FullyConnectedB b) {
             this.b = b;
         }
 
@@ -224,7 +225,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return c;
         }
 
-        public void setC(final FullyConnectedC c) {
+        public void setC(FullyConnectedC c) {
             this.c = c;
         }
     }
@@ -234,9 +235,10 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         private FullyConnectedA a;
         private FullyConnectedC c;
 
+        @SuppressWarnings("unused")
         public FullyConnectedB() { }
 
-        public FullyConnectedB(final String name) {
+        public FullyConnectedB(String name) {
             this.name = name;
         }
 
@@ -244,7 +246,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -252,7 +254,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return a;
         }
 
-        public void setA(final FullyConnectedA a) {
+        public void setA(FullyConnectedA a) {
             this.a = a;
         }
 
@@ -260,7 +262,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return c;
         }
 
-        public void setC(final FullyConnectedC c) {
+        public void setC(FullyConnectedC c) {
             this.c = c;
         }
     }
@@ -270,13 +272,14 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         private FullyConnectedA a;
         private FullyConnectedB b;
 
+        @SuppressWarnings("unused")
         public FullyConnectedC() { }
 
         public String getName() {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -284,7 +287,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return a;
         }
 
-        public void setA(final FullyConnectedA a) {
+        public void setA(FullyConnectedA a) {
             this.a = a;
         }
 
@@ -292,11 +295,11 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return b;
         }
 
-        public void setB(final FullyConnectedB b) {
+        public void setB(FullyConnectedB b) {
             this.b = b;
         }
 
-        public FullyConnectedC(final String name) {
+        public FullyConnectedC(String name) {
             this.name = name;
         }
     }
@@ -306,9 +309,10 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         private DualPathGraph left;
         private DualPathGraph right;
 
+        @SuppressWarnings("unused")
         public DualPathGraph() { }
 
-        public DualPathGraph(final String name) {
+        public DualPathGraph(String name) {
             this.name = name;
         }
 
@@ -316,7 +320,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return name;
         }
 
-        public void setName(final String name) {
+        public void setName(String name) {
             this.name = name;
         }
 
@@ -324,7 +328,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return left;
         }
 
-        public void setLeft(final DualPathGraph left) {
+        public void setLeft(DualPathGraph left) {
             this.left = left;
         }
 
@@ -332,7 +336,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
             return right;
         }
 
-        public void setRight(final DualPathGraph right) {
+        public void setRight(DualPathGraph right) {
             this.right = right;
         }
     }

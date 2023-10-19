@@ -30,11 +30,9 @@ import java.util.Map;
 import java.util.Objects;
 
 public final class ToConverters {
-
     private static final Map<QueryDataType, ToConverter> CONVERTERS = prepareConverters();
 
-    private ToConverters() {
-    }
+    private ToConverters() { }
 
     @Nonnull
     public static ToConverter getToConverter(QueryDataType type) {

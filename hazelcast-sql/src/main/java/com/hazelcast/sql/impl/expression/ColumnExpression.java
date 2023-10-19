@@ -51,7 +51,7 @@ public final class ColumnExpression<T> implements Expression<T> {
         // like QueryDataType.VARCHAR_CHARACTER, are canonicalized to values of
         // some other canonical type, like QueryDataType.VARCHAR. That kind of
         // changes the observed type of a column to a canonical one.
-        if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+        if (type.getTypeFamily() == QueryDataTypeFamily.OBJECT) {
             return new ColumnExpression<>(index, type);
         } else {
             Class<?> canonicalClass = type.getConverter().getNormalizedValueClass();
@@ -74,7 +74,6 @@ public final class ColumnExpression<T> implements Expression<T> {
         return res;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
         // Lazy deserialization is disabled by default, and it has to be requested explicitly.
