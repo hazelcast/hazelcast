@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.common.CalcIntoScanRule;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
@@ -47,7 +46,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.joining;
 
@@ -86,32 +84,28 @@ import static java.util.stream.Collectors.joining;
  */
 public class HazelcastTable extends AbstractTable {
     private final Table target;
-    private final Supplier<Statistic> statisticSupplier;
+    private final Statistic statistic;
     private final RexNode filter;
     private List<RexNode> projects;
 
     private RelDataType rowType;
     private final Set<String> hiddenFieldNames = new HashSet<>();
 
-    public HazelcastTable(Table target, HazelcastInstance instance) {
-        this(target, createTableStatistic(target, instance));
-    }
-
     public HazelcastTable(Table target, Statistic statistic) {
         this.target = target;
-        this.statisticSupplier = () -> statistic;
+        this.statistic = statistic;
         this.filter = null;
     }
 
     private HazelcastTable(
             Table target,
-            Supplier<Statistic> statisticSupplier,
+            Statistic statistic,
             List<RexNode> projects,
             @Nullable RelDataType rowType,
             @Nullable RexNode filter
     ) {
         this.target = target;
-        this.statisticSupplier = statisticSupplier;
+        this.statistic = statistic;
         this.projects = projects;
         this.rowType = rowType == null ? computeRowType(projects) : rowType;
         this.filter = filter;
@@ -132,11 +126,11 @@ public class HazelcastTable extends AbstractTable {
     }
 
     public HazelcastTable withProject(List<RexNode> projects, @Nullable RelDataType rowType) {
-        return new HazelcastTable(target, statisticSupplier, projects, rowType, filter);
+        return new HazelcastTable(target, statistic, projects, rowType, filter);
     }
 
     public HazelcastTable withFilter(RexNode filter) {
-        return new HazelcastTable(target, statisticSupplier, projects, rowType, filter);
+        return new HazelcastTable(target, statistic, projects, rowType, filter);
     }
 
     @Nonnull
@@ -163,7 +157,6 @@ public class HazelcastTable extends AbstractTable {
 
     @Override
     public Statistic getStatistic() {
-        Statistic statistic = statisticSupplier.get();
         if (filter == null) {
             return statistic;
         } else {
@@ -175,7 +168,7 @@ public class HazelcastTable extends AbstractTable {
 
     @SuppressWarnings("DataFlowIssue")
     public double getTotalRowCount() {
-        return statisticSupplier.get().getRowCount();
+        return statistic.getRowCount();
     }
 
     public boolean isHidden(String fieldName) {
@@ -219,17 +212,12 @@ public class HazelcastTable extends AbstractTable {
         return new RelRecordType(StructKind.PEEK_FIELDS, typeFields, false);
     }
 
-    private static Statistic createTableStatistic(Table table, HazelcastInstance instance) {
-        return new HazelcastTableStatistic(instance.getMap(table.getSqlName()).size());
-    }
-
     /**
      * Statistics that takes into account the row count after the filter is applied.
      */
     private final class AdjustedStatistic implements Statistic {
 
         private final Double rowCount;
-        private final Statistic statistic = statisticSupplier.get();
 
         private AdjustedStatistic(Double rowCount) {
             this.rowCount = rowCount;

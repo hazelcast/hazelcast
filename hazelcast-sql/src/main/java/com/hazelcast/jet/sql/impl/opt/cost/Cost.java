@@ -48,13 +48,22 @@ public class Cost implements RelOptCost {
      * - and compare with each element; (estimate - 1 op, assuming hash collision may happen)
      * - add the k-v to the table.      (estimate - 1 op).
      */
-    public static final double HASH_JOIN_MULTIPLIER = 7;
+    public static final double HASH_JOIN_MULTIPLIER = 7.;
+
+    // During the comparison for each right row we do everything, except adding.
+    public static final double HASH_JOIN_ROW_CMP_MULTIPLIER = HASH_JOIN_MULTIPLIER - 1;
 
     // Most of the time you compare one field from both sides in join condition.
     public static final double NLJ_JOIN_ROW_CMP_MULTIPLIER = 1.5;
 
-    // During the comparison for each right row we do everything, except adding.
-    public static final double HASH_JOIN_ROW_CMP_MULTIPLIER = HASH_JOIN_MULTIPLIER - 1;
+    /**
+     * Multiplier to display CPU aspect of network broadcast actions (we do not include network cost yet):
+     * - row serialization;              (avg estimate - 4 ops: 1 ops for __key and 3 ops as avg count of value props)
+     * - write raw data to the socket    (estimate - 4 ops)
+     * - read raw data from the socket   (estimate - 2 ops)
+     * - row deserialization             (avg estimate - 4 ops, same as for serialization)
+     */
+    public static final double NETWORK_BROADCAST_FACTOR = 14.;
 
     private final double rows;
     private final double cpu;
