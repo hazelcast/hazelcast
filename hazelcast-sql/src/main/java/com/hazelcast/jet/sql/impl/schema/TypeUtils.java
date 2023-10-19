@@ -225,8 +225,10 @@ public final class TypeUtils {
 
         @Override
         protected String getTypeMetadata(Schema schema) {
-            // Used only for debugging purposes since AvroUpsertTarget has already a reference to the schema.
-            return schema != null ? schema.toString() : null;
+            // AvroUpsertTarget has already a reference to the schema, and Avro schemas
+            // are self-contained. That is, it is not possible to have a partial schema
+            // or override some parts of a schema.
+            return null;
         }
 
         @Override
