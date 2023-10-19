@@ -30,6 +30,7 @@ import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.impl.connector.RemoteMapSinkEntryProcessorParams;
 import com.hazelcast.jet.impl.connector.RemoteMapSinkParams;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.json.JsonUtil;
@@ -799,8 +800,42 @@ public final class Sinks {
             @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
+        RemoteMapSinkEntryProcessorParams<E, K, V, R> params = new RemoteMapSinkEntryProcessorParams<>(mapName);
+        params.setClientConfig(clientConfig);
+        params.setToKeyFn(toKeyFn);
+        params.setToEntryProcessorFn(toEntryProcessorFn);
+
+        ProcessorMetaSupplier processorMetaSupplier = updateRemoteMapP(params);
         return fromProcessor("remoteMapWithEntryProcessorSink(" + mapName + ')',
-                updateRemoteMapP(mapName, clientConfig, toKeyFn, toEntryProcessorFn),
+                processorMetaSupplier,
+                toKeyFn);
+    }
+
+    /**
+     * The same as the {@link #remoteMapWithEntryProcessor(String, ClientConfig, FunctionEx, FunctionEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @since 5.4
+     */
+    public static <E, K, V, R> Sink<E> remoteMapWithEntryProcessor(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
+    ) {
+        RemoteMapSinkEntryProcessorParams<E, K, V, R> params = new RemoteMapSinkEntryProcessorParams<>(mapName);
+        params.setDataConnectionName(dataConnectionRef.getName());
+        params.setToKeyFn(toKeyFn);
+        params.setToEntryProcessorFn(toEntryProcessorFn);
+
+        ProcessorMetaSupplier processorMetaSupplier = updateRemoteMapP(params);
+        return fromProcessor("remoteMapWithEntryProcessorSink(" + mapName + ')',
+                processorMetaSupplier,
                 toKeyFn);
     }
 

@@ -51,6 +51,14 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
         this.clientXml = clientXml;
     }
 
+    public void setClientXml(String clientXml) {
+        this.clientXml = clientXml;
+    }
+
+    public void setDataConnectionName(String dataConnectionName) {
+        this.dataConnectionName = dataConnectionName;
+    }
+
     public static ProcessorSupplier ofMap(
             @Nullable String clientXml,
             @Nonnull FunctionEx<HazelcastInstance, Processor> procFn
@@ -107,7 +115,7 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
     protected abstract Processor createProcessor(HazelcastInstance instance, SerializationService serializationService);
 
     boolean isLocal() {
-        return clientXml == null;
+        return (clientXml == null) && (dataConnectionName == null);
     }
 
     @Override

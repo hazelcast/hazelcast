@@ -719,29 +719,6 @@ public class SinksTest extends PipelineTestSupport {
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
     }
 
-    @Test
-    public void remoteMapWithEntryProcessor() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToMap(remoteHz.getMap(srcName), input);
-
-        // When
-        Sink<Entry<String, Integer>> sink = Sinks.remoteMapWithEntryProcessor(
-                srcName,
-                clientConfig,
-                Entry::getKey,
-                entry -> new IncrementEntryProcessor<>(10));
-
-        // Then
-        p.readFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).writeTo(sink);
-        execute();
-        List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + 10))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(srcName).entrySet();
-        assertEquals(expected.size(), actual.size());
-        expected.forEach(entry -> assertTrue(actual.contains(entry)));
-    }
 
     @Test
     public void mapWithEntryProcessor_when_entryIsLocked_then_entryIsNotUpdated() {

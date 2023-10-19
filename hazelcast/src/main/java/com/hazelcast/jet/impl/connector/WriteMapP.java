@@ -145,6 +145,9 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
         buffer = new ArrayMap<>(EdgeConfig.DEFAULT_QUEUE_SIZE);
     }
 
+    /**
+     * A ProcessorSupplier that transforms the key and value of a stream and writes the transformed data to a map sink.
+     */
     public static class Supplier<T, K, V> extends AbstractHazelcastConnectorSupplier {
 
         private static final long serialVersionUID = 1L;

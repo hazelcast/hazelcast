@@ -18,11 +18,12 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.map.EntryProcessor;
 
 /**
- * Parameters for using a remote map as a sink
+ * Parameters for using a remote map as a sink with an EntryProcessor:
  */
-public class RemoteMapSinkParams<K, V, T> {
+public class RemoteMapSinkEntryProcessorParams<E, K, V, R> {
 
     private final String mapName;
 
@@ -30,11 +31,11 @@ public class RemoteMapSinkParams<K, V, T> {
 
     private ClientConfig clientConfig;
 
-    private FunctionEx<? super T, ? extends K> toKeyFn;
+    private FunctionEx<? super E, ? extends K> toKeyFn;
 
-    private FunctionEx<? super T, ? extends V> toValueFn;
+    private FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn;
 
-    public RemoteMapSinkParams(String mapName) {
+    public RemoteMapSinkEntryProcessorParams(String mapName) {
         this.mapName = mapName;
     }
 
@@ -62,19 +63,19 @@ public class RemoteMapSinkParams<K, V, T> {
         this.clientConfig = clientConfig;
     }
 
-    public FunctionEx<? super T, ? extends K> getToKeyFn() {
+    public FunctionEx<? super E, ? extends K> getToKeyFn() {
         return toKeyFn;
     }
 
-    public void setToKeyFn(FunctionEx<? super T, ? extends K> toKeyFn) {
+    public void setToKeyFn(FunctionEx<? super E, ? extends K> toKeyFn) {
         this.toKeyFn = toKeyFn;
     }
 
-    public FunctionEx<? super T, ? extends V> getToValueFn() {
-        return toValueFn;
+    public FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> getToEntryProcessorFn() {
+        return toEntryProcessorFn;
     }
 
-    public void setToValueFn(FunctionEx<? super T, ? extends V> toValueFn) {
-        this.toValueFn = toValueFn;
+    public void setToEntryProcessorFn(FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn) {
+        this.toEntryProcessorFn = toEntryProcessorFn;
     }
 }
