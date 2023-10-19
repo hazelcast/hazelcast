@@ -43,6 +43,12 @@ import java.util.function.Supplier;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_AVRO_SCHEMA;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_JAVA_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_CLASS_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_CLASS_VERSION;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.AVRO_TO_SQL;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
@@ -118,8 +124,14 @@ public final class TypeUtils {
         }
 
         @Override
-        protected PortableId getSchemaId(Map<String, String> options, Boolean isKey) {
-            return portableId(options, isKey);
+        protected PortableId getSchemaId(Map<String, String> mappingOptions, boolean isKey) {
+            return portableId(mappingOptions, isKey);
+        }
+
+        @Override
+        protected PortableId getSchemaId(Map<String, String> typeOptions) {
+            return portableId(typeOptions, OPTION_TYPE_PORTABLE_FACTORY_ID,
+                    OPTION_TYPE_PORTABLE_CLASS_ID, OPTION_TYPE_PORTABLE_CLASS_VERSION);
         }
     }
 
@@ -149,8 +161,13 @@ public final class TypeUtils {
         }
 
         @Override
-        protected String getSchemaId(Map<String, String> options, Boolean isKey) {
-            return compactTypeName(options, isKey);
+        protected String getSchemaId(Map<String, String> mappingOptions, boolean isKey) {
+            return compactTypeName(mappingOptions, isKey);
+        }
+
+        @Override
+        protected String getSchemaId(Map<String, String> typeOptions) {
+            return typeOptions.get(OPTION_TYPE_COMPACT_TYPE_NAME);
         }
     }
 
@@ -186,8 +203,14 @@ public final class TypeUtils {
         }
 
         @Override
-        protected Class<?> getSchemaId(Map<String, String> options, Boolean isKey) {
-            return loadClass(options, isKey);
+        protected Class<?> getSchemaId(Map<String, String> mappingOptions, boolean isKey) {
+            return loadClass(mappingOptions, isKey);
+        }
+
+        @Override
+        protected Class<?> getSchemaId(Map<String, String> typeOptions) {
+            String className = typeOptions.get(OPTION_TYPE_JAVA_CLASS);
+            return className != null ? loadClass(className) : null;
         }
 
         private static boolean isUserClass(Class<?> clazz) {
@@ -232,8 +255,14 @@ public final class TypeUtils {
         }
 
         @Override
-        protected Schema getSchemaId(Map<String, String> options, Boolean isKey) {
-            return inlineSchema(options, isKey);
+        protected Schema getSchemaId(Map<String, String> mappingOptions, boolean isKey) {
+            return inlineSchema(mappingOptions, isKey);
+        }
+
+        @Override
+        protected Schema getSchemaId(Map<String, String> typeOptions) {
+            String schemaJson = typeOptions.get(OPTION_TYPE_AVRO_SCHEMA);
+            return schemaJson != null ? new Schema.Parser().parse(schemaJson) : null;
         }
     }
 
@@ -272,7 +301,7 @@ public final class TypeUtils {
                 throw QueryException.error("Encountered type '" + typeName + "', which doesn't exist");
             }
 
-            ID schemaId = getSchemaId(type.options(), null);
+            ID schemaId = getSchemaId(type.options());
             if (schemaId == null) {
                 schemaId = schemaIdSupplier.get();
             }
@@ -304,7 +333,7 @@ public final class TypeUtils {
         protected abstract S getSchema(ID schemaId);
         protected abstract List<TypeField> resolveFields(S schema);
         protected abstract ID getFieldSchemaId(S schema, String fieldName, String fieldTypeName);
-        /** @param isKey Null for types, non-null for mappings. */
-        protected abstract ID getSchemaId(Map<String, String> options, Boolean isKey);
+        protected abstract ID getSchemaId(Map<String, String> mappingOptions, boolean isKey);
+        protected abstract ID getSchemaId(Map<String, String> typeOptions);
     }
 }

@@ -43,7 +43,6 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_RECORD_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_SCHEMA;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_RECORD_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
@@ -245,12 +244,11 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                 : builder -> builder.name(name).type().optional().type(schema);
     }
 
-    public static Schema inlineSchema(Map<String, String> options, Boolean isKey) {
-        String schemaProperty = isKey == null ? OPTION_TYPE_AVRO_SCHEMA :
-                isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA;
+    public static Schema inlineSchema(Map<String, String> options, boolean isKey) {
+        String schemaProperty = isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA;
         String schemaJson = options.get(schemaProperty);
         if (schemaJson == null) {
-            if (isKey != null && !options.containsKey("schema.registry.url")) {
+            if (!options.containsKey("schema.registry.url")) {
                 throw QueryException.error("Either schema.registry.url or " + schemaProperty
                         + " is required to create Avro-based mapping");
             }

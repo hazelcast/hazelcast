@@ -49,9 +49,6 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_VERSION;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FACTORY_ID;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_CLASS_ID;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_CLASS_VERSION;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_VERSION;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
@@ -231,26 +228,30 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
         }, ExceptionUtil::notParallelizable).build();
     }
 
-    public static PortableId portableId(Map<String, String> options, Boolean isKey) {
-        String factoryIdProperty = isKey == null ? OPTION_TYPE_PORTABLE_FACTORY_ID :
-                isKey ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID;
-        String classIdProperty = isKey == null ? OPTION_TYPE_PORTABLE_CLASS_ID :
-                isKey ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID;
-        String versionProperty = isKey == null ? OPTION_TYPE_PORTABLE_CLASS_VERSION :
-                isKey ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION;
+    public static PortableId portableId(Map<String, String> options, boolean isKey) {
+        String factoryIdProperty = isKey ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID;
+        String classIdProperty = isKey ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID;
+        String versionProperty = isKey ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION;
 
+        PortableId portableId = portableId(options, factoryIdProperty, classIdProperty, versionProperty);
+        if (portableId == null) {
+            throw QueryException.error(String.format("%s Portable ID (%s, %s and optional %s)"
+                            + " is required to create Portable-based mapping", isKey ? "Key" : "Value",
+                    factoryIdProperty, classIdProperty, versionProperty));
+        }
+        return portableId;
+    }
+
+    public static PortableId portableId(
+            Map<String, String> options,
+            String factoryIdProperty,
+            String classIdProperty,
+            String versionProperty
+    ) {
         Integer factoryId = Optional.ofNullable(options.get(factoryIdProperty)).map(Integer::parseInt).orElse(null);
         Integer classId = Optional.ofNullable(options.get(classIdProperty)).map(Integer::parseInt).orElse(null);
         int version = Optional.ofNullable(options.get(versionProperty)).map(Integer::parseInt).orElse(0);
 
-        if (factoryId == null || classId == null) {
-            if (isKey != null) {
-                throw QueryException.error(String.format("%s Portable ID (%s, %s and optional %s)"
-                                + " is required to create Portable-based mapping", isKey ? "Key" : "Value",
-                        factoryIdProperty, classIdProperty, versionProperty));
-            }
-            return null;
-        }
-        return new PortableId(factoryId, classId, version);
+        return factoryId != null && classId != null ? new PortableId(factoryId, classId, version) : null;
     }
 }

@@ -42,7 +42,6 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_JAVA_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
@@ -240,12 +239,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         );
     }
 
-    public static Class<?> loadClass(Map<String, String> options, Boolean isKey) {
-        if (isKey == null) {
-            String className = options.get(OPTION_TYPE_JAVA_CLASS);
-            return className != null ? loadClass(className) : null;
-        }
-
+    public static Class<?> loadClass(Map<String, String> options, boolean isKey) {
         String formatProperty = options.get(isKey ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT);
         String classNameProperty = isKey ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS;
 
@@ -259,7 +253,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         return loadClass(className);
     }
 
-    private static Class<?> loadClass(String className) {
+    public static Class<?> loadClass(String className) {
         try {
             return ReflectionUtils.loadClass(className);
         } catch (Exception e) {

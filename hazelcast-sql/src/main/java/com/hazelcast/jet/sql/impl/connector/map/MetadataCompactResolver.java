@@ -46,7 +46,6 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_COMPACT_TYPE_NAME;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_COMPACT_TYPE_NAME;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
@@ -149,11 +148,10 @@ public final class MetadataCompactResolver implements KvMetadataResolver {
                 ExceptionUtil::notParallelizable).build();
     }
 
-    public static String compactTypeName(Map<String, String> options, Boolean isKey) {
-        String typeNameProperty = isKey == null ? OPTION_TYPE_COMPACT_TYPE_NAME :
-                isKey ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME;
+    public static String compactTypeName(Map<String, String> options, boolean isKey) {
+        String typeNameProperty = isKey ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME;
         String typeName = options.get(typeNameProperty);
-        if (typeName == null && isKey != null) {
+        if (typeName == null) {
             throw QueryException.error(typeNameProperty + " is required to create Compact-based mapping");
         }
         return typeName;
