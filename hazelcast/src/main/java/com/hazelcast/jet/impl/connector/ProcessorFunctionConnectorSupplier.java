@@ -29,6 +29,8 @@ import javax.annotation.Nonnull;
  */
 public class ProcessorFunctionConnectorSupplier extends AbstractHazelcastConnectorSupplier {
 
+    private static final long serialVersionUID = 1L;
+
     private final FunctionEx<HazelcastInstance, Processor> processorFunction;
 
     public ProcessorFunctionConnectorSupplier(FunctionEx<HazelcastInstance, Processor> processorFunction) {
