@@ -151,6 +151,25 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         }
     }
 
+    public static void executeJdbcWithQuotes(String sql, String tableName) throws SQLException {
+        requireNonNull(dbConnectionUrl, "dbConnectionUrl must be set");
+        //Put the table name in quotations
+        String[] substrings = sql.split(" ");
+        String finalSql = "";
+        for (String str : substrings) {
+            if (str.equals(tableName)) {
+                finalSql += (quote(str) + " ") ;
+            } else {
+                finalSql += (str + " ");
+            }
+        }
+        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
+             Statement stmt = conn.createStatement()
+        ) {
+            stmt.execute(finalSql);
+        }
+    }
+
     public static void insertItems(String tableName, int start, int count) throws SQLException {
         int end = start + count;
         String sql = String.format("INSERT INTO %s VALUES(?, ?)", tableName);
@@ -224,6 +243,11 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
 
     protected static void assertJdbcRowsAnyOrder(String tableName, List<Class<?>> columnTypes, Row... rows) {
         List<Row> actualRows = jdbcRowsTable(tableName, columnTypes);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
+    }
+
+    protected static void assertJdbcQueryRowsAnyOrder(String query, Row... rows) {
+        List<Row> actualRows = jdbcRows(query);
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 

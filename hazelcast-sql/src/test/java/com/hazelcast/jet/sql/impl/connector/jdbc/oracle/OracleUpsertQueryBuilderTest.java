@@ -61,7 +61,7 @@ public class OracleUpsertQueryBuilderTest {
         StringBuilder sb = new StringBuilder();
         builder.appendMergeClause(sb);
         String mergeClause = sb.toString();
-        assertThat(mergeClause).isEqualTo("MERGE INTO \"table1\" M USING (SELECT ? as \"field1\", ? as \"field2\" FROM dual) E ON (M.\"pk1\" = E.\"pk1\" AND M.\"pk2\" = E.\"pk2\")");
+        assertThat(mergeClause).isEqualTo("MERGE INTO \"table1\" TARGET USING (SELECT ? as \"field1\", ? as \"field2\" FROM dual) SOURCE ON (TARGET.\"pk1\" = SOURCE.\"pk1\" AND TARGET.\"pk2\" = SOURCE.\"pk2\")");
     }
 
     @Test
@@ -72,8 +72,8 @@ public class OracleUpsertQueryBuilderTest {
 
         String matchedClause = sb.toString();
         assertThat(matchedClause).isEqualTo(
-                "WHEN MATCHED THEN UPDATE  SET M.\"field1\" = E.\"field1\", M.\"field2\" = E.\"field2\" WHEN NOT MATCHED THEN INSERT (\"field1\", \"field2\")  "
-                        + "VALUES(E.\"field1\", E.\"field2\")");
+                "WHEN MATCHED THEN UPDATE  SET TARGET.\"field1\" = SOURCE.\"field1\", TARGET.\"field2\" = SOURCE.\"field2\" WHEN NOT MATCHED THEN INSERT (\"field1\", \"field2\")  "
+                        + "VALUES(SOURCE.\"field1\", SOURCE.\"field2\")");
     }
 
     @Test
@@ -81,9 +81,9 @@ public class OracleUpsertQueryBuilderTest {
         OracleUpsertQueryBuilder builder = new OracleUpsertQueryBuilder(jdbcTable, dialect);
         String result = builder.query();
         assertThat(result).isEqualTo(
-                "MERGE INTO \"table1\" M USING (SELECT ? as \"field1\", ? as \"field2\" FROM dual) E ON (M.\"pk1\" = E.\"pk1\" AND M.\"pk2\" = E.\"pk2\") "
-                        + "WHEN MATCHED THEN UPDATE  SET M.\"field1\" = E.\"field1\", M.\"field2\" = E.\"field2\" "
-                        + "WHEN NOT MATCHED THEN INSERT (\"field1\", \"field2\")  VALUES(E.\"field1\", E.\"field2\")"
+                "MERGE INTO \"table1\" TARGET USING (SELECT ? as \"field1\", ? as \"field2\" FROM dual) SOURCE ON (TARGET.\"pk1\" = SOURCE.\"pk1\" AND TARGET.\"pk2\" = SOURCE.\"pk2\") "
+                        + "WHEN MATCHED THEN UPDATE  SET TARGET.\"field1\" = SOURCE.\"field1\", TARGET.\"field2\" = SOURCE.\"field2\" "
+                        + "WHEN NOT MATCHED THEN INSERT (\"field1\", \"field2\")  VALUES(SOURCE.\"field1\", SOURCE.\"field2\")"
         );
     }
 }

@@ -187,9 +187,9 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Test
     public void updateTableSetUsingExpressionWithTableColumnNoPushDown() throws Exception {
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)", "data VARCHAR(100)");
-        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 'name-0', '{\"value\":0}')");
-        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 'name-1', '{\"value\":1}')");
-        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(2, 'name-2', '{\"value\":2}')");
+        executeJdbcWithQuotes("INSERT INTO " + tableName + " VALUES(0, 'name-0', '{\"value\":0}')", tableName);
+        executeJdbcWithQuotes("INSERT INTO " + tableName + " VALUES(1, 'name-1', '{\"value\":1}')", tableName);
+        executeJdbcWithQuotes("INSERT INTO " + tableName + " VALUES(2, 'name-2', '{\"value\":2}')", tableName);
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -387,7 +387,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE JSON_QUERY(data, '$.value') = '2'");
 
         assertJdbcQueryRowsAnyOrder("SELECT " + quote("name") + " FROM " + quote(tableName),
-                newArrayList(String.class),
+                //newArrayList(String.class),
                 new Row("name-0"),
                 new Row("name-1"),
                 new Row("updated")

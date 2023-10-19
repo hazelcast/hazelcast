@@ -45,7 +45,7 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
         //sb.append("LOOP BEGIN ");
         sb.append("MERGE INTO ");
         dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
-        sb.append(" M USING (SELECT");
+        sb.append(" TARGET USING (SELECT");
         Iterator<String> it = jdbcTable.dbFieldNames().iterator();
         while (it.hasNext()) {
             String dbFieldName = it.next();
@@ -56,7 +56,7 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
                 sb.append(',');
             }
         }
-        sb.append(" FROM dual) E");
+        sb.append(" FROM dual) SOURCE");
         sb.append(" ON (");
         appendPrimaryKeys(sb);
         sb.append(")");
@@ -76,9 +76,9 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
                 continue;
             }
 
-            sb.append(" M.");
+            sb.append(" TARGET.");
             sb.append("\"" + dbFieldName + "\"");
-            sb.append(" = E.");
+            sb.append(" = SOURCE.");
             sb.append("\"" + dbFieldName + "\"");
             if (it.hasNext()) {
                 sb.append(',');
@@ -95,9 +95,9 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
         List<String> pkFields = jdbcTable.getPrimaryKeyList();
         for (int i = 0; i < pkFields.size(); i++) {
             String field = pkFields.get(i);
-            sb.append("M.")
+            sb.append("TARGET.")
                     .append("\"" + field + "\"")
-                    .append(" = E.")
+                    .append(" = SOURCE.")
                     .append("\"" + field + "\"");
             if (i < pkFields.size() - 1) {
                 sb.append(" AND ");
@@ -110,7 +110,7 @@ public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
         Iterator<String> it = fieldNames.iterator();
         while (it.hasNext()) {
             String fieldName = it.next();
-            sb.append("E.");
+            sb.append("SOURCE.");
             dialect.quoteIdentifier(sb, fieldName);
             if (it.hasNext()) {
                 sb.append(", ");
