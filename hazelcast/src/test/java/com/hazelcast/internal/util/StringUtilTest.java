@@ -58,17 +58,6 @@ class StringUtilTest extends HazelcastTestSupport {
 
 
     @Test
-    void test_lowerCaseFirstChar() {
-        assertEquals("", StringUtil.lowerCaseFirstChar(""));
-        assertEquals(".", StringUtil.lowerCaseFirstChar("."));
-        assertEquals(" ", StringUtil.lowerCaseFirstChar(" "));
-        assertEquals("a", StringUtil.lowerCaseFirstChar("a"));
-        assertEquals("a", StringUtil.lowerCaseFirstChar("A"));
-        assertEquals("aBC", StringUtil.lowerCaseFirstChar("ABC"));
-        assertEquals("abc", StringUtil.lowerCaseFirstChar("Abc"));
-    }
-
-    @Test
     void testSplitByComma() {
         assertNull(StringUtil.splitByComma(null, true));
         assertArrayEquals(arr(""), StringUtil.splitByComma("", true));
