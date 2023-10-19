@@ -221,7 +221,11 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             }
             long[] topicOffsets = offsets.get(topicPartition.topic());
             assert topicOffsets != null && topicOffsets.length > partition;
-            topicOffsets[partition] = initialOffset;
+
+            // we need to decrement the initialOffset value before putting it into the array,
+            // because the record we want to start reading from has not yet been consumed
+            topicOffsets[partition] = initialOffset - 1;
+
             getLogger().info("Seeking to specified initial offset: " + initialOffset
                     + " of topic-partition: " + topicPartition);
             consumer.seek(topicPartition, initialOffset);
