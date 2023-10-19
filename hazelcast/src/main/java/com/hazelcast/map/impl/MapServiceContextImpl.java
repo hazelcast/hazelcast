@@ -74,6 +74,7 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.DefaultIndexProvider;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexProvider;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -462,10 +463,15 @@ class MapServiceContextImpl implements MapServiceContext {
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
         if (mapContainer.isGlobalIndexEnabled()) {
-            mapContainer.getGlobalIndexRegistry().destroyIndexes();
+            destroyGlobalIndexes(mapContainer);
         }
 
         localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
+    }
+
+    protected void destroyGlobalIndexes(MapContainer mapContainer) {
+        IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
+        indexRegistry.destroyIndexes();
     }
 
     /**
