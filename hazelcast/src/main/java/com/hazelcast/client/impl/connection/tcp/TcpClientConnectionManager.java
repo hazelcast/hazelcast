@@ -101,6 +101,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -130,6 +131,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
 public class TcpClientConnectionManager implements ClientConnectionManager, MembershipListener {
+    public static final HazelcastProperty TPC_IO_THREAD_COUNT = new HazelcastProperty(
+            "hazelcast.internal.tpc.connect.count");
 
     /**
      * A private property to let users control the reconnection behavior of the client.
@@ -511,7 +514,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     <A> ClientConnection connect(A target, Function<A, ClientConnection> getOrConnectFunction,
-                           Function<A, Address> addressTranslator) {
+                                 Function<A, Address> addressTranslator) {
         try {
             logger.info("Trying to connect to " + target);
             return getOrConnectFunction.apply(target);
@@ -1072,7 +1075,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             List<Integer> tpcPorts = response.getTpcPorts();
             if (isTpcAwareClient && tpcPorts != null && !tpcPorts.isEmpty()) {
-                connectTpcPorts(connection, tpcPorts, response.getTpcToken());
+                List<Integer> newTpcPorts = subset(tpcPorts);
+                connectTpcPorts(connection, newTpcPorts, response.getTpcToken());
             }
 
             boolean connectionsEmpty = activeConnections.isEmpty();
@@ -1142,6 +1146,32 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             onConnectionClose(connection);
         }
         return connection;
+    }
+
+    private static List<Integer> subset(List<Integer> tpcPorts) {
+        String s = System.getProperty("hazelcast.internal.tpc.connect.count");
+        System.out.println("hazelcast.internal.tpc.connect.count=" + s);
+        System.out.println("tpcPorts:" + tpcPorts);
+        if (s == null) {
+            System.out.println("'hazelcast.internal.tpc.connect.count' not configured");
+            return tpcPorts;
+        }
+
+        Integer connectCount = Integer.parseInt(s);
+        if (connectCount >= tpcPorts.size()) {
+            System.out.println("Selecting all tpcPort because the number of TPC ports is smaller than the connect count");
+            return tpcPorts;
+        }
+
+        tpcPorts = new LinkedList<>(tpcPorts);
+        List<Integer> newTpcPorts = new ArrayList<>();
+        ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
+        for (int k = 0; k < connectCount; k++) {
+            int index = threadLocalRandom.nextInt(tpcPorts.size());
+            newTpcPorts.add(tpcPorts.remove(index));
+        }
+        System.out.println("Connectioning to the following TPC ports:" + newTpcPorts);
+        return newTpcPorts;
     }
 
     /**

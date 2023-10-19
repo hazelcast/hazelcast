@@ -202,7 +202,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                                                                NodeExtension nodeExtension,
                                                                ClassLoader configClassLoader) {
         int threadCount = tpcServerBootstrap.eventloopCount();
-
+        logger.info("Starting " + threadCount + " partition operation threads.");
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = createThreadPoolName(hzName, "partition-operation") + threadId;

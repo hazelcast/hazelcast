@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.TaskQueue;
 
 import java.util.AbstractQueue;
 import java.util.Iterator;
@@ -27,7 +27,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public class TpcOperationQueue extends AbstractQueue implements OperationQueue {
 
     // There is no data-race on this queue because the field is set before the thread is started.
-    private Reactor reactor;
+    private TaskQueue taskQueue;
     private final Queue<Object> normalQueue;
     private final Queue<Object> priorityQueue;
 
@@ -58,8 +58,9 @@ public class TpcOperationQueue extends AbstractQueue implements OperationQueue {
         } else {
             normalQueue.offer(task);
         }
-
-        reactor.wakeup();
+        // the problem is that adding the task should be done through the
+        // task queue because the task queue isn't scheduled this way
+        taskQueue.schedule();
     }
 
     @Override
@@ -97,7 +98,7 @@ public class TpcOperationQueue extends AbstractQueue implements OperationQueue {
         return normalQueue.isEmpty() && priorityQueue.isEmpty();
     }
 
-    public void setReactor(Reactor reactor) {
-        this.reactor = reactor;
+    public void setTaskQueue(TaskQueue taskQueue) {
+        this.taskQueue = taskQueue;
     }
 }

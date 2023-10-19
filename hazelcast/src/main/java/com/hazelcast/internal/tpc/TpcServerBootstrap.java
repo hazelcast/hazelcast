@@ -75,6 +75,10 @@ public class TpcServerBootstrap {
     public static final HazelcastProperty TPC_EVENTLOOP_COUNT = new HazelcastProperty(
             "hazelcast.internal.tpc.eventloop.count");
 
+    public static final HazelcastProperty TPC_IO_THREAD_COUNT = new HazelcastProperty(
+            "hazelcast.internal.tpc.io.thread.count");
+
+
     private static final int TERMINATE_TIMEOUT_SECONDS = 5;
 
     private final NodeEngineImpl nodeEngine;
@@ -122,7 +126,7 @@ public class TpcServerBootstrap {
     }
 
     public int eventloopCount() {
-        return loadReactorCount();
+        return loadReactorCount() - loadDedicatedIoThreadCount();
     }
 
     private int loadReactorCount() {
@@ -134,12 +138,26 @@ public class TpcServerBootstrap {
         }
     }
 
+    private int loadDedicatedIoThreadCount() {
+        String dedicatedIOThreadCount = nodeEngine.getProperties().getString(TPC_IO_THREAD_COUNT);
+        if (dedicatedIOThreadCount == null) {
+            return 0;
+        } else {
+            return Integer.parseInt(dedicatedIOThreadCount);
+        }
+    }
+
     public void start() {
         if (!enabled) {
             return;
         }
 
         logger.info("Starting TpcServerBootstrap");
+
+        int dedicatedIoThreadCount = loadDedicatedIoThreadCount();
+        int reactorCount = loadReactorCount();
+        logger.info("reactorThreadCount " + reactorCount);
+        logger.info("dedicatedIoThreadCount " + dedicatedIoThreadCount);
 
         TpcEngine.Builder tpcEngineBuilder = new TpcEngine.Builder();
         // The current approach for allowing the OperationThreads to become the reactor threads
@@ -150,25 +168,32 @@ public class TpcServerBootstrap {
 
             @Override
             public void accept(Reactor.Builder reactorBuilder) {
-                OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
-                        .getOperationService()
-                        .getOperationExecutor();
-                TpcPartitionOperationThread operationThread = (TpcPartitionOperationThread) operationExecutor
-                        .getPartitionThreads()[threadIndex];
+                if (dedicatedIoThreadCount > 0 && threadIndex < dedicatedIoThreadCount) {
+                    reactorBuilder.defaultTaskQueueBuilder = new TaskQueue.Builder();
+                    reactorBuilder.defaultTaskQueueBuilder.concurrent = true;
+                    reactorBuilder.threadName = "ioThread-" + threadIndex;
+                } else {
+                    OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
+                            .getOperationService()
+                            .getOperationExecutor();
+                    int operationThreadIndex = threadIndex - dedicatedIoThreadCount;
+                    TpcPartitionOperationThread operationThread = (TpcPartitionOperationThread) operationExecutor
+                            .getPartitionThreads()[operationThreadIndex];
 
-                reactorBuilder.threadFactory = eventloopTask -> {
-                    operationThread.setEventloopTask(eventloopTask);
-                    return operationThread;
-                };
+                    reactorBuilder.threadFactory = eventloopTask -> {
+                        operationThread.setEventloopTask(eventloopTask);
+                        return operationThread;
+                    };
 
-                reactorBuilder.defaultTaskQueueBuilder = new TaskQueue.Builder();
-                reactorBuilder.defaultTaskQueueBuilder.taskRunner = operationThread;
-                reactorBuilder.defaultTaskQueueBuilder.queue = operationThread.getQueue();
-                reactorBuilder.defaultTaskQueueBuilder.concurrent = true;
+                    reactorBuilder.defaultTaskQueueBuilder = new TaskQueue.Builder();
+                    reactorBuilder.defaultTaskQueueBuilder.taskRunner = operationThread;
+                    reactorBuilder.defaultTaskQueueBuilder.queue = operationThread.getQueue();
+                    reactorBuilder.defaultTaskQueueBuilder.concurrent = true;
+                }
                 threadIndex++;
             }
         };
-        tpcEngineBuilder.reactorCount = loadReactorCount();
+        tpcEngineBuilder.reactorCount = reactorCount;
         tpcEngine = tpcEngineBuilder.build();
         // The TpcPartitionOperationThread are created with the right TpcOperationQueue, but
         // the reactor isn't set yet.
@@ -178,11 +203,15 @@ public class TpcServerBootstrap {
         OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
                 .getOperationService()
                 .getOperationExecutor();
-        for (int k = 0; k < operationExecutor.getPartitionThreadCount(); k++) {
+
+        int partitionThreadIndex = 0;
+        for (int k = dedicatedIoThreadCount; k < reactorCount; k++) {
             Reactor reactor = tpcEngine.reactor(k);
             TpcPartitionOperationThread partitionThread = (TpcPartitionOperationThread) operationExecutor
-                    .getPartitionThreads()[k];
-            partitionThread.getQueue().setReactor(reactor);
+                    .getPartitionThreads()[partitionThreadIndex];
+             partitionThread.getQueue().setTaskQueue(reactor.defaultTaskQueue());
+
+            partitionThreadIndex++;
         }
 
         tpcEngine.start();
@@ -197,9 +226,19 @@ public class TpcServerBootstrap {
         int port = Integer.parseInt(range[0]);
         int limit = Integer.parseInt(range[1]);
 
+        int dedicatedIoThreadCount = loadDedicatedIoThreadCount();
+        int sockets;
+        if (dedicatedIoThreadCount == 0) {
+            sockets = tpcEngine.reactorCount();
+        } else {
+            sockets = dedicatedIoThreadCount;
+        }
+
+        logger.info("Opening " + sockets + " sockets.");
+
         // Currently we only open the sockets for clients. But in the future we also need to
         // open sockets for members, WAN replication etc.
-        for (int k = 0; k < tpcEngine.reactorCount(); k++) {
+        for (int k = 0; k < sockets; k++) {
             Reactor reactor = tpcEngine.reactor(k);
 
             AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();

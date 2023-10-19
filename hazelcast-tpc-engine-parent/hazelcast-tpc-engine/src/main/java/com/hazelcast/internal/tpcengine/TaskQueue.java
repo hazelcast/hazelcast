@@ -338,6 +338,39 @@ public final class TaskQueue {
         }
     }
 
+    public void schedule() {
+        if (Thread.currentThread() == eventloop.eventloopThread) {
+            if (runState.get() == STATE_RUNNING) {
+                return;
+            }
+
+            if (concurrent) {
+                if (runState.compareAndSet(STATE_BLOCKED, STATE_RUNNING)) {
+                    scheduler.enqueue(this);
+                }
+            } else {
+                runState.lazySet(STATE_RUNNING);
+                scheduler.enqueue(this);
+            }
+
+        } else {
+            if (!concurrent) {
+                throw new IllegalStateException(
+                        "Can't schedule concurrent TaskGroup " + name
+                                + " outside of the EventloopThread. "
+                                + "Current thread is " + Thread.currentThread().getName());
+            }
+
+            if (runState.get() == STATE_RUNNING) {
+                return;
+            }
+
+            if (runState.compareAndSet(STATE_BLOCKED, STATE_RUNNING)) {
+                signals.raise(signalAction);
+            }
+        }
+    }
+
     void unschedule() {
         assert runState.get() == STATE_RUNNING;
         assert Thread.currentThread() == eventloop.eventloopThread;

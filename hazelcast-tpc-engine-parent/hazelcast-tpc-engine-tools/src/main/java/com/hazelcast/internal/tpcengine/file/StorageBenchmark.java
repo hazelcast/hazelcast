@@ -139,7 +139,7 @@ public class StorageBenchmark {
         //benchmark.directories.add("/mnt/benchdrive1");
         //benchmark.directories.add("/mnt/benchdrive2");
         //benchmark.directories.add("/mnt/benchdrive3");
-        benchmark.readwrite = READWRITE_NOP;
+        benchmark.readwrite = READWRITE_WRITE;
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = true;
         benchmark.spin = false;
