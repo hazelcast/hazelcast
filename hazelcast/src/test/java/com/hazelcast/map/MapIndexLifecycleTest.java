@@ -72,7 +72,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
 
     private static final int BOOK_COUNT = 1000;
 
-    private String mapName = randomMapName();
+    private final String mapName = randomMapName();
 
     @Override
     protected Config getConfig() {
