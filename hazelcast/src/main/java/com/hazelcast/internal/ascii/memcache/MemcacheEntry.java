@@ -25,9 +25,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -99,7 +99,7 @@ public class MemcacheEntry implements IdentifiedDataSerializable {
         final int start = TextCommandConstants.VALUE_SPACE.length;
         for (int i = start; i < bytes.length; ++i) {
             if (bytes[i] == ' ') {
-                return bytesToString(Arrays.copyOfRange(bytes, start, i));
+                return new String(Arrays.copyOfRange(bytes, start, i), StandardCharsets.UTF_8);
             }
         }
         return null;
@@ -144,7 +144,7 @@ public class MemcacheEntry implements IdentifiedDataSerializable {
     public String toString() {
         return "MemcacheEntry{"
                 + "bytes="
-                + bytesToString(bytes)
+                + new String(bytes, StandardCharsets.UTF_8)
                 + ", flag="
                 + flag
                 + '}';

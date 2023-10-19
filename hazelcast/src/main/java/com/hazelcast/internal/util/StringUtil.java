@@ -57,17 +57,6 @@ public final class StringUtil {
     }
 
     /**
-     * Creates a UTF8_CHARSET string from a byte array.
-     *
-     * @param bytes the byte array.
-     * @return the string created from the byte array.
-     */
-    public static String bytesToString(byte[] bytes) {
-
-        return new String(bytes, StandardCharsets.UTF_8);
-    }
-
-    /**
      * Creates a byte array from a string.
      *
      * @param s the string.
