@@ -285,7 +285,7 @@ public final class TypeUtils {
                     field.name().equals(isKey ? QueryPath.KEY : QueryPath.VALUE)
                             ? () -> getSchemaId(mappingOptions, isKey)
                             : () -> getFieldSchemaId(getSchema(getSchemaId(mappingOptions, isKey)),
-                                    field.plainExternalName(), typeName),
+                                    plainExternalName(field), typeName),
                     typeName, new HashMap<>()));
         }
 
@@ -335,5 +335,12 @@ public final class TypeUtils {
         protected abstract ID getFieldSchemaId(S schema, String fieldName, String fieldTypeName);
         protected abstract ID getSchemaId(Map<String, String> mappingOptions, boolean isKey);
         protected abstract ID getSchemaId(Map<String, String> typeOptions);
+
+        /**
+         * Returns the external name of the field without {@code __key.} or {@code this.} prefix.
+         */
+        public static String plainExternalName(MappingField field) {
+            return QueryPath.create(field.externalName()).getPath();
+        }
     }
 }

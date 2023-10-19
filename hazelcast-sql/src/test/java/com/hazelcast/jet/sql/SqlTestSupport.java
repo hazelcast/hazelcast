@@ -98,6 +98,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
+import static com.hazelcast.jet.sql.impl.schema.TypeUtils.FieldEnricher.plainExternalName;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -954,7 +955,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             public final Type type;
 
             public Field(MappingField field) {
-                name = field.plainExternalName();
+                name = plainExternalName(field);
                 type = new Type(field.type());
             }
 
