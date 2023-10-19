@@ -57,7 +57,7 @@ public final class ConversionsFromBson {
      * In other words, converts for SELECT statements.
      */
     @Nullable
-    @SuppressWarnings("checkstyle:RightCurly")
+    @SuppressWarnings({ "checkstyle:RightCurly", "javabugs:S6320" })
     public static Object convertFromBson(@Nullable Object toConvert, @Nonnull QueryDataType sqlType) {
         if (toConvert == null) {
             return null;
