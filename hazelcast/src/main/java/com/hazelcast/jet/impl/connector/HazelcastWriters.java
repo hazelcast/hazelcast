@@ -155,6 +155,17 @@ public final class HazelcastWriters {
                         SecuredFunctions.updateMapProcessorFn(name, clientXml, toKeyFn, updateFn)));
     }
 
+    // Dummy function to make the EE SecuredFunctionTest.java pass.
+    @Nonnull
+    public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(
+            @Nonnull String name,
+            @Nullable ClientConfig clientConfig,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
+    ) {
+        return updateMapSupplier(MAX_PARALLEL_ASYNC_OPS_DEFAULT, name, toKeyFn, toEntryProcessorFn);
+    }
+
     @Nonnull
     public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(
             @Nonnull String name,
