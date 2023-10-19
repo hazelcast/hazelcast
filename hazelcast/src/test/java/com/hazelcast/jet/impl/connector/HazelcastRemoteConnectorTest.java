@@ -57,7 +57,7 @@ import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteCacheP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteMapP;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteCacheP;
@@ -178,12 +178,12 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex producer = dag.newVertex(SOURCE_NAME, readMapP(SOURCE_NAME));
 
-        RemoteMapSinkParams<Integer, Integer, Integer> params = new RemoteMapSinkParams<>(SINK_NAME);
+        MapSinkParams<Integer, Integer, Integer> params = new MapSinkParams<>(SINK_NAME);
         params.setClientConfig(clientConfig);
         params.setToKeyFn(identity());
         params.setToValueFn(identity());
 
-        Vertex consumer = dag.newVertex(SINK_NAME, writeRemoteMapP(params));
+        Vertex consumer = dag.newVertex(SINK_NAME, writeMapP(params));
         dag.edge(between(producer, consumer));
 
         executeAndWait(dag);

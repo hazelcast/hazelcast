@@ -18,12 +18,11 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.map.EntryProcessor;
 
 /**
- * Parameters for using a remote map as a sink with an EntryProcessor:
+ * Parameters for using a map as a sink
  */
-public class RemoteMapSinkEntryProcessorParams<E, K, V, R> {
+public class MapSinkParams<K, V, T> {
 
     private final String mapName;
 
@@ -31,16 +30,22 @@ public class RemoteMapSinkEntryProcessorParams<E, K, V, R> {
 
     private ClientConfig clientConfig;
 
-    private FunctionEx<? super E, ? extends K> toKeyFn;
+    private FunctionEx<? super T, ? extends K> toKeyFn;
 
-    private FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn;
+    private FunctionEx<? super T, ? extends V> toValueFn;
 
-    public RemoteMapSinkEntryProcessorParams(String mapName) {
+    private String clientXml;
+
+    public MapSinkParams(String mapName) {
         this.mapName = mapName;
     }
 
     public boolean hasDataSourceConnection() {
         return dataConnectionName != null;
+    }
+
+    public boolean hasClientConfig() {
+        return clientConfig != null;
     }
 
     public String getMapName() {
@@ -63,19 +68,27 @@ public class RemoteMapSinkEntryProcessorParams<E, K, V, R> {
         this.clientConfig = clientConfig;
     }
 
-    public FunctionEx<? super E, ? extends K> getToKeyFn() {
+    public FunctionEx<? super T, ? extends K> getToKeyFn() {
         return toKeyFn;
     }
 
-    public void setToKeyFn(FunctionEx<? super E, ? extends K> toKeyFn) {
+    public void setToKeyFn(FunctionEx<? super T, ? extends K> toKeyFn) {
         this.toKeyFn = toKeyFn;
     }
 
-    public FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> getToEntryProcessorFn() {
-        return toEntryProcessorFn;
+    public FunctionEx<? super T, ? extends V> getToValueFn() {
+        return toValueFn;
     }
 
-    public void setToEntryProcessorFn(FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn) {
-        this.toEntryProcessorFn = toEntryProcessorFn;
+    public void setToValueFn(FunctionEx<? super T, ? extends V> toValueFn) {
+        this.toValueFn = toValueFn;
+    }
+
+    public String getClientXml() {
+        return clientXml;
+    }
+
+    public void setClientXml(String clientXml) {
+        this.clientXml = clientXml;
     }
 }

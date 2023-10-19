@@ -161,32 +161,13 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
         private FunctionEx<? super T, ? extends V> toValueFn;
         private int maxParallelAsyncOps;
 
-
-        public static <T, K, V> Supplier<T, K, V> fromClientXml(
-                String clientXml,
-                String mapName,
-                @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-                @Nonnull FunctionEx<? super T, ? extends V> toValueFn
-        ) {
+        public static <T, K, V> Supplier<T, K, V> createNew(MapSinkParams<K, V, T> params) {
             Supplier<T, K, V> supplier = new Supplier<>();
-            supplier.mapName = mapName;
-            supplier.clientXml = clientXml;
-            supplier.toKeyFn = toKeyFn;
-            supplier.toValueFn = toValueFn;
-            return supplier;
-        }
-
-        public static <T, K, V> Supplier<T, K, V> fromDataConnection(
-                String dataConnectionName,
-                String mapName,
-                @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-                @Nonnull FunctionEx<? super T, ? extends V> toValueFn
-        ) {
-            Supplier<T, K, V> supplier = new Supplier<>();
-            supplier.mapName = mapName;
-            supplier.dataConnectionName = dataConnectionName;
-            supplier.toKeyFn = toKeyFn;
-            supplier.toValueFn = toValueFn;
+            supplier.mapName = params.getMapName();
+            supplier.dataConnectionName = params.getDataConnectionName();
+            supplier.clientXml = params.getClientXml();
+            supplier.toKeyFn = params.getToKeyFn();
+            supplier.toValueFn = params.getToValueFn();
             return supplier;
         }
 

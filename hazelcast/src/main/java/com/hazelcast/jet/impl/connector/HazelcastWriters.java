@@ -75,6 +75,7 @@ public final class HazelcastWriters {
     private HazelcastWriters() {
     }
 
+    // Dummy function to make the EE SecuredFunctionTest.java pass.
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(
             @Nonnull String name,
@@ -82,39 +83,38 @@ public final class HazelcastWriters {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
-        String clientXml = asXmlString(clientConfig);
-        WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.fromClientXml(
-                clientXml,
-                name,
-                toKeyFn,
-                toValueFn);
+        MapSinkParams<K, V, T> params = new MapSinkParams<>(name);
+        params.setClientConfig(clientConfig);
+        params.setToKeyFn(toKeyFn);
+        params.setToValueFn(toValueFn);
 
-        return preferLocalParallelismOne(mapPutPermission(clientXml, name),
-                supplier);
+        String clientXml = asXmlString(clientConfig);
+        params.setClientXml(clientXml);
+
+        return writeMapSupplier(params);
     }
 
     /**
      * Create ProcessorMetaSupplier to update a remote map
      */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier writeRemoteMapSupplier(RemoteMapSinkParams<K, V, T> params) {
+    public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(MapSinkParams<K, V, T> params) {
         if (params.hasDataSourceConnection()) {
-            WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.fromDataConnection(
-                    params.getDataConnectionName(),
-                    params.getMapName(),
-                    params.getToKeyFn(),
-                    params.getToValueFn());
+            WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(params);
+
+            return preferLocalParallelismOne(null, supplier);
+        } else if (params.hasClientConfig()) {
+            String clientXml = asXmlString(params.getClientConfig());
+            params.setClientXml(clientXml);
+
+            WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(params);
 
             return preferLocalParallelismOne(null, supplier);
         } else {
-            String clientXml = asXmlString(params.getClientConfig());
-            WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.fromClientXml(
-                    clientXml,
-                    params.getMapName(),
-                    params.getToKeyFn(),
-                    params.getToValueFn());
+            WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(params);
 
-            return preferLocalParallelismOne(null, supplier);
+            Permission permission = mapPutPermission(null, params.getMapName());
+            return preferLocalParallelismOne(permission, supplier);
         }
     }
 
@@ -163,54 +163,26 @@ public final class HazelcastWriters {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
-        return updateMapSupplier(MAX_PARALLEL_ASYNC_OPS_DEFAULT, name, toKeyFn, toEntryProcessorFn);
-    }
+        MapSinkEntryProcessorParams<T, K, V, R> params = new MapSinkEntryProcessorParams<>(name);
+        params.setMaxParallelAsyncOps(MAX_PARALLEL_ASYNC_OPS_DEFAULT);
+        params.setToKeyFn(toKeyFn);
+        params.setToEntryProcessorFn(toEntryProcessorFn);
 
-    @Nonnull
-    public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(
-            @Nonnull String name,
-            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
-    ) {
-        return updateMapSupplier(MAX_PARALLEL_ASYNC_OPS_DEFAULT, name, toKeyFn, toEntryProcessorFn);
-    }
+        return updateMapSupplier(params);
 
-    @Nonnull
-    public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(
-            int maxParallelAsyncOps,
-            @Nonnull String name,
-            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
-    ) {
-        checkSerializable(toKeyFn, "toKeyFn");
-        checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
-
-        String clientXml = null;
-        FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
-                maxParallelAsyncOps,
-                name,
-                clientXml,
-                toKeyFn,
-                toEntryProcessorFn);
-
-        ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
-
-        return ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name),
-                processorSupplier);
     }
 
     /**
      * Create ProcessorMetaSupplier to update a remote map with an EntryProcessor
      */
     @Nonnull
-    public static <T, K, V, R> ProcessorMetaSupplier updateRemoteMapSupplier(
-            RemoteMapSinkEntryProcessorParams<T, K, V, R> params) {
+    public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(MapSinkEntryProcessorParams<T, K, V, R> params) {
         checkSerializable(params.getToKeyFn(), "toKeyFn");
         checkSerializable(params.getToEntryProcessorFn(), "toEntryProcessorFn");
 
         if (params.hasDataSourceConnection()) {
             FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
-                    MAX_PARALLEL_ASYNC_OPS_DEFAULT,
+                    params.getMaxParallelAsyncOps(),
                     params.getMapName(),
                     "",
                     params.getToKeyFn(),
@@ -220,10 +192,10 @@ public final class HazelcastWriters {
             processorSupplier.setDataConnectionName(params.getDataConnectionName());
 
             return ProcessorMetaSupplier.of(null, processorSupplier);
-        } else {
+        } else if (params.hasClientConfig()) {
             String clientXml = asXmlString(params.getClientConfig());
             FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
-                    MAX_PARALLEL_ASYNC_OPS_DEFAULT,
+                    params.getMaxParallelAsyncOps(),
                     params.getMapName(),
                     clientXml,
                     params.getToKeyFn(),
@@ -233,6 +205,18 @@ public final class HazelcastWriters {
             processorSupplier.setClientXml(clientXml);
 
             return ProcessorMetaSupplier.of(null, processorSupplier);
+        } else {
+            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
+                    params.getMaxParallelAsyncOps(),
+                    params.getMapName(),
+                    null,
+                    params.getToKeyFn(),
+                    params.getToEntryProcessorFn());
+
+            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
+
+            Permission permission = mapUpdatePermission(null, params.getMapName());
+            return ProcessorMetaSupplier.of(permission, processorSupplier);
         }
     }
 
@@ -265,7 +249,8 @@ public final class HazelcastWriters {
                 return 1;
             }
 
-            @Nonnull @Override
+            @Nonnull
+            @Override
             public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return address -> new WriteObservableP.Supplier(name);
             }
@@ -384,7 +369,8 @@ public final class HazelcastWriters {
             entries = new ArrayList<>(size);
         }
 
-        @Override @Nonnull
+        @Override
+        @Nonnull
         public Set<Entry<K, V>> entrySet() {
             return set;
         }
@@ -400,7 +386,8 @@ public final class HazelcastWriters {
 
         private class ArraySet extends AbstractSet<Entry<K, V>> {
 
-            @Override @Nonnull
+            @Override
+            @Nonnull
             public Iterator<Entry<K, V>> iterator() {
                 return entries.iterator();
             }
