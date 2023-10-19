@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class MongoBatchSqlConnectorDeleteTest extends MongoSqlTest {
+public class MongoBatchSqlConnectorDeleteIT extends MongoSqlIT {
 
     @Parameterized.Parameter(0)
     public boolean includeIdInMapping;

@@ -35,7 +35,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class})
-public class MongoBatchSqlConnectorUpdateTest extends MongoSqlTest {
+public class MongoBatchSqlConnectorUpdateIT extends MongoSqlIT {
 
     @Parameterized.Parameter(0)
     public boolean includeIdInMapping;

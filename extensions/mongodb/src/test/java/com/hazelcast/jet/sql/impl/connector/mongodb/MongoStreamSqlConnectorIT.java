@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
+public class MongoStreamSqlConnectorIT extends MongoSqlIT {
     private final Random random = new Random();
 
     @Test

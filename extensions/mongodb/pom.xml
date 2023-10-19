@@ -50,15 +50,6 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>com/hazelcast/jet/**</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven.failsafe.plugin.version}</version>
                 <configuration combine.children="append">
@@ -67,9 +58,6 @@
                     Moreover this parameter name is really confusing.
                     -->
                     <classesDirectory>${project.build.directory}/${project.artifactId}-${project.version}-jar-with-dependencies.jar</classesDirectory>
-                    <includes>
-                        <include>com/hazelcast/jet/**/*Test.java</include>
-                    </includes>
                 </configuration>
             </plugin>
             <plugin>

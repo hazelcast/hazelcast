@@ -29,7 +29,7 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
+public class MongoCreateDataConnectionSqlIT extends MongoSqlIT {
 
     @Test
     public void createsConnection() {

@@ -56,7 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
+public class AllTypesInsertMongoSqlConnectorIT extends MongoSqlIT {
     private static final ObjectId EXAMPLE_OBJECT_ID = ObjectId.get();
     @Parameterized.Parameter
     public int no;

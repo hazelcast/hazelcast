@@ -17,7 +17,6 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -39,7 +38,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class PlaceholderReplacerTest extends SimpleTestInClusterSupport {
+public class PlaceholderReplacerTest {
 
     @Test
     public void replaces_dynamic_param() {
