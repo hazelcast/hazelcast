@@ -34,7 +34,9 @@ import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallI
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setInvocationTime;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
