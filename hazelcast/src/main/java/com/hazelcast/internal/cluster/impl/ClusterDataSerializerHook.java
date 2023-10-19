@@ -24,6 +24,7 @@ import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.CommitClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOp;
+import com.hazelcast.internal.cluster.impl.operations.DemoteDataMemberOp;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOp;
@@ -100,8 +101,11 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int HEARTBEAT_COMPLAINT = 38;
     public static final int PROMOTE_LITE_MEMBER = 39;
     public static final int VECTOR_CLOCK = 40;
+    public static final int DEMOTE_DATA_MEMBER = 41;
+    public static final int MEMBERS_VIEW_RESPONSE = 42;
 
-    static final int LEN = VECTOR_CLOCK + 1;
+
+    static final int LEN = MEMBERS_VIEW_RESPONSE + 1;
 
     @Override
     public int getFactoryId() {
@@ -151,6 +155,8 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[MEMBERS_VIEW_METADATA] = arg -> new MembersViewMetadata();
         constructors[HEARTBEAT_COMPLAINT] = arg -> new HeartbeatComplaintOp();
         constructors[PROMOTE_LITE_MEMBER] = arg -> new PromoteLiteMemberOp();
+        constructors[DEMOTE_DATA_MEMBER] = arg -> new DemoteDataMemberOp();
+        constructors[MEMBERS_VIEW_RESPONSE] = arg -> new MembersViewResponse();
         constructors[VECTOR_CLOCK] = arg -> new VectorClock();
         constructors[ENDPOINT_QUALIFIER] = arg -> new EndpointQualifier();
         return new ArrayDataSerializableFactory(constructors);
