@@ -72,18 +72,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven.failsafe.plugin.version}</version>
-                <configuration combine.children="append">
-                    <!--
-                    Failsafe uses the jar, but the main artifact, we shade the dependencies into a jar with jar-with-dependencies classifier.
-                    Therefore we exclude direct dependency and add jar-with-dependencies
-                    -->
-                    <classpathDependencyExcludes>
-                        <classpathDependencyExclude>com.hazelcast.jet:hazelcast-jet-mongodb</classpathDependencyExclude>
-                    </classpathDependencyExcludes>
-                    <additionalClasspathElements>
-                        <additionalClasspathElement>${project.basedir}/../mongodb/target/hazelcast-jet-mongodb-${project.version}-jar-with-dependencies.jar</additionalClasspathElement>
-                    </additionalClasspathElements>
-                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -177,6 +165,7 @@
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-mongodb</artifactId>
             <version>${project.version}</version>
+            <classifier>jar-with-dependencies</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>

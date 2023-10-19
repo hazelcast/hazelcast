@@ -423,7 +423,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         // when
         sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
-        createDataConnection(instance(), dcName, "mongo", false,
+        createDataConnection(instance(), dcName, "Mongo", false,
                 // create data connection that is correct enough to parse the query
                 ImmutableMap.of("connectionString", "bad:12345", "database", "db",
                         "idColumn", "id")
