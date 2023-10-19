@@ -71,8 +71,11 @@ public class PortableId implements DataSerializable {
         return version;
     }
 
-    public void setVersion(int version) {
-        this.version = version;
+    @PrivateApi
+    public void setVersionIfNotSet(int version) {
+        if (this.version < 0) {
+            this.version = version;
+        }
     }
 
     @Override

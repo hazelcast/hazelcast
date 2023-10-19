@@ -122,9 +122,7 @@ public class ClassDefinitionImpl implements ClassDefinition, DataSerializable {
     }
 
     void setVersionIfNotSet(int version) {
-        if (getVersion() < 0) {
-            portableId.setVersion(version);
-        }
+        portableId.setVersionIfNotSet(version);
     }
 
     @Override
