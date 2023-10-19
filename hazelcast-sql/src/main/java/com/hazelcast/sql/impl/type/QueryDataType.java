@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Data type represents a type of concrete expression which is based on some basic data type.
@@ -297,7 +298,9 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     @Override
     public int hashCode() {
-        return 251 * converter.getId();
+        return !isCustomType()
+                ? converter.getId()
+                : Objects.hash(objectTypeName, objectTypeKind, objectTypeMetadata);
     }
 
     @Override
@@ -308,7 +311,13 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        return converter.getId() == ((QueryDataType) o).converter.getId();
+        QueryDataType that = (QueryDataType) o;
+        return !isCustomType()
+                ? converter.getId() == that.converter.getId()
+                : objectTypeName.equals(that.objectTypeName)
+                        && objectTypeKind == that.objectTypeKind
+                        && Objects.equals(objectTypeMetadata, that.objectTypeMetadata)
+                        && objectFields.equals(that.objectFields);
     }
 
     @Override
@@ -359,6 +368,23 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         @Override
         public int getClassId() {
             return SqlDataSerializerHook.QUERY_DATA_TYPE_FIELD;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, type);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            QueryDataTypeField that = (QueryDataTypeField) o;
+            return name.equals(that.name) && type.equals(that.type);
         }
     }
 }

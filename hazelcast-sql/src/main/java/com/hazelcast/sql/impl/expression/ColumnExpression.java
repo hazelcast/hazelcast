@@ -67,7 +67,7 @@ public final class ColumnExpression<T> implements Expression<T> {
         // if the column expression is the top expression.
         Object res = row.get(index, false);
         if (res instanceof LazyTarget) {
-            assert type.equals(QueryDataType.OBJECT);
+            assert type.getTypeFamily() == QueryDataTypeFamily.OBJECT;
             LazyTarget lazyTarget = (LazyTarget) res;
             res = lazyTarget.getDeserialized() != null ? lazyTarget.getDeserialized() : lazyTarget.getSerialized();
         }
@@ -85,7 +85,7 @@ public final class ColumnExpression<T> implements Expression<T> {
         Object res = row.get(index, useLazyDeserialization);
 
         if (res instanceof LazyTarget) {
-            assert type.equals(QueryDataType.OBJECT);
+            assert type.getTypeFamily() == QueryDataTypeFamily.OBJECT;
             res = ((LazyTarget) res).deserialize(context.getSerializationService());
         }
 
