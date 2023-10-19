@@ -30,7 +30,7 @@
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_arguments_in_method_invocation=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_arguments_in_qualified_allocation_expression=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_assertion_message=0
-/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_assignment=0
+/instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_assignment=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_bitwise_operator=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_compact_if=16
 /instance/org.eclipse.jdt.core/org.eclipse.jdt.core.formatter.alignment_for_compact_loops=16

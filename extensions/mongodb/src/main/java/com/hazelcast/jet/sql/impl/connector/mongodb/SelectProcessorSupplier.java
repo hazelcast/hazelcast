@@ -182,7 +182,7 @@ public class SelectProcessorSupplier extends MongoProcessorSupplier implements D
                 row[index] = fromDoc;
             }
         }
-        addIfInProjection(changeStreamDocument.getOperationType().getValue(), "operationType", row);
+        addIfInProjection(changeStreamDocument.getOperationTypeString(), "operationType", row);
         addIfInProjection(changeStreamDocument.getResumeToken().toString(), "resumeToken", row);
         addIfInProjection(LocalDateTime.ofInstant(Instant.ofEpochMilli(ts), systemDefault()), "ts", row);
         addIfInProjection(bsonDateTimeToLocalDateTime(changeStreamDocument.getWallTime()), "wallTime", row);
