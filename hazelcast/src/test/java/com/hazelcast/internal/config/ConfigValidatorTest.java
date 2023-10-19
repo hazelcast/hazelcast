@@ -25,11 +25,9 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -53,23 +51,16 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigValidatorTest extends HazelcastTestSupport {
 
-    private HazelcastProperties properties;
-    private NativeMemoryConfig nativeMemoryConfig;
     private SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
-    private ILogger logger;
 
     @Before
     public void setUp() {
         Config config = new Config();
-        nativeMemoryConfig = config.getNativeMemoryConfig();
         NodeEngine nodeEngine = Mockito.mock(NodeEngine.class);
         when(nodeEngine.getConfigClassLoader()).thenReturn(config.getClassLoader());
 
         splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(config.getClassLoader());
         when(nodeEngine.getSplitBrainMergePolicyProvider()).thenReturn(splitBrainMergePolicyProvider);
-
-        properties = nodeEngine.getProperties();
-        logger = nodeEngine.getLogger(MapConfig.class);
     }
 
     @Test
@@ -79,18 +70,18 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
 
     @Test
     public void checkMapConfig_BINARY() {
-        checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider);
+        checkMapConfig(new Config(), getMapConfig(BINARY), splitBrainMergePolicyProvider);
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void checkMapConfig_fails_with_merge_policy_which_requires_per_entry_stats_enabled() {
-        checkMapConfig(getMapConfig(BINARY).setPerEntryStatsEnabled(false),
-                nativeMemoryConfig, splitBrainMergePolicyProvider);
+        checkMapConfig(new Config(), getMapConfig(BINARY).setPerEntryStatsEnabled(false),
+                splitBrainMergePolicyProvider);
     }
 
     @Test
     public void checkMapConfig_OBJECT() {
-        checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider);
+        checkMapConfig(new Config(), getMapConfig(OBJECT), splitBrainMergePolicyProvider);
     }
 
     /**
@@ -98,7 +89,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
      */
     @Test(expected = InvalidConfigurationException.class)
     public void checkMapConfig_NATIVE() {
-        checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider);
+        checkMapConfig(new Config(), getMapConfig(NATIVE), splitBrainMergePolicyProvider);
     }
 
     /**
@@ -106,7 +97,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
      */
     @Test(expected = InvalidConfigurationException.class)
     public void checkMapConfig_TieredStore() {
-        checkMapConfig(getMapConfig(true), nativeMemoryConfig, splitBrainMergePolicyProvider);
+        checkMapConfig(new Config(), getMapConfig(true), splitBrainMergePolicyProvider);
     }
 
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
