@@ -16,7 +16,8 @@
 
 package com.hazelcast.internal.nio.ascii;
 
-import static com.hazelcast.internal.util.StringUtil.stringToBytes;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.logging.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -26,10 +27,9 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
-import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.internal.util.StringUtil;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
  * Test client for verifying text protocols (HTTP REST API, Memcache, ...). Sample usage:
@@ -189,7 +189,7 @@ public class TextProtocolClient implements Closeable {
      * Returns all bytes received by this client from a server as UTF-8 String.
      */
     public String getReceivedString() {
-        return StringUtil.bytesToString(getReceivedBytes());
+        return new String(getReceivedBytes(), StandardCharsets.UTF_8);
     }
 
     /**
