@@ -93,8 +93,11 @@ public final class HazelcastWriters {
                 supplier);
     }
 
+    /**
+     * Create ProcessorMetaSupplier to update a remote map
+     */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(RemoteMapSinkParams<K, V, T> params) {
+    public static <T, K, V> ProcessorMetaSupplier writeRemoteMapSupplier(RemoteMapSinkParams<K, V, T> params) {
         if (params.hasDataSourceConnection()) {
             WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.fromDataConnection(
                     params.getDataConnectionName(),
@@ -155,35 +158,46 @@ public final class HazelcastWriters {
     @Nonnull
     public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(
             @Nonnull String name,
-            @Nullable ClientConfig clientConfig,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
+    ) {
+        return updateMapSupplier(MAX_PARALLEL_ASYNC_OPS_DEFAULT, name, toKeyFn, toEntryProcessorFn);
+    }
+
+    @Nonnull
+    public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(
+            int maxParallelAsyncOps,
+            @Nonnull String name,
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
 
-        String clientXml = asXmlString(clientConfig);
+        String clientXml = null;
         FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
-                MAX_PARALLEL_ASYNC_OPS_DEFAULT,
+                maxParallelAsyncOps,
                 name,
                 clientXml,
                 toKeyFn,
                 toEntryProcessorFn);
 
         ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
-        processorSupplier.setClientXml(clientXml);
 
         return ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name),
                 processorSupplier);
     }
 
+    /**
+     * Create ProcessorMetaSupplier to update a remote map with an EntryProcessor
+     */
     @Nonnull
-    public static <T, K, V, R> ProcessorMetaSupplier updateRemoteMapSupplier(RemoteMapSinkEntryProcessorParams<T, K, V, R> params) {
+    public static <T, K, V, R> ProcessorMetaSupplier updateRemoteMapSupplier(
+            RemoteMapSinkEntryProcessorParams<T, K, V, R> params) {
         checkSerializable(params.getToKeyFn(), "toKeyFn");
         checkSerializable(params.getToEntryProcessorFn(), "toEntryProcessorFn");
 
         if (params.hasDataSourceConnection()) {
-
             FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
                     MAX_PARALLEL_ASYNC_OPS_DEFAULT,
                     params.getMapName(),
@@ -211,23 +225,6 @@ public final class HazelcastWriters {
         }
     }
 
-    @Nonnull
-    public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(
-            int maxParallelAsyncOps,
-            @Nonnull String name,
-            @Nullable ClientConfig clientConfig,
-            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
-    ) {
-        checkSerializable(toKeyFn, "toKeyFn");
-        checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
-
-        String clientXml = asXmlString(clientConfig);
-        return ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name),
-                AbstractHazelcastConnectorSupplier.ofMap(clientXml,
-                        SecuredFunctions.updateWithEntryProcessorFn(maxParallelAsyncOps, name, clientXml,
-                                toKeyFn, toEntryProcessorFn)));
-    }
 
     @Nonnull
     public static ProcessorMetaSupplier writeCacheSupplier(@Nonnull String name, @Nullable ClientConfig clientConfig) {

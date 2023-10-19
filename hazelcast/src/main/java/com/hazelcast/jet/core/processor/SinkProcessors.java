@@ -95,7 +95,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier writeRemoteMapP(RemoteMapSinkParams<K, V, T> params) {
-        return HazelcastWriters.writeMapSupplier(params);
+        return HazelcastWriters.writeRemoteMapSupplier(params);
     }
 
     /**
@@ -168,7 +168,7 @@ public final class SinkProcessors {
             @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
 
     ) {
-        return HazelcastWriters.updateMapSupplier(mapName, null, toKeyFn, toEntryProcessorFn);
+        return HazelcastWriters.updateMapSupplier(mapName, toKeyFn, toEntryProcessorFn);
     }
 
     /**
@@ -183,22 +183,7 @@ public final class SinkProcessors {
             @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
 
     ) {
-        return HazelcastWriters.updateMapSupplier(maxParallelAsyncOps, mapName, null, toKeyFn, toEntryProcessorFn);
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link Sinks#remoteMapWithEntryProcessor(String, ClientConfig, FunctionEx,
-     * FunctionEx)}.
-     */
-    @Nonnull
-    public static <T, K, V, R> ProcessorMetaSupplier updateRemoteMapP(
-            @Nonnull String mapName,
-            @Nonnull ClientConfig clientConfig,
-            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
-    ) {
-        return HazelcastWriters.updateMapSupplier(mapName, clientConfig, toKeyFn, toEntryProcessorFn);
+        return HazelcastWriters.updateMapSupplier(maxParallelAsyncOps, mapName, toKeyFn, toEntryProcessorFn);
     }
 
     @Nonnull
