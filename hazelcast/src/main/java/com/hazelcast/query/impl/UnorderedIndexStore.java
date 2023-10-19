@@ -321,7 +321,9 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
      * @see IndexCopyBehavior
      */
     private class AddFunctor implements IndexFunctor<Comparable, QueryableEntry> {
-
+        // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
+        // effect on throughput such that it's not a direct replacement
+        @SuppressWarnings("squid:S3824")
         @Override
         public Object invoke(Comparable value, QueryableEntry entry) {
             if (value == NULL) {

@@ -121,11 +121,8 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
         ClassLoader managerClassLoader = getManagerClassLoader(classLoader);
         Properties managerProperties = properties == null ? new Properties() : properties;
         synchronized (cacheManagers) {
-            Map<URI, AbstractHazelcastCacheManager> cacheManagersByURI = cacheManagers.get(managerClassLoader);
-            if (cacheManagersByURI == null) {
-                cacheManagersByURI = new HashMap<URI, AbstractHazelcastCacheManager>();
-                cacheManagers.put(managerClassLoader, cacheManagersByURI);
-            }
+            Map<URI, AbstractHazelcastCacheManager> cacheManagersByURI = cacheManagers.computeIfAbsent(managerClassLoader,
+                    x -> new HashMap<>());
             AbstractHazelcastCacheManager cacheManager = cacheManagersByURI.get(managerURI);
             if (cacheManager == null || cacheManager.isClosed()) {
                 try {

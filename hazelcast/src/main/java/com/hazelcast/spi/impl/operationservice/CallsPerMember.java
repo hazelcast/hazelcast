@@ -87,11 +87,7 @@ public final class CallsPerMember implements LiveOperations {
     }
 
     public CategorizedCallIds getOrCreateCallIdsForMember(Address address) {
-        CategorizedCallIds callIds = callIdsByMember.get(address);
-        if (callIds == null) {
-            callIds = new CategorizedCallIds();
-            callIdsByMember.put(address, callIds);
-        }
+        CategorizedCallIds callIds = callIdsByMember.computeIfAbsent(address, x -> new CategorizedCallIds());
         return callIds;
     }
 
