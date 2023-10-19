@@ -41,7 +41,7 @@ public class FieldAccessExpression<T> implements Expression<T> {
     private static final int MAX_GETTER_PER_CLASS_COUNT = 1;
 
     // Single instance for all calls to eval, used only during execution on particular node.
-    private transient GetterCache getterCache;
+    private transient volatile GetterCache getterCache;
 
     private QueryDataType type;
     private String name;
