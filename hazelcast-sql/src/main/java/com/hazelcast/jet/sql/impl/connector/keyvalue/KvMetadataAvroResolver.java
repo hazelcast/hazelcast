@@ -104,12 +104,8 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         }
         Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
 
-        Schema schema = getSchemaId(fieldsByPath, schemaJson -> {
-            // HazelcastKafkaAvro[De]Serializer obtains the schema from mapping options
-            options.put(isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA, schemaJson);
-            return new Schema.Parser().parse(schemaJson);
-        }, () -> inlineSchema(options, isKey));
-
+        Schema schema = getSchemaId(fieldsByPath, json -> new Schema.Parser().parse(json),
+                () -> inlineSchema(options, isKey));
         if (schema != null && options.containsKey("schema.registry.url")) {
             throw new IllegalArgumentException("Inline schema cannot be used with schema registry");
         }

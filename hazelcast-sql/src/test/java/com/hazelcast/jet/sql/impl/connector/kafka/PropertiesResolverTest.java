@@ -22,6 +22,8 @@ import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.apache.avro.Schema;
+import org.apache.avro.SchemaBuilder;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.DoubleDeserializer;
@@ -40,20 +42,21 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
+import java.util.Properties;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.KEY_DESERIALIZER;
 import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.KEY_SERIALIZER;
 import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.VALUE_DESERIALIZER;
 import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.VALUE_SERIALIZER;
-import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.resolveConsumerProperties;
-import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.resolveProducerProperties;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -61,6 +64,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class PropertiesResolverTest {
 
     private static final String UNKNOWN_FORMAT = "unknown";
+    private static final Schema DUMMY_SCHEMA = SchemaBuilder.record("jet.sql").fields().endRecord();
 
     @Test
     public void test_consumerProperties_absentFormat() {
@@ -240,14 +244,21 @@ public class PropertiesResolverTest {
     @Test
     public void test_consumerProperties_avro() {
         // key
-        assertThat(resolveConsumerProperties(Map.of(OPTION_KEY_FORMAT, AVRO_FORMAT)))
-                .containsExactlyEntriesOf(Map.of(KEY_DESERIALIZER, HazelcastKafkaAvroDeserializer.class.getCanonicalName()));
+        assertThat(PropertiesResolver.resolveConsumerProperties(Map.of(
+                OPTION_KEY_FORMAT, AVRO_FORMAT
+        ), DUMMY_SCHEMA, null)).containsExactlyInAnyOrderEntriesOf(Map.of(
+                KEY_DESERIALIZER, HazelcastKafkaAvroDeserializer.class.getCanonicalName(),
+                OPTION_KEY_AVRO_SCHEMA, DUMMY_SCHEMA
+        ));
 
         // value
-        assertThat(resolveConsumerProperties(Map.of(
+        assertThat(PropertiesResolver.resolveConsumerProperties(Map.of(
                 OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
                 OPTION_VALUE_FORMAT, AVRO_FORMAT
-        ))).containsExactlyEntriesOf(Map.of(VALUE_DESERIALIZER, HazelcastKafkaAvroDeserializer.class.getCanonicalName()));
+        ), null, DUMMY_SCHEMA)).containsExactlyInAnyOrderEntriesOf(Map.of(
+                VALUE_DESERIALIZER, HazelcastKafkaAvroDeserializer.class.getCanonicalName(),
+                OPTION_VALUE_AVRO_SCHEMA, DUMMY_SCHEMA
+        ));
     }
 
     @Test
@@ -275,14 +286,21 @@ public class PropertiesResolverTest {
     @Test
     public void test_producerProperties_avro() {
         // key
-        assertThat(PropertiesResolver.resolveProducerProperties(Map.of(OPTION_KEY_FORMAT, AVRO_FORMAT)))
-                .containsExactlyEntriesOf(Map.of(KEY_SERIALIZER, HazelcastKafkaAvroSerializer.class.getCanonicalName()));
+        assertThat(PropertiesResolver.resolveProducerProperties(Map.of(
+                OPTION_KEY_FORMAT, AVRO_FORMAT
+        ), DUMMY_SCHEMA, null)).containsExactlyInAnyOrderEntriesOf(Map.of(
+                KEY_SERIALIZER, HazelcastKafkaAvroSerializer.class.getCanonicalName(),
+                OPTION_KEY_AVRO_SCHEMA, DUMMY_SCHEMA
+        ));
 
         // value
         assertThat(PropertiesResolver.resolveProducerProperties(Map.of(
                 OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
                 OPTION_VALUE_FORMAT, AVRO_FORMAT
-        ))).containsExactlyEntriesOf(Map.of(VALUE_SERIALIZER, HazelcastKafkaAvroSerializer.class.getCanonicalName()));
+        ), null, DUMMY_SCHEMA)).containsExactlyInAnyOrderEntriesOf(Map.of(
+                VALUE_SERIALIZER, HazelcastKafkaAvroSerializer.class.getCanonicalName(),
+                OPTION_VALUE_AVRO_SCHEMA, DUMMY_SCHEMA
+        ));
     }
 
     @Test
@@ -310,33 +328,45 @@ public class PropertiesResolverTest {
     @Test
     public void when_consumerProperties_avroPropertyIsDefined_then_itsNotOverwritten() {
         // key
-        assertThat(resolveConsumerProperties(Map.of(
+        assertThat(PropertiesResolver.resolveConsumerProperties(Map.of(
                 OPTION_KEY_FORMAT, AVRO_FORMAT,
                 KEY_DESERIALIZER, "deserializer"
-        )).containsExactlyEntriesOf(Map.of(KEY_DESERIALIZER, "deserializer"));
+        ), DUMMY_SCHEMA, null)).containsExactlyInAnyOrderEntriesOf(Map.of(
+                KEY_DESERIALIZER, "deserializer",
+                OPTION_KEY_AVRO_SCHEMA, DUMMY_SCHEMA
+        ));
 
         // value
-        assertThat(resolveConsumerProperties(Map.of(
+        assertThat(PropertiesResolver.resolveConsumerProperties(Map.of(
                 OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
                 OPTION_VALUE_FORMAT, AVRO_FORMAT,
                 VALUE_DESERIALIZER, "deserializer"
-        )).containsExactlyEntriesOf(Map.of(VALUE_DESERIALIZER, "deserializer"));
+        ), null, DUMMY_SCHEMA)).containsExactlyInAnyOrderEntriesOf(Map.of(
+                VALUE_DESERIALIZER, "deserializer",
+                OPTION_VALUE_AVRO_SCHEMA, DUMMY_SCHEMA
+        ));
     }
 
     @Test
     public void when_producerProperties_avroPropertyIsDefined_then_itsNotOverwritten() {
         // key
-        assertThat(resolveProducerProperties(Map.of(
+        assertThat(PropertiesResolver.resolveProducerProperties(Map.of(
                 OPTION_KEY_FORMAT, AVRO_FORMAT,
                 KEY_SERIALIZER, "serializer"
-        )).containsExactlyEntriesOf(Map.of(KEY_SERIALIZER, "serializer"));
+        ), DUMMY_SCHEMA, null)).containsExactlyInAnyOrderEntriesOf(Map.of(
+                KEY_SERIALIZER, "serializer",
+                OPTION_KEY_AVRO_SCHEMA, DUMMY_SCHEMA
+        ));
 
         // value
-        assertThat(resolveProducerProperties(Map.of(
+        assertThat(PropertiesResolver.resolveProducerProperties(Map.of(
                 OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
                 OPTION_VALUE_FORMAT, AVRO_FORMAT,
                 VALUE_SERIALIZER, "serializer"
-        )).containsExactlyEntriesOf(Map.of(VALUE_SERIALIZER, "serializer"));
+        ), null, DUMMY_SCHEMA)).containsExactlyInAnyOrderEntriesOf(Map.of(
+                VALUE_SERIALIZER, "serializer",
+                OPTION_VALUE_AVRO_SCHEMA, DUMMY_SCHEMA
+        ));
     }
 
     @Test
@@ -407,5 +437,13 @@ public class PropertiesResolverTest {
 
         assertThat(resolveProducerProperties(valueOptions))
                 .containsExactlyEntriesOf(Map.of(VALUE_SERIALIZER, "serializer"));
+    }
+
+    private static Properties resolveConsumerProperties(Map<String, String> options) {
+        return PropertiesResolver.resolveConsumerProperties(options, null, null);
+    }
+
+    private static Properties resolveProducerProperties(Map<String, String> options) {
+        return PropertiesResolver.resolveProducerProperties(options, null, null);
     }
 }
