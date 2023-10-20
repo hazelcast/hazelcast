@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.jet.sql.impl.ExpressionUtil.SqlRowComparator;
-import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.LazyDefiningSpecificMemberPms;
 import com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier;
 import com.hazelcast.jet.sql.impl.expression.UdtObjectToJsonFunction;
@@ -41,7 +40,6 @@ import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.Agg
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.RowGetFn;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.RowGetMaybeSerializedFn;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.RowIdentityFn;
-import com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink;
 import com.hazelcast.jet.sql.impl.validate.UpdateDataConnectionOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -253,7 +251,8 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[MAP_INDEX_SCAN_METADATA] = MapIndexScanMetadata::new;
         constructors[ROW_PROJECTOR_PROCESSOR_SUPPLIER] = RowProjectorProcessorSupplier::new;
         constructors[KV_ROW_PROJECTOR_SUPPLIER] = com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector.Supplier::new;
-        constructors[ROOT_RESULT_CONSUMER_SINK_SUPPLIER] = com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.Supplier::new;
+        constructors[ROOT_RESULT_CONSUMER_SINK_SUPPLIER] =
+                com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.Supplier::new;
         constructors[SQL_ROW_COMPARATOR] = SqlRowComparator::new;
         constructors[FIELD_COLLATION] = FieldCollation::new;
         constructors[ROW_GET_MAYBE_SERIALIZED_FN] = RowGetMaybeSerializedFn::new;
