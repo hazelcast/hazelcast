@@ -90,7 +90,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     }
 
     static RelNode preOptimizeInternal(String sql, OptimizerContext context) {
-        QueryParseResult parseResult = context.parse(sql, NoOpSqlSecurityContext.INSTANCE);
+        QueryParseResult parseResult = context.parse(sql);
         return context.convert(parseResult.getNode()).getRel();
     }
 

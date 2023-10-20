@@ -81,13 +81,13 @@ public class UnparseTest extends SqlTestSupport {
     }
 
     private void checkQuery(String query) {
-        final SqlNode node = context.parse(query, NoOpSqlSecurityContext.INSTANCE).getNode();
+        final SqlNode node = context.parse(query).getNode();
         final SqlPrettyWriter writer = new SqlPrettyWriter(SqlPrettyWriter.config());
         node.unparse(writer, 0, 0);
         final String result = writer.toSqlString().toString();
 
         assertEquals(query, result);
-        assertNotNull(context.parse(result, NoOpSqlSecurityContext.INSTANCE).getNode());
+        assertNotNull(context.parse(result).getNode());
     }
 
     private static OptimizerContext createContext() {
