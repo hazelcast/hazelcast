@@ -19,7 +19,6 @@ package com.hazelcast.jet.core.processor;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -28,6 +27,7 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.MapSinkEntryProcessorParams;
+import com.hazelcast.jet.impl.connector.MapSinkMergeParams;
 import com.hazelcast.jet.impl.connector.MapSinkParams;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
@@ -86,7 +86,7 @@ public final class SinkProcessors {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
-        MapSinkParams<K, V, T> params = new MapSinkParams<>(mapName);
+        MapSinkParams<T, K, V> params = new MapSinkParams<>(mapName);
         params.setToKeyFn(toKeyFn);
         params.setToValueFn(toValueFn);
         return writeMapP(params);
@@ -100,35 +100,9 @@ public final class SinkProcessors {
         return HazelcastWriters.writeMapSupplier(params);
     }
 
-    /**
-     * Returns a supplier of processors for
-     * {@link Sinks#mapWithMerging(String, FunctionEx, FunctionEx,
-     * BinaryOperatorEx)}.
-     */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier mergeMapP(
-            @Nonnull String mapName,
-            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
-            @Nonnull BinaryOperatorEx<V> mergeFn
-    ) {
-        return HazelcastWriters.mergeMapSupplier(mapName, null, toKeyFn, toValueFn, mergeFn);
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link Sinks#remoteMapWithMerging(String, ClientConfig, FunctionEx,
-     * FunctionEx, BinaryOperatorEx)}.
-     */
-    @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier mergeRemoteMapP(
-            @Nonnull String mapName,
-            @Nonnull ClientConfig clientConfig,
-            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
-            @Nonnull BinaryOperatorEx<V> mergeFn
-    ) {
-        return HazelcastWriters.mergeMapSupplier(mapName, clientConfig, toKeyFn, toValueFn, mergeFn);
+    public static <T, K, V> ProcessorMetaSupplier mergeMapP(MapSinkMergeParams<T, K, V> params) {
+        return HazelcastWriters.mergeMapSupplier(params);
     }
 
     /**

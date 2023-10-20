@@ -31,6 +31,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.connector.MapSinkEntryProcessorParams;
+import com.hazelcast.jet.impl.connector.MapSinkMergeParams;
 import com.hazelcast.jet.impl.connector.MapSinkParams;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.json.JsonUtil;
@@ -58,7 +59,6 @@ import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelis
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.mergeMapP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.mergeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
@@ -285,7 +285,7 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
-        MapSinkParams<K, V, T> params = new MapSinkParams<>(mapName);
+        MapSinkParams<T, K, V> params = new MapSinkParams<>(mapName);
         params.setClientConfig(clientConfig);
         params.setToKeyFn(toKeyFn);
         params.setToValueFn(toValueFn);
@@ -316,7 +316,7 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
-        MapSinkParams<K, V, T> params = new MapSinkParams<>(mapName);
+        MapSinkParams<T, K, V> params = new MapSinkParams<>(mapName);
         params.setDataConnectionName(dataConnectionRef.getName());
         params.setToKeyFn(toKeyFn);
         params.setToValueFn(toValueFn);
@@ -379,8 +379,15 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
-        return new SinkImpl<>("mapWithMergingSink(" + mapName + ')',
-                mergeMapP(mapName, toKeyFn, toValueFn,  mergeFn), toKeyFn);
+        MapSinkMergeParams<T, K, V> params = new MapSinkMergeParams<>(mapName);
+        params.setToKeyFn(toKeyFn);
+        params.setToValueFn(toValueFn);
+        params.setMergeFn(mergeFn);
+
+        ProcessorMetaSupplier processorMetaSupplier = mergeMapP(params);
+        return fromProcessor("mapWithMergingSink(" + mapName + ')',
+                processorMetaSupplier,
+                toKeyFn);
     }
 
     /**
@@ -443,6 +450,32 @@ public final class Sinks {
     }
 
     /**
+     * Convenience for {@link #remoteMapWithMerging} with {@link Entry} as
+     * input item.
+     */
+    @Nonnull
+    public static <K, V> Sink<Entry<K, V>> remoteMapWithMerging(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull BinaryOperatorEx<V> mergeFn
+    ) {
+        return remoteMapWithMerging(mapName, clientConfig, Entry::getKey, entryValue(), mergeFn);
+    }
+
+    /**
+     * Convenience for {@link #remoteMapWithMerging} with {@link Entry} as
+     * input item.
+     */
+    @Nonnull
+    public static <K, V> Sink<Entry<K, V>> remoteMapWithMerging(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull BinaryOperatorEx<V> mergeFn
+    ) {
+        return remoteMapWithMerging(mapName, dataConnectionRef, Entry::getKey, entryValue(), mergeFn);
+    }
+
+    /**
      * Returns a sink equivalent to {@link #mapWithMerging(String, BinaryOperatorEx)},
      * but for a map in a remote Hazelcast cluster identified by the supplied
      * {@code ClientConfig}.
@@ -457,8 +490,35 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
+        MapSinkMergeParams<T, K, V> params = new MapSinkMergeParams<>(mapName);
+        params.setClientConfig(clientConfig);
+        params.setToKeyFn(toKeyFn);
+        params.setToValueFn(toValueFn);
+        params.setMergeFn(mergeFn);
+
+        ProcessorMetaSupplier processorMetaSupplier = mergeMapP(params);
         return fromProcessor("remoteMapWithMergingSink(" + mapName + ')',
-                mergeRemoteMapP(mapName, clientConfig, toKeyFn, toValueFn, mergeFn),
+                processorMetaSupplier,
+                toKeyFn);
+    }
+
+    @Nonnull
+    public static <T, K, V> Sink<T> remoteMapWithMerging(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
+            @Nonnull BinaryOperatorEx<V> mergeFn
+    ) {
+        MapSinkMergeParams<T, K, V> params = new MapSinkMergeParams<>(mapName);
+        params.setDataConnectionName(dataConnectionRef.getName());
+        params.setToKeyFn(toKeyFn);
+        params.setToValueFn(toValueFn);
+        params.setMergeFn(mergeFn);
+
+        ProcessorMetaSupplier processorMetaSupplier = mergeMapP(params);
+        return fromProcessor("remoteMapWithMergingSink(" + mapName + ')',
+                processorMetaSupplier,
                 toKeyFn);
     }
 
@@ -486,19 +546,6 @@ public final class Sinks {
         return mapWithMerging(map.getName(), mergeFn);
     }
 
-    /**
-     * Convenience for {@link #remoteMapWithMerging} with {@link Entry} as
-     * input item.
-     */
-    @Nonnull
-    public static <K, V> Sink<Entry<K, V>> remoteMapWithMerging(
-            @Nonnull String mapName,
-            @Nonnull ClientConfig clientConfig,
-            @Nonnull BinaryOperatorEx<V> mergeFn
-    ) {
-        return fromProcessor("remoteMapWithMergingSink(" + mapName + ')',
-                mergeRemoteMapP(mapName, clientConfig, Entry::getKey, entryValue(), mergeFn));
-    }
 
     /**
      * Returns a sink that uses the supplied key-extracting and value-updating

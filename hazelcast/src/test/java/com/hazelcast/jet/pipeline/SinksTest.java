@@ -39,6 +39,7 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
+import com.hazelcast.jet.impl.connector.MapSinkMergeParams;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.EntryProcessor;
@@ -387,8 +388,13 @@ public class SinksTest extends PipelineTestSupport {
 
     @Test
     public void mapWithMerging_when_multipleValuesForSingleKeyInABatch() throws Exception {
-        ProcessorMetaSupplier metaSupplier = adaptSupplier(SinkProcessors.<Entry<String, Integer>, String,
-                Integer>mergeMapP(sinkName, Entry::getKey, Entry::getValue, Integer::sum));
+        MapSinkMergeParams<Entry<String, Integer>, String, Integer> params = new MapSinkMergeParams<>(sinkName);
+        params.setToKeyFn(Entry::getKey);
+        params.setToValueFn(Entry::getValue);
+        params.setMergeFn(Integer::sum);
+        ProcessorMetaSupplier processorMetaSupplier = SinkProcessors.mergeMapP(params);
+
+        ProcessorMetaSupplier metaSupplier = adaptSupplier(processorMetaSupplier);
 
         TestProcessorSupplierContext psContext = new TestProcessorSupplierContext().setHazelcastInstance(member);
         Processor p = TestSupport.supplierFrom(metaSupplier, psContext).get();
@@ -439,49 +445,6 @@ public class SinksTest extends PipelineTestSupport {
         assertEquals(expected, actual);
     }
 
-    @Test
-    public void remoteMapWithMerging() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToMap(remoteHz.getMap(srcName), input);
-
-        // When
-        Sink<Entry<String, Integer>> sink = Sinks.remoteMapWithMerging(
-                srcName,
-                clientConfig,
-                Entry::getKey,
-                Entry::getValue,
-                // intentionally not a method reference - https://bugs.openjdk.java.net/browse/JDK-8154236
-                (oldValue, newValue) -> oldValue + newValue);
-
-        // Then
-        p.readFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).writeTo(sink);
-        execute();
-        List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + i))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(srcName).entrySet();
-        assertEquals(expected.size(), actual.size());
-        expected.forEach(entry -> assertTrue(actual.contains(entry)));
-    }
-
-    @Test
-    public void remoteMapWithMerging_when_functionReturnsNull_then_keyIsRemoved() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToMap(remoteHz.getMap(srcName), input);
-        BatchSource<Entry<String, Integer>> source = Sources.remoteMap(srcName, clientConfig);
-
-        // When
-        Sink<Entry<String, Integer>> sink = Sinks.remoteMapWithMerging(
-                srcName, clientConfig, (oldValue, newValue) -> null);
-
-        // Then
-        p.readFrom(source).writeTo(sink);
-        execute();
-        Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(srcName).entrySet();
-        assertEquals(0, actual.size());
-    }
 
     @Test
     public void mapWithUpdating_byName() {

@@ -161,7 +161,7 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
         private FunctionEx<? super T, ? extends V> toValueFn;
         private int maxParallelAsyncOps;
 
-        public static <T, K, V> Supplier<T, K, V> createNew(MapSinkParams<K, V, T> params) {
+        public static <T, K, V> Supplier<T, K, V> createNew(MapSinkParams<T, K, V> params) {
             Supplier<T, K, V> supplier = new Supplier<>();
             supplier.mapName = params.getMapName();
             supplier.dataConnectionName = params.getDataConnectionName();
