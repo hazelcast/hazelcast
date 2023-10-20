@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
