@@ -165,12 +165,12 @@ public class ParserOperationsTest extends SqlTestSupport {
     }
 
     private void checkSuccess(String sql) {
-        context.parse(sql, NoOpSqlSecurityContext.INSTANCE);
+        context.parse(sql);
     }
 
     private void checkFailure(String sql, String message) {
         try {
-            context.parse(sql, NoOpSqlSecurityContext.INSTANCE);
+            context.parse(sql);
 
             fail("Exception is not thrown: " + message);
         } catch (QueryException e) {
