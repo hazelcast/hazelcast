@@ -24,9 +24,18 @@ import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
+import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlDynamicParam;
+import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 
+import java.security.Permission;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +90,35 @@ public final class FileTableFunction extends HazelcastDynamicTableFunction {
 
     private static String randomName() {
         return SCHEMA_NAME_FILES + "_" + UuidUtil.newUnsecureUuidString().replace('-', '_');
+    }
+
+    @Override
+    public List<Permission> permissions(SqlCall call) {
+        SqlNode astPath = findOperandByName(OPTION_PATH, call);
+        if (astPath == null) {
+            return Collections.emptyList();
+        }
+        if (astPath instanceof SqlLiteral) {
+            String path = astPath.toSqlString(PostgresqlSqlDialect.DEFAULT).getSql();
+            return Collections.singletonList(ConnectorPermission.file(path, ActionConstants.ACTION_READ));
+        } else if (astPath instanceof SqlDynamicParam) {
+            // Note: it is pre-validation phase, we can't extract the path value from dynamic param yet.
+            //  Better to have more strict permissions check here.
+            return Collections.singletonList(ConnectorPermission.file("*", ActionConstants.ACTION_READ));
+        }
+        return Collections.emptyList();
+    }
+
+    private static SqlNode findOperandByName(String name, SqlCall call) {
+        for (int i = 0; i < call.operandCount(); i++) {
+            if (call.operand(i) instanceof SqlLiteral) {
+                SqlLiteral literal = call.operand(i);
+                if (name.equals(literal.toValue())) {
+                    return literal;
+                }
+            }
+        }
+        return null;
     }
 
     private static final class FileOperandMetadata extends HazelcastSqlOperandMetadata {

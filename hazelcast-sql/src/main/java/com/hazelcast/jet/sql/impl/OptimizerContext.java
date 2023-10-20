@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
@@ -52,6 +53,7 @@ import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.tools.RuleSet;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
@@ -107,12 +109,13 @@ public final class OptimizerContext {
             List<List<String>> searchPaths,
             List<Object> arguments,
             int memberCount,
-            IMapResolver iMapResolver
+            IMapResolver iMapResolver,
+            SqlSecurityContext ssc
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, arguments, memberCount, iMapResolver);
+        return create(rootSchema, searchPaths, arguments, memberCount, iMapResolver, ssc);
     }
 
     public static OptimizerContext create(
@@ -120,14 +123,16 @@ public final class OptimizerContext {
             List<List<String>> schemaPaths,
             List<Object> arguments,
             int memberCount,
-            IMapResolver iMapResolver
+            IMapResolver iMapResolver,
+            @Nonnull SqlSecurityContext ssc
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
-        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
+        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver, ssc);
         VolcanoPlanner volcanoPlanner = createPlanner(distributionTraitDef);
-        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, distributionTraitDef);
+
+        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, distributionTraitDef, ssc);
 
         QueryParser parser = new QueryParser(validator);
         QueryConverter converter = new QueryConverter(validator, catalogReader, cluster);
@@ -150,8 +155,8 @@ public final class OptimizerContext {
      * @param sql SQL string.
      * @return SQL tree.
      */
-    public QueryParseResult parse(String sql) {
-        return parser.parse(sql);
+    public QueryParseResult parse(String sql, @Nonnull SqlSecurityContext ssc) {
+        return parser.parse(sql, ssc);
     }
 
     /**
@@ -214,12 +219,14 @@ public final class OptimizerContext {
 
     private static HazelcastRelOptCluster createCluster(
             VolcanoPlanner planner,
-            DistributionTraitDef distributionTraitDef
+            DistributionTraitDef distributionTraitDef,
+            SqlSecurityContext ssc
     ) {
         HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(
                 planner,
                 HazelcastRexBuilder.INSTANCE,
-                distributionTraitDef
+                distributionTraitDef,
+                ssc
         );
 
         // Wire up custom metadata providers.

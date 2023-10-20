@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.security.NoOpSqlSecurityContext.INSTANCE;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -123,7 +124,7 @@ public class ParserNameResolutionTest extends SqlTestSupport {
     }
 
     private static void checkSuccess(OptimizerContext context, String fieldName, String tableFqn, String... tableComponents) {
-        QueryParseResult res = context.parse(composeSelect(fieldName, tableComponents));
+        QueryParseResult res = context.parse(composeSelect(fieldName, tableComponents), INSTANCE);
 
         SqlSelect select = (SqlSelect) res.getNode();
 
@@ -145,7 +146,7 @@ public class ParserNameResolutionTest extends SqlTestSupport {
 
     private static void checkFailure(int errorCode, String errorMessage, String fieldName, String... tableComponents) {
         try {
-            context.parse(composeSelect(fieldName, tableComponents));
+            context.parse(composeSelect(fieldName, tableComponents), INSTANCE);
 
             fail();
         } catch (QueryException e) {
@@ -225,7 +226,8 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 searchPaths,
                 emptyList(),
                 1,
-                name -> null
+                name -> null,
+                INSTANCE
         );
     }
 
