@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.parse;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -80,13 +81,13 @@ public class UnparseTest extends SqlTestSupport {
     }
 
     private void checkQuery(String query) {
-        final SqlNode node = context.parse(query).getNode();
+        final SqlNode node = context.parse(query, NoOpSqlSecurityContext.INSTANCE).getNode();
         final SqlPrettyWriter writer = new SqlPrettyWriter(SqlPrettyWriter.config());
         node.unparse(writer, 0, 0);
         final String result = writer.toSqlString().toString();
 
         assertEquals(query, result);
-        assertNotNull(context.parse(result).getNode());
+        assertNotNull(context.parse(result, NoOpSqlSecurityContext.INSTANCE).getNode());
     }
 
     private static OptimizerContext createContext() {
@@ -95,7 +96,8 @@ public class UnparseTest extends SqlTestSupport {
                 emptyList(),
                 emptyList(),
                 1,
-                name -> null
+                name -> null,
+                NoOpSqlSecurityContext.INSTANCE
         );
     }
 }

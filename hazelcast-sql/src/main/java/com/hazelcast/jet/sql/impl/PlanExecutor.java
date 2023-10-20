@@ -359,9 +359,9 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(CreateViewPlan plan) {
+    SqlResult execute(CreateViewPlan plan, SqlSecurityContext ssc) {
         OptimizerContext context = plan.context();
-        SqlNode sqlNode = context.parse(plan.viewQuery()).getNode();
+        SqlNode sqlNode = context.parse(plan.viewQuery(), ssc).getNode();
         RelNode relNode = context.convert(sqlNode).getRel();
         List<RelDataTypeField> fieldList = relNode.getRowType().getFieldList();
 

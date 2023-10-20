@@ -112,6 +112,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Contexts;
@@ -291,19 +292,21 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     public SqlPlan prepare(OptimizationTask task) {
         // 1. Prepare context.
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
+        SqlSecurityContext ssc = task.getSqlSecurityContext();
 
         OptimizerContext context = OptimizerContext.create(
                 task.getSchema(),
                 task.getSearchPaths(),
                 task.getArguments(),
                 memberCount,
-                iMapResolver);
+                iMapResolver,
+                ssc);
 
         try {
             OptimizerContext.setThreadContext(context);
 
             // 2. Parse SQL string and validate it.
-            QueryParseResult parseResult = context.parse(task.getSql());
+            QueryParseResult parseResult = context.parse(task.getSql(), ssc);
 
             // 3. Create plan.
             return createPlan(task, parseResult, context);
