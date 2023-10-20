@@ -21,7 +21,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 
 /**
- * Parameters for using a map as a sink with a update function
+ * Parameters for using a map as a sink with an update function
  */
 public class MapSinkUpdateParams<T, K, V> {
 

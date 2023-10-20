@@ -27,13 +27,13 @@ import javax.annotation.Nonnull;
 /**
  * A ProcessorSupplier that checks permission of processor function
  */
-public class ProcessorFunctionConnectorSupplier extends AbstractHazelcastConnectorSupplier {
+class ProcessorFunctionConnectorSupplier extends AbstractHazelcastConnectorSupplier {
 
     private static final long serialVersionUID = 1L;
 
     private final FunctionEx<HazelcastInstance, Processor> processorFunction;
 
-    public ProcessorFunctionConnectorSupplier(FunctionEx<HazelcastInstance, Processor> processorFunction) {
+    ProcessorFunctionConnectorSupplier(FunctionEx<HazelcastInstance, Processor> processorFunction) {
         this.processorFunction = processorFunction;
     }
 

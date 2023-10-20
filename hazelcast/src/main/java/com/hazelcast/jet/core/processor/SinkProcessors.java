@@ -74,22 +74,9 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <K, V> ProcessorMetaSupplier writeMapP(@Nonnull String mapName) {
-        return writeMapP(mapName, Map.Entry::getKey, Map.Entry<K, V>::getValue);
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link Sinks#map(String, FunctionEx, FunctionEx)}.
-     */
-    @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier writeMapP(
-            @Nonnull String mapName,
-            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull FunctionEx<? super T, ? extends V> toValueFn
-    ) {
-        MapSinkParams<T, K, V> params = new MapSinkParams<>(mapName);
-        params.setToKeyFn(toKeyFn);
-        params.setToValueFn(toValueFn);
+        MapSinkParams<Map.Entry<K, V>, K, V> params = new MapSinkParams<>(mapName);
+        params.setToKeyFn(Map.Entry::getKey);
+        params.setToValueFn(Map.Entry::getValue);
         return writeMapP(params);
     }
 
@@ -97,7 +84,7 @@ public final class SinkProcessors {
      * Returns a supplier of processors
      */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier writeMapP(MapSinkParams<K, V, T> params) {
+    public static <T, K, V> ProcessorMetaSupplier writeMapP(MapSinkParams<T, K, V> params) {
         return HazelcastWriters.writeMapSupplier(params);
     }
 

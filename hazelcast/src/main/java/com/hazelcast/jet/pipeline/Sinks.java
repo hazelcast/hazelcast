@@ -191,7 +191,10 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
 
     ) {
-        ProcessorMetaSupplier processorMetaSupplier = writeMapP(mapName, toKeyFn, toValueFn);
+        MapSinkParams<T, K, V> params = new MapSinkParams<>(mapName);
+        params.setToKeyFn(toKeyFn);
+        params.setToValueFn(toValueFn);
+        ProcessorMetaSupplier processorMetaSupplier = writeMapP(params);
         return new SinkImpl<>("mapSink(" + mapName + ')',
                 processorMetaSupplier, toKeyFn);
     }
@@ -464,8 +467,15 @@ public final class Sinks {
     }
 
     /**
-     * Convenience for {@link #remoteMapWithMerging} with {@link Entry} as
-     * input item.
+     * The same as the {@link #remoteMapWithMerging(String, ClientConfig, BinaryOperatorEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @since 5.4
      */
     @Nonnull
     public static <K, V> Sink<Entry<K, V>> remoteMapWithMerging(
@@ -503,6 +513,17 @@ public final class Sinks {
                 toKeyFn);
     }
 
+    /**
+     * The same as the {@link #remoteMapWithMerging(String, ClientConfig, FunctionEx, FunctionEx, BinaryOperatorEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @since 5.4
+     */
     @Nonnull
     public static <T, K, V> Sink<T> remoteMapWithMerging(
             @Nonnull String mapName,
