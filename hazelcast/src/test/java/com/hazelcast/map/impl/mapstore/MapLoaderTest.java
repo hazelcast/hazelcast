@@ -68,9 +68,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.test.Accessors.getNode;
-import static com.hazelcast.test.TestCollectionUtils.setOfValuesBetween;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
@@ -159,7 +160,10 @@ public class MapLoaderTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = instances[0].getMap(name);
 
         // load specific keys
-        map.loadAll(setOfValuesBetween(0, keysInMapStore), true);
+        Set<Integer> keys = IntStream.range(0, keysInMapStore)
+                .boxed()
+                .collect(Collectors.toSet());
+        map.loadAll(keys, true);
 
         // remove everything
         map.clear();
@@ -637,7 +641,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     private MapStore<Integer, Integer> createMapLoader(final AtomicInteger loadAllCounter) {
-        return new MapStoreAdapter<Integer, Integer>() {
+        return new MapStoreAdapter<>() {
             @Override
             public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
                 loadAllCounter.addAndGet(keys.size());
@@ -773,9 +777,9 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         volatile boolean preloadValues = false;
 
-        private SampleIndexableObject[] values = new SampleIndexableObject[10];
-        private Set<Integer> keys = new HashSet<>();
-        private AtomicInteger loadAllKeysCallCount = new AtomicInteger(0);
+        private final SampleIndexableObject[] values = new SampleIndexableObject[10];
+        private final Set<Integer> keys = new HashSet<>();
+        private final AtomicInteger loadAllKeysCallCount = new AtomicInteger(0);
 
         public SampleIndexableObjectMapLoader() {
             for (int i = 0; i < 10; i++) {

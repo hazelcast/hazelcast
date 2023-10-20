@@ -42,8 +42,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import static com.hazelcast.test.TestCollectionUtils.setOfValuesBetween;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -59,7 +60,7 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void testGetMap_issue_3031() throws Exception {
+    public void testGetMap_issue_3031() {
         final int itemCount = 1000;
         final String mapName = randomMapName();
 
@@ -85,7 +86,7 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void testLoadAll_givenKeys() throws Exception {
+    public void testLoadAll_givenKeys() {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         hazelcastFactory.newHazelcastInstance(config);
@@ -121,7 +122,10 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
         IMap<Integer, Integer> map = client.getMap(name);
 
         //load specific keys
-        map.loadAll(setOfValuesBetween(0, keysInMapStore), true);
+        Set<Integer> keys = IntStream.range(0, keysInMapStore)
+                .boxed()
+                .collect(Collectors.toSet());
+        map.loadAll(keys, true);
 
         //remove everything
         map.clear();
@@ -132,7 +136,7 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void testLoadAll_allKeys() throws Exception {
+    public void testLoadAll_allKeys() {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         hazelcastFactory.newHazelcastInstance(config);
