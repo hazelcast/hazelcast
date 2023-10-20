@@ -24,12 +24,16 @@ import com.hazelcast.jet.sql.impl.validate.UnsupportedOperationVisitor;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.impl.ParseException;
 import org.apache.calcite.sql.util.SqlVisitor;
+
+import javax.annotation.Nonnull;
 
 /**
  * Performs syntactic and semantic validation of the query.
@@ -52,9 +56,9 @@ public class QueryParser {
         this.validator = validator;
     }
 
-    public QueryParseResult parse(String sql) {
+    public QueryParseResult parse(String sql, @Nonnull SqlSecurityContext ssc) {
         try {
-            return parse0(sql);
+            return parse0(sql, ssc);
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -69,7 +73,12 @@ public class QueryParser {
         }
     }
 
-    private QueryParseResult parse0(String sql) throws SqlParseException {
+    // For test purposes only
+    QueryParseResult parse(String sql) {
+        return parse(sql, NoOpSqlSecurityContext.INSTANCE);
+    }
+
+    private QueryParseResult parse0(String sql, SqlSecurityContext sqlSecurityContext) throws SqlParseException {
         SqlParser parser = SqlParser.create(sql, CONFIG);
         SqlNodeList statements = parser.parseStmtList();
         if (statements.size() != 1) {

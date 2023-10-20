@@ -242,7 +242,7 @@ public class SqlServiceImpl implements SqlService {
         }
 
         // Prepare and execute
-        SqlPlan plan = prepare(schema, sql, args0, expectedResultType);
+        SqlPlan plan = prepare(schema, sql, args0, expectedResultType, securityContext);
 
         if (securityContext.isSecurityEnabled()) {
             plan.checkPermissions(securityContext);
@@ -252,7 +252,12 @@ public class SqlServiceImpl implements SqlService {
         return plan.execute(queryId, args0, timeout, securityContext);
     }
 
-    private SqlPlan prepare(String schema, String sql, List<Object> arguments, SqlExpectedResultType expectedResultType) {
+    private SqlPlan prepare(
+            String schema,
+            String sql,
+            List<Object> arguments,
+            SqlExpectedResultType expectedResultType,
+            SqlSecurityContext sqlSecurityContext) {
         List<List<String>> searchPaths = prepareSearchPaths(schema);
 
         PlanKey planKey = new PlanKey(searchPaths, sql);
@@ -261,9 +266,8 @@ public class SqlServiceImpl implements SqlService {
 
         if (plan == null) {
             SqlCatalog catalog = new SqlCatalog(optimizer.tableResolvers());
-
-            plan = optimizer.prepare(new OptimizationTask(sql, arguments, searchPaths, catalog));
-
+            plan = optimizer.prepare(new OptimizationTask(
+                    sql, arguments, searchPaths, catalog, sqlSecurityContext));
             if (plan.isCacheable()) {
                 planCache.put(planKey, plan);
             }
