@@ -387,7 +387,6 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE JSON_QUERY(data, '$.value') = '2'");
 
         assertJdbcQueryRowsAnyOrder("SELECT " + quote("name") + " FROM " + quote(tableName),
-                //newArrayList(String.class),
                 new Row("name-0"),
                 new Row("name-1"),
                 new Row("updated")

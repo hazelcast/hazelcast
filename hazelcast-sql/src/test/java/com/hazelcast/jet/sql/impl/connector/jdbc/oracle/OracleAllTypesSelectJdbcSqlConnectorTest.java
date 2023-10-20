@@ -42,16 +42,13 @@ public class OracleAllTypesSelectJdbcSqlConnectorTest extends AllTypesSelectJdbc
         assumeThat(type).describedAs("BOOLEAN not supported on Oracle")
                 .isNotEqualTo("BOOLEAN");
 
-        assumeThat(type).describedAs("BIGINT not supported on Oracle")
-                .isNotEqualTo("BIGINT");
+        //assumeThat(type).describedAs("BIGINT not supported on Oracle")
+        //        .isNotEqualTo("BIGINT");
 
         assumeThat(type).describedAs("TIME not supported on Oracle")
                 .isNotEqualTo("TIME");
 
 
-        if (type.equals("DOUBLE")) {
-            type = "DOUBLE PRECISION";
-        }
         if (type.equals("DATE")) {
             value = "DATE'2022-12-30'";
         }
@@ -60,6 +57,26 @@ public class OracleAllTypesSelectJdbcSqlConnectorTest extends AllTypesSelectJdbc
         }
         if (type.equals("TIMESTAMP WITH TIME ZONE")) {
             value = "TIMESTAMP'2022-12-30 23:59:59 -05:00'";
+        }
+        if (type.equals("SMALLINT")) {
+            type = "NUMBER(4)";
+        }
+        if (type.equals("INTEGER")) {
+            type = "NUMBER(5)";
+        }
+        if (type.equals("BIGINT")) {
+            type = "NUMBER(18)";
+        }
+        if (type.equals("REAL")) {
+            type = "NUMBER(6,1)";
+        }
+        if (type.equals("DOUBLE")) {
+            type = "NUMBER(14,1)";
+        }
+        if (type.equals("DECIMAL (10,5)")) {
+            type = "DECIMAL (11,5)";
+            //this still works, decimal will be converted to NUMBER with the same precision and scale
+            //Changed from precision 10 to 11 because it falls into double's interval
         }
     }
 

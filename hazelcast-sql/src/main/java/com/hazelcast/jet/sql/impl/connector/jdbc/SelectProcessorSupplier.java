@@ -51,11 +51,12 @@ public class SelectProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    private static final int REAL_PRECISION = 63;
-    private static final int DOUBLE_PRECISION = 126;
-    private static final int INT_PRECISION = 38;
-    private static final int REAL_DOUBLE_SCALE = -127;
+    private static final int DOUBLE_PRECISION_SCALE = 15;
+    private static final int INT_PRECISION = 10;
+    private static final int SMALLINT_PRECISION = 4;
+    private static final int BIGINT_PRECISION = 18;
     private static final int INT_SCALE = 0;
+    private static final int REAL_PRECISION_SCALE = 7;
     private String query;
     private int[] parameterPositions;
 
@@ -162,14 +163,30 @@ public class SelectProcessorSupplier
         if (type.equals("NUMBER")) {
             int precision = metaData.getPrecision(column + 1);
             int scale = metaData.getScale(column + 1);
-            if (precision == REAL_PRECISION && scale == REAL_DOUBLE_SCALE) {
-                return "REAL";
-            } else if (precision == INT_PRECISION && scale == INT_SCALE) {
-                return "INT";
-            } else if (precision == DOUBLE_PRECISION && scale == REAL_DOUBLE_SCALE) {
-                return "DOUBLE PRECISION";
+
+            if (scale == INT_SCALE) {
+                if (precision <= SMALLINT_PRECISION) {
+                    return "SMALLINT";
+                } else if (precision < INT_PRECISION) {
+                    return "INT";
+                } else if (precision <= BIGINT_PRECISION) {
+                    return "BIGINT";
+                } else {
+                    return "DECIMAL";
+                }
+            } else {
+                if ( (scale + precision) <= REAL_PRECISION_SCALE ) {
+                    return "REAL";
+                } else if ( (scale + precision) <= DOUBLE_PRECISION_SCALE ) {
+                    return "DOUBLE PRECISION";
+                }
             }
+
         }
+        /*
+            If none of the conditions above are met, then the default conversion for
+            NUMBER(p,s) where s != 0 will be DECIMAL(p,s).
+        */
         return type;
     }
 }
