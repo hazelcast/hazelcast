@@ -22,7 +22,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
@@ -66,7 +65,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
@@ -82,7 +80,6 @@ import static com.hazelcast.jet.core.processor.SourceProcessors.streamCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamSocketP;
 import static com.hazelcast.jet.impl.connector.StreamEventJournalP.streamRemoteCacheSupplier;
-import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -674,34 +671,16 @@ public final class Sources {
                             .build();
     }
 
-    private static class RemoteReplicatedMapReader<K, V> {
+    private static class RemoteReplicatedMapReader<K, V> extends HazelcastClientBaseContext {
         private final String replicatedMapName;
         private final int batchSize;
 
-        private HazelcastInstance client;
         private Iterator<Map.Entry<K, V>> iterator;
 
         RemoteReplicatedMapReader(String replicatedMapName, String dataConnectionName, String clientXml,
                                   int batchSize, Context context) {
+            super(dataConnectionName, clientXml, context);
             this.replicatedMapName = replicatedMapName;
-
-            if (dataConnectionName == null && clientXml == null) {
-                throw new IllegalArgumentException("Either dataConnectionName or clientConfig must be provided. "
-                        + "Both are null");
-            }
-
-            if (dataConnectionName != null) {
-                HazelcastDataConnection dataConnection =
-                        context.dataConnectionService()
-                               .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
-                try {
-                    this.client = dataConnection.getClient();
-                } finally {
-                    dataConnection.release();
-                }
-            } else {
-                this.client = newHazelcastClient(asClientConfig(clientXml));
-            }
             this.batchSize = batchSize;
         }
 
@@ -717,13 +696,6 @@ public final class Sources {
             }
             if (!iterator.hasNext()) {
                 buffer.close();
-            }
-        }
-
-        public void destroy() {
-            if (client != null) {
-                client.shutdown();
-                client = null;
             }
         }
     }
