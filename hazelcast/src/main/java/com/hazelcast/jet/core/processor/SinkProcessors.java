@@ -29,6 +29,7 @@ import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.MapSinkEntryProcessorParams;
 import com.hazelcast.jet.impl.connector.MapSinkMergeParams;
 import com.hazelcast.jet.impl.connector.MapSinkParams;
+import com.hazelcast.jet.impl.connector.MapSinkUpdateParams;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
@@ -105,32 +106,9 @@ public final class SinkProcessors {
         return HazelcastWriters.mergeMapSupplier(params);
     }
 
-    /**
-     * Returns a supplier of processors for
-     * {@link Sinks#mapWithEntryProcessor(String, FunctionEx, FunctionEx)} .
-     */
     @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier updateMapP(
-            @Nonnull String mapName,
-            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
-    ) {
-        return HazelcastWriters.updateMapSupplier(mapName, null, toKeyFn, updateFn);
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link Sinks#remoteMapWithUpdating(String, ClientConfig, FunctionEx
-     *, BiFunctionEx)}.
-     */
-    @Nonnull
-    public static <T, K, V> ProcessorMetaSupplier updateMapP(
-            @Nonnull String mapName,
-            @Nonnull ClientConfig clientConfig,
-            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
-    ) {
-        return HazelcastWriters.updateMapSupplier(mapName, clientConfig, toKeyFn, updateFn);
+    public static <T, K, V> ProcessorMetaSupplier updateMapP(MapSinkUpdateParams<T, K, V> params) {
+        return HazelcastWriters.updateMapSupplier(params);
     }
 
     @Nonnull

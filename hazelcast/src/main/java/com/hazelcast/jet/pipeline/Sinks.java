@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.connector.MapSinkEntryProcessorParams;
 import com.hazelcast.jet.impl.connector.MapSinkMergeParams;
 import com.hazelcast.jet.impl.connector.MapSinkParams;
+import com.hazelcast.jet.impl.connector.MapSinkUpdateParams;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EntryProcessor;
@@ -593,8 +594,14 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
-        return new SinkImpl<>("mapWithUpdatingSink(" + mapName + ')',
-                updateMapP(mapName, toKeyFn, updateFn), toKeyFn);
+        MapSinkUpdateParams<T, K, V> params = new MapSinkUpdateParams<>(mapName);
+        params.setToKeyFn(toKeyFn);
+        params.setUpdateFn(updateFn);
+        ProcessorMetaSupplier processorMetaSupplier = updateMapP(params);
+
+        return fromProcessor("mapWithUpdatingSink(" + mapName + ')',
+                processorMetaSupplier,
+                toKeyFn);
     }
 
     /**
@@ -664,8 +671,43 @@ public final class Sinks {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
+        MapSinkUpdateParams<T, K, V> params = new MapSinkUpdateParams<>(mapName);
+        params.setClientConfig(clientConfig);
+        params.setToKeyFn(toKeyFn);
+        params.setUpdateFn(updateFn);
+        ProcessorMetaSupplier processorMetaSupplier = updateMapP(params);
+
         return fromProcessor("remoteMapWithUpdatingSink(" + mapName + ')',
-                updateMapP(mapName, clientConfig, toKeyFn, updateFn),
+                processorMetaSupplier,
+                toKeyFn);
+    }
+
+    /**
+     * The same as the {@link #remoteMapWithUpdating(String, ClientConfig, BiFunctionEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @since 5.4
+     */
+    @Nonnull
+    public static <T, K, V> Sink<T> remoteMapWithUpdating(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
+    ) {
+        MapSinkUpdateParams<T, K, V> params = new MapSinkUpdateParams<>(mapName);
+        params.setDataConnectionName(dataConnectionRef.getName());
+        params.setToKeyFn(toKeyFn);
+        params.setUpdateFn(updateFn);
+
+        ProcessorMetaSupplier processorMetaSupplier = updateMapP(params);
+        return fromProcessor("remoteMapWithUpdatingSink(" + mapName + ')',
+                processorMetaSupplier,
                 toKeyFn);
     }
 
@@ -697,17 +739,45 @@ public final class Sinks {
      * Convenience for {@link #remoteMapWithUpdating} with {@link Entry} as
      * input item.
      */
-    // squid:S1612 Convert2MethodRef (provokes a javac 9 bug)
-    @SuppressWarnings("squid:S1612")
     @Nonnull
     public static <K, V, E extends Entry<K, V>> Sink<E> remoteMapWithUpdating(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull BiFunctionEx<? super V, ? super E, ? extends V> updateFn
     ) {
-        //noinspection Convert2MethodRef (provokes a javac 9 bug)
+        MapSinkUpdateParams<E, K, V> params = new MapSinkUpdateParams<>(mapName);
+        params.setClientConfig(clientConfig);
+        params.setToKeyFn(Entry::getKey);
+        params.setUpdateFn(updateFn);
+        ProcessorMetaSupplier processorMetaSupplier = updateMapP(params);
         return fromProcessor("remoteMapWithUpdatingSink(" + mapName + ')',
-                updateMapP(mapName, clientConfig, (Entry<K, V> e) -> e.getKey(), updateFn));
+                processorMetaSupplier);
+    }
+
+    /**
+     * The same as the {@link #remoteMapWithUpdating(String, ClientConfig, BiFunctionEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     *
+     * @since 5.4
+     */
+    @Nonnull
+    public static <K, V, E extends Entry<K, V>> Sink<E> remoteMapWithUpdating(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull BiFunctionEx<? super V, ? super E, ? extends V> updateFn
+    ) {
+        MapSinkUpdateParams<E, K, V> params = new MapSinkUpdateParams<>(mapName);
+        params.setDataConnectionName(dataConnectionRef.getName());
+        params.setToKeyFn(Entry::getKey);
+        params.setUpdateFn(updateFn);
+        ProcessorMetaSupplier processorMetaSupplier = updateMapP(params);
+        return fromProcessor("remoteMapWithUpdatingSink(" + mapName + ')',
+                processorMetaSupplier);
     }
 
     /**

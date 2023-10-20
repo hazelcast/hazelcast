@@ -95,7 +95,7 @@ public final class HazelcastWriters {
     }
 
     /**
-     * Create ProcessorMetaSupplier to update a remote map
+     * Update map with key and value functions
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(MapSinkParams<T, K, V> params) {
@@ -118,6 +118,9 @@ public final class HazelcastWriters {
         }
     }
 
+    /**
+     * Update map with a merge function
+     */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier mergeMapSupplier(MapSinkMergeParams<T, K, V> params) {
         // Get reference to functions because MapSinkMergeParams is not serializable
@@ -179,6 +182,8 @@ public final class HazelcastWriters {
             return ProcessorMetaSupplier.of(permission, processorSupplier);
         }
     }
+
+    // Dummy function to make the EE SecuredFunctionTest.java pass.
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(
             @Nonnull String name,
@@ -193,6 +198,53 @@ public final class HazelcastWriters {
         return ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name),
                 AbstractHazelcastConnectorSupplier.ofMap(clientXml,
                         SecuredFunctions.updateMapProcessorFn(name, clientXml, toKeyFn, updateFn)));
+    }
+
+    /**
+     * Update map with an update function
+     */
+    @Nonnull
+    public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(MapSinkUpdateParams<T, K, V> params) {
+        checkSerializable(params.getToKeyFn(), "toKeyFn");
+        checkSerializable(params.getUpdateFn(), "updateFn");
+
+        if (params.hasDataSourceConnection()) {
+            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
+                    params.getMapName(),
+                    "",
+                    params.getToKeyFn(),
+                    params.getUpdateFn());
+
+            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
+            processorSupplier.setDataConnectionName(params.getDataConnectionName());
+
+            Permission permission = mapUpdatePermission(null, params.getMapName());
+            return ProcessorMetaSupplier.of(permission, processorSupplier);
+
+        }  else if (params.hasClientConfig()) {
+            String clientXml = asXmlString(params.getClientConfig());
+            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
+                    params.getMapName(),
+                    "",
+                    params.getToKeyFn(),
+                    params.getUpdateFn());
+
+            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
+            processorSupplier.setClientXml(clientXml);
+
+            Permission permission = mapUpdatePermission(null, params.getMapName());
+            return ProcessorMetaSupplier.of(permission, processorSupplier);
+        } else {
+            FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
+                    params.getMapName(),
+                    null,
+                    params.getToKeyFn(),
+                    params.getUpdateFn());
+
+            ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
+            Permission permission = mapUpdatePermission(null, params.getMapName());
+            return ProcessorMetaSupplier.of(permission, processorSupplier);
+        }
     }
 
     // Dummy function to make the EE SecuredFunctionTest.java pass.
@@ -213,7 +265,7 @@ public final class HazelcastWriters {
     }
 
     /**
-     * Create ProcessorMetaSupplier to update a remote map with an EntryProcessor
+     * Update map with an EntryProcessor
      */
     @Nonnull
     public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(MapSinkEntryProcessorParams<T, K, V, R> params) {

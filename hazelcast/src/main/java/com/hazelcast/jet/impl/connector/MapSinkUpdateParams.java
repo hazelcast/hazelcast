@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.function.BinaryOperatorEx;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 
 /**
- * Parameters for using a map as a sink with a merge function
+ * Parameters for using a map as a sink with a update function
  */
-public class MapSinkMergeParams<T, K, V> {
+public class MapSinkUpdateParams<T, K, V> {
 
     private final String mapName;
 
@@ -33,11 +33,9 @@ public class MapSinkMergeParams<T, K, V> {
 
     private FunctionEx<? super T, ? extends K> toKeyFn;
 
-    private FunctionEx<? super T, ? extends V> toValueFn;
+    private BiFunctionEx<? super V, ? super T, ? extends V> updateFn;
 
-    private BinaryOperatorEx<V> mergeFn;
-
-    public MapSinkMergeParams(String mapName) {
+    public MapSinkUpdateParams(String mapName) {
         this.mapName = mapName;
     }
 
@@ -77,19 +75,11 @@ public class MapSinkMergeParams<T, K, V> {
         this.toKeyFn = toKeyFn;
     }
 
-    public FunctionEx<? super T, ? extends V> getToValueFn() {
-        return toValueFn;
+    public BiFunctionEx<? super V, ? super T, ? extends V> getUpdateFn() {
+        return updateFn;
     }
 
-    public void setToValueFn(FunctionEx<? super T, ? extends V> toValueFn) {
-        this.toValueFn = toValueFn;
-    }
-
-    public BinaryOperatorEx<V> getMergeFn() {
-        return mergeFn;
-    }
-
-    public void setMergeFn(BinaryOperatorEx<V> mergeFn) {
-        this.mergeFn = mergeFn;
+    public void setUpdateFn(BiFunctionEx<? super V, ? super T, ? extends V> updateFn) {
+        this.updateFn = updateFn;
     }
 }

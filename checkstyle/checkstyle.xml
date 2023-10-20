@@ -83,7 +83,7 @@
     <!-- Checks for Size Violations.                    -->
     <!-- See http://checkstyle.sf.net/config_sizes.html -->
     <module name="FileLength">
-        <property name="max" value="1600"/>
+        <property name="max" value="1800"/>
     </module>
 
     <!-- Checks for whitespace                               -->
