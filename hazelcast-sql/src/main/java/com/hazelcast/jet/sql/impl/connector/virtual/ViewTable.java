@@ -22,7 +22,6 @@ import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
-import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
@@ -61,7 +60,7 @@ public class ViewTable extends Table {
             throw QueryException.error("Cycle detected in view references");
         }
         expansionStack.push(viewPath);
-        SqlNode sqlNode = context.parse(viewQuery, NoOpSqlSecurityContext.INSTANCE).getNode();
+        SqlNode sqlNode = context.parse(viewQuery).getNode();
         viewRel = context.convertView(sqlNode);
         expansionStack.pop();
         List<RelDataTypeField> fieldList = viewRel.getRowType().getFieldList();

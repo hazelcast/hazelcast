@@ -260,7 +260,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             OptimizerContext.setThreadContext(context);
 
             // 2. Parse SQL string and validate it.
-            QueryParseResult parseResult = context.parse(task.getSql(), ssc);
+            QueryParseResult parseResult = context.parse(task.getSql());
 
             // 3. Create plan.
             return createPlan(task, parseResult, context);
