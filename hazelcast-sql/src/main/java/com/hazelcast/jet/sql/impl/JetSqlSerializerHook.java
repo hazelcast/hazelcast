@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.jet.sql.impl.ExpressionUtil.SqlRowComparator;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.LazyDefiningSpecificMemberPms;
 import com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier;
@@ -31,6 +31,16 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.AggregateAccumulateFunction;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.AggregateArrayAggSupplier;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.AggregateAvgSupplier;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.AggregateCountSupplier;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.AggregateCreateSupplier;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.AggregateObjectAggSupplier;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.AggregateSumSupplier;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.RowGetFn;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.RowGetMaybeSerializedFn;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule.RowIdentityFn;
 import com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink;
 import com.hazelcast.jet.sql.impl.validate.UpdateDataConnectionOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -99,12 +109,15 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
+import com.hazelcast.sql.impl.schema.type.Type.TypeField;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JET_SQL_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JET_SQL_DS_FACTORY_ID;
@@ -230,115 +243,112 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     @SuppressWarnings("unchecked")
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
-        constructors[JSON_QUERY] = arg -> new JsonQueryFunction();
-        constructors[JSON_PARSE] = arg -> new JsonParseFunction();
-        constructors[JSON_VALUE] = arg -> new JsonValueFunction<>();
-        constructors[JSON_OBJECT] = arg -> new JsonObjectFunction();
-        constructors[JSON_ARRAY] = arg -> new JsonArrayFunction();
-        constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
-        constructors[ROW_PROJECTOR_PROCESSOR_SUPPLIER] = arg -> new RowProjectorProcessorSupplier();
-        constructors[KV_ROW_PROJECTOR_SUPPLIER] = arg -> new KvRowProjector.Supplier();
-        constructors[ROOT_RESULT_CONSUMER_SINK_SUPPLIER] = arg -> new RootResultConsumerSink.Supplier();
-        constructors[SQL_ROW_COMPARATOR] = arg -> new ExpressionUtil.SqlRowComparator();
-        constructors[FIELD_COLLATION] = arg -> new FieldCollation();
-        constructors[ROW_GET_MAYBE_SERIALIZED_FN] = arg -> new AggregateAbstractPhysicalRule.RowGetMaybeSerializedFn();
-        constructors[NULL_FUNCTION] = arg -> AggregateAbstractPhysicalRule.NullFunction.INSTANCE;
-        constructors[ROW_GET_FN] = arg -> new AggregateAbstractPhysicalRule.RowGetFn();
-        constructors[AGGREGATE_CREATE_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateCreateSupplier();
-        constructors[AGGREGATE_ACCUMULATE_FUNCTION] =
-                arg -> new AggregateAbstractPhysicalRule.AggregateAccumulateFunction();
-        constructors[AGGREGATE_COMBINE_FUNCTION] =
-                arg -> AggregateAbstractPhysicalRule.AggregateCombineFunction.INSTANCE;
-        constructors[AGGREGATE_FINISH_FUNCTION] =
-                arg -> AggregateAbstractPhysicalRule.AggregateFinishFunction.INSTANCE;
-        constructors[AGGREGATE_SUM_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateSumSupplier();
-        constructors[AGGREGATE_AVG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateAvgSupplier();
-        constructors[AGGREGATE_COUNT_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateCountSupplier();
-        constructors[AGGREGATE_JSON_ARRAY_AGG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateArrayAggSupplier();
-        constructors[ROW_IDENTITY_FN] = arg -> new AggregateAbstractPhysicalRule.RowIdentityFn();
-        constructors[AGGREGATE_EXPORT_FUNCTION] = arg -> AggregateAbstractPhysicalRule.AggregateExportFunction.INSTANCE;
-        constructors[AGGREGATE_JSON_OBJECT_AGG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateObjectAggSupplier();
-        constructors[UDT_OBJECT_TO_JSON] = arg -> new UdtObjectToJsonFunction();
-        constructors[UPDATE_DATA_CONNECTION_OPERATION] = arg -> new UpdateDataConnectionOperation();
+        constructors[JSON_QUERY] = JsonQueryFunction::new;
+        constructors[JSON_PARSE] = JsonParseFunction::new;
+        constructors[JSON_VALUE] = JsonValueFunction::new;
+        constructors[JSON_OBJECT] = JsonObjectFunction::new;
+        constructors[JSON_ARRAY] = JsonArrayFunction::new;
+        constructors[MAP_INDEX_SCAN_METADATA] = MapIndexScanMetadata::new;
+        constructors[ROW_PROJECTOR_PROCESSOR_SUPPLIER] = RowProjectorProcessorSupplier::new;
+        constructors[KV_ROW_PROJECTOR_SUPPLIER] = com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector.Supplier::new;
+        constructors[ROOT_RESULT_CONSUMER_SINK_SUPPLIER] = com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.Supplier::new;
+        constructors[SQL_ROW_COMPARATOR] = SqlRowComparator::new;
+        constructors[FIELD_COLLATION] = FieldCollation::new;
+        constructors[ROW_GET_MAYBE_SERIALIZED_FN] = RowGetMaybeSerializedFn::new;
+        constructors[NULL_FUNCTION] = () -> AggregateAbstractPhysicalRule.NullFunction.INSTANCE;
+        constructors[ROW_GET_FN] = RowGetFn::new;
+        constructors[AGGREGATE_CREATE_SUPPLIER] = AggregateCreateSupplier::new;
+        constructors[AGGREGATE_ACCUMULATE_FUNCTION] = AggregateAccumulateFunction::new;
+        constructors[AGGREGATE_COMBINE_FUNCTION] = () -> AggregateAbstractPhysicalRule.AggregateCombineFunction.INSTANCE;
+        constructors[AGGREGATE_FINISH_FUNCTION] = () -> AggregateAbstractPhysicalRule.AggregateFinishFunction.INSTANCE;
+        constructors[AGGREGATE_SUM_SUPPLIER] = AggregateSumSupplier::new;
+        constructors[AGGREGATE_AVG_SUPPLIER] = AggregateAvgSupplier::new;
+        constructors[AGGREGATE_COUNT_SUPPLIER] = AggregateCountSupplier::new;
+        constructors[AGGREGATE_JSON_ARRAY_AGG_SUPPLIER] = AggregateArrayAggSupplier::new;
+        constructors[ROW_IDENTITY_FN] = RowIdentityFn::new;
+        constructors[AGGREGATE_EXPORT_FUNCTION] = () -> AggregateAbstractPhysicalRule.AggregateExportFunction.INSTANCE;
+        constructors[AGGREGATE_JSON_OBJECT_AGG_SUPPLIER] = AggregateObjectAggSupplier::new;
+        constructors[UDT_OBJECT_TO_JSON] = UdtObjectToJsonFunction::new;
+        constructors[UPDATE_DATA_CONNECTION_OPERATION] = UpdateDataConnectionOperation::new;
 
-        constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
-        constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
-        constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
-        constructors[INDEX_FILTER_IN] = arg -> new IndexCompositeFilter();
+        constructors[INDEX_FILTER_VALUE] = IndexFilterValue::new;
+        constructors[INDEX_FILTER_EQUALS] = IndexEqualsFilter::new;
+        constructors[INDEX_FILTER_RANGE] = IndexRangeFilter::new;
+        constructors[INDEX_FILTER_IN] = IndexCompositeFilter::new;
 
-        constructors[EXPRESSION_TO_CHAR] = arg -> new ToCharFunction();
-        constructors[EXPRESSION_COLUMN] = arg -> new ColumnExpression<>();
-        constructors[EXPRESSION_IS_NULL] = arg -> new IsNullPredicate();
+        constructors[EXPRESSION_TO_CHAR] = ToCharFunction::new;
+        constructors[EXPRESSION_COLUMN] = ColumnExpression::new;
+        constructors[EXPRESSION_IS_NULL] = IsNullPredicate::new;
 
-        constructors[EXPRESSION_CONSTANT] = arg -> new ConstantExpression<>();
-        constructors[EXPRESSION_PARAMETER] = arg -> new ParameterExpression<>();
-        constructors[EXPRESSION_CAST] = arg -> new CastExpression<>();
-        constructors[EXPRESSION_DIVIDE] = arg -> new DivideFunction<>();
-        constructors[EXPRESSION_MINUS] = arg -> new MinusFunction<>();
-        constructors[EXPRESSION_MULTIPLY] = arg -> new MultiplyFunction<>();
-        constructors[EXPRESSION_PLUS] = arg -> new PlusFunction<>();
-        constructors[EXPRESSION_UNARY_MINUS] = arg -> new UnaryMinusFunction<>();
-        constructors[EXPRESSION_AND] = arg -> new AndPredicate();
-        constructors[EXPRESSION_OR] = arg -> new OrPredicate();
-        constructors[EXPRESSION_NOT] = arg -> new NotPredicate();
-        constructors[EXPRESSION_COMPARISON] = arg -> new ComparisonPredicate();
-        constructors[EXPRESSION_IS_TRUE] = arg -> new IsTruePredicate();
-        constructors[EXPRESSION_IS_NOT_TRUE] = arg -> new IsNotTruePredicate();
-        constructors[EXPRESSION_IS_FALSE] = arg -> new IsFalsePredicate();
-        constructors[EXPRESSION_IS_NOT_FALSE] = arg -> new IsNotFalsePredicate();
-        constructors[EXPRESSION_IS_NOT_NULL] = arg -> new IsNotNullPredicate();
+        constructors[EXPRESSION_CONSTANT] = ConstantExpression::new;
+        constructors[EXPRESSION_PARAMETER] = ParameterExpression::new;
+        constructors[EXPRESSION_CAST] = CastExpression::new;
+        constructors[EXPRESSION_DIVIDE] = DivideFunction::new;
+        constructors[EXPRESSION_MINUS] = MinusFunction::new;
+        constructors[EXPRESSION_MULTIPLY] = MultiplyFunction::new;
+        constructors[EXPRESSION_PLUS] = PlusFunction::new;
+        constructors[EXPRESSION_UNARY_MINUS] = UnaryMinusFunction::new;
+        constructors[EXPRESSION_AND] = AndPredicate::new;
+        constructors[EXPRESSION_OR] = OrPredicate::new;
+        constructors[EXPRESSION_NOT] = NotPredicate::new;
+        constructors[EXPRESSION_COMPARISON] = ComparisonPredicate::new;
+        constructors[EXPRESSION_IS_TRUE] = IsTruePredicate::new;
+        constructors[EXPRESSION_IS_NOT_TRUE] = IsNotTruePredicate::new;
+        constructors[EXPRESSION_IS_FALSE] = IsFalsePredicate::new;
+        constructors[EXPRESSION_IS_NOT_FALSE] = IsNotFalsePredicate::new;
+        constructors[EXPRESSION_IS_NOT_NULL] = IsNotNullPredicate::new;
 
-        constructors[EXPRESSION_ABS] = arg -> new AbsFunction<>();
-        constructors[EXPRESSION_SIGN] = arg -> new SignFunction<>();
-        constructors[EXPRESSION_RAND] = arg -> new RandFunction();
-        constructors[EXPRESSION_DOUBLE] = arg -> new DoubleFunction();
-        constructors[EXPRESSION_FLOOR_CEIL] = arg -> new FloorCeilFunction<>();
-        constructors[EXPRESSION_ROUND_TRUNCATE] = arg -> new RoundTruncateFunction<>();
+        constructors[EXPRESSION_ABS] = AbsFunction::new;
+        constructors[EXPRESSION_SIGN] = SignFunction::new;
+        constructors[EXPRESSION_RAND] = RandFunction::new;
+        constructors[EXPRESSION_DOUBLE] = DoubleFunction::new;
+        constructors[EXPRESSION_FLOOR_CEIL] = FloorCeilFunction::new;
+        constructors[EXPRESSION_ROUND_TRUNCATE] = RoundTruncateFunction::new;
 
-        constructors[EXPRESSION_ASCII] = arg -> new AsciiFunction();
-        constructors[EXPRESSION_CHAR_LENGTH] = arg -> new CharLengthFunction();
-        constructors[EXPRESSION_INITCAP] = arg -> new InitcapFunction();
-        constructors[EXPRESSION_LOWER] = arg -> new LowerFunction();
-        constructors[EXPRESSION_UPPER] = arg -> new UpperFunction();
-        constructors[EXPRESSION_CONCAT] = arg -> new ConcatFunction();
-        constructors[EXPRESSION_LIKE] = arg -> new LikeFunction();
-        constructors[EXPRESSION_SUBSTRING] = arg -> new SubstringFunction();
-        constructors[EXPRESSION_TRIM] = arg -> new TrimFunction();
-        constructors[EXPRESSION_REPLACE] = arg -> new ReplaceFunction();
-        constructors[EXPRESSION_POSITION] = arg -> new PositionFunction();
-        constructors[EXPRESSION_REMAINDER] = arg -> new RemainderFunction<>();
-        constructors[EXPRESSION_CONCAT_WS] = arg -> new ConcatWSFunction();
-        constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
-        constructors[EXPRESSION_EXTRACT] = arg -> new ExtractFunction();
+        constructors[EXPRESSION_ASCII] = AsciiFunction::new;
+        constructors[EXPRESSION_CHAR_LENGTH] = CharLengthFunction::new;
+        constructors[EXPRESSION_INITCAP] = InitcapFunction::new;
+        constructors[EXPRESSION_LOWER] = LowerFunction::new;
+        constructors[EXPRESSION_UPPER] = UpperFunction::new;
+        constructors[EXPRESSION_CONCAT] = ConcatFunction::new;
+        constructors[EXPRESSION_LIKE] = LikeFunction::new;
+        constructors[EXPRESSION_SUBSTRING] = SubstringFunction::new;
+        constructors[EXPRESSION_TRIM] = TrimFunction::new;
+        constructors[EXPRESSION_REPLACE] = ReplaceFunction::new;
+        constructors[EXPRESSION_POSITION] = PositionFunction::new;
+        constructors[EXPRESSION_REMAINDER] = RemainderFunction::new;
+        constructors[EXPRESSION_CONCAT_WS] = ConcatWSFunction::new;
+        constructors[EXPRESSION_CASE] = CaseExpression::new;
+        constructors[EXPRESSION_EXTRACT] = ExtractFunction::new;
 
-        constructors[EXPRESSION_DOUBLE_DOUBLE] = arg -> new DoubleBiFunction();
-        constructors[EXPRESSION_TO_TIMESTAMP_TZ] = arg -> new ToTimestampTzFunction();
-        constructors[EXPRESSION_TO_EPOCH_MILLIS] = arg -> new ToEpochMillisFunction();
+        constructors[EXPRESSION_DOUBLE_DOUBLE] = DoubleBiFunction::new;
+        constructors[EXPRESSION_TO_TIMESTAMP_TZ] = ToTimestampTzFunction::new;
+        constructors[EXPRESSION_TO_EPOCH_MILLIS] = ToEpochMillisFunction::new;
 
-        constructors[SARG_EXPRESSION] = arg -> new SargExpression<>();
-        constructors[SEARCH_PREDICATE] = arg -> new SearchPredicate();
-        constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
-        constructors[EXPRESSION_ROW] = arg -> new RowExpression();
+        constructors[SARG_EXPRESSION] = SargExpression::new;
+        constructors[SEARCH_PREDICATE] = SearchPredicate::new;
+        constructors[EXPRESSION_FIELD_ACCESS] = FieldAccessExpression::new;
+        constructors[EXPRESSION_ROW] = RowExpression::new;
 
-        constructors[DATA_CONNECTION] = arg -> new DataConnectionCatalogEntry();
+        constructors[DATA_CONNECTION] = DataConnectionCatalogEntry::new;
 
-        constructors[ROW_HEAP] = arg -> new HeapRow();
-        constructors[ROW_EMPTY] = arg -> EmptyRow.INSTANCE;
+        constructors[ROW_HEAP] = HeapRow::new;
+        constructors[ROW_EMPTY] = () -> EmptyRow.INSTANCE;
 
-        constructors[LAZY_TARGET] = arg -> new LazyTarget();
+        constructors[LAZY_TARGET] = LazyTarget::new;
 
-        constructors[TARGET_DESCRIPTOR_GENERIC] = arg -> GenericQueryTargetDescriptor.DEFAULT;
+        constructors[TARGET_DESCRIPTOR_GENERIC] = () -> GenericQueryTargetDescriptor.DEFAULT;
 
-        constructors[QUERY_PATH] = arg -> new QueryPath();
+        constructors[QUERY_PATH] = QueryPath::new;
 
-        constructors[INTERVAL_YEAR_MONTH] = arg -> new SqlYearMonthInterval();
-        constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
+        constructors[INTERVAL_YEAR_MONTH] = SqlYearMonthInterval::new;
+        constructors[INTERVAL_DAY_SECOND] = SqlDaySecondInterval::new;
 
-        constructors[EXPRESSION_GET_DDL] = arg -> new GetDdlFunction();
+        constructors[EXPRESSION_GET_DDL] = GetDdlFunction::new;
 
-        constructors[LAZY_SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER] = arg -> new LazyDefiningSpecificMemberPms();
+        constructors[LAZY_SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER] = LazyDefiningSpecificMemberPms::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }
@@ -347,17 +357,16 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public void afterFactoriesCreated(Map<Integer, DataSerializableFactory> factories) {
         ArrayDataSerializableFactory mapDataFactory = (ArrayDataSerializableFactory) factories.get(SqlDataSerializerHook.F_ID);
 
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors =
-                new ConstructorFunction[SqlDataSerializerHook.LEN];
-        constructors[SqlDataSerializerHook.QUERY_DATA_TYPE] = arg -> new QueryDataType();
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[SqlDataSerializerHook.LEN];
+        constructors[SqlDataSerializerHook.QUERY_DATA_TYPE] = QueryDataType::new;
         // SqlDataSerializerHook.QUERY_ID
-        constructors[SqlDataSerializerHook.MAPPING] = arg -> new Mapping();
-        constructors[SqlDataSerializerHook.MAPPING_FIELD] = arg -> new MappingField();
-        constructors[SqlDataSerializerHook.VIEW] = arg -> new View();
-        constructors[SqlDataSerializerHook.TYPE] = arg -> new Type();
-        constructors[SqlDataSerializerHook.TYPE_FIELD] = arg -> new Type.TypeField();
+        constructors[SqlDataSerializerHook.MAPPING] = Mapping::new;
+        constructors[SqlDataSerializerHook.MAPPING_FIELD] = MappingField::new;
+        constructors[SqlDataSerializerHook.VIEW] = View::new;
+        constructors[SqlDataSerializerHook.TYPE] = Type::new;
+        constructors[SqlDataSerializerHook.TYPE_FIELD] = TypeField::new;
         // SqlDataSerializerHook.ROW_VALUE
-        constructors[SqlDataSerializerHook.QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
+        constructors[SqlDataSerializerHook.QUERY_DATA_TYPE_FIELD] = QueryDataTypeField::new;
 
         mapDataFactory.mergeConstructors(constructors);
     }
