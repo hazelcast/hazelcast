@@ -322,6 +322,11 @@ public class MapContainer {
         return partitionedIndexRegistry.isEmpty();
     }
 
+    public MapWanContext getWanContext() {
+        return wanContext;
+    }
+
+
     public int getTotalBackupCount() {
         return getBackupCount() + getAsyncBackupCount();
     }
