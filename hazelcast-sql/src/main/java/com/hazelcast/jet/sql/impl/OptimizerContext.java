@@ -86,17 +86,20 @@ public final class OptimizerContext {
     private final QueryPlanner planner;
     private final Set<PlanObjectKey> usedViews = new HashSet<>();
     private final Deque<String> viewExpansionStack = new ArrayDeque<>();
+    private final SqlSecurityContext sqlSecurityContext;
 
     private OptimizerContext(
             HazelcastRelOptCluster cluster,
             QueryParser parser,
             QueryConverter converter,
-            QueryPlanner planner
+            QueryPlanner planner,
+            SqlSecurityContext sqlSecurityContext
     ) {
         this.cluster = cluster;
         this.parser = parser;
         this.converter = converter;
         this.planner = planner;
+        this.sqlSecurityContext = sqlSecurityContext;
     }
 
     /**
@@ -138,7 +141,7 @@ public final class OptimizerContext {
         QueryConverter converter = new QueryConverter(validator, catalogReader, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
-        return new OptimizerContext(cluster, parser, converter, planner);
+        return new OptimizerContext(cluster, parser, converter, planner, ssc);
     }
 
     public static void setThreadContext(OptimizerContext context) {
@@ -155,8 +158,8 @@ public final class OptimizerContext {
      * @param sql SQL string.
      * @return SQL tree.
      */
-    public QueryParseResult parse(String sql, @Nonnull SqlSecurityContext ssc) {
-        return parser.parse(sql, ssc);
+    public QueryParseResult parse(String sql) {
+        return parser.parse(sql, sqlSecurityContext);
     }
 
     /**

@@ -376,7 +376,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             // We need to feed primary keys to the delete processor so that it can directly delete the records.
             // Therefore we use the primary key for the select list.
             connector.getPrimaryKey(table).forEach(name -> selectList.add(new SqlIdentifier(name, SqlParserPos.ZERO)));
-            if (selectList.size() == 0) {
+            if (selectList.isEmpty()) {
                 throw QueryException.error("Cannot DELETE from " + delete.getTargetTable() + ": it doesn't have a primary key");
             }
         }
@@ -432,14 +432,14 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     protected void validateTableFunction(SqlCall node, SqlValidatorScope scope, RelDataType targetRowType) {
-        if (node instanceof SqlBasicCall && !node.getOperandList().isEmpty()) {
+        if (ssc.isSecurityEnabled() && node instanceof SqlBasicCall && !node.getOperandList().isEmpty()) {
             SqlNode sqlNode = node.getOperandList().get(0);
             if (sqlNode instanceof SqlBasicCall) {
                 SqlBasicCall call = (SqlBasicCall) sqlNode;
                 SqlOperator operator = call.getOperator();
                 if (operator instanceof HazelcastDynamicTableFunction) {
                     HazelcastDynamicTableFunction f = (HazelcastDynamicTableFunction) operator;
-                    for (Permission permission : f.permissions(call)) {
+                    for (Permission permission : f.permissions(call, this)) {
                         ssc.checkPermission(permission);
                     }
                 }
@@ -487,6 +487,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         ParameterConverter parameterConverter = parameterConverterMap.get(index);
         Object argument = arguments.get(index);
         return parameterConverter.convert(argument);
+    }
+
+    public Object getRawArgumentAt(int index) {
+        return arguments.get(index);
     }
 
     public ParameterConverter[] getParameterConverters(SqlNode node) {

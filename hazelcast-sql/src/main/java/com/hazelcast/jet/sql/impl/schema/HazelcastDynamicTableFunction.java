@@ -76,7 +76,7 @@ public abstract class HazelcastDynamicTableFunction extends HazelcastTableSource
         return ((HazelcastFunctionRelDataType) rowType).table();
     }
 
-    public abstract List<Permission> permissions(SqlCall call);
+    public abstract List<Permission> permissions(SqlCall call, HazelcastSqlValidator validator);
 
     private static RelDataType inferReturnType(
             String name,
@@ -119,7 +119,7 @@ public abstract class HazelcastDynamicTableFunction extends HazelcastTableSource
         return arguments;
     }
 
-    private static SqlNode findOperandByName(String name, SqlCall call) {
+    protected static SqlNode findOperandByName(String name, SqlCall call) {
         for (int i = 0; i < call.operandCount(); i++) {
             SqlCall assignment = call.operand(i);
             SqlIdentifier id = assignment.operand(1);
@@ -178,7 +178,7 @@ public abstract class HazelcastDynamicTableFunction extends HazelcastTableSource
                 + (SqlUtil.isLiteral(operand) ? ((SqlLiteral) operand).getTypeName() : operand.getKind()));
     }
 
-    private static String extractStringValue(SqlLiteral literal) {
+    protected static String extractStringValue(SqlLiteral literal) {
         Object value = literal.getValue();
         return value instanceof NlsString ? ((NlsString) value).getValue() : null;
     }
