@@ -18,6 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
@@ -396,6 +397,14 @@ public interface NodeExtension {
      * Returns CP persistence service.
      */
     CPPersistenceService getCPPersistenceService();
+
+    /**
+     * Returns CP subsystem implementation.
+     */
+    // TODO logger needs to be pulled out so we can pass around interface
+    // TODO this is a quick way to get things up and running: effectively, we initialise CP subsystem in say was as now
+    //      and we delegate to NodeExtension to give us back the correct CPSubsystem implementation...looks like this is the way
+    CPSubsystem getCPSubsystem(HazelcastInstanceImpl instance); // Impl, why --> because the we access logger
 
     /**
      * Returns a JetService.

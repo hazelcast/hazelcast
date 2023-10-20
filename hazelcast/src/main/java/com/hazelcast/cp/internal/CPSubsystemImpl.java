@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.CPMap;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.event.CPGroupAvailabilityListener;
 import com.hazelcast.cp.event.CPMembershipListener;
@@ -62,7 +63,7 @@ public class CPSubsystemImpl implements CPSubsystem {
         this.instance = instance;
         int cpMemberCount = instance.getConfig().getCPSubsystemConfig().getCPMemberCount();
         this.cpSubsystemEnabled = cpMemberCount > 0;
-        ILogger logger = instance.node.getLogger(CPSubsystem.class);
+        ILogger logger = instance.node.getLogger(CPSubsystem.class); // this is why we need Impl
         if (cpSubsystemEnabled) {
             logger.info("CP Subsystem is enabled with " + cpMemberCount + " members.");
         } else {
@@ -138,7 +139,7 @@ public class CPSubsystemImpl implements CPSubsystem {
         return instance.node.getNodeEngine().getService(serviceName);
     }
 
-    private <T extends DistributedObject> T createProxy(String serviceName, String name) {
+    protected  <T extends DistributedObject> T createProxy(String serviceName, String name) {
         RaftRemoteService service = getService(serviceName);
         return service.createProxy(name);
     }
@@ -165,6 +166,12 @@ public class CPSubsystemImpl implements CPSubsystem {
     public boolean removeGroupAvailabilityListener(UUID id) {
         RaftService raftService = getService(RaftService.SERVICE_NAME);
         return raftService.removeAvailabilityListener(id);
+    }
+
+    @Nonnull
+    @Override
+    public <K, V> CPMap<K, V> getMap(@Nonnull String name) {
+        throw new UnsupportedOperationException();
     }
 
     private static class CPSubsystemManagementServiceImpl implements CPSubsystemManagementService {

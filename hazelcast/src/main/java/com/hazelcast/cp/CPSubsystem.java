@@ -558,4 +558,13 @@ public interface CPSubsystem {
      */
     boolean removeGroupAvailabilityListener(UUID id);
 
+    /**
+     * Returns a proxy for a {@link CPMap}. <b>Enterprise Only</b>.
+     * @param name Name of the map
+     * @return Proxy for {@link CPMap}
+     * @param <K> Key type of the map
+     * @param <V> Value type of the map
+     */
+    @Nonnull
+    <K, V> CPMap<K, V> getMap(@Nonnull String name);
 }

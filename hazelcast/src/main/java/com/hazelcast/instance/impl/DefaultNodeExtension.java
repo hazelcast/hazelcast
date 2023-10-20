@@ -35,6 +35,7 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
@@ -667,6 +668,12 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public CPPersistenceService getCPPersistenceService() {
         return NopCPPersistenceService.INSTANCE;
+    }
+
+    @Override
+    public CPSubsystem getCPSubsystem(HazelcastInstanceImpl instance) {
+        // TODO -- subclass implements this correctly
+        return null;
     }
 
     protected void createAndSetPhoneHome() {
