@@ -91,6 +91,7 @@ public interface WanReplicationService extends CoreService,
      */
     DelegatingWanScheme getWanReplicationPublishers(String name);
 
+    boolean hasWanReplicationScheme(String name);
     /**
      * Starts the shutdown process of the WAN replication service.
      */

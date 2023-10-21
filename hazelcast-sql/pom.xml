@@ -759,7 +759,6 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -772,7 +771,6 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>${mysql.connector.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -785,7 +783,6 @@
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>${mssql.version}</version>
             <scope>test</scope>
         </dependency>
 

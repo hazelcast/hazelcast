@@ -27,7 +27,6 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -56,7 +55,6 @@ import static com.hazelcast.jet.mongodb.impl.Mappers.toClass;
  * @since 5.3
  *
  */
-@Beta
 public final class MongoSourceBuilder {
 
     private MongoSourceBuilder() {

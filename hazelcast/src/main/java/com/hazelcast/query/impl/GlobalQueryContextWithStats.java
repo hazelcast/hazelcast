@@ -60,11 +60,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
             return null;
         }
 
-        QueryTrackingIndex trackingIndex = knownIndexes.get(pattern);
-        if (trackingIndex == null) {
-            trackingIndex = new QueryTrackingIndex();
-            knownIndexes.put(pattern, trackingIndex);
-        }
+        QueryTrackingIndex trackingIndex = knownIndexes.computeIfAbsent(pattern, x -> new QueryTrackingIndex());
 
         trackingIndex.attachTo(delegate);
         trackedIndexes.add(trackingIndex);

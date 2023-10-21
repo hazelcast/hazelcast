@@ -50,11 +50,7 @@ public class InternalListMultiMap<K, V> {
      * @param value
      */
     public void put(K key, V value) {
-        List<V> values = backingMap.get(key);
-        if (values == null) {
-            values = new ArrayList<V>();
-            backingMap.put(key, values);
-        }
+        List<V> values = backingMap.computeIfAbsent(key, x -> new ArrayList<>());
         values.add(value);
     }
 

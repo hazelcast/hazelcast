@@ -112,7 +112,7 @@ public final class EntryOperator {
         this.mapContainer = recordStore.getMapContainer();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         this.mapName = mapContainer.getName();
-        this.wanReplicationEnabled = mapContainer.isWanReplicationEnabled();
+        this.wanReplicationEnabled = mapContainer.getWanContext().isWanReplicationEnabled();
         this.shouldClone = mapContainer.shouldCloneOnEntryProcessing(mapOperation.getPartitionId());
         this.mapServiceContext = mapContainer.getMapServiceContext();
         LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
