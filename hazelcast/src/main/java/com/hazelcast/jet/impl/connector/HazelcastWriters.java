@@ -102,14 +102,15 @@ public final class HazelcastWriters {
         if (params.hasDataSourceConnection()) {
             WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(params);
 
-            return preferLocalParallelismOne(null, supplier);
+            return preferLocalParallelismOne(supplier);
         } else if (params.hasClientConfig()) {
+            //Set clientXml
             String clientXml = asXmlString(params.getClientConfig());
             params.setClientXml(clientXml);
 
             WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(params);
 
-            return preferLocalParallelismOne(null, supplier);
+            return preferLocalParallelismOne(supplier);
         } else {
             WriteMapP.Supplier<? super T, ? extends K, ? extends V> supplier = WriteMapP.Supplier.createNew(params);
 
@@ -146,7 +147,7 @@ public final class HazelcastWriters {
                     });
             ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
             processorSupplier.setDataConnectionName(params.getDataConnectionName());
-            return ProcessorMetaSupplier.of(null, processorSupplier);
+            return ProcessorMetaSupplier.of(processorSupplier);
 
         } else if (params.hasClientConfig()) {
             String clientXml = asXmlString(params.getClientConfig());
@@ -163,7 +164,7 @@ public final class HazelcastWriters {
                     });
             ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
             processorSupplier.setClientXml(clientXml);
-            return ProcessorMetaSupplier.of(null, processorSupplier);
+            return ProcessorMetaSupplier.of(processorSupplier);
 
         } else {
             FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
@@ -218,8 +219,7 @@ public final class HazelcastWriters {
             ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
             processorSupplier.setDataConnectionName(params.getDataConnectionName());
 
-            Permission permission = mapUpdatePermission(null, params.getMapName());
-            return ProcessorMetaSupplier.of(permission, processorSupplier);
+            return ProcessorMetaSupplier.of(processorSupplier);
 
         }  else if (params.hasClientConfig()) {
             String clientXml = asXmlString(params.getClientConfig());
@@ -232,8 +232,7 @@ public final class HazelcastWriters {
             ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
             processorSupplier.setClientXml(clientXml);
 
-            Permission permission = mapUpdatePermission(null, params.getMapName());
-            return ProcessorMetaSupplier.of(permission, processorSupplier);
+            return ProcessorMetaSupplier.of(processorSupplier);
         } else {
             FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateMapProcessorFn(
                     params.getMapName(),
@@ -283,7 +282,7 @@ public final class HazelcastWriters {
             ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
             processorSupplier.setDataConnectionName(params.getDataConnectionName());
 
-            return ProcessorMetaSupplier.of(null, processorSupplier);
+            return ProcessorMetaSupplier.of(processorSupplier);
         } else if (params.hasClientConfig()) {
             String clientXml = asXmlString(params.getClientConfig());
             FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
@@ -296,7 +295,7 @@ public final class HazelcastWriters {
             ProcessorFunctionConnectorSupplier processorSupplier = new ProcessorFunctionConnectorSupplier(processorFunction);
             processorSupplier.setClientXml(clientXml);
 
-            return ProcessorMetaSupplier.of(null, processorSupplier);
+            return ProcessorMetaSupplier.of(processorSupplier);
         } else {
             FunctionEx<HazelcastInstance, Processor> processorFunction = SecuredFunctions.updateWithEntryProcessorFn(
                     params.getMaxParallelAsyncOps(),
