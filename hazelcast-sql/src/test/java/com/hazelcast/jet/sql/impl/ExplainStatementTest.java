@@ -226,8 +226,8 @@ public class ExplainStatementTest extends SqlTestSupport {
         assertRowsOrdered(sql, singletonList(
                 new Row("InsertMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], values=[{" +
                         "expressions=[[" +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}, " +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}]]}])"
+                        "ConstantExpression{type=INT, value=2}, " +
+                        "ConstantExpression{type=INT, value=2}]]}])"
                 )));
 
         createMapping("map", Integer.class, Integer.class);
@@ -237,10 +237,10 @@ public class ExplainStatementTest extends SqlTestSupport {
                 new Row("InsertPhysicalRel(" +
                         "table=[[hazelcast, public, map[projects=[$0, $1]]]], operation=[INSERT], flattened=[false])"),
                 new Row("  ValuesPhysicalRel(values=[{expressions=[" +
-                        "[ConstantExpression{type=QueryDataType {family=INTEGER}, value=3}, " +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=3}], " +
-                        "[ConstantExpression{type=QueryDataType {family=INTEGER}, value=4}, " +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=4}]]}])")
+                        "[ConstantExpression{type=INT, value=3}, " +
+                        "ConstantExpression{type=INT, value=3}], " +
+                        "[ConstantExpression{type=INT, value=4}, " +
+                        "ConstantExpression{type=INT, value=4}]]}])")
         ));
     }
 
@@ -255,8 +255,8 @@ public class ExplainStatementTest extends SqlTestSupport {
         assertRowsOrdered(sql, singletonList(
                 new Row("SinkMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], values=" +
                         "[[{expressions=[[" +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}, " +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}]]}]])"
+                        "ConstantExpression{type=INT, value=2}, " +
+                        "ConstantExpression{type=INT, value=2}]]}]])"
                 )));
     }
 

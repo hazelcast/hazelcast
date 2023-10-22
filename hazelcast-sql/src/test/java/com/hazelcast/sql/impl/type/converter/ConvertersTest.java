@@ -17,6 +17,8 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.SqlErrorCode;
@@ -177,6 +179,17 @@ public class ConvertersTest {
         checkFamily(MapConverter.INSTANCE, MAP);
         checkFamily(JsonConverter.INSTANCE, JSON);
         checkFamily(RowConverter.INSTANCE, ROW);
+    }
+
+    @Test
+    public void testSerialization() {
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
+
+        for (Converter converter : Converters.getConverters()) {
+            assertSame(converter, ss.toObject(ss.toData(converter)));
+        }
+
+        ss.dispose();
     }
 
     @Test

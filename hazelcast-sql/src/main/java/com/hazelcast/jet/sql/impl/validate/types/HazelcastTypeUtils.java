@@ -82,6 +82,7 @@ public final class HazelcastTypeUtils {
         CALCITE_TO_HZ.put(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
 
         HZ_TO_CALCITE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.MAP, SqlTypeName.ANY);
         CALCITE_TO_HZ.put(SqlTypeName.ANY, QueryDataType.OBJECT);
         CALCITE_TO_HZ.put(SqlTypeName.MAP, QueryDataType.MAP);
 

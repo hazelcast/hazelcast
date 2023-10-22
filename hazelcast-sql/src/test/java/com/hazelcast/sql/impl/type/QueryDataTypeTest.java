@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.type;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.SqlCustomClass;
@@ -69,10 +70,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.FieldUtils.getEnumConstants;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -166,47 +169,49 @@ public class QueryDataTypeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSerialization() {
-        checkSerialization(QueryDataType.VARCHAR);
-        checkSerialization(QueryDataType.VARCHAR_CHARACTER);
+    public void testResolutionByName() {
+        checkName(QueryDataType.VARCHAR, "VARCHAR");
+        checkName(QueryDataType.VARCHAR_CHARACTER, "VARCHAR_CHARACTER");
 
-        checkSerialization(QueryDataType.BOOLEAN);
+        checkName(QueryDataType.BOOLEAN, "BOOLEAN");
 
-        checkSerialization(QueryDataType.TINYINT);
-        checkSerialization(QueryDataType.SMALLINT);
-        checkSerialization(QueryDataType.INT);
-        checkSerialization(QueryDataType.BIGINT);
-        checkSerialization(QueryDataType.DECIMAL);
-        checkSerialization(QueryDataType.DECIMAL_BIG_INTEGER);
-        checkSerialization(QueryDataType.REAL);
-        checkSerialization(QueryDataType.DOUBLE);
+        checkName(QueryDataType.TINYINT, "TINYINT");
+        checkName(QueryDataType.SMALLINT, "SMALLINT");
+        checkName(QueryDataType.INT, "INT");
+        checkName(QueryDataType.BIGINT, "BIGINT");
+        checkName(QueryDataType.DECIMAL, "DECIMAL");
+        checkName(QueryDataType.DECIMAL_BIG_INTEGER, "DECIMAL_BIG_INTEGER");
+        checkName(QueryDataType.REAL, "REAL");
+        checkName(QueryDataType.DOUBLE, "DOUBLE");
 
-        checkSerialization(QueryDataType.TIME);
-        checkSerialization(QueryDataType.DATE);
-        checkSerialization(QueryDataType.TIMESTAMP);
-        checkSerialization(QueryDataType.TIMESTAMP_WITH_TZ_DATE);
-        checkSerialization(QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR);
-        checkSerialization(QueryDataType.TIMESTAMP_WITH_TZ_INSTANT);
-        checkSerialization(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
-        checkSerialization(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME);
+        checkName(QueryDataType.TIME, "TIME");
+        checkName(QueryDataType.DATE, "DATE");
+        checkName(QueryDataType.TIMESTAMP, "TIMESTAMP");
+        checkName(QueryDataType.TIMESTAMP_WITH_TZ_DATE, "TIMESTAMP_WITH_TZ_DATE");
+        checkName(QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR, "TIMESTAMP_WITH_TZ_CALENDAR");
+        checkName(QueryDataType.TIMESTAMP_WITH_TZ_INSTANT, "TIMESTAMP_WITH_TZ_INSTANT");
+        checkName(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, "TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME");
+        checkName(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME, "TIMESTAMP_WITH_TZ_ZONED_DATE_TIME");
 
-        checkSerialization(QueryDataType.OBJECT);
-        checkSerialization(new QueryDataType("CustomType"));
+        checkName(QueryDataType.OBJECT, "OBJECT");
+        checkName(new QueryDataType("CustomType"), "CustomType");
 
-        checkSerialization(QueryDataType.NULL);
+        checkName(QueryDataType.NULL, "NULL");
 
-        checkSerialization(QueryDataType.INTERVAL_YEAR_MONTH);
-        checkSerialization(QueryDataType.INTERVAL_DAY_SECOND);
+        checkName(QueryDataType.INTERVAL_YEAR_MONTH, "INTERVAL_YEAR_MONTH");
+        checkName(QueryDataType.INTERVAL_DAY_SECOND, "INTERVAL_DAY_SECOND");
 
-        checkSerialization(QueryDataType.MAP);
-        checkSerialization(QueryDataType.JSON);
-        checkSerialization(QueryDataType.ROW);
+        checkName(QueryDataType.MAP, "MAP");
+        checkName(QueryDataType.JSON, "JSON");
+        checkName(QueryDataType.ROW, "ROW");
     }
 
     @Test
-    public void testEquals() {
-        assertEquals(new QueryDataType(IntegerConverter.INSTANCE), new QueryDataType(IntegerConverter.INSTANCE));
-        assertNotEquals(new QueryDataType(IntegerConverter.INSTANCE), new QueryDataType(LongConverter.INSTANCE));
+    public void testSerialization() {
+        for (QueryDataType type : getEnumConstants(QueryDataType.class).values()) {
+            checkSerialization(type);
+        }
+        checkSerialization(new QueryDataType("CustomType"));
     }
 
     // TODO This test will be removed by HZ-3691.
@@ -234,19 +239,45 @@ public class QueryDataTypeTest extends HazelcastTestSupport {
         checkFamily(QueryDataType.NULL, QueryDataTypeFamily.NULL);
     }
 
-    private void checkConverter(QueryDataType type, Converter expectedConverter) {
-        assertSame(expectedConverter, type.getConverter());
-        assertSame(expectedConverter.getTypeFamily(), type.getConverter().getTypeFamily());
+    private void checkConverter(QueryDataType type, Converter converter) {
+        assertSame(converter, type.getConverter());
+        if (!type.isCustomType()) {
+            assertSame(type, QueryDataType.TYPES_BY_CONVERTER.get(converter));
+        }
     }
 
-    private void checkClasses(QueryDataType expectedType, Class<?>... classes) {
+    private void checkClasses(QueryDataType type, Class<?>... classes) {
+        assertContains(List.of(classes), type.getConverter().getValueClass());
         for (Class<?> clazz : classes) {
-            assertSame(expectedType, QueryDataTypeUtils.resolveTypeForClass(clazz));
+            assertSame(type, QueryDataTypeUtils.resolveTypeForClass(clazz));
+        }
+    }
+
+    private void checkName(QueryDataType type, String name) {
+        assertEquals(name, type.toString());
+        if (type.isCustomType()) {
+            assertThatThrownBy(() -> QueryDataType.valueOf(name))
+                    .hasMessage("No predefined QueryDataType with name " + name);
+        } else {
+            assertSame(type, QueryDataType.valueOf(name));
         }
     }
 
     private void checkSerialization(QueryDataType type) {
-        assertEquals(type, serializationService.toObject(serializationService.toData(type)));
+        Object identifiedDataSerialized = serde(type);
+        Object javaSerialized = serde((SupplierEx<Object>) () -> type).get();
+
+        for (Object serialized : List.of(identifiedDataSerialized, javaSerialized)) {
+            if (type.isCustomType()) {
+                assertEquals(type, serialized);
+            } else {
+                assertSame(type, serialized);
+            }
+        }
+    }
+
+    private static <T> T serde(T object) {
+        return serializationService.toObject(serializationService.toData(object));
     }
 
     private void checkFamily(QueryDataType expectedType, QueryDataTypeFamily typeFamily) {

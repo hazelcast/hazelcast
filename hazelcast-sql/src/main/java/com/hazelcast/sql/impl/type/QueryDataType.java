@@ -50,12 +50,18 @@ import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 
 import java.io.IOException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+
+import static com.hazelcast.sql.impl.FieldUtils.getEnumConstants;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Data type represents a type of concrete expression which is based on some basic data type.
@@ -99,6 +105,12 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType MAP = new QueryDataType(MapConverter.INSTANCE);
     public static final QueryDataType JSON = new QueryDataType(JsonConverter.INSTANCE);
     public static final QueryDataType ROW = new QueryDataType(RowConverter.INSTANCE);
+
+    private static final Map<String, QueryDataType> TYPES = getEnumConstants(QueryDataType.class);
+    private static final Map<QueryDataType, String> NAMES =
+            TYPES.entrySet().stream().collect(toMap(Entry::getValue, Entry::getKey));
+    static final Map<Converter, QueryDataType> TYPES_BY_CONVERTER =
+            TYPES.values().stream().collect(toMap(type -> type.converter, identity()));
 
     private Converter converter;
     // nonnull for custom types (nested types)
@@ -301,7 +313,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         readObjectTypeMetadata(type, in);
 
         return type.objectTypeName == null
-                ? QueryDataTypeUtils.resolveTypeForClass(converter.getValueClass())
+                ? TYPES_BY_CONVERTER.get(converter)
                 : typeMap.computeIfAbsent(type.objectTypeName, k -> type);
     }
 
@@ -335,7 +347,24 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " {family=" + getTypeFamily() + "}";
+        return objectTypeName != null ? objectTypeName : NAMES.get(this);
+    }
+
+    public static QueryDataType valueOf(String name) {
+        QueryDataType type = TYPES.get(name);
+        if (type == null) {
+            throw new IllegalArgumentException("No predefined QueryDataType with name " + name);
+        }
+        return type;
+    }
+
+    @Override
+    public QueryDataType readReplace() {
+        return isCustomType() ? this : TYPES_BY_CONVERTER.get(converter);
+    }
+
+    private Object readResolve() throws ObjectStreamException {
+        return isCustomType() ? this : TYPES_BY_CONVERTER.get(converter);
     }
 
     public static class QueryDataTypeField implements IdentifiedDataSerializable, Serializable {

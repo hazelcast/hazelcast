@@ -28,8 +28,15 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
+import static java.lang.reflect.Modifier.FINAL;
+import static java.lang.reflect.Modifier.PUBLIC;
+import static java.lang.reflect.Modifier.STATIC;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Utilities to extract properties from <ol>
@@ -42,6 +49,8 @@ public final class FieldUtils {
     private static final String METHOD_PREFIX_IS = "is";
     private static final String METHOD_GET_FACTORY_ID = "getFactoryId";
     private static final String METHOD_GET_CLASS_ID = "getClassId";
+
+    private static final int ENUM_CONSTANT_MASK = PUBLIC | STATIC | FINAL;
 
     private FieldUtils() { }
 
@@ -79,6 +88,23 @@ public final class FieldUtils {
         }
 
         return fields;
+    }
+
+    /**
+     * Constructs name-to-instance mapping for enum-like classes.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Map<String, T> getEnumConstants(Class<T> type) {
+        return Arrays.stream(type.getDeclaredFields())
+                .filter(field -> field.getType() == type
+                        && (field.getModifiers() & ENUM_CONSTANT_MASK) == ENUM_CONSTANT_MASK)
+                .collect(toMap(Field::getName, field -> {
+                    try {
+                        return (T) field.get(null);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    }
+                }));
     }
 
     @Nullable

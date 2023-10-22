@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.type.converter;
 
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -30,6 +29,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.MAP;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
+
 public final class ToConverters {
     private static final Map<QueryDataType, ToConverter> CONVERTERS = prepareConverters();
 
@@ -37,8 +39,8 @@ public final class ToConverters {
 
     @Nonnull
     public static ToConverter getToConverter(QueryDataType type) {
-        if (type.getTypeFamily() == QueryDataTypeFamily.OBJECT) {
-            // User-defined types are subject to the same conversion rules as ordinary OBJECT.
+        if (type.getTypeFamily() == OBJECT || type.getTypeFamily() == MAP) {
+            // User-defined types and maps are subject to the same conversion rules as ordinary OBJECT.
             type = QueryDataType.OBJECT;
         }
         return Objects.requireNonNull(CONVERTERS.get(type), "missing converter for " + type);

@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -384,5 +385,9 @@ public abstract class Converter implements Serializable {
     @Override
     public String toString() {
         return getClass().getSimpleName();
+    }
+
+    protected Object readResolve() throws ObjectStreamException {
+        return Converters.getConverter(id);
     }
 }
