@@ -45,8 +45,8 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.flatMap;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getSchemaId;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getMetadata;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getTopLevelType;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
@@ -76,8 +76,9 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
 
-        Class<?> typeClass = getSchemaId(fieldsByPath, KvMetadataJavaResolver::loadClass,
-                () -> loadClass(options, isKey));
+        Class<?> typeClass = getMetadata(fieldsByPath)
+                .<Class<?>>map(KvMetadataJavaResolver::loadClass)
+                .orElseGet(() -> loadClass(options, isKey));
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(typeClass);
 
         if (type.getTypeFamily() != QueryDataTypeFamily.OBJECT || type.isCustomType()) {
@@ -171,9 +172,9 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
 
-        Entry<QueryDataType, Class<?>> entry = flatMap(fieldsByPath,
-                type -> entry(type, loadClass(type.getObjectTypeMetadata())),
-                () -> {
+        Entry<QueryDataType, Class<?>> entry = getTopLevelType(fieldsByPath)
+                .<Entry<QueryDataType, Class<?>>>map(type -> entry(type, loadClass(type.getObjectTypeMetadata())))
+                .orElseGet(() -> {
                     Class<?> typeClass = loadClass(options, isKey);
                     return entry(QueryDataTypeUtils.resolveTypeForClass(typeClass), typeClass);
                 });

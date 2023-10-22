@@ -55,7 +55,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FAC
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getSchemaId;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getMetadata;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
@@ -99,7 +99,7 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
 
-        PortableId portableId = getSchemaId(fieldsByPath, PortableId::new, () -> portableId(options, isKey));
+        PortableId portableId = getPortableId(fieldsByPath, options, isKey);
         ClassDefinition classDefinition = serializationService.getPortableContext()
                 .lookupClassDefinition(portableId);
 
@@ -161,7 +161,7 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
 
-        PortableId portableId = getSchemaId(fieldsByPath, PortableId::new, () -> portableId(options, isKey));
+        PortableId portableId = getPortableId(fieldsByPath, options, isKey);
         ClassDefinition classDefinition = resolveClassDefinition(portableId, getFields(fieldsByPath),
                 serializationService.getPortableContext());
 
@@ -226,6 +226,16 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
                     return schema;
             }
         }, ExceptionUtil::notParallelizable).build();
+    }
+
+    private static PortableId getPortableId(
+            Map<QueryPath, MappingField> fields,
+            Map<String, String> options,
+            boolean isKey
+    ) {
+        return getMetadata(fields)
+                .map(PortableId::new)
+                .orElseGet(() -> portableId(options, isKey));
     }
 
     public static PortableId portableId(Map<String, String> options, boolean isKey) {

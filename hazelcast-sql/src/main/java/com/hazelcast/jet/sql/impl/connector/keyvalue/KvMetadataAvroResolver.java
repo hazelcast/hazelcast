@@ -48,7 +48,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVR
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getSchemaId;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getMetadata;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 import static com.hazelcast.jet.sql.impl.inject.AvroUpsertTarget.CONVERSION_PREFS;
 import static com.hazelcast.sql.impl.type.converter.Converters.getConverter;
@@ -104,8 +104,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         }
         Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
 
-        Schema schema = getSchemaId(fieldsByPath, json -> new Schema.Parser().parse(json),
-                () -> inlineSchema(options, isKey));
+        Schema schema = getSchema(fieldsByPath, options, isKey);
         if (schema != null && options.containsKey("schema.registry.url")) {
             throw new IllegalArgumentException("Inline schema cannot be used with schema registry");
         }
@@ -139,8 +138,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
-        Schema schema = getSchemaId(fieldsByPath, json -> new Schema.Parser().parse(json),
-                () -> inlineSchema(options, isKey));
+        Schema schema = getSchema(fieldsByPath, options, isKey);
         if (schema == null) {
             String recordName = options.getOrDefault(
                     isKey ? OPTION_KEY_AVRO_RECORD_NAME : OPTION_VALUE_AVRO_RECORD_NAME, "jet.sql");
@@ -229,6 +227,12 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                 validate(fieldSchema, mappingFieldType.getObjectFields().stream().map(Field::new).collect(toList()));
             }
         }
+    }
+
+    private static Schema getSchema(Map<QueryPath, MappingField> fields, Map<String, String> options, boolean isKey) {
+        return getMetadata(fields)
+                .map(json -> new Schema.Parser().parse(json))
+                .orElseGet(() -> inlineSchema(options, isKey));
     }
 
     public static UnaryOperator<FieldAssembler<Schema>> optionalField(String name, Schema schema) {

@@ -49,9 +49,8 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_COMPA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_COMPACT_TYPE_NAME;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getFields;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getSchemaId;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.getMetadata;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
-import static java.util.function.Function.identity;
 
 public final class MetadataCompactResolver implements KvMetadataResolver {
     static final MetadataCompactResolver INSTANCE = new MetadataCompactResolver();
@@ -95,7 +94,7 @@ public final class MetadataCompactResolver implements KvMetadataResolver {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
 
         // Check if the compact type name is specified
-        getSchemaId(fieldsByPath, identity(), () -> compactTypeName(options, isKey));
+        getCompactTypeName(fieldsByPath, options, isKey);
 
         return fieldsByPath.entrySet().stream()
                 .map(entry -> {
@@ -120,7 +119,7 @@ public final class MetadataCompactResolver implements KvMetadataResolver {
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
 
-        String typeName = getSchemaId(fieldsByPath, identity(), () -> compactTypeName(options, isKey));
+        String typeName = getCompactTypeName(fieldsByPath, options, isKey);
 
         List<TableField> fields = new ArrayList<>(fieldsByPath.size());
         for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
@@ -146,6 +145,14 @@ public final class MetadataCompactResolver implements KvMetadataResolver {
                 (schema, field) -> schema.addField(new FieldDescriptor(field.name(),
                         SQL_TO_COMPACT.getOrDefault(field.type().getTypeFamily()))),
                 ExceptionUtil::notParallelizable).build();
+    }
+
+    private static String getCompactTypeName(
+            Map<QueryPath, MappingField> fields,
+            Map<String, String> options,
+            boolean isKey
+    ) {
+        return getMetadata(fields).orElseGet(() -> compactTypeName(options, isKey));
     }
 
     public static String compactTypeName(Map<String, String> options, boolean isKey) {

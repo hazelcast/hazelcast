@@ -30,8 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
@@ -87,45 +86,35 @@ public interface KvMetadataResolver {
     }
 
     /**
-     * If {@code __key}/{@code this} is the only field and has a custom type,
+     * If {@code __key}/{@code this} is the only key/value field and has a custom type,
      * return type fields. Otherwise, return mapping fields without {@code __key} or {@code this}.
      */
     static Stream<Field> getFields(Map<QueryPath, MappingField> fields) {
-        return flatMap(fields, type -> type.getObjectFields().stream().map(Field::new),
-                () -> fields.entrySet().stream().filter(e -> !e.getKey().isTopLevel()).map(Field::new));
+        return getTopLevelType(fields)
+                .map(type -> type.getObjectFields().stream().map(Field::new))
+                .orElseGet(() -> fields.entrySet().stream().filter(e -> !e.getKey().isTopLevel()).map(Field::new));
     }
 
     /**
-     * If {@code __key}/{@code this} is the only key/value field and has a custom type with
-     * nonnull metadata, resolve the schema ID from the type. Otherwise, return {@code orElse()}.
+     * If {@code __key}/{@code this} is the only key/value field and has a custom type,
+     * return its metadata.
      */
-    static <T> T getSchemaId(
-            Map<QueryPath, MappingField> fields,
-            Function<String, T> resolveFromType,
-            Supplier<T> orElse
-    ) {
-        return flatMap(fields, type -> {
-            String metadata = type.getObjectTypeMetadata();
-            return metadata != null ? resolveFromType.apply(metadata) : orElse.get();
-        }, orElse);
+    static Optional<String> getMetadata(Map<QueryPath, MappingField> fields) {
+        return getTopLevelType(fields).map(QueryDataType::getObjectTypeMetadata);
     }
 
     /**
-     * If {@code __key}/{@code this} is the only field and has a custom type,
-     * return {@code typeMapper(fieldType)}. Otherwise, return {@code orElse()}.
+     * If {@code __key}/{@code this} is the only key/value field and has a custom type,
+     * return its type.
      */
-    static <T> T flatMap(
-            Map<QueryPath, MappingField> fields,
-            Function<QueryDataType, T> typeMapper,
-            Supplier<T> orElse
-    ) {
+    static Optional<QueryDataType> getTopLevelType(Map<QueryPath, MappingField> fields) {
         if (fields.size() == 1) {
             Entry<QueryPath, MappingField> entry = fields.entrySet().iterator().next();
             if (entry.getKey().isTopLevel() && entry.getValue().type().isCustomType()) {
-                return typeMapper.apply(entry.getValue().type());
+                return Optional.of(entry.getValue().type());
             }
         }
-        return orElse.get();
+        return Optional.empty();
     }
 
     class Field {
