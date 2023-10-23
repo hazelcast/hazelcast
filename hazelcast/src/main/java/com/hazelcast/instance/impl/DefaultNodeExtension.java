@@ -673,7 +673,6 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public CPSubsystem getCPSubsystem(HazelcastInstanceImpl instance) {
-        // TODO: permission check
         return new CPSubsystemImpl(instance);
     }
 
