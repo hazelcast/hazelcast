@@ -21,6 +21,7 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Parameters to use a remote map as source
@@ -33,16 +34,20 @@ public class RemoteMapSourceParams<T, K, V> {
 
     private final String mapName;
 
-    private String dataConnectionName;
+    private final String dataConnectionName;
 
-    private ClientConfig clientConfig;
+    private final ClientConfig clientConfig;
 
-    private Predicate<K, V> predicate;
+    private final Predicate<K, V> predicate;
 
-    private Projection<? super Map.Entry<K, V>, ? extends T> projection;
+    private final Projection<? super Map.Entry<K, V>, ? extends T> projection;
 
-    public RemoteMapSourceParams(String mapName) {
-        this.mapName = mapName;
+    private RemoteMapSourceParams(Builder<T, K, V> builder) {
+        this.mapName = builder.mapName;
+        this.dataConnectionName = builder.dataConnectionName;
+        this.clientConfig = builder.clientConfig;
+        this.predicate = builder.predicate;
+        this.projection = builder.projection;
     }
 
     public boolean hasDataSourceConnection() {
@@ -61,31 +66,61 @@ public class RemoteMapSourceParams<T, K, V> {
         return dataConnectionName;
     }
 
-    public void setDataConnectionName(String dataConnectionName) {
-        this.dataConnectionName = dataConnectionName;
-    }
-
     public ClientConfig getClientConfig() {
         return clientConfig;
-    }
-
-    public void setClientConfig(ClientConfig clientConfig) {
-        this.clientConfig = clientConfig;
     }
 
     public Predicate<K, V> getPredicate() {
         return predicate;
     }
 
-    public void setPredicate(Predicate<K, V> predicate) {
-        this.predicate = predicate;
-    }
-
     public Projection<? super Map.Entry<K, V>, ? extends T> getProjection() {
         return projection;
     }
 
-    public void setProjection(Projection<? super Map.Entry<K, V>, ? extends T> projection) {
-        this.projection = projection;
+    public static <T, K, V> Builder<T, K, V> builder(String mapName) {
+        return new Builder<>(mapName);
+    }
+
+    public static class Builder<T, K, V> {
+
+        private final String mapName;
+
+        private String dataConnectionName;
+
+        private ClientConfig clientConfig;
+
+        private Predicate<K, V> predicate;
+
+        private Projection<? super Map.Entry<K, V>, ? extends T> projection;
+
+        public Builder(String mapName) {
+            Objects.requireNonNull(mapName, "mapName can not be null");
+            this.mapName = mapName;
+        }
+
+        public Builder<T, K, V> withDataConnectionName(String dataConnectionName) {
+            this.dataConnectionName = dataConnectionName;
+            return this;
+        }
+
+        public Builder<T, K, V> withClientConfig(ClientConfig clientConfig) {
+            this.clientConfig = clientConfig;
+            return this;
+        }
+
+        public Builder<T, K, V> withPredicate(Predicate<K, V> predicate) {
+            this.predicate = predicate;
+            return this;
+        }
+
+        public Builder<T, K, V> withProjection(Projection<? super Map.Entry<K, V>, ? extends T> projection) {
+            this.projection = projection;
+            return this;
+        }
+
+        public RemoteMapSourceParams<T, K, V> build() {
+            return new RemoteMapSourceParams<>(this);
+        }
     }
 }

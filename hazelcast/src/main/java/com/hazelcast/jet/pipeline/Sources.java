@@ -34,9 +34,9 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.processor.RemoteMapSourceParams;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
-import com.hazelcast.jet.core.processor.RemoteMapSourceParams;
 import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
@@ -532,8 +532,10 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig
     ) {
-        RemoteMapSourceParams<Object, K, V> params = new RemoteMapSourceParams<>(mapName);
-        params.setClientConfig(clientConfig);
+        // There is no projection. So emitted type is Object
+        RemoteMapSourceParams<Object, K, V> params = RemoteMapSourceParams.<Object, K, V>builder(mapName)
+                .withClientConfig(clientConfig)
+                .build();
 
         ProcessorSupplier processorSupplier = readRemoteMapP(params);
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
@@ -601,10 +603,11 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
-        RemoteMapSourceParams<T, K, V> params = new RemoteMapSourceParams<>(mapName);
-        params.setClientConfig(clientConfig);
-        params.setPredicate(predicate);
-        params.setProjection(projection);
+        RemoteMapSourceParams<T, K, V> params = RemoteMapSourceParams.<T, K, V>builder(mapName)
+                .withClientConfig(clientConfig)
+                .withPredicate(predicate)
+                .withProjection(projection)
+                .build();
 
         ProcessorSupplier processorSupplier = readRemoteMapP(params);
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
@@ -629,8 +632,10 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull DataConnectionRef dataConnectionRef
     ) {
-        RemoteMapSourceParams<Object, K, V> params = new RemoteMapSourceParams<>(mapName);
-        params.setDataConnectionName(dataConnectionRef.getName());
+        // There is no projection. So emitted type is Object
+        RemoteMapSourceParams<Object, K, V> params = RemoteMapSourceParams.<Object, K, V>builder(mapName)
+                .withDataConnectionName(dataConnectionRef.getName())
+                .build();
 
         ProcessorSupplier processorSupplier = readRemoteMapP(params);
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
@@ -657,10 +662,11 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
-        RemoteMapSourceParams<T, K, V> params = new RemoteMapSourceParams<>(mapName);
-        params.setDataConnectionName(dataConnectionRef.getName());
-        params.setPredicate(predicate);
-        params.setProjection(projection);
+        RemoteMapSourceParams<T, K, V> params = RemoteMapSourceParams.<T, K, V>builder(mapName)
+                .withDataConnectionName(dataConnectionRef.getName())
+                .withPredicate(predicate)
+                .withProjection(projection)
+                .build();
 
         ProcessorSupplier processorSupplier = readRemoteMapP(params);
         return batchFromProcessor("remoteMapSource(" + mapName + ')',

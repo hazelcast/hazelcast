@@ -139,10 +139,11 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
         DAG dag = new DAG();
 
-        RemoteMapSourceParams<Object, Integer, Integer> params = new RemoteMapSourceParams<>(SOURCE_NAME);
-        params.setClientConfig(clientConfig);
-        params.setPredicate(Predicates.greaterThan("this", "0"));
-        params.setProjection(Projections.singleAttribute("value"));
+        RemoteMapSourceParams<Object, Integer, Integer> params = RemoteMapSourceParams.<Object, Integer, Integer>builder(SOURCE_NAME)
+                .withClientConfig(clientConfig)
+                .withPredicate(Predicates.greaterThan("this", "0"))
+                .withProjection(Projections.singleAttribute("value"))
+                .build();
 
         Vertex source = dag.newVertex("source",
                 readRemoteMapP(params)
@@ -163,10 +164,11 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
         DAG dag = new DAG();
 
-        RemoteMapSourceParams<Integer, Integer, Integer> params = new RemoteMapSourceParams<>(SOURCE_NAME);
-        params.setClientConfig(clientConfig);
-        params.setPredicate(e -> !e.getKey().equals(0));
-        params.setProjection(Entry::getValue);
+        RemoteMapSourceParams<Integer, Integer, Integer> params = RemoteMapSourceParams.<Integer, Integer, Integer>builder(SOURCE_NAME)
+                .withClientConfig(clientConfig)
+                .withPredicate(e -> !e.getKey().equals(0))
+                .withProjection(Entry::getValue)
+                .build();
 
         Vertex source = dag.newVertex(SOURCE_NAME, readRemoteMapP(params)).localParallelism(4);
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME)).localParallelism(1);
