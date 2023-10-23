@@ -122,7 +122,7 @@ public abstract class HazelcastDynamicTableFunction extends HazelcastTableSource
         return arguments;
     }
 
-    protected static SqlNode findOperandByName(String name, SqlCall call) {
+    private static SqlNode findOperandByName(String name, SqlCall call) {
         for (int i = 0; i < call.operandCount(); i++) {
             SqlCall assignment = call.operand(i);
             SqlIdentifier id = assignment.operand(1);
