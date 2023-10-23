@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Offloadable;
-import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
@@ -353,52 +352,35 @@ public final class Sinks {
             int batchSize) {
         String xmlConfig = ImdgUtil.asXmlString(clientConfig);
         return SinkBuilder.sinkBuilder("remoteReplicatedMapSink(" + replicatedMapName + ')',
-                                  context -> new ClientReplicatedMapBatchWriter<K, V>(
+                                  context -> new RemoteReplicatedMapBatchWriter<K, V>(
                                           replicatedMapName,
                                           dataConnectionName,
                                           xmlConfig,
                                           batchSize,
                                           context
                                   ))
-                          .receiveFn(ClientReplicatedMapBatchWriter<K, V>::write)
-                          .flushFn(ClientReplicatedMapBatchWriter::flush)
-                          .destroyFn(ClientReplicatedMapBatchWriter::destroy).build();
+                          .receiveFn(RemoteReplicatedMapBatchWriter<K, V>::write)
+                          .flushFn(RemoteReplicatedMapBatchWriter::flush)
+                          .destroyFn(RemoteReplicatedMapBatchWriter::destroy).build();
     }
 
-    private static class ClientReplicatedMapBatchWriter<K, V> {
+    private static class RemoteReplicatedMapBatchWriter<K, V> extends HazelcastClientBaseContext {
 
         private final ReplicatedMap<K, V> replicatedMap;
         private final int batchSize;
 
-        private HazelcastInstance client;
-        private Map<K, V> batch = new HashMap<>();
+        private final Map<K, V> batch;
 
-        ClientReplicatedMapBatchWriter(String replicatedMapName,
+        RemoteReplicatedMapBatchWriter(String replicatedMapName,
                                        String dataConnectionName,
                                        String clientXml,
                                        int batchSize,
                                        Processor.Context context
         ) {
-
-            if (dataConnectionName == null && clientXml == null) {
-                throw new IllegalArgumentException("Either dataConnectionName or clientConfig must be provided. "
-                        + "Both are null");
-            }
-
-            if (dataConnectionName != null) {
-                HazelcastDataConnection dataConnection =
-                        context.dataConnectionService()
-                               .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
-                try {
-                    this.client = dataConnection.getClient();
-                } finally {
-                    dataConnection.release();
-                }
-            } else {
-                this.client = newHazelcastClient(asClientConfig(clientXml));
-            }
+            super(dataConnectionName, clientXml, context);
             this.replicatedMap = client.getReplicatedMap(replicatedMapName);
             this.batchSize = batchSize;
+            this.batch = new HashMap<>(batchSize);
         }
 
         public void write(Map.Entry<K, V> entry) {
@@ -415,12 +397,6 @@ public final class Sinks {
             }
         }
 
-        public void destroy() {
-            if (client != null) {
-                client.shutdown();
-                client = null;
-            }
-        }
     }
 
     /**
