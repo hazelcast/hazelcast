@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 
@@ -120,6 +121,9 @@ public class RemoteMapSourceParams<T, K, V> {
         }
 
         public RemoteMapSourceParams<T, K, V> build() {
+            if ((dataConnectionName == null) && (clientConfig == null)) {
+                throw new HazelcastException("Either dataConnectionName or clientConfig must be non-null");
+            }
             return new RemoteMapSourceParams<>(this);
         }
     }
