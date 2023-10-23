@@ -36,7 +36,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
-import com.hazelcast.jet.impl.connector.RemoteMapSourceParams;
+import com.hazelcast.jet.core.processor.RemoteMapSourceParams;
 import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
@@ -532,7 +532,7 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig
     ) {
-        RemoteMapSourceParams<K, V, Object> params = new RemoteMapSourceParams<>(mapName);
+        RemoteMapSourceParams<Object, K, V> params = new RemoteMapSourceParams<>(mapName);
         params.setClientConfig(clientConfig);
 
         ProcessorSupplier processorSupplier = readRemoteMapP(params);
@@ -601,7 +601,7 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
-        RemoteMapSourceParams<K, V, T> params = new RemoteMapSourceParams<>(mapName);
+        RemoteMapSourceParams<T, K, V> params = new RemoteMapSourceParams<>(mapName);
         params.setClientConfig(clientConfig);
         params.setPredicate(predicate);
         params.setProjection(projection);
@@ -629,7 +629,7 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull DataConnectionRef dataConnectionRef
     ) {
-        RemoteMapSourceParams<K, V, Object> params = new RemoteMapSourceParams<>(mapName);
+        RemoteMapSourceParams<Object, K, V> params = new RemoteMapSourceParams<>(mapName);
         params.setDataConnectionName(dataConnectionRef.getName());
 
         ProcessorSupplier processorSupplier = readRemoteMapP(params);
@@ -657,7 +657,7 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<? super Entry<K, V>, ? extends T> projection
     ) {
-        RemoteMapSourceParams<K, V, T> params = new RemoteMapSourceParams<>(mapName);
+        RemoteMapSourceParams<T, K, V> params = new RemoteMapSourceParams<>(mapName);
         params.setDataConnectionName(dataConnectionRef.getName());
         params.setPredicate(predicate);
         params.setProjection(projection);

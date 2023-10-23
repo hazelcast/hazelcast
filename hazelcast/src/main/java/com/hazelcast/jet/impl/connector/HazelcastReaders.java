@@ -30,6 +30,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.processor.RemoteMapSourceParams;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalCacheReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalMapQueryReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalMapReader;
@@ -327,10 +328,10 @@ public final class HazelcastReaders {
     }
 
     /**
-     * Create a ProcessorSupplier for remote map in another cluster
+     * Create a ProcessorSupplier for a remote map in another cluster
      */
     @Nonnull
-    public static <K, V, T> ProcessorSupplier readRemoteMapSupplier(RemoteMapSourceParams<K, V, T> params) {
+    public static <T, K, V> ProcessorSupplier readRemoteMapSupplier(RemoteMapSourceParams<T, K, V> params) {
         if (params.hasDataSourceConnection()) {
             if (params.hasPredicate()) {
                 checkSerializable(params.getPredicate(), "predicate");

@@ -36,7 +36,6 @@ import com.hazelcast.jet.impl.connector.ConvenientSourceP.SourceBufferConsumerSi
 import com.hazelcast.jet.impl.connector.HazelcastReaders;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadJdbcP;
-import com.hazelcast.jet.impl.connector.RemoteMapSourceParams;
 import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamJmsP;
@@ -144,7 +143,7 @@ public final class SourceProcessors {
     }
 
     @Nonnull
-    public static <T, K, V> ProcessorSupplier readRemoteMapP(@Nonnull RemoteMapSourceParams<K, V, T> params) {
+    public static <T, K, V> ProcessorSupplier readRemoteMapP(@Nonnull RemoteMapSourceParams<T, K, V> params) {
         return HazelcastReaders.readRemoteMapSupplier(params);
     }
 

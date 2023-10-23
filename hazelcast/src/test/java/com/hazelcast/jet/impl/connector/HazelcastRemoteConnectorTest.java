@@ -34,6 +34,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.RemoteMapSourceParams;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projections;
@@ -138,7 +139,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
         DAG dag = new DAG();
 
-        RemoteMapSourceParams<Integer, Integer, Object> params = new RemoteMapSourceParams<>(SOURCE_NAME);
+        RemoteMapSourceParams<Object, Integer, Integer> params = new RemoteMapSourceParams<>(SOURCE_NAME);
         params.setClientConfig(clientConfig);
         params.setPredicate(Predicates.greaterThan("this", "0"));
         params.setProjection(Projections.singleAttribute("value"));

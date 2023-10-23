@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.connector;
+package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.projection.Projection;
@@ -22,7 +22,14 @@ import com.hazelcast.query.Predicate;
 
 import java.util.Map;
 
-public class RemoteMapSourceParams<K, V, T> {
+/**
+ * Parameters to use a remote map as source
+ *
+ * @param <T> specifies emitted type
+ * @param <K> specifies key type
+ * @param <V> specifies value type
+ */
+public class RemoteMapSourceParams<T, K, V> {
 
     private final String mapName;
 
@@ -41,6 +48,7 @@ public class RemoteMapSourceParams<K, V, T> {
     public boolean hasDataSourceConnection() {
         return dataConnectionName != null;
     }
+
     public boolean hasPredicate() {
         return predicate != null;
     }
