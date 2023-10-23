@@ -28,6 +28,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableSourceFunction;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCollectionTableOperator;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
@@ -222,8 +223,28 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         super.addToSelectList(list, aliases, fieldList, exp, scope, includeSystemVars);
     }
 
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     @Override
     protected void validateFrom(SqlNode node, RelDataType targetRowType, SqlValidatorScope scope) {
+        // Note: Calcite 1.28 doesn't have yet validateTableFunction, we moved check here.
+        if (node instanceof SqlBasicCall
+                && ((SqlBasicCall) node).getOperator() instanceof HazelcastCollectionTableOperator) {
+            SqlBasicCall call = (SqlBasicCall) node;
+            if (ssc.isSecurityEnabled() && !call.getOperandList().isEmpty()) {
+                SqlNode sqlNode = call.getOperandList().get(0);
+                if (sqlNode instanceof SqlBasicCall) {
+                    SqlBasicCall basicCall = (SqlBasicCall) sqlNode;
+                    SqlOperator operator = basicCall.getOperator();
+                    if (operator instanceof HazelcastDynamicTableFunction) {
+                        HazelcastDynamicTableFunction f = (HazelcastDynamicTableFunction) operator;
+                        for (Permission permission : f.permissions(basicCall, this)) {
+                            ssc.checkPermission(permission);
+                        }
+                    }
+                }
+            }
+        }
+
         super.validateFrom(node, targetRowType, scope);
 
         if (countOrderingFunctions(node) > 1) {
@@ -487,26 +508,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         deriveType(scope, call);
         super.validateCall(call, scope);
     }
-
-    @Override
-    protected void validateTableFunction(SqlCall node, SqlValidatorScope scope, RelDataType targetRowType) {
-        if (ssc.isSecurityEnabled() && node instanceof SqlBasicCall && !node.getOperandList().isEmpty()) {
-            SqlNode sqlNode = node.getOperandList().get(0);
-            if (sqlNode instanceof SqlBasicCall) {
-                SqlBasicCall call = (SqlBasicCall) sqlNode;
-                SqlOperator operator = call.getOperator();
-                if (operator instanceof HazelcastDynamicTableFunction) {
-                    HazelcastDynamicTableFunction f = (HazelcastDynamicTableFunction) operator;
-                    for (Permission permission : f.permissions(call, this)) {
-                        ssc.checkPermission(permission);
-                    }
-                }
-            }
-        }
-
-        super.validateTableFunction(node, scope, targetRowType);
-    }
-
 
     @Override
     protected SqlNode performUnconditionalRewrites(SqlNode node, boolean underFrom) {

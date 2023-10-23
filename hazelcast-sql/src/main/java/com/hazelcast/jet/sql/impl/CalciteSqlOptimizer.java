@@ -80,6 +80,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
@@ -238,7 +239,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 ssc);
 
         // 2. Parse SQL string and validate it.
-        QueryParseResult parseResult = context.parse(task.getSql(), ssc);
+        QueryParseResult parseResult = context.parse(task.getSql());
 
         // 3. Create plan.
         return createPlan(task, parseResult, context);
@@ -678,7 +679,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
-    private static class StreamingAggregationDetector extends RelVisitor {
+    private static final class StreamingAggregationDetector extends RelVisitor {
         @SuppressWarnings("checkstyle:VisibilityModifier")
         public boolean found;
 

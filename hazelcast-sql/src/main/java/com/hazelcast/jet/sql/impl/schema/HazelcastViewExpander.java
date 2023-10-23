@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.parse.QueryConverter;
 import com.hazelcast.jet.sql.impl.parse.QueryParser;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelRoot;
@@ -72,7 +73,7 @@ public class HazelcastViewExpander implements RelOptTable.ViewExpander {
             throw QueryException.error("Cycle detected in view references");
         }
         expansionStack.push(viewPath);
-        SqlNode sqlNode = parser.parse(queryString).getNode();
+        SqlNode sqlNode = parser.parse(queryString, NoOpSqlSecurityContext.INSTANCE).getNode();
         final RelRoot root = sqlToRelConverter.convertQuery(sqlNode, true, true);
         expansionStack.pop();
         final RelRoot root2 = root.withRel(sqlToRelConverter.flattenTypes(root.rel, true));

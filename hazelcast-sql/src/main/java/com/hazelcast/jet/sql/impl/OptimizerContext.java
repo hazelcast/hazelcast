@@ -75,6 +75,7 @@ public final class OptimizerContext {
     private final QueryParser parser;
     private final QueryConverter converter;
     private final QueryPlanner planner;
+    private final SqlSecurityContext sqlSecurityContext;
 
     private OptimizerContext(
             HazelcastRelOptCluster cluster,
