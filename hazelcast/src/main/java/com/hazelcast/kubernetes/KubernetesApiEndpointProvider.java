@@ -24,12 +24,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static com.hazelcast.kubernetes.KubernetesApiProvider.convertToString;
 import static com.hazelcast.kubernetes.KubernetesApiProvider.toJsonArray;
+import static com.hazelcast.kubernetes.KubernetesApiProvider.extractTargetRefName;
 import static com.hazelcast.kubernetes.KubernetesClient.Endpoint;
 import static com.hazelcast.kubernetes.KubernetesClient.EndpointAddress;
 
@@ -62,18 +61,18 @@ class KubernetesApiEndpointProvider
         for (JsonValue subset : toJsonArray(endpointItemJson.asObject().get("subsets"))) {
             Integer endpointPort = extractPort(subset);
             for (JsonValue address : toJsonArray(subset.asObject().get("addresses"))) {
-                addresses.add(extractEntrypointAddress(address, endpointPort, true));
+                addresses.add(extractEndpointAddress(address, endpointPort, true));
             }
             for (JsonValue address : toJsonArray(subset.asObject().get("notReadyAddresses"))) {
-                addresses.add(extractEntrypointAddress(address, endpointPort, false));
+                addresses.add(extractEndpointAddress(address, endpointPort, false));
             }
         }
         return addresses;
     }
 
-    private Endpoint extractEntrypointAddress(JsonValue endpointAddressJson, Integer endpointPort, boolean isReady) {
+    private Endpoint extractEndpointAddress(JsonValue endpointAddressJson, Integer endpointPort, boolean isReady) {
         String ip = endpointAddressJson.asObject().get("ip").asString();
-        String targetRefName = endpointAddressJson.asObject().get("targetRef").asObject().get("name").asString();
+        String targetRefName = extractTargetRefName(endpointAddressJson);
         Map<String, String> additionalProperties = extractAdditionalPropertiesFrom(endpointAddressJson);
         return new Endpoint(new EndpointAddress(ip, endpointPort, targetRefName), isReady, additionalProperties);
     }
@@ -89,9 +88,13 @@ class KubernetesApiEndpointProvider
             // Service must point to exactly one endpoint address, otherwise the public IP would be ambiguous.
             if (endpoints.size() == 1) {
                 EndpointAddress address = endpoints.get(0).getPrivateAddress();
+                // Omit the endpoint if the targetRef name in its private address is null.
+                if (address.getTargetRefName() == null) {
+                    continue;
+                }
                 if (privateAddresses.contains(address.getIp())) {
                     // If multiple services match the pod, then match service and pod names
-                    if (!result.containsKey(address) || service.equals(extractTargetRefName(item))) {
+                    if (!result.containsKey(address) || service.equals(address.getTargetRefName())) {
                         result.put(address, service);
                     }
                     left.remove(address.getIp());
@@ -103,20 +106,6 @@ class KubernetesApiEndpointProvider
             throw noCorrespondingServicesException(left);
         }
         return result;
-    }
-
-    private String extractTargetRefName(JsonValue endpointItemJson) {
-        return Optional.of(endpointItemJson)
-                       .flatMap(e -> toJsonArray(e.asObject().get("subsets")).values().stream().findFirst())
-                       .flatMap(e -> Stream.concat(
-                               toJsonArray(e.asObject().get("addresses")).values().stream(),
-                               toJsonArray(e.asObject().get("notReadyAddresses")).values().stream()
-                               ).findFirst()
-                       )
-                       .map(e -> e.asObject().get("targetRef"))
-                       .map(e -> e.asObject().get("name"))
-                       .map(KubernetesApiProvider::convertToString)
-                       .orElse(null);
     }
 
     public Map<EndpointAddress, String> extractNodes(JsonObject endpointsListJson,
@@ -154,10 +143,12 @@ class KubernetesApiEndpointProvider
         Map<EndpointAddress, String> result = new HashMap<>();
         for (JsonValue address : toJsonArray(addressesJson)) {
             String ip = address.asObject().get("ip").asString();
-            String targetRefName = address.asObject().get("targetRef").asObject().get("name").asString();
-            String nodeName = KubernetesApiProvider.convertToString(address.asObject().get("nodeName"));
-            for (Integer port : ports) {
-                result.put(new EndpointAddress(ip, port, targetRefName), nodeName);
+            String targetRefName = extractTargetRefName(address);
+            JsonValue nodeName = address.asObject().get("nodeName");
+            if (nodeName != null && !nodeName.isNull()) {
+                for (Integer port : ports) {
+                    result.put(new EndpointAddress(ip, port, targetRefName), nodeName.asString());
+                }
             }
         }
         return result;
