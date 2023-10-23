@@ -12,7 +12,7 @@
     <artifactId>distribution-it</artifactId>
 
     <properties>
-        <jaxb.version>2.3.1</jaxb.version>
+        <jaxb.version>4.0.4</jaxb.version>
         <jaxb-core.version>3.0.2</jaxb-core.version>
         <activation.version>1.1.1</activation.version>
         <hsqldb.version>2.7.2</hsqldb.version>
