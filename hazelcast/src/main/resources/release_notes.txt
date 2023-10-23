@@ -1,4 +1,4 @@
-This document lists the enhancements, fixed issues, and removed or deprecated features for Hazelcast Platform 5.3.3 release. The numbers in the square brackets refer to the issues and pull requests in Hazelcast's GitHub repository.
+This document lists the enhancements, fixed issues, and removed or deprecated features for Hazelcast Platform 5.3.5 release. The numbers in the square brackets refer to the issues and pull requests in Hazelcast's GitHub repository.
 
 ## Enhancements
 
