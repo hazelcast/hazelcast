@@ -144,11 +144,9 @@ class KubernetesApiEndpointProvider
         for (JsonValue address : toJsonArray(addressesJson)) {
             String ip = address.asObject().get("ip").asString();
             String targetRefName = extractTargetRefName(address);
-            JsonValue nodeName = address.asObject().get("nodeName");
-            if (nodeName != null && !nodeName.isNull()) {
-                for (Integer port : ports) {
-                    result.put(new EndpointAddress(ip, port, targetRefName), nodeName.asString());
-                }
+            String nodeName = KubernetesApiProvider.convertToString(address.asObject().get("nodeName"));
+            for (Integer port : ports) {
+                result.put(new EndpointAddress(ip, port, targetRefName), nodeName);
             }
         }
         return result;

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.kubernetes.KubernetesApiProvider.convertToString;
 import static com.hazelcast.kubernetes.KubernetesApiProvider.toJsonArray;
 import static com.hazelcast.kubernetes.KubernetesApiProvider.extractTargetRefName;
 import static com.hazelcast.kubernetes.KubernetesClient.Endpoint;
@@ -123,16 +124,14 @@ public class KubernetesApiEndpointSlicesProvider
             for (JsonValue endpoint : toJsonArray(item.asObject().get("endpoints"))) {
                 JsonObject endpointObject = endpoint.asObject();
                 String targetRefName = extractTargetRefName(endpointObject);
-                JsonValue nodeName = endpointObject.asObject().get("nodeName");
-                if (nodeName != null && !nodeName.isNull()) {
-                    Map<EndpointAddress, String> nodes = extractNodes(
-                            endpointObject.get("addresses"), ports, nodeName.asString(), targetRefName);
-                    for (Map.Entry<EndpointAddress, String> nodeEntry : nodes.entrySet()) {
-                        EndpointAddress address = nodeEntry.getKey();
-                        if (privateAddresses.contains(address.getIp())) {
-                            result.put(address, nodes.get(address));
-                            left.remove(address.getIp());
-                        }
+                String nodeName = convertToString(endpointObject.asObject().get("nodeName"));
+                Map<EndpointAddress, String> nodes = extractNodes(
+                        endpointObject.get("addresses"), ports, nodeName, targetRefName);
+                for (Map.Entry<EndpointAddress, String> nodeEntry : nodes.entrySet()) {
+                    EndpointAddress address = nodeEntry.getKey();
+                    if (privateAddresses.contains(address.getIp())) {
+                        result.put(address, nodes.get(address));
+                        left.remove(address.getIp());
                     }
                 }
             }
