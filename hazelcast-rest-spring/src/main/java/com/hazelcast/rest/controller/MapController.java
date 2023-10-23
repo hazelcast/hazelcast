@@ -18,6 +18,8 @@ package com.hazelcast.rest.controller;
 import com.hazelcast.rest.security.CustomSecurityContext;
 import com.hazelcast.rest.service.MapService;
 import com.hazelcast.rest.util.LoginContextHolder;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.security.permission.MapPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -66,7 +68,7 @@ public class MapController {
         try {
             securityContext.getSecurityContext()
                     .checkPermission(loginContextHolder.getLoginContext().getSubject(),
-                            new MapPermission(mapName, "read"));
+                            new MapPermission(mapName, ActionConstants.ACTION_READ));
         } catch (SecurityException e) {
             System.out.println("checkPermission security exception: " + e);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());

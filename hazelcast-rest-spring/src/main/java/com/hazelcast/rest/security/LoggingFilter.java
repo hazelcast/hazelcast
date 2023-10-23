@@ -46,13 +46,13 @@ public class LoggingFilter implements Filter {
                 System.out.println("Logging Request " +  req.getMethod() + " : " +  req.getRequestURI());
                 chain.doFilter(request, response);
             } catch (MalformedJwtException | SignatureException e) {
-                res.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                res.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
+                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                res.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
             }
 
         } else {
-            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            res.sendError(HttpServletResponse.SC_FORBIDDEN);
+            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         }
     }
 
