@@ -63,7 +63,7 @@ public class CPSubsystemImpl implements CPSubsystem {
         this.instance = instance;
         int cpMemberCount = instance.getConfig().getCPSubsystemConfig().getCPMemberCount();
         this.cpSubsystemEnabled = cpMemberCount > 0;
-        ILogger logger = instance.node.getLogger(CPSubsystem.class); // this is why we need Impl
+        ILogger logger = instance.node.getLogger(CPSubsystem.class);
         if (cpSubsystemEnabled) {
             logger.info("CP Subsystem is enabled with " + cpMemberCount + " members.");
         } else {

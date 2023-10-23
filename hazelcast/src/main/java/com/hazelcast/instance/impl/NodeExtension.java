@@ -401,10 +401,7 @@ public interface NodeExtension {
     /**
      * Returns CP subsystem implementation.
      */
-    // TODO logger needs to be pulled out so we can pass around interface
-    // TODO this is a quick way to get things up and running: effectively, we initialise CP subsystem in say was as now
-    //      and we delegate to NodeExtension to give us back the correct CPSubsystem implementation...looks like this is the way
-    CPSubsystem getCPSubsystem(HazelcastInstanceImpl instance); // Impl, why --> because the we access logger
+    CPSubsystem getCPSubsystem(HazelcastInstanceImpl instance);
 
     /**
      * Returns a JetService.
