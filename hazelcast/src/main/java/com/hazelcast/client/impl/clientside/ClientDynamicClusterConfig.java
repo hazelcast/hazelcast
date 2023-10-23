@@ -65,6 +65,7 @@ import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.IntegrityCheckerConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ManagementCenterConfig;
@@ -134,6 +135,11 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config addMapConfig(MapConfig mapConfig) {
+        if (mapConfig.getTieredStoreConfig().isEnabled()) {
+            throw new InvalidConfigurationException("Tiered store enabled map config"
+                    + " cannot be added dynamically [" + mapConfig + "]");
+        }
+
         List<ListenerConfigHolder> listenerConfigs = adaptListenerConfigs(mapConfig.getEntryListenerConfigs());
         List<ListenerConfigHolder> partitionLostListenerConfigs =
                 adaptListenerConfigs(mapConfig.getPartitionLostListenerConfigs());
