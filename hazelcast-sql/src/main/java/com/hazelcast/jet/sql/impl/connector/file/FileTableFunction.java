@@ -30,8 +30,10 @@ import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDynamicParam;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlUtil;
@@ -131,6 +133,19 @@ public final class FileTableFunction extends HazelcastDynamicTableFunction {
 
     private void throwCantDeterminePath() {
         throw QueryException.error("Can't determine the file path, query is denied in secure environment");
+    }
+
+    private static SqlNode findOperandByName(String name, SqlCall call) {
+        for (int i = 0; i < call.operandCount(); i++) {
+            if (call.operand(i) instanceof SqlBasicCall) {
+                SqlCall assignment = call.operand(i);
+                SqlIdentifier id = assignment.operand(1);
+                if (name.equals(id.getSimple())) {
+                    return assignment.operand(0);
+                }
+            }
+        }
+        return null;
     }
 
     private static SqlNode findOperandByPosition(int pos, SqlCall call) {
