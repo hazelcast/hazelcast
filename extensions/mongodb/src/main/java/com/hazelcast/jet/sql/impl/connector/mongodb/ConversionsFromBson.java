@@ -19,8 +19,6 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.bson.BsonDateTime;
 import org.bson.BsonDocument;
-import org.bson.BsonJavaScript;
-import org.bson.BsonJavaScriptWithScope;
 import org.bson.BsonMaxKey;
 import org.bson.BsonMinKey;
 import org.bson.BsonTimestamp;
@@ -57,7 +55,7 @@ public final class ConversionsFromBson {
      * In other words, converts for SELECT statements.
      */
     @Nullable
-    @SuppressWarnings({ "checkstyle:RightCurly", "javabugs:S6320" })
+    @SuppressWarnings("checkstyle:RightCurly")
     public static Object convertFromBson(@Nullable Object toConvert, @Nonnull QueryDataType sqlType) {
         if (toConvert == null) {
             return null;
@@ -92,12 +90,6 @@ public final class ConversionsFromBson {
             if (sqlType.getTypeFamily() != OBJECT) {
                 value = toConvert.toString();
             }
-        }
-        else if (toConvert instanceof BsonJavaScript) {
-            value = ((BsonJavaScript) value).getCode();
-        }
-        else if (toConvert instanceof BsonJavaScriptWithScope) {
-            value = ((BsonJavaScriptWithScope) value).getCode();
         }
         else if (toConvert instanceof Date) {
             value = convertJavaDate((Date) toConvert, sqlType);

@@ -23,6 +23,7 @@ import org.bson.BsonDouble;
 import org.bson.BsonInt32;
 import org.bson.BsonInt64;
 import org.bson.BsonJavaScript;
+import org.bson.BsonJavaScriptWithScope;
 import org.bson.BsonRegularExpression;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
@@ -193,6 +194,9 @@ final class BsonTypes {
         }
         if (value instanceof BsonJavaScript) {
             return ((BsonJavaScript) value).getCode();
+        }
+        else if (value instanceof BsonJavaScriptWithScope) {
+            value = ((BsonJavaScriptWithScope) value).getCode();
         }
         if (value instanceof CodeWithScope) {
             return value;
