@@ -21,7 +21,7 @@ import com.hazelcast.core.DistributedObject;
 public interface CPMap<K, V> extends DistributedObject {
     /**
      * Associates [key] with [value].
-     * @param key Key of the entry
+     * @param key non-null key of the entry
      * @param value Value of the entry
      * @return null if [key] had no previous mapping, otherwise the previous value associated with [key]
      */
@@ -29,27 +29,27 @@ public interface CPMap<K, V> extends DistributedObject {
 
     /**
      * Associates [key] with [value].
-     * @param key Key of the entry
+     * @param key non-null key of the entry
      * @param value Value of the entry
      */
     void set(K key, V value);
 
     /**
      * Removes [key] if present.
-     * @param key Key of the key-value entry to remove
+     * @param key non-null key of the key-value entry to remove
      * @return null if [key] was not present, otherwise the value associated with [key]
      */
     V remove(K key);
 
     /**
      * Removes [key] if present.
-     * @param key Key of the key-value entry to remove
+     * @param key non-null key of the key-value entry to remove
      */
     void delete(K key);
 
     /**
      * Indivisibly sets [key] to [newValue] if the current value for [key] is equal-to [expectedValue].
-     * @param key Key of the entry
+     * @param key non-null key of the entry
      * @param expectedValue Expected value associated with [key]
      * @param newValue New value to associated with [key]
      * @return true if [key] was associated with [newValue], otherwise false
@@ -58,7 +58,7 @@ public interface CPMap<K, V> extends DistributedObject {
 
     /**
      * Gets the value associated with [key]
-     * @param key Key of the entry
+     * @param key non-null key of the entry
      * @return null if [key] had no association, otherwise the value associated with [key].
      */
     V get(K key);
