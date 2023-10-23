@@ -82,6 +82,33 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.0</version>
+                <goals>
+                    <goal>analyze</goal>
+                </goals>
+                <executions>
+                    <execution>
+                        <id>check-for-transitive-dependencies-usage</id>
+                        <phase>package</phase>
+                        <goals><goal>analyze</goal></goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <ignoredUnusedDeclaredDependencies>org.apache:calcite</ignoredUnusedDeclaredDependencies>
+                    <failOnWarning>true</failOnWarning>
+                    <ignoreNonCompile>true</ignoreNonCompile>
+                    <ignoredUsedUndeclaredDependencies>
+                        <ignoredUsedUndeclaredDependency>org.slf4j:*</ignoredUsedUndeclaredDependency>
+                        <ignoredUsedUndeclaredDependency>com.google.code.findbugs:*</ignoredUsedUndeclaredDependency>
+                        <ignoredUsedUndeclaredDependency>com.tngtech.archunit:*</ignoredUsedUndeclaredDependency>
+                        <ignoredUsedUndeclaredDependency>junit:*</ignoredUsedUndeclaredDependency>
+                        <ignoredUsedUndeclaredDependency>com.github.docker-java:*</ignoredUsedUndeclaredDependency>,
+                    </ignoredUsedUndeclaredDependencies>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -103,6 +130,22 @@
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-sync</artifactId>
             <version>${mongodb.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-core</artifactId>
+            <version>${mongodb.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>bson</artifactId>
+            <version>${mongodb.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
 
         <dependency>

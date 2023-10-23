@@ -157,7 +157,7 @@ final class BsonTypes {
         return result;
     }
 
-    @SuppressWarnings("checkstyle:ReturnCount")
+    @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:RightCurly"})
     static Object unwrapSimpleWrappers(Object value) {
         if (value instanceof BsonBoolean) {
             return ((BsonBoolean) value).getValue();
@@ -196,7 +196,7 @@ final class BsonTypes {
             return ((BsonJavaScript) value).getCode();
         }
         else if (value instanceof BsonJavaScriptWithScope) {
-            value = ((BsonJavaScriptWithScope) value).getCode();
+            return ((BsonJavaScriptWithScope) value).getCode();
         }
         if (value instanceof CodeWithScope) {
             return value;
