@@ -41,6 +41,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.NlsString;
 
 import java.nio.charset.Charset;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -74,6 +75,8 @@ public abstract class HazelcastDynamicTableFunction extends HazelcastTableSource
     public final HazelcastTable toTable(RelDataType rowType) {
         return ((HazelcastFunctionRelDataType) rowType).table();
     }
+
+    public abstract List<Permission> permissions(SqlCall call, HazelcastSqlValidator validator);
 
     private static RelDataType inferReturnType(
             String name,
@@ -175,7 +178,7 @@ public abstract class HazelcastDynamicTableFunction extends HazelcastTableSource
                 + (SqlUtil.isLiteral(operand) ? ((SqlLiteral) operand).getTypeName() : operand.getKind()));
     }
 
-    private static String extractStringValue(SqlLiteral literal) {
+    protected static String extractStringValue(SqlLiteral literal) {
         Object value = literal.getValue();
         return value instanceof NlsString ? ((NlsString) value).getValue() : null;
     }
