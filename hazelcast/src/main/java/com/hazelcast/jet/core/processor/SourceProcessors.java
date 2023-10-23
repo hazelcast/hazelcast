@@ -142,6 +142,9 @@ public final class SourceProcessors {
         return StreamEventJournalP.streamMapSupplier(mapName, predicateFn, projectionFn, initialPos, eventTimePolicy);
     }
 
+    /**
+     * Returns a supplier of processors for a remote map in another cluster
+     */
     @Nonnull
     public static <T, K, V> ProcessorSupplier readRemoteMapP(@Nonnull RemoteMapSourceParams<T, K, V> params) {
         return HazelcastReaders.readRemoteMapSupplier(params);
