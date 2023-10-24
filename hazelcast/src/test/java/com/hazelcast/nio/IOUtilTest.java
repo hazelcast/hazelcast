@@ -57,10 +57,12 @@ import java.util.List;
 import static com.hazelcast.internal.nio.IOUtil.close;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
+import static com.hazelcast.internal.nio.IOUtil.compress;
 import static com.hazelcast.internal.nio.IOUtil.copy;
 import static com.hazelcast.internal.nio.IOUtil.copyFile;
 import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
 import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.nio.IOUtil.decompress;
 import static com.hazelcast.internal.nio.IOUtil.delete;
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.internal.nio.IOUtil.getFileFromResources;
@@ -82,6 +84,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -214,97 +217,106 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testNewOutputStream_shouldWriteWholeByteBuffer() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        OutputStream outputStream = newOutputStream(buffer);
-        assertEquals(SIZE, buffer.remaining());
+        try (OutputStream outputStream = newOutputStream(buffer)) {
+            assertEquals(SIZE, buffer.remaining());
 
-        outputStream.write(new byte[SIZE]);
+            outputStream.write(new byte[SIZE]);
 
-        assertEquals(0, buffer.remaining());
+            assertEquals(0, buffer.remaining());
+        }
     }
 
     @Test
     public void testNewOutputStream_shouldWriteSingleByte() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        OutputStream outputStream = newOutputStream(buffer);
-        assertEquals(SIZE, buffer.remaining());
+        try (OutputStream outputStream = newOutputStream(buffer)) {
+            assertEquals(SIZE, buffer.remaining());
 
-        outputStream.write(23);
+            outputStream.write(23);
 
-        assertEquals(SIZE - 1, buffer.remaining());
+            assertEquals(SIZE - 1, buffer.remaining());
+        }
     }
 
     @Test
     public void testNewOutputStream_shouldWriteInChunks() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        OutputStream outputStream = newOutputStream(buffer);
-        assertEquals(SIZE, buffer.remaining());
+        try (OutputStream outputStream = newOutputStream(buffer)) {
+            assertEquals(SIZE, buffer.remaining());
 
-        outputStream.write(new byte[1], 0, 1);
-        outputStream.write(new byte[SIZE - 1], 0, SIZE - 1);
+            outputStream.write(new byte[1], 0, 1);
+            outputStream.write(new byte[SIZE - 1], 0, SIZE - 1);
 
-        assertEquals(0, buffer.remaining());
+            assertEquals(0, buffer.remaining());
+        }
     }
 
     @Test(expected = BufferOverflowException.class)
     public void testNewOutputStream_shouldThrowWhenTryingToWriteToEmptyByteBuffer() throws Exception {
         ByteBuffer empty = ByteBuffer.wrap(EMPTY_BYTE_ARRAY);
-        OutputStream outputStream = newOutputStream(empty);
+        try (OutputStream outputStream = newOutputStream(empty)) {
 
-        outputStream.write(23);
+            outputStream.write(23);
+        }
     }
 
     @Test
     public void testNewInputStream_shouldReturnMinusOneWhenEmptyByteBufferProvidedAndReadingOneByte() throws Exception {
         ByteBuffer empty = ByteBuffer.wrap(EMPTY_BYTE_ARRAY);
-        InputStream inputStream = newInputStream(empty);
+        try (InputStream inputStream = newInputStream(empty)) {
 
-        int read = inputStream.read();
+            int read = inputStream.read();
 
-        assertEquals(-1, read);
+            assertEquals(-1, read);
+        }
     }
 
     @Test
     public void testNewInputStream_shouldReadWholeByteBuffer() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        InputStream inputStream = newInputStream(buffer);
+        try (InputStream inputStream = newInputStream(buffer)) {
 
-        int read = inputStream.read(new byte[SIZE]);
+            int read = inputStream.read(new byte[SIZE]);
 
-        assertEquals(SIZE, read);
+            assertEquals(SIZE, read);
+        }
     }
 
     @Test
     public void testNewInputStream_shouldAllowReadingByteBufferInChunks() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        InputStream inputStream = newInputStream(buffer);
+        try (InputStream inputStream = newInputStream(buffer)) {
 
-        int firstRead = inputStream.read(new byte[1]);
-        int secondRead = inputStream.read(new byte[SIZE - 1]);
+            int firstRead = inputStream.read(new byte[1]);
+            int secondRead = inputStream.read(new byte[SIZE - 1]);
 
-        assertEquals(1, firstRead);
-        assertEquals(SIZE - 1, secondRead);
+            assertEquals(1, firstRead);
+            assertEquals(SIZE - 1, secondRead);
+        }
     }
 
     @Test
     public void testNewInputStream_shouldReturnMinusOneWhenNothingRemainingInByteBuffer() throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
-        InputStream inputStream = newInputStream(buffer);
+        try (InputStream inputStream = newInputStream(buffer)) {
 
-        int firstRead = inputStream.read(new byte[SIZE]);
-        int secondRead = inputStream.read();
+            int firstRead = inputStream.read(new byte[SIZE]);
+            int secondRead = inputStream.read();
 
-        assertEquals(SIZE, firstRead);
-        assertEquals(-1, secondRead);
+            assertEquals(SIZE, firstRead);
+            assertEquals(-1, secondRead);
+        }
     }
 
     @Test
     public void testNewInputStream_shouldReturnMinusOneWhenEmptyByteBufferProvidedAndReadingSeveralBytes() throws Exception {
         ByteBuffer empty = ByteBuffer.wrap(EMPTY_BYTE_ARRAY);
-        InputStream inputStream = newInputStream(empty);
+        try (InputStream inputStream = newInputStream(empty)) {
 
-        int read = inputStream.read(NON_EMPTY_BYTE_ARRAY);
+            int read = inputStream.read(NON_EMPTY_BYTE_ARRAY);
 
-        assertEquals(-1, read);
+            assertEquals(-1, read);
+        }
     }
 
     @Test(expected = EOFException.class)
@@ -322,6 +334,36 @@ public class IOUtilTest extends HazelcastTestSupport {
         inputStream.readFully(new byte[SIZE]);
 
         inputStream.readFully(NON_EMPTY_BYTE_ARRAY);
+    }
+
+    @Test
+    public void testCompressAndDecompress() {
+        String expected = "But I must explain to you how all this mistaken idea of denouncing pleasure and praising pain was born"
+                + " and I will give you a complete account of the system, and expound the actual teachings of the great explorer"
+                + " of the truth, the master-builder of human happiness.";
+
+        byte[] compressed = compress(expected.getBytes());
+        byte[] decompressed = decompress(compressed);
+
+        assertEquals(expected, new String(decompressed));
+    }
+
+    @Test
+    public void testCompressAndDecompress_withEmptyInput() {
+        byte[] compressed = compress(EMPTY_BYTE_ARRAY);
+        byte[] decompressed = decompress(compressed);
+
+        assertArrayEquals(EMPTY_BYTE_ARRAY, decompressed);
+    }
+
+    @Test
+    public void testCompressAndDecompress_withSingleByte() {
+        byte[] input = new byte[]{111};
+
+        byte[] compressed = compress(input);
+        byte[] decompressed = decompress(compressed);
+
+        assertArrayEquals(input, decompressed);
     }
 
     @Test

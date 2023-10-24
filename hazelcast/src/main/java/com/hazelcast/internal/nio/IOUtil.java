@@ -28,6 +28,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassNameFilter;
 
 import javax.annotation.Nonnull;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.File;
@@ -64,6 +65,9 @@ import java.time.ZoneOffset;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_KEEPALIVE;
@@ -394,6 +398,47 @@ public final class IOUtil {
         return n;
     }
 
+    public static byte[] compress(byte[] input) {
+        if (input.length == 0) {
+            return new byte[0];
+        }
+        // 60% of the original length
+        int len = (int) (input.length * 0.6);
+        len = Math.max(len, 10);
+
+        Deflater compressor = new Deflater();
+        compressor.setLevel(Deflater.DEFAULT_COMPRESSION);
+        compressor.setInput(input);
+        compressor.finish();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(len);
+        byte[] buf = new byte[len];
+        while (!compressor.finished()) {
+            int count = compressor.deflate(buf);
+            bos.write(buf, 0, count);
+        }
+        compressor.end();
+        return bos.toByteArray();
+    }
+
+    public static byte[] decompress(byte[] compressedData) {
+        if (compressedData.length == 0) {
+            return compressedData;
+        }
+        Inflater inflater = new Inflater();
+        inflater.setInput(compressedData);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(compressedData.length);
+        byte[] buf = new byte[1024];
+        while (!inflater.finished()) {
+            try {
+                int count = inflater.inflate(buf);
+                bos.write(buf, 0, count);
+            } catch (DataFormatException e) {
+                LOGGER.finest("Decompression failed", e);
+            }
+        }
+        inflater.end();
+        return bos.toByteArray();
+    }
 
     /**
      * Quietly attempts to close a {@link Closeable} or {@link AutoCloseable} resource, swallowing any exception.
