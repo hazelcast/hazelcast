@@ -273,9 +273,4 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     default boolean shouldEnableMerkleTree(MapConfig mapConfig, boolean log) {
         return false;
     }
-
-    /**
-     * @return {@link EventListenerCounter} object.
-     */
-    EventListenerCounter getEventListenerCounter();
 }

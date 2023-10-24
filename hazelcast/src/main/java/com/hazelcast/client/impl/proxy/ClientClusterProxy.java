@@ -131,4 +131,9 @@ public class ClientClusterProxy implements Cluster {
     public void promoteLocalLiteMember() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void demoteLocalDataMember() {
+        throw new UnsupportedOperationException();
+    }
 }

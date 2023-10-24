@@ -103,11 +103,14 @@ public class WanReplicationServiceImpl implements WanReplicationService,
     }
 
     @Override
+    public boolean hasWanReplicationScheme(String wanReplicationScheme) {
+       return wanReplications.containsKey(wanReplicationScheme)
+               || node.getConfig().getWanReplicationConfig(wanReplicationScheme) != null;
+    }
+
+
+    @Override
     public DelegatingWanScheme getWanReplicationPublishers(String wanReplicationScheme) {
-        if (!wanReplications.containsKey(wanReplicationScheme)
-                && node.getConfig().getWanReplicationConfig(wanReplicationScheme) == null) {
-            return null;
-        }
         return getOrPutSynchronized(wanReplications, wanReplicationScheme, this, publisherDelegateConstructor);
     }
 
@@ -400,10 +403,11 @@ public class WanReplicationServiceImpl implements WanReplicationService,
 
     private WanPublisher getPublisherOrNull(String wanReplicationName,
                                             String wanPublisherId) {
-        DelegatingWanScheme publisherDelegate = getWanReplicationPublishers(wanReplicationName);
-        return publisherDelegate != null
-                ? publisherDelegate.getPublisher(wanPublisherId)
-                : null;
+        if (!hasWanReplicationScheme(wanReplicationName)) {
+            return null;
+        }
+
+        return getWanReplicationPublishers(wanReplicationName).getPublisher(wanPublisherId);
     }
 
     private void notifyMigrationAwarePublishers(Consumer<WanMigrationAwarePublisher> publisherConsumer) {

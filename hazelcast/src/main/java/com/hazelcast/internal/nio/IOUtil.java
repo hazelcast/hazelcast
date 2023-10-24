@@ -402,10 +402,12 @@ public final class IOUtil {
         if (input.length == 0) {
             return new byte[0];
         }
-        int len = Math.max(input.length / 10, 10);
+        // 60% of the original length
+        int len = (int) (input.length * 0.6);
+        len = Math.max(len, 10);
 
         Deflater compressor = new Deflater();
-        compressor.setLevel(Deflater.BEST_SPEED);
+        compressor.setLevel(Deflater.DEFAULT_COMPRESSION);
         compressor.setInput(input);
         compressor.finish();
         ByteArrayOutputStream bos = new ByteArrayOutputStream(len);

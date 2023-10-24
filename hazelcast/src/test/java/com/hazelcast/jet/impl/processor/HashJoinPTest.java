@@ -370,7 +370,7 @@ public class HashJoinPTest extends JetTestSupport {
     }
 
     @SafeVarargs
-    private static <K, V> Map<K, Object> toMap(Tuple2<K, Object>... entries) {
+    private static <K> Map<K, Object> toMap(Tuple2<K, Object>... entries) {
         return Stream.of(entries).collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
     }
 

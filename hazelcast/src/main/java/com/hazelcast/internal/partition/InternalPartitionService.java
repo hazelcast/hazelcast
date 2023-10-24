@@ -30,6 +30,7 @@ import com.hazelcast.internal.services.ManagedService;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public interface InternalPartitionService extends IPartitionService, ManagedService, GracefulShutdownAwareService {
 
@@ -138,4 +139,6 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
 
     @Nullable
     PartitionTableView getLeftMemberSnapshot(UUID uuid);
+
+    boolean onDemote(long timeout, TimeUnit unit);
 }

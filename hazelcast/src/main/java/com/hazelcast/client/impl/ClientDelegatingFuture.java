@@ -483,7 +483,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
         }
     }
 
-    class HandleBiFunction<U, R> implements BiFunction<ClientMessage, Throwable, R> {
+    class HandleBiFunction<R> implements BiFunction<ClientMessage, Throwable, R> {
         private final BiFunction<? super V, Throwable, R> delegate;
 
         HandleBiFunction(@Nonnull BiFunction<? super V, Throwable, R> delegate) {

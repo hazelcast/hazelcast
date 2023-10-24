@@ -31,9 +31,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static java.lang.Character.isLowerCase;
-import static java.lang.Character.toLowerCase;
-
 /**
  * Utility class for Strings.
  */
@@ -57,17 +54,6 @@ public final class StringUtil {
             = Pattern.compile("^(\\d+)\\.(\\d+)(\\.(\\d+))?(-\\w+(?:-\\d+)?)?(-SNAPSHOT)?$");
 
     private StringUtil() {
-    }
-
-    /**
-     * Creates a UTF8_CHARSET string from a byte array.
-     *
-     * @param bytes the byte array.
-     * @return the string created from the byte array.
-     */
-    public static String bytesToString(byte[] bytes) {
-
-        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     /**
@@ -143,27 +129,6 @@ public final class StringUtil {
             return s;
         }
         return s.toUpperCase(LOCALE_INTERNAL);
-    }
-
-    /**
-     * Converts the first character to lower case.
-     * <p>
-     * Empty strings are ignored.
-     *
-     * @param s the given string
-     * @return the converted string.
-     */
-    public static String lowerCaseFirstChar(String s) {
-        if (s.isEmpty()) {
-            return s;
-        }
-
-        char first = s.charAt(0);
-        if (isLowerCase(first)) {
-            return s;
-        }
-
-        return toLowerCase(first) + s.substring(1);
     }
 
     /**

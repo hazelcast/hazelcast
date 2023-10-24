@@ -22,7 +22,6 @@ import com.hazelcast.jet.pipeline.file.FileSources;
 import org.junit.Test;
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -38,9 +37,7 @@ public class TextFileFormatTest extends BaseFileFormatTest {
                                                       .glob("file.txt")
                                                       .format(FileFormat.text());
 
-        String expected = new String(
-                Files.readAllBytes(Paths.get(currentDir, "/src/test/resources", "file.txt")),
-                StandardCharsets.UTF_8);
+        String expected = Files.readString(Paths.get(currentDir, "/src/test/resources", "file.txt"));
 
         assertItemsInSource(source, expected);
     }
@@ -55,7 +52,7 @@ public class TextFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldReadEmptyTextFile() throws Exception {
+    public void shouldReadEmptyTextFile() {
         FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/resources")
                                                       .glob("file-empty.txt")
                                                       .format(FileFormat.text());
@@ -64,7 +61,7 @@ public class TextFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldReadEmptyLinesTextFile() throws Exception {
+    public void shouldReadEmptyLinesTextFile() {
         FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/resources")
                                                       .glob("file-empty.txt")
                                                       .format(FileFormat.lines());

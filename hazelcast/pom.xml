@@ -40,7 +40,7 @@
         <pax.exam.version>2.6.0</pax.exam.version>
         <pax.runner.version>1.8.6</pax.runner.version>
         <javax.inject.version>1</javax.inject.version>
-        <wiremock.version>3.0.1</wiremock.version>
+        <wiremock.version>3.2.0</wiremock.version>
     </properties>
 
     <build>
@@ -497,7 +497,6 @@
         <dependency>
             <groupId>org.objenesis</groupId>
             <artifactId>objenesis</artifactId>
-            <version>${objenesis.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -778,19 +777,16 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>${mysql.connector.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>${mssql.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

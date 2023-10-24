@@ -193,7 +193,7 @@ public class SlidingWindowP_stage1Test {
                 .expectOutput(singletonList(wm(16)));
     }
 
-    private static <V> KeyedWindowResult<Long, LongAccumulator> frame(long ts, long value) {
+    private static KeyedWindowResult<Long, LongAccumulator> frame(long ts, long value) {
         return new KeyedWindowResult<>(ts - 4, ts, KEY, new LongAccumulator(value));
     }
 }

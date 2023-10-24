@@ -104,9 +104,8 @@ public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
 
     static boolean isEndpointAvailable(String url) {
-        return !RestClient.create(url)
-                .withConnectTimeoutSeconds(1)
-                .withReadTimeoutSeconds(1)
+        return !RestClient.create(url, 1)
+                .withRequestTimeoutSeconds(1)
                 .withRetries(1)
                 .withHeader("Metadata", "True")
                 .get()

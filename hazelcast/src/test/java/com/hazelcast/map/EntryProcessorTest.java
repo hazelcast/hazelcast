@@ -1934,7 +1934,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-    private static class TTLChangingEntryProcessorOffloadable<K, V>
+    private static class TTLChangingEntryProcessorOffloadable
             extends TTLChangingEntryProcessor implements Offloadable {
 
 

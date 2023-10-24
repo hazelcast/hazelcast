@@ -273,7 +273,7 @@ public class EntryProcessorExpiryTimeTest extends HazelcastTestSupport {
         }
     }
 
-    private static class SetValueWithoutChangingExpiryTimeOffloadable<K, V>
+    private static class SetValueWithoutChangingExpiryTimeOffloadable<V>
             extends SetValueWithoutChangingExpiryTime implements Offloadable {
 
         SetValueWithoutChangingExpiryTimeOffloadable(V newValue) {

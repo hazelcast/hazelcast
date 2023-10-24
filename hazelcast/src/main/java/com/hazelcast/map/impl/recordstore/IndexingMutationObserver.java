@@ -91,7 +91,7 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
     @Override
     public void onReset() {
-        clearGlobalIndexes(false);
+        clearGlobalIndexes();
         // Partitioned indexes are cleared in MapReplicationStateHolder
     }
 
@@ -102,25 +102,20 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
     @Override
     public void onDestroy(boolean isDuringShutdown, boolean internal) {
-        boolean destroyGlobalIndexes = isDuringShutdown || mapContainer.isDestroyed();
-        clearGlobalIndexes(destroyGlobalIndexes);
+        // global indexes are destroyed on map-container
+        // destroy(see MapServiceContextImpl#destroyMap)
+        clearGlobalIndexes();
         clearPartitionedIndexes(true);
     }
 
     /**
      * Only indexed data will be removed, index info will stay.
      */
-    private void clearGlobalIndexes(boolean destroy) {
-        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
-        if (!indexRegistry.isGlobal()) {
+    private void clearGlobalIndexes() {
+        if (!mapContainer.isGlobalIndexEnabled()) {
             return;
         }
-
-        if (destroy) {
-            indexRegistry.destroyIndexes();
-            return;
-        }
-
+        IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
         if (indexRegistry.haveAtLeastOneIndex()) {
             // clears indexed data of this partition
             // from shared global index.
