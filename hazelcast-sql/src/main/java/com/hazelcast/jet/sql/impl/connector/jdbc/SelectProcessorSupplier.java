@@ -175,9 +175,9 @@ public class SelectProcessorSupplier
                     return "DECIMAL";
                 }
             } else {
-                if ( (scale + precision) <= REAL_PRECISION_SCALE ) {
+                if ((scale + precision) <= REAL_PRECISION_SCALE) {
                     return "REAL";
-                } else if ( (scale + precision) <= DOUBLE_PRECISION_SCALE ) {
+                } else if ((scale + precision) <= DOUBLE_PRECISION_SCALE) {
                     return "DOUBLE PRECISION";
                 }
             }
