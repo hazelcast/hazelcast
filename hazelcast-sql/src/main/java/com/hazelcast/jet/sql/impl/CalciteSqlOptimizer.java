@@ -89,6 +89,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
@@ -227,13 +228,15 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     public SqlPlan prepare(OptimizationTask task) {
         // 1. Prepare context.
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
+        SqlSecurityContext ssc = task.getSqlSecurityContext();
 
         OptimizerContext context = OptimizerContext.create(
                 task.getSchema(),
                 task.getSearchPaths(),
                 task.getArguments(),
                 memberCount,
-                iMapResolver);
+                iMapResolver,
+                ssc);
 
         // 2. Parse SQL string and validate it.
         QueryParseResult parseResult = context.parse(task.getSql());
@@ -676,7 +679,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
-    private static class StreamingAggregationDetector extends RelVisitor {
+    private static final class StreamingAggregationDetector extends RelVisitor {
         @SuppressWarnings("checkstyle:VisibilityModifier")
         public boolean found;
 
