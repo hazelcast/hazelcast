@@ -62,7 +62,8 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.ConstructorFunction;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY_ID;
@@ -127,59 +128,61 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public static final int MERGE = 44;
     public static final int MERGE_BACKUP = 45;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public DataSerializableFactory createFactory() {
 
-        //noinspection unchecked
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[MERGE_BACKUP + 1];
-        constructors[OFFER] = arg -> new OfferOperation();
-        constructors[OFFER_BACKUP] = arg -> new OfferBackupOperation();
-        constructors[POLL] = arg -> new PollOperation();
-        constructors[POLL_BACKUP] = arg -> new PollBackupOperation();
-        constructors[PEEK] = arg -> new PeekOperation();
-        constructors[ADD_ALL_BACKUP] = arg -> new AddAllBackupOperation();
-        constructors[ADD_ALL] = arg -> new AddAllOperation();
-        constructors[CLEAR_BACKUP] = arg -> new ClearBackupOperation();
-        constructors[CLEAR] = arg -> new ClearOperation();
-        constructors[COMPARE_AND_REMOVE_BACKUP] = arg -> new CompareAndRemoveBackupOperation();
-        constructors[COMPARE_AND_REMOVE] = arg -> new CompareAndRemoveOperation();
-        constructors[CONTAINS] = arg -> new ContainsOperation();
-        constructors[DRAIN_BACKUP] = arg -> new DrainBackupOperation();
-        constructors[DRAIN] = arg -> new DrainOperation();
-        constructors[ITERATOR] = arg -> new IteratorOperation();
-        constructors[QUEUE_EVENT] = arg -> new QueueEvent();
-        constructors[QUEUE_EVENT_FILTER] = arg -> new QueueEventFilter();
-        constructors[QUEUE_ITEM] = arg -> new QueueItem();
-        constructors[QUEUE_REPLICATION] = arg -> new QueueReplicationOperation();
-        constructors[REMOVE_BACKUP] = arg -> new RemoveBackupOperation();
-        constructors[REMOVE] = arg -> new RemoveOperation();
-        constructors[SIZE] = arg -> new SizeOperation();
-        constructors[TXN_OFFER_BACKUP] = arg -> new TxnOfferBackupOperation();
-        constructors[TXN_OFFER] = arg -> new TxnOfferOperation();
-        constructors[TXN_POLL_BACKUP] = arg -> new TxnPollBackupOperation();
-        constructors[TXN_POLL] = arg -> new TxnPollOperation();
-        constructors[TXN_PREPARE_BACKUP] = arg -> new TxnPrepareBackupOperation();
-        constructors[TXN_PREPARE] = arg -> new TxnPrepareOperation();
-        constructors[TXN_RESERVE_OFFER] = arg -> new TxnReserveOfferOperation();
-        constructors[TXN_RESERVE_OFFER_BACKUP] = arg -> new TxnReserveOfferBackupOperation();
-        constructors[TXN_RESERVE_POLL] = arg -> new TxnReservePollOperation();
-        constructors[TXN_RESERVE_POLL_BACKUP] = arg -> new TxnReservePollBackupOperation();
-        constructors[TXN_ROLLBACK_BACKUP] = arg -> new TxnRollbackBackupOperation();
-        constructors[TXN_ROLLBACK] = arg -> new TxnRollbackOperation();
-        constructors[CHECK_EVICT] = arg -> new CheckAndEvictOperation();
-        constructors[QUEUE_CONTAINER] = arg -> new QueueContainer();
-        constructors[TRANSACTION_ROLLBACK] = arg -> new QueueTransactionRollbackOperation();
-        constructors[TX_QUEUE_ITEM] = arg -> new TxQueueItem();
-        constructors[TXN_PEEK] = arg -> new TxnPeekOperation();
-        constructors[IS_EMPTY] = arg -> new IsEmptyOperation();
-        constructors[REMAINING_CAPACITY] = arg -> new RemainingCapacityOperation();
-        constructors[TXN_COMMIT] = arg -> new TxnCommitOperation();
-        constructors[TXN_COMMIT_BACKUP] = arg -> new TxnCommitBackupOperation();
-        constructors[MERGE] = arg -> new QueueMergeOperation();
-        constructors[MERGE_BACKUP] = arg -> new QueueMergeBackupOperation();
+        // noinspection unchecked
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[MERGE_BACKUP + 1];
+        constructors[OFFER] = OfferOperation::new;
+        constructors[OFFER_BACKUP] = OfferBackupOperation::new;
+        constructors[POLL] = PollOperation::new;
+        constructors[POLL_BACKUP] = PollBackupOperation::new;
+        constructors[PEEK] = PeekOperation::new;
+        constructors[ADD_ALL_BACKUP] = AddAllBackupOperation::new;
+        constructors[ADD_ALL] = AddAllOperation::new;
+        constructors[CLEAR_BACKUP] = ClearBackupOperation::new;
+        constructors[CLEAR] = ClearOperation::new;
+        constructors[COMPARE_AND_REMOVE_BACKUP] = CompareAndRemoveBackupOperation::new;
+        constructors[COMPARE_AND_REMOVE] = CompareAndRemoveOperation::new;
+        constructors[CONTAINS] = ContainsOperation::new;
+        constructors[DRAIN_BACKUP] = DrainBackupOperation::new;
+        constructors[DRAIN] = DrainOperation::new;
+        constructors[ITERATOR] = IteratorOperation::new;
+        constructors[QUEUE_EVENT] = QueueEvent::new;
+        constructors[QUEUE_EVENT_FILTER] = QueueEventFilter::new;
+        constructors[QUEUE_ITEM] = QueueItem::new;
+        constructors[QUEUE_REPLICATION] = QueueReplicationOperation::new;
+        constructors[REMOVE_BACKUP] = RemoveBackupOperation::new;
+        constructors[REMOVE] = RemoveOperation::new;
+        constructors[SIZE] = SizeOperation::new;
+        constructors[TXN_OFFER_BACKUP] = TxnOfferBackupOperation::new;
+        constructors[TXN_OFFER] = TxnOfferOperation::new;
+        constructors[TXN_POLL_BACKUP] = TxnPollBackupOperation::new;
+        constructors[TXN_POLL] = TxnPollOperation::new;
+        constructors[TXN_PREPARE_BACKUP] = TxnPrepareBackupOperation::new;
+        constructors[TXN_PREPARE] = TxnPrepareOperation::new;
+        constructors[TXN_RESERVE_OFFER] = TxnReserveOfferOperation::new;
+        constructors[TXN_RESERVE_OFFER_BACKUP] = TxnReserveOfferBackupOperation::new;
+        constructors[TXN_RESERVE_POLL] = TxnReservePollOperation::new;
+        constructors[TXN_RESERVE_POLL_BACKUP] = TxnReservePollBackupOperation::new;
+        constructors[TXN_ROLLBACK_BACKUP] = TxnRollbackBackupOperation::new;
+        constructors[TXN_ROLLBACK] = TxnRollbackOperation::new;
+        constructors[CHECK_EVICT] = CheckAndEvictOperation::new;
+        constructors[QUEUE_CONTAINER] = QueueContainer::new;
+        constructors[TRANSACTION_ROLLBACK] = QueueTransactionRollbackOperation::new;
+        constructors[TX_QUEUE_ITEM] = TxQueueItem::new;
+        constructors[TXN_PEEK] = TxnPeekOperation::new;
+        constructors[IS_EMPTY] = IsEmptyOperation::new;
+        constructors[REMAINING_CAPACITY] = RemainingCapacityOperation::new;
+        constructors[TXN_COMMIT] = TxnCommitOperation::new;
+        constructors[TXN_COMMIT_BACKUP] = TxnCommitBackupOperation::new;
+        constructors[MERGE] = QueueMergeOperation::new;
+        constructors[MERGE_BACKUP] = QueueMergeBackupOperation::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }
