@@ -29,6 +29,7 @@ public class UtilCollectionSerializerHook implements DataSerializerHook {
 
     public static final int PARTITION_ID_SET = 1;
     public static final int IMMUTABLE_PARTITION_ID_SET = 2;
+    public static final int IMMUTABLE_LAZY_ENTRY = 3;
 
     @Override
     public int getFactoryId() {
@@ -42,6 +43,8 @@ public class UtilCollectionSerializerHook implements DataSerializerHook {
                     return new PartitionIdSet();
                 case IMMUTABLE_PARTITION_ID_SET:
                     return new ImmutablePartitionIdSet();
+                case IMMUTABLE_LAZY_ENTRY:
+                    return new ImmutableLazyEntry<>();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }
