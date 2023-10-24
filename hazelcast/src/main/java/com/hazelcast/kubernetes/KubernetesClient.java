@@ -521,15 +521,19 @@ class KubernetesClient {
     }
 
     private static String extractLoadBalancerAddress(JsonObject serviceResponse) {
-        JsonObject ingress = serviceResponse
-                .get("status").asObject()
-                .get("loadBalancer").asObject()
-                .get("ingress").asArray().get(0).asObject();
-        JsonValue address = ingress.get("ip");
-        if (address == null) {
-            address = ingress.get("hostname");
+        try {
+            JsonObject ingress = serviceResponse
+                    .get("status").asObject()
+                    .get("loadBalancer").asObject()
+                    .get("ingress").asArray().get(0).asObject();
+            JsonValue address = ingress.get("ip");
+            if (address == null) {
+                address = ingress.get("hostname");
+            }
+            return address.asString();
+        } catch (Exception e) {
+            throw new KubernetesClientException("Unable to extract the public address from the LoadBalancer service", e);
         }
-        return address.asString();
     }
 
     private static Integer extractServicePort(JsonObject serviceJson) {
