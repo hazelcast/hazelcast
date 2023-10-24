@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
+import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
@@ -36,12 +37,14 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.ResourceUtil;
 import org.apache.calcite.runtime.Resources;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -70,6 +73,7 @@ import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
 
+import java.security.Permission;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -117,17 +121,20 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     private final List<Object> arguments;
 
     private final IMapResolver iMapResolver;
+    private final SqlSecurityContext ssc;
 
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             List<Object> arguments,
-            IMapResolver iMapResolver
+            IMapResolver iMapResolver,
+            SqlSecurityContext ssc
     ) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
         this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
         this.arguments = arguments;
         this.iMapResolver = iMapResolver;
+        this.ssc = ssc;
     }
 
     @Override
@@ -367,7 +374,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             // We need to feed primary keys to the delete processor so that it can directly delete the records.
             // Therefore we use the primary key for the select list.
             connector.getPrimaryKey(table).forEach(name -> selectList.add(new SqlIdentifier(name, SqlParserPos.ZERO)));
-            if (selectList.size() == 0) {
+            if (selectList.isEmpty()) {
                 throw QueryException.error("Cannot DELETE from " + delete.getTargetTable() + ": it doesn't have a primary key");
             }
         }
@@ -422,6 +429,26 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     }
 
     @Override
+    protected void validateTableFunction(SqlCall node, SqlValidatorScope scope, RelDataType targetRowType) {
+        if (ssc.isSecurityEnabled() && node instanceof SqlBasicCall && !node.getOperandList().isEmpty()) {
+            SqlNode sqlNode = node.getOperandList().get(0);
+            if (sqlNode instanceof SqlBasicCall) {
+                SqlBasicCall call = (SqlBasicCall) sqlNode;
+                SqlOperator operator = call.getOperator();
+                if (operator instanceof HazelcastDynamicTableFunction) {
+                    HazelcastDynamicTableFunction f = (HazelcastDynamicTableFunction) operator;
+                    for (Permission permission : f.permissions(call, this)) {
+                        ssc.checkPermission(permission);
+                    }
+                }
+            }
+        }
+
+        super.validateTableFunction(node, scope, targetRowType);
+    }
+
+
+    @Override
     protected SqlNode performUnconditionalRewrites(SqlNode node, boolean underFrom) {
         SqlNode rewritten = super.performUnconditionalRewrites(node, underFrom);
 
@@ -450,6 +477,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         ParameterConverter parameterConverter = parameterConverterMap.get(index);
         Object argument = arguments.get(index);
         return parameterConverter.convert(argument);
+    }
+
+    public Object getRawArgumentAt(int index) {
+        return arguments.get(index);
     }
 
     public ParameterConverter[] getParameterConverters(SqlNode node) {

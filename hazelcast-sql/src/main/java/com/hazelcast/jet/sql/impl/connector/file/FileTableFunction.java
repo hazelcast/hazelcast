@@ -21,12 +21,25 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSqlOperandMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
+import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.ConnectorPermission;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
+import org.apache.calcite.sql.SqlBasicCall;
+import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlDynamicParam;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlUtil;
 
+import java.security.Permission;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +94,65 @@ public final class FileTableFunction extends HazelcastDynamicTableFunction {
 
     private static String randomName() {
         return SCHEMA_NAME_FILES + "_" + UuidUtil.newUnsecureUuidString().replace('-', '_');
+    }
+
+    @Override
+    public List<Permission> permissions(SqlCall call, HazelcastSqlValidator validator) {
+        // Try to find operand by name first, most common option.
+        SqlNode astPath = findOperandByName(OPTION_PATH, call);
+        // If not successful -> try to find by position: SELECT * FROM TABLE(fn('path', 'glob'))
+        if (astPath == null && call.operandCount() > 0) {
+            astPath = findOperandByPosition(0, call);
+        }
+        if (astPath == null) {
+            throwCantDeterminePath();
+        }
+
+        if (SqlUtil.isNullLiteral(astPath, true)) {
+            throwCantDeterminePath();
+        }
+
+        if (astPath instanceof SqlLiteral) {
+            String path = extractStringValue((SqlLiteral) astPath);
+            if (path != null) {
+                return Collections.singletonList(ConnectorPermission.file(path, ActionConstants.ACTION_READ));
+            } else {
+                throwCantDeterminePath();
+            }
+        } else if (astPath instanceof SqlDynamicParam) {
+            Object pathObj = validator.getRawArgumentAt(((SqlDynamicParam) astPath).getIndex());
+            if (pathObj instanceof String) {
+                String path = (String) pathObj;
+                return Collections.singletonList(ConnectorPermission.file(path, ActionConstants.ACTION_READ));
+            } else {
+                throwCantDeterminePath();
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private void throwCantDeterminePath() {
+        throw QueryException.error("Can't determine the file path, query is denied in secure environment");
+    }
+
+    private static SqlNode findOperandByName(String name, SqlCall call) {
+        for (int i = 0; i < call.operandCount(); i++) {
+            if (call.operand(i) instanceof SqlBasicCall) {
+                SqlCall assignment = call.operand(i);
+                SqlIdentifier id = assignment.operand(1);
+                if (name.equals(id.getSimple())) {
+                    return assignment.operand(0);
+                }
+            }
+        }
+        return null;
+    }
+
+    private static SqlNode findOperandByPosition(int pos, SqlCall call) {
+        if (call.operand(pos) instanceof SqlLiteral) {
+            return call.operand(pos);
+        }
+        return null;
     }
 
     private static final class FileOperandMetadata extends HazelcastSqlOperandMetadata {

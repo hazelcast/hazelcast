@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.security.NoOpSqlSecurityContext.INSTANCE;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -225,7 +226,8 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 searchPaths,
                 emptyList(),
                 1,
-                name -> null
+                name -> null,
+                INSTANCE
         );
     }
 
