@@ -44,6 +44,7 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
@@ -401,7 +402,7 @@ public interface NodeExtension {
     /**
      * Returns CP subsystem implementation.
      */
-    CPSubsystem getCPSubsystem(HazelcastInstanceImpl instance);
+    CPSubsystem getCPSubsystem(NodeEngine nodeEngine);
 
     /**
      * Returns a JetService.

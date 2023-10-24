@@ -47,6 +47,7 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
@@ -305,8 +306,8 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public CPSubsystem getCPSubsystem(HazelcastInstanceImpl instance) {
-        return nodeExtension.getCPSubsystem(instance);
+    public CPSubsystem getCPSubsystem(NodeEngine nodeEngine) {
+        return nodeExtension.getCPSubsystem(nodeEngine);
     }
 
     @Override

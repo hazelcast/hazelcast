@@ -672,8 +672,8 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public CPSubsystem getCPSubsystem(HazelcastInstanceImpl instance) {
-        return new CPSubsystemImpl(instance);
+    public CPSubsystem getCPSubsystem(NodeEngine nodeEngine) {
+        return new CPSubsystemImpl(nodeEngine);
     }
 
     protected void createAndSetPhoneHome() {

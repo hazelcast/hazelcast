@@ -116,7 +116,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         // in one HazelcastInstance will not reflect on other the user-context of other HazelcastInstances
         this.userContext.putAll(config.getUserContext());
         this.node = createNode(config, nodeContext);
-        this.cpSubsystem = this.node.getNodeExtension().getCPSubsystem(this);
+        this.cpSubsystem = this.node.getNodeExtension().getCPSubsystem(node.getNodeEngine());
 
         try {
             this.logger = node.getLogger(getClass().getName());

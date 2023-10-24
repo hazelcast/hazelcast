@@ -39,9 +39,9 @@ import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.session.RaftSessionService;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -55,15 +55,15 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public class CPSubsystemImpl implements CPSubsystem {
 
-    private final HazelcastInstanceImpl instance;
+    private final NodeEngine nodeEngine;
     private final boolean cpSubsystemEnabled;
     private volatile CPSubsystemManagementService cpSubsystemManagementService;
 
-    public CPSubsystemImpl(HazelcastInstanceImpl instance) {
-        this.instance = instance;
-        int cpMemberCount = instance.getConfig().getCPSubsystemConfig().getCPMemberCount();
+    public CPSubsystemImpl(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        int cpMemberCount = nodeEngine.getConfig().getCPSubsystemConfig().getCPMemberCount();
         this.cpSubsystemEnabled = cpMemberCount > 0;
-        ILogger logger = instance.node.getLogger(CPSubsystem.class);
+        ILogger logger = nodeEngine.getLogger(CPSubsystem.class);
         if (cpSubsystemEnabled) {
             logger.info("CP Subsystem is enabled with " + cpMemberCount + " members.");
         } else {
@@ -136,7 +136,7 @@ public class CPSubsystemImpl implements CPSubsystem {
     }
 
     private <T> T getService(@Nonnull String serviceName) {
-        return instance.node.getNodeEngine().getService(serviceName);
+        return nodeEngine.getService(serviceName);
     }
 
     protected  <T extends DistributedObject> T createProxy(String serviceName, String name) {
