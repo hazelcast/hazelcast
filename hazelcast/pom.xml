@@ -489,7 +489,7 @@
         <dependency>
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
-            <version>1.14.3</version>
+            <version>1.14.2</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.re2j</groupId>
