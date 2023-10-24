@@ -54,11 +54,6 @@ public class AtomicRefSnapshotTest extends AbstractAtomicRegisterSnapshotTest<St
     }
 
     @Override
-    protected String readValue() {
-        return atomicRef.get();
-    }
-
-    @Override
     protected RaftOp getQueryRaftOp() {
         return new GetOp(name);
     }
