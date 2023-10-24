@@ -105,16 +105,55 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
 
         List<SqlRow> actualList = getRows("SELECT n.id, n.name, n.ssn , t.v FROM " +
                                           "TABLE(generate_series(207,210)) t " +
-                                          "JOIN " + tableName + " n ON t.v = n.ssn LIMIT 2");
+                                          "JOIN " + tableName + " n ON t.v = n.ssn ORDER BY n.ssn LIMIT 2");
 
         List<Object> ssnList = actualList.stream()
                 .map(sqlRow -> sqlRow.getObject("ssn"))
                 .collect(Collectors.toList());
 
         assertThat(ssnList)
-                .contains(208, 209);
+                .containsExactlyInAnyOrder(208, 209);
     }
 
+
+    // Put 4 items to stream
+    // Put 3 items to DB
+    // Let join should return 4 items but because of limit within the sql it returns 2 rows
+    // The iterator on sql is closed before the ResultSet is exhausted
+    @Test
+    public void joinWithTableValuedFunction_traverser_is_closed() throws Exception {
+        String tableName = randomTableName();
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
+
+        for (int index = 1; index < 5; index++) {
+            // (1, 'myworker1', 208),
+            // (2, 'myworker2', 209)
+            // ...
+            // (4, 'myworker4', 211)
+            String sql = getInsertSQL(tableName, index);
+            executeJdbc(sql);
+        }
+
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                + " id INT, "
+                + " name VARCHAR, "
+                + " ssn INT "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        List<SqlRow> actualList = getRows("SELECT n.id, n.name, n.ssn , t.v FROM " +
+                                          "TABLE(generate_series(207,211)) t " +
+                                          "JOIN " + tableName + " n ON t.v = n.ssn ORDER BY n.ssn LIMIT 2");
+
+        List<Object> ssnList = actualList.stream()
+                .map(sqlRow -> sqlRow.getObject("ssn"))
+                .collect(Collectors.toList());
+
+        assertThat(ssnList)
+                .containsExactlyInAnyOrder(208, 209);
+    }
 
     // Left side is batch : joinInfo indices are used
     @Test

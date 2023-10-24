@@ -18,7 +18,5 @@ package com.hazelcast.jet.pipeline.file.impl;
 
 import com.hazelcast.jet.Traverser;
 
-import java.io.Closeable;
-
-public interface FileTraverser<R> extends Traverser<R>, Closeable {
+public interface FileTraverser<R> extends Traverser<R> {
 }

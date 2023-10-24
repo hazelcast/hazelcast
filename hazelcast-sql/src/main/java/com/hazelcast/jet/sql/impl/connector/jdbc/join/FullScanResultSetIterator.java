@@ -106,11 +106,12 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
 
     private void close() {
         LOGGER.info("FullScanResultSetIterator is closing");
-        iteratorClosed = true;
-
-        IOUtil.closeResource(resultSet);
-        IOUtil.closeResource(preparedStatement);
-        IOUtil.closeResource(connection);
+        if (!iteratorClosed) {
+            iteratorClosed = true;
+            IOUtil.closeResource(resultSet);
+            IOUtil.closeResource(preparedStatement);
+            IOUtil.closeResource(connection);
+        }
     }
 
     private void getNextItem() throws SQLException {

@@ -19,9 +19,10 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.connector.jdbc.join.AutoCloseableTraverser;
+import com.hazelcast.jet.sql.impl.connector.jdbc.join.JoinPredicatePreparedStatementSetter;
 import com.hazelcast.jet.sql.impl.connector.jdbc.join.JoinPredicateScanResultSetIterator;
 import com.hazelcast.jet.sql.impl.connector.jdbc.join.JoinPredicateScanRowMapper;
-import com.hazelcast.jet.sql.impl.connector.jdbc.join.JoinPredicatePreparedStatementSetter;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -30,7 +31,6 @@ import com.mongodb.lang.NonNull;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -68,9 +68,9 @@ public class JdbcJoinPredicateScanProcessorSupplier
         List<JetSqlRow> leftRowsList = convertIterableToArrayList(leftRows);
         String unionAllSql = generateSql(leftRowsList);
 
-        Iterator<JetSqlRow> iterator = joinUnionAll(leftRowsList, unionAllSql);
+        JoinPredicateScanResultSetIterator<JetSqlRow> iterator = joinUnionAll(leftRowsList, unionAllSql);
 
-        return Traversers.traverseIterator(iterator);
+        return new AutoCloseableTraverser<>(iterator, Traversers.traverseIterator(iterator));
     }
 
     private <T> ArrayList<T> convertIterableToArrayList(Iterable<T> iterable) {
@@ -89,7 +89,7 @@ public class JdbcJoinPredicateScanProcessorSupplier
     }
 
     // Return an iterator that can traverse leftRowsList and ResultSet of unionAllSql
-    private Iterator<JetSqlRow> joinUnionAll(List<JetSqlRow> leftRowsList, String unionAllSql) {
+    private JoinPredicateScanResultSetIterator<JetSqlRow> joinUnionAll(List<JetSqlRow> leftRowsList, String unionAllSql) {
         return new JoinPredicateScanResultSetIterator<>(
                 dataConnection.getConnection(),
                 unionAllSql,

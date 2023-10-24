@@ -52,6 +52,10 @@ public class TransformBatchedP<T, R> extends AbstractProcessor {
 
         if (emitFromTraverser(outputTraverser)) {
             inbox.clear();
+            try {
+                outputTraverser.close();
+            } catch (Exception ignored) {
+            }
             outputTraverser = null;
         }
     }

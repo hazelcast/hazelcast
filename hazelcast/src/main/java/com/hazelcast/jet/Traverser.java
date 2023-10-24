@@ -43,7 +43,7 @@ import java.util.function.Predicate;
  * @since Jet 3.0
  */
 @FunctionalInterface
-public interface Traverser<T> {
+public interface Traverser<T> extends AutoCloseable {
 
     /**
      * Returns the next item, removing it from this traverser. If no item is
@@ -52,6 +52,13 @@ public interface Traverser<T> {
      * {@code null} forever. Otherwise, trying again later may produce one.
      */
     T next();
+
+    /**
+     * Close the traverser
+     */
+    @Override
+    default void close() throws Exception {
+    }
 
     /**
      * Returns a traverser that will emit the results of applying {@code

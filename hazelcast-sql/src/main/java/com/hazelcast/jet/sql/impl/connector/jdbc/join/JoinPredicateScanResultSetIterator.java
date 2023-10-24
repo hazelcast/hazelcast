@@ -34,7 +34,7 @@ import java.util.function.Function;
  * This class adapts the internally fetched ResultSet and the specified rowMapper into an iterator
  * The rowMapper has the SQL Join logic. As long as it returns an item, we can traverse this iterator
  */
-public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
+public class JoinPredicateScanResultSetIterator<T> implements Iterator<T>, AutoCloseable {
     private static final ILogger LOGGER = Logger.getLogger(JoinPredicateScanResultSetIterator.class);
     private final Connection connection;
     private final String sql;
@@ -106,13 +106,15 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T> {
         }
     }
 
-    private void close() {
+    @Override
+    public void close() {
         LOGGER.info("JoinPredicateScanResultSetIterator is closing");
-        iteratorClosed = true;
-
-        IOUtil.closeResource(resultSet);
-        IOUtil.closeResource(preparedStatement);
-        IOUtil.closeResource(connection);
+        if (!iteratorClosed) {
+            iteratorClosed = true;
+            IOUtil.closeResource(resultSet);
+            IOUtil.closeResource(preparedStatement);
+            IOUtil.closeResource(connection);
+        }
     }
 
     private void getNextItem() throws SQLException {
