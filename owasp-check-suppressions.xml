@@ -113,10 +113,11 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        False positive - json version 20230227 have already fix for listed CVE.
+        False positive - json version 20231013 and higher have already fix for listed CVE.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.json/json@20230227.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.json/json@.*$</packageUrl>
         <cve>CVE-2022-45688</cve>
+        <cve>CVE-2023-5072</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
