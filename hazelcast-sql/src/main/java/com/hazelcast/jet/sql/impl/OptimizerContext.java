@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
@@ -52,6 +53,7 @@ import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.tools.RuleSet;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
@@ -82,17 +84,20 @@ public final class OptimizerContext {
     private final QueryPlanner planner;
     private final Set<PlanObjectKey> usedViews = new HashSet<>();
     private final Deque<String> viewExpansionStack = new ArrayDeque<>();
+    private final SqlSecurityContext sqlSecurityContext;
 
     private OptimizerContext(
             HazelcastRelOptCluster cluster,
             QueryParser parser,
             QueryConverter converter,
-            QueryPlanner planner
+            QueryPlanner planner,
+            SqlSecurityContext sqlSecurityContext
     ) {
         this.cluster = cluster;
         this.parser = parser;
         this.converter = converter;
         this.planner = planner;
+        this.sqlSecurityContext = sqlSecurityContext;
     }
 
     /**
@@ -107,12 +112,13 @@ public final class OptimizerContext {
             List<List<String>> searchPaths,
             List<Object> arguments,
             int memberCount,
-            IMapResolver iMapResolver
+            IMapResolver iMapResolver,
+            SqlSecurityContext ssc
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, arguments, memberCount, iMapResolver);
+        return create(rootSchema, searchPaths, arguments, memberCount, iMapResolver, ssc);
     }
 
     public static OptimizerContext create(
@@ -120,20 +126,22 @@ public final class OptimizerContext {
             List<List<String>> schemaPaths,
             List<Object> arguments,
             int memberCount,
-            IMapResolver iMapResolver
+            IMapResolver iMapResolver,
+            @Nonnull SqlSecurityContext ssc
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
-        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
+        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver, ssc);
         VolcanoPlanner volcanoPlanner = createPlanner(distributionTraitDef);
-        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, distributionTraitDef);
+
+        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, distributionTraitDef, ssc);
 
         QueryParser parser = new QueryParser(validator);
         QueryConverter converter = new QueryConverter(validator, catalogReader, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
-        return new OptimizerContext(cluster, parser, converter, planner);
+        return new OptimizerContext(cluster, parser, converter, planner, ssc);
     }
 
     public static void setThreadContext(OptimizerContext context) {
@@ -151,7 +159,7 @@ public final class OptimizerContext {
      * @return SQL tree.
      */
     public QueryParseResult parse(String sql) {
-        return parser.parse(sql);
+        return parser.parse(sql, sqlSecurityContext);
     }
 
     /**
@@ -214,12 +222,14 @@ public final class OptimizerContext {
 
     private static HazelcastRelOptCluster createCluster(
             VolcanoPlanner planner,
-            DistributionTraitDef distributionTraitDef
+            DistributionTraitDef distributionTraitDef,
+            SqlSecurityContext ssc
     ) {
         HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(
                 planner,
                 HazelcastRexBuilder.INSTANCE,
-                distributionTraitDef
+                distributionTraitDef,
+                ssc
         );
 
         // Wire up custom metadata providers.
