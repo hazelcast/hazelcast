@@ -31,6 +31,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -136,7 +137,11 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
     @Before
     public void before() {
-        members = createHazelcastInstances(memberConfig(), membersCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        members = new HazelcastInstance[membersCount];
+        for (int i = 0; i < membersCount; i++) {
+            members[i] = factory.newHazelcastInstance(memberConfig());
+        }
 
         if (isPortable()) {
             createMapping(members[0], mapName(), PORTABLE_FACTORY_ID, PORTABLE_KEY_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
