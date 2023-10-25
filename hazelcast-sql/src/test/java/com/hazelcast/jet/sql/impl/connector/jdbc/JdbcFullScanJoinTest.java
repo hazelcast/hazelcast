@@ -171,7 +171,7 @@ public class JdbcFullScanJoinTest extends JdbcSqlTestSupport {
     // This does not create equi join indices
     // Put 5 items to tablename
     // Put 3 items to otherTableName
-    // Let join should return 4 items but because of limit within the sql it returns 2 rows
+    // Left join should return 4 items but because of limit within the sql it returns 2 rows
     // The iterator on sql is closed before the ResultSet is exhausted
     @Test
     public void thetaJoinByPrimaryKey_traverser_is_closed() throws SQLException {
@@ -199,7 +199,7 @@ public class JdbcFullScanJoinTest extends JdbcSqlTestSupport {
         String selectSql = "SELECT t1.name, t1.id, t2.id , t2.name " +
                            "FROM " + tableName + " t1 " +
                            "JOIN " + otherTableName + " t2 " +
-                           "   ON t1.id < t2.id ORDER BY t1.id LIMIT 2";
+                           "   ON t1.id < t2.id ORDER BY t1.id, t2.id LIMIT 2";
         assertRowsAnyOrder(
                 selectSql,
                 newArrayList(

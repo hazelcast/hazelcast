@@ -41,8 +41,10 @@ abstract class AbstractJoinProcessorSupplier
         implements ProcessorSupplier, DataSerializable {
 
     protected String query;
+
     //joinInfo is DataSerializable.
     protected JetJoinInfo joinInfo;
+
     //Expression is Serializable.
     protected List<Expression<?>> projections;
 
