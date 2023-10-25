@@ -23,11 +23,16 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.processor.TransformBatchedP;
+import com.hazelcast.sql.impl.row.JetSqlRow;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,16 +40,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class AutoCloseableTraverserTest extends JetTestSupport {
 
     @Test
-    public void test_stream_is_closed() {
-        AtomicBoolean wasClosed = new AtomicBoolean(false);
-        Stream<Integer> stream = Stream.of(1).onClose(() -> wasClosed.set(true));
+    public void test_all_streams_are_closed() {
+        // Create stream 1
+        FullScanResultSetIterator<JetSqlRow> iterator = new FullScanResultSetIterator<>(
+                null,
+                null,
+                null,
+                null
+        );
 
-        Function<? super Iterable<Integer>, Traverser<Integer>> mapper =
-                (Iterable<Integer> items) ->
-                        new AutoCloseableTraverser<>(stream, Traversers.traverseIterable(items));
+        Spliterator<JetSqlRow> spliterator = Spliterators.spliteratorUnknownSize(iterator,
+                Spliterator.IMMUTABLE | Spliterator.ORDERED);
 
-        TransformBatchedP<Integer, Integer> processor = new TransformBatchedP<>(mapper);
-        SupplierEx<Processor> processorSupplierEx = () -> processor;
+        Stream<JetSqlRow> iteratorStream = StreamSupport.stream(spliterator, false).onClose(iterator::close);
+
+        // Create stream 2
+        final AtomicBoolean wasClosed = new AtomicBoolean(false);
+        JetSqlRow jetSqlRow = new JetSqlRow();
+        Stream<JetSqlRow> stream2 = Stream.ofNullable(jetSqlRow).onClose(() -> wasClosed.set(true));
+
+        // Concat streams
+        SupplierEx<Processor> processorSupplierEx = getProcessorSupplierEx(iteratorStream, stream2);
 
         // When processor is closed, we expect the stream to be closed too
         TestSupport
@@ -52,7 +68,22 @@ public class AutoCloseableTraverserTest extends JetTestSupport {
                 .input(asList(1, 2, 3, 4, 5))
                 .expectOutput(asList(1, 2, 3, 4, 5));
 
-        assertThat(wasClosed).isTrue();
+        assertThat(iterator.isIteratorClosed()).isTrue();
+        assertThat(wasClosed.get()).isTrue();
+    }
+
+    @NotNull
+    private static SupplierEx<Processor> getProcessorSupplierEx(Stream<JetSqlRow> iteratorStream,
+                                                                Stream<JetSqlRow> stream2) {
+        Stream<JetSqlRow> stream = Stream.concat(iteratorStream, stream2);
+
+        // Use stream as AutoCloseable
+        Function<? super Iterable<Integer>, Traverser<Integer>> mapper =
+                (Iterable<Integer> items) ->
+                        new AutoCloseableTraverser<>(stream, Traversers.traverseIterable(items));
+
+        TransformBatchedP<Integer, Integer> processor = new TransformBatchedP<>(mapper);
+        return () -> processor;
     }
 
     @Test

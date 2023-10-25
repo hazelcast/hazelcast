@@ -80,6 +80,6 @@ public class JdbcJoinFullScanProcessorSupplier
         );
         Spliterator<JetSqlRow> spliterator = Spliterators.spliteratorUnknownSize(iterator,
                 Spliterator.IMMUTABLE | Spliterator.ORDERED);
-        return StreamSupport.stream(spliterator, false);
+        return StreamSupport.stream(spliterator, false).onClose(iterator::close);
     }
 }
