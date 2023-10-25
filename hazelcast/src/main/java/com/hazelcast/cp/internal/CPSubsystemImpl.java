@@ -55,8 +55,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public class CPSubsystemImpl implements CPSubsystem {
 
+    protected final boolean cpSubsystemEnabled;
     private final NodeEngine nodeEngine;
-    private final boolean cpSubsystemEnabled;
     private volatile CPSubsystemManagementService cpSubsystemManagementService;
 
     public CPSubsystemImpl(NodeEngine nodeEngine) {
