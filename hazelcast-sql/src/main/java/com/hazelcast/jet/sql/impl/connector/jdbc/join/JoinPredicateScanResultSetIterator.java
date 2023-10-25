@@ -117,6 +117,11 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T>, AutoC
         }
     }
 
+    // Used for testing
+    public boolean isIteratorClosed() {
+        return iteratorClosed;
+    }
+
     private void getNextItem() throws SQLException {
         lazyInit();
         hasNext = getNextItemFromRowMapper();
