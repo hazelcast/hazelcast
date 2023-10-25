@@ -67,7 +67,7 @@ public class JdbcJoinFullScanProcessorSupplier
         for (JetSqlRow leftRow : leftRows) {
             stream = Stream.concat(stream, joinRow(leftRow));
         }
-        return new AutoCloseableTraverser<>(stream,Traversers.traverseStream(stream));
+        return new AutoCloseableTraverser<>(stream, Traversers.traverseStream(stream));
     }
 
     private Stream<JetSqlRow> joinRow(JetSqlRow leftRow) {
