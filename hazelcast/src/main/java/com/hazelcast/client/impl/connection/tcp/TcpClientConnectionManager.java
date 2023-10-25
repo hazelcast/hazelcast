@@ -133,6 +133,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class TcpClientConnectionManager implements ClientConnectionManager, MembershipListener {
     public static final HazelcastProperty TPC_IO_THREAD_COUNT = new HazelcastProperty(
             "hazelcast.internal.tpc.connect.count");
+    /**
+     * If set, overrides {@link com.hazelcast.config.tpc.TpcConfig#isEnabled()}
+     */
+    public static final HazelcastProperty TPC_ENABLED = new HazelcastProperty(
+            "hazelcast.internal.tpc.enabled");
 
     /**
      * A private property to let users control the reconnection behavior of the client.
@@ -261,15 +266,26 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         this.waitStrategy = initializeWaitStrategy(config);
         this.shuffleMemberList = properties.getBoolean(SHUFFLE_MEMBER_LIST);
         this.isUnisocketClient = unisocketModeConfigured(config);
-        this.isTpcAwareClient = config.getTpcConfig().isEnabled();
+
+        this.isTpcAwareClient = isTpcEnabled(config);
         this.asyncStart = config.getConnectionStrategyConfig().isAsyncStart();
         this.reconnectMode = config.getConnectionStrategyConfig().getReconnectMode();
         this.connectionProcessListenerRunner = new ClientConnectionProcessListenerRunner(client);
         this.skipMemberListDuringReconnection = properties.getBoolean(SKIP_MEMBER_LIST_DURING_RECONNECTION);
     }
 
+    private  boolean isTpcEnabled(ClientConfig config) {
+        boolean enabled0;
+        String enabledString = client.getProperties().getString(TPC_ENABLED);
+        if (enabledString != null) {
+            return Boolean.parseBoolean(enabledString);
+        } else {
+            return config.getTpcConfig().isEnabled();
+        }
+    }
+
     private boolean unisocketModeConfigured(ClientConfig config) {
-        if (config.getTpcConfig().isEnabled()) {
+        if (isTpcEnabled(config)) {
             return false;
         }
 
