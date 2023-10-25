@@ -80,7 +80,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz1 = createPausedMigrationCluster(factory, null);
 
-        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener(false);
         hz1.getPartitionService().addMigrationListener(listener);
 
         HazelcastInstance hz2 = factory.newHazelcastInstance();
@@ -120,7 +120,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
             }
         });
 
-        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener(true);
         hz1.getPartitionService().addMigrationListener(listener);
 
         // trigger migrations
@@ -169,7 +169,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         warmUpPartitions(hz1, hz2, hz3);
         waitAllForSafeState(Arrays.asList(hz1, hz2, hz3));
 
-        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener(false);
         hz1.getPartitionService().addMigrationListener(listener);
 
         hz3.getLifecycleService().terminate();
@@ -540,6 +540,12 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         final ILogger logger = Logger.getLogger(PartitionMigrationListenerTest.class);
         volatile MigrationEventsPack currentEvents;
 
+        final boolean shouldRecordIncompleteEvents;
+
+        public EventCollectingMigrationListener(boolean shouldRecordIncompleteEvents) {
+            this.shouldRecordIncompleteEvents = shouldRecordIncompleteEvents;
+        }
+
         @Override
         public void migrationStarted(MigrationState state) {
             assertNull(currentEvents);
@@ -558,7 +564,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
             // Due to this, we should only record fully completed migrations, otherwise
             //   this test will inconsistently fail when a new migration plan is created
             boolean migrationCompleted = state.getPlannedMigrations() == state.getCompletedMigrations();
-            if (migrationCompleted) {
+            if (shouldRecordIncompleteEvents || migrationCompleted) {
                 allEventPacks.add(currentEvents);
             }
             currentEvents = null;
