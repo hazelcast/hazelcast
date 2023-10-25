@@ -39,7 +39,7 @@ import static java.lang.Boolean.TRUE;
 public class MapWanContext {
 
     protected volatile SplitBrainMergePolicy wanMergePolicy;
-    protected ConcurrentMemoizingSupplier<DelegatingWanScheme> wanReplicationDelegateSupplier;
+    protected volatile ConcurrentMemoizingSupplier<DelegatingWanScheme> wanReplicationDelegateSupplier;
     private final MapConfig mapConfig;
     private final String name;
     private final MapServiceContext mapServiceContext;
@@ -73,7 +73,8 @@ public class MapWanContext {
         }
 
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
-
+        // reset due to possible reconfiguration
+        wanReplicationDelegateSupplier = null;
         if (wanReplicationService.hasWanReplicationScheme(wanReplicationRefName)) {
             wanReplicationDelegateSupplier = new ConcurrentMemoizingSupplier<>(() ->
                     wanReplicationService.getWanReplicationPublishers(wanReplicationRefName)
