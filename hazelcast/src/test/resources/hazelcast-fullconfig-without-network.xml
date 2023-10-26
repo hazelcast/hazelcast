@@ -890,6 +890,11 @@
                     <action>all</action>
                 </actions>
             </semaphore-permission>
+            <cpmap-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </cpmap-permission>
             <executor-service-permission name="*">
                 <actions>
                     <action>all</action>
