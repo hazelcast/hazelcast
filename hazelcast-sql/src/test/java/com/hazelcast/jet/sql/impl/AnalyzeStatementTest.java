@@ -27,11 +27,11 @@ import org.junit.runner.RunWith;
 
 import java.util.Objects;
 
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -59,6 +59,31 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
                 .filter(j -> Objects.equals(
                         j.getConfig().getArgument("__sql.queryText"),
                         "ANALYZE SELECT * FROM test WHERE TRUE"
+                ))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(job);
+    }
+
+    // TODO: test other DMLs when we have proper OPTIONS support
+    @Test
+    public void test_insert() {
+        createMapping("test", Long.class, Long.class);
+        final String baseQuery = "INSERT INTO test SELECT v, v from table(generate_series(1,2))";
+        assertFalse(assertDmlQueryPlan(baseQuery).isAnalyzed());
+        assertTrue(assertDmlQueryPlan("ANALYZE " + baseQuery).isAnalyzed());
+        SqlPlanImpl.DmlPlan plan = assertDmlQueryPlan(
+                "ANALYZE WITH OPTIONS('opt1'='opt1val', 'opt2'='opt2val') " + baseQuery);
+        assertTrue(plan.isAnalyzed());
+        assertEquals("opt1val", plan.getAnalyzeOptions().get("opt1"));
+        assertEquals("opt2val", plan.getAnalyzeOptions().get("opt2"));
+
+        instance().getSql().execute("ANALYZE " + baseQuery);
+        final Job job = instance().getJet().getJobs()
+                .stream()
+                .filter(j -> Objects.equals(
+                        j.getConfig().getArgument("__sql.queryText"),
+                        "ANALYZE " + baseQuery
                 ))
                 .findFirst()
                 .orElse(null);

@@ -591,7 +591,9 @@ public class PlanExecutor {
 
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-        Job job = jet.newLightJob(plan.getDag(), jobConfig, ssc.subject());
+        Job job = plan.isAnalyzed()
+                ? jet.newJob(plan.getDag(), jobConfig, ssc.subject())
+                : jet.newLightJob(plan.getDag(), jobConfig, ssc.subject());
         job.join();
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);
