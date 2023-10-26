@@ -30,18 +30,13 @@ import javax.annotation.Nonnull;
  * @since 5.3
  */
 @Beta
-public abstract class DataConnectionBase implements DataConnection, AutoCloseable {
+public abstract class DataConnectionBase implements DataConnection {
 
     private final ReferenceCounter refCounter = new ReferenceCounter(this::destroy);
     private final DataConnectionConfig config;
 
     protected DataConnectionBase(@Nonnull DataConnectionConfig config) {
         this.config = config;
-    }
-
-    @Override
-    public void close() {
-        release();
     }
 
     @Override

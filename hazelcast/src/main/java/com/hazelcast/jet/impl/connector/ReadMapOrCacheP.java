@@ -432,7 +432,6 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Override
         public void init(@Nonnull Context context) {
             client = (HazelcastClientProxy) createRemoteClient(context);
-            //client = (HazelcastClientProxy) newHazelcastClient(asClientConfig(clientXml));
             totalParallelism = context.totalParallelism();
             baseIndex = context.memberIndex() * context.localParallelism();
         }
@@ -461,10 +460,13 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             // The order is important.
             // If dataConnectionConfig is specified prefer it to clientXml
             if (dataConnectionName != null) {
-                try (HazelcastDataConnection hazelcastDataConnection = context
+                HazelcastDataConnection hazelcastDataConnection = context
                         .dataConnectionService()
-                        .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class)) {
+                        .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
+                try {
                     return hazelcastDataConnection.getClient();
+                } finally {
+                    hazelcastDataConnection.release();
                 }
             } else {
                 return newHazelcastClient(asClientConfig(clientXml));
