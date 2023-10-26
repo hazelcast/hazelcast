@@ -72,7 +72,20 @@ public final class Traversers {
      */
     @Nonnull
     public static <T> Traverser<T> traverseIterator(@Nonnull Iterator<? extends T> iterator) {
-        return () -> iterator.hasNext() ? requireNonNull(iterator.next(), "Iterator returned a null item") : null;
+        return new Traverser<T>() {
+            @Override
+            public T next() {
+                return iterator.hasNext() ? requireNonNull(iterator.next(), "Iterator returned a null item") : null;
+            }
+
+            @Override
+            public void close() throws Exception {
+                if (iterator instanceof AutoCloseable) {
+                    AutoCloseable autoCloseable = (AutoCloseable) iterator;
+                    autoCloseable.close();
+                }
+            }
+        };
     }
 
     /**

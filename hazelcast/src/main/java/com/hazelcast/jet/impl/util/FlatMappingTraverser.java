@@ -62,4 +62,11 @@ public class FlatMappingTraverser<T, R> implements Traverser<R> {
         final T t = wrapped.next();
         return t != null ? mapper.apply(t) : NULL_TRAVERSER;
     }
+
+    @Override
+    public void close() throws Exception {
+        if (currentTraverser != NULL_TRAVERSER) {
+            currentTraverser.close();
+        }
+    }
 }

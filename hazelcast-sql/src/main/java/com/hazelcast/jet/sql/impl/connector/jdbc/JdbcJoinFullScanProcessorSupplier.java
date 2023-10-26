@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.connector.jdbc.join.AutoCloseableTraverser;
 import com.hazelcast.jet.sql.impl.connector.jdbc.join.FullScanEmptyResultSetMapper;
 import com.hazelcast.jet.sql.impl.connector.jdbc.join.FullScanResultSetIterator;
 import com.hazelcast.jet.sql.impl.connector.jdbc.join.FullScanRowMapper;
@@ -30,10 +29,6 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * This class retrieves the right-side data for a Join operation.
@@ -62,24 +57,17 @@ public class JdbcJoinFullScanProcessorSupplier
     }
 
     protected Traverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows) {
-
-        Stream<JetSqlRow> stream = Stream.empty();
-        for (JetSqlRow leftRow : leftRows) {
-            stream = Stream.concat(stream, joinRow(leftRow));
-        }
-        return new AutoCloseableTraverser<>(stream, Traversers.traverseStream(stream));
+        return Traversers.traverseIterable(leftRows)
+                  .flatMap(jetSqlRow -> Traversers.traverseIterator(joinRow(jetSqlRow)));
     }
 
-    private Stream<JetSqlRow> joinRow(JetSqlRow leftRow) {
+    private FullScanResultSetIterator<JetSqlRow> joinRow(JetSqlRow leftRow) {
         // Full scan : Select * from the table and iterate over the ResulSet
-        FullScanResultSetIterator<JetSqlRow> iterator = new FullScanResultSetIterator<>(
+        return new FullScanResultSetIterator<>(
                 dataConnection.getConnection(),
                 query,
                 new FullScanRowMapper(expressionEvalContext, projections, joinInfo, leftRow),
                 new FullScanEmptyResultSetMapper(projections, joinInfo, leftRow)
         );
-        Spliterator<JetSqlRow> spliterator = Spliterators.spliteratorUnknownSize(iterator,
-                Spliterator.IMMUTABLE | Spliterator.ORDERED);
-        return StreamSupport.stream(spliterator, false).onClose(iterator::close);
     }
 }

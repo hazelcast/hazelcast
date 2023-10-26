@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.iterator.AutoCloseableIterator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -25,12 +26,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class FullScanResultSetIterator<T> implements Iterator<T> {
+public class FullScanResultSetIterator<T> implements AutoCloseableIterator<T> {
     private static final ILogger LOGGER = Logger.getLogger(FullScanResultSetIterator.class);
     private final Connection connection;
     private final String sql;
@@ -105,18 +105,13 @@ public class FullScanResultSetIterator<T> implements Iterator<T> {
     }
 
     public void close() {
-        LOGGER.info("FullScanResultSetIterator is closing");
         if (!iteratorClosed) {
+            LOGGER.info("Closing iterator");
             iteratorClosed = true;
             IOUtil.closeResource(resultSet);
             IOUtil.closeResource(preparedStatement);
             IOUtil.closeResource(connection);
         }
-    }
-
-    // Used for testing
-    public boolean isIteratorClosed() {
-        return iteratorClosed;
     }
 
     private void getNextItem() throws SQLException {

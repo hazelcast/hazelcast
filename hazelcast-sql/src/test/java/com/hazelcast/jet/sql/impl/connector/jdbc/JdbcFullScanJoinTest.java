@@ -16,13 +16,19 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
+import com.hazelcast.dataconnection.impl.JdbcDataConnectionTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.sql.DataSource;
 import java.sql.SQLException;
+import java.util.List;
 
+import static com.hazelcast.dataconnection.impl.JdbcDataConnectionTest.isClosed;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
 
 public class JdbcFullScanJoinTest extends JdbcSqlTestSupport {
@@ -175,37 +181,64 @@ public class JdbcFullScanJoinTest extends JdbcSqlTestSupport {
     // The iterator on sql is closed before the ResultSet is exhausted
     @Test
     public void thetaJoinByPrimaryKey_traverser_is_closed() throws SQLException {
-        String otherTableName = randomTableName();
-        createTable(otherTableName);
+        // Use data connection which we can drop and check if it is closed
+        String jdbcDataConnection = "jdbc_data_connection";
+        execute("CREATE DATA CONNECTION " + jdbcDataConnection
+                + " TYPE Jdbc OPTIONS('jdbcUrl'= '" + dbConnectionUrl
+                + "', 'maximumPoolSize'='64')");
 
+        // So we need different tables
+        int count = 10_000;
+        String tableName0 = randomTableName();
+        createTable(tableName0);
+        insertItems(tableName0, count);
 
-        String sql = getInsertSQL(otherTableName, 1, "othername-1");
-        executeJdbc(sql);
+        String tableName1 = randomTableName();
+        createTable(tableName1);
 
-        sql = getInsertSQL(otherTableName, 2, "othername-2");
-        executeJdbc(sql);
+        for (int i = 1; i < count; i++) {
+            String sql = getInsertSQL(tableName1, i, "othername-" + i);
+            executeJdbc(sql);
+        }
 
-        sql = getInsertSQL(otherTableName, 3, "othername-3");
-        executeJdbc(sql);
+        DataSource dataSource0 = getDataSource(0, jdbcDataConnection);
+        DataSource dataSource1 = getDataSource(1, jdbcDataConnection);
 
         execute(
-                "CREATE MAPPING " + otherTableName + " ("
+                "CREATE MAPPING " + tableName0 + " ("
                 + " id INT, "
                 + " name VARCHAR "
                 + ") "
-                + "DATA CONNECTION " + TEST_DATABASE_REF
+                + "DATA CONNECTION " + jdbcDataConnection
+        );
+
+        execute(
+                "CREATE MAPPING " + tableName1 + " ("
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + jdbcDataConnection
         );
 
         String selectSql = "SELECT t1.name, t1.id, t2.id , t2.name " +
-                           "FROM " + tableName + " t1 " +
-                           "JOIN " + otherTableName + " t2 " +
-                           "   ON t1.id < t2.id ORDER BY t1.id, t2.id LIMIT 2";
-        assertRowsAnyOrder(
-                selectSql,
-                newArrayList(
-                        new Row("name-0", 0, 1, "othername-1"),
-                        new Row("name-0", 0, 2, "othername-2")
-                )
-        );
+                           "FROM " + tableName0 + " t1 " +
+                           "JOIN " + tableName1 + " t2 " +
+                           "   ON t1.id < t2.id LIMIT 2";
+        List<Row> rows = allRows(selectSql, sqlService);
+        assertThat(rows).hasSize(2);
+        execute("DROP DATA CONNECTION " + jdbcDataConnection);
+
+        assertTrueEventually("dataSources should be closed", () -> {
+            assertThat(isClosed(dataSource0)).isTrue();
+            assertThat(isClosed(dataSource1)).isTrue();
+        }, 10);
+    }
+
+    private static DataSource getDataSource(int instanceNumber, String dataConnectionName) {
+        JdbcDataConnection jdbcDataConnection = getDataConnectionService(instances()[instanceNumber])
+                .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);
+        DataSource dataSource = JdbcDataConnectionTest.pooledDataSource(jdbcDataConnection);
+        jdbcDataConnection.release();
+        return dataSource;
     }
 }

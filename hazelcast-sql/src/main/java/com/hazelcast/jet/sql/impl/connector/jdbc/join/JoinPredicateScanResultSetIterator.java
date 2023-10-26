@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.join;
 
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.iterator.AutoCloseableIterator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -25,7 +26,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -34,7 +34,7 @@ import java.util.function.Function;
  * This class adapts the internally fetched ResultSet and the specified rowMapper into an iterator
  * The rowMapper has the SQL Join logic. As long as it returns an item, we can traverse this iterator
  */
-public class JoinPredicateScanResultSetIterator<T> implements Iterator<T>, AutoCloseable {
+public class JoinPredicateScanResultSetIterator<T> implements AutoCloseableIterator<T> {
     private static final ILogger LOGGER = Logger.getLogger(JoinPredicateScanResultSetIterator.class);
     private final Connection connection;
     private final String sql;
@@ -108,18 +108,13 @@ public class JoinPredicateScanResultSetIterator<T> implements Iterator<T>, AutoC
 
     @Override
     public void close() {
-        LOGGER.info("JoinPredicateScanResultSetIterator is closing");
         if (!iteratorClosed) {
+            LOGGER.info("Closing iterator");
             iteratorClosed = true;
             IOUtil.closeResource(resultSet);
             IOUtil.closeResource(preparedStatement);
             IOUtil.closeResource(connection);
         }
-    }
-
-    // Used for testing
-    public boolean isIteratorClosed() {
-        return iteratorClosed;
     }
 
     private void getNextItem() throws SQLException {

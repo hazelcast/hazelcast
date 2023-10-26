@@ -16,13 +16,23 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
+import com.hazelcast.dataconnection.impl.JdbcDataConnectionTest;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.sql.DataSource;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
+import static com.hazelcast.dataconnection.impl.JdbcDataConnectionTest.isClosed;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
 
 public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
@@ -59,7 +69,58 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
         );
     }
 
+    // Put 4 items to stream
+    // Put 3 items to DB
+    // Let join should return 4 items but because of limit within the sql it returns 2 rows
+    // The iterator on sql is closed before the ResultSet is exhausted
+    @Test
+    public void joinWithTableValuedFunction_traverser_is_closed() throws Exception {
+        // Use data connection which we can drop and check if it is closed
+        String jdbcDataConnection = "jdbc_data_connection";
+        execute("CREATE DATA CONNECTION " + jdbcDataConnection
+                + " TYPE Jdbc OPTIONS('jdbcUrl'= '" + dbConnectionUrl
+                + "', 'maximumPoolSize'='64')");
 
+        // So we need different tables
+        int count = 10_000;
+        String tableName0 = randomTableName();
+        createTable(tableName0);
+        insertItems(tableName0, count);
+
+        DataSource dataSource0 = getDataSource(0, jdbcDataConnection);
+        DataSource dataSource1 = getDataSource(1, jdbcDataConnection);
+
+        execute(
+                "CREATE MAPPING " + tableName0 + " ("
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + jdbcDataConnection
+        );
+
+        // It's important that single item from the stream has multiple hits,
+        // otherwise we get single query per item, and we close the resulting iterable by exhausting it
+        List<SqlRow> actualList = getRows("SELECT n.id, n.name, t.v FROM " +
+                                          "(SELECT v FROM TABLE(generate_stream(1000)) WHERE v > 0) t " +
+                                          "JOIN " + tableName0 + " n ON n.id % t.v = 0 LIMIT 2");
+
+        assertThat(actualList).hasSize(2);
+
+        execute("DROP DATA CONNECTION " + jdbcDataConnection);
+
+        assertTrueEventually("dataSources should be closed", () -> {
+            assertThat(isClosed(dataSource0)).isTrue();
+            assertThat(isClosed(dataSource1)).isTrue();
+        }, 10);
+    }
+
+    private static DataSource getDataSource(int instanceNumber, String dataConnectionName) {
+        JdbcDataConnection jdbcDataConnection = getDataConnectionService(instances()[instanceNumber])
+                .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);
+        DataSource dataSource = JdbcDataConnectionTest.pooledDataSource(jdbcDataConnection);
+        jdbcDataConnection.release();
+        return dataSource;
+    }
 
     // Left side is batch : joinInfo indices are used
     @Test
@@ -263,5 +324,15 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
                         new Row(4, "name-4")
                 )
         );
+    }
+
+    private List<SqlRow> getRows(String sql) {
+        List<SqlRow> actualList = new ArrayList<>();
+        try (SqlResult sqlResult = sqlService.execute(sql)) {
+
+            Iterator<SqlRow> iterator = sqlResult.iterator();
+            iterator.forEachRemaining(actualList::add);
+        }
+        return actualList;
     }
 }

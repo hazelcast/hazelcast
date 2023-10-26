@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.connector.jdbc.join.AutoCloseableTraverser;
 import com.hazelcast.jet.sql.impl.connector.jdbc.join.JoinPredicatePreparedStatementSetter;
 import com.hazelcast.jet.sql.impl.connector.jdbc.join.JoinPredicateScanResultSetIterator;
 import com.hazelcast.jet.sql.impl.connector.jdbc.join.JoinPredicateScanRowMapper;
@@ -67,10 +66,7 @@ public class JdbcJoinPredicateScanProcessorSupplier
     protected Traverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows) {
         List<JetSqlRow> leftRowsList = convertIterableToArrayList(leftRows);
         String unionAllSql = generateSql(leftRowsList);
-
-        JoinPredicateScanResultSetIterator<JetSqlRow> iterator = joinUnionAll(leftRowsList, unionAllSql);
-
-        return new AutoCloseableTraverser<>(iterator, Traversers.traverseIterator(iterator));
+        return Traversers.traverseIterator(joinUnionAll(leftRowsList, unionAllSql));
     }
 
     private <T> ArrayList<T> convertIterableToArrayList(Iterable<T> iterable) {

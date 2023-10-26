@@ -44,6 +44,16 @@ public class TransformBatchedP<T, R> extends AbstractProcessor {
     }
 
     @Override
+    public boolean isCooperative() {
+        return isCooperative;
+    }
+
+    public TransformBatchedP<T, R> setCooperative(boolean cooperative) {
+        isCooperative = cooperative;
+        return this;
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public void process(int ordinal, @Nonnull Inbox inbox) {
         if (outputTraverser == null) {
@@ -57,24 +67,13 @@ public class TransformBatchedP<T, R> extends AbstractProcessor {
     }
 
     @Override
-    public boolean isCooperative() {
-        return isCooperative;
-    }
-
-    public TransformBatchedP<T, R> setCooperative(boolean cooperative) {
-        isCooperative = cooperative;
-        return this;
+    public void close() throws Exception {
+        closeTraverser();
     }
 
     @Override
     public boolean closeIsCooperative() {
         return true;
-    }
-
-    @Override
-    public void close() throws Exception {
-        closeTraverser();
-        super.close();
     }
 
     private void closeTraverser() {
@@ -86,4 +85,5 @@ public class TransformBatchedP<T, R> extends AbstractProcessor {
             outputTraverser = null;
         }
     }
+
 }

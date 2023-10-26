@@ -24,6 +24,7 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -346,6 +347,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance instance) {
         return Accessors.getNodeEngineImpl(instance);
+    }
+
+    public static InternalDataConnectionService getDataConnectionService(HazelcastInstance instance) {
+        return Accessors.getNodeEngineImpl(instance).getDataConnectionService();
     }
 
     public Map<Address, int[]> getPartitionAssignment(HazelcastInstance instance) {
