@@ -24,7 +24,6 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.processor.TransformBatchedP;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.util.Spliterator;
@@ -72,20 +71,6 @@ public class AutoCloseableTraverserTest extends JetTestSupport {
         assertThat(wasClosed.get()).isTrue();
     }
 
-    @NotNull
-    private static SupplierEx<Processor> getProcessorSupplierEx(Stream<JetSqlRow> iteratorStream,
-                                                                Stream<JetSqlRow> stream2) {
-        Stream<JetSqlRow> stream = Stream.concat(iteratorStream, stream2);
-
-        // Use stream as AutoCloseable
-        Function<? super Iterable<Integer>, Traverser<Integer>> mapper =
-                (Iterable<Integer> items) ->
-                        new AutoCloseableTraverser<>(stream, Traversers.traverseIterable(items));
-
-        TransformBatchedP<Integer, Integer> processor = new TransformBatchedP<>(mapper);
-        return () -> processor;
-    }
-
     @Test
     public void test_iterator_is_closed() {
         JoinPredicateScanResultSetIterator<Integer> iterator = new JoinPredicateScanResultSetIterator<>(null, null, null, null);
@@ -104,5 +89,18 @@ public class AutoCloseableTraverserTest extends JetTestSupport {
                 .expectOutput(asList(1, 2, 3, 4, 5));
 
         assertThat(iterator.isIteratorClosed()).isTrue();
+    }
+
+    private static SupplierEx<Processor> getProcessorSupplierEx(Stream<JetSqlRow> iteratorStream,
+                                                                Stream<JetSqlRow> stream2) {
+        Stream<JetSqlRow> stream = Stream.concat(iteratorStream, stream2);
+
+        // Use stream as AutoCloseable
+        Function<? super Iterable<Integer>, Traverser<Integer>> mapper =
+                (Iterable<Integer> items) ->
+                        new AutoCloseableTraverser<>(stream, Traversers.traverseIterable(items));
+
+        var processor = new TransformBatchedP<>(mapper);
+        return () -> processor;
     }
 }

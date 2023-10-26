@@ -52,11 +52,7 @@ public class TransformBatchedP<T, R> extends AbstractProcessor {
 
         if (emitFromTraverser(outputTraverser)) {
             inbox.clear();
-            try {
-                outputTraverser.close();
-            } catch (Exception ignored) {
-            }
-            outputTraverser = null;
+            closeTraverser();
         }
     }
 
@@ -73,5 +69,21 @@ public class TransformBatchedP<T, R> extends AbstractProcessor {
     @Override
     public boolean closeIsCooperative() {
         return true;
+    }
+
+    @Override
+    public void close() throws Exception {
+        closeTraverser();
+        super.close();
+    }
+
+    private void closeTraverser() {
+        if (outputTraverser != null) {
+            try {
+                outputTraverser.close();
+            } catch (Exception ignored) {
+            }
+            outputTraverser = null;
+        }
     }
 }
