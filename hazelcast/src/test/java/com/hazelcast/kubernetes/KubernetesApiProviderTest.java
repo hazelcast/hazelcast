@@ -16,6 +16,7 @@
 
 package com.hazelcast.kubernetes;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import org.junit.Test;
@@ -38,7 +39,7 @@ public abstract class KubernetesApiProviderTest {
     }
 
     @Test
-    public void extractNodes() {
+    public void extractNodes() throws JsonProcessingException {
         //given
         JsonObject endpointsJson = Json.parse(getEndpointsResponseWithServices()).asObject();
         ArrayList<String> privateAddresses = new ArrayList<>();
@@ -71,7 +72,7 @@ public abstract class KubernetesApiProviderTest {
     }
 
     @Test
-    public void parseEndpointsList() {
+    public void parseEndpointsList() throws JsonProcessingException {
         JsonObject endpointsListJson = Json.parse(getEndpointsListResponse()).asObject();
         List<Endpoint> endpoints = provider.parseEndpointsList(endpointsListJson);
         assertThat(format(endpoints)).containsExactlyInAnyOrder(
@@ -81,7 +82,7 @@ public abstract class KubernetesApiProviderTest {
     }
 
     @Test
-    public void parseEndpoints() {
+    public void parseEndpoints() throws JsonProcessingException {
         JsonObject endpointsListJson = Json.parse(getEndpointsResponse()).asObject();
         List<Endpoint> endpoints = provider.parseEndpoints(endpointsListJson);
         assertThat(format(endpoints)).containsExactlyInAnyOrder(
@@ -90,7 +91,7 @@ public abstract class KubernetesApiProviderTest {
     }
 
     @Test
-    public void extractServices() {
+    public void extractServices() throws JsonProcessingException {
         //given
         JsonObject endpointsJson = Json.parse(getEndpointsResponseWithServices()).asObject();
         ArrayList<String> privateAddresses = new ArrayList<>();
@@ -142,11 +143,11 @@ public abstract class KubernetesApiProviderTest {
         return toString(ip, port, false);
     }
 
-    public abstract String getEndpointsResponseWithServices();
+    public abstract String getEndpointsResponseWithServices() throws JsonProcessingException;
 
-    public abstract String getEndpointsResponse();
+    public abstract String getEndpointsResponse() throws JsonProcessingException;
 
-    public abstract String getEndpointsListResponse();
+    public abstract String getEndpointsListResponse() throws JsonProcessingException;
 
     public abstract String getEndpointsUrlString();
 
