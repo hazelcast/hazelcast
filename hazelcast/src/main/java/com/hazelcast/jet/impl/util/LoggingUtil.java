@@ -20,7 +20,7 @@ import com.hazelcast.logging.ILogger;
 
 /**
  * Utility methods to suppress building of messages for a disabled logging level.
- * 
+ *
  * @deprecated just access the methods directly on the {@link ILogger}
  */
 @Deprecated

@@ -37,7 +37,7 @@ public interface ILogger extends TpcLogger {
     /**
      * Logs to {@link #fine(String)} using a lazily evaluated {@code template} {@link String} with arguments, formatted using
      * {@link String#format(String, Object...)}
-     * 
+     *
      * @since 5.4
      */
     default void logFine(String template, Object arg1) {
@@ -70,7 +70,7 @@ public interface ILogger extends TpcLogger {
     /**
      * Logs to {@link #finest(String)} using a lazily evaluated {@code template} {@link String} with arguments, formatted using
      * {@link String#format(String, Object...)}
-     * 
+     *
      * @since 5.4
      */
     default void logFinest(String template, Object arg1) {
