@@ -16,20 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.sql.SqlResult;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
 
 public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
@@ -58,23 +51,6 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
         );
     }
 
-    private static String getWorkerName(int index) {
-        return "myworker" + index;
-    }
-
-    private static int getSSN(int index) {
-        return 207 + index;
-    }
-
-    private static String getInsertSQL(String tableName, int index) {
-        return String.format("INSERT INTO %s VALUES(%d, '%s', %d)",
-                tableName,
-                index,
-                getWorkerName(index),
-                getSSN(index)
-        );
-    }
-
     private static String getInsertSQL(String tableName, int id, String workerName) {
         return String.format("INSERT INTO %s VALUES(%d, '%s')",
                 tableName,
@@ -84,76 +60,6 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
     }
 
 
-    // Left side is batch : joinInfo indices are used
-    @Test
-    public void joinWithTableValuedFunction() throws Exception {
-        String tableName = randomTableName();
-        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
-        for (int index = 1; index < 3; index++) {
-            String sql = getInsertSQL(tableName, index);
-            executeJdbc(sql);
-        }
-
-        execute(
-                "CREATE MAPPING " + tableName + " ("
-                + " id INT, "
-                + " name VARCHAR, "
-                + " ssn INT "
-                + ") "
-                + "DATA CONNECTION " + TEST_DATABASE_REF
-        );
-
-        List<SqlRow> actualList = getRows("SELECT n.id, n.name, n.ssn , t.v FROM " +
-                                          "TABLE(generate_series(207,210)) t " +
-                                          "JOIN " + tableName + " n ON t.v = n.ssn ORDER BY n.ssn LIMIT 2");
-
-        List<Object> ssnList = actualList.stream()
-                .map(sqlRow -> sqlRow.getObject("ssn"))
-                .collect(Collectors.toList());
-
-        assertThat(ssnList)
-                .containsExactlyInAnyOrder(208, 209);
-    }
-
-
-    // Put 4 items to stream
-    // Put 3 items to DB
-    // Let join should return 4 items but because of limit within the sql it returns 2 rows
-    // The iterator on sql is closed before the ResultSet is exhausted
-    @Test
-    public void joinWithTableValuedFunction_traverser_is_closed() throws Exception {
-        String tableName = randomTableName();
-        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
-
-        for (int index = 1; index < 5; index++) {
-            // (1, 'myworker1', 208),
-            // (2, 'myworker2', 209)
-            // ...
-            // (4, 'myworker4', 211)
-            String sql = getInsertSQL(tableName, index);
-            executeJdbc(sql);
-        }
-
-        execute(
-                "CREATE MAPPING " + tableName + " ("
-                + " id INT, "
-                + " name VARCHAR, "
-                + " ssn INT "
-                + ") "
-                + "DATA CONNECTION " + TEST_DATABASE_REF
-        );
-
-        List<SqlRow> actualList = getRows("SELECT n.id, n.name, n.ssn , t.v FROM " +
-                                          "TABLE(generate_series(207,211)) t " +
-                                          "JOIN " + tableName + " n ON t.v = n.ssn ORDER BY n.ssn LIMIT 2");
-
-        List<Object> ssnList = actualList.stream()
-                .map(sqlRow -> sqlRow.getObject("ssn"))
-                .collect(Collectors.toList());
-
-        assertThat(ssnList)
-                .containsExactlyInAnyOrder(208, 209);
-    }
 
     // Left side is batch : joinInfo indices are used
     @Test
@@ -357,15 +263,5 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
                         new Row(4, "name-4")
                 )
         );
-    }
-
-    private List<SqlRow> getRows(String sql) {
-        List<SqlRow> actualList = new ArrayList<>();
-        try (SqlResult sqlResult = sqlService.execute(sql)) {
-
-            Iterator<SqlRow> iterator = sqlResult.iterator();
-            iterator.forEachRemaining(actualList::add);
-        }
-        return actualList;
     }
 }

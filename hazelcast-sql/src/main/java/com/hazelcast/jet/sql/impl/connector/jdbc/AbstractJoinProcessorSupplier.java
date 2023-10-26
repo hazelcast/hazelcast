@@ -82,6 +82,9 @@ abstract class AbstractJoinProcessorSupplier
                 collect(toList());
     }
 
+    /**
+     * Return a Traverser that processes given rows
+     */
     protected abstract Traverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows);
 
     @Override
