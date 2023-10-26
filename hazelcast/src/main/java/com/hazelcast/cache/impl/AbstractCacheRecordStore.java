@@ -959,7 +959,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         expiryPolicy = getExpiryPolicy(record, expiryPolicy);
         long expiryTime = TIME_NOT_AVAILABLE;
         try {
-            Duration expiryDuration = expiryPolicy.getExpiryForUpdate();
+            Duration expiryDuration = expiryPolicy.getExpiryForCreation();
             if (expiryDuration != null) {
                 expiryTime = getAdjustedExpireTime(expiryDuration, now);
             }

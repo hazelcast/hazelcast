@@ -17,7 +17,6 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
