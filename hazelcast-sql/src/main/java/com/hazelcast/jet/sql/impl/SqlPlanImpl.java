@@ -1171,6 +1171,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final boolean analyzed;
         private final Map<String, String> analyzeOptions;
 
+        @SuppressWarnings("checkstyle:ParameterNumber")
         DmlPlan(
                 Operation operation,
                 PlanKey planKey,
