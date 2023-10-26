@@ -29,7 +29,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class JdbcInnerEquiJoinStreamToJdbcTest extends JdbcSqlTestSupport {
+public class JdbcRightEquiJoinStreamToJdbcTest extends JdbcSqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
@@ -37,8 +37,7 @@ public class JdbcInnerEquiJoinStreamToJdbcTest extends JdbcSqlTestSupport {
     }
 
 
-    // This test will call JdbcSqlConnector#nestedLoopReader
-    // joinInfo indices are used
+    // This test will call JdbcSqlConnector#fullScanReader
     @Test
     public void joinWithTableValuedFunction_small_table_on_right() throws Exception {
         String tableName = "table1";
@@ -56,19 +55,19 @@ public class JdbcInnerEquiJoinStreamToJdbcTest extends JdbcSqlTestSupport {
         );
 
         String sql = "SELECT n.id, n.name, n.ssn , t.v FROM " +
-                     "TABLE(generate_series(207,300)) t " +
-                     "JOIN " + tableName + " n ON t.v = n.ssn ORDER BY n.ssn";
+                     "TABLE(generate_series(209,211)) t " +
+                     "RIGHT JOIN " + tableName + " n ON t.v = n.ssn ORDER BY n.ssn, t.v";
         List<Row> actualList = getRows(sql);
 
 
         assertThat(actualList).containsExactly(
-                new Row(1, "myworker1", 208, 208),
+                new Row(1, "myworker1", 208, null),
                 new Row(2, "myworker2", 209, 209),
                 new Row(3, "myworker3", 210, 210)
         );
     }
 
-    // This test will call JdbcSqlConnector#fullScanReader
+    // This test will call JdbcSqlConnector#nestedLoopReader
     @Test
     public void joinWithTableValuedFunction_small_table_on_left() throws Exception {
         String tableName = "table2";
@@ -86,11 +85,13 @@ public class JdbcInnerEquiJoinStreamToJdbcTest extends JdbcSqlTestSupport {
         );
 
         String sql = "SELECT n.id, n.name, n.ssn , t.v FROM " + tableName + " n " +
-                     "JOIN TABLE(generate_series(207,300)) t ON t.v = n.ssn ORDER BY n.ssn";
+                     "RIGHT JOIN TABLE(generate_series(207,211)) t ON t.v = n.ssn ORDER BY n.ssn , t.v";
         List<Row> actualList = getRows(sql);
 
 
         assertThat(actualList).containsExactly(
+                new Row(null, null, null, 207),
+                new Row(null, null, null, 211),
                 new Row(1, "myworker1", 208, 208),
                 new Row(2, "myworker2", 209, 209),
                 new Row(3, "myworker3", 210, 210)
