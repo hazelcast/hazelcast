@@ -17,10 +17,12 @@
 package org.apache.calcite.plan;
 
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 
+import java.security.Permission;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,23 +44,28 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
      */
     private boolean requiresJob;
 
+    private SqlSecurityContext sqlSecurityContext;
+
     private HazelcastRelOptCluster(
             RelOptPlanner planner,
             RelDataTypeFactory typeFactory,
             RexBuilder rexBuilder,
             AtomicInteger nextCorrel,
-            Map<String, RelNode> mapCorrelToRel
+            Map<String, RelNode> mapCorrelToRel,
+            SqlSecurityContext sqlSecurityContext
     ) {
         super(planner, typeFactory, rexBuilder, nextCorrel, mapCorrelToRel);
+        this.sqlSecurityContext = sqlSecurityContext;
     }
 
-    public static HazelcastRelOptCluster create(RelOptPlanner planner, RexBuilder rexBuilder) {
+    public static HazelcastRelOptCluster create(RelOptPlanner planner, RexBuilder rexBuilder, SqlSecurityContext ssc) {
         return new HazelcastRelOptCluster(
                 planner,
                 rexBuilder.getTypeFactory(),
                 rexBuilder,
                 new AtomicInteger(0),
-                new HashMap<>()
+                new HashMap<>(),
+                ssc
         );
     }
 
@@ -76,5 +83,13 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
 
     public void setRequiresJob(boolean requiresJob) {
         this.requiresJob = requiresJob;
+    }
+
+    public boolean isSecurityEnabled() {
+        return sqlSecurityContext.isSecurityEnabled();
+    }
+
+    public void checkPermission(Permission permission) {
+        sqlSecurityContext.checkPermission(permission);
     }
 }
