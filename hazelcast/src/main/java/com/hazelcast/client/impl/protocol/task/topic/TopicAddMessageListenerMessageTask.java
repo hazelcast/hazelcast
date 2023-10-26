@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.topic.Message;
@@ -86,7 +87,7 @@ public class TopicAddMessageListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "addMessageListener";
+        return SecurityInterceptorConstants.ADD_MESSAGE_LISTENER;
     }
 
     @Override

@@ -21,6 +21,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -52,12 +53,12 @@ import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
-import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.EvictionPolicy.LRU;
@@ -92,26 +93,26 @@ import static java.lang.String.format;
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public final class ConfigValidator {
 
-    public static final EnumSet<EvictionPolicy> COMMONLY_SUPPORTED_EVICTION_POLICIES = EnumSet.of(LRU, LFU);
+    public static final Set<EvictionPolicy> COMMONLY_SUPPORTED_EVICTION_POLICIES = EnumSet.of(LRU, LFU);
 
-    private static final EnumSet<MaxSizePolicy> NEAR_CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
+    private static final Set<MaxSizePolicy> NEAR_CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
             = EnumSet.of(MaxSizePolicy.ENTRY_COUNT);
 
-    private static final EnumSet<EvictionPolicy> MAP_SUPPORTED_EVICTION_POLICIES
+    private static final Set<EvictionPolicy> MAP_SUPPORTED_EVICTION_POLICIES
             = EnumSet.of(LRU, LFU, RANDOM, NONE);
 
-    private static final EnumSet<MaxSizePolicy> MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
+    private static final Set<MaxSizePolicy> MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
             = EnumSet.of(PER_NODE, PER_PARTITION, USED_NATIVE_MEMORY_PERCENTAGE,
             FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
 
-    private static final EnumSet<MaxSizePolicy> MAP_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
+    private static final Set<MaxSizePolicy> MAP_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
             = EnumSet.of(PER_NODE, PER_PARTITION, USED_HEAP_SIZE, USED_HEAP_PERCENTAGE,
             FREE_HEAP_SIZE, FREE_HEAP_PERCENTAGE);
 
-    private static final EnumSet<MaxSizePolicy> CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
+    private static final Set<MaxSizePolicy> CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
             = EnumSet.of(ENTRY_COUNT);
 
-    private static final EnumSet<MaxSizePolicy> CACHE_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
+    private static final Set<MaxSizePolicy> CACHE_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
             = EnumSet.of(USED_NATIVE_MEMORY_PERCENTAGE,
             FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
 
@@ -121,25 +122,77 @@ public final class ConfigValidator {
     /**
      * Validates the given {@link MapConfig}.
      *
+     * @param config
      * @param mapConfig the {@link MapConfig}
      */
-    public static void checkMapConfig(MapConfig mapConfig,
-                                      NativeMemoryConfig nativeMemoryConfig,
-                                      SplitBrainMergePolicyProvider mergePolicyProvider,
-                                      HazelcastProperties properties, ILogger logger) {
+    public static void checkMapConfig(Config config, MapConfig mapConfig,
+                                      SplitBrainMergePolicyProvider mergePolicyProvider) {
 
         checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
         checkNotBitmapIndexWhenNativeMemory(mapConfig.getInMemoryFormat(), mapConfig.getIndexConfigs());
-        checkNotTieredStoreWhenOpenSource(mapConfig.getTieredStoreConfig());
+        checkTSEnabledOnEnterpriseJar(mapConfig.getTieredStoreConfig());
 
         if (getBuildInfo().isEnterprise()) {
-            checkMapNativeConfig(mapConfig, nativeMemoryConfig);
+            checkMapNativeConfig(mapConfig, config.getNativeMemoryConfig());
+            checkTieredStoreMapConfig(config, mapConfig);
         }
 
         checkMapEvictionConfig(mapConfig.getEvictionConfig());
         checkMapMaxSizePolicyPerInMemoryFormat(mapConfig);
         checkMapMergePolicy(mapConfig,
                 mapConfig.getMergePolicyConfig().getPolicy(), mergePolicyProvider);
+    }
+
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public static void checkTieredStoreMapConfig(Config config, MapConfig mapConfig) {
+        if (!mapConfig.getTieredStoreConfig().isEnabled()) {
+            return;
+        }
+
+        String mapName = mapConfig.getName();
+        DiskTierConfig diskTierConfig = mapConfig.getTieredStoreConfig().getDiskTierConfig();
+        if (!diskTierConfig.isEnabled()) {
+            throw new InvalidConfigurationException(String.format("Map '%s' is configured for tiered "
+                    + "storage, but disk tier store is not enabled. Currently this is not supported, "
+                    + "disk tier store must be enabled", mapName));
+        }
+        String deviceName = diskTierConfig.getDeviceName();
+        if (config.getDeviceConfig(deviceName) == null) {
+            throw new InvalidConfigurationException(String.format("Map '%s' is configured for tiered "
+                    + "storage, but there is no configuration found for the device '%s' to be used for "
+                    + "the map", mapName, deviceName));
+        }
+
+        if (mapConfig.getDataPersistenceConfig().isEnabled()) {
+            throw new InvalidConfigurationException(String.format("Map '%s' is configured for tiered "
+                    + "storage, but data persistence is also configured. Tiered store and data "
+                    + "persistence are mutually exclusive features.", mapName));
+        }
+
+        InMemoryFormat inMemoryFormat = mapConfig.getInMemoryFormat();
+        if (NATIVE != inMemoryFormat) {
+            throw new InvalidConfigurationException(format("Only NATIVE in-memory-format "
+                            + "is supported for Tiered-Store but found [%s] for the map [%s]",
+                    inMemoryFormat, mapConfig.getName()));
+        }
+
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        if (!EvictionPolicy.NONE.equals(evictionConfig.getEvictionPolicy())) {
+            throw new InvalidConfigurationException(format("Eviction is not supported "
+                    + "for Tiered-Store map [%s]", mapConfig.getName()));
+        }
+
+        int timeToLiveSeconds = mapConfig.getTimeToLiveSeconds();
+        if (timeToLiveSeconds != MapConfig.DISABLED_TTL_SECONDS) {
+            throw new InvalidConfigurationException(format("TTL expiry is not supported "
+                    + "for Tiered-Store map [%s]", mapConfig.getName()));
+        }
+
+        int maxIdleSeconds = mapConfig.getMaxIdleSeconds();
+        if (maxIdleSeconds != MapConfig.DEFAULT_MAX_IDLE_SECONDS) {
+            throw new InvalidConfigurationException(format("MaxIdle expiry is not supported"
+                    + " for Tiered-Store map [%s]", mapConfig.getName()));
+        }
     }
 
     static void checkMapMaxSizePolicyPerInMemoryFormat(MapConfig mapConfig) {
@@ -159,7 +212,7 @@ public final class ConfigValidator {
 
     private static void throwNotMatchingMaxSizePolicy(InMemoryFormat inMemoryFormat,
                                                       MaxSizePolicy maxSizePolicy,
-                                                      EnumSet<MaxSizePolicy> policies) {
+                                                      Set<MaxSizePolicy> policies) {
         String msg = "%s is not a valid max size policy to use with"
                 + " in memory format %s. Please select an appropriate one from list: %s";
         throw new InvalidConfigurationException(format(msg, maxSizePolicy, inMemoryFormat, policies));
@@ -233,7 +286,7 @@ public final class ConfigValidator {
                 && config.getNetworkConfig().getSymmetricEncryptionConfig() != null
                 && config.getNetworkConfig().getSymmetricEncryptionConfig().isEnabled()
                 && !usesAdvancedNetworkConfig) {
-                logger.warning(warn);
+            logger.warning(warn);
         }
 
         if (config.getAdvancedNetworkConfig() != null
@@ -357,7 +410,7 @@ public final class ConfigValidator {
      * @param evictionConfig the {@link EvictionConfig}
      */
     public static void checkEvictionConfig(EvictionConfig evictionConfig,
-                                           EnumSet<EvictionPolicy> supportedEvictionPolicies) {
+                                           Set<EvictionPolicy> supportedEvictionPolicies) {
         if (evictionConfig == null) {
             throw new InvalidConfigurationException("Eviction config cannot be null!");
         }
@@ -415,7 +468,7 @@ public final class ConfigValidator {
     public static void checkEvictionConfig(EvictionPolicy evictionPolicy,
                                            String comparatorClassName,
                                            Object comparator,
-                                           EnumSet<EvictionPolicy> supportedEvictionPolicies) {
+                                           Set<EvictionPolicy> supportedEvictionPolicies) {
         checkComparatorDefinedOnlyOnce(comparatorClassName, comparator);
 
         if (!supportedEvictionPolicies.contains(evictionPolicy)) {
@@ -506,7 +559,7 @@ public final class ConfigValidator {
                                         String mergePolicyClassname,
                                         Class<? extends MergingValue> mergeTypes,
                                         SplitBrainMergePolicyProvider mergePolicyProvider,
-                                        EnumSet<EvictionPolicy> supportedEvictionPolicies) {
+                                        Set<EvictionPolicy> supportedEvictionPolicies) {
         try {
             checkNotNativeWhenOpenSource(inMemoryFormat);
             checkEvictionConfig(evictionConfig, supportedEvictionPolicies);
@@ -645,7 +698,7 @@ public final class ConfigValidator {
      *
      * @param tieredStoreConfig supplied tieredStoreConfig
      */
-    private static void checkNotTieredStoreWhenOpenSource(TieredStoreConfig tieredStoreConfig) {
+    private static void checkTSEnabledOnEnterpriseJar(TieredStoreConfig tieredStoreConfig) {
         if (tieredStoreConfig.isEnabled() && !getBuildInfo().isEnterprise()) {
             throw new InvalidConfigurationException("Tiered-Store is supported in Hazelcast Enterprise only."
                     + " Please make sure you have Hazelcast Enterprise JARs on your classpath.");

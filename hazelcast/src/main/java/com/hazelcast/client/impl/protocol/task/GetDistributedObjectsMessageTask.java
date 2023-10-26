@@ -23,6 +23,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectUtil;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
@@ -77,7 +78,7 @@ public class GetDistributedObjectsMessageTask
 
     @Override
     public String getMethodName() {
-        return "getDistributedObjects";
+        return SecurityInterceptorConstants.GET_DISTRIBUTED_OBJECTS;
     }
 
     @Override

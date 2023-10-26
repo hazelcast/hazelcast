@@ -17,27 +17,27 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ExperimentalTpcAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientTpcAuthenticationCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class ExperimentalTpcAuthenticationMessageTask
-        extends AbstractMessageTask<ExperimentalTpcAuthenticationCodec.RequestParameters> {
+public class ClientTpcAuthenticationMessageTask
+        extends AbstractMessageTask<ClientTpcAuthenticationCodec.RequestParameters> {
 
-    public ExperimentalTpcAuthenticationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ClientTpcAuthenticationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ExperimentalTpcAuthenticationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected ClientTpcAuthenticationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return null;
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ExperimentalTpcAuthenticationCodec.encodeResponse();
+        return ClientTpcAuthenticationCodec.encodeResponse();
     }
 
     @Override

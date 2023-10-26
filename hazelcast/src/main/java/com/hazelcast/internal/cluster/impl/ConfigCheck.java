@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -170,17 +171,8 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             out.writeString(entry.getValue());
         }
 
-        out.writeInt(maps.size());
-        for (Map.Entry<String, Object> entry : maps.entrySet()) {
-            out.writeString(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
-
-        out.writeInt(queues.size());
-        for (Map.Entry<String, Object> entry : queues.entrySet()) {
-            out.writeString(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
+        SerializationUtil.writeMapStringKey(maps, out);
+        SerializationUtil.writeMapStringKey(queues, out);
     }
 
     @Override

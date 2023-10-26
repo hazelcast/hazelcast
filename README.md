@@ -2,7 +2,7 @@
 
 [![Slack](https://img.shields.io/badge/slack-chat-green.svg)](https://slack.hazelcast.com/) 
 [![javadoc](https://javadoc.io/badge2/com.hazelcast/hazelcast/latest/javadoc.svg)](https://javadoc.io/doc/com.hazelcast/hazelcast/latest)
-[![Docker pulls](https://img.shields.io/docker/pulls/hazelcast/hazelcast)](https://img.shields.io/docker/pulls/hazelcast/hazelcast)
+[![Docker pulls](https://img.shields.io/docker/pulls/hazelcast/hazelcast)](https://hub.docker.com/r/hazelcast/hazelcast)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=hazelcast_hazelcast&metric=alert_status)](https://sonarcloud.io/dashboard?id=hazelcast_hazelcast)
 
 ----
@@ -354,7 +354,7 @@ see used in the comments on your PR:
 * *`run-nightly-tests` - run nightly (slow) tests. WARNING: Use with care as this is a resource consuming task.*
 * *`run-ee-nightly-tests` - run nightly (slow) tests from hazelcast-enterprise. WARNING: Use with care as this is a resource consuming task.*
 * `run-sql-only` - run default tests in `hazelcast-sql`, `hazelcast-distribution`, and `extensions/mapstore` modules
-* `run-docs-only` - do not run any tests, check that only files with `.md` or `.adoc` suffix are added in the PR
+* `run-docs-only` - do not run any tests, check that only files with `.md`, `.adoc` or `.txt` suffix are added in the PR
 * `run-sonar` - run SonarCloud analysis
 * `run-arm64` - run the tests on arm64 machine
 
@@ -372,7 +372,7 @@ anywhere other than `hazelcast-sql`.
 
 When creating a PR which changes only documentation (files with suffix `.md` or `.adoc`) it 
 makes no sense to run tests. For that case the label `docs-only` can be used. The job will fail 
-in case you've made other changes than in `.md` or `.adoc` files.
+in case you've made other changes than in `.md`, `.adoc` or `.txt` files.
 
 ## License
 

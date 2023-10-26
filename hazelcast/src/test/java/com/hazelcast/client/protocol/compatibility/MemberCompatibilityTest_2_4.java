@@ -28,8 +28,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -52,15 +50,15 @@ public class MemberCompatibilityTest_2_4 {
 
     @Before
     public void setUp() throws IOException {
-        File file = new File(getClass().getResource("/2.4.protocol.compatibility.binary").getFile());
-        InputStream inputStream = new FileInputStream(file);
-        byte[] data = new byte[(int) file.length()];
-        inputStream.read(data);
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        ClientMessageReader reader = new ClientMessageReader(0);
-        while (reader.readFrom(buffer, true)) {
-            clientMessages.add(reader.getClientMessage());
-            reader.reset();
+        try (InputStream inputStream = getClass().getResourceAsStream("/2.4.protocol.compatibility.binary")) {
+            assert inputStream != null;
+            byte[] data = inputStream.readAllBytes();
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            ClientMessageReader reader = new ClientMessageReader(0);
+            while (reader.readFrom(buffer, true)) {
+                clientMessages.add(reader.getClientMessage());
+                reader.reset();
+            }
         }
     }
 
@@ -83,7 +81,7 @@ public class MemberCompatibilityTest_2_4 {
     @Test
     public void test_ClientAuthenticationCodec_encodeResponse() {
         int fileClientMessageIndex = 1;
-        ClientMessage encoded = ClientAuthenticationCodec.encodeResponse(aByte, anAddress, aUUID, aByte, aString, anInt, aUUID, aBoolean);
+        ClientMessage encoded = ClientAuthenticationCodec.encodeResponse(aByte, anAddress, aUUID, aByte, aString, anInt, aUUID, aBoolean, aListOfIntegers, aByteArray);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -106,7 +104,7 @@ public class MemberCompatibilityTest_2_4 {
     @Test
     public void test_ClientAuthenticationCustomCodec_encodeResponse() {
         int fileClientMessageIndex = 3;
-        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeResponse(aByte, anAddress, aUUID, aByte, aString, anInt, aUUID, aBoolean);
+        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeResponse(aByte, anAddress, aUUID, aByte, aString, anInt, aUUID, aBoolean, aListOfIntegers, aByteArray);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7630,7 +7628,7 @@ public class MemberCompatibilityTest_2_4 {
     public void test_CPSubsystemAddGroupAvailabilityListenerCodec_encodeGroupAvailabilityEventEvent() {
         int fileClientMessageIndex = 860;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ClientMessage encoded = CPSubsystemAddGroupAvailabilityListenerCodec.encodeGroupAvailabilityEventEvent(aRaftGroupId, aListOfCpMembers, aListOfCpMembers);
+        ClientMessage encoded = CPSubsystemAddGroupAvailabilityListenerCodec.encodeGroupAvailabilityEventEvent(aRaftGroupId, aListOfCpMembers, aListOfCpMembers, aBoolean);
         compareClientMessages(fromFile, encoded);
     }
 

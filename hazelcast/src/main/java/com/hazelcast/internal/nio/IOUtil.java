@@ -62,7 +62,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Collection;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -317,10 +316,12 @@ public final class IOUtil {
 
     public static OutputStream newOutputStream(final ByteBuffer dst) {
         return new OutputStream() {
+            @Override
             public void write(int b) {
                 dst.put((byte) b);
             }
 
+            @Override
             public void write(byte[] bytes, int off, int len) {
                 dst.put(bytes, off, len);
             }
@@ -329,6 +330,7 @@ public final class IOUtil {
 
     public static InputStream newInputStream(final ByteBuffer src) {
         return new InputStream() {
+            @Override
             public int read() {
                 if (!src.hasRemaining()) {
                     return -1;
@@ -336,6 +338,7 @@ public final class IOUtil {
                 return src.get() & 0xff;
             }
 
+            @Override
             public int read(byte[] bytes, int off, int len) {
                 if (!src.hasRemaining()) {
                     return -1;
@@ -399,10 +402,12 @@ public final class IOUtil {
         if (input.length == 0) {
             return new byte[0];
         }
-        int len = Math.max(input.length / 10, 10);
+        // 60% of the original length
+        int len = (int) (input.length * 0.6);
+        len = Math.max(len, 10);
 
         Deflater compressor = new Deflater();
-        compressor.setLevel(Deflater.BEST_SPEED);
+        compressor.setLevel(Deflater.DEFAULT_COMPRESSION);
         compressor.setInput(input);
         compressor.finish();
         ByteArrayOutputStream bos = new ByteArrayOutputStream(len);
@@ -448,21 +453,6 @@ public final class IOUtil {
             closeable.close();
         } catch (Exception e) {
             LOGGER.finest("closeResource failed", e);
-        }
-    }
-
-    public static void closeResources(Collection<? extends Closeable> collection) {
-        if (collection == null) {
-            return;
-        }
-        for (Closeable closeable : collection) {
-            if (closeable != null) {
-                try {
-                    closeable.close();
-                } catch (IOException e) {
-                    LOGGER.finest("closeResource failed", e);
-                }
-            }
         }
     }
 
@@ -544,7 +534,7 @@ public final class IOUtil {
             return;
         }
         try {
-            Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(path, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Files.delete(file);
@@ -703,37 +693,6 @@ public final class IOUtil {
             copyDirectory(source, target);
         } else {
             copyFile(source, target, -1);
-        }
-    }
-
-    /**
-     * Deep copies source to target. If target doesn't exist, this will fail with {@link HazelcastException}.
-     * <p>
-     * The source is only accessed here, but not managed. It's the responsibility of the caller to release
-     * any resources held by the source.
-     *
-     * @param source the source
-     * @param target the destination
-     * @throws HazelcastException if the target doesn't exist
-     */
-    public static void copy(InputStream source, File target) {
-        if (!target.exists()) {
-            throw new HazelcastException("The target file doesn't exist " + target.getAbsolutePath());
-        }
-
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(target);
-            byte[] buff = new byte[8192];
-
-            int length;
-            while ((length = source.read(buff)) > 0) {
-                out.write(buff, 0, length);
-            }
-        } catch (Exception e) {
-            throw new HazelcastException("Error occurred while copying InputStream", e);
-        } finally {
-            closeResource(out);
         }
     }
 

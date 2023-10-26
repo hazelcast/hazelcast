@@ -36,17 +36,17 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to TPC channels.
  */
-@Generated("b720050e60afb51e1898feeeb3580775")
-public final class ExperimentalTpcAuthenticationCodec {
-    //hex: 0xFD0300
-    public static final int REQUEST_MESSAGE_TYPE = 16581376;
-    //hex: 0xFD0301
-    public static final int RESPONSE_MESSAGE_TYPE = 16581377;
+@Generated("4eeb26c68d74726d9dc168ad2423da9b")
+public final class ClientTpcAuthenticationCodec {
+    //hex: 0x001600
+    public static final int REQUEST_MESSAGE_TYPE = 5632;
+    //hex: 0x001601
+    public static final int RESPONSE_MESSAGE_TYPE = 5633;
     private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private ExperimentalTpcAuthenticationCodec() {
+    private ClientTpcAuthenticationCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -66,7 +66,7 @@ public final class ExperimentalTpcAuthenticationCodec {
     public static ClientMessage encodeRequest(java.util.UUID uuid, byte[] token) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setOperationName("Experimental.TpcAuthentication");
+        clientMessage.setOperationName("Client.TpcAuthentication");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
@@ -76,7 +76,7 @@ public final class ExperimentalTpcAuthenticationCodec {
         return clientMessage;
     }
 
-    public static ExperimentalTpcAuthenticationCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static ClientTpcAuthenticationCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();

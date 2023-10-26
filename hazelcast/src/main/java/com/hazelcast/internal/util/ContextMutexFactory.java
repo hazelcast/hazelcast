@@ -68,11 +68,7 @@ public final class ContextMutexFactory {
     public Mutex mutexFor(Object mutexKey) {
         Mutex mutex;
         synchronized (mainMutex) {
-            mutex = mutexMap.get(mutexKey);
-            if (mutex == null) {
-                mutex = new Mutex(mutexKey);
-                mutexMap.put(mutexKey, mutex);
-            }
+            mutex = mutexMap.computeIfAbsent(mutexKey, Mutex::new);
             mutex.referenceCount++;
         }
         return mutex;

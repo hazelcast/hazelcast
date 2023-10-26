@@ -26,9 +26,11 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -38,8 +40,8 @@ import java.util.concurrent.CountDownLatch;
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static org.junit.Assert.assertEquals;
 
+@Category(SlowTest.class)
 public class CacheClientListenerTest extends CacheListenerTest {
-
     @Before
     @After
     public void cleanup() {
@@ -109,8 +111,7 @@ public class CacheClientListenerTest extends CacheListenerTest {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 assertEquals("Expired event is received more than once", 1, expiredLatch.getCount());
             }
         }, 3);

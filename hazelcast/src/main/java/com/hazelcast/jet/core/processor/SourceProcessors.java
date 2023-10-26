@@ -53,7 +53,6 @@ import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.impl.function.SecuredFunctions;
-import com.hazelcast.security.permission.ConnectorPermission;
 import jakarta.jms.Connection;
 import jakarta.jms.Message;
 import jakarta.jms.MessageConsumer;
@@ -80,7 +79,6 @@ import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.impl.connector.StreamEventJournalP.streamRemoteCacheSupplier;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 
 /**
  * Static utility class with factories of source processors (the DAG
@@ -394,7 +392,6 @@ public final class SourceProcessors {
             @Nonnull FunctionEx<? super Message, ? extends T> projectionFn
     ) {
         return ProcessorMetaSupplier.preferLocalParallelismOne(
-                ConnectorPermission.jms(destination, ACTION_READ),
                 new StreamJmsP.Supplier<>(destination, maxGuarantee, eventTimePolicy,
                         newConnectionFn, consumerFn, messageIdFn, projectionFn)
         );
@@ -423,10 +420,9 @@ public final class SourceProcessors {
     ) {
         ProcessorSupplier pSupplier = new StreamJmsP.Supplier<>(
                 destination, maxGuarantee, eventTimePolicy, newConnectionFn, consumerFn, messageIdFn, projectionFn);
-        ConnectorPermission permission = ConnectorPermission.jms(destination, ACTION_READ);
         return isSharedConsumer
-                ? ProcessorMetaSupplier.preferLocalParallelismOne(permission, pSupplier)
-                : ProcessorMetaSupplier.forceTotalParallelismOne(pSupplier, newUnsecureUuidString(), permission);
+                ? ProcessorMetaSupplier.preferLocalParallelismOne(pSupplier)
+                : ProcessorMetaSupplier.forceTotalParallelismOne(pSupplier, newUnsecureUuidString());
     }
 
     /**

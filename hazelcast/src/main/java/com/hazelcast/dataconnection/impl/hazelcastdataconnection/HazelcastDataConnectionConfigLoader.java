@@ -24,7 +24,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,8 +64,7 @@ public class HazelcastDataConnectionConfigLoader {
     private String readFileContent(String filePath) {
         try {
             Path path = Paths.get(filePath);
-            byte[] bytes = Files.readAllBytes(path);
-            return new String(bytes, StandardCharsets.UTF_8);
+            return Files.readString(path);
         } catch (IOException exception) {
             throw new HazelcastException("Unable to read file :" + filePath);
         }

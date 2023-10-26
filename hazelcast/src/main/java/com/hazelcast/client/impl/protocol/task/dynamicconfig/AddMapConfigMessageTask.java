@@ -31,6 +31,7 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -134,7 +135,7 @@ public class AddMapConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "addMapConfig";
+        return SecurityInterceptorConstants.ADD_MAP_CONFIG;
     }
 
     @Override

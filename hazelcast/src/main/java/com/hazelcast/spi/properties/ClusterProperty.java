@@ -582,6 +582,21 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.max.wait.seconds.before.join", 20, SECONDS);
 
     /**
+     * Controls how {@link #WAIT_SECONDS_BEFORE_JOIN} and {@link #MAX_WAIT_SECONDS_BEFORE_JOIN} behave.
+     * If async is true, the joining member's {@link HazelcastInstance} constructor returns right away without blocking.
+     * Cluster remains in the same state as before until the configured timeouts have expired, and the new member
+     * will behave as if it was a lite member until they expire.
+     * After the timeouts expire and no other joining members are in the queue,
+     * cluster repartitioning will be performed in the background.
+     * <p>
+     * Async reduces latency significantly when new members join clusters, often reducing startup time.
+     *
+     * @since 5.4.0
+     */
+    public static final HazelcastProperty ASYNC_JOIN_STRATEGY_ENABLED
+            = new HazelcastProperty("hazelcast.async.join.strategy.enabled", true);
+
+    /**
      * Join timeout, maximum time to try to join before giving up.
      */
     public static final HazelcastProperty MAX_JOIN_SECONDS
@@ -1924,6 +1939,14 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty WAN_REPLICATE_ICACHE_EVICTIONS
             = new HazelcastProperty("hazelcast.wan.replicate.icache.evictions", false);
+
+    /**
+     * Maximum wait in seconds during member demotion to a lite member.
+     *
+     * @since 5.4
+     */
+    public static final HazelcastProperty DEMOTE_MAX_WAIT
+            = new HazelcastProperty("hazelcast.member.demote.max.wait", 600, SECONDS);
 
     private ClusterProperty() {
     }

@@ -66,29 +66,6 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
         assertThat(result[0]).isSameAs(o);
     }
 
-
-    @Test
-    public void copyWithoutNulls_whenSrcHasNullItem_thenDoNotCopyItIntoTarget() {
-        Object[] src = new Object[1];
-        src[0] = null;
-        Object[] dst = new Object[0];
-
-        ArrayUtils.copyWithoutNulls(src, dst);
-        assertThat(dst).isEmpty();
-    }
-
-    @Test
-    public void copyWithoutNulls_whenSrcHasNonNullItem_thenCopyItIntoTarget() {
-        Object[] src = new Object[1];
-        Object o = new Object();
-        src[0] = o;
-        Object[] dst = new Object[1];
-
-        ArrayUtils.copyWithoutNulls(src, dst);
-        assertThat(dst).hasSize(1);
-        assertThat(dst[0]).isSameAs(o);
-    }
-
     @Test
     public void contains() {
         Object[] array = new Object[1];
@@ -149,6 +126,17 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
         src[0] = obj;
 
         Object result = ArrayUtils.getItemAtPositionOrNull(src, 1);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void getItemAtPositionOrNull_whenNegative_thenReturNull() {
+        Object obj = new Object();
+        Object[] src = new Object[1];
+        src[0] = obj;
+
+        Object result = ArrayUtils.getItemAtPositionOrNull(src, -1);
 
         assertNull(result);
     }

@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
 
-public class ResultReadyNotifyOperation<V>
+public class ResultReadyNotifyOperation
         extends AbstractSchedulerOperation
         implements Notifier {
 

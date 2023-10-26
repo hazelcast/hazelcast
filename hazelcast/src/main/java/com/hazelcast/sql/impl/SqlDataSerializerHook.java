@@ -19,10 +19,11 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.expression.RowValue;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_FACTORY_ID;
@@ -54,10 +55,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     @SuppressWarnings("unchecked")
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
-        constructors[QUERY_ID] = arg -> new QueryId();
-        constructors[ROW_VALUE] = arg -> new RowValue();
+        constructors[QUERY_ID] = QueryId::new;
+        constructors[ROW_VALUE] = RowValue::new;
 
         // other constructors are added in JetSqlSerializerHook.afterFactoriesCreated()
 

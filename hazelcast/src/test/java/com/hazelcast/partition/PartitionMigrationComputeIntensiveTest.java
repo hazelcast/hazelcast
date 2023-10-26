@@ -57,7 +57,7 @@ public class PartitionMigrationComputeIntensiveTest extends HazelcastTestSupport
         warmUpPartitions(instances);
 
         LOGGER.info("Adding migration listener");
-        EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener(false);
         instances[0].getPartitionService().addMigrationListener(listener);
 
         LOGGER.info("Changing cluster state to PASSIVE");

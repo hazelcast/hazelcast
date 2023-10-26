@@ -24,6 +24,7 @@ import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -89,7 +90,7 @@ public class MultiMapSizeMessageTask
 
     @Override
     public String getMethodName() {
-        return "size";
+        return SecurityInterceptorConstants.SIZE;
     }
 
     @Override

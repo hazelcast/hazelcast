@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -87,7 +88,7 @@ public class MapIsEmptyMessageTask
 
     @Override
     public String getMethodName() {
-        return "isEmpty";
+        return SecurityInterceptorConstants.IS_EMPTY;
     }
 
     @Override

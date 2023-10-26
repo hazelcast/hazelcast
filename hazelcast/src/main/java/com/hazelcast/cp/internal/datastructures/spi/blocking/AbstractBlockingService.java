@@ -202,7 +202,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         Long2ObjectHashMap<Object> completedWaitKeys = new Long2ObjectHashMap<>();
         registry.closeSession(sessionId, expiredWaitKeys, completedWaitKeys);
 
-        if (logger.isFineEnabled() && (expiredWaitKeys.size() > 0 || completedWaitKeys.size() > 0)) {
+        if (logger.isFineEnabled() && !(expiredWaitKeys.isEmpty() && completedWaitKeys.isEmpty())) {
             logger.fine("Closed Session[" + sessionId + "] in " + groupId + " expired wait key commit indices: "
                     + expiredWaitKeys + " completed wait keys: " + completedWaitKeys);
         }
@@ -278,6 +278,9 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
                 .sum();
     }
 
+    // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
+    // effect on throughput such that it's not a direct replacement
+    @SuppressWarnings("squid:S3824")
     protected final RR getOrInitRegistry(CPGroupId groupId) {
         checkNotNull(groupId);
         RR registry = registries.get(groupId);
@@ -393,7 +396,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
             long now = Clock.currentTimeMillis();
             for (ResourceRegistry<W, R> registry : registries.values()) {
                 Collection<BiTuple<String, UUID>> t = registry.getWaitKeysToExpire(now);
-                if (t.size() > 0) {
+                if (!t.isEmpty()) {
                     timeouts.put(registry.getGroupId(), t);
                 }
             }

@@ -51,8 +51,8 @@ class MapRemoteService implements RemoteService {
         MapConfig mapConfig = config.findMapConfig(name);
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
 
-        checkMapConfig(mapConfig, config.getNativeMemoryConfig(), mergePolicyProvider,
-                mapServiceContext.getNodeEngine().getProperties(), nodeEngine.getLogger(MapConfig.class));
+        checkMapConfig(config, mapConfig, mergePolicyProvider
+        );
 
         if (mapConfig.isNearCacheEnabled()) {
             checkNearCacheConfig(name, mapConfig.getNearCacheConfig(), config.getNativeMemoryConfig(), false);
