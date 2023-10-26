@@ -21,7 +21,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
-import java.util.Map;
+import java.util.Collections;
+import java.util.HashMap;
 
 import static com.hazelcast.kubernetes.KubernetesFakeUtils.endpointAddress;
 import static com.hazelcast.kubernetes.KubernetesFakeUtils.endpoints;
@@ -52,13 +53,23 @@ public class KubernetesApiEndpointProviderTest
 
     public String getEndpointsResponse() throws JsonProcessingException {
         return WRITER.writeValueAsString(
-                endpoints(Map.of("192.168.0.25", "hazelcast-0", "172.17.0.5", "hazelcast-1"), 5701));
+                endpoints(new HashMap<String, String>() {{
+                    put("192.168.0.25", "hazelcast-0");
+                    put("172.17.0.5", "hazelcast-1");
+                }}, 5701));
     }
 
     public String getEndpointsListResponse() throws JsonProcessingException {
         return WRITER.writeValueAsString(endpointsList(
-                endpoints(Map.of("172.17.0.5", "hazelcast-0", "192.168.0.25", "hazelcast-1"),
-                        Map.of("172.17.0.6", "hazelcast-2"), Map.of("5701", 5701, "hazelcast", 5702))));
+                endpoints(new HashMap<String, String>() {{
+                              put("172.17.0.5", "hazelcast-0");
+                              put("192.168.0.25", "hazelcast-1");
+                          }},
+                        Collections.singletonMap("172.17.0.6", "hazelcast-2"),
+                        new HashMap<String, Integer>() {{
+                            put("5701", 5701);
+                            put("hazelcast", 5702);
+                        }})));
     }
 
     public String getEndpointsUrlString() {

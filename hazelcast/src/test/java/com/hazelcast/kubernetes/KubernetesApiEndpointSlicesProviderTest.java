@@ -20,8 +20,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Collections;
+import java.util.HashMap;
 
 import static com.hazelcast.kubernetes.KubernetesFakeUtils.endpointSlice;
 import static com.hazelcast.kubernetes.KubernetesFakeUtils.endpointSliceEndpoint;
@@ -39,29 +39,32 @@ public class KubernetesApiEndpointSlicesProviderTest
     @Override
     public String getEndpointsResponseWithServices() throws JsonProcessingException {
         return WRITER.writeValueAsString(endpointSliceList(
-                endpointSlice("hazelcast-0", List.of("192.168.0.25"), List.of(5701), "hazelcast-0", "nodeName-1"),
-                endpointSlice("service-1", List.of("172.17.0.5"), List.of(5701), "hazelcast-1", "nodeName-2"),
-                endpointSlice("my-release-hazelcast", List.of(5701),
-                        endpointSliceEndpoint(List.of("192.168.0.25"), "hazelcast-0", "node-name-1", true),
-                        endpointSliceEndpoint(List.of("172.17.0.5"), "hazelcast-1", "node-name-2", true)),
-                endpointSlice("kubernetes", List.of("34.122.156.52"), List.of(443))));
+                endpointSlice("hazelcast-0", Collections.singletonList("192.168.0.25"), Collections.singletonList(5701), "hazelcast-0", "nodeName-1"),
+                endpointSlice("service-1", Collections.singletonList("172.17.0.5"), Collections.singletonList(5701), "hazelcast-1", "nodeName-2"),
+                endpointSlice("my-release-hazelcast", Collections.singletonList(5701),
+                        endpointSliceEndpoint(Collections.singletonList("192.168.0.25"), "hazelcast-0", "node-name-1", true),
+                        endpointSliceEndpoint(Collections.singletonList("172.17.0.5"), "hazelcast-1", "node-name-2", true)),
+                endpointSlice("kubernetes", Collections.singletonList("34.122.156.52"), Collections.singletonList(443))));
     }
 
     @Override
     public String getEndpointsResponse() throws JsonProcessingException {
         return WRITER.writeValueAsString(endpointSliceList(
-                endpointSlice("service-0", List.of(5701),
-                        endpointSliceEndpoint(List.of("172.17.0.5"), "pod-0", "nodeName-0", true),
-                        endpointSliceEndpoint(List.of("192.168.0.25"), "pod-1", "node-name-1", true))));
+                endpointSlice("service-0", Collections.singletonList(5701),
+                        endpointSliceEndpoint(Collections.singletonList("172.17.0.5"), "pod-0", "nodeName-0", true),
+                        endpointSliceEndpoint(Collections.singletonList("192.168.0.25"), "pod-1", "node-name-1", true))));
     }
 
     @Override
     public String getEndpointsListResponse() throws JsonProcessingException {
         return WRITER.writeValueAsString(endpointSliceList(
-                endpointSlice("service-0", Map.of("5701", 5701, "hazelcast", 5702),
-                        endpointSliceEndpoint(List.of("172.17.0.5"), "pod-0", "nodeName-0", true),
-                        endpointSliceEndpoint(List.of("192.168.0.25"), "pod-1", "nodeName-1", true),
-                        endpointSliceEndpoint(List.of("172.17.0.6"), "pod-2", "node-name-2", false))));
+                endpointSlice("service-0", new HashMap<String, Integer>() {{
+                            put("5701", 5701);
+                            put("hazelcast", 5702);
+                        }},
+                        endpointSliceEndpoint(Collections.singletonList("172.17.0.5"), "pod-0", "nodeName-0", true),
+                        endpointSliceEndpoint(Collections.singletonList("192.168.0.25"), "pod-1", "nodeName-1", true),
+                        endpointSliceEndpoint(Collections.singletonList("172.17.0.6"), "pod-2", "node-name-2", false))));
     }
 
     @Override
