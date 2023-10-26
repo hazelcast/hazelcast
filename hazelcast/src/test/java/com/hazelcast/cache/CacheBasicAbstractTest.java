@@ -17,6 +17,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -24,6 +25,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -1042,6 +1044,26 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
         // one of two failed
         assertEquals(1, illegalStateExceptionCount.get());
+    }
+
+    @Test
+    public void testUpdatingExpiryPolicyOfCacheEntry() {
+        ICache<Integer, String> cache = createCache();
+        cache.put(1, "value", new CreatedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, 5000)));
+
+        assertTrue(cache.setExpiryPolicy(1, new CreatedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, 6000))));
+        assertTrueEventually("expected the key to be expired", () ->
+                Assertions.assertNull(cache.get(1)), 10);
+    }
+
+    @Test
+    public void testUpdatingExpiryPolicyOfCacheEntryToEternal() {
+        ICache<Integer, String> cache = createCache();
+        cache.put(1, "value", new CreatedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, 5000)));
+
+        assertTrue(cache.setExpiryPolicy(1, new CreatedExpiryPolicy(Duration.ETERNAL)));
+        sleepAtLeastSeconds(5);
+        assertEquals("value", cache.get(1));
     }
 
     private static void createCacheConcurrently(CountDownLatch latch, CacheManager cacheManager,
