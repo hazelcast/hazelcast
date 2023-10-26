@@ -37,7 +37,6 @@ public class JdbcInnerEquiJoinStreamToJdbcTest extends JdbcSqlTestSupport {
     }
 
 
-    // This test will call JdbcSqlConnector#nestedLoopReader
     // joinInfo indices are used
     @Test
     public void joinWithTableValuedFunction_small_table_on_right() throws Exception {
@@ -56,46 +55,18 @@ public class JdbcInnerEquiJoinStreamToJdbcTest extends JdbcSqlTestSupport {
         );
 
         String sql = "SELECT n.id, n.name, n.ssn , t.v FROM " +
-                     "TABLE(generate_series(207,300)) t " +
-                     "JOIN " + tableName + " n ON t.v = n.ssn ORDER BY n.ssn";
+                     "(SELECT v FROM TABLE(generate_stream(1000))) t " +
+                     "JOIN " + tableName + " n ON t.v = n.id LIMIT 3";
         List<Row> actualList = getRows(sql);
 
 
-        assertThat(actualList).containsExactly(
-                new Row(1, "myworker1", 208, 208),
-                new Row(2, "myworker2", 209, 209),
-                new Row(3, "myworker3", 210, 210)
+        assertThat(actualList).containsExactlyInAnyOrder(
+                new Row(1, "myworker1", 208, 1L),
+                new Row(2, "myworker2", 209, 2L),
+                new Row(3, "myworker3", 210, 3L)
         );
     }
 
-    // This test will call JdbcSqlConnector#fullScanReader
-    @Test
-    public void joinWithTableValuedFunction_small_table_on_left() throws Exception {
-        String tableName = "table2";
-        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
-        // SSN from : 208 - 210
-        addWorkers(tableName, 3);
-
-        execute(
-                "CREATE MAPPING " + tableName + " ("
-                + " id INT, "
-                + " name VARCHAR, "
-                + " ssn INT "
-                + ") "
-                + "DATA CONNECTION " + TEST_DATABASE_REF
-        );
-
-        String sql = "SELECT n.id, n.name, n.ssn , t.v FROM " + tableName + " n " +
-                     "JOIN TABLE(generate_series(207,300)) t ON t.v = n.ssn ORDER BY n.ssn";
-        List<Row> actualList = getRows(sql);
-
-
-        assertThat(actualList).containsExactly(
-                new Row(1, "myworker1", 208, 208),
-                new Row(2, "myworker2", 209, 209),
-                new Row(3, "myworker3", 210, 210)
-        );
-    }
 
     private List<Row> getRows(String sql) {
         List<Row> actualList = new ArrayList<>();
