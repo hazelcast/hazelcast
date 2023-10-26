@@ -76,7 +76,7 @@
         <maven.deploy.plugin.version>3.1.1</maven.deploy.plugin.version>
 
         <maven.surefire.plugin.version>3.2.1</maven.surefire.plugin.version>
-        <maven.checkstyle.plugin.version>3.3.0</maven.checkstyle.plugin.version>
+        <maven.checkstyle.plugin.version>3.3.1</maven.checkstyle.plugin.version>
         <maven.jacoco.plugin.version>0.8.11</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>3.2.1</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
@@ -85,13 +85,13 @@
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
         <owasp.dependency-check.version>8.4.2</owasp.dependency-check.version>
-        <codehause.license.plugin.version>2.2.0</codehause.license.plugin.version>
+        <codehause.license.plugin.version>2.3.0</codehause.license.plugin.version>
 
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.3</avro.version>
-        <aws.sdk.version>1.12.572</aws.sdk.version>
+        <aws.sdk.version>1.12.574</aws.sdk.version>
         <calcite.version>1.35.0</calcite.version>
         <classgraph.version>4.8.163</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
@@ -112,7 +112,7 @@
         <kotlin.version>1.9.10</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <mssql.version>12.4.1.jre11</mssql.version>
-        <mysql.connector.version>8.1.0</mysql.connector.version>
+        <mysql.connector.version>8.2.0</mysql.connector.version>
         <netty.version>4.1.100.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
@@ -143,7 +143,7 @@
         <atomikos.version>3.9.3</atomikos.version>
         <bytebuddy.version>1.14.9</bytebuddy.version>
         <commons-codec.version>1.16.0</commons-codec.version>
-        <commons-io.version>2.14.0</commons-io.version>
+        <commons-io.version>2.15.0</commons-io.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
         <confluent.version>7.4.0</confluent.version>
         <felix.utils.version>1.11.6</felix.utils.version>
