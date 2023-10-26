@@ -28,34 +28,42 @@ public final class LoggingUtil {
     private LoggingUtil() {
     }
 
+    /** @see ILogger#logFine(String, Object) */
     public static void logFine(ILogger logger, String template, Object arg1) {
         logger.logFine(template, arg1);
     }
 
+    /** @see ILogger#logFine(String, Object, Object) */
     public static void logFine(ILogger logger, String template, Object arg1, Object arg2) {
         logger.logFine(template, arg1, arg2);
     }
 
+    /** @see ILogger#logFine(String, Object, Object, Object) */
     public static void logFine(ILogger logger, String template, Object arg1, Object arg2, Object arg3) {
         logger.logFine(template, arg1, arg2, arg3);
     }
 
+    /** @see ILogger#logFine(String, Object, Object, Object, Object) */
     public static void logFine(ILogger logger, String template, Object arg1, Object arg2, Object arg3, Object arg4) {
         logger.logFine(template, arg1, arg2, arg3, arg4);
     }
 
+    /** @see ILogger#logFinest(String, Object) */
     public static void logFinest(ILogger logger, String template, Object arg1) {
         logger.logFinest(template, arg1);
     }
 
+    /** @see ILogger#logFinest(String, Object, Object) */
     public static void logFinest(ILogger logger, String template, Object arg1, Object arg2) {
         logger.logFinest(template, arg1, arg2);
     }
 
+    /** @see ILogger#logFinest(String, Object, Object, Object) */
     public static void logFinest(ILogger logger, String template, Object arg1, Object arg2, Object arg3) {
         logger.logFinest(template, arg1, arg2, arg3);
     }
 
+    /** @see ILogger#logFinest(String, Object, Object, Object, Object) */
     public static void logFinest(ILogger logger, String template, Object arg1, Object arg2, Object arg3, Object arg4) {
         logger.logFinest(template, arg1, arg2, arg3, arg4);
     }
