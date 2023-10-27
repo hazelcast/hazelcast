@@ -1067,6 +1067,8 @@ abstract class SqlPlanImpl extends SqlPlan {
         // map of per-table partition pruning candidates, structured as
         // mapName -> { columnName -> RexLiteralOrDynamicParam }
         private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
+        private final boolean analyzed;
+        private final Map<String, String> analyzeOptions;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         SelectPlan(
@@ -1079,7 +1081,10 @@ abstract class SqlPlanImpl extends SqlPlan {
                 SqlRowMetadata rowMetadata,
                 PlanExecutor planExecutor,
                 List<Permission> permissions,
-                Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates) {
+                Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates,
+                final boolean analyzed,
+                final Map<String, String> analyzeOptions
+        ) {
             super(planKey);
 
             this.objectKeys = objectKeys;
@@ -1091,6 +1096,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.planExecutor = planExecutor;
             this.permissions = permissions;
             this.partitionStrategyCandidates = partitionStrategyCandidates;
+            this.analyzed = analyzed;
+            this.analyzeOptions = analyzeOptions;
         }
 
         QueryParameterMetadata getParameterMetadata() {
@@ -1127,6 +1134,14 @@ abstract class SqlPlanImpl extends SqlPlan {
             return partitionStrategyCandidates;
         }
 
+        public boolean isAnalyzed() {
+            return analyzed;
+        }
+
+        public Map<String, String> getAnalyzeOptions() {
+            return analyzeOptions;
+        }
+
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             checkPermissions(context, dag);
@@ -1153,7 +1168,10 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final boolean infiniteRows;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final boolean analyzed;
+        private final Map<String, String> analyzeOptions;
 
+        @SuppressWarnings("checkstyle:ParameterNumber")
         DmlPlan(
                 Operation operation,
                 PlanKey planKey,
@@ -1163,8 +1181,9 @@ abstract class SqlPlanImpl extends SqlPlan {
                 String query,
                 boolean infiniteRows,
                 PlanExecutor planExecutor,
-                List<Permission> permissions
-        ) {
+                List<Permission> permissions,
+                boolean analyzed,
+                Map<String, String> analyzeOptions) {
             super(planKey);
 
             this.operation = operation;
@@ -1175,6 +1194,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.infiniteRows = infiniteRows;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.analyzed = analyzed;
+            this.analyzeOptions = analyzeOptions;
         }
 
         Operation getOperation() {
@@ -1205,6 +1226,14 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isPlanValid(PlanCheckContext context) {
             return context.isValid(objectKeys);
+        }
+
+        public boolean isAnalyzed() {
+            return analyzed;
+        }
+
+        public Map<String, String> getAnalyzeOptions() {
+            return analyzeOptions;
         }
 
         @Override
