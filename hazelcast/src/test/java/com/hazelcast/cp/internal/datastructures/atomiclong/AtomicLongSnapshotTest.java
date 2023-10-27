@@ -54,11 +54,6 @@ public class AtomicLongSnapshotTest extends AbstractAtomicRegisterSnapshotTest<L
     }
 
     @Override
-    protected Long readValue() {
-        return atomicLong.get();
-    }
-
-    @Override
     protected RaftOp getQueryRaftOp() {
         return new LocalGetOp(name);
     }

@@ -218,7 +218,7 @@ public enum MergeOpSteps implements IMapOpStep {
             List backupPairs = null;
 
             boolean hasMapListener = mapEventPublisher.hasEventListener(state.getOperation().getName());
-            boolean hasWanReplication = mapContainer.isWanReplicationEnabled()
+            boolean hasWanReplication = mapContainer.getWanContext().isWanReplicationEnabled()
                     && !state.isDisableWanReplicationEvent();
             boolean hasBackups = mapContainer.getTotalBackupCount() > 0;
             boolean hasInvalidation = mapContainer.hasInvalidationListener();

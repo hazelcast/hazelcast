@@ -85,7 +85,7 @@ public class PutAllOperation extends MapOperation
         }
 
         hasMapListener = mapEventPublisher.hasEventListener(name);
-        hasWanReplication = mapContainer.isWanReplicationEnabled();
+        hasWanReplication = mapContainer.getWanContext().isWanReplicationEnabled();
         hasBackups = hasBackups();
         hasInvalidation = mapContainer.hasInvalidationListener();
 

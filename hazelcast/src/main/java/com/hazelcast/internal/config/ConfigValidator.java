@@ -21,6 +21,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -52,7 +53,6 @@ import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
-import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -122,25 +122,77 @@ public final class ConfigValidator {
     /**
      * Validates the given {@link MapConfig}.
      *
+     * @param config
      * @param mapConfig the {@link MapConfig}
      */
-    public static void checkMapConfig(MapConfig mapConfig,
-                                      NativeMemoryConfig nativeMemoryConfig,
-                                      SplitBrainMergePolicyProvider mergePolicyProvider,
-                                      HazelcastProperties properties, ILogger logger) {
+    public static void checkMapConfig(Config config, MapConfig mapConfig,
+                                      SplitBrainMergePolicyProvider mergePolicyProvider) {
 
         checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
         checkNotBitmapIndexWhenNativeMemory(mapConfig.getInMemoryFormat(), mapConfig.getIndexConfigs());
-        checkNotTieredStoreWhenOpenSource(mapConfig.getTieredStoreConfig());
+        checkTSEnabledOnEnterpriseJar(mapConfig.getTieredStoreConfig());
 
         if (getBuildInfo().isEnterprise()) {
-            checkMapNativeConfig(mapConfig, nativeMemoryConfig);
+            checkMapNativeConfig(mapConfig, config.getNativeMemoryConfig());
+            checkTieredStoreMapConfig(config, mapConfig);
         }
 
         checkMapEvictionConfig(mapConfig.getEvictionConfig());
         checkMapMaxSizePolicyPerInMemoryFormat(mapConfig);
         checkMapMergePolicy(mapConfig,
                 mapConfig.getMergePolicyConfig().getPolicy(), mergePolicyProvider);
+    }
+
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public static void checkTieredStoreMapConfig(Config config, MapConfig mapConfig) {
+        if (!mapConfig.getTieredStoreConfig().isEnabled()) {
+            return;
+        }
+
+        String mapName = mapConfig.getName();
+        DiskTierConfig diskTierConfig = mapConfig.getTieredStoreConfig().getDiskTierConfig();
+        if (!diskTierConfig.isEnabled()) {
+            throw new InvalidConfigurationException(String.format("Map '%s' is configured for tiered "
+                    + "storage, but disk tier store is not enabled. Currently this is not supported, "
+                    + "disk tier store must be enabled", mapName));
+        }
+        String deviceName = diskTierConfig.getDeviceName();
+        if (config.getDeviceConfig(deviceName) == null) {
+            throw new InvalidConfigurationException(String.format("Map '%s' is configured for tiered "
+                    + "storage, but there is no configuration found for the device '%s' to be used for "
+                    + "the map", mapName, deviceName));
+        }
+
+        if (mapConfig.getDataPersistenceConfig().isEnabled()) {
+            throw new InvalidConfigurationException(String.format("Map '%s' is configured for tiered "
+                    + "storage, but data persistence is also configured. Tiered store and data "
+                    + "persistence are mutually exclusive features.", mapName));
+        }
+
+        InMemoryFormat inMemoryFormat = mapConfig.getInMemoryFormat();
+        if (NATIVE != inMemoryFormat) {
+            throw new InvalidConfigurationException(format("Only NATIVE in-memory-format "
+                            + "is supported for Tiered-Store but found [%s] for the map [%s]",
+                    inMemoryFormat, mapConfig.getName()));
+        }
+
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        if (!EvictionPolicy.NONE.equals(evictionConfig.getEvictionPolicy())) {
+            throw new InvalidConfigurationException(format("Eviction is not supported "
+                    + "for Tiered-Store map [%s]", mapConfig.getName()));
+        }
+
+        int timeToLiveSeconds = mapConfig.getTimeToLiveSeconds();
+        if (timeToLiveSeconds != MapConfig.DISABLED_TTL_SECONDS) {
+            throw new InvalidConfigurationException(format("TTL expiry is not supported "
+                    + "for Tiered-Store map [%s]", mapConfig.getName()));
+        }
+
+        int maxIdleSeconds = mapConfig.getMaxIdleSeconds();
+        if (maxIdleSeconds != MapConfig.DEFAULT_MAX_IDLE_SECONDS) {
+            throw new InvalidConfigurationException(format("MaxIdle expiry is not supported"
+                    + " for Tiered-Store map [%s]", mapConfig.getName()));
+        }
     }
 
     static void checkMapMaxSizePolicyPerInMemoryFormat(MapConfig mapConfig) {
@@ -234,7 +286,7 @@ public final class ConfigValidator {
                 && config.getNetworkConfig().getSymmetricEncryptionConfig() != null
                 && config.getNetworkConfig().getSymmetricEncryptionConfig().isEnabled()
                 && !usesAdvancedNetworkConfig) {
-                logger.warning(warn);
+            logger.warning(warn);
         }
 
         if (config.getAdvancedNetworkConfig() != null
@@ -646,7 +698,7 @@ public final class ConfigValidator {
      *
      * @param tieredStoreConfig supplied tieredStoreConfig
      */
-    private static void checkNotTieredStoreWhenOpenSource(TieredStoreConfig tieredStoreConfig) {
+    private static void checkTSEnabledOnEnterpriseJar(TieredStoreConfig tieredStoreConfig) {
         if (tieredStoreConfig.isEnabled() && !getBuildInfo().isEnterprise()) {
             throw new InvalidConfigurationException("Tiered-Store is supported in Hazelcast Enterprise only."
                     + " Please make sure you have Hazelcast Enterprise JARs on your classpath.");

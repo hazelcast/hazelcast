@@ -57,7 +57,6 @@ public final class CollectionUtil {
         return !isEmpty(collection);
     }
 
-
     /**
      * Returns the n-th item or {@code null} if collection is smaller.
      *

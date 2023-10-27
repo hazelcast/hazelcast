@@ -54,11 +54,7 @@ public class InternalSetMultimap<K, V> {
         checkNotNull(key, "Key cannot be null");
         checkNotNull(value, "Value cannot be null");
 
-        Set<V> values = backingMap.get(key);
-        if (values == null) {
-            values = new HashSet<V>();
-            backingMap.put(key, values);
-        }
+        Set<V> values = backingMap.computeIfAbsent(key, x -> new HashSet<>());
         values.add(value);
     }
 

@@ -66,11 +66,7 @@ public final class Bitmap<E> {
             Object value = values.next();
             assert value != null;
 
-            SparseBitSet bitSet = bitSets.get(value);
-            if (bitSet == null) {
-                bitSet = new SparseBitSet();
-                bitSets.put(value, bitSet);
-            }
+            SparseBitSet bitSet = bitSets.computeIfAbsent(value, x -> new SparseBitSet());
             operationStats.onEntryAdded(ZeroCost.ZERO_COST);
             bitSet.add(key);
         }
@@ -103,11 +99,7 @@ public final class Bitmap<E> {
             Object value = newValues.next();
             assert value != null;
 
-            SparseBitSet bitSet = bitSets.get(value);
-            if (bitSet == null) {
-                bitSet = new SparseBitSet();
-                bitSets.put(value, bitSet);
-            }
+            SparseBitSet bitSet = bitSets.computeIfAbsent(value, x -> new SparseBitSet());
             operationStats.onEntryAdded(ZeroCost.ZERO_COST);
             bitSet.add(key);
         }

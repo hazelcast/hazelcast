@@ -47,11 +47,7 @@ public class NodeAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
                 throw new IllegalArgumentException("Not enough metadata information is provided. "
                         + "Node name information must be provided with NODE_AWARE partition group.");
             }
-            MemberGroup group = groups.get(nodeInfo);
-            if (group == null) {
-                group = new DefaultMemberGroup();
-                groups.put(nodeInfo, group);
-            }
+            MemberGroup group = groups.computeIfAbsent(nodeInfo, x -> new DefaultMemberGroup());
             group.addMember(member);
         }
         return new HashSet<>(groups.values());

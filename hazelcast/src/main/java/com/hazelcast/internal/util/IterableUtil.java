@@ -131,7 +131,7 @@ public final class IterableUtil {
         return size;
     }
 
-    public static <T, R> Iterator<R> limit(final Iterator<R> iterator, final int limit) {
+    public static <R> Iterator<R> limit(final Iterator<R> iterator, final int limit) {
         return new Iterator<R>() {
             private int iterated;
 

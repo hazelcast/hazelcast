@@ -82,12 +82,8 @@ final class PartitionReplicaVersions {
     }
 
     private PartitionReplicaFragmentVersions getFragmentVersions(ServiceNamespace namespace) {
-        PartitionReplicaFragmentVersions fragmentVersions = fragmentVersionsMap.get(namespace);
-        if (fragmentVersions == null) {
-            fragmentVersions = new PartitionReplicaFragmentVersions(partitionId, namespace);
-            fragmentVersionsMap.put(namespace, fragmentVersions);
-        }
-        return fragmentVersions;
+        return fragmentVersionsMap.computeIfAbsent(namespace,
+                x -> new PartitionReplicaFragmentVersions(partitionId, namespace));
     }
 
     void retainNamespaces(Collection<ServiceNamespace> namespaces) {

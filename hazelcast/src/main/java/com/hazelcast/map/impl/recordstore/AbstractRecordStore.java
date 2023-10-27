@@ -149,7 +149,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     public boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
         switch (provenance) {
             case WAN:
-                return mapContainer.isPersistWanReplicatedData();
+                return mapContainer.getWanContext().isPersistWanReplicatedData();
             case NOT_WAN:
                 return true;
             default:

@@ -123,9 +123,10 @@ public interface NodeEngine {
     /**
      * Returns the local member.
      * <p>
-     * The returned value will never be null but it may change when local lite member is promoted to a data member
-     * or when this member merges to a new cluster after split-brain detected. Returned value should not be
-     * cached but instead this method should be called each time when local member is needed.
+     * The returned value will never be null, but it may change when local lite member is promoted to a data member
+     * or when a data member is demoted to a lite member or when this member merges to a new cluster after
+     * split-brain detected. Returned value should not be cached but instead this method should be called each time
+     * when local member is needed.
      *
      * @return the local member
      */
