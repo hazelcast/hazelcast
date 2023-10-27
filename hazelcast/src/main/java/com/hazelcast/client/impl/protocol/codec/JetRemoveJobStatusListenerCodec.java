@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified job status listener. If there is no such listener
  * added before, this call does no change in the cluster and returns false.
  */
-@Generated("3b3c4c253322dfc700d90b111d18258a")
+@SuppressWarnings("unused")
+@Generated("0623ac6c9aa82eb8ba96878d1248c133")
 public final class JetRemoveJobStatusListenerCodec {
     //hex: 0xFE1400
     public static final int REQUEST_MESSAGE_TYPE = 16651264;

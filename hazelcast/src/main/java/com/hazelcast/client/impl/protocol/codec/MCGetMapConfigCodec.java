@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the config of a map on the member it's called on.
  */
-@Generated("a7beeb55cd8dab3e402694dc70335c11")
+@SuppressWarnings("unused")
+@Generated("d2dcbc253244ff224513869a94e5df06")
 public final class MCGetMapConfigCodec {
     //hex: 0x200300
     public static final int REQUEST_MESSAGE_TYPE = 2097920;

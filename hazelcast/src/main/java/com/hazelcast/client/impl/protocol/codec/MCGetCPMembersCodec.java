@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current list of CP members.
  */
-@Generated("f6e311c355553715d46ec3f92e2557ed")
+@SuppressWarnings("unused")
+@Generated("f9b25f8e8530e49e526cfc50fdcda421")
 public final class MCGetCPMembersCodec {
     //hex: 0x201900
     public static final int REQUEST_MESSAGE_TYPE = 2103552;

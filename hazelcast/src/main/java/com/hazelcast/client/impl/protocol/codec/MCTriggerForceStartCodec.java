@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Triggers force start
  */
-@Generated("30fd607ad9d78040c5be574d3cb3824e")
+@SuppressWarnings("unused")
+@Generated("18f66a516078637cb95a581463b15a3b")
 public final class MCTriggerForceStartCodec {
     //hex: 0x201E00
     public static final int REQUEST_MESSAGE_TYPE = 2104832;

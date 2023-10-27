@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("3cfe8cae8938bd077580966caf83491d")
+@SuppressWarnings("unused")
+@Generated("0a591d0143287996afdfab0b1df71ce3")
 public final class WanSyncConfigCodec {
     private static final int CONSISTENCY_CHECK_STRATEGY_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = CONSISTENCY_CHECK_STRATEGY_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;

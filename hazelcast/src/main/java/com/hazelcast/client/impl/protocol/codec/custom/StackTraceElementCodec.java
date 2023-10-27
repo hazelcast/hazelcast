@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("174a266326736d32f4fa1309014c6d0e")
+@SuppressWarnings("unused")
+@Generated("520224bf4e4f4fcbbe82cef1e01ad53c")
 public final class StackTraceElementCodec {
     private static final int LINE_NUMBER_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = LINE_NUMBER_FIELD_OFFSET + INT_SIZE_IN_BYTES;

@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Acquires all available permits at once and returns immediately.
  */
-@Generated("ed71e02df0c9fa755609cee7770afb23")
+@SuppressWarnings("unused")
+@Generated("f3f7bbfaf903a8cf715b8203072cd737")
 public final class SemaphoreDrainCodec {
     //hex: 0x0C0400
     public static final int REQUEST_MESSAGE_TYPE = 787456;

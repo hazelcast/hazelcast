@@ -41,7 +41,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * element, including null, and throw an exception, as described in the specification for Collection
  * Individual set implementations should clearly document any restrictions on the elements that they may contain.
  */
-@Generated("a31cc9469d727dd65aa963bae8456898")
+@SuppressWarnings("unused")
+@Generated("be3a78be90885f2a8c3c024c370941f8")
 public final class SetAddCodec {
     //hex: 0x060400
     public static final int REQUEST_MESSAGE_TYPE = 394240;

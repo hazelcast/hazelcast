@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Shuts down the member it's called on.
  */
-@Generated("3c5252cc02c7445abca7d1196d81a17f")
+@SuppressWarnings("unused")
+@Generated("5afcd8837e513c4f5266848f5fb57cfb")
 public final class MCShutdownMemberCodec {
     //hex: 0x200800
     public static final int REQUEST_MESSAGE_TYPE = 2099200;

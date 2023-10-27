@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("794aa37d063f6214139e5ffc198e4562")
+@SuppressWarnings("unused")
+@Generated("454be213a4892c5f9a822198520a0791")
 public final class WanCustomPublisherConfigHolderCodec {
 
     private WanCustomPublisherConfigHolderCodec() {

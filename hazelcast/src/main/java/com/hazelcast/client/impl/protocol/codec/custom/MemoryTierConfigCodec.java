@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("e4d1309f4e7d7a5768572aa1a593a53e")
+@SuppressWarnings("unused")
+@Generated("2241607626c60f970121e8bae5cc097c")
 public final class MemoryTierConfigCodec {
 
     private MemoryTierConfigCodec() {

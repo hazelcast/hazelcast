@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("38d023e271352edd267b9b596f24e660")
+@SuppressWarnings("unused")
+@Generated("9f764534d40fd31353cb451fa3ea06d8")
 public final class MemberInfoCodec {
     private static final int UUID_FIELD_OFFSET = 0;
     private static final int LITE_MEMBER_FIELD_OFFSET = UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;

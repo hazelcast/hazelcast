@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("fbd66667aad1b8f036a519a7d433b4de")
+@SuppressWarnings("unused")
+@Generated("38751ddaa91b6d5e59436baa9d44fc96")
 public final class DistributedObjectInfoCodec {
 
     private DistributedObjectInfoCodec() {

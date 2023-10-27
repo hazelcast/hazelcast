@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Return true if this collection contains all of the elements in the specified collection.
  */
-@Generated("d73f623cdf073e5d0b7ce7ba54559f3a")
+@SuppressWarnings("unused")
+@Generated("d2cff9cce8ab6e3a67a755e5550e0b76")
 public final class QueueContainsAllCodec {
     //hex: 0x030C00
     public static final int REQUEST_MESSAGE_TYPE = 199680;
