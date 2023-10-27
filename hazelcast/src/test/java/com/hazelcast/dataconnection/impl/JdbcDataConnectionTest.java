@@ -266,7 +266,7 @@ public class JdbcDataConnectionTest {
         }
     }
 
-    public static HikariDataSource pooledDataSource(JdbcDataConnection dataConnection) {
+    public static DataSource pooledDataSource(JdbcDataConnection dataConnection) {
         return dataConnection.pooledDataSource();
     }
 
