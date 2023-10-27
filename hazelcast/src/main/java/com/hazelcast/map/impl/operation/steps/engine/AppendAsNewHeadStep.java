@@ -32,12 +32,12 @@ import javax.annotation.Nullable;
  * So with this delegator Step, append becomes 1st step in step
  * chain and current becomes 2nd.
  */
-class AppendAsNewHeadStep<S> implements Step<S> {
+public class AppendAsNewHeadStep<S> implements Step<S> {
 
     private final Step<S> append;
     private final Step<S> current;
 
-    AppendAsNewHeadStep(Step<S> current, Step<S> append) {
+    public AppendAsNewHeadStep(Step<S> current, Step<S> append) {
         this.append = append;
         this.current = current;
     }
@@ -82,7 +82,7 @@ class AppendAsNewHeadStep<S> implements Step<S> {
      * @param newStep    step to append before current head.
      * @return current head step.
      */
-    static Step appendAsNewHeadStep(Step currentHead, Step newStep) {
+    public static Step appendAsNewHeadStep(Step currentHead, Step newStep) {
         return new AppendAsNewHeadStep(currentHead, newStep);
     }
 }

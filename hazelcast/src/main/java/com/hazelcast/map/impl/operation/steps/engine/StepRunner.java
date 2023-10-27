@@ -194,7 +194,6 @@ public class StepRunner extends Offload
                     }
                 }
             } catch (Throwable throwable) {
-                throwable.printStackTrace();
                 stepSupplier.handleOperationError(throwable);
             }
         } while (!currentThread().isInterrupted());
