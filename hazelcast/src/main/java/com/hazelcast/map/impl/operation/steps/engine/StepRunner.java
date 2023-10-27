@@ -28,7 +28,7 @@ import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import javax.annotation.Nullable;
-import java.util.Set;
+import java.util.LinkedList;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
@@ -60,7 +60,7 @@ public class StepRunner extends Offload
 
     private final int partitionId;
     private final long maxRunNanos;
-    private final Set<MapOperation> offloadedOperations;
+    private final LinkedList<MapOperation> offloadedOperations;
     private final OperationExecutor operationExecutor;
     private final ExecutionService executionService;
 
@@ -194,6 +194,7 @@ public class StepRunner extends Offload
                     }
                 }
             } catch (Throwable throwable) {
+                throwable.printStackTrace();
                 stepSupplier.handleOperationError(throwable);
             }
         } while (!currentThread().isInterrupted());
@@ -248,7 +249,7 @@ public class StepRunner extends Offload
         }
     }
 
-    private Set<MapOperation> getOffloadedOperations(MapOperation mapOperation) {
+    private LinkedList<MapOperation> getOffloadedOperations(MapOperation mapOperation) {
         return mapOperation.getRecordStore().getOffloadedOperations();
     }
 
@@ -277,7 +278,10 @@ public class StepRunner extends Offload
         public void sendResponse(Operation op, Object response) {
             assertRunningOnPartitionThread();
 
-            if (offloadedOperations.remove(op)) {
+            MapOperation removed = offloadedOperations.remove(0);
+            assert removed == op;
+
+            if (removed == op) {
                 ((MapOperation) op).getRecordStore().decMapStoreOffloadedOperationsCount();
                 delegate.sendResponse(op, response);
             }

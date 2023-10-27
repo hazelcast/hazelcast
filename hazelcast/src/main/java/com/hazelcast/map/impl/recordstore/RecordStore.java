@@ -34,6 +34,7 @@ import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
@@ -47,6 +48,7 @@ import com.hazelcast.wan.impl.CallerProvenance;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -670,7 +672,7 @@ public interface RecordStore<R extends Record> {
         // no-op
     }
 
-    Set<MapOperation> getOffloadedOperations();
+    LinkedList<MapOperation> getOffloadedOperations();
 
     void incMapStoreOffloadedOperationsCount();
 
@@ -681,6 +683,11 @@ public interface RecordStore<R extends Record> {
     boolean isTieredStorageEnabled();
 
     default void disposeOnSplitBrainHeal() {
+        // no-op
+    }
+
+    // TODO better api
+    default void addPostOp(State state) {
         // no-op
     }
 }

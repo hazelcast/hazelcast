@@ -55,6 +55,8 @@ public enum UtilSteps implements IMapOpStep {
     SEND_RESPONSE() {
         @Override
         public void runStep(State state) {
+            state.getRecordStore().addPostOp(state);
+
             StepResponseUtil.sendResponse(state);
 
             MapOperation operation = state.getOperation();
@@ -148,8 +150,9 @@ public enum UtilSteps implements IMapOpStep {
 
     public static OperationRunnerImpl getPartitionOperationRunner(State state) {
         MapOperation operation = state.getOperation();
+        int partitionId = state.getPartitionId();
         return (OperationRunnerImpl) ((OperationServiceImpl) operation.getNodeEngine()
                 .getOperationService()).getOperationExecutor()
-                .getPartitionOperationRunners()[state.getPartitionId()];
+                .getPartitionOperationRunners()[partitionId];
     }
 }

@@ -67,7 +67,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -140,7 +140,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     private final IPartitionService partitionService;
     private final InterceptorRegistry interceptorRegistry;
     // offloadedOperations is only accessed by single thread
-    private final Set<MapOperation> offloadedOperations = new LinkedHashSet<>();
+    private final LinkedList<MapOperation> offloadedOperations = new LinkedList<>();
     // mapStoreOffloadedOperationsCount is for accessed by single thread
     private final SwCounter mapStoreOffloadedOperationsCount = newSwCounter();
 
@@ -1599,7 +1599,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Set<MapOperation> getOffloadedOperations() {
+    public LinkedList<MapOperation> getOffloadedOperations() {
         return offloadedOperations;
     }
 
