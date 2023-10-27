@@ -63,6 +63,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
                 .findFirst()
                 .orElse(null);
         assertNotNull(job);
+        assertFalse(job.isLightJob());
     }
 
     // TODO: test other DMLs when we have proper OPTIONS support
@@ -88,5 +89,6 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
                 .findFirst()
                 .orElse(null);
         assertNotNull(job);
+        assertFalse(job.isLightJob());
     }
 }
