@@ -395,6 +395,9 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
     }
 
+    /**
+     * Create a processor that uses a remote cluster as source
+     */
     static class RemoteProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier {
 
         private static final long serialVersionUID = 1L;
