@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("6132f80f2b389a9d2d593770bde77699")
+@SuppressWarnings("unused")
+@Generated("ef904b0a157594fb41f13bbf675fbf86")
 public final class KubernetesConfigCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int USE_PUBLIC_IP_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

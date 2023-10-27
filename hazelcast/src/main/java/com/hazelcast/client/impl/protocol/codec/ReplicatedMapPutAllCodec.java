@@ -39,7 +39,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * v in the specified map. The behavior of this operation is undefined if the specified map is modified while the
  * operation is in progress.
  */
-@Generated("25acb7e3a6f85ffc15124e1e523efec9")
+@SuppressWarnings("unused")
+@Generated("9774a59856d2df1477474a9ac3fa3005")
 public final class ReplicatedMapPutAllCodec {
     //hex: 0x0D0800
     public static final int REQUEST_MESSAGE_TYPE = 854016;

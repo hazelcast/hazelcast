@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("e8aeb1ca6c0b220a78612a8ba94f68d2")
+@SuppressWarnings("unused")
+@Generated("b59f5e9a4a7b54dc6b9c8c514f433162")
 public final class MergePolicyConfigCodec {
     private static final int BATCH_SIZE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

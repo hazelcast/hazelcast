@@ -40,7 +40,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * possible that the map explicitly mapped the key to null. The map will not contain a mapping for the specified key once the
  * call returns.
  */
-@Generated("90be58bc65c6e2bf75b72734e4d2de32")
+@SuppressWarnings("unused")
+@Generated("ae0c849073ba16697efefc6643e742ef")
 public final class MapRemoveCodec {
     //hex: 0x010300
     public static final int REQUEST_MESSAGE_TYPE = 66304;

@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the remaining capacity of the ringbuffer. The returned value could be stale as soon as it is returned.
  * If ttl is not set, the remaining capacity will always be the capacity.
  */
-@Generated("b1858e594bbc95f4fee1873e04c84e29")
+@SuppressWarnings("unused")
+@Generated("dff941b0668905c93a776eb9a50cbe95")
 public final class RingbufferRemainingCapacityCodec {
     //hex: 0x170500
     public static final int REQUEST_MESSAGE_TYPE = 1508608;

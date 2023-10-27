@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified entry listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-@Generated("e4820a45a0a4e714164e81218d0cbd78")
+@SuppressWarnings("unused")
+@Generated("3f814aaf100ffef1fe894d607073d729")
 public final class CacheRemoveEntryListenerCodec {
     //hex: 0x131400
     public static final int REQUEST_MESSAGE_TYPE = 1250304;

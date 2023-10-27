@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("a9bb7549a60e9c68817a2ad8e9682c8f")
+@SuppressWarnings("unused")
+@Generated("06174dabc411f5c8acf3555a83fc8355")
 public final class NearCachePreloaderConfigCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int STORE_INITIAL_DELAY_SECONDS_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

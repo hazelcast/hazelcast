@@ -42,7 +42,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
-@Generated("fdd63303f0344bd77c7966cbfc9519bc")
+@SuppressWarnings("unused")
+@Generated("620471b173e3f78fb4808ed805e335f6")
 public final class RingbufferReadManyCodec {
     //hex: 0x170900
     public static final int REQUEST_MESSAGE_TYPE = 1509632;

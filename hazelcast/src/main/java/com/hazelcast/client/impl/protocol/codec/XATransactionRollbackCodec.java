@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Informs the member to roll back work done on behalf of a transaction.
  */
-@Generated("7c1c83862f87301dbd6c05648f877128")
+@SuppressWarnings("unused")
+@Generated("0811d71a8568c90805b3169252fad717")
 public final class XATransactionRollbackCodec {
     //hex: 0x140700
     public static final int REQUEST_MESSAGE_TYPE = 1312512;

@@ -35,7 +35,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("07881d727b6eed167d16f5cf6d01bc36")
+@SuppressWarnings("unused")
+@Generated("8e20da08ed2835bffb2bfcbd67f8dcd0")
 public final class JetGetJobConfigCodec {
     //hex: 0xFE0800
     public static final int REQUEST_MESSAGE_TYPE = 16648192;

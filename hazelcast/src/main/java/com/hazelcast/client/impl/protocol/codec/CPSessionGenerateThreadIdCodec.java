@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Generates a new ID for the caller thread. The ID is unique in the given
  * CP group.
  */
-@Generated("7cce8e79d861b3d73f0d103b1e8f2185")
+@SuppressWarnings("unused")
+@Generated("34c62613e75c539efb83aef913f42c76")
 public final class CPSessionGenerateThreadIdCodec {
     //hex: 0x1F0400
     public static final int REQUEST_MESSAGE_TYPE = 2032640;

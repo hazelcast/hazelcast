@@ -38,7 +38,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * will delete the records from that database. The MAP_CLEARED event is fired for any registered listeners.
  * To clear a map without calling MapStore#deleteAll, use #evictAll.
  */
-@Generated("862a3c0c638a0f4975562373b2063a3b")
+@SuppressWarnings("unused")
+@Generated("3f98e7459f0fe10d26aafd69136a4ba2")
 public final class MapClearCodec {
     //hex: 0x012D00
     public static final int REQUEST_MESSAGE_TYPE = 77056;

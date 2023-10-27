@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("490eba43dc31ca943e25fb4f49fa1f03")
+@SuppressWarnings("unused")
+@Generated("47ff923e90a8660b9fee185fabc7fb2f")
 public final class EndpointQualifierCodec {
     private static final int TYPE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
