@@ -267,6 +267,10 @@ public class DynamicConfigurationAwareConfig extends Config {
         boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getMapConfigs(),
                 mapConfig.getName(), mapConfig);
         if (staticConfigDoesNotExist) {
+            if (mapConfig.getTieredStoreConfig().isEnabled()) {
+                throw new InvalidConfigurationException("Tiered store enabled map config"
+                        + " cannot be added dynamically [" + mapConfig + "]");
+            }
             configurationService.broadcastConfig(mapConfig);
         }
         return this;
