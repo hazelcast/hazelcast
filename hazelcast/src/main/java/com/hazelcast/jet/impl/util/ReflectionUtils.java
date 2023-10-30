@@ -24,6 +24,9 @@ import io.github.classgraph.ScanResult;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -269,6 +272,21 @@ public final class ReflectionUtils {
 
     public static String toClassResourceId(String name) {
         return toPath(name) + ".class";
+    }
+
+    public static String toClassResourceId(Class<?> clazz) {
+        return toClassResourceId(clazz.getName());
+    }
+
+    @Nullable
+    public static byte[] getClassContent(String name, ClassLoader classLoader) throws IOException {
+        try (InputStream is = classLoader.getResourceAsStream(toClassResourceId(name))) {
+            if (is == null) {
+                return null;
+            } else {
+                return is.readAllBytes();
+            }
+        }
     }
 
     public static Object getFieldValue(String fieldName, Object obj) {
