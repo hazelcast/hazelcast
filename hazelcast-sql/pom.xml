@@ -476,10 +476,6 @@
                     <groupId>org.jetbrains.kotlin</groupId>
                     <artifactId>kotlin-stdlib</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.jetbrains.kotlin</groupId>
-                    <artifactId>kotlin-stdlib-jdk8</artifactId>
-                </exclusion>
                 <!-- Unused geospatial libraries (only jts-core is required) -->
                 <exclusion>
                     <groupId>org.locationtech.jts.io</groupId>
