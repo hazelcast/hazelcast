@@ -22,8 +22,7 @@ package com.hazelcast.internal.tpcengine.util;
 @SuppressWarnings("checkstyle:MethodName")
 // https://lopica.sourceforge.net/os.html
 // https://memorynotfound.com/detect-os-name-version-java/
-public final class OS {
-
+public class OS {
     private static final String OS_NAME = System.getProperty("os.name", "?");
     private static final String OS_VERSION = System.getProperty("os.version", "?");
     private static final boolean IS_LINUX = isLinux0(OS_NAME);
@@ -37,7 +36,7 @@ public final class OS {
     private static final boolean IS_64BIT = is64bit0(OS_ARCH);
     private static final boolean IS_X86_64 = OS_ARCH.equals("amd64");
 
-    private OS() {
+    protected OS() {
     }
 
     private static boolean is64bit0(String osArch) {
