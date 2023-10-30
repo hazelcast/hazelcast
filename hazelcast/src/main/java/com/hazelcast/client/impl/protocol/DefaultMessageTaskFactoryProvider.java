@@ -873,9 +873,9 @@ import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
 public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProvider {
     private static final int MESSAGE_TASK_PROVIDER_INITIAL_CAPACITY = 500;
 
-    private final Int2ObjectHashMap<MessageTaskFactory> factories;
+    protected final Int2ObjectHashMap<MessageTaskFactory> factories;
 
-    private final Node node;
+    protected final Node node;
 
     public DefaultMessageTaskFactoryProvider(NodeEngine nodeEngine) {
         this.node = ((NodeEngineImpl) nodeEngine).getNode();
@@ -919,6 +919,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         initializeManagementCenterTaskFactories();
         initializeSqlTaskFactories();
         initializeSchemaFactories();
+        initializeCPMapTaskFactories();
     }
 
     private void initializeSetTaskFactories() {
@@ -1704,6 +1705,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new CloseSessionMessageTask(cm, node, con));
         factories.put(CPSessionGenerateThreadIdCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new GenerateThreadIdMessageTask(cm, node, con));
+    }
+
+    protected void initializeCPMapTaskFactories() {
     }
 
     private void initializeCPListenerTaskFactories() {
