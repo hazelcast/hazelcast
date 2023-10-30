@@ -37,6 +37,7 @@ import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.function.RunnableEx;
@@ -119,8 +120,6 @@ import static org.junit.Assume.assumeTrue;
 public abstract class HazelcastTestSupport {
 
     public static final String JAVA_VENDOR = System.getProperty("java.vendor");
-
-    public static final String OS_ARCHITECTURE = System.getProperty("os.arch");
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
@@ -1544,7 +1543,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assumeNoArm64Architecture() {
-        Assume.assumeFalse("Not supported on arm64 (aarch64) architecture", "aarch64".equals(OS_ARCHITECTURE));
+        Assume.assumeFalse("Not supported on arm64 (aarch64) architecture", "aarch64".equals(OS.osArch()));
     }
 
     /**

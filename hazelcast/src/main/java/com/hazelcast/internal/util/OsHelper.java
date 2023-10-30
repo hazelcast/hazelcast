@@ -16,26 +16,19 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.tpcengine.util.OS;
+
 /**
  * Helper methods related to operating system on which the code is actually running.
  */
-public final class OsHelper {
-
+public final class OsHelper extends OS {
     /**
      * OS name in lower case.
      */
-    public static final String OS = System.getProperty("os.name").toLowerCase();
+    private static final String OS_NAME_LOWER_CASE = osName().toLowerCase();
 
     private OsHelper() {
-    }
-
-    /**
-     * Returns {@code true} if the system is Linux.
-     *
-     * @return {@code true} if the current system is Linux.
-     */
-    public static boolean isLinux() {
-        return OS.contains("nux");
+        super();
     }
 
     /**
@@ -44,24 +37,6 @@ public final class OsHelper {
      * @return {@code true} if the current system is Unix/Linux/AIX.
      */
     public static boolean isUnixFamily() {
-        return (OS.contains("nix") || OS.contains("nux") || OS.contains("aix"));
-    }
-
-    /**
-     * Returns {@code true} if the system is a Mac OS.
-     *
-     * @return {@code true} if the current system is Mac.
-     */
-    public static boolean isMac() {
-        return (OS.contains("mac") || OS.contains("darwin"));
-    }
-
-    /**
-     * Returns {@code true} if the system is a Windows.
-     *
-     * @return {@code true} if the current system is a Windows one.
-     */
-    public static boolean isWindows() {
-        return OS.contains("windows");
+        return (OS_NAME_LOWER_CASE.contains("nix") || OS_NAME_LOWER_CASE.contains("nux") || OS_NAME_LOWER_CASE.contains("aix"));
     }
 }
