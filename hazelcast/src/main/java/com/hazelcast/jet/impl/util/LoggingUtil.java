@@ -28,43 +28,43 @@ public final class LoggingUtil {
     private LoggingUtil() {
     }
 
-    /** @see ILogger#logFine(String, Object) */
+    /** @see ILogger#fine(String, Object) */
     public static void logFine(ILogger logger, String template, Object arg1) {
-        logger.logFine(template, arg1);
+        logger.fine(template, arg1);
     }
 
-    /** @see ILogger#logFine(String, Object, Object) */
+    /** @see ILogger#fine(String, Object, Object) */
     public static void logFine(ILogger logger, String template, Object arg1, Object arg2) {
-        logger.logFine(template, arg1, arg2);
+        logger.fine(template, arg1, arg2);
     }
 
-    /** @see ILogger#logFine(String, Object, Object, Object) */
+    /** @see ILogger#fine(String, Object, Object, Object) */
     public static void logFine(ILogger logger, String template, Object arg1, Object arg2, Object arg3) {
-        logger.logFine(template, arg1, arg2, arg3);
+        logger.fine(template, arg1, arg2, arg3);
     }
 
-    /** @see ILogger#logFine(String, Object, Object, Object, Object) */
+    /** @see ILogger#fine(String, Object, Object, Object, Object) */
     public static void logFine(ILogger logger, String template, Object arg1, Object arg2, Object arg3, Object arg4) {
-        logger.logFine(template, arg1, arg2, arg3, arg4);
+        logger.fine(template, arg1, arg2, arg3, arg4);
     }
 
-    /** @see ILogger#logFinest(String, Object) */
+    /** @see ILogger#finest(String, Object) */
     public static void logFinest(ILogger logger, String template, Object arg1) {
-        logger.logFinest(template, arg1);
+        logger.finest(template, arg1);
     }
 
-    /** @see ILogger#logFinest(String, Object, Object) */
+    /** @see ILogger#finest(String, Object, Object) */
     public static void logFinest(ILogger logger, String template, Object arg1, Object arg2) {
-        logger.logFinest(template, arg1, arg2);
+        logger.finest(template, arg1, arg2);
     }
 
-    /** @see ILogger#logFinest(String, Object, Object, Object) */
+    /** @see ILogger#finest(String, Object, Object, Object) */
     public static void logFinest(ILogger logger, String template, Object arg1, Object arg2, Object arg3) {
-        logger.logFinest(template, arg1, arg2, arg3);
+        logger.finest(template, arg1, arg2, arg3);
     }
 
-    /** @see ILogger#logFinest(String, Object, Object, Object, Object) */
+    /** @see ILogger#finest(String, Object, Object, Object, Object) */
     public static void logFinest(ILogger logger, String template, Object arg1, Object arg2, Object arg3, Object arg4) {
-        logger.logFinest(template, arg1, arg2, arg3, arg4);
+        logger.finest(template, arg1, arg2, arg3, arg4);
     }
 }

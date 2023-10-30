@@ -40,28 +40,28 @@ public interface ILogger extends TpcLogger {
      *
      * @since 5.4
      */
-    default void logFine(String template, Object arg1) {
+    default void fine(String template, Object arg1) {
         if (isFineEnabled()) {
             fine(String.format(template, arg1));
         }
     }
 
-    /** @see #logFine(String, Object) */
-    default void logFine(String template, Object arg1, Object arg2) {
+    /** @see #fine(String, Object) */
+    default void fine(String template, Object arg1, Object arg2) {
         if (isFineEnabled()) {
             fine(String.format(template, arg1, arg2));
         }
     }
 
-    /** @see #logFine(String, Object) */
-    default void logFine(String template, Object arg1, Object arg2, Object arg3) {
+    /** @see #fine(String, Object) */
+    default void fine(String template, Object arg1, Object arg2, Object arg3) {
         if (isFineEnabled()) {
             fine(String.format(template, arg1, arg2, arg3));
         }
     }
 
-    /** @see #logFine(String, Object) */
-    default void logFine(String template, Object arg1, Object arg2, Object arg3, Object arg4) {
+    /** @see #fine(String, Object) */
+    default void fine(String template, Object arg1, Object arg2, Object arg3, Object arg4) {
         if (isFineEnabled()) {
             fine(String.format(template, arg1, arg2, arg3, arg4));
         }
@@ -73,28 +73,28 @@ public interface ILogger extends TpcLogger {
      *
      * @since 5.4
      */
-    default void logFinest(String template, Object arg1) {
+    default void finest(String template, Object arg1) {
         if (isFinestEnabled()) {
             finest(String.format(template, arg1));
         }
     }
 
-    /** @see #logFinest(String, Object) */
-    default void logFinest(String template, Object arg1, Object arg2) {
+    /** @see #finest(String, Object) */
+    default void finest(String template, Object arg1, Object arg2) {
         if (isFinestEnabled()) {
             finest(String.format(template, arg1, arg2));
         }
     }
 
-    /** @see #logFinest(String, Object) */
-    default void logFinest(String template, Object arg1, Object arg2, Object arg3) {
+    /** @see #finest(String, Object) */
+    default void finest(String template, Object arg1, Object arg2, Object arg3) {
         if (isFinestEnabled()) {
             finest(String.format(template, arg1, arg2, arg3));
         }
     }
 
-    /** @see #logFinest(String, Object) */
-    default void logFinest(String template, Object arg1, Object arg2, Object arg3, Object arg4) {
+    /** @see #finest(String, Object) */
+    default void finest(String template, Object arg1, Object arg2, Object arg3, Object arg4) {
         if (isFinestEnabled()) {
             finest(String.format(template, arg1, arg2, arg3, arg4));
         }
