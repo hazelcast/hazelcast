@@ -20,6 +20,8 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.cp.internal.CPSubsystemImpl;
+import com.hazelcast.client.cp.internal.datastructures.proxy.ClientRaftProxyFactory;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.tcp.ClientPlainChannelInitializer;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
@@ -34,6 +36,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
@@ -236,5 +239,10 @@ public class DefaultClientExtension implements ClientExtension {
     @Override
     public JetService getJet() {
         return jetClient;
+    }
+
+    @Override
+    public CPSubsystem getCPSubsystem(HazelcastClientInstanceImpl hazelcastClientInstance) {
+        return new CPSubsystemImpl(new ClientRaftProxyFactory(hazelcastClientInstance));
     }
 }

@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -112,4 +113,9 @@ public interface ClientExtension {
      * Returns a JetService.
      */
     JetService getJet();
+
+    /**
+     * Gets the CPSubsystem.
+     */
+    CPSubsystem getCPSubsystem(HazelcastClientInstanceImpl hazelcastClientInstance);
 }
