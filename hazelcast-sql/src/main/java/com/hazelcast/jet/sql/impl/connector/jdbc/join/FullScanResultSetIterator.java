@@ -107,7 +107,6 @@ public class FullScanResultSetIterator<T> implements AutoCloseableIterator<T> {
     @Override
     public void close() {
         if (!iteratorClosed) {
-            LOGGER.info("Closing iterator");
             iteratorClosed = true;
             IOUtil.closeResource(resultSet);
             IOUtil.closeResource(preparedStatement);

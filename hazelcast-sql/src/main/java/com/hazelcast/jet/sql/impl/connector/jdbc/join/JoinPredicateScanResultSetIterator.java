@@ -109,7 +109,6 @@ public class JoinPredicateScanResultSetIterator<T> implements AutoCloseableItera
     @Override
     public void close() {
         if (!iteratorClosed) {
-            LOGGER.info("Closing iterator");
             iteratorClosed = true;
             IOUtil.closeResource(resultSet);
             IOUtil.closeResource(preparedStatement);
