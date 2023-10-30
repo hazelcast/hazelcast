@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches a schema from the cluster with the given schemaId
  */
-@Generated("b781cfb6f7455eb1a3fb0f5a31d32abe")
+@SuppressWarnings("unused")
+@Generated("c98b9c231e6cd49baca1e34b3ee89a9c")
 public final class ClientFetchSchemaCodec {
     //hex: 0x001400
     public static final int REQUEST_MESSAGE_TYPE = 5120;

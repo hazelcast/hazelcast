@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels the task running on the member with the given address.
  */
-@Generated("513e5d39032c426eeaf6bed63aa7cdb1")
+@SuppressWarnings("unused")
+@Generated("c96c05412a6ac5642c71279fa0c8dd73")
 public final class ExecutorServiceCancelOnMemberCodec {
     //hex: 0x080400
     public static final int REQUEST_MESSAGE_TYPE = 525312;

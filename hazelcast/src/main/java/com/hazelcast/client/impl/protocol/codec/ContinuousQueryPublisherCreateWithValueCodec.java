@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a publisher that includes value for the cache events it sends.
  */
-@Generated("0f143ced8a4d5cc9fcad2082a65c2e7d")
+@SuppressWarnings("unused")
+@Generated("0a67bf3e8fa26fd915fee6cb00a84937")
 public final class ContinuousQueryPublisherCreateWithValueCodec {
     //hex: 0x160100
     public static final int REQUEST_MESSAGE_TYPE = 1442048;

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
+import com.hazelcast.jet.sql.impl.parse.SqlAnalyzeStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
@@ -173,6 +174,15 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             explicandum = super.validate(explicandum);
             explainStatement.setExplicandum(explicandum);
             return explainStatement;
+        }
+
+        // Handling same corner case as with EXPLAIN
+        if (topNode instanceof SqlAnalyzeStatement) {
+            SqlAnalyzeStatement analyzeStatement = (SqlAnalyzeStatement) topNode;
+            SqlNode query = analyzeStatement.getQuery();
+            query = super.validate(query);
+            analyzeStatement.setQuery(query);
+            return analyzeStatement;
         }
 
         return super.validate(topNode);

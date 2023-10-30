@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("8b42d74d2a6310ab4a1a7c13e6be51bf")
+@SuppressWarnings("unused")
+@Generated("71353261fc182838cbaafeacd28c76d0")
 public final class DiscoveryConfigCodec {
 
     private DiscoveryConfigCodec() {
