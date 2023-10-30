@@ -263,8 +263,8 @@ public final class TypeUtils {
 
         @Override
         protected Schema getSchemaId(Map<String, String> typeOptions) {
-            String schemaJson = typeOptions.get(OPTION_TYPE_AVRO_SCHEMA);
-            return schemaJson != null ? new Schema.Parser().parse(schemaJson) : null;
+            String json = typeOptions.get(OPTION_TYPE_AVRO_SCHEMA);
+            return json != null ? new Schema.Parser().parse(json) : null;
         }
     }
 

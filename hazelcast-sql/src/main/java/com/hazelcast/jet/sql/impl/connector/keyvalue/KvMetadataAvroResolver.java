@@ -241,15 +241,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
     }
 
     public static Schema inlineSchema(Map<String, String> options, boolean isKey) {
-        String schemaProperty = isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA;
-        String schemaJson = options.get(schemaProperty);
-        if (schemaJson == null) {
-            if (!options.containsKey("schema.registry.url")) {
-                throw QueryException.error("Either schema.registry.url or " + schemaProperty
-                        + " is required to create Avro-based mapping");
-            }
-            return null;
-        }
-        return new Schema.Parser().parse(schemaJson);
+        String json = options.get(isKey ? OPTION_KEY_AVRO_SCHEMA : OPTION_VALUE_AVRO_SCHEMA);
+        return json != null ? new Schema.Parser().parse(json) : null;
     }
 }

@@ -30,7 +30,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.INSTANCE;
@@ -51,7 +50,7 @@ public class KvMetadataAvroResolverTest {
         Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(
                 key,
                 List.of(field("field", QueryDataType.INT, prefix + ".field")),
-                Map.of("schema.registry.url", "http://localhost:8081"),
+                emptyMap(),
                 null
         );
 
@@ -67,7 +66,7 @@ public class KvMetadataAvroResolverTest {
         KvMetadata metadata = INSTANCE.resolveMetadata(
                 key,
                 List.of(field("field", QueryDataType.INT, "extField")),
-                Map.of("schema.registry.url", "http://localhost:8081"),
+                emptyMap(),
                 null
         );
         assertThat(metadata.getFields()).containsExactly(key
@@ -123,7 +122,7 @@ public class KvMetadataAvroResolverTest {
                         field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz"),
                         field("object", QueryDataType.OBJECT, prefix + ".object")
                 ),
-                Map.of("schema.registry.url", "http://localhost:8081"),
+                emptyMap(),
                 null
         );
 
