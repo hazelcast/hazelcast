@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.internal.util.collection.DefaultedMap;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.PortableUpsertTargetDescriptor;
@@ -46,6 +45,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.Util.reduce;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_VERSION;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FACTORY_ID;
@@ -193,7 +193,7 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
             return classDefinition;
         }
 
-        return fields.reduce(new ClassDefinitionBuilder(portableId), (schema, field) -> {
+        return reduce(new ClassDefinitionBuilder(portableId), fields, (schema, field) -> {
             switch (field.type().getTypeFamily()) {
                 case BOOLEAN:
                     return schema.addBooleanField(field.name());
@@ -225,7 +225,7 @@ public final class MetadataPortableResolver implements KvMetadataResolver {
                     // validated earlier, skip whole __key & this
                     return schema;
             }
-        }, ExceptionUtil::notParallelizable).build();
+        }).build();
     }
 
     private static PortableId getPortableId(

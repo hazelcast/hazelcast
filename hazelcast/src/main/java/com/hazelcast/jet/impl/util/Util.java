@@ -75,6 +75,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -379,6 +382,33 @@ public final class Util {
             }
         }
         return -1;
+    }
+
+    /**
+     * An alternative to {@link Stream#reduce(Object, BiFunction, BinaryOperator)
+     * Stream.reduce(identity, accumulator, combiner)}, which is not parallelizable.
+     * It eliminates the need for a combiner by processing elements in the order
+     * they appear in the stream.
+     */
+    public static <T, R> T reduce(T identity, Stream<R> elements, BiFunction<T, R, T> accumulator) {
+        T result = identity;
+        for (R element : (Iterable<R>) elements::iterator) {
+            result = accumulator.apply(result, element);
+        }
+        return result;
+    }
+
+    /**
+     * An alternative to {@link Stream#collect(Supplier, BiConsumer, BiConsumer)
+     * Stream.collect(supplier, accumulator, combiner)}, which is not parallelizable.
+     * It eliminates the need for a combiner by processing elements in the order
+     * they appear in the stream.
+     */
+    public static <T, R> T collect(T container, Stream<R> elements, BiConsumer<T, R> accumulator) {
+        for (R element : (Iterable<R>) elements::iterator) {
+            accumulator.accept(container, element);
+        }
+        return container;
     }
 
     /**

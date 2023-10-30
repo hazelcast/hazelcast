@@ -23,7 +23,6 @@ import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaWriter;
 import com.hazelcast.internal.util.collection.DefaultedMap;
 import com.hazelcast.internal.util.collection.DefaultedMap.DefaultedMapBuilder;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.CompactUpsertTargetDescriptor;
@@ -44,6 +43,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.Util.collect;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_COMPACT_TYPE_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_COMPACT_TYPE_NAME;
@@ -141,10 +141,10 @@ public final class MetadataCompactResolver implements KvMetadataResolver {
     }
 
     private static Schema resolveSchema(String typeName, Stream<Field> fields) {
-        return fields.collect(() -> new SchemaWriter(typeName),
-                (schema, field) -> schema.addField(new FieldDescriptor(field.name(),
-                        SQL_TO_COMPACT.getOrDefault(field.type().getTypeFamily()))),
-                ExceptionUtil::notParallelizable).build();
+        return collect(new SchemaWriter(typeName), fields, (schema, field) ->
+                schema.addField(new FieldDescriptor(field.name(),
+                        SQL_TO_COMPACT.getOrDefault(field.type().getTypeFamily())))
+        ).build();
     }
 
     private static String getCompactTypeName(

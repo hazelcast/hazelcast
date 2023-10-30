@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.sql.impl.extract.AvroQueryTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.AvroUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.QueryException;
@@ -40,6 +39,7 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.Util.reduce;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_RECORD_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_SCHEMA;
@@ -77,12 +77,11 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                 .and().stringType()
                 .endUnion();
 
-        private static final Map<QueryDataTypeFamily, List<Schema.Type>> CONVERSIONS =
-                CONVERSION_PREFS.entrySet().stream()
-                        .collect(ImmutableMap::<QueryDataTypeFamily, List<Schema.Type>>builder,
-                                 (map, e) -> map.put(getConverter(e.getKey()).getTypeFamily(), e.getValue()),
-                                 ExceptionUtil::notParallelizable)
-                        .build();
+        private static final Map<QueryDataTypeFamily, List<Schema.Type>> CONVERSIONS = reduce(
+                ImmutableMap.<QueryDataTypeFamily, List<Schema.Type>>builder(),
+                CONVERSION_PREFS.entrySet().stream(),
+                (map, e) -> map.put(getConverter(e.getKey()).getTypeFamily(), e.getValue())
+        ).build();
     }
 
     private KvMetadataAvroResolver() { }
@@ -153,7 +152,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
 
     // CREATE MAPPING <name> (<fields>) Type Kafka; INSERT INTO <name> ...
     private static Schema resolveSchema(String recordName, Stream<Field> fields) {
-        return fields.reduce(SchemaBuilder.record(recordName).fields(), (schema, field) -> {
+        return reduce(SchemaBuilder.record(recordName).fields(), fields, (schema, field) -> {
             switch (field.type().getTypeFamily()) {
                 case BOOLEAN:
                     return schema.optionalBoolean(field.name());
@@ -183,7 +182,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                 default:
                     throw new IllegalArgumentException("Unsupported type: " + field.type());
             }
-        }, ExceptionUtil::notParallelizable).endRecord();
+        }).endRecord();
     }
 
     private static void validate(Schema schema, List<Field> fields) {
