@@ -61,7 +61,7 @@ public class MapPutAllWithMetadataMessageTask
         SplitBrainMergePolicy mergePolicy = nodeEngine.getSplitBrainMergePolicyProvider()
                                                       .getMergePolicy(PassThroughMergePolicy.class.getName());
 
-        return new MergeOperation(parameters.name, mergingEntries, mergePolicy, false);
+        return new MergeOperation(parameters.name, mergingEntries, mergePolicy, true);
     }
 
     @Override

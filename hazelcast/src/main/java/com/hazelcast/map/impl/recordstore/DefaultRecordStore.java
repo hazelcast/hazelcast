@@ -58,6 +58,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
@@ -83,6 +84,7 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.map.impl.record.Record.UNSET;
@@ -127,6 +129,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * key loading.
      */
     private boolean loadedOnPreMigration;
+    /**
+     * Defined by {@link com.hazelcast.spi.properties.ClusterProperty#WAN_REPLICATE_IMAP_EVICTIONS},
+     * if set to true then eviction operations by this RecordStore will be WAN replicated
+     */
+    private boolean wanReplicateEvictions;
 
     private final IPartitionService partitionService;
     private final InterceptorRegistry interceptorRegistry;
@@ -144,6 +151,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
         this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         this.interceptorRegistry = mapContainer.getInterceptorRegistry();
+        this.wanReplicateEvictions = mapContainer.isWanReplicationEnabled()
+                && mapServiceContext.getNodeEngine().getProperties().getBoolean(ClusterProperty.WAN_REPLICATE_IMAP_EVICTIONS);
         initJsonMetadataStore();
     }
 
@@ -554,6 +563,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         removeKeyFromExpirySystem(dataKey);
         storage.removeRecord(dataKey, record);
+
+        if (wanReplicateEvictions && eviction) {
+            mapEventPublisher.publishWanRemove(name, toHeapData(dataKey));
+        }
     }
 
     @Override
@@ -568,6 +581,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.removeRecord(key, record);
             if (!backup) {
                 mapServiceContext.interceptRemove(interceptorRegistry, value);
+            }
+            if (wanReplicateEvictions) {
+                mapEventPublisher.publishWanRemove(name, toHeapData(key));
             }
         }
         return value;
@@ -1098,13 +1114,27 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
-                mergeRecordExpiration(key, record, mergingEntry, now);
+                // When receiving WAN replicated data, it is possible that the merge policy rejects an incoming
+                //  value, which would result in the above condition being true (merge policy selects the existing
+                //  value as the outcome). However, we do not want to apply metadata changes if we are rejecting
+                //  the merge and sticking with our original data. Due to current limitations of the
+                //  SplitBrainMergePolicy, we have no view on whether the merge policy modified the outcome or not,
+                //  only the resultant value. Long-term we need to address this shortfall in merge policies, but
+                //  for now the additional check below allows us to make an educated guess about whether the merge
+                //  changed data and use that. Since this only matters for WAN-received merge events, we can avoid
+                //  additional overhead by checking provenance. Fixes HZ-3392, Backlog for merge changes: HZ-3397
+                boolean shouldMergeExpiration = provenance != CallerProvenance.WAN
+                        || valueComparator.isEqual(oldValue, mergingEntry.getValue(), serializationService);
+                if (shouldMergeExpiration) {
+                    mergeRecordExpiration(key, record, mergingEntry, now);
+                }
                 return true;
             }
 
             boolean persist = persistenceEnabledFor(provenance);
             updateRecord(record, key, oldValue, newValue, true, UNSET, UNSET, UNSET,
                     now, null, persist, true, false);
+            mergeRecordExpiration(key, record, mergingEntry, now);
         }
 
         return newValue != null;

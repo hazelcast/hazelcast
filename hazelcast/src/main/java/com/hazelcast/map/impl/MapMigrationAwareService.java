@@ -280,6 +280,15 @@ class MapMigrationAwareService
         return recordStore -> recordStore.getMapContainer().getTotalBackupCount() < backupCount;
     }
 
+    /**
+     * @param backupCount number of backups of a maps' partition
+     * @return predicate to find all map partitions which are expected to have
+     * fewer backups than given backupCount.
+     */
+    static Predicate<MapContainer> lesserBackupMapsThenWithContainer(final int backupCount) {
+        return container -> container.getTotalBackupCount() < backupCount;
+    }
+
     private MetaDataGenerator getMetaDataGenerator() {
         return mapServiceContext.getMapNearCacheManager().getInvalidator().getMetaDataGenerator();
     }

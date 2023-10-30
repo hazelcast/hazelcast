@@ -48,6 +48,15 @@ public interface ClientClusterService {
     Collection<Member> getMemberList();
 
     /**
+     * Gets the collection of members, or an empty list if the client
+     * changed the cluster and the new member list is not received yet.
+     *
+     * @return The collection of members.
+     */
+    @Nonnull
+    Collection<Member> getEffectiveMemberList();
+
+    /**
      * Returns a collection of the members that satisfy the given {@link MemberSelector}.
      *
      * @param selector {@link MemberSelector} instance to filter members to return

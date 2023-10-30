@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.3.1-DM-SNAPSHOT</version>
+        <version>5.3.5-DM-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -70,33 +70,6 @@
                                     <includes>**/*.xml,**/*.yaml,META-INF/NOTICE</includes>
                                 </artifactItem>
                             </artifactItems>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-hz3</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast</artifactId>
-                                    <version>${hazelcast-3.version}</version>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast-client</artifactId>
-                                    <version>${hazelcast-3.version}</version>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast-3-connector-impl</artifactId>
-                                    <version>${project.version}</version>
-                                </artifactItem>
-                            </artifactItems>
-                            <outputDirectory>${project.build.directory}/custom-lib</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -371,16 +344,6 @@
             <artifactId>hazelcast-jet-s3</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-3-connector-interface</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-3-connector-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>

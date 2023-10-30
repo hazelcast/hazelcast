@@ -207,7 +207,7 @@ public class MasterJobContext {
     /**
      * Creates exception with appropriate type for job cancellation.
      */
-    private Throwable createCancellationException() {
+    private RuntimeException createCancellationException() {
         return isUserInitiatedTermination() ? new CancellationByUserException() : new CancellationException();
     }
 
@@ -331,7 +331,7 @@ public class MasterJobContext {
         try {
             if (isCancelled()) {
                 logger.fine("Skipping init job '" + mc.jobName() + "': is already cancelled.");
-                throw new CancellationException();
+                throw createCancellationException();
             }
             if (mc.jobStatus() != NOT_RUNNING) {
                 logger.fine("Not starting job '" + mc.jobName() + "': status is " + mc.jobStatus());

@@ -41,6 +41,7 @@ import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.Acquir
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.spi.properties.ClusterProperty.METRICS_DATASTRUCTURES;
 
 /**
  * Contains Raft-based lock instances
@@ -62,7 +63,10 @@ public class LockService extends AbstractBlockingService<LockInvocationKey, Lock
     @Override
     protected void initImpl() {
         super.initImpl();
-        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
+
+        if (nodeEngine.getProperties().getBoolean(METRICS_DATASTRUCTURES)) {
+            nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     public AcquireResult acquire(CPGroupId groupId, String name, LockInvocationKey key, long timeoutMs) {
@@ -233,4 +237,11 @@ public class LockService extends AbstractBlockingService<LockInvocationKey, Lock
         }
     }
 
+    @Override
+    public boolean destroyRaftObject(CPGroupId groupId, String name) {
+        boolean result = super.destroyRaftObject(groupId, name);
+        String proxyName = withoutDefaultGroupName(name + "@" + groupId.getName());
+        proxies.remove(proxyName);
+        return result;
+    }
 }

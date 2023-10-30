@@ -33,25 +33,15 @@ public interface IMapStepAwareOperation extends StepAwareOperation<State> {
     default Step getStartingStep() {
         assert this instanceof MapOperation;
 
-        // only backup operations of
-        // tieredStoreAndPartitionCompactorEnabled
-        // maps can be created as a Step.
-        if (!(this instanceof BackupOperation
-                && ((MapOperation) this).isTieredStoreAndPartitionCompactorEnabled())) {
-            return StepAwareOperation.super.getStartingStep();
+        // Here only backup-operations of some MapOperations which has
+        // tieredStoreAndPartitionCompactorEnabled field is set true
+        // are created as a Step automatically, otherwise you have
+        // to make your MapOperation as a Step operation yourself.
+        if (((MapOperation) this).isTieredStoreAndPartitionCompactorEnabled()
+                && this instanceof BackupOperation) {
+            return UtilSteps.DIRECT_RUN_STEP;
         }
 
-        MapOperation mapOperation = (MapOperation) this;
-        return new IMapOpStep() {
-            @Override
-            public void runStep(State state) {
-                mapOperation.runInternalDirect();
-            }
-
-            @Override
-            public Step nextStep(State state) {
-                return UtilSteps.FINAL_STEP;
-            }
-        };
+        return StepAwareOperation.super.getStartingStep();
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
+import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import org.junit.After;
@@ -35,9 +36,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public abstract class AsyncServerSocketOptionsTest {
 
+    private static final Option<Boolean> SUPPORTED_OPTION = SO_REUSEADDR;
     private final List<Reactor> reactors = new ArrayList<>();
 
     public abstract ReactorBuilder newReactorBuilder();
@@ -67,7 +70,14 @@ public abstract class AsyncServerSocketOptionsTest {
     }
 
     @Test
-    public void set_nullOption() {
+    public void test_set() {
+        AsyncServerSocket serverSocket = newServerSocket();
+        AsyncSocketOptions options = serverSocket.options();
+        assertTrue(options.set(SUPPORTED_OPTION, true));
+    }
+
+    @Test
+    public void test_set_nullOption() {
         AsyncServerSocket serverSocket = newServerSocket();
         AsyncSocketOptions options = serverSocket.options();
         assertThrows(NullPointerException.class, () -> options.set(null, 1));
@@ -85,15 +95,7 @@ public abstract class AsyncServerSocketOptionsTest {
         AsyncServerSocket serverSocket = newServerSocket();
         AsyncSocketOptions options = serverSocket.options();
         // SO_SNDBUF is not supported for server sockets.
-        assertThrows(UnsupportedOperationException.class, () -> options.set(SO_SNDBUF, 64 * 1024));
-    }
-
-    @Test
-    public void test_setIfUnsupported_unsupportedOption() {
-        AsyncServerSocket serverSocket = newServerSocket();
-        AsyncSocketOptions options = serverSocket.options();
-        // SO_SNDBUF is not supported for server sockets.
-        assertFalse(options.setIfSupported(SO_SNDBUF, 64 * 1024));
+        assertFalse(options.set(SO_SNDBUF, 64 * 1024));
     }
 
     @Test
@@ -101,15 +103,7 @@ public abstract class AsyncServerSocketOptionsTest {
         AsyncServerSocket serverSocket = newServerSocket();
         AsyncSocketOptions options = serverSocket.options();
         // SO_SNDBUF is not supported for server sockets.
-        assertThrows(UnsupportedOperationException.class, () -> options.get(SO_SNDBUF));
-    }
-
-    @Test
-    public void test_getIfUnsupported_unsupportedOption() {
-        AsyncServerSocket serverSocket = newServerSocket();
-        AsyncSocketOptions options = serverSocket.options();
-        // SO_SNDBUF is not supported for server sockets.
-        assertNull(options.getIfSupported(SO_SNDBUF));
+        assertNull(options.get(SO_SNDBUF));
     }
 
     @Test
@@ -142,14 +136,13 @@ public abstract class AsyncServerSocketOptionsTest {
         AsyncServerSocket serverSocket = newServerSocket();
         AsyncSocketOptions options = serverSocket.options();
         if (options.isSupported(SO_REUSEPORT)) {
-
             options.set(SO_REUSEPORT, true);
             assertEquals(Boolean.TRUE, options.get(SO_REUSEPORT));
             options.set(SO_REUSEPORT, false);
             assertEquals(Boolean.FALSE, options.get(SO_REUSEPORT));
         } else {
-            assertFalse(options.setIfSupported(SO_REUSEPORT, true));
-            assertNull(options.getIfSupported(SO_REUSEPORT));
+            assertFalse(options.set(SO_REUSEPORT, true));
+            assertNull(options.get(SO_REUSEPORT));
         }
     }
 }

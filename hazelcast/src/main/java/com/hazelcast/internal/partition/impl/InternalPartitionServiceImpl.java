@@ -265,6 +265,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         }
     }
 
+    @Override
+    public boolean isPartitionAssignmentDone() {
+        return partitionStateManager.isInitialized();
+    }
+
     /** Sends a {@link AssignPartitions} to the master to assign partitions. */
     private void triggerMasterToAssignPartitions() {
         if (!shouldTriggerMasterToAssignPartitions()) {

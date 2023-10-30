@@ -343,7 +343,10 @@ public class LocalMapStatsProvider {
     }
 
     private void addIndexStats(String mapName, LocalMapStatsImpl localMapStats) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        MapContainer mapContainer = mapServiceContext.getExistingMapContainer(mapName);
+        if (mapContainer == null) {
+            return;
+        }
         Indexes globalIndexes = mapContainer.getIndexes();
 
         Map<String, OnDemandIndexStats> freshStats = null;

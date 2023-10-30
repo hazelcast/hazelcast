@@ -16,14 +16,17 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.Option;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
+import com.hazelcast.internal.tpcengine.util.OS;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.nio.channels.ServerSocketChannel;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.ReflectionUtil.findStaticFieldValue;
@@ -36,6 +39,12 @@ public class NioAsyncServerSocketOptions implements AsyncSocketOptions {
     // This option is available since Java 9, so we need to use reflection.
     private static final SocketOption<Boolean> STD_SOCK_OPT_SO_REUSEPORT
             = findStaticFieldValue(StandardSocketOptions.class, "SO_REUSEPORT");
+    private static final Set<SocketOption<?>> WINDOWS_UNSUPPORTED_OPTIONS;
+
+    static {
+        WINDOWS_UNSUPPORTED_OPTIONS = new HashSet<>();
+        WINDOWS_UNSUPPORTED_OPTIONS.add(STD_SOCK_OPT_SO_REUSEPORT);
+    }
 
     private final ServerSocketChannel serverSocketChannel;
 
@@ -64,11 +73,17 @@ public class NioAsyncServerSocketOptions implements AsyncSocketOptions {
     }
 
     private boolean isSupported(SocketOption socketOption) {
-        return socketOption != null && serverSocketChannel.supportedOptions().contains(socketOption);
+        if (socketOption == null) {
+            return false;
+        }
+        if (OS.isWindows() && WINDOWS_UNSUPPORTED_OPTIONS.contains(socketOption)) {
+            return false;
+        }
+        return serverSocketChannel.supportedOptions().contains(socketOption);
     }
 
     @Override
-    public <T> boolean setIfSupported(Option<T> option, T value) {
+    public <T> boolean set(Option<T> option, T value) {
         checkNotNull(option, "option");
         checkNotNull(value, "value");
 
@@ -86,7 +101,7 @@ public class NioAsyncServerSocketOptions implements AsyncSocketOptions {
     }
 
     @Override
-    public <T> T getIfSupported(Option<T> option) {
+    public <T> T get(Option<T> option) {
         checkNotNull(option, "option");
 
         try {

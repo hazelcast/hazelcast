@@ -45,7 +45,6 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
         this.socketChannel = socketChannel;
     }
 
-    // SO_TIMEOUT unfortunately doesn't have a SocketOption version.
     private static SocketOption toSocketOption(Option option) {
         if (TCP_NODELAY.equals(option)) {
             return StandardSocketOptions.TCP_NODELAY;
@@ -72,12 +71,7 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
     public boolean isSupported(Option option) {
         checkNotNull(option, "option");
 
-        if (option.equals(SO_TIMEOUT)) {
-            return true;
-        } else {
-            SocketOption socketOption = toSocketOption(option);
-            return isSupported(socketOption);
-        }
+        return isSupported(toSocketOption(option));
     }
 
     private boolean isSupported(SocketOption socketOption) {
@@ -85,19 +79,15 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
     }
 
     @Override
-    public <T> T getIfSupported(Option<T> option) {
+    public <T> T get(Option<T> option) {
         checkNotNull(option, "option");
 
         try {
-            if (option.equals(SO_TIMEOUT)) {
-                return (T) (Integer) socketChannel.socket().getSoTimeout();
+            SocketOption socketOption = toSocketOption(option);
+            if (isSupported(socketOption)) {
+                return (T) socketChannel.getOption(socketOption);
             } else {
-                SocketOption socketOption = toSocketOption(option);
-                if (isSupported(socketOption)) {
-                    return (T) socketChannel.getOption(socketOption);
-                } else {
-                    return null;
-                }
+                return null;
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -105,22 +95,17 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
     }
 
     @Override
-    public <T> boolean setIfSupported(Option<T> option, T value) {
+    public <T> boolean set(Option<T> option, T value) {
         checkNotNull(option, "option");
         checkNotNull(value, "value");
 
         try {
-            if (option.equals(SO_TIMEOUT)) {
-                socketChannel.socket().setSoTimeout((Integer) value);
+            SocketOption socketOption = toSocketOption(option);
+            if (isSupported(socketOption)) {
+                socketChannel.setOption(socketOption, value);
                 return true;
             } else {
-                SocketOption socketOption = toSocketOption(option);
-                if (isSupported(socketOption)) {
-                    socketChannel.setOption(socketOption, value);
-                    return true;
-                } else {
-                    return false;
-                }
+                return false;
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);

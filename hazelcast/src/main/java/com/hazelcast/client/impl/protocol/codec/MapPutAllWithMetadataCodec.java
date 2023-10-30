@@ -34,9 +34,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Put a batch of entries with metadata into an IMap. This is a client side version of WAN entry replication.
+ * Copies all of the mappings from the specified entry list to this map, including metadata.
+ * The implementation uses MergeOperation with PassThroughMergePolicy, so the effect of 
+ * this call is equivalent to synchronizing given entries using WAN replication.
+ * Please note that all the keys in the request should belong to the partition id to which this request is being sent, all keys
+ * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
+ * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
-@Generated("b6a53d6391dcd1364aa03753ed56eb39")
+@Generated("a8d1d03ec3de96de55d76858ff81db9a")
 public final class MapPutAllWithMetadataCodec {
     //hex: 0x014900
     public static final int REQUEST_MESSAGE_TYPE = 84224;

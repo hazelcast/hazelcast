@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.io.EOFException;
 import java.io.IOException;
 
 /**
@@ -41,15 +42,18 @@ public class InstallSnapshot implements IdentifiedDataSerializable {
     private int term;
     private SnapshotEntry snapshot;
     private long queryRound;
+    private long flowControlSequenceNumber;
 
     public InstallSnapshot() {
     }
 
-    public InstallSnapshot(RaftEndpoint leader, int term, SnapshotEntry snapshot, long queryRound) {
+    public InstallSnapshot(RaftEndpoint leader, int term, SnapshotEntry snapshot, long queryRound,
+                           long flowControlSequenceNumber) {
         this.leader = leader;
         this.term = term;
         this.snapshot = snapshot;
         this.queryRound = queryRound;
+        this.flowControlSequenceNumber = flowControlSequenceNumber;
     }
 
     public RaftEndpoint leader() {
@@ -68,6 +72,10 @@ public class InstallSnapshot implements IdentifiedDataSerializable {
         return queryRound;
     }
 
+    public long flowControlSequenceNumber() {
+        return flowControlSequenceNumber;
+    }
+
     @Override
     public int getFactoryId() {
         return RaftDataSerializerHook.F_ID;
@@ -84,6 +92,7 @@ public class InstallSnapshot implements IdentifiedDataSerializable {
         out.writeInt(term);
         out.writeObject(snapshot);
         out.writeLong(queryRound);
+        out.writeLong(flowControlSequenceNumber);
     }
 
     @Override
@@ -92,12 +101,18 @@ public class InstallSnapshot implements IdentifiedDataSerializable {
         term = in.readInt();
         snapshot = in.readObject();
         queryRound = in.readLong();
+        try {
+            flowControlSequenceNumber = in.readLong();
+            // TODO RU_COMPAT_5_3 added for Version 5.3 compatibility. Should be removed at Version 5.5
+        } catch (EOFException e) {
+            flowControlSequenceNumber = -1;
+        }
     }
 
     @Override
     public String toString() {
         return "InstallSnapshot{" + "leader=" + leader + ", term=" + term + ", snapshot=" + snapshot + ", queryRound="
-                + queryRound + '}';
+                + queryRound + ", flowControlSequenceNumber=" + flowControlSequenceNumber + '}';
     }
 
 }

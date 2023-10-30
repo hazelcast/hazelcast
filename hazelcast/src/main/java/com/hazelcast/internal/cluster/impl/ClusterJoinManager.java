@@ -42,6 +42,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
@@ -65,6 +66,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -100,7 +102,8 @@ public class ClusterJoinManager {
     private final ClusterClockImpl clusterClock;
     private final ClusterStateManager clusterStateManager;
 
-    private final Map<Address, MemberInfo> joiningMembers = new LinkedHashMap<>();
+    // Map of members batched to join, along with their passed OnJoinOp pre-join operation
+    private final Map<Address, BiTuple<MemberInfo, OnJoinOp>> joiningMembers = new LinkedHashMap<>();
     private final Map<UUID, Long> recentlyJoinedMemberUuids = new HashMap<>();
 
     /**
@@ -457,20 +460,29 @@ public class ClusterJoinManager {
             firstJoinRequest = now;
         }
 
-        final MemberInfo existing = joiningMembers.put(memberInfo.getAddress(), memberInfo);
+        // Store the OnJoinOp passed in joiningMembers map to execute later; otherwise when we batch
+        //  join request, only the final joiner's OnJoinOp is executed - we want to execute them all!
+        final BiTuple<MemberInfo, OnJoinOp> existing = joiningMembers.put(memberInfo.getAddress(),
+                BiTuple.of(memberInfo, preJoinOperation));
         if (existing == null) {
             sendMasterAnswer(memberInfo.getAddress());
             if (now - firstJoinRequest < maxWaitMillisBeforeJoin) {
                 timeToStartJoin = now + waitMillisBeforeJoin;
             }
-        } else if (!existing.getUuid().equals(memberInfo.getUuid())) {
+        } else if (!existing.element1().getUuid().equals(memberInfo.getUuid())) {
             logger.warning("Received a new join request from " + memberInfo.getAddress()
                     + " with a new UUID " + memberInfo.getUuid()
-                    + ". Previous UUID was " + existing.getUuid());
+                    + ". Previous UUID was " + existing.element1().getUuid());
         }
-        if (now >= timeToStartJoin) {
-            startJoin(preJoinOperation);
+
+        if (!isBatchingJoins(now)) {
+            startJoin();
         }
+    }
+
+    // Accessible for testing
+    public boolean isBatchingJoins(long now) {
+        return now < timeToStartJoin;
     }
 
     /**
@@ -767,10 +779,8 @@ public class ClusterJoinManager {
 
     /**
      * Starts join process on master member.
-     *
-     * @param preJoinOperation joining member's preJoinOperation, not master's
      */
-    private void startJoin(OnJoinOp preJoinOperation) {
+    private void startJoin() {
         logger.fine("Starting join...");
         clusterServiceLock.lock();
         try {
@@ -783,7 +793,8 @@ public class ClusterJoinManager {
                 partitionService.pauseMigration();
                 MemberMap memberMap = clusterService.getMembershipManager().getMemberMap();
 
-                MembersView newMembersView = MembersView.cloneAdding(memberMap.toMembersView(), joiningMembers.values());
+                MembersView newMembersView = MembersView.cloneAdding(memberMap.toMembersView(),
+                        joiningMembers.values().stream().map(BiTuple::element1).collect(Collectors.toList()));
 
                 long time = clusterClock.getClusterTime();
 
@@ -794,11 +805,15 @@ public class ClusterJoinManager {
                     return;
                 }
 
-                OnJoinOp preJoinOp = preparePreJoinOps();
+                // Run all joining members' provided pre join operations now, but only
+                //  execute them locally and on existing members of this cluster (do
+                //  not broadcast to other members joining within this batch)
+                runProvidedPostJoinOpsWithoutBroadcast();
 
-                if (preJoinOperation != null) {
-                    nodeEngine.getOperationService().run(preJoinOperation);
-                }
+                // Prepare our normal pre-join operations, which will be broadcast remotely;
+                //  this must be done AFTER pre-join ops from all joining members are applied
+                //  to master, via #runProvidedPostJoinOpsWithoutBroadcast() above
+                OnJoinOp preJoinOp = preparePreJoinOps();
 
                 // post join operations must be lock free, that means no locks at all:
                 // no partition locks, no key-based locks, no service level locks!
@@ -807,7 +822,8 @@ public class ClusterJoinManager {
                 // this is the current partition assignment state, not taking into account the
                 // currently joining members
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
-                for (MemberInfo member : joiningMembers.values()) {
+                for (BiTuple<MemberInfo, OnJoinOp> tuple : joiningMembers.values()) {
+                    MemberInfo member = tuple.element1();
                     if (isMemberRestartingWithPersistence(member.getAttributes())
                         && isMemberRejoining(memberMap, member.getAddress(), member.getUuid())) {
                         logger.info(member + " is rejoining the cluster");
@@ -839,6 +855,20 @@ public class ClusterJoinManager {
             }
         } finally {
             clusterServiceLock.unlock();
+        }
+    }
+
+    private void runProvidedPostJoinOpsWithoutBroadcast() {
+        for (BiTuple<MemberInfo, OnJoinOp> tuple : joiningMembers.values()) {
+            if (tuple.element2() != null) {
+                OnJoinOp onJoinOp = tuple.element2();
+                try {
+                    onJoinOp.beforeRun();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                onJoinOp.runWithoutBroadcastTo(joiningMembers.keySet());
+            }
         }
     }
 

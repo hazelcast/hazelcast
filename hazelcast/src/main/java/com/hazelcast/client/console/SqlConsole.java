@@ -17,12 +17,10 @@
 package com.hazelcast.client.console;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.management.MCClusterMetadata;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -56,7 +54,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.client.console.HazelcastCommandLine.getClusterMetadata;
 import static com.hazelcast.client.console.HazelcastCommandLine.getHazelcastClientInstanceImpl;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
@@ -268,11 +265,9 @@ public final class SqlConsole {
     private static String sqlStartingPrompt(HazelcastInstance hz) {
         HazelcastClientInstanceImpl hazelcastClientImpl = getHazelcastClientInstanceImpl(hz);
         ClientClusterService clientClusterService = hazelcastClientImpl.getClientClusterService();
-        MCClusterMetadata clusterMetadata =
-                FutureUtil.getValue(getClusterMetadata(hazelcastClientImpl, clientClusterService.getMasterMember()));
+        String versionString = "Hazelcast " + clientClusterService.getMasterMember().getVersion().toString();
         Cluster cluster = hazelcastClientImpl.getCluster();
         Set<Member> members = cluster.getMembers();
-        String versionString = "Hazelcast " + clusterMetadata.getMemberVersion();
         return new AttributedStringBuilder()
                 .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
                 .append("Connected to ")
