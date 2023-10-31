@@ -919,7 +919,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         initializeManagementCenterTaskFactories();
         initializeSqlTaskFactories();
         initializeSchemaFactories();
-        initializeCPMapTaskFactories();
     }
 
     private void initializeSetTaskFactories() {
@@ -1705,9 +1704,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new CloseSessionMessageTask(cm, node, con));
         factories.put(CPSessionGenerateThreadIdCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new GenerateThreadIdMessageTask(cm, node, con));
-    }
-
-    protected void initializeCPMapTaskFactories() {
     }
 
     private void initializeCPListenerTaskFactories() {

@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.client.impl.protocol.DefaultMessageTaskFactoryProvider;
+import com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.Config;
@@ -703,7 +704,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public DefaultMessageTaskFactoryProvider getMessageTaskFactoryProvider(NodeEngine nodeEngine) {
+    public MessageTaskFactoryProvider getMessageTaskFactoryProvider(NodeEngine nodeEngine) {
         return new DefaultMessageTaskFactoryProvider(nodeEngine);
     }
 }

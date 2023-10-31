@@ -17,7 +17,7 @@
 package com.hazelcast.instance.impl;
 
 import com.hazelcast.auditlog.AuditlogService;
-import com.hazelcast.client.impl.protocol.DefaultMessageTaskFactoryProvider;
+import com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
@@ -414,5 +414,5 @@ public interface NodeExtension {
     @Nullable
     JetServiceBackend getJetServiceBackend();
 
-    DefaultMessageTaskFactoryProvider getMessageTaskFactoryProvider(NodeEngine nodeEngine);
+    MessageTaskFactoryProvider getMessageTaskFactoryProvider(NodeEngine nodeEngine);
 }
