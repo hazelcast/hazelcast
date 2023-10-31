@@ -315,7 +315,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     public static final class LocalProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier,
             IdentifiedDataSerializable, Versioned {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 2L;
 
         private BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
 
@@ -400,7 +400,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
      */
     static class RemoteProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 2L;
 
         private String clientXml;
 
