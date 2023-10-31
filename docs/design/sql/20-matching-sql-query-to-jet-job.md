@@ -135,7 +135,7 @@ the performance tests confirm that latency for short DML queries might be improv
 
 The proposed Java API changes are as follows:
 
-java
+```java
 public interface SqlService {
 // ...
 
@@ -151,10 +151,10 @@ public interface SqlService {
 }
 
 public interface AsyncSqlResult extends SqlResult {
-/**
-* @return If the query uses/used Jet job
-*/
-boolean isJob();
+    /**
+     * @return If the query uses/used Jet job
+     */
+    boolean isJob();
 
     /**
      * Returns job id of job used to execute this query.
@@ -181,6 +181,7 @@ boolean isJob();
 public class SqlClientResult implements AsyncSqlResult {
 // ...
 }
+```
 
 Within the SqlService, we're implementing a new method named `executeAsync`. When using this method, the client can
 indicate that a query should be executed asynchronously by setting an asynchronous flag. Afterward, `execute` task
