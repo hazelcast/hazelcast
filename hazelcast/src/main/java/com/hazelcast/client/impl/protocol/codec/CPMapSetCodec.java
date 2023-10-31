@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Sets the key-value in the specified map.
  */
 @SuppressWarnings("unused")
-@Generated("755b2d5632a9bff19224929c45c7bf70")
+@Generated("08d90a579c6ea33f09cf1ab4c2b22680")
 public final class CPMapSetCodec {
     //hex: 0x230300
     public static final int REQUEST_MESSAGE_TYPE = 2294528;
@@ -70,10 +70,10 @@ public final class CPMapSetCodec {
         /**
          * Value to associate with the key.
          */
-        public com.hazelcast.internal.serialization.Data value;
+        public @Nullable com.hazelcast.internal.serialization.Data value;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
@@ -85,7 +85,7 @@ public final class CPMapSetCodec {
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, key);
-        DataCodec.encode(clientMessage, value);
+        CodecUtil.encodeNullable(clientMessage, value, DataCodec::encode);
         return clientMessage;
     }
 
@@ -97,7 +97,7 @@ public final class CPMapSetCodec {
         request.groupId = RaftGroupIdCodec.decode(iterator);
         request.name = StringCodec.decode(iterator);
         request.key = DataCodec.decode(iterator);
-        request.value = DataCodec.decode(iterator);
+        request.value = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         return request;
     }
 
