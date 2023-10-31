@@ -26,6 +26,7 @@ public final class OS {
     private static final String OS_NAME = System.getProperty("os.name", "?");
     private static final String OS_VERSION = System.getProperty("os.version", "?");
     private static final boolean IS_LINUX = isLinux0(OS_NAME);
+    private static final boolean IS_UNIX_FAMILY = isUnixFamily0(OS_NAME);
     private static final boolean IS_WINDOWS = isWindows0(OS_NAME);
     private static final boolean IS_MAC = isMac0(OS_NAME);
 
@@ -47,14 +48,13 @@ public final class OS {
         return osName.toLowerCase().startsWith("linux");
     }
 
-    /** @return {@code true} if the current system from Unix family (Unix/Linux/AIX). */
-    public static boolean isUnixFamily() {
-        return (OS_NAME_LOWER_CASE.contains("nix") || isLinux() || OS_NAME_LOWER_CASE.contains("aix"));
+    static boolean isUnixFamily0(String osName) {
+        osName = osName.toLowerCase();
+        return IS_LINUX || osName.contains("nix") || osName.contains("aix");
     }
 
     static boolean isWindows0(String osName) {
-        osName = osName.toLowerCase();
-        return osName.contains("windows");
+        return osName.toLowerCase().contains("windows");
     }
 
     static boolean isMac0(String osName) {
@@ -97,6 +97,11 @@ public final class OS {
     /** @return the page size (so the size of a single page in the page table). */
     public static int pageSize() {
         return PAGE_SIZE;
+    }
+
+    /** @return {@code true} if the current system from Unix family (Unix/Linux/AIX). */
+    public static boolean isUnixFamily() {
+        return IS_UNIX_FAMILY;
     }
 
     /** @return {@code true} if the current system is Linux. */

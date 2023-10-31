@@ -20,23 +20,55 @@ import com.hazelcast.internal.tpcengine.util.OS;
 
 /**
  * Helper methods related to operating system on which the code is actually running.
+ *
+ * @deprecated use {@link OS}
  */
-public final class OsHelper extends OS {
-    /**
-     * OS name in lower case.
-     */
-    private static final String OS_NAME_LOWER_CASE = osName().toLowerCase();
-
+@Deprecated(since = "5.4")
+public final class OsHelper {
     private OsHelper() {
-        super();
     }
 
     /**
      * Returns {@code true} if the system is from Unix family.
      *
+     * @deprecated call {@link OS#isLinux()} directly
      * @return {@code true} if the current system is Unix/Linux/AIX.
      */
+    @Deprecated(since = "5.4")
+    public static boolean isLinux() {
+        return OS.isLinux();
+    }
+
+    /**
+     * Returns {@code true} if the system is from Unix family.
+     *
+     * @deprecated call {@link OS#isUnixFamily()} directly
+     * @return {@code true} if the current system is Unix/Linux/AIX.
+     */
+    @Deprecated(since = "5.4")
     public static boolean isUnixFamily() {
-        return (OS_NAME_LOWER_CASE.contains("nix") || OS_NAME_LOWER_CASE.contains("nux") || OS_NAME_LOWER_CASE.contains("aix"));
+        return OS.isUnixFamily();
+    }
+
+    /**
+     * Returns {@code true} if the system is a Mac OS.
+     *
+     * @deprecated call {@link OS#isMac()} directly
+     * @return {@code true} if the current system is Mac.
+     */
+    @Deprecated(since = "5.4")
+    public static boolean isMac() {
+        return OS.isMac();
+    }
+
+    /**
+     * Returns {@code true} if the system is a Windows.
+     *
+     * @deprecated call {@link OS#isWindows()} directly
+     * @return {@code true} if the current system is a Windows one.
+     */
+    @Deprecated(since = "5.4")
+    public static boolean isWindows() {
+        return OS.isWindows();
     }
 }
