@@ -48,9 +48,9 @@ class JdbcParameters {
     }
 
     // Convert key and GenericRecord to JDBC parameter values
-    static <K> JdbcParameters convert(
+    static <K, V> JdbcParameters convert(
             K key,
-            GenericRecord genericRecord,
+            V value,
             List<SqlColumnMetadata> columnMetadataList,
             String idColumn
     ) {
@@ -73,65 +73,72 @@ class JdbcParameters {
                 params[i] = key;
                 continue;
             }
+            if (columnMetadataList.size() == 2) {
+                // If we only have a single column as value, we get it as it is.
+                params[i] = value;
+            } else {
+                // If we have multiple columns as value, it means the value is a GenericRecord
+                // Get all other values from GenericRecord
+                GenericRecord genericRecord = (GenericRecord) value;
+                switch (columnMetadata.getType()) {
+                    case VARCHAR:
+                        params[i] = genericRecord.getString(columnName);
+                        break;
 
-            // Get all other values from GenericRecord
-            switch (columnMetadata.getType()) {
-                case VARCHAR:
-                    params[i] = genericRecord.getString(columnName);
-                    break;
+                    case BOOLEAN:
+                        params[i] = genericRecord.getBoolean(columnName);
+                        break;
 
-                case BOOLEAN:
-                    params[i] = genericRecord.getBoolean(columnName);
-                    break;
+                    case TINYINT:
+                        params[i] = genericRecord.getInt8(columnName);
+                        break;
 
-                case TINYINT:
-                    params[i] = genericRecord.getInt8(columnName);
-                    break;
+                    case SMALLINT:
+                        params[i] = genericRecord.getInt16(columnName);
+                        break;
 
-                case SMALLINT:
-                    params[i] = genericRecord.getInt16(columnName);
-                    break;
+                    case INTEGER:
+                        params[i] = genericRecord.getInt32(columnName);
+                        break;
 
-                case INTEGER:
-                    params[i] = genericRecord.getInt32(columnName);
-                    break;
+                    case BIGINT:
+                        params[i] = genericRecord.getInt64(columnName);
+                        break;
 
-                case BIGINT:
-                    params[i] = genericRecord.getInt64(columnName);
-                    break;
+                    case REAL:
+                        params[i] = genericRecord.getFloat32(columnName);
+                        break;
 
-                case REAL:
-                    params[i] = genericRecord.getFloat32(columnName);
-                    break;
+                    case DOUBLE:
+                        params[i] = genericRecord.getFloat64(columnName);
+                        break;
 
-                case DOUBLE:
-                    params[i] = genericRecord.getFloat64(columnName);
-                    break;
+                    case DATE:
+                        params[i] = genericRecord.getDate(columnName);
+                        break;
 
-                case DATE:
-                    params[i] = genericRecord.getDate(columnName);
-                    break;
+                    case TIME:
+                        params[i] = genericRecord.getTime(columnName);
+                        break;
 
-                case TIME:
-                    params[i] = genericRecord.getTime(columnName);
-                    break;
+                    case TIMESTAMP:
+                        params[i] = genericRecord.getTimestamp(columnName);
+                        break;
 
-                case TIMESTAMP:
-                    params[i] = genericRecord.getTimestamp(columnName);
-                    break;
+                    case TIMESTAMP_WITH_TIME_ZONE:
+                        params[i] = genericRecord.getTimestampWithTimezone(columnName);
+                        break;
 
-                case TIMESTAMP_WITH_TIME_ZONE:
-                    params[i] = genericRecord.getTimestampWithTimezone(columnName);
-                    break;
+                    case DECIMAL:
+                        params[i] = genericRecord.getDecimal(columnName);
+                        break;
 
-                case DECIMAL:
-                    params[i] = genericRecord.getDecimal(columnName);
-                    break;
-
-                default:
-                    throw new HazelcastException("Column type " + columnMetadata.getType() + " not supported");
+                    default:
+                        throw new HazelcastException("Column type " + columnMetadata.getType() + " not supported");
+                    }
+                }
             }
-        }
+
 
         jdbcParameters.setParams(params);
         jdbcParameters.setIdPos(idPos);

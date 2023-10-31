@@ -87,7 +87,7 @@ import static java.util.stream.Collectors.toMap;
  *
  * @param <K>
  */
-public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoaderLifecycleSupport {
+public class GenericMapLoader<K, V> implements MapLoader<K, V>, MapLoaderLifecycleSupport {
 
     /**
      * Property key to define data connection
@@ -301,19 +301,25 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     }
 
     @Override
-    public GenericRecord load(K key) {
+    @SuppressWarnings("unchecked")
+    public V load(K key) {
         awaitSuccessfulInit();
 
         try (SqlResult queryResult = sqlService.execute(queries.load(), key)) {
             Iterator<SqlRow> it = queryResult.iterator();
 
-            GenericRecord genericRecord = null;
+            V genericRecord = null;
             if (it.hasNext()) {
                 SqlRow sqlRow = it.next();
                 if (it.hasNext()) {
                     throw new IllegalStateException("multiple matching rows for a key " + key);
                 }
-                genericRecord = toGenericRecord(sqlRow, genericMapStoreProperties);
+                // If there is a single column as the value, return that column as the value
+                if (queryResult.getRowMetadata().getColumnCount() == 2) {
+                    return sqlRow.getObject(1);
+                }
+                //else return GenericRecord as the value
+                genericRecord = (V) toGenericRecord(sqlRow, genericMapStoreProperties);
             }
             return genericRecord;
         }
@@ -323,7 +329,8 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
      * Size of the {@code keys} collection is limited by {@link ClusterProperty#MAP_LOAD_CHUNK_SIZE}
      */
     @Override
-    public Map<K, GenericRecord> loadAll(Collection<K> keys) {
+    @SuppressWarnings("unchecked")
+    public Map<K, V> loadAll(Collection<K> keys) {
         awaitSuccessfulInit();
 
         Object[] keysArray = keys.toArray();
@@ -332,11 +339,19 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         try (SqlResult queryResult = sqlService.execute(sql, keysArray)) {
             Iterator<SqlRow> it = queryResult.iterator();
 
-            Map<K, GenericRecord> result = new HashMap<>();
+            Map<K, V> result = new HashMap<>();
+            // If there is a single column as the value, return that column as the value
+            if (queryResult.getRowMetadata().getColumnCount() == 2) {
+                SqlRow sqlRow = it.next();
+                K id = sqlRow.getObject(genericMapStoreProperties.idColumn);
+                result.put(id, sqlRow.getObject(1)); //Figure this out it should be either 0 or 1, probably 1 though
+                return result;
+            }
+            //else return GenericRecord as the value
             while (it.hasNext()) {
                 SqlRow sqlRow = it.next();
                 K id = sqlRow.getObject(genericMapStoreProperties.idColumn);
-                GenericRecord record = toGenericRecord(sqlRow, genericMapStoreProperties);
+                V record = (V) toGenericRecord(sqlRow, genericMapStoreProperties);
                 result.put(id, record);
             }
             return result;

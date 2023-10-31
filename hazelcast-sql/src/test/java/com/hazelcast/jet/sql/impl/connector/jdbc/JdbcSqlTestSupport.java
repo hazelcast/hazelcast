@@ -104,6 +104,10 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)");
     }
 
+    public static void createTableThreeColumns(String tableName) throws SQLException {
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT");
+    }
+
     public static void createTable(String tableName, String... columns) throws SQLException {
         executeJdbc("CREATE TABLE " + tableName + " (" + String.join(", ", columns) + ")");
     }
@@ -129,6 +133,29 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
             for (int i = start; i < end; i++) {
                 stmt.setInt(1, i);
                 stmt.setString(2, String.format("name-%d", i));
+                stmt.addBatch();
+                stmt.clearParameters();
+            }
+            stmt.executeBatch();
+        }
+    }
+
+    public static void insertItemsThreeColumns(String tableName, int count) throws SQLException {
+        insertItemsThreeColumns(tableName, 0, count);
+    }
+
+    public static void insertItemsThreeColumns(String tableName, int start, int count) throws SQLException {
+        int end = start + count;
+        String sql = String.format("INSERT INTO %s VALUES(?, ?, ?)", tableName);
+
+        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
+             PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+
+            for (int i = start; i < end; i++) {
+                stmt.setInt(1, i);
+                stmt.setString(2, String.format("name-%d", i));
+                stmt.setInt(3, i);
                 stmt.addBatch();
                 stmt.clearParameters();
             }
