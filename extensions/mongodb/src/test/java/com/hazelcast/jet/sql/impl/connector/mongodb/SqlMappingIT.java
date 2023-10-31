@@ -21,7 +21,7 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class SqlMappingTest extends MongoSqlTest {
+public class SqlMappingIT extends MongoSqlIT {
 
     @Test
     public void testExternalNameShouldNotHaveMoreComponents() {
