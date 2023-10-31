@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.util.OsHelper;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Watermark;
@@ -750,7 +750,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     public static String hadoopNonExistingPath() {
-        return OsHelper.isWindows() ? "c:\\non\\existing\\path" : "/non/existing/path";
+        return OS.isWindows() ? "c:\\non\\existing\\path" : "/non/existing/path";
     }
 
     public static SqlServiceImpl sqlServiceImpl(HazelcastInstance instance) {

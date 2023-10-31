@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Properties;
 
-import static com.hazelcast.internal.util.OsHelper.isWindows;
+import static com.hazelcast.internal.tpcengine.util.OS.isWindows;
 
 class EmbeddedKafkaTestSupport extends KafkaTestSupport {
     private static final String ZK_HOST = "127.0.0.1";

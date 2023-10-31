@@ -38,7 +38,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.tpcengine.util.OS;
-import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.logging.ILogger;
@@ -91,7 +90,6 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.OsHelper.isLinux;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -1535,11 +1533,11 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assumeThatNoWindowsOS() {
-        assumeFalse("Skipping on Windows", OsHelper.isWindows());
+        assumeFalse("Skipping on Windows", OS.isWindows());
     }
 
     public static void assumeThatLinuxOS() {
-        Assume.assumeTrue("Only Linux platform supported", isLinux());
+        Assume.assumeTrue("Only Linux platform supported", OS.isLinux());
     }
 
     public static void assumeNoArm64Architecture() {
