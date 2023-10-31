@@ -61,7 +61,6 @@ import java.util.Map;
 
 import static com.hazelcast.client.properties.ClientProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
-import static com.hazelcast.client.properties.ClientProperty.TPC_ENABLED;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.unmodifiableList;
@@ -146,7 +145,7 @@ class ClusterDiscoveryServiceBuilder {
             String cloudUrlBase = properties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
             String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
             int connectionTimeoutMillis = getConnectionTimeoutMillis(networkConfig);
-            boolean tpcEnabled = isTpcEnabled(clientConfig);
+            boolean tpcEnabled = clientConfig.getTpcConfig().isEnabled();
             HazelcastCloudDiscovery cloudDiscovery
                     = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis, tpcEnabled);
             return new ViridianAddressProvider(cloudDiscovery);
@@ -158,15 +157,6 @@ class ClusterDiscoveryServiceBuilder {
                 loggingService.getLogger(TranslateToPublicAddressProvider.class));
         clusterService.addMembershipListener(toPublicAddressProvider);
         return new DefaultAddressProvider(networkConfig, toPublicAddressProvider);
-    }
-
-    private boolean isTpcEnabled(ClientConfig clientConfig) {
-        String tpcEnabled = clientConfig.getProperties().getProperty(TPC_ENABLED.getName());
-        if (tpcEnabled != null) {
-            return Boolean.parseBoolean(tpcEnabled);
-        } else {
-            return clientConfig.getTpcConfig().isEnabled();
-        }
     }
 
     private Map<Address, Address> discoverAddresses(DiscoveryService discoveryService) {
