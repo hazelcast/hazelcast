@@ -103,7 +103,7 @@ public class PartitionContainer {
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
         int partitionId = getPartitionId();
 
-        if (!mapContainer.isGlobalIndexEnabled()) {
+        if (!mapContainer.shouldUseGlobalIndex()) {
             mapContainer.createIndexRegistry(false, partitionId);
         }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);

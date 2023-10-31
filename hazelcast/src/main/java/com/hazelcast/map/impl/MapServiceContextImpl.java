@@ -462,7 +462,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
-        if (mapContainer.isGlobalIndexEnabled()) {
+        if (mapContainer.shouldUseGlobalIndex()) {
             destroyGlobalIndexes(mapContainer);
         }
 
@@ -919,6 +919,11 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public boolean globalIndexEnabled() {
         return true;
+    }
+
+    @Override
+    public boolean isForciblyEnabledGlobalIndex() {
+        return false;
     }
 
     @Override
