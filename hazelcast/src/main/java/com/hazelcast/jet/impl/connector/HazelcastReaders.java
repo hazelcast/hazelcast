@@ -332,12 +332,10 @@ public final class HazelcastReaders {
      */
     @Nonnull
     public static <T, K, V> ProcessorSupplier readRemoteMapSupplier(RemoteMapSourceParams<T, K, V> params) {
+        // Create using a data source
         if (params.hasDataSourceConnection()) {
             if (params.hasPredicate()) {
-                checkSerializable(params.getPredicate(), "predicate");
-                checkSerializable(params.getProjection(), "projection");
-
-                RemoteMapQueryReaderFunction<K, V, T> readerSupplier = new RemoteMapQueryReaderFunction<>(
+                var readerSupplier = new RemoteMapQueryReaderFunction<K, V, T>(
                         params.getMapName(), params.getPredicate(), params.getProjection());
 
                 return RemoteProcessorSupplier.fromDataConnection(params.getDataConnectionName(), readerSupplier);
@@ -346,13 +344,11 @@ public final class HazelcastReaders {
                 return RemoteProcessorSupplier.fromDataConnection(params.getDataConnectionName(), readerSupplier);
             }
         } else {
+            // Create using XML
             String clientXml = ImdgUtil.asXmlString(params.getClientConfig());
 
             if (params.hasPredicate()) {
-                checkSerializable(params.getPredicate(), "predicate");
-                checkSerializable(params.getProjection(), "projection");
-
-                RemoteMapQueryReaderFunction<K, V, ? extends T> readerSupplier = new RemoteMapQueryReaderFunction<>(
+                var readerSupplier = new RemoteMapQueryReaderFunction<K, V, T>(
                         params.getMapName(), params.getPredicate(), params.getProjection());
                 return RemoteProcessorSupplier.fromClientXml(clientXml, readerSupplier);
             } else {

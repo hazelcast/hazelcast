@@ -24,6 +24,8 @@ import com.hazelcast.query.Predicate;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+
 /**
  * Parameters to use a remote map as source
  *
@@ -95,7 +97,7 @@ public class RemoteMapSourceParams<T, K, V> {
 
         private Projection<? super Map.Entry<K, V>, ? extends T> projection;
 
-        public Builder(String mapName) {
+        private Builder(String mapName) {
             Objects.requireNonNull(mapName, "mapName can not be null");
             this.mapName = mapName;
         }
@@ -111,11 +113,13 @@ public class RemoteMapSourceParams<T, K, V> {
         }
 
         public Builder<T, K, V> withPredicate(Predicate<K, V> predicate) {
+            checkSerializable(predicate, "predicate");
             this.predicate = predicate;
             return this;
         }
 
         public Builder<T, K, V> withProjection(Projection<? super Map.Entry<K, V>, ? extends T> projection) {
+            checkSerializable(projection, "projection");
             this.projection = projection;
             return this;
         }
