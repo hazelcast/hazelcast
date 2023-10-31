@@ -22,7 +22,7 @@ package com.hazelcast.internal.tpcengine.util;
 @SuppressWarnings("checkstyle:MethodName")
 // https://lopica.sourceforge.net/os.html
 // https://memorynotfound.com/detect-os-name-version-java/
-public class OS {
+public final class OS {
     private static final String OS_NAME = System.getProperty("os.name", "?");
     private static final String OS_VERSION = System.getProperty("os.version", "?");
     private static final boolean IS_LINUX = isLinux0(OS_NAME);
@@ -36,7 +36,7 @@ public class OS {
     private static final boolean IS_64BIT = is64bit0(OS_ARCH);
     private static final boolean IS_X86_64 = OS_ARCH.equals("amd64");
 
-    protected OS() {
+    private OS() {
     }
 
     private static boolean is64bit0(String osArch) {
@@ -45,6 +45,11 @@ public class OS {
 
     static boolean isLinux0(String osName) {
         return osName.toLowerCase().startsWith("linux");
+    }
+
+    /** @return {@code true} if the current system from Unix family (Unix/Linux/AIX). */
+    public static boolean isUnixFamily() {
+        return (OS_NAME_LOWER_CASE.contains("nix") || isLinux() || OS_NAME_LOWER_CASE.contains("aix"));
     }
 
     static boolean isWindows0(String osName) {
@@ -83,64 +88,38 @@ public class OS {
         }
     }
 
-    /**
-     * Checks of the the architecture of the os is x86-64 (AMD64).
-     *
-     * @return true if x86-64, false otherwise.
-     */
+    /** @return true if the architecture of the os is x86-64 (AMD64), false otherwise. */
     @SuppressWarnings("java:S100")
     public static boolean isX86_64() {
         return IS_X86_64;
     }
 
-    /**
-     * Returns the page size (so the size of a single page in the page table).
-     *
-     * @return the page size.
-     */
+    /** @return the page size (so the size of a single page in the page table). */
     public static int pageSize() {
         return PAGE_SIZE;
     }
 
-    /**
-     * Returns {@code true} if the system is Linux.
-     *
-     * @return {@code true} if the current system is Linux.
-     */
+    /** @return {@code true} if the current system is Linux. */
     public static boolean isLinux() {
         return IS_LINUX;
     }
 
-    /**
-     * Returns the OS name ("os.name" System property).
-     *
-     * @return the OS name.
-     */
+    /** @return the OS name ("os.name" System property). */
     public static String osName() {
         return OS_NAME;
     }
 
-    /**
-     * Returns the OS version ("os.version" System property).
-     *
-     * @return the OS version.
-     */
+    /** @return the OS version ("os.version" System property). */
     public static String osVersion() {
         return OS_VERSION;
     }
 
-    /**
-     * Returns the OS arch ("os.arch" System property).
-     *
-     * @return the OS arch.
-     */
+    /** @return the OS arch ("os.arch" System property). */
     public static String osArch() {
         return OS_ARCH;
     }
 
     /**
-     * Returns the Linux kernel major version.
-     *
      * @return the Linux kernel major version or -1 if it couldn't be determined.
      * @throws IllegalStateException when the OS isn't Linux.
      */
@@ -153,8 +132,6 @@ public class OS {
     }
 
     /**
-     * Returns the Linux kernel minor version.
-     *
      * @return the Linux kernel minor version or -1 if it couldn't be determined.
      * @throws IllegalStateException when the OS isn't Linux.
      */
@@ -166,29 +143,17 @@ public class OS {
         return LINUX_KERNEL_MINOR_VERSION;
     }
 
-    /**
-     * Checks if the OS is 64 bit.
-     *
-     * @return true if 64 bit, false otherwise.
-     */
+    /** @return true if the OS 64 bit, false otherwise. */
     public static boolean is64bit() {
         return IS_64BIT;
     }
 
-    /**
-     * Returns {@code true} if the system is a Mac OS.
-     *
-     * @return {@code true} if the current system is Mac.
-     */
+    /** @return {@code true} if the current system is Mac OS. */
     public static boolean isMac() {
         return IS_MAC;
     }
 
-    /**
-     * Returns {@code true} if the system is a Windows.
-     *
-     * @return {@code true} if the current system is a Windows one.
-     */
+    /** @return {@code true} if the current system is a Windows one. */
     public static boolean isWindows() {
         return IS_WINDOWS;
     }
