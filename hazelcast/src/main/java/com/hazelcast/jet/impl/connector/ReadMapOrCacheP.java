@@ -410,8 +410,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private transient int baseIndex;
 
         RemoteProcessorSupplier(
-                String dataConnectionName,
-                String clientXml,
+                @Nullable String dataConnectionName,
+                @Nullable String clientXml,
                 @Nonnull FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier) {
             this.dataConnectionName = dataConnectionName;
             this.clientXml = clientXml;
