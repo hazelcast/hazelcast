@@ -17,6 +17,7 @@
 package com.hazelcast.client.properties;
 
 import com.hazelcast.client.config.ClientMetricsConfig;
+import com.hazelcast.client.config.ClientTpcConfig;
 import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -28,6 +29,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Defines the name and default value for Hazelcast Client properties.
  */
 public final class ClientProperty {
+
+    /**
+     * If set, overrides {@link ClientTpcConfig#isEnabled()} flag.
+     */
+    public static final HazelcastProperty TPC_ENABLED
+            = new HazelcastProperty("hazelcast.client.tpc.enabled");
 
     /**
      * Client shuffles the given member list to prevent all clients to connect to the same node when

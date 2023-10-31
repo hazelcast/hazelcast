@@ -114,6 +114,7 @@ import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COU
 import static com.hazelcast.client.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
+import static com.hazelcast.client.properties.ClientProperty.TPC_ENABLED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -177,7 +178,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final ReconnectMode reconnectMode;
     private final LoadBalancer loadBalancer;
     private final boolean isUnisocketClient;
-    private final boolean isTpcAwareClient;
+    private final boolean isTpcEnabled;
     private final boolean skipMemberListDuringReconnection;
     private volatile Credentials currentCredentials;
 
@@ -253,16 +254,25 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         this.clusterDiscoveryService = client.getClusterDiscoveryService();
         this.waitStrategy = initializeWaitStrategy(config);
         this.shuffleMemberList = properties.getBoolean(SHUFFLE_MEMBER_LIST);
+        this.isTpcEnabled = isTpcEnabled(config);
         this.isUnisocketClient = unisocketModeConfigured(config);
-        this.isTpcAwareClient = config.getTpcConfig().isEnabled();
         this.asyncStart = config.getConnectionStrategyConfig().isAsyncStart();
         this.reconnectMode = config.getConnectionStrategyConfig().getReconnectMode();
         this.connectionProcessListenerRunner = new ClientConnectionProcessListenerRunner(client);
         this.skipMemberListDuringReconnection = properties.getBoolean(SKIP_MEMBER_LIST_DURING_RECONNECTION);
     }
 
+    private boolean isTpcEnabled(ClientConfig config) {
+        String tpcEnabled = config.getProperty(TPC_ENABLED.getName());
+        if (tpcEnabled != null) {
+            return Boolean.parseBoolean(tpcEnabled);
+        } else {
+            return config.getTpcConfig().isEnabled();
+        }
+    }
+
     private boolean unisocketModeConfigured(ClientConfig config) {
-        if (config.getTpcConfig().isEnabled()) {
+        if (isTpcEnabled) {
             return false;
         }
 
@@ -801,7 +811,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             channel.connect(inetSocketAddress, connectionTimeoutMillis);
 
             TcpClientConnection connection = new TcpClientConnection(client, connectionIdGen.incrementAndGet(), channel);
-            if (isTpcAwareClient) {
+            if (isTpcEnabled) {
                 connection.attributeMap().put(CandidateClusterContext.class, currentClusterContext);
             }
 
@@ -1058,7 +1068,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             checkClientState(connection, switchingToNextCluster);
 
             List<Integer> tpcPorts = response.getTpcPorts();
-            if (isTpcAwareClient && tpcPorts != null && !tpcPorts.isEmpty()) {
+            if (isTpcEnabled && tpcPorts != null && !tpcPorts.isEmpty()) {
                 connectTpcPorts(connection, tpcPorts, response.getTpcToken());
             }
 
