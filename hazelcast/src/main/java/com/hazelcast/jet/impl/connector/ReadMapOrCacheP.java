@@ -402,34 +402,20 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         private static final long serialVersionUID = 2L;
 
-        private String clientXml;
-
-        private String dataConnectionName;
-        private FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier;
-
+        private final String dataConnectionName;
+        private final String clientXml;
+        private final FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier;
         private transient HazelcastClientProxy client;
         private transient int totalParallelism;
         private transient int baseIndex;
 
-        private RemoteProcessorSupplier() {
-        }
-
-        public static <B, R> RemoteProcessorSupplier<ClientInvocationFuture, B, R> fromClientXml(
-                @Nonnull String clientXml,
-                @Nonnull FunctionEx<HazelcastInstance, Reader<ClientInvocationFuture, B, R>> readerSupplier) {
-            RemoteProcessorSupplier<ClientInvocationFuture, B, R> remoteProcessorSupplier = new RemoteProcessorSupplier<>();
-            remoteProcessorSupplier.clientXml = clientXml;
-            remoteProcessorSupplier.readerSupplier = readerSupplier;
-            return remoteProcessorSupplier;
-        }
-
-        public static <B, R> RemoteProcessorSupplier<ClientInvocationFuture, B, R> fromDataConnection(
-                @Nonnull String dataConnectionName,
-                @Nonnull FunctionEx<HazelcastInstance, Reader<ClientInvocationFuture, B, R>> readerSupplier) {
-            RemoteProcessorSupplier<ClientInvocationFuture, B, R> remoteProcessorSupplier = new RemoteProcessorSupplier<>();
-            remoteProcessorSupplier.dataConnectionName = dataConnectionName;
-            remoteProcessorSupplier.readerSupplier = readerSupplier;
-            return remoteProcessorSupplier;
+        RemoteProcessorSupplier(
+                String dataConnectionName,
+                String clientXml,
+                @Nonnull FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier) {
+            this.dataConnectionName = dataConnectionName;
+            this.clientXml = clientXml;
+            this.readerSupplier = readerSupplier;
         }
 
         @Override

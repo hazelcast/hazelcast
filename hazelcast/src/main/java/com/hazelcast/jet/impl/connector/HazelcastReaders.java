@@ -129,7 +129,7 @@ public final class HazelcastReaders {
             @Nonnull ClientConfig clientConfig
     ) {
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return RemoteProcessorSupplier.fromClientXml(clientXml, new RemoteCacheReaderFunction(cacheName));
+        return new RemoteProcessorSupplier<>(null, clientXml, new RemoteCacheReaderFunction(cacheName));
     }
 
     public static class RemoteCacheReaderFunction implements FunctionEx<HazelcastInstance,
@@ -338,10 +338,10 @@ public final class HazelcastReaders {
                 var readerSupplier = new RemoteMapQueryReaderFunction<K, V, T>(
                         params.getMapName(), params.getPredicate(), params.getProjection());
 
-                return RemoteProcessorSupplier.fromDataConnection(params.getDataConnectionName(), readerSupplier);
+                return new RemoteProcessorSupplier<>(params.getDataConnectionName(), null, readerSupplier);
             } else {
                 RemoteMapReaderFunction readerSupplier = new RemoteMapReaderFunction(params.getMapName());
-                return RemoteProcessorSupplier.fromDataConnection(params.getDataConnectionName(), readerSupplier);
+                return new RemoteProcessorSupplier<>(params.getDataConnectionName(), null, readerSupplier);
             }
         } else {
             // Create using XML
@@ -350,10 +350,10 @@ public final class HazelcastReaders {
             if (params.hasPredicate()) {
                 var readerSupplier = new RemoteMapQueryReaderFunction<K, V, T>(
                         params.getMapName(), params.getPredicate(), params.getProjection());
-                return RemoteProcessorSupplier.fromClientXml(clientXml, readerSupplier);
+                return new RemoteProcessorSupplier<>(null, clientXml, readerSupplier);
             } else {
                 RemoteMapReaderFunction readerSupplier = new RemoteMapReaderFunction(params.getMapName());
-                return RemoteProcessorSupplier.fromClientXml(clientXml, readerSupplier);
+                return new RemoteProcessorSupplier<>(null, clientXml, readerSupplier);
             }
         }
     }
