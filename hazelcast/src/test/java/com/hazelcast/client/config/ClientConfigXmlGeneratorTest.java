@@ -779,7 +779,9 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testTpcConfig() {
-        ClientTpcConfig originalConfig = new ClientTpcConfig().setEnabled(true);
+        ClientTpcConfig originalConfig = new ClientTpcConfig()
+                .setEnabled(true)
+                .setConnectionCount(10);
         clientConfig.setTpcConfig(originalConfig);
         ClientTpcConfig generatedConfig = newConfigViaGenerator().getTpcConfig();
         assertEquals(originalConfig, generatedConfig);

@@ -24,6 +24,7 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.config.ClientTpcConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
@@ -99,6 +100,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -115,7 +117,6 @@ import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COU
 import static com.hazelcast.client.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
-import static com.hazelcast.client.properties.ClientProperty.TPC_ENABLED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -180,7 +181,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final ReconnectMode reconnectMode;
     private final LoadBalancer loadBalancer;
     private final boolean isUnisocketClient;
-    private final boolean isTpcEnabled;
+    private final boolean isTpcAwareClient;
     private final boolean skipMemberListDuringReconnection;
     private volatile Credentials currentCredentials;
 
@@ -256,25 +257,16 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         this.clusterDiscoveryService = client.getClusterDiscoveryService();
         this.waitStrategy = initializeWaitStrategy(config);
         this.shuffleMemberList = properties.getBoolean(SHUFFLE_MEMBER_LIST);
-        this.isTpcEnabled = isTpcEnabled(config);
         this.isUnisocketClient = unisocketModeConfigured(config);
+        this.isTpcAwareClient = config.getTpcConfig().isEnabled();
         this.asyncStart = config.getConnectionStrategyConfig().isAsyncStart();
         this.reconnectMode = config.getConnectionStrategyConfig().getReconnectMode();
         this.connectionProcessListenerRunner = new ClientConnectionProcessListenerRunner(client);
         this.skipMemberListDuringReconnection = properties.getBoolean(SKIP_MEMBER_LIST_DURING_RECONNECTION);
     }
 
-    private boolean isTpcEnabled(ClientConfig config) {
-        String tpcEnabled = config.getProperty(TPC_ENABLED.getName());
-        if (tpcEnabled != null) {
-            return Boolean.parseBoolean(tpcEnabled);
-        } else {
-            return config.getTpcConfig().isEnabled();
-        }
-    }
-
     private boolean unisocketModeConfigured(ClientConfig config) {
-        if (isTpcEnabled) {
+        if (config.getTpcConfig().isEnabled()) {
             return false;
         }
 
@@ -519,7 +511,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     <A> ClientConnection connect(A target, Function<A, ClientConnection> getOrConnectFunction,
-                           Function<A, Address> addressTranslator) {
+                                 Function<A, Address> addressTranslator) {
         try {
             logger.info("Trying to connect to " + target);
             return getOrConnectFunction.apply(target);
@@ -813,7 +805,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             channel.connect(inetSocketAddress, connectionTimeoutMillis);
 
             TcpClientConnection connection = new TcpClientConnection(client, connectionIdGen.incrementAndGet(), channel);
-            if (isTpcEnabled) {
+            if (isTpcAwareClient) {
                 connection.attributeMap().put(CandidateClusterContext.class, currentClusterContext);
             }
 
@@ -1077,7 +1069,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             checkClientState(connection, switchingToNextCluster);
 
             List<Integer> tpcPorts = response.getTpcPorts();
-            if (isTpcEnabled && tpcPorts != null && !tpcPorts.isEmpty()) {
+            if (isTpcAwareClient && tpcPorts != null && !tpcPorts.isEmpty()) {
                 connectTpcPorts(connection, tpcPorts, response.getTpcToken());
             }
 
@@ -1338,16 +1330,37 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     private void connectTpcPorts(TcpClientConnection connection, List<Integer> tpcPorts, byte[] tpcToken) {
+        List<Integer> targetTpcPorts = getTargetTpcPorts(tpcPorts, client.getClientConfig().getTpcConfig());
+
         TpcChannelConnector connector = new TpcChannelConnector(client,
                 authenticationTimeout,
                 clientUuid,
                 connection,
-                tpcPorts,
+                targetTpcPorts,
                 tpcToken,
                 executor,
                 this::createTpcChannel,
                 client.getLoggingService());
         connector.initiate();
+    }
+
+    static List<Integer> getTargetTpcPorts(List<Integer> tpcPorts, ClientTpcConfig tpcConfig) {
+        List<Integer> targetTpcPorts;
+        int tpcConnectionCount = tpcConfig.getConnectionCount();
+        if (tpcConnectionCount == 0 || tpcConnectionCount >= tpcPorts.size()) {
+            // zero means connect to all.
+            targetTpcPorts = tpcPorts;
+        } else {
+            // we make a copy of the tpc ports because items are removed.
+            List<Integer> tpcPortsCopy = new LinkedList<>(tpcPorts);
+            targetTpcPorts = new ArrayList<>(tpcConnectionCount);
+            ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
+            for (int k = 0; k < tpcConnectionCount; k++) {
+                int index = threadLocalRandom.nextInt(tpcPortsCopy.size());
+                targetTpcPorts.add(tpcPortsCopy.remove(index));
+            }
+        }
+        return targetTpcPorts;
     }
 
     private class ClientChannelErrorHandler implements ChannelErrorHandler {
