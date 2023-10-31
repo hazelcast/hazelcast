@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.schema.MappingField;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -178,8 +179,12 @@ public class KvMetadataResolvers {
         return resolver;
     }
 
+    /**
+     * Null format is only valid for Kafka keys.
+     * @see KvMetadataNullResolver
+     */
+    @Nullable
     private static String getFormat(Map<String, String> options, boolean isKey) {
-        String option = isKey ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT;
-        return options.get(option);
+        return options.get(isKey ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT);
     }
 }

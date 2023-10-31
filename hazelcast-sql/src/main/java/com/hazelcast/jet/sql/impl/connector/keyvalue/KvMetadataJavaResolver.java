@@ -126,14 +126,14 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
     }
 
     private Stream<MappingField> resolveObjectFields(boolean isKey, Class<?> typeClass) {
-        Map<String, Class<?>> fieldsInClass = FieldsUtil.resolveClass(typeClass);
-        if (fieldsInClass.isEmpty()) {
+        Map<String, Class<?>> classFields = FieldsUtil.resolveClass(typeClass);
+        if (classFields.isEmpty()) {
             // we didn't find any non-object fields in the class, map the whole value (e.g. in java.lang.Object)
             String name = isKey ? KEY : VALUE;
             return Stream.of(new MappingField(name, QueryDataType.OBJECT, name));
         }
 
-        return fieldsInClass.entrySet().stream().map(classField -> {
+        return classFields.entrySet().stream().map(classField -> {
             QueryPath path = new QueryPath(classField.getKey(), isKey);
             QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
             String name = classField.getKey();
@@ -216,7 +216,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             Map<QueryPath, MappingField> fieldsByPath,
             Class<?> typeClass
     ) {
-        Map<String, Class<?>> typesByNames = FieldsUtil.resolveClass(typeClass);
+        Map<String, Class<?>> classFields = FieldsUtil.resolveClass(typeClass);
 
         List<TableField> fields = new ArrayList<>();
         Map<String, String> typeNamesByPaths = new HashMap<>();
@@ -226,8 +226,8 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             String name = entry.getValue().name();
 
             fields.add(new MapTableField(name, type, false, path));
-            if (path.getPath() != null && typesByNames.get(path.getPath()) != null) {
-                typeNamesByPaths.put(path.getPath(), typesByNames.get(path.getPath()).getName());
+            if (path.getPath() != null && classFields.get(path.getPath()) != null) {
+                typeNamesByPaths.put(path.getPath(), classFields.get(path.getPath()).getName());
             }
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);

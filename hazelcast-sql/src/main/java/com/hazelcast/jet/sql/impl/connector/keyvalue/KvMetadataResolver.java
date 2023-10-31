@@ -87,6 +87,15 @@ public interface KvMetadataResolver {
     }
 
     /**
+     * If {@code __key}/{@code this} is the only field and has a custom type,
+     * return type fields. Otherwise, return mapping fields without {@code __key} or {@code this}.
+     */
+    static Stream<Field> getFields(Map<QueryPath, MappingField> fields) {
+        return flatMap(fields, type -> type.getObjectFields().stream().map(Field::new),
+                () -> fields.entrySet().stream().filter(e -> !e.getKey().isTopLevel()).map(Field::new));
+    }
+
+    /**
      * If {@code __key}/{@code this} is the only key/value field and has a custom type with
      * nonnull metadata, resolve the schema ID from the type. Otherwise, return {@code orElse()}.
      */
@@ -99,15 +108,6 @@ public interface KvMetadataResolver {
             String metadata = type.getObjectTypeMetadata();
             return metadata != null ? resolveFromType.apply(metadata) : orElse.get();
         }, orElse);
-    }
-
-    /**
-     * If {@code __key}/{@code this} is the only field and has a custom type,
-     * return type fields. Otherwise, return mapping fields without {@code __key} or {@code this}.
-     */
-    static Stream<Field> getFields(Map<QueryPath, MappingField> fields) {
-        return flatMap(fields, type -> type.getObjectFields().stream().map(Field::new),
-                () -> fields.entrySet().stream().filter(e -> !e.getKey().isTopLevel()).map(Field::new));
     }
 
     /**

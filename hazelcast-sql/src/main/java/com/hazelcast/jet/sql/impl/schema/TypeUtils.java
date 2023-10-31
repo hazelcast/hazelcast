@@ -269,6 +269,21 @@ public final class TypeUtils {
     }
 
     /**
+     * Adds {@linkplain QueryDataType#getObjectTypeMetadata() metadata}, i.e. schema ID,
+     * to custom types. <ol>
+     * <li> If the type has a well-defined† metadata in options, this self-reported metadata
+     *      is used. († For example, in Portable, {@code factoryId}, {@code classId}, and
+     *      {@code version} must be provided together.)
+     * <li> If the mapping has only {@code __key} or {@code this} fields, and both the mapping
+     *      and type define metadata, the one that is defined by the type is used. In other
+     *      words, type options override mapping options. In this case, the mapping does not
+     *      need to specify metadata since it will be ignored.
+     * <li> If the type does not define metadata, it is resolved from the parent, which might
+     *      be another type or the mapping: if the type belongs to explicit {@code __key} or
+     *      {@code this} fields, the metadata will be <em>inherited</em> from the mapping;
+     *      otherwise, it will be <em>accessed</em> as a field from the parent schema.
+     * </ol>
+     *
      * @param <ID> type of schema identifier
      * @param <S> type of schema
      */

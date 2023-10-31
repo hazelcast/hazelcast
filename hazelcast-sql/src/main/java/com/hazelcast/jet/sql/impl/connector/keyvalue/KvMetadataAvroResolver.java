@@ -82,7 +82,6 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                         .collect(ImmutableMap::<QueryDataTypeFamily, List<Schema.Type>>builder,
                                  (map, e) -> map.put(getConverter(e.getKey()).getTypeFamily(), e.getValue()),
                                  ExceptionUtil::notParallelizable)
-                        .put(QueryDataTypeFamily.OBJECT, List.of(Schema.Type.RECORD, Schema.Type.UNION, Schema.Type.NULL))
                         .build();
     }
 
@@ -209,7 +208,11 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
             QueryDataType mappingFieldType = field.type();
             QueryDataTypeFamily mappingFieldTypeFamily = mappingFieldType.getTypeFamily();
 
-            List<Schema.Type> conversions = Schemas.CONVERSIONS.get(mappingFieldTypeFamily);
+            List<Schema.Type> conversions = mappingFieldTypeFamily == QueryDataTypeFamily.OBJECT
+                    ? mappingFieldType.isCustomType()
+                            ? List.of(Schema.Type.RECORD)  // Unwrapped, so does not include NULL
+                            : List.of(Schema.Type.UNION, Schema.Type.NULL)  // Ordinary OBJECT can be mapped to NULL
+                    : Schemas.CONVERSIONS.get(mappingFieldTypeFamily);
             if (conversions == null) {
                 throw new IllegalArgumentException("Unsupported type: " + mappingFieldType);
             }
@@ -221,12 +224,6 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
 
             Schema fieldSchema = unwrapNullableType(schemaField.schema());
             Schema.Type schemaFieldType = fieldSchema.getType();
-
-            if (mappingFieldTypeFamily == QueryDataTypeFamily.OBJECT) {
-                conversions = mappingFieldType.isCustomType()
-                        ? List.of(Schema.Type.RECORD)  // Unwrapped, so does not include NULL
-                        : List.of(Schema.Type.UNION, Schema.Type.NULL);  // Ordinary OBJECT can be mapped to NULL
-            }
             if (!conversions.contains(schemaFieldType)) {
                 throw new IllegalArgumentException(schemaFieldType + " schema type is incompatible with "
                         + mappingFieldType + " mapping type");

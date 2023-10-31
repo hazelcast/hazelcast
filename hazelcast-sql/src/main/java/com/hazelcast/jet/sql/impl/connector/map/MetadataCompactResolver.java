@@ -141,7 +141,7 @@ public final class MetadataCompactResolver implements KvMetadataResolver {
         );
     }
 
-    private Schema resolveSchema(String typeName, Stream<Field> fields) {
+    private static Schema resolveSchema(String typeName, Stream<Field> fields) {
         return fields.collect(() -> new SchemaWriter(typeName),
                 (schema, field) -> schema.addField(new FieldDescriptor(field.name(),
                         SQL_TO_COMPACT.getOrDefault(field.type().getTypeFamily()))),

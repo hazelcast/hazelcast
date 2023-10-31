@@ -207,6 +207,15 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         return SqlDataSerializerHook.QUERY_DATA_TYPE;
     }
 
+    /**
+     * @implNote Collects all distinct custom types into a <em>type map</em> beforehand
+     * to avoid infinite recursion. Then, it writes each type with its direct children,
+     * i.e. each subtree, in an arbitrary order. {@link #readData} first creates a type
+     * map that initially contains only this {@code QueryDataType}, i.e. the root. Then,
+     * it reads all subtrees by creating a type only if it is not created before using
+     * the type map. Even though subtrees don't lie in a particular order, the children
+     * of all subtrees will eventually be populated, including the root.
+     */
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(converter.getId());
@@ -296,6 +305,10 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
                 : typeMap.computeIfAbsent(type.objectTypeName, k -> type);
     }
 
+    public boolean isCustomType() {
+        return converter.getTypeFamily() == QueryDataTypeFamily.OBJECT && objectTypeName != null;
+    }
+
     @Override
     public int hashCode() {
         return !isCustomType()
@@ -323,10 +336,6 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     @Override
     public String toString() {
         return getClass().getSimpleName() + " {family=" + getTypeFamily() + "}";
-    }
-
-    public boolean isCustomType() {
-        return converter.getTypeFamily() == QueryDataTypeFamily.OBJECT && objectTypeName != null;
     }
 
     public static class QueryDataTypeField implements IdentifiedDataSerializable, Serializable {
