@@ -73,9 +73,7 @@ public final class HazelcastReaders {
 
     @Nonnull
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
-        return new LocalProcessorMetaSupplier<>(
-                new LocalCacheReaderFunction(cacheName)
-        ) {
+        return new LocalProcessorMetaSupplier<>(new LocalCacheReaderFunction(cacheName)) {
             @Override
             public Permission getRequiredPermission() {
                 return new CachePermission(cacheName, ACTION_CREATE, ACTION_READ);
