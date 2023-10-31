@@ -557,6 +557,26 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- MONGODB -->
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-mongodb</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>${mongodb.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mongodb</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>toxiproxy</artifactId>

@@ -29,7 +29,7 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class MongoCreateDataConnectionSqlIT extends MongoSqlIT {
+public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
 
     @Test
     public void createsConnection() {
@@ -95,7 +95,7 @@ public class MongoCreateDataConnectionSqlIT extends MongoSqlIT {
     private void testCreatesConnectionEvenWhenUnreachable(boolean shared) {
         String dataConnName = randomName();
         String options = String.format("OPTIONS ('connectionString' = '%s', 'database' = 'fakeNonExisting') ",
-                "mongodb://non-existing-address:1234/?connectTimeoutMS=20&socketTimeoutMS=20&serverSelectionTimeoutMS=20");
+                "mongodb://non-existing-fake-address:1234/?connectTimeoutMS=200&socketTimeoutMS=200&serverSelectionTimeoutMS=200");
 
         String sharedString = shared ? " SHARED " : " ";
         instance().getSql().execute("CREATE DATA CONNECTION " + dataConnName + " TYPE Mongo " + sharedString + options)
@@ -111,6 +111,6 @@ public class MongoCreateDataConnectionSqlIT extends MongoSqlIT {
             instance().getSql().execute("CREATE MAPPING test_" + shared + " data connection " + dataConnName)
                     .close();
         });
-        assertThat(e.getMessage()).contains("address=non-existing-address:1234");
+        assertThat(e.getMessage()).contains("exception={com.mongodb.MongoSocketException: non-existing");
     }
 }

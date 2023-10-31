@@ -149,17 +149,6 @@
                             <transformer
                                     implementation="com.hazelcast.buildutils.HazelcastManifestTransformer"/>
                         </transformers>
-                        <filters>
-                            <filter>
-                                <artifact>*:*</artifact>
-                                <excludes>
-                                    <exclude>module-info.class</exclude>
-                                    <exclude>META-INF/*.SF</exclude>
-                                    <exclude>META-INF/*.DSA</exclude>
-                                    <exclude>META-INF/*.RSA</exclude>
-                                </excludes>
-                            </filter>
-                        </filters>
                     </configuration>
                     <dependencies>
                         <dependency>

@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class MongoBatchSqlConnectorDeleteIT extends MongoSqlIT {
+public class MongoBatchSqlConnectorDeleteTest extends MongoSqlTest {
 
     @Parameterized.Parameter(0)
     public boolean includeIdInMapping;
@@ -193,8 +193,7 @@ public class MongoBatchSqlConnectorDeleteIT extends MongoSqlIT {
         options.validationOptions(validationOptions);
         mongoClient.getDatabase(databaseName).createCollection(collectionName, options);
         if (idFirst) {
-            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\""
-                        + collectionName + "\" \n("
+            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
                     + (includeIdInMapping ? " id OBJECT external name _id, " : "")
                     + " firstName VARCHAR, \n"
                     + " lastName VARCHAR, \n"
@@ -207,8 +206,7 @@ public class MongoBatchSqlConnectorDeleteIT extends MongoSqlIT {
                     + ")"
             );
         } else {
-            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\""
-                       + collectionName + "\" \n("
+            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
                     + " firstName VARCHAR, \n"
                     + " lastName VARCHAR, \n"
                     + (includeIdInMapping ? " id OBJECT external name _id, " : "")

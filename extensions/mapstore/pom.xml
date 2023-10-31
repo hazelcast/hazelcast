@@ -68,11 +68,6 @@
                     </relocations>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${maven.failsafe.plugin.version}</version>
-            </plugin>
         </plugins>
     </build>
 
@@ -165,7 +160,6 @@
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-mongodb</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>

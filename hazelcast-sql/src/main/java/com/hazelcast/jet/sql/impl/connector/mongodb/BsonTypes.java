@@ -23,7 +23,6 @@ import org.bson.BsonDouble;
 import org.bson.BsonInt32;
 import org.bson.BsonInt64;
 import org.bson.BsonJavaScript;
-import org.bson.BsonJavaScriptWithScope;
 import org.bson.BsonRegularExpression;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
@@ -157,7 +156,7 @@ final class BsonTypes {
         return result;
     }
 
-    @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:RightCurly"})
+    @SuppressWarnings("checkstyle:ReturnCount")
     static Object unwrapSimpleWrappers(Object value) {
         if (value instanceof BsonBoolean) {
             return ((BsonBoolean) value).getValue();
@@ -194,9 +193,6 @@ final class BsonTypes {
         }
         if (value instanceof BsonJavaScript) {
             return ((BsonJavaScript) value).getCode();
-        }
-        else if (value instanceof BsonJavaScriptWithScope) {
-            return ((BsonJavaScriptWithScope) value).getCode();
         }
         if (value instanceof CodeWithScope) {
             return value;

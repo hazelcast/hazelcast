@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -422,13 +423,17 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         // when
         sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
-        createDataConnection(instance(), dcName, "Kafka", false, singletonMap("A", "B"));
+        createDataConnection(instance(), dcName, "mongo", false,
+                // create data connection that is correct enough to parse the query
+                ImmutableMap.of("connectionString", "bad:12345", "database", "db",
+                        "idColumn", "id")
+        );
 
         // then
         assertThatThrownBy(() -> sqlService.execute("select count(*) from " + mappingName).iterator().hasNext())
                 .as("Should detect change of data connection type")
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Missing 'valueFormat' option");
+                .hasMessageContaining("Mongo connector allows only object types");
 
         // cleanup
         sqlService.executeUpdate("DROP MAPPING " + mappingName);

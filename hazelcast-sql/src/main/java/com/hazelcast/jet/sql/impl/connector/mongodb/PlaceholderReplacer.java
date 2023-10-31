@@ -42,8 +42,8 @@ final class PlaceholderReplacer {
      * <p>
      * Parameters are not known at query planning stage, they are
      * visible only in {@link ProcessorSupplier#init(Context)} method. That's why
-     * we must use placeholders for the dynamic parameters, because we cannot transfer
-     * {@linkplain org.apache.calcite.rex.RexNode} over the network, as it's not serializable.
+     * we must use placeholders for the dynamic parameters, because we cannot transfer {@linkplain org.apache.calcite.rex.RexNode}
+     * over the network, as it's not serializable.
      *
      * <p>
      * Similar restrictions are in the case of input references - input reference value is known only to the processor
@@ -77,8 +77,7 @@ final class PlaceholderReplacer {
                 }
                 entryValue = newValues;
             } else if (entryValue instanceof Document) {
-                entryValue = replacePlaceholders((Document) entryValue, evalContext, inputRow, externalNames,
-                        readValueFromInput);
+                entryValue = replacePlaceholders((Document) entryValue, evalContext, inputRow, externalNames, readValueFromInput);
             }
 
             result.append(entryKey, entryValue);

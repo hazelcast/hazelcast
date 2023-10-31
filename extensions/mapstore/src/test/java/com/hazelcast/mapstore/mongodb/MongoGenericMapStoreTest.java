@@ -57,7 +57,7 @@ import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class MongoGenericMapStoreIT extends SimpleTestInClusterSupport {
+public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
     static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
 
     public static MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);

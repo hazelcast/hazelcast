@@ -43,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class MongoSqlConnectorIT extends MongoSqlIT {
+public class MongoSqlConnectorTest extends MongoSqlTest {
 
     @Test
     public void readsFromMongo_withId_withUnsupportedExpr() {
@@ -367,25 +367,21 @@ public class MongoSqlConnectorIT extends MongoSqlIT {
 
     @Test
     public void sinkInto_allHardcoded_withId() {
-        testSinksIntoMongo(true, "sink into " + collectionName
-                + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
+        testSinksIntoMongo(true, "sink into " + collectionName + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
     }
     @Test
     public void sinkInto_allHardcoded_withoutId() {
-        testSinksIntoMongo(false, "sink into " + collectionName
-                + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
+        testSinksIntoMongo(false, "sink into " + collectionName + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
     }
 
     @Test
     public void sinkInto_oneParametrized_withId() {
-        testSinksIntoMongo(true, "sink into " + collectionName
-                        + " (firstName, lastName, jedi) values ('Leia', ?, true)",
+        testSinksIntoMongo(true, "sink into " + collectionName + " (firstName, lastName, jedi) values ('Leia', ?, true)",
                 "Organa");
     }
     @Test
     public void sinkInto_oneParametrized_withoutId() {
-        testSinksIntoMongo(false, "sink into " + collectionName
-                        + " (firstName, lastName, jedi) values ('Leia', ?, true)",
+        testSinksIntoMongo(false, "sink into " + collectionName + " (firstName, lastName, jedi) values ('Leia', ?, true)",
                 "Organa");
     }
 
@@ -412,8 +408,7 @@ public class MongoSqlConnectorIT extends MongoSqlIT {
 
     private void createMapping(boolean includeIdInMapping, boolean idFirst) {
         if (idFirst) {
-            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\""
-                    + collectionName + "\" \n("
+            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
                     + (includeIdInMapping ? " id OBJECT external name _id, " : "")
                     + " firstName VARCHAR, \n"
                     + " lastName VARCHAR, \n"
@@ -425,8 +420,7 @@ public class MongoSqlConnectorIT extends MongoSqlIT {
                     + ")"
             );
         } else {
-            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\""
-                    + collectionName + "\" \n("
+            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
                     + " firstName VARCHAR, \n"
                     + " lastName VARCHAR, \n"
                     + " jedi BOOLEAN \n"

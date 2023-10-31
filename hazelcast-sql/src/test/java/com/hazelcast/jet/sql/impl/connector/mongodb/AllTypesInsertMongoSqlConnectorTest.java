@@ -49,14 +49,13 @@ import java.util.stream.Collectors;
 
 import static java.time.ZoneId.systemDefault;
 import static java.time.ZoneOffset.UTC;
-import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class AllTypesInsertMongoSqlConnectorIT extends MongoSqlIT {
+public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
     private static final ObjectId EXAMPLE_OBJECT_ID = ObjectId.get();
     @Parameterized.Parameter
     public int no;
@@ -87,7 +86,7 @@ public class AllTypesInsertMongoSqlConnectorIT extends MongoSqlIT {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String dateTimeString = dateTimeUtc.withZoneSameInstant(systemDefault()).format(formatter);
 
-        String dateTimeStringTz = "cast ('" + dateTimeUtc.withZoneSameInstant(systemDefault()).format(ISO_OFFSET_DATE_TIME)
+        String dateTimeStringTz = "cast ('" + dateTimeUtc.withZoneSameInstant(systemDefault()).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
                 + "' as timestamp with time zone)";
         return asList(new Object[][]{
                 {1, "string", "VARCHAR", "'dummy'", "dummy", "dummy", "dummy"},

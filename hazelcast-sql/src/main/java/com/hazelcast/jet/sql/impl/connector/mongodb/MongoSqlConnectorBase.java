@@ -65,8 +65,8 @@ import static java.util.Collections.singletonList;
  * for {@code _id field}).
  * <p>
  * All MongoDB connectors assume at least one primary key.
- * If user didn't specify any, the {@code _id} column is set to primary key - it is mandatory (auto-created if not
- * specified by user), unique and indexed.
+ * If user didn't specify any, the {@code _id} column is set to primary key - it is mandatory (auto-created if not specified
+ * by user), unique and indexed.
  * <p>
  *
  * @see FieldResolver
@@ -215,9 +215,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         return wrap(ctx, supplier, true);
     }
 
-    protected static DbCheckingPMetaSupplier wrap(DagBuildContext ctx,
-                                                  ProcessorSupplier supplier,
-                                                  boolean forceParallelismOne) {
+    protected static DbCheckingPMetaSupplier wrap(DagBuildContext ctx, ProcessorSupplier supplier, boolean forceParallelismOne) {
         MongoTable table = ctx.getTable();
         String connectionString = table.connectionString;
         SupplierEx<MongoClient> clientSupplier = connectionString == null
