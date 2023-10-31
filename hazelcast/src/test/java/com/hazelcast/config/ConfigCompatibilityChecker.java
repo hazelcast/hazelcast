@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
@@ -795,6 +796,22 @@ public class ConfigCompatibilityChecker {
                     return false;
                 }
                 if (e.getValue().getLockAcquireLimit() != s2.getLockAcquireLimit()) {
+                    return false;
+                }
+            }
+
+            Map<String, CPMapConfig> maps1 = c1.getCpMapConfigs();
+
+            if (maps1.size() != c2.getCpMapConfigs().size()) {
+                return false;
+            }
+
+            for (Entry<String, CPMapConfig> e : maps1.entrySet()) {
+                CPMapConfig c2CPMapConfig = c2.findCPMapConfig(e.getKey());
+                if (c2CPMapConfig == null) {
+                    return false;
+                }
+                if (e.getValue().getMaxSizeMb() != c2CPMapConfig.getMaxSizeMb()) {
                     return false;
                 }
             }

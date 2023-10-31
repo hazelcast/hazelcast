@@ -39,7 +39,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.3.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.4.xsd">
 
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
@@ -1071,6 +1071,16 @@
                 <lock-acquire-limit>2</lock-acquire-limit>
             </fenced-lock>
         </locks>
+        <maps>
+            <map>
+                <name>map1</name>
+                <max-size-mb>50</max-size-mb>
+            </map>
+            <map>
+                <name>map2</name>
+                <max-size-mb>25</max-size-mb>
+            </map>
+        </maps>
     </cp-subsystem>
 
     <auditlog enabled="false">
