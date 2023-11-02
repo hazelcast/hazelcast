@@ -78,7 +78,7 @@ jobs:
           path: auto-discovery-suite
 
       - name : Set-up Terraform
-        uses: hashicorp/setup-terraform@v2.0.3
+        uses: hashicorp/setup-terraform@v3.0.0
         with:
           terraform_version: 1.5.4
           terraform_wrapper: false
