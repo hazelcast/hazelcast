@@ -204,6 +204,14 @@ public final class MetricNames {
     public static final String JOB_STATUS = "status";
 
     /**
+     * Indicates whether the job was cancelled by the user.
+     *
+     * @see Job#isUserCancelled()
+     * @since 5.4
+     */
+    public static final String IS_USER_CANCELLED = "userCancelled";
+
+    /**
      * Number of jobs submitted to the Jet cluster.
      * <p>
      * This metric is zero on non-master members. When a master fails and a new

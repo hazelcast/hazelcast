@@ -168,7 +168,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         job.cancel();
 
         //then
-        assertTrueEventually(() -> assertJobStatusMetric(job, FAILED));
+        assertTrueEventually(() -> assertJobStatusMetric(job, FAILED, true));
         assertTrueEventually(() -> assertJobStats(1, 1, 1, 0, 1));
     }
 
@@ -265,17 +265,29 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     }
 
     private void assertJobStatusMetric(Job job, JobStatus status) {
+        assertJobStatusMetric(job, status, false);
+    }
+
+    private void assertJobStatusMetric(Job job, JobStatus status, boolean isUserCancelled) {
         try {
             // Check job metrics
-            List<Measurement> statuses = job.getMetrics().get(MetricNames.JOB_STATUS);
+            JobMetrics metrics = job.getMetrics();
+            List<Measurement> statuses = metrics.get(MetricNames.JOB_STATUS);
             long lastStatus = statuses.get(statuses.size() - 1).value();
             assertEquals(status, JobStatus.getById((int) lastStatus));
 
+            List<Measurement> cancelled = metrics.get(MetricNames.IS_USER_CANCELLED);
+            long lastCancelled = cancelled.get(cancelled.size() - 1).value();
+            assertEquals(isUserCancelled ? 1 : 0, lastCancelled);
+
             if (!status.isTerminal()) {
                 // Check JMX metrics
-                long jmxStatus = JmxMetricsChecker.forJob(hzInstances[0], job)
-                                                  .getMetricValue(MetricNames.JOB_STATUS);
+                JmxMetricsChecker jmx = JmxMetricsChecker.forJob(hzInstances[0], job);
+                long jmxStatus = jmx.getMetricValue(MetricNames.JOB_STATUS);
                 assertEquals(status, JobStatus.getById((int) jmxStatus));
+
+                long jmxCancelled = jmx.getMetricValue(MetricNames.IS_USER_CANCELLED);
+                assertEquals(isUserCancelled ? 1 : 0, jmxCancelled);
             }
         } catch (Exception e) {
             throw new AssertionError(e.getMessage(), e);

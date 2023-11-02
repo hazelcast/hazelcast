@@ -23,6 +23,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeUnit;
+import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
 import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.jet.JetException;
@@ -158,6 +159,7 @@ public class MasterJobContext {
     private volatile RawJobMetrics jobMetrics;
 
     private final MetricDescriptor statusMetricDescriptor;
+    private final MetricDescriptor userCancelledMetricDescriptor;
 
     /**
      * A new instance is (re)assigned when the execution is started and
@@ -196,14 +198,18 @@ public class MasterJobContext {
         defaultParallelism = mc.getJetServiceBackend().getJetConfig().getCooperativeThreadCount();
         defaultQueueSize = mc.getJetServiceBackend().getJetConfig()
                 .getDefaultEdgeConfig().getQueueSize();
-        statusMetricDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER.get()
+        MetricDescriptorImpl jobMetricDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER.get()
                 .withTag(MetricTags.JOB, mc.jobIdString())
-                .withTag(MetricTags.JOB_NAME, mc.jobName())
+                .withTag(MetricTags.JOB_NAME, mc.jobName());
+        statusMetricDescriptor = jobMetricDescriptor.copy()
                 .withMetric(MetricNames.JOB_STATUS)
                 .withUnit(ProbeUnit.ENUM);
+        userCancelledMetricDescriptor = jobMetricDescriptor.copy()
+                .withMetric(MetricNames.IS_USER_CANCELLED)
+                .withUnit(ProbeUnit.BOOLEAN);
 
         // Set initial status metrics
-        setJobMetrics(mc.jobStatus());
+        setJobMetrics(mc.jobStatus(), false);
     }
 
     public CompletableFuture<Void> jobCompletionFuture() {
@@ -1062,16 +1068,19 @@ public class MasterJobContext {
     }
 
     /**
-     * Generates persistent job metrics —currently only job status.
+     * Generates persistent job metrics, namely {@link MetricNames#JOB_STATUS} and
+     * {@link MetricNames#IS_USER_CANCELLED}.
      *
      * @see MasterContext#provideDynamicMetrics
      */
-    void setJobMetrics(JobStatus status) {
+    void setJobMetrics(JobStatus status, boolean userRequested) {
         if (!mc.metricsEnabled()) {
             return;
         }
         MetricsCompressor compressor = new MetricsCompressor();
         compressor.addLong(statusMetricDescriptor, status.getId());
+        boolean isUserCancelled = status == FAILED && userRequested;
+        compressor.addLong(userCancelledMetricDescriptor, isUserCancelled ? 1 : 0);
         jobMetrics = RawJobMetrics.of(compressor.getBlobAndClose());
     }
 
