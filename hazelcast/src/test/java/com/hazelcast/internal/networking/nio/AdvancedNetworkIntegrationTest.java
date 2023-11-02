@@ -297,10 +297,8 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
 
     private void assertLocalPortsOpen(int... ports) {
         for (int port : ports) {
-            Socket socket = new Socket();
-            try {
+            try (Socket socket = new Socket()) {
                 socket.connect(new InetSocketAddress("127.0.0.1", port));
-                socket.close();
             } catch (IOException e) {
                 fail("Failed to connect to port " + port + ": " + e.getMessage());
             }

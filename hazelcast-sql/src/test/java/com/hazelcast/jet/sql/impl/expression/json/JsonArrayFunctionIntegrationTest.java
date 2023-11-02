@@ -117,7 +117,7 @@ public class JsonArrayFunctionIntegrationTest extends SqlJsonTestSupport {
                 rows(1, json("[\"foo\",42,[1,2,3]]")));
     }
 
-    private List<Row> jsonArrayRow(final Object ...values) {
+    private List<Row> jsonArrayRow(final Object... values) {
         return rows(1, json(jsonString(values)));
     }
 

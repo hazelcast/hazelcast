@@ -21,11 +21,11 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.mock.MockUtil;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
+import com.hazelcast.query.SampleTestObjects.SpiedEmployee;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,8 +45,6 @@ import java.util.Map;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -114,13 +112,12 @@ public class QueryIndexingTest extends HazelcastTestSupport {
     private static Map<Integer, Employee> newEmployees(int employeeCount) {
         Map<Integer, Employee> employees = new HashMap<>();
         for (int i = 0; i < employeeCount; i++) {
-            Employee val;
+            Employee spy;
             if (i % 2 == 0) {
-                val = new Employee(i, null, null, 0, true, i);
+                spy = new SpiedEmployee(i, null, null, 0, true, i);
             } else {
-                val = new Employee(i, "name" + i, "city" + i, 0, true, i);
+                spy = new SpiedEmployee(i, "name" + i, "city" + i, 0, true, i);
             }
-            Employee spy = MockUtil.serializableSpy(Employee.class, val);
             employees.put(i, spy);
         }
         return employees;
@@ -145,8 +142,9 @@ public class QueryIndexingTest extends HazelcastTestSupport {
 
     private static void assertGettersCalledNTimes(Collection<Employee> matchingEmployees, int expectedCalls) {
         for (Employee employee : matchingEmployees) {
-            verify(employee, times(expectedCalls)).getCity();
-            verify(employee, times(expectedCalls)).getName();
+            SpiedEmployee spy = (SpiedEmployee) employee;
+            assertEquals(expectedCalls, spy.getInvocationCount("getCity"));
+            assertEquals(expectedCalls, spy.getInvocationCount("getName"));
         }
     }
 

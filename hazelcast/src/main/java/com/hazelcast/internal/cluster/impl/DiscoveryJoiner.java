@@ -28,7 +28,6 @@ import com.hazelcast.internal.util.concurrent.IdleStrategy;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 
 import static com.hazelcast.spi.properties.ClusterProperty.WAIT_SECONDS_BEFORE_JOIN;
@@ -71,15 +70,16 @@ public class DiscoveryJoiner
 
     @Override
     protected Collection<Address> getPossibleAddressesForInitialJoin() {
+        Collection<Address> possibleAddresses = null;
         long deadLine = System.nanoTime() + SECONDS.toNanos(maximumWaitingTimeBeforeJoinSeconds);
         for (int i = 0; System.nanoTime() < deadLine; i++) {
-            Collection<Address> possibleAddresses = getPossibleAddresses();
+            possibleAddresses = getPossibleAddresses();
             if (!possibleAddresses.isEmpty()) {
                 return possibleAddresses;
             }
             idleStrategy.idle(i);
         }
-        return Collections.emptyList();
+        return possibleAddresses == null ? getPossibleAddresses() : possibleAddresses;
     }
 
     @Override

@@ -47,6 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
@@ -258,9 +259,13 @@ public class TestHazelcastInstanceFactory {
     }
 
     public HazelcastInstance[] newInstances(Config config, int nodeCount) {
+        return newInstances(() -> config, nodeCount);
+    }
+
+    public HazelcastInstance[] newInstances(Supplier<Config> configSupplier, int nodeCount) {
         HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
-            instances[i] = newHazelcastInstance(config);
+            instances[i] = newHazelcastInstance(configSupplier.get());
         }
         return instances;
     }

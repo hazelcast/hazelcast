@@ -39,7 +39,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * (identically equal) value previously put into the map.Time resolution for TTL is seconds. The given TTL value is
  * rounded to the next closest second value.
  */
-@Generated("a2b6f09e4de21a925de555812da14a9d")
+@SuppressWarnings("unused")
+@Generated("17f6d9702d0418202a411a7be5265476")
 public final class MapPutWithMaxIdleCodec {
     //hex: 0x014400
     public static final int REQUEST_MESSAGE_TYPE = 82944;

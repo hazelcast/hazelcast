@@ -74,6 +74,33 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         if (delayedEntries == null || delayedEntries.isEmpty()) {
             return Collections.emptyMap();
         }
+        return writeCoalescing
+                ? processInternalWithNoOrder(delayedEntries)
+                : processInternalWithOrder(delayedEntries);
+    }
+
+    private Map<Integer, List<DelayedEntry>> processInternalWithNoOrder(List<DelayedEntry> delayedEntries) {
+        final Map<Integer, List<DelayedEntry>> failuresByPartition = new HashMap<>();
+        // split into delete and write.
+        final List<DelayedEntry> entriesToProcessDelete = new ArrayList<>();
+        final List<DelayedEntry> entriesToProcessWrite = new ArrayList<>();
+        for (final DelayedEntry<Data, Object> entry : delayedEntries) {
+            if (entry.getValue() == null) {
+                entriesToProcessDelete.add(entry);
+            } else {
+                entriesToProcessWrite.add(entry);
+            }
+        }
+        final List<DelayedEntry> failuresDelete = callHandler(entriesToProcessDelete, StoreOperationType.DELETE);
+        addFailsTo(failuresByPartition, failuresDelete);
+        entriesToProcessDelete.clear();
+        final List<DelayedEntry> failuresWrite = callHandler(entriesToProcessWrite, StoreOperationType.WRITE);
+        addFailsTo(failuresByPartition, failuresWrite);
+        entriesToProcessWrite.clear();
+        return failuresByPartition;
+    }
+
+    private Map<Integer, List<DelayedEntry>> processInternalWithOrder(List<DelayedEntry> delayedEntries) {
         final Map<Integer, List<DelayedEntry>> failuresByPartition = new HashMap<>();
         final List<DelayedEntry> entriesToProcess = new ArrayList<>();
         StoreOperationType operationType = null;

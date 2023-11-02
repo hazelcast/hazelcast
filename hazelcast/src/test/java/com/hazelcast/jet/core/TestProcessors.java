@@ -53,7 +53,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -713,11 +713,11 @@ public final class TestProcessors {
         static List<Address> members;
         static List<List<Object>> lists;
 
-        List<Object> getListAt(int i) {
+        public List<Object> getListAt(int i) {
             return lists.get(i);
         }
 
-        List<List<Object>> getLists() {
+        public List<List<Object>> getLists() {
             return lists;
         }
 

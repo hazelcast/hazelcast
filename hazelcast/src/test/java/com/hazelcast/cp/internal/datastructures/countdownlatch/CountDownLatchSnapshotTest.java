@@ -56,11 +56,6 @@ public class CountDownLatchSnapshotTest extends AbstractAtomicRegisterSnapshotTe
     }
 
     @Override
-    protected Integer readValue() {
-        return latch.getCount();
-    }
-
-    @Override
     protected RaftOp getQueryRaftOp() {
         return new GetCountOp(name);
     }

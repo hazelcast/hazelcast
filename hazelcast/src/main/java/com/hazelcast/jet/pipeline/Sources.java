@@ -48,16 +48,17 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.spi.annotation.Beta;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Message;
 
 import javax.annotation.Nonnull;
-import javax.jms.ConnectionFactory;
-import javax.jms.Message;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 
 import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
@@ -1225,9 +1226,9 @@ public final class Sources {
      * </pre>
      *
      * This version creates a connection without any authentication parameters.
-     * JMS {@link javax.jms.Message} objects are emitted to downstream.
+     * JMS {@link jakarta.jms.Message} objects are emitted to downstream.
      * <p>
-     * <b>Note:</b> {@link javax.jms.Message} might not be serializable. In
+     * <b>Note:</b> {@link jakarta.jms.Message} might not be serializable. In
      * that case you can use {@linkplain #jmsQueueBuilder(SupplierEx) the
      * builder} and add a projection.
      *
@@ -1297,10 +1298,10 @@ public final class Sources {
      *
      * This version creates a connection without any authentication parameters.
      * A non-durable, non-shared consumer is used, only one member will connect
-     * to the broker. JMS {@link javax.jms.Message} objects are emitted to
+     * to the broker. JMS {@link jakarta.jms.Message} objects are emitted to
      * downstream.
      * <p>
-     * <b>Note:</b> {@link javax.jms.Message} might not be serializable. In
+     * <b>Note:</b> {@link jakarta.jms.Message} might not be serializable. In
      * that case you can use {@linkplain #jmsQueueBuilder(SupplierEx) the
      * builder} and add a projection.
      *
@@ -1494,5 +1495,49 @@ public final class Sources {
     ) {
         return batchFromProcessor("jdbcSource",
                 SourceProcessors.readJdbcP(connectionURL, query, createOutputFn));
+    }
+
+    /**
+     * Same as @{link {@link Sources#jdbc(String, String, FunctionEx)}}
+     * <p>
+     * It is not always possible to use the default properties. This overload allows passing some properties to the
+     * JDBC driver
+     * <p>
+     * Example for PostgreSQL to specify fetchSize:  PostgreSQL requires that the autocommit should be <b>disabled</b>.
+     * Because the backend closes cursors at the end of transactions, so in autocommit enabled mode
+     * the backend will have closed the cursor before anything can be fetched from it.
+     * <pre>{@code
+     *        Properties properties = new Properties();
+     *        properties.put(JdbcPropertyKeys.FETCH_SIZE, "5");
+     *        properties.put(JdbcPropertyKeys.AUTO_COMMIT, "false");
+     *        p.readFrom(Sources.jdbc(
+     *            "jdbc:postgresql://localhost:5432/mydatabase",
+     *            "select ID, NAME from PERSON",
+     *            properties
+     *            resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
+     *    }</pre>
+     *    <p>
+     * Example for MySQL to specify fetchSize: The database connection URL should have <b>"&useCursorFetch=true"</b> parameter
+     * to enable cursor-based fetching. This means that the JDBC driver will fetch a set of rows from the database at a time,
+     * rather than fetching all the rows in the result set at once
+     * <pre>{@code
+     *        Properties properties = new Properties();
+     *        properties.put(JdbcPropertyKeys.FETCH_SIZE, "5");
+     *        p.readFrom(Sources.jdbc(
+     *            "jdbc:mysql://localhost:3306/mydatabase?useCursorFetch=true,"
+     *            "select ID, NAME from PERSON",
+     *            properties
+     *            resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
+     *    }</pre>
+     *
+     */
+    public static <T> BatchSource<T> jdbc(
+            @Nonnull String connectionURL,
+            @Nonnull String query,
+            @Nonnull Properties properties,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> createOutputFn
+    ) {
+        return batchFromProcessor("jdbcSource",
+                SourceProcessors.readJdbcP(connectionURL, query, properties, createOutputFn));
     }
 }

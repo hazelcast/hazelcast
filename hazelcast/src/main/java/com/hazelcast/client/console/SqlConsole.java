@@ -17,12 +17,10 @@
 package com.hazelcast.client.console;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.management.MCClusterMetadata;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -40,11 +38,13 @@ import org.jline.reader.SyntaxError;
 import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
 
 import java.io.IOError;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,7 +56,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.client.console.HazelcastCommandLine.getClusterMetadata;
 import static com.hazelcast.client.console.HazelcastCommandLine.getHazelcastClientInstanceImpl;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
@@ -74,14 +73,21 @@ public final class SqlConsole {
     private static final int EXPLAIN_ROWS_INITIAL_CAPACITY = 100;
     private static final List<SqlRow> ROWS_BUFFER = new ArrayList<>(EXPLAIN_ROWS_INITIAL_CAPACITY);
 
-    private SqlConsole() { }
+    private final HazelcastCommandLine.GlobalMixin globalMixin;
+    private final HazelcastInstance hzClient;
 
-    public static void run(HazelcastInstance hzClient) {
+    public SqlConsole(HazelcastCommandLine.GlobalMixin globalMixin, HazelcastInstance hzClient) {
+        this.globalMixin = globalMixin;
+        this.hzClient = hzClient;
+    }
+
+    public void run() {
         LineReader reader = LineReaderBuilder.builder().parser(new MultilineParser())
                 .variable(LineReader.SECONDARY_PROMPT_PATTERN, new AttributedStringBuilder()
                         .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR)).append("%M%P > ").toAnsi())
                 .variable(LineReader.INDENTATION, 2)
                 .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
+                .terminal(systemOrDumbTerminal())
                 .appName("hazelcast-sql")
                 .build();
 
@@ -94,7 +100,7 @@ public final class SqlConsole {
         });
 
         PrintWriter writer = reader.getTerminal().writer();
-        writer.println(sqlStartingPrompt(hzClient));
+        writer.println(sqlStartingPrompt());
         writer.flush();
 
         for (; ; ) {
@@ -165,18 +171,25 @@ public final class SqlConsole {
                 writer.flush();
                 break;
             }
-            executeSqlCmd(hzClient, command, reader.getTerminal(), activeSqlResult);
+            executeSqlCmd(command, reader.getTerminal(), activeSqlResult);
         }
     }
 
-    private static void executeSqlCmd(
-            HazelcastInstance hz,
+    private static Terminal systemOrDumbTerminal() {
+        try {
+            return TerminalBuilder.builder().dumb(true).build();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void executeSqlCmd(
             String command,
             Terminal terminal,
             AtomicReference<SqlResult> activeSqlResult
     ) {
         PrintWriter out = terminal.writer();
-        try (SqlResult sqlResult = hz.getSql().execute(command)) {
+        try (SqlResult sqlResult = hzClient.getSql().execute(command)) {
             activeSqlResult.set(sqlResult);
 
             // if it's a result with an update count, just print it
@@ -217,10 +230,7 @@ public final class SqlConsole {
             out.println(message);
         } catch (HazelcastSqlException e) {
             // the query failed to execute with HazelcastSqlException
-            String errorPrompt = new AttributedStringBuilder()
-                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
-                    .append(e.getMessage())
-                    .toAnsi();
+            String errorPrompt = getErrorPrompt(e);
             out.println(errorPrompt);
         } catch (Exception e) {
             // the query failed to execute with an unexpected exception
@@ -234,6 +244,24 @@ public final class SqlConsole {
         }
     }
 
+    private String getErrorPrompt(HazelcastSqlException hazelcastSqlException) {
+        Throwable cause = hazelcastSqlException.getCause();
+        String errorPrompt;
+        if (globalMixin.isVerbose() && cause != null) {
+            errorPrompt = new AttributedStringBuilder()
+                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                    .append(hazelcastSqlException.getMessage())
+                    .append("\nStack trace:\n")
+                    .append(cause.getMessage())
+                    .toAnsi();
+        } else {
+            errorPrompt = new AttributedStringBuilder()
+                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                    .append(hazelcastSqlException.getMessage())
+                    .toAnsi();
+        }
+        return errorPrompt;
+    }
     private static int printExplain(
             SqlRowMetadata rowMetadata,
             SqlResult sqlResult,
@@ -265,14 +293,12 @@ public final class SqlConsole {
         return ROWS_BUFFER.size();
     }
 
-    private static String sqlStartingPrompt(HazelcastInstance hz) {
-        HazelcastClientInstanceImpl hazelcastClientImpl = getHazelcastClientInstanceImpl(hz);
+    private String sqlStartingPrompt() {
+        HazelcastClientInstanceImpl hazelcastClientImpl = getHazelcastClientInstanceImpl(hzClient);
         ClientClusterService clientClusterService = hazelcastClientImpl.getClientClusterService();
-        MCClusterMetadata clusterMetadata =
-                FutureUtil.getValue(getClusterMetadata(hazelcastClientImpl, clientClusterService.getMasterMember()));
+        String versionString = "Hazelcast " + clientClusterService.getMasterMember().getVersion().toString();
         Cluster cluster = hazelcastClientImpl.getCluster();
         Set<Member> members = cluster.getMembers();
-        String versionString = "Hazelcast " + clusterMetadata.getMemberVersion();
         return new AttributedStringBuilder()
                 .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
                 .append("Connected to ")

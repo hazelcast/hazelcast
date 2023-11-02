@@ -1272,7 +1272,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
             public String toString() {
                 return "DurationConfig{"
                         + "durationAmount=" + durationAmount
-                        + ", timeUnit" + timeUnit
+                        + ", timeUnit=" + timeUnit
                         + '}';
             }
         }

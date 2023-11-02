@@ -36,6 +36,7 @@ import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EventListener;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -106,6 +107,17 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     @Override
     public Collection<Member> getMemberList() {
         return memberListSnapshot.get().members.values();
+    }
+
+    @Nonnull
+    @Override
+    public Collection<Member> getEffectiveMemberList() {
+        MemberListSnapshot snapshot = memberListSnapshot.get();
+        if (snapshot.version == INITIAL_MEMBER_LIST_VERSION) {
+            return Collections.emptyList();
+        }
+
+        return snapshot.members.values();
     }
 
     @Override
@@ -274,9 +286,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             events.add(new MembershipEvent(getCluster(), member, MembershipEvent.MEMBER_ADDED, currentMembers));
         }
 
-        if (events.size() != 0) {
+        if (!events.isEmpty()) {
             MemberListSnapshot snapshot = memberListSnapshot.get();
-            if (snapshot.members.values().size() != 0) {
+            if (!snapshot.members.values().isEmpty()) {
                 logger.info(membersString(snapshot));
             }
         }

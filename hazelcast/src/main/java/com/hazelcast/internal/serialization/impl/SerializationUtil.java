@@ -77,7 +77,7 @@ public final class SerializationUtil {
         if (!(object instanceof Serializable)) {
             throw new IllegalArgumentException('"' + objectName + "\" must implement Serializable");
         }
-        try (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
+        try (ObjectOutputStream os = new ObjectOutputStream(OutputStream.nullOutputStream())) {
             os.writeObject(object);
         } catch (NotSerializableException | InvalidClassException e) {
             throw new IllegalArgumentException("\"" + objectName + "\" must be serializable", e);
@@ -220,6 +220,19 @@ public final class SerializationUtil {
         assert size == k : "Map has been updated during serialization! Initial size: " + size + ", written size: " + k;
     }
 
+    public static <V> void writeMapStringKey(@Nonnull Map<String, V> map, ObjectDataOutput out) throws IOException {
+        int size = map.size();
+        out.writeInt(size);
+
+        int k = 0;
+        for (Map.Entry<String, V> entry : map.entrySet()) {
+            out.writeString(entry.getKey());
+            out.writeObject(entry.getValue());
+            k++;
+        }
+        assert size == k : "Map has been updated during serialization! Initial size: " + size + ", written size: " + k;
+    }
+
     /**
      * Reads a map written by {@link #writeNullableMap(Map, ObjectDataOutput)}. The map itself
      * may be {@code null}. No guarantee is provided about the type of Map returned or its suitability
@@ -246,6 +259,18 @@ public final class SerializationUtil {
         Map<K, V> map = createHashMap(size);
         for (int i = 0; i < size; i++) {
             K key = in.readObject();
+            V value = in.readObject();
+            map.put(key, value);
+        }
+        return map;
+    }
+
+    @Nonnull
+    public static <V> Map<String, V> readMapStringKey(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+        Map<String, V> map = createHashMap(size);
+        for (int i = 0; i < size; i++) {
+            String key = in.readString();
             V value = in.readObject();
             map.put(key, value);
         }
@@ -458,13 +483,6 @@ public final class SerializationUtil {
                 return Boolean.TRUE;
             default:
                 throw new IllegalStateException("Unexpected value " + b + " while reading nullable boolean.");
-        }
-    }
-
-    private static class NullOutputStream extends OutputStream {
-        @Override
-        public void write(int b) {
-            // do nothing
         }
     }
 }

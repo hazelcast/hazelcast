@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,6 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -40,7 +42,7 @@ public class TcpClientConnectionManagerTest extends ClientTestSupport {
 
     @Before
     public void setup() {
-        factory.newHazelcastInstance(smallInstanceConfig());
+        factory.newHazelcastInstance(smallInstanceConfigWithoutJetAndMetrics());
     }
 
     @After
@@ -79,5 +81,31 @@ public class TcpClientConnectionManagerTest extends ClientTestSupport {
         boolean isUnisocket = clientImpl.getConnectionManager().isUnisocketClient();
         // should be unisocket only when smart routing is false and TPC disabled
         assertEquals(!smartRouting && !tpcEnabled, isUnisocket);
+    }
+
+    @Test
+    public void testSkipMemberListDuringReconnection() {
+        HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfigWithoutJetAndMetrics());
+
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        String addressString = address.getHost() + ":" + address.getPort();
+        ClientConfig config = new ClientConfig();
+        config.setProperty(TcpClientConnectionManager.SKIP_MEMBER_LIST_DURING_RECONNECTION.getName(), "true");
+        config.getNetworkConfig().setSmartRouting(false);
+        config.getNetworkConfig().addAddress(addressString);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(3_000);
+
+        // There are two members, and the unisocket client is connecting
+        // to one of them. (the address of the `instance` defined above)
+        HazelcastInstance client = factory.newHazelcastClient(config);
+
+        assertEquals(2, client.getCluster().getMembers().size());
+        instance.shutdown();
+
+        // We shut down the `instance` the client is connected to but
+        // there is still a member running. If the client was to try to
+        // connect to members from the member list, it would succeed
+        // and the assertion below would never be true.
+        assertTrueEventually(() -> assertFalse(client.getLifecycleService().isRunning()));
     }
 }

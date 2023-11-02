@@ -64,6 +64,12 @@
             <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
 
         <!-- TEST -->
         <dependency>
@@ -95,7 +101,6 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j2.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -108,6 +113,12 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>redpanda</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-schema-registry</artifactId>
+            <version>${confluent.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -17,15 +17,16 @@
 package com.hazelcast.jet.impl.submitjob.memberside;
 
 import com.hazelcast.internal.util.Sha256Util;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import java.io.IOException;
@@ -46,6 +47,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -55,9 +57,16 @@ public class JobUploadStoreTest {
     @InjectMocks
     JobUploadStore jobUploadStore;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
+        openMocks = openMocks(this);
+    }
+
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
     }
 
     @Test

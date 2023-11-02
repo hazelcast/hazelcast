@@ -33,6 +33,8 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -182,8 +184,12 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     }
 
     @Override
-    public Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
-        return new JobProxy(nodeEngine, jobId, isLightJob, jobDefinition, config);
+    public Job newJobProxy(long jobId,
+                           boolean isLightJob,
+                           @Nonnull Object jobDefinition,
+                           @Nonnull JobConfig config,
+                           @Nullable Subject subject) {
+        return new JobProxy(nodeEngine, jobId, isLightJob, jobDefinition, config, subject);
     }
 
     @Override

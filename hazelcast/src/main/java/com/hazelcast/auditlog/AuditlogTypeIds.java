@@ -86,6 +86,10 @@ public final class AuditlogTypeIds {
      * Event type ID: Clusters merged.
      */
     public static final String CLUSTER_MERGE = "HZ-0606";
+    /**
+     * Event type ID: Data member demoted.
+     */
+    public static final String CLUSTER_DEMOTE_MEMBER = "HZ-0607";
 
     // Member events
     /**

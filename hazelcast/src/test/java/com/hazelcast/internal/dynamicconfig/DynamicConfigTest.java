@@ -41,6 +41,7 @@ import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -83,6 +84,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -90,6 +92,7 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -99,7 +102,10 @@ import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
 import static com.hazelcast.test.TestConfigUtils.NON_DEFAULT_BACKUP_COUNT;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -129,10 +135,16 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         return members[members.length - 1];
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testAddWanReplicationConfigIsNotSupported() {
         WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
-        getDriver().getConfig().addWanReplicationConfig(wanReplicationConfig);
+        wanReplicationConfig.setName(name);
+
+        UnsupportedOperationException exception = Assertions.catchThrowableOfType(
+                () -> getDriver().getConfig().addWanReplicationConfig(wanReplicationConfig),
+                UnsupportedOperationException.class);
+        assertNotNull(exception);
+        assertThat(exception).hasMessage("Adding new WAN config is not supported.");
     }
 
     @Test
@@ -449,6 +461,38 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         driver.getConfig().addMapConfig(config);
 
         assertConfigurationsEqualOnAllMembers(config);
+    }
+
+    @Test
+    public void testMapConfig_withDifferentOrderOfIndexes() {
+        MapConfig config = new MapConfig(name);
+        IndexConfig idx1 = new IndexConfig(IndexType.SORTED, "foo");
+        idx1.setName("idx1");
+        IndexConfig idx2 = new IndexConfig(IndexType.SORTED, "bar");
+        idx2.setName("idx2");
+        config.setIndexConfigs(List.of(idx1, idx2));
+
+        MapConfig reordered = new MapConfig(name);
+        reordered.setIndexConfigs(List.of(idx2, idx1));
+
+        driver.getConfig().addMapConfig(config);
+        assertThatNoException().isThrownBy(() -> driver.getConfig().addMapConfig(reordered));
+
+        assertConfigurationsEqualOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(reordered);
+    }
+
+    @Test
+    public void testMapConfig_throws_InvalidConfigurationException_when_tiered_store_enabled() {
+        MapConfig config = getMapConfig();
+
+        config.getTieredStoreConfig().setEnabled(true);
+
+        InvalidConfigurationException exception = assertThrows(InvalidConfigurationException.class,
+                () -> driver.getConfig().addMapConfig(config));
+
+        assertTrue(exception.getMessage().contains("Tiered store enabled map config cannot be added dynamically"));
+
     }
 
     @Test

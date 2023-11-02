@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -144,12 +146,7 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(className);
-
-        out.writeInt(properties.size());
-        for (Map.Entry<String, Comparable> entry : properties.entrySet()) {
-            out.writeString(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
+        SerializationUtil.writeMapStringKey(properties, out);
     }
 
     @Override
@@ -159,5 +156,22 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
         for (int i = 0; i < size; i++) {
             properties.put(in.readString(), in.readObject());
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        DiscoveryStrategyConfig that = (DiscoveryStrategyConfig) o;
+        return Objects.equals(className, that.className) && Objects.equals(properties, that.properties);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(className, properties);
     }
 }

@@ -74,12 +74,14 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.DefaultIndexProvider;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexProvider;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -146,7 +148,6 @@ class MapServiceContextImpl implements MapServiceContext {
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
     private final ExecutorStats offloadedExecutorStats = new ExecutorStats();
-    private final EventListenerCounter eventListenerCounter = new EventListenerCounter();
     private final AtomicReference<PartitionIdSet> cachedOwnedPartitions = new AtomicReference<>();
 
     /**
@@ -367,13 +368,13 @@ class MapServiceContextImpl implements MapServiceContext {
 
         Iterator<RecordStore> partitionIterator = container.getMaps().values().iterator();
         while (partitionIterator.hasNext()) {
-            RecordStore partition = partitionIterator.next();
-            if (predicate.test(partition)) {
-                partition.beforeOperation();
+            RecordStore recordStore = partitionIterator.next();
+            if (predicate.test(recordStore)) {
+                recordStore.beforeOperation();
                 try {
-                    partition.clearPartition(onShutdown, onRecordStoreDestroy);
+                    recordStore.clearPartition(onShutdown, onRecordStoreDestroy);
                 } finally {
-                    partition.afterOperation();
+                    recordStore.afterOperation();
                 }
                 partitionIterator.remove();
             }
@@ -443,6 +444,10 @@ class MapServiceContextImpl implements MapServiceContext {
 
         MapContainer mapContainer = mapContainers.get(mapName);
         if (mapContainer == null) {
+            // Lite members create their own LocalMapStatsImpl whenever a new IMap is created,
+            // which can happen without a MapContainer, so we need to clean them up - since cleanup
+            // is just a simple map entry removal, we can call it without any Lite member checks
+            localMapStatsProvider.destroyLocalMapStatsImpl(mapName);
             return;
         }
 
@@ -457,9 +462,16 @@ class MapServiceContextImpl implements MapServiceContext {
 
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
+        if (mapContainer.shouldUseGlobalIndex()) {
+            destroyGlobalIndexes(mapContainer);
+        }
+
         localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
-        getEventListenerCounter()
-                .removeCounter(mapName, mapContainer.getInvalidationListenerCounter());
+    }
+
+    protected void destroyGlobalIndexes(MapContainer mapContainer) {
+        IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
+        indexRegistry.destroyIndexes();
     }
 
     /**
@@ -472,8 +484,13 @@ class MapServiceContextImpl implements MapServiceContext {
     private void destroyPartitionsAndMapContainer(MapContainer mapContainer) {
         final List<LocalRetryableExecution> executions = new ArrayList<>();
 
-        for (PartitionContainer container : partitionContainers) {
-            final MapPartitionDestroyOperation op = new MapPartitionDestroyOperation(container, mapContainer);
+        for (PartitionContainer partitionContainer : partitionContainers) {
+            Operation op = new MapPartitionDestroyOperation(partitionContainer, mapContainer)
+                    .setPartitionId(partitionContainer.getPartitionId())
+                    .setNodeEngine(nodeEngine)
+                    .setCallerUuid(nodeEngine.getLocalMember().getUuid())
+                    .setServiceName(SERVICE_NAME);
+
             executions.add(InvocationUtil.executeLocallyWithRetry(nodeEngine, op));
         }
 
@@ -905,6 +922,11 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public boolean isForciblyEnabledGlobalIndex() {
+        return false;
+    }
+
+    @Override
     public ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat) {
         return ValueComparatorUtil.getValueComparatorOf(inMemoryFormat);
     }
@@ -923,8 +945,4 @@ class MapServiceContextImpl implements MapServiceContext {
         return partitioningStrategyFactory;
     }
 
-    @Override
-    public EventListenerCounter getEventListenerCounter() {
-        return eventListenerCounter;
-    }
 }

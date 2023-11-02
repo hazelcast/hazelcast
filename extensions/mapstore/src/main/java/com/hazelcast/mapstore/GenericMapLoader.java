@@ -49,6 +49,7 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.StringUtil.isBoolean;
 import static com.hazelcast.mapstore.ExistingMappingValidator.validateColumn;
 import static com.hazelcast.mapstore.ExistingMappingValidator.validateColumnsExist;
 import static com.hazelcast.mapstore.FromSqlRowConverter.toGenericRecord;
@@ -193,11 +194,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         }
     }
 
-    private boolean isBoolean(String value) {
-        return value.equalsIgnoreCase("false") || value.equalsIgnoreCase("true");
-    }
-
-    private ManagedExecutorService getMapStoreExecutor() {
+   private ManagedExecutorService getMapStoreExecutor() {
         return nodeEngine()
                 .getExecutionService()
                 .getExecutor(ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR);
@@ -265,7 +262,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     }
 
     private void readExistingMapping() {
-        logger.fine("Reading existing mapping for map" + mapName);
+        logger.fine("Reading existing mapping for map " + mapName);
         try {
             // If mappingName does not exist, we get "... did you forget to CREATE MAPPING?" exception
             columnMetadataList = mappingHelper.loadColumnMetadataFromMapping(mappingName);

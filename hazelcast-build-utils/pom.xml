@@ -56,7 +56,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
                 <configuration>
                     <archive>
                         <index>true</index>
@@ -98,12 +97,10 @@
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
-            <version>${bytebuddy.version}</version>
         </dependency>
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy-agent</artifactId>
-            <version>${bytebuddy.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>

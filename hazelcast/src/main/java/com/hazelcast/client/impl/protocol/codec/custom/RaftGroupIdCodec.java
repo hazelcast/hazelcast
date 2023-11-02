@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("d4a2f2ac64389a726a836c49529bbdda")
+@SuppressWarnings("unused")
+@Generated("410345b61d56a65324bbb550afa08d1c")
 public final class RaftGroupIdCodec {
     private static final int SEED_FIELD_OFFSET = 0;
     private static final int ID_FIELD_OFFSET = SEED_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

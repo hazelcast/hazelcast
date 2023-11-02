@@ -35,6 +35,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -45,7 +46,9 @@ import com.hazelcast.sql.impl.schema.TableField;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
@@ -55,6 +58,8 @@ import static java.util.stream.Stream.concat;
 public class KafkaSqlConnector implements SqlConnector {
 
     public static final String TYPE_NAME = "Kafka";
+    public static final String OPTION_BOOTSTRAP_SERVERS = "bootstrap.servers";
+    public static final String OPTION_OFFSET_RESET = "auto.offset.reset";
 
     private static final KvMetadataResolvers METADATA_RESOLVERS = new KvMetadataResolvers(
             new KvMetadataResolver[]{
@@ -131,6 +136,7 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull DagBuildContext context,
             @Nullable HazelcastRexNode predicate,
             @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         KafkaTable table = context.getTable();
@@ -212,5 +218,15 @@ public class KafkaSqlConnector implements SqlConnector {
 
         context.getDag().edge(between(vStart, vEnd));
         return vStart;
+    }
+
+    @Override
+    public Set<String> nonSensitiveConnectorOptions() {
+        Set<String> set = SqlConnector.super.nonSensitiveConnectorOptions();
+        set.addAll(Set.of(
+                OPTION_BOOTSTRAP_SERVERS,
+                OPTION_OFFSET_RESET
+        ));
+        return set;
     }
 }

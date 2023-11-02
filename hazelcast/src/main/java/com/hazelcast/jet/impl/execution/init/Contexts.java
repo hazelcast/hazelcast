@@ -49,7 +49,7 @@ import java.nio.file.Path;
 import java.security.Permission;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ResourceType.DIRECTORY;
@@ -226,10 +226,15 @@ public final class Contexts {
         }
     }
 
-    public static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context {
+    public interface InternalProcSupplierCtx {
+        @Nonnull
+        InternalSerializationService serializationService();
+    }
+
+    public static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context, InternalProcSupplierCtx {
 
         private final int memberIndex;
-        private final ConcurrentHashMap<String, File> tempDirectories;
+        private final ConcurrentMap<String, File> tempDirectories;
         private final InternalSerializationService serializationService;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
@@ -246,7 +251,7 @@ public final class Contexts {
                 int memberCount,
                 boolean isLightJob,
                 Map<Address, int[]> partitionAssignment,
-                ConcurrentHashMap<String, File> tempDirectories,
+                ConcurrentMap<String, File> tempDirectories,
                 InternalSerializationService serializationService,
                 Subject subject,
                 ClassLoader classLoader
@@ -306,7 +311,7 @@ public final class Contexts {
             return attachedFile(id);
         }
 
-        public ConcurrentHashMap<String, File> tempDirectories() {
+        public ConcurrentMap<String, File> tempDirectories() {
             return tempDirectories;
         }
 
@@ -355,6 +360,7 @@ public final class Contexts {
             return serializationService.getManagedContext();
         }
 
+        @Override
         @Nonnull
         public InternalSerializationService serializationService() {
             return serializationService;
@@ -381,7 +387,7 @@ public final class Contexts {
                        int localParallelism,
                        int memberIndex,
                        int memberCount,
-                       ConcurrentHashMap<String, File> tempDirectories,
+                       ConcurrentMap<String, File> tempDirectories,
                        InternalSerializationService serializationService,
                        Subject subject,
                        ClassLoader classLoader

@@ -64,7 +64,7 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.core.metrics.MetricNames.JOB_STATUS;
 import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static java.util.stream.Collectors.toConcurrentMap;
 

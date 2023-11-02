@@ -53,20 +53,20 @@ import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.impl.function.SecuredFunctions;
-import com.hazelcast.security.permission.ConnectorPermission;
+import jakarta.jms.Connection;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.Session;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.jms.Connection;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.security.Permission;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
@@ -79,7 +79,6 @@ import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.impl.connector.StreamEventJournalP.streamRemoteCacheSupplier;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 
 /**
  * Static utility class with factories of source processors (the DAG
@@ -393,7 +392,6 @@ public final class SourceProcessors {
             @Nonnull FunctionEx<? super Message, ? extends T> projectionFn
     ) {
         return ProcessorMetaSupplier.preferLocalParallelismOne(
-                ConnectorPermission.jms(destination, ACTION_READ),
                 new StreamJmsP.Supplier<>(destination, maxGuarantee, eventTimePolicy,
                         newConnectionFn, consumerFn, messageIdFn, projectionFn)
         );
@@ -422,10 +420,9 @@ public final class SourceProcessors {
     ) {
         ProcessorSupplier pSupplier = new StreamJmsP.Supplier<>(
                 destination, maxGuarantee, eventTimePolicy, newConnectionFn, consumerFn, messageIdFn, projectionFn);
-        ConnectorPermission permission = ConnectorPermission.jms(destination, ACTION_READ);
         return isSharedConsumer
-                ? ProcessorMetaSupplier.preferLocalParallelismOne(permission, pSupplier)
-                : ProcessorMetaSupplier.forceTotalParallelismOne(pSupplier, newUnsecureUuidString(), permission);
+                ? ProcessorMetaSupplier.preferLocalParallelismOne(pSupplier)
+                : ProcessorMetaSupplier.forceTotalParallelismOne(pSupplier, newUnsecureUuidString());
     }
 
     /**
@@ -463,9 +460,18 @@ public final class SourceProcessors {
             @Nonnull String query,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(connectionURL, query, mapOutputFn);
+        Properties properties = new Properties();
+        return ReadJdbcP.supplier(connectionURL, query, properties, mapOutputFn);
     }
 
+    public static <T> ProcessorMetaSupplier readJdbcP(
+            @Nonnull String connectionURL,
+            @Nonnull String query,
+            @Nonnull Properties properties,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        return ReadJdbcP.supplier(connectionURL, query, properties, mapOutputFn);
+    }
     /**
      * Returns a supplier of processors for a source that the user can create
      * using the {@link SourceBuilder}. This variant creates a source that

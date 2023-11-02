@@ -40,7 +40,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * re-enabled for thread scheduling purposes, and Countdown owner is set to
  * null. If the current count equals zero, then nothing happens.
  */
-@Generated("ede30fbb3b7a569ce2d7445b5b9ed38f")
+@SuppressWarnings("unused")
+@Generated("d197f285cb65f3950416250e63e3bc5f")
 public final class CountDownLatchCountDownCodec {
     //hex: 0x0B0300
     public static final int REQUEST_MESSAGE_TYPE = 721664;

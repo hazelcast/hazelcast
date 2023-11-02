@@ -267,6 +267,10 @@ public class DynamicConfigurationAwareConfig extends Config {
         boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getMapConfigs(),
                 mapConfig.getName(), mapConfig);
         if (staticConfigDoesNotExist) {
+            if (mapConfig.getTieredStoreConfig().isEnabled()) {
+                throw new InvalidConfigurationException("Tiered store enabled map config"
+                        + " cannot be added dynamically [" + mapConfig + "]");
+            }
             configurationService.broadcastConfig(mapConfig);
         }
         return this;
@@ -878,7 +882,12 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        throw new UnsupportedOperationException("Unsupported operation");
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getWanReplicationConfigs(),
+                wanReplicationConfig.getName(), wanReplicationConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(wanReplicationConfig);
+        }
+        return this;
     }
 
     @Override

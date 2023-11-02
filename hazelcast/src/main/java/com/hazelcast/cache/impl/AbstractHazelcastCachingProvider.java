@@ -121,11 +121,8 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
         ClassLoader managerClassLoader = getManagerClassLoader(classLoader);
         Properties managerProperties = properties == null ? new Properties() : properties;
         synchronized (cacheManagers) {
-            Map<URI, AbstractHazelcastCacheManager> cacheManagersByURI = cacheManagers.get(managerClassLoader);
-            if (cacheManagersByURI == null) {
-                cacheManagersByURI = new HashMap<URI, AbstractHazelcastCacheManager>();
-                cacheManagers.put(managerClassLoader, cacheManagersByURI);
-            }
+            Map<URI, AbstractHazelcastCacheManager> cacheManagersByURI = cacheManagers.computeIfAbsent(managerClassLoader,
+                    x -> new HashMap<>());
             AbstractHazelcastCacheManager cacheManager = cacheManagersByURI.get(managerURI);
             if (cacheManager == null || cacheManager.isClosed()) {
                 try {
@@ -385,5 +382,15 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
             }
         }
         return (scheme != null && SUPPORTED_SCHEMES.contains(scheme.toLowerCase(StringUtil.LOCALE_INTERNAL)));
+    }
+
+    /**
+     * Tests if the configuration file provided is a YAML file. The test is based on the file extension.
+     * @param configURL configuration URL to test.
+     * @return true if the configuration file extension is .yml or .yaml; otherwise, false.
+     */
+    protected static boolean isYamlConfiguration(URL configURL) {
+        String path = configURL.getPath();
+        return path.endsWith(".yml") || path.endsWith(".yaml");
     }
 }

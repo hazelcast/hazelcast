@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
@@ -24,12 +26,14 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.ResultIterator.HasNextResult;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +45,8 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings("resource")
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlUnionTest extends SqlTestSupport {
     private IMap<Integer, Person> map1;
@@ -51,7 +57,7 @@ public class SqlUnionTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, null);
+        initialize(3, null);
     }
 
     @Before
@@ -240,17 +246,137 @@ public class SqlUnionTest extends SqlTestSupport {
         ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
         List<Row> actualRows = new ArrayList<>();
         assertTrueEventually(() -> {
-            while (iterator.hasNext(50, TimeUnit.MILLISECONDS) == HasNextResult.YES) {
-                actualRows.add(new Row(iterator.next()));
-            }
-            if (actualRows.size() == 7 && expected.size() < 7) {
-                // Because we drop late items after union all (thanks to UnionDropLateItemsTransposeRule),
-                // it can happen that one of the late items makes it through. But both will never make it.
-                expected.add(new Row(timestampTz(0L), 4));
-            }
-            assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expected);
-        },
+                    while (iterator.hasNext(50, TimeUnit.MILLISECONDS) == HasNextResult.YES) {
+                        actualRows.add(new Row(iterator.next()));
+                    }
+                    if (actualRows.size() == 7 && expected.size() < 7) {
+                        // Because we drop late items after union all (thanks to UnionDropLateItemsTransposeRule),
+                        // it can happen that one of the late items makes it through. But both will never make it.
+                        expected.add(new Row(timestampTz(0L), 4));
+                    }
+                    assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expected);
+                },
                 5);
+    }
+
+    @Test
+    public void prunableUnionAllTest() {
+        String map1Name = randomName();
+        String map2Name = randomName();
+        instance().getConfig().addMapConfig(
+                new MapConfig(map1Name).setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("id")
+                )));
+        instance().getConfig().addMapConfig(
+                new MapConfig(map2Name).setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("id")
+                )));
+
+        IMap<Person, String> prunableMap1 = instance().getMap(map1Name);
+        IMap<Person, String> prunableMap2 = instance().getMap(map2Name);
+
+        createMapping(map1Name, Person.class, String.class);
+        createMapping(map2Name, Person.class, String.class);
+
+        for (int i = 0; i < 5; ++i) {
+            prunableMap1.put(new Person(i, "ABC" + i), "" + i);
+            prunableMap2.put(new Person(i, "ABC" + i), "" + i);
+        }
+
+        String sql = "(SELECT this FROM " + map1Name + " WHERE id = 1) " +
+                "UNION ALL " +
+                "(SELECT this FROM " + map2Name + " WHERE id = 1)";
+        expected.add(new Row("1"));
+        expected.add(new Row("1"));
+
+        assertRowsAnyOrder(sql, expected);
+    }
+
+    @Test
+    public void prunableUnionTest() {
+        // Note: it is a test for the future implementation of prunable Aggregation.
+        //  Union converts to UnionAll + Aggregation, and  prunable Aggregation implementor
+        //  easily may miss that fact during testing.
+        //  Right now it just a execution check test.
+        // https://hazelcast.atlassian.net/browse/HZ-2796
+        String map1Name = randomName();
+        String map2Name = randomName();
+        instance().getConfig().addMapConfig(
+                new MapConfig(map1Name).setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("id")
+                )));
+        instance().getConfig().addMapConfig(
+                new MapConfig(map2Name).setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("id")
+                )));
+
+        IMap<Person, String> prunableMap1 = instance().getMap(map1Name);
+        IMap<Person, String> prunableMap2 = instance().getMap(map2Name);
+
+        createMapping(map1Name, Person.class, String.class);
+        createMapping(map2Name, Person.class, String.class);
+
+        for (int i = 0; i < 5; ++i) {
+            prunableMap1.put(new Person(i, "ABC" + i), "" + i);
+            prunableMap2.put(new Person(i, "ABC" + i), "" + i);
+        }
+
+        String sql = "(SELECT this FROM " + map1Name + " WHERE id = 1) " +
+                "UNION " +
+                "(SELECT this FROM " + map2Name + " WHERE id = 1)";
+
+        expected.add(new Row("1"));
+
+        assertRowsAnyOrder(sql, expected);
+    }
+
+    @Test
+    public void prunableSelfUnionAllTest() {
+        instance().getConfig().addMapConfig(
+                new MapConfig("pMap1").setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("id")
+                )));
+
+        IMap<Person, String> prunableMap1 = instance().getMap("pMap1");
+
+        createMapping("pMap1", Person.class, String.class);
+
+        for (int i = 0; i < 5; ++i) {
+            prunableMap1.put(new Person(i, "ABC" + i), "" + i);
+        }
+
+        String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION ALL (SELECT this FROM pMap1 WHERE id = 1)";
+        expected.add(new Row("1"));
+        expected.add(new Row("1"));
+
+        assertRowsAnyOrder(sql, expected);
+    }
+
+    @Test
+    public void prunableSelfUnionTest() {
+        // Note: it is a test for the future implementation of prunable Aggregation.
+        //  Union converts to UnionAll + Aggregation, and  prunable Aggregation implementor
+        //  easily may miss that fact during testing.
+        //  Right now it just a execution check test.
+        // JIRA issue : https://hazelcast.atlassian.net/browse/HZ-2796
+        instance().getConfig().addMapConfig(
+                new MapConfig("pMap1").setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("id")
+                )));
+
+        IMap<Person, String> prunableMap1 = instance().getMap("pMap1");
+
+        createMapping("pMap1", Person.class, String.class);
+        createMapping("pMap2", Person.class, String.class);
+
+        for (int i = 0; i < 5; ++i) {
+            prunableMap1.put(new Person(i, "ABC" + i), "" + i);
+        }
+
+        String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION (SELECT this FROM pMap1 WHERE id = 1)";
+        expected.add(new Row("1"));
+
+        assertRowsAnyOrder(sql, expected);
     }
 
     private static String createTable(Object[]... values) {

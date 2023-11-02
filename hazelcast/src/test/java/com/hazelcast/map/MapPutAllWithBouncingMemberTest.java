@@ -60,13 +60,12 @@ public class MapPutAllWithBouncingMemberTest extends HazelcastTestSupport {
         return cfg;
     }
 
-    @Rule(order = 10)
+    @Rule
     public BounceMemberRule bounceMemberRule =
-            BounceMemberRule.with(() -> {
-                        return getConfig();
-                    })
+            BounceMemberRule.with(() -> getConfig())
                     .driverType(BounceTestConfiguration.DriverType.MEMBER)
                     .clusterSize(2)
+                    .driverCount(2)
                     .build();
 
     @Test

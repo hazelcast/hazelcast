@@ -21,6 +21,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -30,6 +31,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,7 +49,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -59,11 +61,15 @@ public class RingbufferStoreFailureConsistencyTest extends HazelcastTestSupport 
     private static final String TWO = "Two";
     private static final String THREE = "Three";
 
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+
     @Mock
     private RingbufferStore<String> store;
     private Ringbuffer<String> ringbufferPrimary;
     private Ringbuffer<String> ringbufferBackup;
     private HazelcastInstance primaryInstance;
+
+    private AutoCloseable openMocks;
 
     private static Config getConfig(String ringbufferName, int capacity, RingbufferStoreConfig ringbufferStoreConfig) {
         Config config = new Config();
@@ -78,13 +84,12 @@ public class RingbufferStoreFailureConsistencyTest extends HazelcastTestSupport 
 
     @Before
     public void setUp() {
-        initMocks(this);
+        openMocks = openMocks(this);
 
         RingbufferStoreConfig rbStoreConfig = new RingbufferStoreConfig()
                 .setEnabled(true)
                 .setStoreImplementation(store);
         Config config = getConfig(RINGBUFFER_NAME, DEFAULT_CAPACITY, rbStoreConfig);
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
@@ -94,6 +99,12 @@ public class RingbufferStoreFailureConsistencyTest extends HazelcastTestSupport 
 
         ringbufferPrimary = primaryInstance.getRingbuffer(RINGBUFFER_NAME);
         ringbufferBackup = backupInstance.getRingbuffer(RINGBUFFER_NAME);
+    }
+
+    @After
+    public void cleanUp() {
+        factory.shutdownAll();
+        MockUtil.closeMocks(openMocks);
     }
 
     @Test

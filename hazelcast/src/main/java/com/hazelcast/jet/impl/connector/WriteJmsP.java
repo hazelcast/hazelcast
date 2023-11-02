@@ -24,28 +24,23 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.security.permission.ConnectorPermission;
+import jakarta.jms.Connection;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Session;
+import jakarta.jms.XAConnection;
+import jakarta.jms.XASession;
 
 import javax.annotation.Nonnull;
-import javax.jms.Connection;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.XAConnection;
-import javax.jms.XASession;
-import java.security.Permission;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Stream;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -128,13 +123,12 @@ public final class WriteJmsP<T> extends XaSinkProcessorBase {
         checkSerializable(messageFn, "messageFn");
 
         return ProcessorMetaSupplier.of(PREFERRED_LOCAL_PARALLELISM,
-                ConnectorPermission.jms(destinationName, ACTION_WRITE),
                 new Supplier<>(destinationName, exactlyOnce, newConnectionFn, messageFn, isTopic));
     }
 
     private static final class Supplier<T> implements ProcessorSupplier {
 
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
         private final SupplierEx<? extends Connection> newConnectionFn;
         private final String destinationName;
@@ -176,11 +170,6 @@ public final class WriteJmsP<T> extends XaSinkProcessorBase {
             if (connection != null) {
                 connection.close();
             }
-        }
-
-        @Override
-        public List<Permission> permissions() {
-            return singletonList(ConnectorPermission.jms(destinationName, ACTION_WRITE));
         }
     }
 }

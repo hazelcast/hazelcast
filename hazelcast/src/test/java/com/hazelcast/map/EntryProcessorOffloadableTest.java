@@ -137,14 +137,14 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
                 .setImplementation(new MapStoreAdapter() {
                     @Override
                     public Object load(Object key) {
-                        sleepAtLeastSeconds(1000);
+                        sleepSeconds(1000);
                         // just returns a random number
                         return System.currentTimeMillis();
                     }
 
                     @Override
                     public void store(Object key, Object value) {
-                        sleepAtLeastSeconds(1000);
+                        sleepSeconds(1000);
                         super.store(key, value);
                     }
                 });

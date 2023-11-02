@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.protocol.codec.CacheEntryProcessorCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -86,6 +87,6 @@ public class CacheEntryProcessorMessageTask
 
     @Override
     public String getMethodName() {
-        return "invoke";
+        return SecurityInterceptorConstants.INVOKE;
     }
 }

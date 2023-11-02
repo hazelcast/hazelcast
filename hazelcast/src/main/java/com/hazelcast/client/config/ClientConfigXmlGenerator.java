@@ -61,8 +61,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.util.StringUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.XmlUtil.format;
 
 /**
  * The ClientConfigXmlGenerator is responsible for transforming a
@@ -144,7 +144,7 @@ public final class ClientConfigXmlGenerator {
         //close HazelcastClient
         gen.close();
 
-        return formatXml(xml.toString(), indent);
+        return format(xml.toString(), indent);
     }
 
     private static void network(XmlGenerator gen, ClientNetworkConfig network) {
@@ -157,6 +157,7 @@ public final class ClientConfigXmlGenerator {
         socketOptions(gen, network.getSocketOptions());
         socketInterceptor(gen, network.getSocketInterceptorConfig());
         ssl(gen, network.getSSLConfig());
+        cloud(gen, network.getCloudConfig());
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(network));
         autoDetection(gen, network.getAutoDetectionConfig());
         discovery(gen, network.getDiscoveryConfig());
@@ -517,6 +518,12 @@ public final class ClientConfigXmlGenerator {
                 .node("class-name", classNameOrImplClass(socketInterceptor.getClassName(),
                         socketInterceptor.getImplementation()))
                 .appendProperties(socketInterceptor.getProperties())
+                .close();
+    }
+
+    private static void cloud(XmlGenerator gen, ClientCloudConfig cloudConfig) {
+        gen.open("hazelcast-cloud", "enabled", cloudConfig.isEnabled())
+                .node("discovery-token", cloudConfig.getDiscoveryToken())
                 .close();
     }
 

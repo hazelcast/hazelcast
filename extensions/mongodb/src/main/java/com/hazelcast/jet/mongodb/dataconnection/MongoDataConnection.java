@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
-import com.hazelcast.spi.annotation.Beta;
+import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoClientSettings.Builder;
 import com.mongodb.MongoCredential;
@@ -28,6 +28,7 @@ import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.connection.ConnectionPoolSettings;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -47,12 +48,13 @@ import static java.util.Collections.singletonList;
  *
  * @since 5.3
  */
-@Beta
 public class MongoDataConnection extends DataConnectionBase {
+
     /**
      * Name of a property which holds connection string to the mongodb instance.
      */
     public static final String CONNECTION_STRING_PROPERTY = "connectionString";
+
     /**
      * Name of a property with a database name hint.
      * This is used as a <strong>hint</strong> only; {@link #listResources} will return only collection from db with this
@@ -65,48 +67,80 @@ public class MongoDataConnection extends DataConnectionBase {
      * Name of the property holding username.
      */
     public static final String USERNAME_PROPERTY = "username";
+
     /**
      * Name of the property holding user password.
      */
     public static final String PASSWORD_PROPERTY = "password";
+
     /**
      * Name of a property which holds host:port address of the mongodb instance.
      */
     public static final String HOST_PROPERTY = "host";
+
     /**
      * Name of the property holding the name of the database in which user is created.
      * Default value is {@code admin}.
      */
     public static final String AUTH_DB_PROPERTY = "authDb";
 
+    /**
+     * Name of the property holding the minimum size of Mongo Client connection pool.
+     * Default is 10.
+     * @since 5.4
+     */
+    public static final String CONNECTION_POOL_MIN = "connectionPoolMinSize";
+
+    /**
+     * Name of the property holding the maximum size of Mongo Client connection pool.
+     * Default is 10.
+     * @since 5.4
+     */
+    public static final String CONNECTION_POOL_MAX = "connectionPoolMaxSize";
+
     private volatile ConcurrentMemoizingSupplier<MongoClient> mongoClientSup;
+    private final String name;
+    private final String connectionString;
     private final String databaseName;
     private final String username;
     private final String password;
     private final String host;
     private final String authDb;
+    private final int connectionPoolMinSize;
+    private final int connectionPoolMaxSize;
+
+    private final SslConf sslConf;
 
     /**
      * Creates a new data connection based on given config.
      */
+    @SuppressWarnings("DataFlowIssue")
     public MongoDataConnection(DataConnectionConfig config) {
         super(config);
+        this.name = config.getName();
+        this.connectionString = config.getProperty(CONNECTION_STRING_PROPERTY);
         this.databaseName = config.getProperty(DATABASE_PROPERTY);
         this.username = config.getProperty(USERNAME_PROPERTY);
         this.password = config.getProperty(PASSWORD_PROPERTY);
         this.host = config.getProperty(HOST_PROPERTY);
         this.authDb = config.getProperty(AUTH_DB_PROPERTY, "admin");
+        this.connectionPoolMinSize = Integer.parseInt(config.getProperty(CONNECTION_POOL_MIN, "10"));
+        this.connectionPoolMaxSize = Integer.parseInt(config.getProperty(CONNECTION_POOL_MAX, "10"));
+        this.sslConf = new SslConf(config);
+
+        checkState(connectionPoolMinSize <= connectionPoolMaxSize, "connection pool max size" +
+                " cannot be lower than min size");
 
         checkState(allSame((username == null), (password == null), (host == null)),
         "You have to provide connectionString property or combination of username, password and host");
 
         if (config.isShared()) {
             this.mongoClientSup = new ConcurrentMemoizingSupplier<>(
-                    () -> new CloseableMongoClient(createClient(config), this::release));
+                    () -> new CloseableMongoClient(createClient(), this::release));
         }
     }
 
-    private static boolean allSame(boolean... booleans) {
+    static boolean allSame(boolean... booleans) {
         if (booleans.length == 0) {
             return true;
         }
@@ -119,23 +153,31 @@ public class MongoDataConnection extends DataConnectionBase {
         return true;
     }
 
-    private MongoClient createClient(DataConnectionConfig config) {
+    private MongoClient createClient() {
         try {
-            String connectionString = config.getProperty(CONNECTION_STRING_PROPERTY);
-            if (connectionString != null) {
-                return MongoClients.create(connectionString);
-            }
-            ServerAddress serverAddress = new ServerAddress(host);
-            MongoCredential credential = MongoCredential.createCredential(username, authDb, password.toCharArray());
             Builder builder = MongoClientSettings.builder()
                                                  .codecRegistry(defaultCodecRegistry())
-                                                 .applyToClusterSettings(s -> s.hosts(singletonList(serverAddress)))
-                                                 .credential(credential);
+                                                 .applyToConnectionPoolSettings(this::connectionPoolSettings)
+                                                 .applyToSslSettings(sslConf::apply);
+            if (connectionString != null) {
+                builder.applyConnectionString(new ConnectionString(connectionString));
+            } else {
+                var serverAddress = new ServerAddress(host);
+                var credential = MongoCredential.createCredential(username, authDb, password.toCharArray());
+                builder
+                        .applyToClusterSettings(s -> s.hosts(singletonList(serverAddress)))
+                        .credential(credential);
+            }
             return MongoClients.create(builder.build());
         } catch (Exception e) {
-            throw new HazelcastException("Unable to create Mongo client for data connection '" + config.getName() + "'",
-                    e);
+            throw new HazelcastException("Unable to create Mongo client for data connection '" + name + "': "
+                    + e.getMessage(), e);
         }
+    }
+
+    private void connectionPoolSettings(ConnectionPoolSettings.Builder builder) {
+        builder.minSize(connectionPoolMinSize)
+               .maxSize(connectionPoolMaxSize);
     }
 
     /**
@@ -153,7 +195,7 @@ public class MongoDataConnection extends DataConnectionBase {
             checkState(supplier != null, "Mongo client should not be closed at this point");
             return supplier.get();
         } else {
-            MongoClient client = createClient(getConfig());
+            MongoClient client = createClient();
             return new CloseableMongoClient(client, client::close);
         }
     }
@@ -223,7 +265,7 @@ public class MongoDataConnection extends DataConnectionBase {
         dataConnectionConfig.setName(name);
         dataConnectionConfig.setShared(true);
         dataConnectionConfig.setProperty(CONNECTION_STRING_PROPERTY, connectionString);
-        dataConnectionConfig.setType("MongoDB");
+        dataConnectionConfig.setType("Mongo");
         return dataConnectionConfig;
     }
 }

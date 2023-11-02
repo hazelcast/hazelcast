@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks if local MC config (client filter list) has the same ETag as provided.
  */
-@Generated("5a4131c63aa3b4c9be5c5ccae180b9a5")
+@SuppressWarnings("unused")
+@Generated("0b332cc1122fe566102a5457238370f3")
 public final class MCMatchMCConfigCodec {
     //hex: 0x200C00
     public static final int REQUEST_MESSAGE_TYPE = 2100224;

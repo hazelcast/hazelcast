@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Rollbacks the transaction with the given id.
  */
-@Generated("6a08b51306075a58c9c07d6c8eb23201")
+@SuppressWarnings("unused")
+@Generated("900702c9838908f4477e74bfdea70d3d")
 public final class TransactionRollbackCodec {
     //hex: 0x150300
     public static final int REQUEST_MESSAGE_TYPE = 1377024;

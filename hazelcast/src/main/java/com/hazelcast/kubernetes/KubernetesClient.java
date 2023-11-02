@@ -25,7 +25,6 @@ import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.util.HostnameUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
-import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -46,8 +45,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.UNKNOWN;
 import static java.util.Arrays.asList;
@@ -67,13 +64,19 @@ class KubernetesClient {
     private static final int HTTP_UNAUTHORIZED = 401;
     private static final int HTTP_FORBIDDEN = 403;
 
+    private static final int CONNECTION_TIMEOUT_SECONDS = 10;
+    private static final int READ_TIMEOUT_SECONDS = 10;
+
     private static final List<String> NON_RETRYABLE_KEYWORDS = asList(
             "\"reason\":\"Forbidden\"",
             "\"reason\":\"NotFound\"",
-            "Failure in generating SSLSocketFactory");
+            "Failure in generating SSLSocketFactory",
+            "REST call interrupted");
 
     private static final int STS_MONITOR_SHUTDOWN_AWAIT_TIMEOUT_MS = 1000;
 
+    @Nullable
+    final StsMonitorThread stsMonitorThread;
     private final String stsName;
     private final String namespace;
     private final String kubernetesMaster;
@@ -84,8 +87,6 @@ class KubernetesClient {
     private final boolean useNodeNameAsExternalAddress;
     private final String servicePerPodLabelName;
     private final String servicePerPodLabelValue;
-    @Nullable
-    private final StsMonitorThread stsMonitorThread;
 
     private final KubernetesTokenProvider tokenProvider;
 
@@ -94,6 +95,7 @@ class KubernetesClient {
 
     private boolean isNoPublicIpAlreadyLogged;
     private boolean isKnownExceptionAlreadyLogged;
+    private boolean isNodePortWarningAlreadyLogged;
 
     KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
                      String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
@@ -171,12 +173,12 @@ class KubernetesClient {
     }
 
     public void destroy() {
-        // It's important we interrupt the StsMonitorThread first, as the ClusterTopologyIntentTracker
+        // It's important we shut down the StsMonitorThread first, as the ClusterTopologyIntentTracker
         // receives messages from this thread, and we want to let it process all available messages
         // before the intent tracker is shutdown
         if (stsMonitorThread != null) {
-            LOGGER.info("Interrupting StatefulSet monitor thread");
-            stsMonitorThread.interrupt();
+            LOGGER.info("Shutting down StatefulSet monitor thread");
+            stsMonitorThread.shutdown();
         }
 
         if (clusterTopologyIntentTracker != null) {
@@ -450,7 +452,6 @@ class KubernetesClient {
             Map<String, Integer> publicPorts = new HashMap<>();
             Map<String, String> cachedNodePublicIps = new HashMap<>();
 
-
             for (Map.Entry<EndpointAddress, String> serviceEntry : services.entrySet()) {
                 EndpointAddress privateAddress = serviceEntry.getKey();
                 String service = serviceEntry.getValue();
@@ -474,6 +475,12 @@ class KubernetesClient {
                     }
                     publicIps.put(privateAddress.getIp(), nodePublicAddress);
                     publicPorts.put(privateAddress.getIp(), nodePort);
+                    // Log warning only once.
+                    if (!isNodePortWarningAlreadyLogged && exposeExternallyMode == ExposeExternallyMode.ENABLED) {
+                        LOGGER.warning("Using NodePort service type for public addresses may lead to connection issues from "
+                                + "outside of the Kubernetes cluster. Ensure external accessibility of the NodePort IPs.");
+                        isNodePortWarningAlreadyLogged = true;
+                    }
                 }
             }
 
@@ -486,9 +493,8 @@ class KubernetesClient {
             LOGGER.finest(e);
             // Log warning only once.
             if (!isNoPublicIpAlreadyLogged) {
-                LOGGER.warning(
-                        "Cannot fetch public IPs of Hazelcast Member PODs, you won't be able to use Hazelcast Smart Client from "
-                                + "outside of the Kubernetes network");
+                LOGGER.warning("Cannot fetch public IPs of Hazelcast Member PODs, you won't be able to use "
+                        + "Hazelcast Smart Client from outside of the Kubernetes network");
                 isNoPublicIpAlreadyLogged = true;
             }
             return endpoints;
@@ -515,15 +521,19 @@ class KubernetesClient {
     }
 
     private static String extractLoadBalancerAddress(JsonObject serviceResponse) {
-        JsonObject ingress = serviceResponse
-                .get("status").asObject()
-                .get("loadBalancer").asObject()
-                .get("ingress").asArray().get(0).asObject();
-        JsonValue address = ingress.get("ip");
-        if (address == null) {
-            address = ingress.get("hostname");
+        try {
+            JsonObject ingress = serviceResponse
+                    .get("status").asObject()
+                    .get("loadBalancer").asObject()
+                    .get("ingress").asArray().get(0).asObject();
+            JsonValue address = ingress.get("ip");
+            if (address == null) {
+                address = ingress.get("hostname");
+            }
+            return address.asString();
+        } catch (Exception e) {
+            throw new KubernetesClientException("Unable to extract the public address from the LoadBalancer service", e);
         }
-        return address.asString();
     }
 
     private static Integer extractServicePort(JsonObject serviceJson) {
@@ -589,9 +599,10 @@ class KubernetesClient {
      */
     private JsonObject callGet(final String urlString) {
         return RetryUtils.retry(() -> Json
-                .parse(RestClient.create(urlString)
+                .parse((caCertificate == null ? RestClient.create(urlString, CONNECTION_TIMEOUT_SECONDS)
+                        : RestClient.createWithSSL(urlString, caCertificate, CONNECTION_TIMEOUT_SECONDS))
                         .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
-                        .withCaCertificates(caCertificate)
+                        .withRequestTimeoutSeconds(READ_TIMEOUT_SECONDS)
                         .get()
                         .getBody())
                 .asObject(), retries, NON_RETRYABLE_KEYWORDS);
@@ -751,6 +762,8 @@ class KubernetesClient {
 
         // used only for tests
         volatile boolean running = true;
+        volatile boolean finished;
+        volatile boolean shuttingDown;
 
         String latestResourceVersion;
         RuntimeContext latestRuntimeContext;
@@ -760,19 +773,11 @@ class KubernetesClient {
         private final String stsUrlString;
         private final BackoffIdleStrategy backoffIdleStrategy;
 
-        // We offload reading to a separate Thread to allow us to interrupt the reading operation
-        // when this Thread needs to be shutdown, avoiding the need to terminate this thread in a
-        // non-graceful manner, which could lead to uncompleted message handling - without using a
-        // separate thread, BufferedReader#readLine() blocks until data is received and does not
-        // handle Thread#interrupt()
-        private final ExecutorService readExecutor;
-
         StsMonitorThread() {
             super("hz-k8s-sts-monitor");
             stsUrlString = formatStsListUrl();
             backoffIdleStrategy = new BackoffIdleStrategy(MAX_SPINS, MAX_YIELDS,
                     MILLISECONDS.toNanos(MIN_PARK_PERIOD_MILLIS), SECONDS.toNanos(MAX_PARK_PERIOD_SECONDS));
-            readExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryImpl("hz-k8s-sts-monitor-reader"));
         }
 
         /**
@@ -788,7 +793,7 @@ class KubernetesClient {
             String message;
 
             while (running) {
-                if (Thread.interrupted()) {
+                if (shuttingDown) {
                     break;
                 }
                 try {
@@ -799,6 +804,10 @@ class KubernetesClient {
                     updateTracker(previous, latestRuntimeContext);
                     watchResponse = sendWatchRequest();
                 } catch (RestClientException e) {
+                    // interrupts during shutdown will trigger a RestClientException
+                    if (shuttingDown) {
+                        break;
+                    }
                     handleFailure(e);
                     // always retry after a RestClientException
                     continue;
@@ -810,14 +819,34 @@ class KubernetesClient {
                         onMessage(message);
                     }
                 } catch (IOException e) {
-                    LOGGER.info("Exception while watching for StatefulSet changes", e);
-                    try {
-                        watchResponse.disconnect();
-                    } catch (Exception t) {
-                        LOGGER.fine("Exception while closing connection after an IOException", t);
+                    // If we're shutting down, the watchResponse is already disconnected, and
+                    // the IOException can be disregarded; otherwise continue with logging
+                    if (!shuttingDown) {
+                        LOGGER.info("Exception while watching for StatefulSet changes", e);
+
+                        try {
+                            watchResponse.disconnect();
+                        } catch (Exception t) {
+                            LOGGER.fine("Exception while closing connection after an IOException", t);
+                        }
                     }
                 }
             }
+            finished = true;
+        }
+
+        public void shutdown() {
+            this.shuttingDown = true;
+            try {
+                if (watchResponse != null) {
+                    watchResponse.disconnect();
+                }
+            } catch (IOException e) {
+                LOGGER.fine("Exception while closing connection during shutdown", e);
+            }
+            // Interrupt thread as we may be in the process of making watch requests
+            //  or other calls that need to be interrupted for us to shut down promptly
+            stsMonitorThread.interrupt();
         }
 
         private void handleFailure(RestClientException e) {
@@ -861,11 +890,11 @@ class KubernetesClient {
          *          from Kubernetes API server.
          */
         @Nonnull
-        RestClient.WatchResponse sendWatchRequest() {
-            RestClient restClient = RestClient.create(stsUrlString)
-                    .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
-                    .withCaCertificates(caCertificate);
-            return restClient.watch(latestResourceVersion, readExecutor);
+        RestClient.WatchResponse sendWatchRequest() throws RestClientException {
+            RestClient restClient = (caCertificate == null ? RestClient.create(stsUrlString)
+                    : RestClient.createWithSSL(stsUrlString, caCertificate))
+                    .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()));
+            return restClient.watch(latestResourceVersion);
         }
 
         @Nullable

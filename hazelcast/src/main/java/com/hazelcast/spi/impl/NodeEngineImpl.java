@@ -53,6 +53,7 @@ import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
@@ -152,6 +153,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.proxyService = new ProxyServiceImpl(this);
             this.serviceManager = new ServiceManagerImpl(this);
             this.executionService = new ExecutionServiceImpl(this);
+            this.tenantControlService = new TenantControlServiceImpl(this);
             this.tpcServerBootstrap = new TpcServerBootstrap(this);
             this.operationService = new OperationServiceImpl(this);
             this.eventService = new EventServiceImpl(this);
@@ -180,7 +182,6 @@ public class NodeEngineImpl implements NodeEngine {
 
             checkMapMergePolicies(node);
 
-            this.tenantControlService = new TenantControlServiceImpl(this);
 
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
@@ -199,12 +200,15 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     private InternalSqlService createSqlService() {
+        if (!Util.isJetEnabled(this)) {
+            return new MissingSqlService(node.getThisUuid(), false);
+        }
         Class<?> clz;
         try {
             clz = Class.forName("com.hazelcast.sql.impl.SqlServiceImpl");
         } catch (ClassNotFoundException e) {
             // this is normal if the hazelcast-sql module isn't present - return disabled service
-            return new MissingSqlService(node.getThisUuid());
+            return new MissingSqlService(node.getThisUuid(), true);
         }
 
         try {

@@ -168,6 +168,33 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
     }
 
     @Test
+    public void testDeleteAsync() {
+        IMap<String, String> map = hz.getMap(getMapName());
+        for (int i = 0; i < NUM_ITERATIONS; i++) {
+            String key = "deleteasync_" + String.valueOf(i);
+            String value = "merhaba-" + key;
+
+            String oldValue = map.put(key, value);
+            // this brings the value into the Near Cache
+            String value1 = map.get(key);
+            Future<Boolean> future = map.deleteAsync(key).toCompletableFuture();
+            Boolean returnValue = null;
+            try {
+                returnValue = future.get();
+            } catch (Exception e) {
+                fail("Exception in future.get(): " + e.getMessage());
+            }
+            // here we _might_ still see the value
+            String value2 = map.get(key);
+
+            assertNull(oldValue);
+            assertEquals(value, value1);
+            assertTrue(returnValue);
+            assertNull(value2);
+        }
+    }
+
+    @Test
     public void testPut() {
         IMap<String, String> map = hz.getMap(getMapName());
         for (int i = 0; i < NUM_ITERATIONS; i++) {

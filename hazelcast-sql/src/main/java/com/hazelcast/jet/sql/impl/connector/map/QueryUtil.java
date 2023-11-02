@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
-import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,24 +32,28 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.index.IndexCompositeFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
-final class QueryUtil {
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
+public final class QueryUtil {
     private QueryUtil() {
     }
 
@@ -111,27 +114,55 @@ final class QueryUtil {
 
     static IndexIterationPointer[] indexFilterToPointers(
             IndexFilter indexFilter,
+            boolean compositeIndex,
             boolean descending,
             ExpressionEvalContext evalContext
     ) {
-        ArrayList<IndexIterationPointer> result = new ArrayList<>();
-        createFromIndexFilterInt(indexFilter, descending, evalContext, result);
+        List<IndexIterationPointer> result = new ArrayList<>();
+        createFromIndexFilterInt(indexFilter, compositeIndex, descending, evalContext, result);
+        result = IndexIterationPointer.normalizePointers(result, descending);
         return result.toArray(new IndexIterationPointer[0]);
     }
 
     private static void createFromIndexFilterInt(
             IndexFilter indexFilter,
+            boolean compositeIndex,
             boolean descending,
             ExpressionEvalContext evalContext,
             List<IndexIterationPointer> result
     ) {
         if (indexFilter == null) {
-            result.add(IndexIterationPointer.create(null, true, null, true, descending, null));
+            // Full index scan - should include nulls.
+            //
+            // Note that from=null is treated differently for composite and non-composite index.
+            // This is a bit hacky and might be simplified in the future. IndexIterationPointers are updated
+            // during scanning and `[null, null] DESC` pointer might become `[null, X] DESC`.
+            // However, the latter one is treated as range pointer (<=X) and would not include NULLs!
+            // This duality is caused among others by implicit conversion from null to NULL for
+            // non-composite indexes but there are also checks which choose getSqlRecordIteratorBatch method variant
+            // based on null end (before conversion) meaning different things.
+            // The above affects only `from` because NULLs are smaller than any other value and only DESC sort order
+            // for which `to` is updated during the scan.
+            if (!compositeIndex && descending) {
+                result.add(IndexIterationPointer.ALL_ALT_DESC);
+            } else {
+                result.add(descending ? IndexIterationPointer.ALL_DESC : IndexIterationPointer.ALL);
+            }
         }
         if (indexFilter instanceof IndexRangeFilter) {
             IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
 
-            Comparable<?> from = null;
+            if (rangeFilter.getFrom() == null && rangeFilter.getTo() == null) {
+                // IS NOT NULL range
+                assert !compositeIndex : "IS NOT NULL range should not be generated for composite index";
+                result.add(descending ? IndexIterationPointer.IS_NOT_NULL_DESC : IndexIterationPointer.IS_NOT_NULL);
+                return;
+            }
+
+            // Range filter for non-composite index never includes NULLs.
+            // Composite index should have both ends specified, and they might cover also NULL values for components
+            // but from/to will never be NULL but CompositeValue.
+            Comparable<?> from = compositeIndex ? null : NULL;
             if (rangeFilter.getFrom() != null) {
                 Comparable<?> fromValue = rangeFilter.getFrom().getValue(evalContext);
                 // If the index filter has expression like a > NULL, we need to
@@ -153,16 +184,29 @@ final class QueryUtil {
                 to = toValue;
             }
 
+            if (from != null && to != null) {
+                int cmp = ((Comparable) from).compareTo(to);
+                if (cmp > 0 || (cmp == 0 && (!rangeFilter.isFromInclusive() || !rangeFilter.isToInclusive()))) {
+                    // Range scan with from > to would produce empty result.
+                    // Range scan which reduces to point lookup (from = to) produces result only
+                    // if both ends are inclusive. Otherwise, result would be empty.
+                    // Do not create iteration pointer for such scans (as they would be invalid).
+                    return;
+                }
+            }
+
             result.add(IndexIterationPointer.create(
                     from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), descending, null));
         } else if (indexFilter instanceof IndexEqualsFilter) {
             IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
             Comparable<?> value = equalsFilter.getComparable(evalContext);
+            // Note: this branch is also used for IS NULL, but null value in IndexEqualsFilter
+            // is mapped to NULL by getComparable, so we can easily use it in the same way as ordinary values.
             result.add(IndexIterationPointer.create(value, true, value, true, descending, null));
         } else if (indexFilter instanceof IndexCompositeFilter) {
             IndexCompositeFilter inFilter = (IndexCompositeFilter) indexFilter;
             for (IndexFilter filter : inFilter.getFilters()) {
-                createFromIndexFilterInt(filter, descending, evalContext, result);
+                createFromIndexFilterInt(filter, compositeIndex, descending, evalContext, result);
             }
         }
     }
@@ -173,14 +217,17 @@ final class QueryUtil {
     )
     private static final class JoinProjection
             implements Projection<Entry<Object, Object>, JetSqlRow>, DataSerializable,
-            HazelcastInstanceAware, SerializationServiceAware {
+            NodeAware, SerializationServiceAware {
 
         private KvRowProjector.Supplier rightRowProjectorSupplier;
         private List<Object> arguments;
 
-        private transient HazelcastInstance hzInstance;
+        private transient Node node;
         private transient ExpressionEvalContext evalContext;
         private transient Extractors extractors;
+        private transient SqlSecurityContext ssc;
+
+        private Subject subject;
 
         @SuppressWarnings("unused")
         private JoinProjection() {
@@ -189,7 +236,9 @@ final class QueryUtil {
         private JoinProjection(KvRowProjector.Supplier rightRowProjectorSupplier, ExpressionEvalContext evalContext) {
             this.rightRowProjectorSupplier = rightRowProjectorSupplier;
             this.evalContext = evalContext;
+            this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
             this.arguments = evalContext.getArguments();
+            this.subject = evalContext.subject();
         }
 
         @Override
@@ -198,29 +247,49 @@ final class QueryUtil {
         }
 
         @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.hzInstance = hazelcastInstance;
+        public void setNode(Node node) {
+            assert this.node == null || this.node == node : "Unexpected change of Node instance";
+            this.node = node;
         }
 
         @Override
         public void setSerializationService(SerializationService serializationService) {
-            this.evalContext = new ExpressionEvalContextImpl(
-                    arguments,
-                    (InternalSerializationService) serializationService,
-                    Util.getNodeEngine(hzInstance));
-            this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
+            assert evalContext == null || evalContext.getSerializationService() == serializationService
+                    : "Unexpected change of serialization service";
+            assert node != null : "setNode should be called before setSerializationService";
+            initContext((InternalSerializationService) serializationService);
+        }
+
+        private void initContext(InternalSerializationService iss) {
+            if (evalContext != null) {
+                // already created. setSerializationService might be invoked multiple times.
+                return;
+            }
+
+            SecurityContext securityContext = node.securityContext;
+            if (securityContext != null) {
+                assert subject != null : "Missing subject when security context exists";
+                this.ssc = securityContext.createSqlContext(subject);
+            } else {
+                this.ssc = NoOpSqlSecurityContext.INSTANCE;
+            }
+
+            this.evalContext = ExpressionEvalContext.createContext(arguments, node.getNodeEngine(), iss, ssc);
+            this.extractors = Extractors.newBuilder(iss).build();
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(rightRowProjectorSupplier);
             out.writeObject(arguments);
+            out.writeObject(subject);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             rightRowProjectorSupplier = in.readObject();
             arguments = in.readObject();
+            subject = in.readObject();
         }
     }
 }

@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static com.hazelcast.test.HazelcastTestSupport.assertIterableEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -53,13 +53,41 @@ public class AvroResolverTest {
         List<MappingField> fields = AvroResolver.resolveFields(schema);
 
         // then
-        assertThat(fields).hasSize(7);
-        assertThat(fields.get(0)).isEqualTo(new MappingField("boolean", QueryDataType.BOOLEAN));
-        assertThat(fields.get(1)).isEqualTo(new MappingField("int", QueryDataType.INT));
-        assertThat(fields.get(2)).isEqualTo(new MappingField("long", QueryDataType.BIGINT));
-        assertThat(fields.get(3)).isEqualTo(new MappingField("float", QueryDataType.REAL));
-        assertThat(fields.get(4)).isEqualTo(new MappingField("double", QueryDataType.DOUBLE));
-        assertThat(fields.get(5)).isEqualTo(new MappingField("string", QueryDataType.VARCHAR));
-        assertThat(fields.get(6)).isEqualTo(new MappingField("object", QueryDataType.OBJECT));
+        assertIterableEquals(fields,
+                new MappingField("boolean", QueryDataType.BOOLEAN),
+                new MappingField("int", QueryDataType.INT),
+                new MappingField("long", QueryDataType.BIGINT),
+                new MappingField("float", QueryDataType.REAL),
+                new MappingField("double", QueryDataType.DOUBLE),
+                new MappingField("string", QueryDataType.VARCHAR),
+                new MappingField("object", QueryDataType.OBJECT));
+    }
+
+    @Test
+    public void test_resolveNullableFields() {
+        // given
+        Schema schema = SchemaBuilder.record("name")
+                .fields()
+                .name("boolean").type().nullable().booleanType().noDefault()
+                .name("int").type().nullable().intType().noDefault()
+                .name("long").type().nullable().longType().noDefault()
+                .name("float").type().nullable().floatType().noDefault()
+                .name("double").type().nullable().doubleType().noDefault()
+                .name("string").type().nullable().stringType().noDefault()
+                .name("object").type().nullable().record("object").fields().endRecord().noDefault()
+                .endRecord();
+
+        // when
+        List<MappingField> fields = AvroResolver.resolveFields(schema);
+
+        // then
+        assertIterableEquals(fields,
+                new MappingField("boolean", QueryDataType.BOOLEAN),
+                new MappingField("int", QueryDataType.INT),
+                new MappingField("long", QueryDataType.BIGINT),
+                new MappingField("float", QueryDataType.REAL),
+                new MappingField("double", QueryDataType.DOUBLE),
+                new MappingField("string", QueryDataType.VARCHAR),
+                new MappingField("object", QueryDataType.OBJECT));
     }
 }

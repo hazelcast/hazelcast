@@ -37,6 +37,7 @@ import com.hazelcast.sql.impl.schema.Table;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 
@@ -63,7 +64,8 @@ final class InfoSchemaConnector implements SqlConnector {
         return "InfoSchema";
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull SqlExternalResource externalResource,
@@ -71,7 +73,8 @@ final class InfoSchemaConnector implements SqlConnector {
         throw new UnsupportedOperationException();
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
@@ -81,11 +84,13 @@ final class InfoSchemaConnector implements SqlConnector {
         throw new UnsupportedOperationException();
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
             @Nullable HazelcastRexNode predicate,
             @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {

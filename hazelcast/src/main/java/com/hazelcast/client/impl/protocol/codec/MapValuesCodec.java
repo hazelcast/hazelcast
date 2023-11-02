@@ -39,7 +39,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
  * if query result size limit is configured.
  */
-@Generated("7138e621173c779d81f9f4bc7235afa9")
+@SuppressWarnings("unused")
+@Generated("bf1c4dda1997cf68d9feb5380f90b2eb")
 public final class MapValuesCodec {
     //hex: 0x012400
     public static final int REQUEST_MESSAGE_TYPE = 74752;

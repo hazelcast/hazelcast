@@ -21,8 +21,6 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.retry.RetryStrategy;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.ConnectorPermission;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.ReplaceOptions;
@@ -38,7 +36,6 @@ import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
-import static com.hazelcast.security.permission.ConnectorPermission.mongo;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class WriteMongoParams<I> implements Serializable {
@@ -61,7 +58,7 @@ public class WriteMongoParams<I> implements Serializable {
     @Nonnull
     WriteMode writeMode = WriteMode.REPLACE;
     FunctionEx<I, WriteModel<I>> writeModelFn;
-    boolean throwOnNonExisting = true;
+    boolean checkExistenceOnEachConnect = true;
 
     public WriteMongoParams() {
     }
@@ -248,12 +245,15 @@ public class WriteMongoParams<I> implements Serializable {
         return this;
     }
 
-    public boolean isThrowOnNonExisting() {
-        return throwOnNonExisting;
+    public boolean isCheckExistenceOnEachConnect() {
+        return checkExistenceOnEachConnect;
     }
 
-    public WriteMongoParams<I> setThrowOnNonExisting(boolean throwOnNonExisting) {
-        this.throwOnNonExisting = throwOnNonExisting;
+    /**
+     * If true, the database and collection existence checks will be performed on every reconnection.
+     */
+    public WriteMongoParams<I> setCheckExistenceOnEachConnect(boolean checkExistenceOnEachConnect) {
+        this.checkExistenceOnEachConnect = checkExistenceOnEachConnect;
         return this;
     }
 
@@ -271,13 +271,5 @@ public class WriteMongoParams<I> implements Serializable {
 
         checkState((databaseNameSelectFn == null) != (databaseName == null),
                 "Only select*Fn or *Name functions should be called, never mixed");
-    }
-
-    @Nonnull
-    public ConnectorPermission buildPermission() {
-        return mongo(dataConnectionRef == null ? null : dataConnectionRef.getName(),
-                getDatabaseName(),
-                getCollectionName(),
-                ActionConstants.ACTION_WRITE);
     }
 }

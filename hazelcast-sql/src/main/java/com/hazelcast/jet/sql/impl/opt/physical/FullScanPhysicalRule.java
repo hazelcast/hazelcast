@@ -39,7 +39,6 @@ final class FullScanPhysicalRule extends ConverterRule {
     @Override
     public RelNode convert(RelNode rel) {
         FullScanLogicalRel logicalScan = (FullScanLogicalRel) rel;
-
         return new FullScanPhysicalRel(
                 logicalScan.getCluster(),
                 OptUtils.toPhysicalConvention(logicalScan.getTraitSet()),

@@ -20,7 +20,6 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -40,14 +39,14 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.LOCAL_MEMBER_
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.test.Accessors.getClusterService;
 import static com.hazelcast.test.Accessors.getNode;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterServiceMemberListTest
         extends HazelcastTestSupport {
 
-    private Config liteConfig = new Config().setLiteMember(true);
+    private final Config liteConfig = new Config().setLiteMember(true);
 
     private TestHazelcastInstanceFactory factory;
 
@@ -72,27 +71,19 @@ public class ClusterServiceMemberListTest
 
     @Test
     public void testGetMembersWithMemberSelector() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                verifyMembersFromLiteMember(liteInstance);
-                verifyMembersFromDataMember(dataInstance);
-                verifyMembersFromDataMember(dataInstance2);
-            }
+        assertTrueEventually(() -> {
+            verifyMembersFromLiteMember(liteInstance);
+            verifyMembersFromDataMember(dataInstance);
+            verifyMembersFromDataMember(dataInstance2);
         });
     }
 
     @Test
     public void testSizeWithMemberSelector() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                verifySizeFromLiteMember(liteInstance);
-                verifySizeFromDataMember(dataInstance);
-                verifySizeFromDataMember(dataInstance2);
-            }
+        assertTrueEventually(() -> {
+            verifySizeFromLiteMember(liteInstance);
+            verifySizeFromDataMember(dataInstance);
+            verifySizeFromDataMember(dataInstance2);
         });
     }
 

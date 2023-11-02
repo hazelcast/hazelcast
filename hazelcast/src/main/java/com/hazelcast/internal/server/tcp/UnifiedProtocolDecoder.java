@@ -36,6 +36,7 @@ import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
@@ -48,7 +49,6 @@ import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
-import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE;
@@ -149,7 +149,7 @@ public class UnifiedProtocolDecoder
             // fail-fast
             throw new IllegalStateException("TLS handshake header detected, but plain protocol header was expected.");
         }
-        return bytesToString(protocolBytes);
+        return new String(protocolBytes, StandardCharsets.UTF_8);
     }
 
     private void initChannelForCluster() {

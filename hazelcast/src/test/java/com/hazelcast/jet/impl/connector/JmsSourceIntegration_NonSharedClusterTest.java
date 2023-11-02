@@ -40,8 +40,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.jms.ConnectionFactory;
-import javax.jms.TextMessage;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.TextMessage;
 import java.io.Serializable;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;

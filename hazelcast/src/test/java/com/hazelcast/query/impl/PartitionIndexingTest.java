@@ -46,6 +46,7 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.hazelcast.test.Accessors.getAllIndexes;
 import static com.hazelcast.test.Accessors.getPartitionService;
@@ -62,7 +63,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
 
     private static final int ENTRIES = 10000;
     private static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT = 10;
-    private static final String MAP_NAME = "map";
+    protected static final String MAP_NAME = "map";
 
     @Parameterized.Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
@@ -108,11 +109,14 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
 
     @Test
     public void testOnPreConfiguredIndexes() {
-        Config config = getConfig();
-        config.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.HASH, "this"));
-        config.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.SORTED, "__key"));
+        Supplier<Config> configSupplier = () -> {
+            Config config = getConfig();
+            config.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.HASH, "this"));
+            config.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.SORTED, "__key"));
+            return config;
+        };
 
-        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(configSupplier.get());
         int expectedPartitions = getPartitionService(instance1).getPartitionCount();
 
         IMap<Integer, Integer> map1 = instance1.getMap(MAP_NAME);
@@ -124,12 +128,12 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         }
         assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1);
 
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(configSupplier.get());
         IMap<Integer, Integer> map2 = instance2.getMap(MAP_NAME);
         waitAllForSafeState(instance1, instance2);
         assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map2);
 
-        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(configSupplier.get());
         IMap<Integer, Integer> map3 = instance3.getMap(MAP_NAME);
         waitAllForSafeState(instance1, instance2, instance3);
         assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map2, map3);
@@ -139,7 +143,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map3);
 
         migrationFailingService.fail = true;
-        HazelcastInstance instance4 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance4 = factory.newHazelcastInstance(configSupplier.get());
         IMap<Integer, Integer> map4 = instance4.getMap(MAP_NAME);
         waitAllForSafeState(instance1, instance3, instance4);
         assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map3, map4);
@@ -148,9 +152,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
 
     @Test
     public void testOnProgrammaticallyAddedIndexes() {
-        Config config = getConfig();
-
-        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(getConfig());
         int expectedPartitions = getPartitionService(instance1).getPartitionCount();
 
         IMap<Integer, Integer> map1 = instance1.getMap(MAP_NAME);
@@ -163,12 +165,12 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         client1.addIndex(IndexType.HASH, "this");
         assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1);
 
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(getConfig());
         IMap<Integer, Integer> map2 = instance2.getMap(MAP_NAME);
         waitAllForSafeState(instance1, instance2);
         assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map2);
 
-        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(getConfig());
         IMap<Integer, Integer> map3 = instance3.getMap(MAP_NAME);
         waitAllForSafeState(instance1, instance2, instance3);
         assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map2, map3);
@@ -182,7 +184,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map3);
 
         migrationFailingService.fail = true;
-        HazelcastInstance instance4 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance4 = factory.newHazelcastInstance(getConfig());
         IMap<Integer, Integer> map4 = instance4.getMap(MAP_NAME);
         waitAllForSafeState(instance1, instance3, instance4);
         assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map3, map4);
@@ -201,7 +203,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         Map<String, BitSet> indexToPartitions = new HashMap<String, BitSet>();
 
         for (IMap map : maps) {
-            for (Indexes indexes : getAllIndexes(map)) {
+            for (IndexRegistry indexes : getAllIndexes(map)) {
                 for (InternalIndex index : indexes.getIndexes()) {
                     String indexName = index.getName();
                     BitSet indexPartitions = indexToPartitions.get(indexName);

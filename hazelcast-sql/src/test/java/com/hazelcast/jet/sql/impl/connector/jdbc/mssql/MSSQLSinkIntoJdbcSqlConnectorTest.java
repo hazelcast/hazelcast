@@ -27,10 +27,8 @@ public class MSSQLSinkIntoJdbcSqlConnectorTest extends SinkJdbcSqlConnectorTest 
 
     @BeforeClass
     public static void beforeClass() {
+        //There is no arm64 image for mssql server
+        assumeNoArm64Architecture();
         initialize(new MSSQLDatabaseProvider());
-    }
-    //Disable this test by overriding it until official MSSQL support
-    @Override
-    public void updateTableWithColumns() {
     }
 }

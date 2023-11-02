@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.util.JVM;
+import com.hazelcast.internal.tpcengine.util.OS;
 
 import java.util.Collection;
 import java.util.concurrent.Callable;
@@ -40,6 +41,10 @@ public class TpcTestSupport {
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY = getInteger("hazelcast.assertTrueEventually.timeout.nightly", 240);
 
     public static final int TERMINATION_TIMEOUT_SECONDS = 30;
+
+    public static void assumeNotWindows() {
+        assumeFalse("Skipping on Windows", OS.isWindows());
+    }
 
     public static void assertCompletesEventually(final Future future) {
         assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));

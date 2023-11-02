@@ -42,6 +42,7 @@ import com.hazelcast.internal.partition.PartitionServiceProxy;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.partition.ReadonlyInternalPartition;
 import com.hazelcast.internal.partition.operation.AssignPartitions;
+import com.hazelcast.internal.partition.operation.DemoteRequestOperation;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.internal.partition.operation.PartitionStateCheckOperation;
 import com.hazelcast.internal.partition.operation.PartitionStateOperation;
@@ -120,6 +121,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     private static final int PARTITION_OWNERSHIP_WAIT_MILLIS = 10;
     private static final int SAFE_SHUTDOWN_MAX_AWAIT_STEP_MILLIS = 1000;
+    private static final int DEMOTE_MAX_AWAIT_STEP_MILLIS = 5000;
     private static final long FETCH_PARTITION_STATE_SECONDS = 5;
     private static final long TRIGGER_MASTER_DELAY_MILLIS = 1000;
 
@@ -145,6 +147,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     private final CoalescingDelayedTrigger masterTrigger;
 
     private final AtomicReference<CountDownLatch> shutdownLatchRef = new AtomicReference<>();
+    private final AtomicReference<CountDownLatch> demoteLatchRef = new AtomicReference<>();
+
     private final Executor internalAsyncExecutor;
 
     private volatile Address latestMaster;
@@ -253,7 +257,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         }
         try {
             if (!partitionStateManager.isInitialized()) {
-                Set<Member> excludedMembers = migrationManager.getShutdownRequestedMembers();
+                Set<Member> excludedMembers = migrationManager.getDataDisownRequestedMembers();
                 if (partitionStateManager.initializePartitionAssignments(excludedMembers)) {
                     publishPartitionRuntimeState();
                 }
@@ -263,6 +267,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         } finally {
             partitionServiceLock.unlock();
         }
+    }
+
+    @Override
+    public boolean isPartitionAssignmentDone() {
+        return partitionStateManager.isInitialized();
     }
 
     /** Sends a {@link AssignPartitions} to the master to assign partitions. */
@@ -555,9 +564,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         }
     }
 
-    void sendPartitionRuntimeState(Address target) {
+    CompletableFuture<Boolean> sendPartitionRuntimeState(Address target) {
         if (!isLocalMemberMaster()) {
-            return;
+            return CompletableFuture.completedFuture(false);
         }
         assert partitionStateManager.isInitialized();
 
@@ -570,21 +579,21 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
         OperationService operationService = nodeEngine.getOperationService();
         PartitionStateOperation op = new PartitionStateOperation(partitionState, true);
-        operationService.invokeOnTarget(SERVICE_NAME, op, target);
+        return operationService.invokeOnTarget(SERVICE_NAME, op, target);
     }
 
-    void checkClusterPartitionRuntimeStates() {
+    List<CompletableFuture<Boolean>> checkClusterPartitionRuntimeStates() {
         if (!partitionStateManager.isInitialized()) {
-            return;
+            return Collections.emptyList();
         }
 
         if (!isLocalMemberMaster()) {
-            return;
+            return Collections.emptyList();
         }
 
         if (!areMigrationTasksAllowed()) {
             // migration is disabled because of a member leave, wait till enabled!
-            return;
+            return Collections.emptyList();
         }
 
         long stamp = getPartitionStateStamp();
@@ -592,25 +601,30 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             logger.fine("Checking partition state, stamp: " + stamp);
         }
 
+        List<CompletableFuture<Boolean>> futures = new ArrayList<>();
         OperationService operationService = nodeEngine.getOperationService();
         Collection<Member> members = node.clusterService.getMembers();
         for (Member member : members) {
             if (!member.localMember()) {
                 PartitionStateCheckOperation op = new PartitionStateCheckOperation(stamp);
                 InvocationFuture<Boolean> future = operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress());
-                future.whenCompleteAsync((response, throwable) -> {
-                    if (throwable == null) {
-                        if (!Boolean.TRUE.equals(response)) {
-                            logger.fine(member + " has a stale partition state. Will send the most recent partition state now.");
-                            sendPartitionRuntimeState(member.getAddress());
-                        }
-                    } else {
-                        logger.fine("Failure while checking partition state on " + member, throwable);
-                        sendPartitionRuntimeState(member.getAddress());
-                    }
-                }, internalAsyncExecutor);
+                futures.add(future.handleAsync((response, throwable) -> {
+                            if (throwable == null) {
+                                if (!Boolean.TRUE.equals(response)) {
+                                    logger.fine(member + " has a stale partition state. Will send the most recent "
+                                            + "partition state now.");
+                                    return sendPartitionRuntimeState(member.getAddress());
+                                }
+                                return CompletableFuture.completedFuture(true);
+                            } else {
+                                logger.fine("Failure while checking partition state on " + member, throwable);
+                                return sendPartitionRuntimeState(member.getAddress());
+                            }
+                        }, internalAsyncExecutor)
+                        .thenComposeAsync(x -> x, internalAsyncExecutor));
             }
         }
+        return futures;
     }
 
     /**
@@ -901,6 +915,71 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     @Override
+    public boolean onDemote(long timeout, TimeUnit unit) {
+
+        if (node.isLiteMember()) {
+            return true;
+        }
+
+        CountDownLatch latch = getDemoteLatch();
+
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
+
+        long timeoutMillis = unit.toMillis(timeout);
+        long awaitStep = Math.min(DEMOTE_MAX_AWAIT_STEP_MILLIS, timeoutMillis);
+        try {
+            boolean shouldRetry;
+            do {
+                Address masterAddress = nodeEngine.getMasterAddress();
+                if (masterAddress == null) {
+                    logger.warning("Member demote failed, master member is not known!");
+                    return false;
+                }
+
+                shouldRetry = false;
+                boolean demoteInitiated;
+                if (node.isMaster()) {
+                    demoteInitiated = onDemoteRequest(node.getLocalMember());
+                } else {
+                    UUID memberUuid = node.getLocalMember().getUuid();
+                    DemoteRequestOperation op = new DemoteRequestOperation(memberUuid);
+
+                    InvocationFuture<Boolean> demotionInitResult = operationService.invokeOnMaster(op.getServiceName(),
+                            op);
+                    try {
+                        long startTime = System.currentTimeMillis();
+                        demoteInitiated = demotionInitResult.get(awaitStep, TimeUnit.MILLISECONDS);
+                        long elapsed = System.currentTimeMillis() - startTime;
+                        timeoutMillis -= elapsed;
+                    } catch (TimeoutException e) {
+                        // allow the loop to continue with another demote attempt
+                        demoteInitiated = false;
+                        shouldRetry = true;
+                    } catch (Exception e) {
+                        logger.warning("Failed to initialize member demotion", e);
+                        return false;
+                    }
+                }
+                long latchTimeout = Math.min(awaitStep, timeoutMillis);
+
+                if (demoteInitiated) {
+                    if (latch.await(latchTimeout, TimeUnit.MILLISECONDS)) {
+                        return true;
+                    } else {
+                        timeoutMillis -= latchTimeout;
+                        shouldRetry = true;
+                    }
+                }
+
+            } while (timeoutMillis > 0 && shouldRetry);
+        } catch (InterruptedException e) {
+            currentThread().interrupt();
+            logger.info("Member demote is interrupted!");
+        }
+        return false;
+    }
+
+    @Override
     public boolean onShutdown(long timeout, TimeUnit unit) {
         if (!node.getClusterService().isJoined()) {
             return true;
@@ -950,6 +1029,34 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             }
         }
         return latch;
+    }
+
+    private CountDownLatch getDemoteLatch() {
+        CountDownLatch latch = demoteLatchRef.get();
+        if (latch == null) {
+            latch = new CountDownLatch(1);
+            if (!demoteLatchRef.compareAndSet(null, latch)) {
+                latch = demoteLatchRef.get();
+            }
+        }
+        return latch;
+    }
+
+    public boolean onDemoteRequest(Member member) {
+        partitionServiceLock.lock();
+        try {
+            return migrationManager.onDemoteRequest(member);
+        } finally {
+            partitionServiceLock.unlock();
+        }
+    }
+
+    public void onDemoteResponse() {
+        CountDownLatch latch = demoteLatchRef.get();
+        if (latch != null) {
+            latch.countDown();
+            demoteLatchRef.compareAndSet(latch, null);
+        }
     }
 
     public void onShutdownRequest(Member member) {

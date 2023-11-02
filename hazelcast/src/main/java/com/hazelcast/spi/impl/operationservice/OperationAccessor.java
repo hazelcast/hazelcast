@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
 
@@ -77,6 +78,21 @@ public final class OperationAccessor {
      */
     public static void setCallTimeout(Operation op, long callTimeout) {
         op.setCallTimeout(callTimeout);
+    }
+
+    /**
+     * Clone and reset the supplied operation.
+     *
+     * @param op the operation to clone and reset.
+     * @param serializationService the serialization service to use for cloning.
+     * @return a clone of the supplied operation, with its invocation time reset
+     * to -1 and its call ID reset to 0.
+     */
+    public static Operation cloneAndReset(Operation op, SerializationService serializationService) {
+        Operation clone = serializationService.toObject(serializationService.toData(op));
+        clone.setInvocationTime(-1);
+        clone.resetCallId();
+        return clone;
     }
 
 }

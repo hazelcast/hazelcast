@@ -22,7 +22,6 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import org.apache.commons.io.IOUtils;
 import org.example.jet.impl.deployment.ResourceCollector;
 
 import javax.annotation.Nonnull;
@@ -38,7 +37,7 @@ import static java.util.Collections.nCopies;
 public class TestProcessor extends AbstractProcessor {
 
     // The supplier is not on test nor member classpath - it is on processor classpath
-    private SupplierEx<SupplierEx<String>> resourceReaderSupplier;
+    private final SupplierEx<SupplierEx<String>> resourceReaderSupplier;
     private SupplierEx<String> resourceReader;
 
 
@@ -60,32 +59,34 @@ public class TestProcessor extends AbstractProcessor {
     }
 
     /**
-     * Reads contents of `childfirstclassloader/resource_test.txt` resource
+     * Reads contents of {@code childfirstclassloader/resource_test.txt} resource
      *
      * Depending on whether this class is loaded by system classloader or the processor classloader it will return
      * different content:
-     * - system classloader returns content of `target/test-classes/childfirstclassloader/resource_test.txt` file
-     * - processor classloader returns content of `childfirstclassloader/resource_test.txt` file inside resources.jar
+     * - system classloader returns content of {@code target/test-classes/childfirstclassloader/resource_test.txt} file
+     * - processor classloader returns content of {@code childfirstclassloader/resource_test.txt} file inside {@code resources.jar}
      */
     public static class ResourceReader implements SupplierEx<String> {
 
         @Override
         public String getEx() throws Exception {
-            InputStream is = ResourceReader.class.getClassLoader().getResourceAsStream("childfirstclassloader/resource_test.txt");
-            return IOUtils.toString(is, UTF_8);
+            try (InputStream is = ResourceReader.class.getClassLoader().getResourceAsStream("childfirstclassloader/resource_test.txt")) {
+                assert is != null;
+                return new String(is.readAllBytes(), UTF_8);
+            }
         }
     }
 
     public static class ResourceReaderFactory {
 
         public static SupplierEx<SupplierEx<String>> createResourceReader() {
-            return () -> new ResourceReader();
+            return ResourceReader::new;
         }
     }
 
     public static class TestProcessorSupplier implements ProcessorSupplier {
 
-        private SupplierEx<SupplierEx<String>> resourceReaderSupplier;
+        private final SupplierEx<SupplierEx<String>> resourceReaderSupplier;
         private SupplierEx<String> resourceReader;
 
         public TestProcessorSupplier(SupplierEx<SupplierEx<String>> resourceReaderSupplier) {
@@ -113,7 +114,7 @@ public class TestProcessor extends AbstractProcessor {
 
     public static class TestProcessorMetaSupplier implements ProcessorMetaSupplier {
 
-        private SupplierEx<SupplierEx<String>> resourceReaderSupplier;
+        private final SupplierEx<SupplierEx<String>> resourceReaderSupplier;
         private SupplierEx<String> resourceReader;
 
         public TestProcessorMetaSupplier(SupplierEx<SupplierEx<String>> resourceReaderSupplier) {
@@ -126,8 +127,9 @@ public class TestProcessor extends AbstractProcessor {
             ResourceCollector.add("ProcessorMetaSupplier init " + resourceReader.get());
         }
 
+        @Nonnull
         @Override
-        public Function<? super Address, ? extends ProcessorSupplier> get(List<Address> addresses) {
+        public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             ResourceCollector.add("ProcessorMetaSupplier get " + resourceReader.get());
             return address -> {
                 ResourceCollector.add("ProcessorMetaSupplier create " + resourceReader.get());
@@ -141,9 +143,7 @@ public class TestProcessor extends AbstractProcessor {
         }
 
         public static TestProcessorMetaSupplier create() {
-            return new TestProcessorMetaSupplier(
-                    () -> new ResourceReader()
-            );
+            return new TestProcessorMetaSupplier(ResourceReader::new);
         }
     }
 }

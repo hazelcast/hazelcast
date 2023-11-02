@@ -108,6 +108,8 @@ import java.util.stream.StreamSupport;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
@@ -121,8 +123,6 @@ import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.spi.properties.ClusterProperty.JOB_SCAN_PERIOD;
@@ -158,6 +158,8 @@ public class JobCoordinationService implements DynamicMetricsProvider {
      */
     private static final Object UNINITIALIZED_LIGHT_JOB_MARKER = new Object();
 
+    final List<JobInvocationObserver> jobInvocationObservers = new ArrayList<>();
+
     private final NodeEngineImpl nodeEngine;
     private final JetServiceBackend jetServiceBackend;
     private final JetConfig config;
@@ -170,7 +172,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
     private final ConcurrentMap<Long, ScheduledFuture<?>> scheduledJobTimeouts = new ConcurrentHashMap<>();
     /**
      * Map of {memberUuid; removeTime}.
-     *
+     * <p>
      * A collection of UUIDs of members which left the cluster and for which we
      * didn't receive {@link NotifyMemberShutdownOperation}.
      */
@@ -196,7 +198,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         this.nodeEngine = nodeEngine;
         this.jetServiceBackend = jetServiceBackend;
         this.config = config;
-        this.pipelineToDagContext = () -> this.config.getCooperativeThreadCount();
+        this.pipelineToDagContext = this.config::getCooperativeThreadCount;
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRepository = jobRepository;
 
@@ -305,7 +307,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
             } catch (Throwable e) {
                 jetServiceBackend.getJobClassLoaderService()
-                                 .tryRemoveClassloadersForJob(jobId, COORDINATOR);
+                        .tryRemoveClassloadersForJob(jobId, COORDINATOR);
 
                 res.completeExceptionally(e);
                 throw e;
@@ -353,11 +355,11 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                     scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
 
                     return mc.getCompletionFuture()
-                      .whenComplete((r, t) -> {
-                          Object removed = lightMasterContexts.remove(jobId);
-                          assert removed instanceof LightMasterContext : "LMC not found: " + removed;
-                          unscheduleJobTimeout(jobId);
-                      });
+                            .whenComplete((r, t) -> {
+                                Object removed = lightMasterContexts.remove(jobId);
+                                assert removed instanceof LightMasterContext : "LMC not found: " + removed;
+                                unscheduleJobTimeout(jobId);
+                            });
                 }, coordinationExecutor());
     }
 
@@ -393,7 +395,8 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                 .collect(Collectors.toSet());
     }
 
-    @SuppressWarnings("WeakerAccess") // used by jet-enterprise
+    @SuppressWarnings("WeakerAccess")
+        // used by jet-enterprise
     MasterContext createMasterContext(JobRecord jobRecord, JobExecutionRecord jobExecutionRecord) {
         return new MasterContext(nodeEngine, this, jobRecord, jobExecutionRecord);
     }
@@ -408,8 +411,8 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         }
 
         return masterContexts.values()
-                             .stream()
-                             .anyMatch(ctx -> jobName.equals(ctx.jobConfig().getName()));
+                .stream()
+                .anyMatch(ctx -> jobName.equals(ctx.jobConfig().getName()));
     }
 
     public CompletableFuture<Void> prepareForPassiveClusterState() {
@@ -583,12 +586,12 @@ public class JobCoordinationService implements DynamicMetricsProvider {
                     }
 
                     jobs.entrySet().stream()
-                        .sorted(
-                                comparing(Entry<Long, Long>::getValue)
-                                        .thenComparing(Entry::getKey)
-                                        .reversed()
-                        )
-                        .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
+                            .sorted(
+                                    comparing(Entry<Long, Long>::getValue)
+                                            .thenComparing(Entry::getKey)
+                                            .reversed()
+                            )
+                            .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
                 } else {
                     for (Long jobId : jobRepository.getAllJobIds()) {
                         result.add(tuple2(jobId, false));
@@ -749,6 +752,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
 
     /**
      * Return a summary of all jobs
+     *
      * @deprecated Since 5.3, to be removed in 6.0. Use {@link #getJobAndSqlSummaryList()} instead
      */
     @Deprecated
@@ -905,11 +909,11 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         }
         logFine(logger, "Added a shutting-down member: %s", uuid);
         CompletableFuture[] futures = masterContexts.values().stream()
-                                                    .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
-                                                    .toArray(CompletableFuture[]::new);
+                .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
+                .toArray(CompletableFuture[]::new);
         // Need to do this even if futures.length == 0, we need to perform the action in whenComplete
         CompletableFuture.allOf(futures)
-                         .whenComplete(withTryCatch(logger, (r, e) -> future.complete(null)));
+                .whenComplete(withTryCatch(logger, (r, e) -> future.complete(null)));
         return future;
     }
 
@@ -926,6 +930,10 @@ public class JobCoordinationService implements DynamicMetricsProvider {
     // only for testing
     public MasterContext getMasterContext(long jobId) {
         return masterContexts.get(jobId);
+    }
+
+    public void registerInvocationObserver(JobInvocationObserver observer) {
+        this.jobInvocationObservers.add(observer);
     }
 
     JetServiceBackend getJetServiceBackend() {
@@ -968,9 +976,9 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             return false;
         }
         if (nodeEngine.getNode().isClusterStateManagementAutomatic()
-            && !nodeEngine.getNode().isManagedClusterStable()) {
+                && !nodeEngine.getNode().isManagedClusterStable()) {
             LoggingUtil.logFine(logger, "Not starting jobs because cluster is running in managed context "
-                            + "and is not yet stable. Current cluster topology intentL %s, "
+                            + "and is not yet stable. Current cluster topology intent: %s, "
                             + "expected cluster size: %d, current: %d.",
                     nodeEngine.getNode().getClusterTopologyIntent(),
                     nodeEngine.getNode().currentSpecifiedReplicaCount(), nodeEngine.getClusterService().getSize());
@@ -1441,7 +1449,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
     }
 
     @SuppressWarnings("WeakerAccess")
-    // used by jet-enterprise
+        // used by jet-enterprise
     void assertIsMaster(String error) {
         if (!isMaster()) {
             throw new JetException(error + ". Master address: " + nodeEngine.getClusterService().getMasterAddress());
@@ -1452,7 +1460,8 @@ public class JobCoordinationService implements DynamicMetricsProvider {
         return nodeEngine.getClusterService().isMaster();
     }
 
-    @SuppressWarnings("unused") // used in jet-enterprise
+    @SuppressWarnings("unused")
+        // used in jet-enterprise
     NodeEngineImpl nodeEngine() {
         return nodeEngine;
     }

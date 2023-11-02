@@ -52,8 +52,11 @@ public class AttributeIndexRegistry {
      * there is no more than one writer at any given time.
      *
      * @param index the index to register.
-     * @see Indexes#addOrGetIndex
+     * @see IndexRegistry#addOrGetIndex
      */
+    // squid:S3824 ConcurrentHashMap.computeIfAbsent(K, Function<? super K, ? extends V>) locks the map, which *may* have an
+    // effect on throughput such that it's not a direct replacement
+    @SuppressWarnings("squid:S3824")
     public void register(InternalIndex index) {
         String[] components = index.getComponents();
         String attribute = components[0];
@@ -239,33 +242,7 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
-            throw new UnsupportedOperationException("Should not be called");
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
-            throw new UnsupportedOperationException("Should not be called");
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending) {
-            throw new UnsupportedOperationException("Should not be called");
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(
-            Comparable from,
-            boolean fromInclusive,
-            Comparable to,
-            boolean toInclusive,
-            boolean descending
-        ) {
-            throw new UnsupportedOperationException("Should not be called");
-        }
-
-        @Override
-        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending) {
             throw new UnsupportedOperationException("Should not be called");
         }
 

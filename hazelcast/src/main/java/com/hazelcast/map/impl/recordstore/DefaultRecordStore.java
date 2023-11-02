@@ -58,6 +58,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
@@ -83,17 +84,20 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.map.impl.recordstore.StaticParams.PUT_BACKUP_PARAMS;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import static java.util.Collections.emptyList;
 
 /**
  * Default implementation of a record store.
  */
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "rawtypes"})
 public class DefaultRecordStore extends AbstractEvictableRecordStore {
+
     protected final ILogger logger;
     protected final RecordStoreLoader recordStoreLoader;
     protected final MapKeyLoader keyLoader;
@@ -127,6 +131,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * key loading.
      */
     private boolean loadedOnPreMigration;
+    /**
+     * Defined by {@link com.hazelcast.spi.properties.ClusterProperty#WAN_REPLICATE_IMAP_EVICTIONS},
+     * if set to true then eviction operations by this RecordStore will be WAN replicated
+     */
+    private boolean wanReplicateEvictions;
 
     private final IPartitionService partitionService;
     private final InterceptorRegistry interceptorRegistry;
@@ -144,6 +153,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
         this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         this.interceptorRegistry = mapContainer.getInterceptorRegistry();
+        this.wanReplicateEvictions = mapContainer.getWanContext().isWanReplicationEnabled()
+                && mapServiceContext.getNodeEngine().getProperties().getBoolean(ClusterProperty.WAN_REPLICATE_IMAP_EVICTIONS);
         initJsonMetadataStore();
     }
 
@@ -527,15 +538,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return definedExpirationTime - System.currentTimeMillis();
     }
 
-    public int removeBulk(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean backup) {
+    public int removeBulk(List<Data> dataKeys, List<Record> records, boolean backup) {
         return removeOrEvictEntries(dataKeys, records, false, backup);
     }
 
-    protected int evictBulk(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean backup) {
+    public int evictBulk(List<Data> dataKeys, List<Record> records, boolean backup) {
         return removeOrEvictEntries(dataKeys, records, true, backup);
     }
 
-    private int removeOrEvictEntries(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean eviction,
+    private int removeOrEvictEntries(List<Data> dataKeys, List<Record> records, boolean eviction,
                                      boolean backup) {
         for (int i = 0; i < dataKeys.size(); i++) {
             Data dataKey = dataKeys.get(i);
@@ -546,7 +557,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return dataKeys.size();
     }
 
-    private void removeOrEvictEntry(Data dataKey, Record record, boolean eviction, boolean backup) {
+    public void removeOrEvictEntry(Data dataKey, Record record, boolean eviction, boolean backup) {
         if (eviction) {
             mutationObserver.onEvictRecord(dataKey, record, backup);
         } else {
@@ -554,6 +565,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         removeKeyFromExpirySystem(dataKey);
         storage.removeRecord(dataKey, record);
+
+        if (wanReplicateEvictions && eviction) {
+            mapEventPublisher.publishWanRemove(name, toHeapData(dataKey));
+        }
     }
 
     @Override
@@ -568,6 +583,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.removeRecord(key, record);
             if (!backup) {
                 mapServiceContext.interceptRemove(interceptorRegistry, value);
+            }
+            if (wanReplicateEvictions) {
+                mapEventPublisher.publishWanRemove(name, toHeapData(key));
             }
         }
         return value;
@@ -728,7 +746,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         // then try to load missing keys from map-store
         if (mapDataStore != EMPTY_MAP_DATA_STORE && !keys.isEmpty()) {
-            Map loadedEntries = loadEntries(keys, callerAddress);
+            Map<Data, Object> loadedEntries = loadEntries(keys, callerAddress);
             addToMapEntrySet(mapEntries, loadedEntries);
         }
 
@@ -811,8 +829,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         mapEntries.add(dataKey, dataValue);
     }
 
-    public void addToMapEntrySet(MapEntries mapEntries, Map<Object, Object> entries) {
-        for (Map.Entry<Object, Object> entry : entries.entrySet()) {
+    public void addToMapEntrySet(MapEntries mapEntries, Map<?, ?> entries) {
+        for (Map.Entry<?, ?> entry : entries.entrySet()) {
             addToMapEntrySet(entry.getKey(), entry.getValue(), mapEntries);
         }
     }
@@ -1017,8 +1035,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public Object updateMemory(Record record, Data key, Object oldValue, Object newValue,
-                             boolean changeExpiryOnUpdate, long ttl, long maxIdle,
-                             long expiryTime, long now, boolean backup) {
+                               boolean changeExpiryOnUpdate, long ttl, long maxIdle,
+                               long expiryTime, long now, boolean backup) {
         storage.updateRecordValue(key, record, newValue);
         if (changeExpiryOnUpdate) {
             expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
@@ -1058,9 +1076,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean merge(MapMergeTypes<Object, Object> mergingEntry,
-                         SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
-                         CallerProvenance provenance) {
+    @SuppressWarnings("unchecked")
+    public MapMergeResponse merge(MapMergeTypes<Object, Object> mergingEntry,
+                                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
+                                  CallerProvenance provenance) {
         checkIfLoaded();
         long now = getNow();
 
@@ -1075,12 +1094,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue == null) {
-                return false;
+                return MapMergeResponse.NO_MERGE_APPLIED;
             }
             boolean persist = persistenceEnabledFor(provenance);
             Record newRecord = putNewRecord(key, null, newValue, UNSET, UNSET, UNSET, now,
                     null, ADDED, persist, false);
             mergeRecordExpiration(key, newRecord, mergingEntry, now);
+            return MapMergeResponse.RECORD_CREATED;
         } else {
             oldValue = record.getValue();
             ExpiryMetadata expiryMetadata = expirySystem.getExpiryMetadata(key);
@@ -1094,20 +1114,33 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 }
                 onStore(record);
                 removeRecord0(key, record, false);
-                return true;
+                return MapMergeResponse.RECORD_REMOVED;
             }
 
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
-                mergeRecordExpiration(key, record, mergingEntry, now);
-                return true;
+                // When receiving WAN replicated data, it is possible that the merge policy rejects an incoming
+                //  value, which would result in the above condition being true (merge policy selects the existing
+                //  value as the outcome). However, we do not want to apply metadata changes if we are rejecting
+                //  the merge and sticking with our original data. Due to current limitations of the
+                //  SplitBrainMergePolicy, we have no view on whether the merge policy modified the outcome or not,
+                //  only the resultant value. Long-term we need to address this shortfall in merge policies, but
+                //  for now the additional check below allows us to make an educated guess about whether the merge
+                //  changed data and use that. Since this only matters for WAN-received merge events, we can avoid
+                //  additional overhead by checking provenance. Fixes HZ-3392, Backlog for merge changes: HZ-3397
+                boolean shouldMergeExpiration = provenance != CallerProvenance.WAN
+                        || valueComparator.isEqual(oldValue, mergingEntry.getValue(), serializationService);
+                if (shouldMergeExpiration && mergeRecordExpiration(key, record, mergingEntry, now)) {
+                    return MapMergeResponse.RECORD_EXPIRY_UPDATED;
+                }
+                return MapMergeResponse.RECORDS_ARE_EQUAL;
             }
 
             boolean persist = persistenceEnabledFor(provenance);
             updateRecord(record, key, oldValue, newValue, true, UNSET, UNSET, UNSET,
                     now, null, persist, true, false);
+            mergeRecordExpiration(key, record, mergingEntry, now);
+            return MapMergeResponse.RECORD_UPDATED;
         }
-
-        return newValue != null;
     }
 
     @Override
@@ -1294,7 +1327,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         if (FutureUtil.allDone(loadingFutures)) {
-            List<Future<?>> doneFutures = null;
+            List<Future<?>> doneFutures = emptyList();
             try {
                 doneFutures = FutureUtil.getAllDone(loadingFutures);
                 // check all finished loading futures for exceptions
@@ -1406,9 +1439,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     private String getStateMessage() {
-        return "on partitionId=" + partitionId + " on " + mapServiceContext.getNodeEngine().getThisAddress()
-                + " loadedOnCreate=" + loadedOnCreate + " loadedOnPreMigration=" + loadedOnPreMigration
-                + " isLoaded=" + isLoaded();
+        // due to weird issue with OpenJ9 implementation of string concatenation:
+        //noinspection StringBufferReplaceableByString
+        StringBuilder sb = new StringBuilder();
+        sb.append("on partitionId=");
+        sb.append(partitionId);
+        sb.append(" on ");
+        sb.append(mapServiceContext.getNodeEngine().getThisAddress());
+        sb.append(" loadedOnCreate=");
+        sb.append(loadedOnCreate);
+        sb.append(" loadedOnPreMigration=");
+        sb.append(loadedOnPreMigration);
+        sb.append(" isLoaded=");
+        sb.append(isLoaded());
+        return sb.toString();
     }
 
     @Override
@@ -1418,13 +1462,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         ArrayList<Data> keys = new ArrayList<>();
         ArrayList<Record> records = new ArrayList<>();
         // we don't remove locked keys. These are clearable records.
-        forEach(new BiConsumer<Data, Record>() {
+        forEach(new BiConsumer<>() {
             final Set<Data> lockedKeySet = lockStore.getLockedKeys();
 
             @Override
             public void accept(Data dataKey, Record record) {
                 if (lockedKeySet != null && !lockedKeySet.contains(dataKey)) {
-                    keys.add(dataKey);
+                    keys.add(isTieredStorageEnabled() ? toHeapData(dataKey) : dataKey);
                     records.add(record);
                 }
 
@@ -1435,7 +1479,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return evictBulk(keys, records, backup);
     }
 
-    // TODO optimize when no mapdatastore
+    // TODO optimize when no map-datastore
     @Override
     public int clear(boolean backup) {
         checkIfLoaded();
@@ -1443,13 +1487,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         ArrayList<Data> keys = new ArrayList<>();
         ArrayList<Record> records = new ArrayList<>();
         // we don't remove locked keys. These are clearable records.
-        forEach(new BiConsumer<Data, Record>() {
+        forEach(new BiConsumer<>() {
             final Set<Data> lockedKeySet = lockStore.getLockedKeys();
 
             @Override
             public void accept(Data dataKey, Record record) {
                 if (lockedKeySet != null && !lockedKeySet.contains(dataKey)) {
-                    keys.add(dataKey);
+                    keys.add(isTieredStorageEnabled() ? toHeapData(dataKey) : dataKey);
                     records.add(record);
                 }
 
@@ -1514,7 +1558,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() == POOLED;
     }
 
-    private void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
+    public void destroyStorageImmediate(boolean isDuringShutdown,
+                                        boolean internal) {
         mutationObserver.onDestroy(isDuringShutdown, internal);
         expirySystem.destroy();
         destroyMetadataStore();
@@ -1524,7 +1569,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     /**
      * Calls also {@link #clearStorage(boolean)} to release allocated HD memory
-     * of key+value pairs because {@link #destroyStorageImmediate(boolean, boolean)}
+     * of key+value pairs because
      * only releases internal resources of backing data structure.
      *
      * @param isDuringShutdown {@link Storage#clear(boolean)}
@@ -1556,5 +1601,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Set<MapOperation> getOffloadedOperations() {
         return offloadedOperations;
+    }
+
+    @Override
+    public boolean isTieredStorageEnabled() {
+        return mapContainer.getMapConfig().getTieredStoreConfig().isEnabled();
     }
 }

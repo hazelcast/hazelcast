@@ -39,7 +39,17 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>license-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-third-party</id>
+                        <goals>
+                            <goal>add-third-party</goal>
+                        </goals>
+                        <phase>prepare-package</phase>
+                    </execution>
+                </executions>
                 <configuration>
+                    <force>true</force>
                     <acceptPomPackaging>true</acceptPomPackaging>
                     <includedLicenses combine.children="append">
                         <includedLicense>CDDL</includedLicense>
@@ -70,33 +80,6 @@
                                     <includes>**/*.xml,**/*.yaml,META-INF/NOTICE</includes>
                                 </artifactItem>
                             </artifactItems>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-hz3</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast</artifactId>
-                                    <version>${hazelcast-3.version}</version>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast-client</artifactId>
-                                    <version>${hazelcast-3.version}</version>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast-3-connector-impl</artifactId>
-                                    <version>${project.version}</version>
-                                </artifactItem>
-                            </artifactItems>
-                            <outputDirectory>${project.build.directory}/custom-lib</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -219,17 +202,14 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>${log4j2.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-layout-template-json</artifactId>
-            <version>${log4j2.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j2.version}</version>
         </dependency>
 
         <!-- Prometheus to expose JMX metrics as HTTP endpoint -->
@@ -354,16 +334,6 @@
             <artifactId>hazelcast-jet-s3</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-3-connector-interface</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-3-connector-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>

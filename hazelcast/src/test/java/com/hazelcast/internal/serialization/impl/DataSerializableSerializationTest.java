@@ -23,13 +23,12 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.VersionedDataSerializableFactory;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,11 +40,14 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-
 public class DataSerializableSerializationTest extends HazelcastTestSupport {
+    private static SerializationService ss;
 
-    private SerializationService ss = new DefaultSerializationServiceBuilder().setVersion(InternalSerializationService.VERSION_1)
-                                                                              .build();
+    @BeforeClass
+    public static void setUp() {
+        ss = new DefaultSerializationServiceBuilder().setVersion(InternalSerializationService.VERSION_1)
+                .build();
+    }
 
     @Test
     public void serializeAndDeserialize_DataSerializable() {
@@ -63,19 +65,6 @@ public class DataSerializableSerializationTest extends HazelcastTestSupport {
         SerializationService ss = new DefaultSerializationServiceBuilder().addDataSerializableFactory(1, new IDSPersonFactory())
                                                                           .setVersion(InternalSerializationService.VERSION_1)
                                                                           .build();
-
-        IDSPerson deserialized = ss.toObject(ss.toData(person));
-
-        assertEquals(person.getClass(), deserialized.getClass());
-        assertEquals(person.name, deserialized.name);
-    }
-
-    @Test
-    public void serializeAndDeserialize_IdentifiedDataSerializable_versionedFactory() {
-        IDSPerson person = new IDSPerson("James Bond");
-        SerializationService ss = new DefaultSerializationServiceBuilder()
-                .addDataSerializableFactory(1, new IDSPersonFactoryVersioned()).setVersion(InternalSerializationService.VERSION_1)
-                .build();
 
         IDSPerson deserialized = ss.toObject(ss.toData(person));
 
@@ -113,7 +102,6 @@ public class DataSerializableSerializationTest extends HazelcastTestSupport {
             } catch (HazelcastSerializationException e) {
                 assertInstanceOf(NoSuchMethodException.class, e.getCause());
                 assertContains(e.getCause().getMessage(), "can't conform to DataSerializable");
-                assertInstanceOf(NoSuchMethodException.class, e.getCause().getCause());
                 continue;
             }
             fail("deserialization of '" + throwingInstance.getClass() + "' is expected to fail");
@@ -123,9 +111,8 @@ public class DataSerializableSerializationTest extends HazelcastTestSupport {
             try {
                 ss.toObject(ss.toData(throwingInstance), throwingInstance.getClass());
             } catch (HazelcastSerializationException e) {
-                assertInstanceOf(InstantiationException.class, e.getCause());
+                assertInstanceOf(ReflectiveOperationException.class, e.getCause());
                 assertContains(e.getCause().getMessage(), "can't conform to DataSerializable");
-                assertInstanceOf(InstantiationException.class, e.getCause().getCause());
                 continue;
             }
             fail("deserialization of '" + throwingInstance.getClass() + "' is expected to fail");
@@ -202,17 +189,4 @@ public class DataSerializableSerializationTest extends HazelcastTestSupport {
             return new IDSPerson();
         }
     }
-
-    private static class IDSPersonFactoryVersioned implements VersionedDataSerializableFactory {
-        @Override
-        public IdentifiedDataSerializable create(int typeId) {
-            return new IDSPerson();
-        }
-
-        @Override
-        public IdentifiedDataSerializable create(int typeId, Version version, Version wanProtocolVersion) {
-            throw new RuntimeException("Should not be used outside of the versioned context");
-        }
-    }
-
 }

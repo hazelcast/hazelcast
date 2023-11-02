@@ -57,11 +57,6 @@ public class SemaphoreSnapshotTest extends AbstractAtomicRegisterSnapshotTest<In
     }
 
     @Override
-    protected Integer readValue() {
-        return semaphore.availablePermits();
-    }
-
-    @Override
     protected RaftOp getQueryRaftOp() {
         return new AvailablePermitsOp(name);
     }

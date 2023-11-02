@@ -38,7 +38,7 @@ public class HzSerializableProcessorSuppliersTest extends SimpleTestInClusterSup
     private final DAG dag = new DAG();
     private final URL url = requireNonNull(
             getClass().getResource("DataSerializableSuppliers.jar"));
-    private final ClassLoader cl = new URLClassLoader(new URL[] {url});
+
 
     @BeforeClass
     public static void beforeClass() {
@@ -49,26 +49,32 @@ public class HzSerializableProcessorSuppliersTest extends SimpleTestInClusterSup
 
     @Test
     public void test_metaSupplier() throws Exception {
-        ProcessorMetaSupplier metaSupplier =
-                ClassLoaderUtil.newInstance(cl, "com.example.DataSerializableSuppliers$MetaSupplier");
-        dag.newVertex("v", metaSupplier);
-        submitJob();
+        try (URLClassLoader cl = new URLClassLoader(new URL[]{url})) {
+            ProcessorMetaSupplier metaSupplier =
+                    ClassLoaderUtil.newInstance(cl, "com.example.DataSerializableSuppliers$MetaSupplier");
+            dag.newVertex("v", metaSupplier);
+            submitJob();
+        }
     }
 
     @Test
     public void test_pSupplier() throws Exception {
-        ProcessorSupplier pSupplier =
-                ClassLoaderUtil.newInstance(cl, "com.example.DataSerializableSuppliers$PSupplier");
-        dag.newVertex("v", pSupplier);
-        submitJob();
+        try (URLClassLoader cl = new URLClassLoader(new URL[]{url})) {
+            ProcessorSupplier pSupplier =
+                    ClassLoaderUtil.newInstance(cl, "com.example.DataSerializableSuppliers$PSupplier");
+            dag.newVertex("v", pSupplier);
+            submitJob();
+        }
     }
 
     @Test
     public void test_simpleSupplier() throws Exception {
-        SupplierEx<Processor> supplier =
-                ClassLoaderUtil.newInstance(cl, "com.example.DataSerializableSuppliers$SimpleSupplier");
-        dag.newVertex("v", supplier);
-        submitJob();
+        try (URLClassLoader cl = new URLClassLoader(new URL[]{url})) {
+            SupplierEx<Processor> supplier =
+                    ClassLoaderUtil.newInstance(cl, "com.example.DataSerializableSuppliers$SimpleSupplier");
+            dag.newVertex("v", supplier);
+            submitJob();
+        }
     }
 
     private void submitJob() {

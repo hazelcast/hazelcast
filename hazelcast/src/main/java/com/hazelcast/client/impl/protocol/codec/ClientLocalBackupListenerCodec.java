@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener for backup acks
  */
-@Generated("5c06f2c3d4622f4ec6736afa3cbe3fd5")
+@SuppressWarnings("unused")
+@Generated("a3e5b2a8a997765059b703ef851b55dd")
 public final class ClientLocalBackupListenerCodec {
     //hex: 0x000F00
     public static final int REQUEST_MESSAGE_TYPE = 3840;

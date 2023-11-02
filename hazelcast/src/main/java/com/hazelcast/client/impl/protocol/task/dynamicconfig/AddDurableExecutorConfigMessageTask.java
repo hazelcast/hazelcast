@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 public class AddDurableExecutorConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddDurableExecutorConfigCodec.RequestParameters> {
@@ -56,7 +57,7 @@ public class AddDurableExecutorConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "addDurableExecutorConfig";
+        return SecurityInterceptorConstants.ADD_DURABLE_EXECUTOR_CONFIG;
     }
 
     @Override

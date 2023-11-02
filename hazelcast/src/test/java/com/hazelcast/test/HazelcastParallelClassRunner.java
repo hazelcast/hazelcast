@@ -17,7 +17,10 @@
 package com.hazelcast.test;
 
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.internal.util.collection.ArrayUtils;
 import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -161,8 +164,14 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
                 System.out.println("Started Running Test: " + testName);
                 HazelcastParallelClassRunner.super.runChild(method, notifier);
                 numThreads.decrementAndGet();
-                float took = (float) (System.currentTimeMillis() - start) / 1000;
-                System.out.println(format("Finished Running Test: %s in %.3f seconds.", testName, took));
+                float tookSeconds = (float) (System.currentTimeMillis() - start) / 1000;
+                System.out.println(format("Finished Running Test: %s in %.3f seconds.", testName, tookSeconds));
+
+                Category classAnnotations = method.getDeclaringClass().getAnnotation(Category.class);
+
+                if (classAnnotations != null && ArrayUtils.contains(classAnnotations.value(), QuickTest.class)) {
+                    QuickTest.logMessageIfTestOverran(method, tookSeconds);
+                }
             } finally {
                 removeThreadLocalTestMethodName();
             }

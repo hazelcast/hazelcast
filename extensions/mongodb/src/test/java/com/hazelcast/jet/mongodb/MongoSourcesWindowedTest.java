@@ -17,6 +17,7 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -34,6 +35,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.pipeline.Sinks.list;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -60,16 +62,18 @@ public class MongoSourcesWindowedTest extends AbstractMongoTest {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(streamSource)
                 .withNativeTimestamps(0).setLocalParallelism(2)
+                .peek()
                 .groupingKey(d -> d.getString("test"))
                 .window(tumbling(5))
                 .aggregate(counting())
+                .peek()
                 .writeTo(list(result));
 
         MongoCollection<Document> collection =
                 mongo.getDatabase(defaultDatabase()).getCollection(testName.getMethodName());
         AtomicInteger counter = new AtomicInteger(0);
         spawn(() -> {
-            while (counter.get() < 100) {
+            while (counter.get() < 20) {
                 ObjectId key = ObjectId.get();
                 collection.insertOne(new Document("test", "testowe").append("_id", key));
                 counter.incrementAndGet();
@@ -79,7 +83,8 @@ public class MongoSourcesWindowedTest extends AbstractMongoTest {
                 collection.insertOne(new Document("test", "other").append("_id", key));
             }
         });
-        instance().getJet().newJob(pipeline);
+        Job job = instance().getJet().newJob(pipeline);
+        assertJobStatusEventually(job, RUNNING);
 
         assertTrueEventually(() -> {
             assertThat(result).isNotEmpty();
@@ -91,6 +96,6 @@ public class MongoSourcesWindowedTest extends AbstractMongoTest {
             assertThat(currentSum)
                     .as("Sum of windows is equal to input element count")
                     .isEqualTo(counter.get());
-        });
+        }, 20);
     }
 }

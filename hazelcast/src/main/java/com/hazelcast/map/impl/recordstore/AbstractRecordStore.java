@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.internal.locksupport.LockStore;
 import com.hazelcast.internal.locksupport.LockSupportService;
@@ -36,6 +37,8 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
+import com.hazelcast.map.impl.record.DataRecordFactory;
+import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.record.RecordReaderWriter;
@@ -48,11 +51,11 @@ import javax.annotation.Nonnull;
  * Contains record store common parts.
  */
 abstract class AbstractRecordStore implements RecordStore<Record> {
+
     protected final int partitionId;
     protected final String name;
     protected final LockStore lockStore;
     protected final MapContainer mapContainer;
-    protected final RecordFactory recordFactory;
     protected final InMemoryFormat inMemoryFormat;
     protected final MapStoreContext mapStoreContext;
     protected final ValueComparator valueComparator;
@@ -61,6 +64,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final SerializationService serializationService;
     protected final CompositeMutationObserver<Record> mutationObserver;
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
+
+    protected RecordFactory recordFactory;
     protected Storage<Data, Record> storage;
     protected IndexingMutationObserver<Record> indexingObserver;
 
@@ -72,7 +77,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.serializationService = nodeEngine.getSerializationService();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
-        this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(() -> partitionId);
         this.valueComparator = mapServiceContext.getValueComparatorOf(inMemoryFormat);
         this.mapStoreContext = mapContainer.getMapStoreContext();
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
@@ -80,8 +84,22 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.mutationObserver = new CompositeMutationObserver<>();
     }
 
+    // overridden in different context
+    RecordFactory createRecordFactory() {
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        switch (mapConfig.getInMemoryFormat()) {
+            case BINARY:
+                return new DataRecordFactory(mapContainer, serializationService);
+            case OBJECT:
+                return new ObjectRecordFactory(mapContainer, serializationService);
+            default:
+                throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
+        }
+    }
+
     @Override
     public void init() {
+        this.recordFactory = createRecordFactory();
         this.storage = createStorage(recordFactory, inMemoryFormat);
         addMutationObservers();
     }
@@ -131,7 +149,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     public boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
         switch (provenance) {
             case WAN:
-                return mapContainer.isPersistWanReplicatedData();
+                return mapContainer.getWanContext().isPersistWanReplicatedData();
             case NOT_WAN:
                 return true;
             default:

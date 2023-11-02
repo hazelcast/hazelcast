@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -82,6 +83,6 @@ public class MapValuesWithPredicateMessageTask
 
     @Override
     public String getMethodName() {
-        return "values";
+        return SecurityInterceptorConstants.VALUES;
     }
 }

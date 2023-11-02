@@ -93,7 +93,7 @@ public class SqlBasicTest extends SqlTestSupport {
     private static final int IDS_KEY_CLASS_ID = 2;
     private static final int IDS_VALUE_CLASS_ID = 3;
     static final int PORTABLE_FACTORY_ID = 1;
-    private static final int PORTABLE_KEY_CLASS_ID = 2;
+    static final int PORTABLE_KEY_CLASS_ID = 2;
     static final int PORTABLE_VALUE_CLASS_ID = 3;
     private static final int PORTABLE_NESTED_CLASS_ID = 4;
 
@@ -143,7 +143,8 @@ public class SqlBasicTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initializeWithClient(2, memberConfig(), clientConfig());
+        initializeWithClientAndConfigSupplier(2,
+                () -> memberConfig(), clientConfig());
 
         member1 = instances()[0];
         member2 = instances()[1];
@@ -159,7 +160,8 @@ public class SqlBasicTest extends SqlTestSupport {
     @Test
     public void testSelect() {
         if (isPortable()) {
-            createMapping(mapName(), PORTABLE_FACTORY_ID, PORTABLE_KEY_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
+            createMapping(mapName(), PORTABLE_FACTORY_ID, PORTABLE_KEY_CLASS_ID,
+                    0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
         } else {
             createMapping(mapName(), keyClass(), valueClass());
         }

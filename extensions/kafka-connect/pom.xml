@@ -60,6 +60,26 @@
                     </filters>
                 </configuration>
             </plugin>
+            <!--version 1.7.1 is buggy and does not use the cache properly-->
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.7.1</version>
+                <executions>
+                    <execution>
+                        <id>download-zip-file</id>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://repository.hazelcast.com/download/tests/confluentinc-kafka-connect-datagen-0.6.0.zip</url>
+                            <unpack>false</unpack>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+
+            </plugin>
         </plugins>
     </build>
 
@@ -72,13 +92,11 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j2.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>${log4j2.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -90,7 +108,6 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>${mysql.connector.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -102,7 +119,7 @@
         <dependency>
             <groupId>com.couchbase.client</groupId>
             <artifactId>java-client</artifactId>
-            <version>3.4.6</version>
+            <version>3.4.11</version>
             <scope>test</scope>
         </dependency>
          <dependency>
@@ -115,9 +132,8 @@
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
             <!-- Driver 5.x requires JDK 17 -->
-            <version>4.4.11</version>
+            <version>4.4.12</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>

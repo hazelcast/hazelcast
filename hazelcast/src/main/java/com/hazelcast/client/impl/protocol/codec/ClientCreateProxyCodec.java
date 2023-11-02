@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a cluster-wide proxy with the given name and service.
  */
-@Generated("d7517f68287f70608a43e167ff93a1c5")
+@SuppressWarnings("unused")
+@Generated("45c72bd83cb61d53d10d8515611d8bee")
 public final class ClientCreateProxyCodec {
     //hex: 0x000400
     public static final int REQUEST_MESSAGE_TYPE = 1024;

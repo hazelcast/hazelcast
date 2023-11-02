@@ -152,6 +152,11 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
+    public void testDeleteAsync() {
+        map.deleteAsync(null);
+    }
+
+    @Test(expected = NullPointerException.class)
     public void testTryRemove() {
         map.tryRemove(null, 10, TimeUnit.MILLISECONDS);
     }

@@ -27,7 +27,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -406,14 +406,14 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
     }
 
     protected double calculateOverallSelectivity(long initialHits, double initialTotalSelectivityCount, IMap<?, ?>... maps) {
-        List<Indexes> allIndexes = new ArrayList<>();
+        List<IndexRegistry> allIndexes = new ArrayList<>();
         for (IMap<?, ?> map : maps) {
             allIndexes.addAll(getAllIndexes(map));
         }
 
         long totalHitCount = 0;
         double totalNormalizedHitCardinality = 0.0;
-        for (Indexes indexes : allIndexes) {
+        for (IndexRegistry indexes : allIndexes) {
             PerIndexStats perIndexStats = indexes.getIndex("this").getPerIndexStats();
             totalHitCount += perIndexStats.getHitCount();
             totalNormalizedHitCardinality += perIndexStats.getTotalNormalizedHitCardinality();
@@ -441,7 +441,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
                 InternalIndex index = ((MapProxyImpl<?, ?>) instance.getMap(mapName)).getService().getMapServiceContext()
-                        .getMapContainer(mapName).getIndexes().getIndex(INDEX_NAME);
+                        .getMapContainer(mapName).getGlobalIndexRegistry().getIndex(INDEX_NAME);
 
                 assertNotNull(index);
 

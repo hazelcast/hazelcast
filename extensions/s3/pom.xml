@@ -52,6 +52,16 @@
             </plugin>
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
+                <configuration>
+                    <filters combine.children="append">
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/MANIFEST.MF</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -61,7 +71,7 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
-                <version>2.20.80</version>
+                <version>2.21.13</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -86,13 +96,12 @@
             <groupId>com.adobe.testing</groupId>
             <artifactId>s3mock-testcontainers</artifactId>
             <!-- Remember to update tag in S3MockContainer constructor as well -->
-            <version>2.11.0</version>
+            <version>2.17.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j2.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

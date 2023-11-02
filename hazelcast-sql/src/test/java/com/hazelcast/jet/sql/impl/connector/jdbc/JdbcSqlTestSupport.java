@@ -185,6 +185,11 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
+    protected static void assertJdbcRowsAnyOrder(String tableName, List<Class<?>> columnType, Row... rows) {
+        List<Row> actualRows = jdbcRowsTable(tableName, columnType);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
+    }
+
     protected static void assertJdbcQueryRowsAnyOrder(String query, Row... rows) {
         List<Row> actualRows = jdbcRows(query);
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
@@ -194,28 +199,42 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         return jdbcRows("SELECT * FROM " + tableName);
     }
 
+    protected static List<Row> jdbcRowsTable(String tableName, List<Class<?>> columnType) {
+        return jdbcRows("SELECT * FROM " + tableName, columnType);
+    }
+
     @Nonnull
     protected static List<Row> jdbcRows(String query) {
         return jdbcRows(query, dbConnectionUrl);
     }
 
+    protected static List<Row> jdbcRows(String query, List<Class<?>> columnType) {
+        return jdbcRows(query, dbConnectionUrl, columnType);
+    }
+
     public static List<Row> jdbcRows(String query, String connectionUrl) {
+        return jdbcRows(query, connectionUrl, null);
+    }
+
+    public static List<Row> jdbcRows(String query, String connectionUrl, List<Class<?>> columnType) {
         List<Row> rows = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(connectionUrl);
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(query);
-            ResultSet resultSet = stmt.getResultSet();
+        try (Connection connection = DriverManager.getConnection(connectionUrl);
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
             while (resultSet.next()) {
                 Object[] values = new Object[resultSet.getMetaData().getColumnCount()];
                 for (int i = 0; i < values.length; i++) {
-                    values[i] = resultSet.getObject(i + 1);
+                    if (columnType == null) {
+                        values[i] = resultSet.getObject(i + 1);
+                    } else {
+                        values[i] = resultSet.getObject(i + 1, columnType.get(i));
+                    }
                 }
                 rows.add(new Row(values));
             }
             return rows;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        } catch (SQLException sqlException) {
+            throw new RuntimeException(sqlException);
         }
     }
 }

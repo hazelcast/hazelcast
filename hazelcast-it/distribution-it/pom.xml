@@ -13,11 +13,11 @@
 
     <properties>
         <jaxb.version>2.3.1</jaxb.version>
-        <jaxb-core.version>2.3.0.1</jaxb-core.version>
+        <jaxb-core.version>3.0.2</jaxb-core.version>
         <activation.version>1.1.1</activation.version>
         <hsqldb.version>2.7.2</hsqldb.version>
         <hibernate-core.version>5.3.7.Final</hibernate-core.version>
-        <hazelcast-hibernate53.version>5.0.0</hazelcast-hibernate53.version>
+        <hazelcast-hibernate53.version>5.1.0</hazelcast-hibernate53.version>
     </properties>
 
     <dependencies>
@@ -47,7 +47,6 @@
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
-            <version>${jaxb.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -66,7 +65,6 @@
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
             <version>${hsqldb.version}</version>
-            <classifier>jdk8</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -94,6 +92,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
+                <version>${maven.dependency.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>unpack</id>

@@ -80,8 +80,8 @@ import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.set
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.topicXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.wanReplicationXmlGenerator;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
-import static com.hazelcast.internal.util.StringUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.XmlUtil.format;
 import static java.util.Arrays.asList;
 
 /**
@@ -204,7 +204,7 @@ public class ConfigXmlGenerator {
         xml.append("</hazelcast>");
 
         String xmlString = xml.toString();
-        return formatted ? formatXml(xmlString, INDENT) : xmlString;
+        return formatted ? format(xmlString, INDENT) : xmlString;
     }
 
     private String getOrMaskValue(String value) {
@@ -275,7 +275,8 @@ public class ConfigXmlGenerator {
         }
 
         appendSecurityPermissions(gen, "client-permissions", c.getClientPermissionConfigs(),
-                "on-join-operation", c.getOnJoinPermissionOperation());
+                "on-join-operation", c.getOnJoinPermissionOperation(),
+                "priority-grant", c.isPermissionPriorityGrant());
         gen.close();
     }
 
@@ -417,34 +418,32 @@ public class ConfigXmlGenerator {
     private static void appendSecurityPermissions(XmlGenerator gen, String tag, Set<PermissionConfig> cpc, Object... attributes) {
         final List<PermissionConfig.PermissionType> clusterPermTypes = asList(ALL, CONFIG, TRANSACTION);
 
-        if (!cpc.isEmpty()) {
-            gen.open(tag, attributes);
-            for (PermissionConfig p : cpc) {
-                if (clusterPermTypes.contains(p.getType())) {
-                    gen.open(p.getType().getNodeName(), "principal", p.getPrincipal());
-                } else {
-                    gen.open(p.getType().getNodeName(), "principal", p.getPrincipal(), "name", p.getName());
-                }
+        gen.open(tag, attributes);
+        for (PermissionConfig p : cpc) {
+            if (clusterPermTypes.contains(p.getType())) {
+                gen.open(p.getType().getNodeName(), "principal", p.getPrincipal(), "deny", p.isDeny());
+            } else {
+                gen.open(p.getType().getNodeName(), "principal", p.getPrincipal(), "name", p.getName(), "deny", p.isDeny());
+            }
 
-                if (!p.getEndpoints().isEmpty()) {
-                    gen.open("endpoints");
-                    for (String endpoint : p.getEndpoints()) {
-                        gen.node("endpoint", endpoint);
-                    }
-                    gen.close();
+            if (!p.getEndpoints().isEmpty()) {
+                gen.open("endpoints");
+                for (String endpoint : p.getEndpoints()) {
+                    gen.node("endpoint", endpoint);
                 }
+                gen.close();
+            }
 
-                if (!p.getActions().isEmpty()) {
-                    gen.open("actions");
-                    for (String action : p.getActions()) {
-                        gen.node("action", action);
-                    }
-                    gen.close();
+            if (!p.getActions().isEmpty()) {
+                gen.open("actions");
+                for (String action : p.getActions()) {
+                    gen.node("action", action);
                 }
                 gen.close();
             }
             gen.close();
         }
+        gen.close();
     }
 
     private static void appendLoginModules(XmlGenerator gen, String tag, List<LoginModuleConfig> loginModuleConfigs) {

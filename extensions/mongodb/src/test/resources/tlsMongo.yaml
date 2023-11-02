@@ -1,0 +1,12 @@
+net:
+  bindIp: 0.0.0.0
+  tls:
+    mode: requireTLS
+    certificateKeyFile: "/data/ssl/key.pem"
+setParameter:
+  ocspEnabled: false
+systemLog:
+  verbosity: 1
+  component:
+    network:
+      verbosity: 2

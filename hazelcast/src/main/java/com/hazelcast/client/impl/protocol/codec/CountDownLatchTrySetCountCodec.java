@@ -38,7 +38,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the count is not zero, then this method does nothing
  * and returns false
  */
-@Generated("8330ef4be04b3bebe7034c4392468aaa")
+@SuppressWarnings("unused")
+@Generated("ab67642add6698c0212b7f0940f42873")
 public final class CountDownLatchTrySetCountCodec {
     //hex: 0x0B0100
     public static final int REQUEST_MESSAGE_TYPE = 721152;

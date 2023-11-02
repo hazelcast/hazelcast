@@ -22,15 +22,16 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY_PATH;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE_PATH;
@@ -40,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(JUnitParamsRunner.class)
 public class JoinerTest {
@@ -53,9 +55,16 @@ public class JoinerTest {
     @Mock
     private KvRowProjector.Supplier rightRowProjectorSupplier;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
+        openMocks = openMocks(this);
+    }
+
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
     }
 
     @SuppressWarnings("unused")

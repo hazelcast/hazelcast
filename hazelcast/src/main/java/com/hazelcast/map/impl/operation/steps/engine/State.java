@@ -33,7 +33,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
-import java.util.ArrayList;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static com.hazelcast.map.impl.record.Record.UNSET;
 
@@ -77,14 +78,14 @@ public class State {
     private volatile boolean triggerMapLoader;
     private volatile boolean shouldLoad;
     private volatile boolean changeExpiryOnUpdate = true;
-    private volatile boolean entryProcessorOffload;
+    private volatile boolean entryProcessorOffloadable;
     private volatile Object oldValue;
     private volatile Object newValue;
     private volatile Object result;
     private volatile Collection<Data> keysToLoad = Collections.emptyList();
     private volatile Map loadedKeyValuePairs = Collections.emptyMap();
     private volatile Collection<Data> keys;
-    private volatile ArrayList<Record> records;
+    private volatile List<Record> records;
     private volatile EntryProcessor entryProcessor;
     private volatile EntryOperator operator;
     private volatile List<State> toStore;
@@ -100,6 +101,7 @@ public class State {
     private volatile Queue<InternalIndex> notMarkedIndexes;
     private volatile Set keysFromIndex;
     private volatile Throwable throwable;
+    private volatile Consumer backupOpAfterRun;
 
     public State(RecordStore recordStore, MapOperation operation) {
         this.recordStore = recordStore;
@@ -202,12 +204,12 @@ public class State {
         return this;
     }
 
-    public boolean isEntryProcessorOffload() {
-        return entryProcessorOffload;
+    public boolean isEntryProcessorOffloadable() {
+        return entryProcessorOffloadable;
     }
 
-    public State setEntryProcessorOffload(boolean entryProcessorOffload) {
-        this.entryProcessorOffload = entryProcessorOffload;
+    public State setEntryProcessorOffloadable(boolean entryProcessorOffloadable) {
+        this.entryProcessorOffloadable = entryProcessorOffloadable;
         return this;
     }
 
@@ -327,7 +329,7 @@ public class State {
         return keys;
     }
 
-    public void setRecords(ArrayList<Record> records) {
+    public void setRecords(List<Record> records) {
         this.records = records;
     }
 
@@ -349,7 +351,7 @@ public class State {
         return loadedKeyValuePairs;
     }
 
-    public ArrayList<Record> getRecords() {
+    public List<Record> getRecords() {
         return records;
     }
 
@@ -499,5 +501,15 @@ public class State {
 
     public boolean isChangeExpiryOnUpdate() {
         return changeExpiryOnUpdate;
+    }
+
+    public State setBackupOpAfterRun(Consumer backupOpAfterRun) {
+        this.backupOpAfterRun = backupOpAfterRun;
+        return this;
+    }
+
+    @Nullable
+    public Consumer getBackupOpAfterRun() {
+        return backupOpAfterRun;
     }
 }

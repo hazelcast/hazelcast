@@ -31,7 +31,7 @@ import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
@@ -111,17 +111,31 @@ public class PartitionWideEntryOperation extends MapOperation
 
     @Override
     protected void runInternal() {
-        if (mapContainer.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE) {
+        if (isHDMap()) {
             runForNative();
         } else {
             runWithPartitionScan();
         }
     }
 
+    public boolean isTieredStoreMap() {
+        return mapContainer.getMapConfig()
+                .getTieredStoreConfig().isEnabled();
+    }
+
+    private boolean isHDMap() {
+        return mapContainer.getMapConfig()
+                .getInMemoryFormat() == InMemoryFormat.NATIVE;
+    }
+
     private void runForNative() {
-        if (runWithIndex()) {
+        // try run with partitioned index
+        if (!isTieredStoreMap()
+                && runWithPartitionedIndex()) {
             return;
         }
+
+        // as a fallback scan whole partition
         runWithPartitionScanForNative();
     }
 
@@ -129,7 +143,7 @@ public class PartitionWideEntryOperation extends MapOperation
      * @return {@code true} if index has been used and the EP
      * has been executed on its keys, {@code false} otherwise
      */
-    private boolean runWithIndex() {
+    private boolean runWithPartitionedIndex() {
         // here we try to query the partitioned-index
         Predicate predicate = getPredicate();
         if (predicate == null) {
@@ -137,8 +151,8 @@ public class PartitionWideEntryOperation extends MapOperation
         }
 
         // we use the partitioned-index to operate on the selected keys only
-        Indexes indexes = mapContainer.getIndexes(getPartitionId());
-        Iterable<QueryableEntry> entries = indexes.query(queryOptimizer.optimize(predicate, indexes), 1);
+        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(getPartitionId());
+        Iterable<QueryableEntry> entries = indexRegistry.query(queryOptimizer.optimize(predicate, indexRegistry), 1);
         if (entries == null) {
             return false;
         }

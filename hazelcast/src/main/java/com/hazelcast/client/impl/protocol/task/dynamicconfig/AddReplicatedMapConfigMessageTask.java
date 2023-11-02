@@ -27,6 +27,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 import java.util.ArrayList;
 
@@ -67,7 +68,7 @@ public class AddReplicatedMapConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "addReplicatedMapConfig";
+        return SecurityInterceptorConstants.ADD_REPLICATED_MAP_CONFIG;
     }
 
     @Override

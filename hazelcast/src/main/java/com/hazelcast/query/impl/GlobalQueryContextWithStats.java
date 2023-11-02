@@ -38,7 +38,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
     private final HashSet<QueryTrackingIndex> trackedIndexes = new HashSet<>(8);
 
     @Override
-    void attachTo(Indexes indexes, int ownedPartitionCount) {
+    void attachTo(IndexRegistry indexes, int ownedPartitionCount) {
         super.attachTo(indexes, ownedPartitionCount);
         for (QueryTrackingIndex trackedIndex : trackedIndexes) {
             trackedIndex.resetPerQueryStats();
@@ -55,16 +55,12 @@ public class GlobalQueryContextWithStats extends QueryContext {
 
     @Override
     public Index matchIndex(String pattern, IndexMatchHint matchHint) {
-        InternalIndex delegate = indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
+        InternalIndex delegate = indexRegistry.matchIndex(pattern, matchHint, ownedPartitionCount);
         if (delegate == null) {
             return null;
         }
 
-        QueryTrackingIndex trackingIndex = knownIndexes.get(pattern);
-        if (trackingIndex == null) {
-            trackingIndex = new QueryTrackingIndex();
-            knownIndexes.put(pattern, trackingIndex);
-        }
+        QueryTrackingIndex trackingIndex = knownIndexes.computeIfAbsent(pattern, x -> new QueryTrackingIndex());
 
         trackingIndex.attachTo(delegate);
         trackedIndexes.add(trackingIndex);
@@ -147,42 +143,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
-            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(descending);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
-            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(value);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending) {
-            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(comparison, value, descending);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getSqlRecordIterator(
-            Comparable from,
-            boolean fromInclusive,
-            Comparable to,
-            boolean toInclusive,
-            boolean descending
-        ) {
-            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(from, fromInclusive, to, toInclusive, descending);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
-            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(value);
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value, boolean descending) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(value, descending);
             hasQueries = true;
             return result;
         }

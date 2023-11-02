@@ -88,6 +88,7 @@ import java.util.stream.Collectors;
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
@@ -115,7 +116,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
@@ -222,7 +222,7 @@ public class MasterJobContext {
     /**
      * Creates exception with appropriate type for job cancellation.
      */
-    private Throwable createCancellationException() {
+    private RuntimeException createCancellationException() {
         return isUserInitiatedTermination() ? new CancellationByUserException() : new CancellationException();
     }
 
@@ -346,7 +346,7 @@ public class MasterJobContext {
         try {
             if (isCancelled()) {
                 logger.fine("Skipping init job '" + mc.jobName() + "': is already cancelled.");
-                throw new CancellationException();
+                throw createCancellationException();
             }
             if (mc.jobStatus() != NOT_RUNNING) {
                 logger.fine("Not starting job '" + mc.jobName() + "': status is " + mc.jobStatus());

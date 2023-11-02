@@ -169,6 +169,7 @@ abstract class MapProxySupport<K, V>
 
     /**
      * Defines the batch size for operations of {@link IMap#putAll(Map)} and {@link IMap#setAll(Map)} calls.
+     * This setting is ignored for async variants of those methods.
      * <p>
      * A value of {@code 0} disables the batching and will send a single operation per member with all map entries.
      * <p>
@@ -270,9 +271,9 @@ abstract class MapProxySupport<K, V>
     public void initialize() {
         initializeListeners();
         if (getNodeEngine().isStartCompleted()) {
-            initializeIndexes();
+            indexAllNodesData();
         } else {
-            initializeLocalIndexes();
+            indexLocalNodeData();
         }
         initializeMapStoreLoad();
     }
@@ -328,13 +329,13 @@ abstract class MapProxySupport<K, V>
         return null;
     }
 
-    private void initializeIndexes() {
+    private void indexAllNodesData() {
         for (IndexConfig index : mapConfig.getIndexConfigs()) {
             addIndex(index);
         }
     }
 
-    private void initializeLocalIndexes() {
+    private void indexLocalNodeData() {
         for (IndexConfig index : mapConfig.getIndexConfigs()) {
             addIndexInternal(index, true);
         }
@@ -716,7 +717,7 @@ abstract class MapProxySupport<K, V>
                         SERVICE_NAME,
                         operation,
                         partitionService.getPartitionIdSet(
-                            partitionPredicate.getPartitionKeys().stream().map(k -> toDataWithStrategy(k))
+                            partitionPredicate.getPartitionKeys().stream().map(this::toDataWithStrategy)
                         )
                 );
             } else {
@@ -739,6 +740,11 @@ abstract class MapProxySupport<K, V>
     protected InternalCompletableFuture<Data> removeAsyncInternal(Object key) {
         Data keyData = toDataWithStrategy(key);
         return invokeOperationAsync(key, operationProvider.createRemoveOperation(name, keyData));
+    }
+
+    protected InternalCompletableFuture<Data> deleteAsyncInternal(Object key) {
+        Data keyData = toDataWithStrategy(key);
+        return invokeOperationAsync(key, operationProvider.createDeleteOperation(name, keyData, false));
     }
 
     protected boolean containsKeyInternal(Object key) {
@@ -1017,7 +1023,7 @@ abstract class MapProxySupport<K, V>
                     long currentSize = ++counterPerMember[partitionId].value;
                     if (currentSize % putAllBatchSize == 0) {
                         List<Integer> partitions = memberPartitionsMap.get(addresses[partitionId]);
-                        invokePutAllOperation(addresses[partitionId], partitions, entriesPerPartition, triggerMapLoader)
+                        invokePutAllOperation(addresses[partitionId], partitions, entriesPerPartition, true, triggerMapLoader)
                                 .get();
                     }
                 }
@@ -1045,7 +1051,7 @@ abstract class MapProxySupport<K, V>
                 }
             };
             for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
-                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition, triggerMapLoader)
+                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition, useBatching, triggerMapLoader)
                         .whenCompleteAsync(callback, ConcurrencyUtil.getDefaultAsyncExecutor());
             }
             // if executing in sync mode, block for the responses
@@ -1062,6 +1068,7 @@ abstract class MapProxySupport<K, V>
             Address address,
             List<Integer> memberPartitions,
             MapEntries[] entriesPerPartition,
+            boolean useBatching,
             boolean triggerMapLoader
     ) {
         int size = memberPartitions.size();
@@ -1086,7 +1093,7 @@ abstract class MapProxySupport<K, V>
         long totalSize = 0;
         for (int partitionId : partitions) {
             int batchSize = entriesPerPartition[partitionId].size();
-            assert (putAllBatchSize == 0 || batchSize <= putAllBatchSize);
+            assert !useBatching || putAllBatchSize == 0 || batchSize <= putAllBatchSize;
             entries[index++] = entriesPerPartition[partitionId];
             totalSize += batchSize;
             entriesPerPartition[partitionId] = null;
@@ -1304,7 +1311,7 @@ abstract class MapProxySupport<K, V>
                         SERVICE_NAME,
                         operation,
                         partitionService.getPartitionIdSet(
-                            partitionPredicate.getPartitionKeys().stream().map(k -> toDataWithStrategy(k))
+                            partitionPredicate.getPartitionKeys().stream().map(this::toDataWithStrategy)
                         )
                 );
             } else {
@@ -1413,7 +1420,7 @@ abstract class MapProxySupport<K, V>
         if (predicate instanceof PartitionPredicate) {
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
             PartitionIdSet partitionIds = partitionService.getPartitionIdSet(
-                partitionPredicate.getPartitionKeys().stream().map(k -> toDataWithStrategy(k))
+                partitionPredicate.getPartitionKeys().stream().map(this::toDataWithStrategy)
             );
             final Target t = target;
             boolean allAlwaysFalsePredicate = partitionIds.stream().allMatch(

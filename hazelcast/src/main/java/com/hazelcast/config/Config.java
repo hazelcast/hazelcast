@@ -402,19 +402,23 @@ public class Config {
         checkTrue(properties != null, "properties can't be null");
 
         String path = configFile.getPath();
-        InputStream stream = new FileInputStream(configFile);
-        if (path.endsWith(".xml")) {
-            return applyEnvAndSystemVariableOverrides(
-                    new XmlConfigBuilder(stream).setProperties(properties).build().setConfigurationFile(configFile)
-            );
-        }
-        if (path.endsWith(".yaml") || path.endsWith(".yml")) {
-            return applyEnvAndSystemVariableOverrides(
-                    new YamlConfigBuilder(stream).setProperties(properties).build().setConfigurationFile(configFile)
-            );
-        }
+        try (InputStream stream = new FileInputStream(configFile)) {
+            final Config config;
 
-        throw new IllegalArgumentException("Unknown configuration file extension");
+            if (path.endsWith(".xml")) {
+                config = new XmlConfigBuilder(stream).setProperties(properties).build();
+            } else if (path.endsWith(".yaml") || path.endsWith(".yml")) {
+                config = new YamlConfigBuilder(stream).setProperties(properties).build();
+            } else {
+                throw new IllegalArgumentException("Unknown configuration file extension");
+            }
+
+            return applyEnvAndSystemVariableOverrides(config.setConfigurationFile(configFile));
+        } catch (FileNotFoundException e) {
+            throw e;
+        } catch (IOException e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
     }
 
     /**
@@ -2733,11 +2737,13 @@ public class Config {
 
     /**
      * Adds the device configuration.
+     * Removes the default device config if present.
      *
      * @param deviceConfig device config
      * @return this config instance
      */
     public Config addDeviceConfig(DeviceConfig deviceConfig) {
+        deviceConfigs.remove(DEFAULT_DEVICE_NAME);
         deviceConfigs.put(deviceConfig.getName(), deviceConfig);
         return this;
     }

@@ -20,6 +20,7 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapInterceptorAdaptor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationQueueImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationQueue;
@@ -202,36 +203,10 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
                 operationRunners, getClass().getClassLoader());
     }
 
-    private static class TestMapInterceptor implements MapInterceptor {
+    private static class TestMapInterceptor extends MapInterceptorAdaptor {
+        private static final long serialVersionUID = 1L;
 
         public final String id = TestMapInterceptor.class.toString();
-
-        @Override
-        public Object interceptGet(Object value) {
-            return null;
-        }
-
-        @Override
-        public void afterGet(Object value) {
-        }
-
-        @Override
-        public Object interceptPut(Object oldValue, Object newValue) {
-            return null;
-        }
-
-        @Override
-        public void afterPut(Object value) {
-        }
-
-        @Override
-        public Object interceptRemove(Object removedValue) {
-            return null;
-        }
-
-        @Override
-        public void afterRemove(Object value) {
-        }
 
         @Override
         public int hashCode() {

@@ -20,9 +20,9 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
@@ -58,7 +58,9 @@ public class EvictAllOperation extends MapOperation
     @Override
     public void afterRunInternal() {
         hintMapEvent();
-        invalidateAllKeysInNearCaches();
+        if (mapContainer != null) {
+            invalidateAllKeysInNearCaches();
+        }
     }
 
     private void hintMapEvent() {

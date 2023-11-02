@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Default data declarations for parsers.
+# Each of these may be overridden in a parser's config.fmpp file.
+# In addition, each parser must define "package" and "class".
 data: {
   parser: {
     # Generated parser implementation package and class name.
@@ -23,6 +26,7 @@ data: {
     imports: [
       "com.hazelcast.jet.sql.impl.parse.ParserResource"
       "com.hazelcast.jet.sql.impl.parse.SqlAlterJob"
+      "com.hazelcast.jet.sql.impl.parse.SqlAnalyzeStatement"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateDataConnection"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
@@ -54,22 +58,23 @@ data: {
     # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is
     # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
-      "CONNECTOR"
+      "ANALYZE"
       "CONNECTIONS"
+      "CONNECTOR"
       "IF"
       "INDEX"
       "JOB"
       "JOBS"
       "MAPPING"
       "MAPPINGS"
+      "RESOURCES"
       "RESUME"
-      "SINK"
       "SHARED"
+      "SINK"
       "SNAPSHOT"
       "SUSPEND"
-      "VIEWS"
       "TYPES"
-      "RESOURCES"
+      "VIEWS"
     ]
 
     # List of keywords from "keywords" section that are not reserved.
@@ -128,8 +133,14 @@ data: {
       "CURSOR_NAME"
       "DATA"
       "DATABASE"
+      "DATE_DIFF"
+      "DATE_TRUNC"
+      "DATETIME_DIFF"
       "DATETIME_INTERVAL_CODE"
       "DATETIME_INTERVAL_PRECISION"
+      "DATETIME_TRUNC"
+      "DAYOFWEEK"
+      "DAYOFYEAR"
       "DAYS"
       "DECADE"
       "DEFAULTS"
@@ -248,6 +259,8 @@ data: {
       "PASSTHROUGH"
       "PAST"
       "PATH"
+      "PERCENTILE_CONT"
+      "PERCENTILE_DISC"
       "PIVOT"
       "PLACING"
       "PLAN"
@@ -258,6 +271,7 @@ data: {
       "PRIVILEGES"
       "PUBLIC"
       "QUARTER"
+      "QUARTERS"
       "READ"
       "RELATIVE"
       "REPEATABLE"
@@ -359,8 +373,12 @@ data: {
       "TABLE_NAME"
       "TEMPORARY"
       "TIES"
+      "TIME_DIFF"
+      "TIME_TRUNC"
       "TIMESTAMPADD"
       "TIMESTAMPDIFF"
+      "TIMESTAMP_DIFF"
+      "TIMESTAMP_TRUNC"
       "TOP_LEVEL_COUNT"
       "TRANSACTION"
       "TRANSACTIONS_ACTIVE"
@@ -390,6 +408,7 @@ data: {
       "VERSION"
       "VIEW"
       "WEEK"
+      "WEEKS"
       "WORK"
       "WRAPPER"
       "WRITE"
@@ -398,20 +417,21 @@ data: {
       "ZONE"
 
       # added by Hazelcast
+      "ANALYZE"
       "CONNECTOR"
       "EXTERNAL"
       "JOB"
       "JOBS"
       "MAPPING"
       "MAPPINGS"
+      "RESOURCES"
       "RESUME"
+      "SHARED"
       "SINK"
       "SNAPSHOT"
-      "SHARED"
       "SUSPEND"
-      "VIEWS"
       "TYPES"
-      "RESOURCES"
+      "VIEWS"
     ]
 
     # List of non-reserved keywords to add;
@@ -434,6 +454,7 @@ data: {
     # Example: "SqlShowDatabases()", "SqlShowTables()".
     statementParserMethods: [
       "SqlAlterJob()"
+      "SqlAnalyzeStatement()"
       "SqlExplainStatement()"
       "SqlExtendedInsert()"
       "SqlShowStatement()"
@@ -490,6 +511,12 @@ data: {
       "SqlDropView"
     ]
 
+    # List of methods for parsing extensions to "TRUNCATE" calls.
+    # Each must accept arguments "(SqlParserPos pos)".
+    # Example: "SqlTruncate".
+    truncateStatementParserMethods: [
+    ]
+
     # Binary operators tokens.
     # Example: "< INFIX_CAST: \"::\" >".
     binaryOperatorsTokens: [
@@ -509,10 +536,15 @@ data: {
       "parserImpls.ftl"
     ]
 
+    # Custom identifier token.
+    # Example: "< IDENTIFIER: (<LETTER>|<DIGIT>)+ >".
+    customIdentifierToken: ""
+
     includePosixOperators: false
     includeCompoundIdentifier: true
     includeBraces: true
     includeAdditionalDeclarations: false
+    includeParsingStringLiteralAsArrayLiteral: false
   }
 }
 

@@ -23,6 +23,9 @@ import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListener
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
+import com.hazelcast.security.SecurityInterceptorConstants;
 
 import java.security.Permission;
 import java.util.UUID;
@@ -70,12 +73,12 @@ public class CacheRemovePartitionLostListenerMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(parameters.name, ActionConstants.ACTION_LISTEN);
     }
 
     @Override
     public String getMethodName() {
-        return "removeCachePartitionLostListener";
+        return SecurityInterceptorConstants.REMOVE_PARTITION_LOST_LISTENER;
     }
 
 }

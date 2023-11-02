@@ -996,7 +996,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         // To initialize backupMap when itemQueue has items,
         // we first nullify backupMap.
         Queue<QueueItem> itemQueue = this.itemQueue;
-        if (!CollectionUtil.isEmpty(itemQueue)
+        if (CollectionUtil.isNotEmpty(itemQueue)
                 && MapUtil.isNullOrEmpty(backupMap)) {
             backupMap = null;
         }

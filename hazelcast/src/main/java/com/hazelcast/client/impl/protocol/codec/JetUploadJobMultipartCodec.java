@@ -35,7 +35,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("d4dcbb8be4a3b5c1c96869fff8cfeb32")
+@SuppressWarnings("unused")
+@Generated("2f6d87ebbcd8af77ae458502bd40b34c")
 public final class JetUploadJobMultipartCodec {
     //hex: 0xFE1200
     public static final int REQUEST_MESSAGE_TYPE = 16650752;

@@ -204,7 +204,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         instance().getJet().newJob(p).join();
 
         // Then
-        assertEquals(text + System.getProperty("line.separator"), new String(Files.readAllBytes(onlyFile), charset));
+        assertEquals(text + System.getProperty("line.separator"), Files.readString(onlyFile, charset));
     }
 
     @Test
@@ -261,7 +261,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
             Path file = directory.resolve(String.format("%03d-0", i));
             assertTrueEventually(() -> assertTrue("file not found: " + file, Files.exists(file)), 5);
             assertTrueEventually(() ->
-                    assertEquals(stringValue, new String(Files.readAllBytes(file), StandardCharsets.UTF_8)), 5);
+                    assertEquals(stringValue, Files.readString(file)), 5);
             clock.incrementAndGet();
         }
 
@@ -311,7 +311,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         for (int i = 0, j = 100; i < numItems / 2; i++) {
             Path file = directory.resolve("0-" + i);
             assertEquals((j++) + System.lineSeparator() + (j++) + System.lineSeparator(),
-                    new String(Files.readAllBytes(file)));
+                    Files.readString(file));
         }
 
         job.join();
@@ -328,11 +328,13 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         // When
         instance().getJet().newJob(p).join();
 
+        List<String> lines;
         // Then
-        List<String> lines = Files
-                .list(directory)
-                .flatMap(file -> uncheckCall(() -> Files.readAllLines(file).stream()))
-                .collect(Collectors.toList());
+        try (Stream<Path> list = Files.list(directory)) {
+            lines = list
+                    .flatMap(file -> uncheckCall(() -> Files.readAllLines(file).stream()))
+                    .collect(Collectors.toList());
+        }
         assertEquals(1, lines.size());
         TestPerson actual = JSON.std.beanFrom(TestPerson.class, lines.get(0));
         assertEquals(testPerson, actual);
@@ -460,7 +462,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
             job.restart(graceful);
             try {
                 checkFileContents(0, numItems, exactlyOnce, true, false);
-                // if content matches, break the loop. Otherwise restart and try again
+                // if content matches, break the loop. Otherwise, restart and try again
                 break;
             } catch (AssertionError ignored) {
             }
@@ -475,21 +477,23 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
     private void checkFileContents(int numFrom, int numTo, boolean exactlyOnce, boolean ignoreTempFiles,
                                    boolean assertSorted
     ) throws Exception {
-        List<Integer> actual = Files.list(directory)
-                                    .peek(f -> {
-                                        if (!ignoreTempFiles && f.getFileName().toString().endsWith(TEMP_FILE_SUFFIX)) {
-                                            throw new IllegalArgumentException("Temp file found: " + f);
-                                        }
-                                    })
-                                    .filter(f -> !f.toString().endsWith(TEMP_FILE_SUFFIX))
-                                    // sort by sequence number, if there is one
-                                    .sorted(Comparator.comparing(f -> f.getFileName().toString().length() == 1 ? 0
-                                            : Integer.parseInt(f.getFileName().toString().substring(2))))
-                                    .flatMap(file -> uncheckCall(() -> Files.readAllLines(file).stream()))
-                                    .map(Integer::parseInt)
-                                    .sorted(assertSorted ? (l, r) -> 0 : Comparator.naturalOrder())
-                                    .collect(Collectors.toList());
-
+        List<Integer> actual;
+        try (Stream<Path> list = Files.list(directory)) {
+            actual = list
+                    .peek(f -> {
+                        if (!ignoreTempFiles && f.getFileName().toString().endsWith(TEMP_FILE_SUFFIX)) {
+                            throw new IllegalArgumentException("Temp file found: " + f);
+                        }
+                    })
+                    .filter(f -> !f.toString().endsWith(TEMP_FILE_SUFFIX))
+                    // sort by sequence number, if there is one
+                    .sorted(Comparator.comparing(f -> f.getFileName().toString().length() == 1 ? 0
+                            : Integer.parseInt(f.getFileName().toString().substring(2))))
+                    .flatMap(file -> uncheckCall(() -> Files.readAllLines(file).stream()))
+                    .map(Integer::parseInt)
+                    .sorted(assertSorted ? (l, r) -> 0 : Comparator.naturalOrder())
+                    .collect(Collectors.toList());
+        }
         if (exactlyOnce) {
             String expectedStr = IntStream.range(numFrom, numTo).mapToObj(Integer::toString).collect(joining("\n"));
             String actualStr = actual.stream().map(Object::toString).collect(joining("\n"));
@@ -517,7 +521,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
     }
 
     private static Iterable<Integer> rangeIterable(int itemsFrom, int itemsTo) {
-        return (Iterable<Integer> & Serializable) () -> new Iterator<Integer>() {
+        return (Iterable<Integer> & Serializable) () -> new Iterator<>() {
             int val = itemsFrom;
 
             @Override

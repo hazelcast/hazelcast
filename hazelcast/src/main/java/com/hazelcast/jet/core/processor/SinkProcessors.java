@@ -37,12 +37,12 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.spi.annotation.Beta;
+import jakarta.jms.Connection;
+import jakarta.jms.Message;
+import jakarta.jms.Session;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.jms.Connection;
-import javax.jms.Message;
-import javax.jms.Session;
 import javax.sql.CommonDataSource;
 import java.io.BufferedWriter;
 import java.nio.charset.Charset;
