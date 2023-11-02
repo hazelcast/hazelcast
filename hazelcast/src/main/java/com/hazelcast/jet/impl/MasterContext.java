@@ -220,7 +220,10 @@ public class MasterContext implements DynamicMetricsProvider {
     /**
      * Dynamic metrics are only provided for {@link JmxPublisher}. They are ignored by
      * {@link JobMetricsPublisher}, which checks execution ID, and so not persistent.
-     * Persistent metrics are generated on demand by {@link MasterJobContext#setJobMetrics}.
+     * Persistent metrics are generated on demand by {@link MasterJobContext#setJobMetrics}
+     * and {@link MasterJobContext#setFinalExecutionMetrics}.
+     *
+     * @see MasterJobContext#persistentMetrics()
      */
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {

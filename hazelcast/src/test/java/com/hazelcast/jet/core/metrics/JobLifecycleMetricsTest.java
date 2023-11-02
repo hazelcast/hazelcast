@@ -173,6 +173,29 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     }
 
     @Test
+    public void jobSuspendedThenCancelled() {
+        //init
+        Job job = hzInstances[0].getJet().newJob(streamingPipeline(), JOB_CONFIG_WITH_METRICS);
+        assertJobStatusEventually(job, RUNNING);
+
+        //when
+        job.suspend();
+        assertJobStatusEventually(job, SUSPENDED);
+
+        //then
+        assertTrueEventually(() -> assertJobStatusMetric(job, SUSPENDED));
+        assertTrueEventually(() -> assertJobStats(1, 1, 1, 0, 0));
+
+        //when
+        job.cancel();
+        assertJobStatusEventually(job, FAILED);
+
+        //then
+        assertTrueEventually(() -> assertJobStatusMetric(job, FAILED, true));
+        assertTrueEventually(() -> assertJobStats(1, 1, 1, 0, 1));
+    }
+
+    @Test
     public void jobFailed() {
         //init
         Job job = hzInstances[0].getJet().newJob(failingPipeline(), JOB_CONFIG_WITH_METRICS);

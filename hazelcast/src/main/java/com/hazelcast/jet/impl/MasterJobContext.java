@@ -150,9 +150,9 @@ public class MasterJobContext {
     private volatile Set<Vertex> vertices;
     private volatile boolean verticesCompleted;
 
-    /** Execution-level metrics. */
+    /** Execution-level metrics. Available after the job finishes. */
     @Nonnull
-    private volatile List<RawJobMetrics> executionMetrics = emptyList();
+    private volatile List<RawJobMetrics> finalExecutionMetrics = emptyList();
 
     /** Job-level metrics. Nonnull iff metrics are enabled. */
     private volatile RawJobMetrics jobMetrics;
@@ -704,8 +704,7 @@ public class MasterJobContext {
             error = new IllegalStateException("Job coordination failed");
         }
 
-        setJobMetrics(error == null ? COMPLETED : FAILED);
-        setExecutionMetrics(responses.stream()
+        setFinalExecutionMetrics(responses.stream()
                 .filter(e -> e.getValue() instanceof RawJobMetrics)
                 .map(e -> (RawJobMetrics) e.getValue())
                 .collect(toList()));
@@ -867,10 +866,10 @@ public class MasterJobContext {
         sb.append("Execution of ").append(mc.jobIdString()).append(' ').append(conclusion);
         sb.append("\n\t").append("Start time: ").append(Util.toLocalDateTime(executionStartTime));
         sb.append("\n\t").append("Duration: ").append(formatJobDuration(completionTime - executionStartTime));
-        if (executionMetrics().stream().noneMatch(rjm -> rjm.getBlob() != null)) {
+        if (finalExecutionMetrics.stream().noneMatch(rjm -> rjm.getBlob() != null)) {
             sb.append("\n\tTo see additional job metrics enable JobConfig.storeMetricsAfterJobCompletion");
         } else {
-            JobMetrics jobMetrics = JobMetricsUtil.toJobMetrics(executionMetrics());
+            JobMetrics jobMetrics = JobMetricsUtil.toJobMetrics(finalExecutionMetrics);
 
             Map<String, Long> receivedCounts = mergeByVertex(jobMetrics.get(MetricNames.RECEIVED_COUNT));
             Map<String, Long> emittedCounts = mergeByVertex(jobMetrics.get(MetricNames.EMITTED_COUNT));
@@ -1020,29 +1019,50 @@ public class MasterJobContext {
     }
 
     /**
-     * Aggregated job and execution metrics.
+     * Returns aggregated job and execution metrics.
+     *
+     * @implNote
+     * {@linkplain JobCoordinationService#completeJob When terminal metrics are requested},
+     * job and execution metrics must have already been collected, for which there are two
+     * code paths. In both cases, the same coordinator thread follows the given flow before
+     * requesting the terminal metrics. <ol type=a>
+     * <li> If the job is not suspended before termination: <ol>
+     *      <li> {@link JobExecutionService#beginExecution0}: Collection of terminal execution
+     *           metrics is triggered.
+     *      <li> {@link #onStartExecutionComplete} → <ol type=i>
+     *           <li> {@link #setFinalExecutionMetrics}: Terminal execution metrics are saved.
+     *           <li> {@link #finalizeExecution} → {@link MasterContext#setJobStatus} →
+     *                {@link #setJobMetrics}: Terminal job metrics are saved. </ol></ol>
+     * <li> If the job is suspended before termination: <ol>
+     *      <li> Terminal execution metrics are already collected when suspending the job.
+     *      <li> {@link #requestTermination} → {@link MasterContext#setJobStatus} →
+     *           {@link #setJobMetrics}: Terminal job metrics are saved. </ol></ol>
+     *
+     * @see MasterContext#provideDynamicMetrics
      */
-    List<RawJobMetrics> metrics() {
+    List<RawJobMetrics> persistentMetrics() {
         if (!mc.metricsEnabled()) {
             return emptyList();
         }
-        List<RawJobMetrics> currentExecutionMetrics = executionMetrics;
-        List<RawJobMetrics> metrics = new ArrayList<>(currentExecutionMetrics.size() + 1);
-        metrics.add(jobMetrics);
-        metrics.addAll(currentExecutionMetrics);
+        return withJobMetrics(finalExecutionMetrics);
+    }
+
+    /**
+     * Enriches execution metrics with job metrics if any.
+     */
+    @Nonnull
+    private List<RawJobMetrics> withJobMetrics(@Nonnull List<RawJobMetrics> executionMetrics) {
+        List<RawJobMetrics> metrics = new ArrayList<>(executionMetrics.size() + 1);
+        if (jobMetrics != null) {
+            // It is initialized in the constructor, but due to instruction reordering, it can be null.
+            metrics.add(jobMetrics);
+        }
+        metrics.addAll(executionMetrics);
         return metrics;
     }
 
     /**
-     * Generates persistent job-specific metrics —currently only job status.
-     *
-     * @param status the advertised status
-     * @implNote
-     * Since {@linkplain JobExecutionService#beginExecution0 terminal metrics are collected}
-     * before {@linkplain #finalizeExecution execution is finalized}, the last reported job
-     * status is not terminal. It is also not possible to infer terminal metrics collection
-     * cycle, so that the correct status is advertised. As a solution, the job status metric
-     * is generated on demand.
+     * Generates persistent job metrics —currently only job status.
      *
      * @see MasterContext#provideDynamicMetrics
      */
@@ -1055,14 +1075,12 @@ public class MasterJobContext {
         jobMetrics = RawJobMetrics.of(compressor.getBlobAndClose());
     }
 
-    @Nonnull
-    List<RawJobMetrics> executionMetrics() {
-        return executionMetrics;
-    }
-
-    private void setExecutionMetrics(@Nonnull List<RawJobMetrics> executionMetrics) {
+    private void setFinalExecutionMetrics(@Nonnull List<RawJobMetrics> executionMetrics) {
+        if (!mc.metricsEnabled()) {
+            return;
+        }
         assert executionMetrics.stream().allMatch(Objects::nonNull) : "responses=" + executionMetrics;
-        this.executionMetrics = executionMetrics;
+        finalExecutionMetrics = executionMetrics;
     }
 
     void collectMetrics(CompletableFuture<List<RawJobMetrics>> clientFuture) {
@@ -1076,7 +1094,7 @@ public class MasterJobContext {
                     false
             );
         } else {
-            clientFuture.complete(metrics());
+            clientFuture.complete(persistentMetrics());
         }
     }
 
@@ -1100,8 +1118,7 @@ public class MasterJobContext {
         if (firstThrowable != null) {
             clientFuture.completeExceptionally(firstThrowable);
         } else {
-            setExecutionMetrics(toList(metrics, e -> (RawJobMetrics) e.getValue()));
-            clientFuture.complete(metrics());
+            clientFuture.complete(withJobMetrics(toList(metrics, e -> (RawJobMetrics) e.getValue())));
         }
     }
 

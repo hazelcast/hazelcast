@@ -1112,7 +1112,7 @@ public class JobCoordinationService implements DynamicMetricsProvider {
             // the order of operations is important.
             List<RawJobMetrics> jobMetrics =
                     masterContext.jobConfig().isStoreMetricsAfterJobCompletion()
-                            ? masterContext.jobContext().metrics()
+                            ? masterContext.jobContext().persistentMetrics()
                             : null;
             jobRepository.completeJob(masterContext, jobMetrics, error, completionTime, userCancelled);
             if (removeMasterContext(masterContext)) {
