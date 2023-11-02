@@ -25,6 +25,8 @@ import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroDeserializer;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroSerializer;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -84,8 +86,10 @@ import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
@@ -149,19 +153,19 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         clientProperties = useSchemaRegistry
                 ? ImmutableMap.of("schema.registry.url", kafkaTestSupport.getSchemaRegistryURI().toString())
                 : ImmutableMap.of(OPTION_KEY_AVRO_SCHEMA, keySchema.toString(),
-                                  OPTION_VALUE_AVRO_SCHEMA, valueSchema.toString());
+                OPTION_VALUE_AVRO_SCHEMA, valueSchema.toString());
         kafkaTestSupport.setProducerProperties(name, clientProperties);
 
         return mapping = new SqlMapping(name, KafkaSqlConnector.TYPE_NAME)
                 .options(OPTION_KEY_FORMAT, AVRO_FORMAT,
-                         OPTION_VALUE_FORMAT, AVRO_FORMAT,
-                         "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
-                         "auto.offset.reset", "earliest")
+                        OPTION_VALUE_FORMAT, AVRO_FORMAT,
+                        "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
+                        "auto.offset.reset", "earliest")
                 .optionsIf(useSchemaRegistry,
-                           "schema.registry.url", kafkaTestSupport.getSchemaRegistryURI())
+                        "schema.registry.url", kafkaTestSupport.getSchemaRegistryURI())
                 .optionsIf(!useSchemaRegistry,
-                           OPTION_KEY_AVRO_SCHEMA, keySchema,
-                           OPTION_VALUE_AVRO_SCHEMA, valueSchema);
+                        OPTION_KEY_AVRO_SCHEMA, keySchema,
+                        OPTION_VALUE_AVRO_SCHEMA, valueSchema);
     }
 
     @Test
@@ -336,6 +340,37 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
         assertThatThrownBy(() -> insertRecord(6, Long.MAX_VALUE)).hasMessageContaining(
                 "Not in union [\"null\",\"boolean\",\"int\"]: " + Long.MAX_VALUE + " (Long) (field=info)");
+    }
+
+    @Test
+    public void when_createAvroMapping_then_keyAndValueAreAvailableInInfoSchema() {
+        assumeFalse(useSchemaRegistry);
+        String name = createRandomTopic();
+        kafkaMapping(name, ID_SCHEMA, NAME_SCHEMA)
+                .fields("id BIGINT EXTERNAL NAME \"__key.id\"", "name VARCHAR")
+                .create();
+
+        String query = "SELECT * FROM information_schema.mappings";
+        try (SqlResult result = sqlService.execute(query)) {
+            SqlRow row = result.stream().findFirst().orElseThrow();
+            assertNotNull(row);
+
+            // Destructure the row: it must contain "catalog", "schema", "name", "external name", "type", "options"
+            assertEquals("hazelcast", row.getObject(0));
+            assertEquals("public", row.getObject(1));
+            assertEquals(name, row.getObject(2));
+            assertEquals('"' + name + '"', row.getObject(3));
+            assertEquals(KafkaSqlConnector.TYPE_NAME, row.getObject(4));
+
+            String options = row.getObject(5);
+            assertNotNull(options);
+            // Ensure that the options contain avro schema key and value
+            assertThat(options)
+                    .contains("keyFormat\":\"avro\"")
+                    .contains("valueFormat\":\"avro\"")
+                    .contains("keyAvroSchema\":")
+                    .contains("valueAvroSchema\":");
+        }
     }
 
     @Test
@@ -650,9 +685,9 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 .fields("key_name VARCHAR EXTERNAL NAME \"__key.name\"",
                         "value_name VARCHAR EXTERNAL NAME \"this.name\"")
                 .options("key.serializer", serializerClass.getCanonicalName(),
-                         "key.deserializer", deserializerClass.getCanonicalName(),
-                         "value.serializer", serializerClass.getCanonicalName(),
-                         "value.deserializer", deserializerClass.getCanonicalName())
+                        "key.deserializer", deserializerClass.getCanonicalName(),
+                        "value.serializer", serializerClass.getCanonicalName(),
+                        "value.deserializer", deserializerClass.getCanonicalName())
                 .create();
 
         insertAndAssertRecord("Alice", "Bob");
@@ -666,7 +701,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 .fields("__key INT",
                         "field1 VARCHAR")
                 .options(OPTION_KEY_FORMAT, JAVA_FORMAT,
-                         OPTION_KEY_CLASS, Integer.class.getCanonicalName())
+                        OPTION_KEY_CLASS, Integer.class.getCanonicalName())
                 .create();
 
         insertRecord(42, "foo");
