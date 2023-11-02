@@ -121,7 +121,6 @@ import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -151,13 +150,14 @@ public class MasterJobContext {
     private volatile Set<Vertex> vertices;
     private volatile boolean verticesCompleted;
 
-    /**
-     * The first element contains job-specific metrics.
-     * The other elements contain execution-specific metrics per member.
-     */
+    /** Execution-level metrics. */
     @Nonnull
-    private final List<RawJobMetrics> metrics = new ArrayList<>(singletonList(RawJobMetrics.empty()));
-    private final MetricDescriptor metricDescriptor;
+    private volatile List<RawJobMetrics> executionMetrics = emptyList();
+
+    /** Job-level metrics. Nonnull iff metrics are enabled. */
+    private volatile RawJobMetrics jobMetrics;
+
+    private final MetricDescriptor statusMetricDescriptor;
 
     /**
      * A new instance is (re)assigned when the execution is started and
@@ -196,11 +196,14 @@ public class MasterJobContext {
         defaultParallelism = mc.getJetServiceBackend().getJetConfig().getCooperativeThreadCount();
         defaultQueueSize = mc.getJetServiceBackend().getJetConfig()
                 .getDefaultEdgeConfig().getQueueSize();
-        metricDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER.get()
+        statusMetricDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER.get()
                 .withTag(MetricTags.JOB, mc.jobIdString())
                 .withTag(MetricTags.JOB_NAME, mc.jobName())
                 .withMetric(MetricNames.JOB_STATUS)
                 .withUnit(ProbeUnit.ENUM);
+
+        // Set initial status metrics
+        setJobMetrics(mc.jobStatus());
     }
 
     public CompletableFuture<Void> jobCompletionFuture() {
@@ -1018,9 +1021,15 @@ public class MasterJobContext {
 
     /**
      * Aggregated job and execution metrics.
-     * @see #metrics
      */
     List<RawJobMetrics> metrics() {
+        if (!mc.metricsEnabled()) {
+            return emptyList();
+        }
+        List<RawJobMetrics> currentExecutionMetrics = executionMetrics;
+        List<RawJobMetrics> metrics = new ArrayList<>(currentExecutionMetrics.size() + 1);
+        metrics.add(jobMetrics);
+        metrics.addAll(currentExecutionMetrics);
         return metrics;
     }
 
@@ -1042,18 +1051,18 @@ public class MasterJobContext {
             return;
         }
         MetricsCompressor compressor = new MetricsCompressor();
-        compressor.addLong(metricDescriptor, status.getId());
-        metrics.set(0, RawJobMetrics.of(compressor.getBlobAndClose()));
+        compressor.addLong(statusMetricDescriptor, status.getId());
+        jobMetrics = RawJobMetrics.of(compressor.getBlobAndClose());
     }
 
+    @Nonnull
     List<RawJobMetrics> executionMetrics() {
-        return metrics.subList(1, metrics.size());
+        return executionMetrics;
     }
 
-    private void setExecutionMetrics(List<RawJobMetrics> executionMetrics) {
+    private void setExecutionMetrics(@Nonnull List<RawJobMetrics> executionMetrics) {
         assert executionMetrics.stream().allMatch(Objects::nonNull) : "responses=" + executionMetrics;
-        metrics.subList(1, metrics.size()).clear();
-        metrics.addAll(1, executionMetrics);
+        this.executionMetrics = executionMetrics;
     }
 
     void collectMetrics(CompletableFuture<List<RawJobMetrics>> clientFuture) {
@@ -1067,7 +1076,7 @@ public class MasterJobContext {
                     false
             );
         } else {
-            clientFuture.complete(metrics);
+            clientFuture.complete(metrics());
         }
     }
 
@@ -1092,7 +1101,7 @@ public class MasterJobContext {
             clientFuture.completeExceptionally(firstThrowable);
         } else {
             setExecutionMetrics(toList(metrics, e -> (RawJobMetrics) e.getValue()));
-            clientFuture.complete(this.metrics);
+            clientFuture.complete(metrics());
         }
     }
 

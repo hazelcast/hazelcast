@@ -166,12 +166,11 @@ public class MasterContext implements DynamicMetricsProvider {
     void setJobStatus(JobStatus jobStatus, String description, boolean userRequested) {
         JobStatus oldStatus = this.jobStatus;
         this.jobStatus = jobStatus;
+        // Update metrics before notifying listeners, so that they can see up-to-date metrics.
+        jobContext.setJobMetrics(jobStatus);
         jobEventService.publishEvent(jobId, oldStatus, jobStatus, description, userRequested);
         if (jobStatus.isTerminal()) {
             jobEventService.removeAllEventListeners(jobId);
-        }
-        if (metricsEnabled()) {
-            jobContext.setJobMetrics(jobStatus);
         }
     }
 

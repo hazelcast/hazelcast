@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core.metrics;
 
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
@@ -195,8 +196,9 @@ public final class MetricNames {
     public static final String DISTRIBUTED_BYTES_OUT = "distributedBytesOut";
 
     /**
-     * Ordinal of {@linkplain JobStatus the job's status}.
+     * {@linkplain JobStatus#getId() Numerical ID} of the job's status.
      *
+     * @see Job#getStatus()
      * @since 5.4
      */
     public static final String JOB_STATUS = "status";
