@@ -52,13 +52,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven.failsafe.plugin.version}</version>
-                <configuration combine.children="append">
-                    <!--
-                    Failsafe uses the jar, but the main artifact, we shade the dependencies into a jar with jar-with-dependencies classifier
-                    Moreover this parameter name is really confusing.
-                    -->
-                    <classesDirectory>${project.build.directory}/${project.artifactId}-${project.version}-jar-with-dependencies.jar</classesDirectory>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -71,7 +64,8 @@
                         <goals>
                             <goal>shade</goal>
                         </goals>
-                        <configuration>
+                        <configuration combine.children="override">
+                            <shadedClassifierName />
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.calcite</pattern>

@@ -81,7 +81,6 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-sql</artifactId>
             <version>${project.parent.version}</version>
-            <scope>provided</scope>
         </dependency>
 
         <!--
@@ -165,7 +164,6 @@
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-mongodb</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>
