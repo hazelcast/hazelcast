@@ -112,7 +112,8 @@ public interface Traverser<T> {
      */
     @Nonnull
     @CheckReturnValue
-    default <R> AutoCloseableTraverser<R> flatMapAutoCloseable(@Nonnull Function<? super T, ? extends AutoCloseableTraverser<R>> flatMapFn) {
+    default <R> AutoCloseableTraverser<R> flatMapAutoCloseable(
+            @Nonnull Function<? super T, ? extends AutoCloseableTraverser<R>> flatMapFn) {
         return new FlatMappingAutoCloseableTraverser<>(this, flatMapFn);
     }
 

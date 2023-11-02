@@ -40,7 +40,8 @@ public class FlatMappingAutoCloseableTraverser<T, R> implements AutoCloseableTra
     private final Function<? super T, ? extends AutoCloseableTraverser<? extends R>> mapper;
     private AutoCloseableTraverser<? extends R> currentTraverser = AutoCloseableTraversers.emptyAutoCloseableTraverser();
 
-    public FlatMappingAutoCloseableTraverser(Traverser<T> wrapped, Function<? super T, ? extends AutoCloseableTraverser<? extends R>> mapper) {
+    public FlatMappingAutoCloseableTraverser(Traverser<T> wrapped,
+                                             Function<? super T, ? extends AutoCloseableTraverser<? extends R>> mapper) {
         this.wrapped = wrapped;
         this.mapper = mapper;
     }
