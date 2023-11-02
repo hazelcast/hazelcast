@@ -18,6 +18,8 @@ package com.hazelcast.cp;
 
 import com.hazelcast.core.DistributedObject;
 
+import javax.annotation.Nonnull;
+
 /**
  * CPMap is a key-value store within CP. It can be accessed via {@link CPSubsystem#getMap(String)}.
  * @param <K> Key
@@ -35,7 +37,7 @@ public interface CPMap<K, V> extends DistributedObject {
      * @return null if [key] had no previous mapping, otherwise the previous value associated with [key]
      * @throws IllegalArgumentException when [key] is null
      */
-    V put(K key, V value);
+    V put(@Nonnull K key, V value);
 
     /**
      * Associates [key] with [value].
@@ -48,7 +50,7 @@ public interface CPMap<K, V> extends DistributedObject {
      * @param value Value of the entry
      * @throws IllegalArgumentException when [key] is null
      */
-    void set(K key, V value);
+    void set(@Nonnull K key, V value);
 
     /**
      * Removes [key] if present.
@@ -56,14 +58,14 @@ public interface CPMap<K, V> extends DistributedObject {
      * @return null if [key] was not present, otherwise the value associated with [key]
      * @throws IllegalArgumentException when [key] is null
      */
-    V remove(K key);
+    V remove(@Nonnull K key);
 
     /**
      * Removes [key] if present.
      * @param key non-null key of the key-value entry to remove
      * @throws IllegalArgumentException when [key] is null
      */
-    void delete(K key);
+    void delete(@Nonnull K key);
 
     /**
      * Indivisibly sets [key] to [newValue] if the current value for [key] is equal-to [expectedValue].
@@ -73,7 +75,7 @@ public interface CPMap<K, V> extends DistributedObject {
      * @return true if [key] was associated with [newValue], otherwise false
      * @throws IllegalArgumentException when [key] is null
      */
-    boolean compareAndSet(K key, V expectedValue, V newValue);
+    boolean compareAndSet(@Nonnull K key, V expectedValue, V newValue);
 
     /**
      * Gets the value associated with [key]
@@ -81,5 +83,5 @@ public interface CPMap<K, V> extends DistributedObject {
      * @return null if [key] had no association, otherwise the value associated with [key].
      * @throws IllegalArgumentException when [key] is null
      */
-    V get(K key);
+    V get(@Nonnull K key);
 }
