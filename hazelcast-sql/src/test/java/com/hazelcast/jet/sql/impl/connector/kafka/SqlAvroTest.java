@@ -74,7 +74,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVR
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroSchemaEvolutionTest.NAME_SSN_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.OBJECT_SCHEMA;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.optionalField;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.optional;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.copyOfRange;
@@ -501,8 +501,8 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
             for (Schema fieldSchema : schemaFieldTypes) {
                 Schema.Type schemaFieldType = fieldSchema.getType();
-                Schema valueSchema = optionalField("info", fieldSchema)
-                        .apply(SchemaBuilder.record("jet.sql").fields())
+                Schema valueSchema = SchemaBuilder.record("jet.sql").fields()
+                        .name("info").type(optional(fieldSchema)).withDefault(null)
                         .endRecord();
                 Consumer<String> createKafkaMapping = name ->
                         kafkaMapping(name, ID_SCHEMA, valueSchema)

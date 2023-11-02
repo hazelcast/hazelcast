@@ -29,14 +29,12 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
-import org.apache.avro.SchemaBuilder.FieldAssembler;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.reduce;
@@ -54,6 +52,9 @@ import static com.hazelcast.jet.sql.impl.inject.AvroUpsertTarget.CONVERSION_PREF
 import static com.hazelcast.sql.impl.type.converter.Converters.getConverter;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.avro.Schema.Type.NULL;
+import static org.apache.avro.Schema.Type.RECORD;
+import static org.apache.avro.Schema.Type.UNION;
 
 public final class KvMetadataAvroResolver implements KvMetadataResolver {
 
@@ -178,7 +179,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                             ? resolveSchema(field.type().getObjectTypeName(),
                                     field.type().getObjectFields().stream().map(Field::new))
                             : Schemas.OBJECT_SCHEMA;
-                    return optionalField(field.name(), fieldSchema).apply(schema);
+                    return schema.name(field.name()).type(optional(fieldSchema)).withDefault(null);
                 default:
                     throw new IllegalArgumentException("Unsupported type: " + field.type());
             }
@@ -186,7 +187,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
     }
 
     private static void validate(Schema schema, List<Field> fields) {
-        if (schema.getType() != Schema.Type.RECORD) {
+        if (schema.getType() != RECORD) {
             throw new IllegalArgumentException("Schema must be an Avro record");
         }
         Set<String> mappingFields = fields.stream().map(Field::name).collect(toSet());
@@ -203,8 +204,8 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
 
             List<Schema.Type> conversions = mappingFieldTypeFamily == QueryDataTypeFamily.OBJECT
                     ? mappingFieldType.isCustomType()
-                            ? List.of(Schema.Type.RECORD)  // Unwrapped, so does not include NULL
-                            : List.of(Schema.Type.UNION, Schema.Type.NULL)  // Ordinary OBJECT can be mapped to NULL
+                            ? List.of(RECORD)  // Unwrapped, so does not include NULL
+                            : List.of(UNION, NULL)  // Ordinary OBJECT can be mapped to NULL
                     : Schemas.CONVERSIONS.get(mappingFieldTypeFamily);
             if (conversions == null) {
                 throw new IllegalArgumentException("Unsupported type: " + mappingFieldType);
@@ -234,10 +235,22 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                 .orElseGet(() -> inlineSchema(options, isKey));
     }
 
-    public static UnaryOperator<FieldAssembler<Schema>> optionalField(String name, Schema schema) {
-        return schema.isNullable()
-                ? builder -> builder.name(name).type(schema).withDefault(null)
-                : builder -> builder.name(name).type().optional().type(schema);
+    /**
+     * A field is <em>nullable</em> if it can be set to null. A nullable field is
+     * <em>optional</em> if it can have null default value, which is only possible if
+     * its type is {@code NULL} or a {@code UNION} with {@code NULL} as the first element.
+     */
+    public static Schema optional(Schema schema) {
+        if (schema.getType() == UNION) {
+            return schema.getTypes().get(0).getType() == NULL ? schema
+                    : reduce(
+                            SchemaBuilder.unionOf().nullType(),
+                            schema.getTypes().stream().filter(type -> type.getType() != NULL),
+                            (union, type) -> union.and().type(type)
+                    ).endUnion();
+        }
+        return schema.getType() == NULL ? schema
+                : SchemaBuilder.unionOf().nullType().and().type(schema).endUnion();
     }
 
     public static Schema inlineSchema(Map<String, String> options, boolean isKey) {
