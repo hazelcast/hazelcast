@@ -149,10 +149,9 @@ public class CPSubsystemImpl implements CPSubsystem {
         return context.getListenerService().deregisterListener(id);
     }
 
-    @Nonnull
     @Override
     public <K, V> CPMap<K, V> getMap(@Nonnull String name) {
-        throw new UnsupportedOperationException("client has no support for CPMap yet");
+        throw new UnsupportedOperationException();
     }
 
     private static class CPMembershipEventHandler extends CPSubsystemAddMembershipListenerCodec.AbstractEventHandler
