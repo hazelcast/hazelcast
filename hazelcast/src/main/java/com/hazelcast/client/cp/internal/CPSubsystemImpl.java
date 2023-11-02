@@ -148,7 +148,6 @@ public class CPSubsystemImpl implements CPSubsystem {
         return context.getListenerService().deregisterListener(id);
     }
 
-    @Nonnull
     @Override
     public <K, V> CPMap<K, V> getMap(@Nonnull String name) {
         throw new UnsupportedOperationException();

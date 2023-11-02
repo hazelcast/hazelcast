@@ -564,6 +564,7 @@ public interface CPSubsystem {
      * @return Proxy for {@link CPMap}
      * @param <K> Key type of the map
      * @param <V> Value type of the map
+     * @since 5.4
      */
     @Nonnull
     <K, V> CPMap<K, V> getMap(@Nonnull String name);
