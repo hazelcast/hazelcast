@@ -67,7 +67,7 @@ public abstract class ConfigMessageTaskTest {
 
         when(mockNode.getClientEngine()).thenReturn(mockClientEngine);
         when(mockNode.getConfig()).thenReturn(new Config());
-        when(mockNode.getLogger(any(Class.class))).thenReturn(Logger.getLogger(AddMapConfigMessageTaskTest.class));
+        when(mockNode.getLogger(any(Class.class))).thenReturn(Logger.getLogger(getClass()));
         when(mockNode.getNodeExtension()).thenReturn(mockNodeExtension);
         when(mockNode.getNodeEngine()).thenReturn(mockNodeEngineImpl);
 
