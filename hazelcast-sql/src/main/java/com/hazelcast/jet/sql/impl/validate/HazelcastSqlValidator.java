@@ -82,8 +82,6 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
-import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.extractHzObjectType;
-import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isHzObjectType;
 import static org.apache.calcite.sql.JoinType.FULL;
 import static org.apache.calcite.sql.SqlKind.AS;
 import static org.apache.calcite.sql.SqlKind.COLLECTION_TABLE;
@@ -232,8 +230,8 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
         for (final RelDataTypeField field : type.getFieldList()) {
             final RelDataType fieldType = field.getType();
-            if (isHzObjectType(fieldType)
-                    && containsCycles(extractHzObjectType(fieldType), discovered)) {
+            if (fieldType instanceof HazelcastObjectType
+                    && containsCycles((HazelcastObjectType) fieldType, discovered)) {
                 return true;
             }
         }
@@ -355,11 +353,11 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
         for (final RelDataTypeField field : rowType.getFieldList()) {
             final RelDataType fieldType = field.getType();
-            if (!isHzObjectType(fieldType)) {
+            if (!(fieldType instanceof HazelcastObjectType)) {
                 continue;
             }
 
-            if (containsCycles(extractHzObjectType(fieldType), new HashSet<>())) {
+            if (containsCycles((HazelcastObjectType) fieldType, new HashSet<>())) {
                 throw QueryException.error("Upserts are not supported for cyclic data type columns");
             }
         }
