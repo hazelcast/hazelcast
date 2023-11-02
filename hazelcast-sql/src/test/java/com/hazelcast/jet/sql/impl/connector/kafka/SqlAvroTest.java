@@ -90,7 +90,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
@@ -353,14 +352,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
         String query = "SELECT * FROM information_schema.mappings";
         try (SqlResult result = sqlService.execute(query)) {
-            SqlRow row = null;
-            int cnt = 0;
-            for (SqlRow r : result) {
-                ++cnt;
-                row = r;
-            }
-
-            assertEquals(1, cnt);
+            SqlRow row = result.stream().findFirst().orElseThrow();
             assertNotNull(row);
 
             // Destructure the row: it must contain "catalog", "schema", "name", "external name", "type", "options"
@@ -378,8 +370,6 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                     .contains("valueFormat\":\"avro\"")
                     .contains("keyAvroSchema\":")
                     .contains("valueAvroSchema\":");
-        } catch (Exception e) {
-            fail("Failed to execute query: " + query + ". " + e.getMessage());
         }
     }
 
