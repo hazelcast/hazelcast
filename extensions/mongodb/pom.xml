@@ -64,8 +64,7 @@
                         <goals>
                             <goal>shade</goal>
                         </goals>
-                        <configuration combine.children="override">
-                            <shadedClassifierName />
+                        <configuration>
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.calcite</pattern>
