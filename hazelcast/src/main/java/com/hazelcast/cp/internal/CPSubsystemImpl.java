@@ -171,7 +171,7 @@ public class CPSubsystemImpl implements CPSubsystem {
     @Nonnull
     @Override
     public <K, V> CPMap<K, V> getMap(@Nonnull String name) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("CPMap is not supported in Open Source");
     }
 
     private static class CPSubsystemManagementServiceImpl implements CPSubsystemManagementService {
