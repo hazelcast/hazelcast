@@ -40,6 +40,7 @@ import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
@@ -50,6 +51,7 @@ import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -301,8 +303,8 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
     }
 
     private void assertEmptyJobMetrics(Job job, boolean saved) {
-        assertTrue("Should have been empty, but contained: " + job.getMetrics().metrics(),
-                job.getMetrics().metrics().isEmpty());
+        Set<String> metrics = job.getMetrics().metrics();
+        assertThat(metrics).as("Should have been empty, but contained: %s", metrics).isEmpty();
         assertEquals(saved, hz().getMap(JobRepository.JOB_METRICS_MAP_NAME).containsKey(job.getId()));
     }
 

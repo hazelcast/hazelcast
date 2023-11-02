@@ -19,7 +19,6 @@ package com.hazelcast.jet.core.metrics;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
@@ -48,6 +47,8 @@ import static com.hazelcast.jet.core.TestProcessors.ListSource;
 import static com.hazelcast.jet.core.TestProcessors.MockP;
 import static com.hazelcast.jet.core.TestProcessors.MockPMS;
 import static com.hazelcast.jet.core.TestProcessors.MockPS;
+import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -157,8 +158,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     @Test
     public void jobCancelled() {
         //init
-        Job job = hzInstances[0].getJet().newJob(streamingPipeline(),
-                new JobConfig().setStoreMetricsAfterJobCompletion(true));
+        Job job = hzInstances[0].getJet().newJob(streamingPipeline(), JOB_CONFIG_WITH_METRICS);
         assertJobStatusEventually(job, RUNNING);
 
         assertTrueEventually(() -> assertJobStats(1, 1, 0, 0, 0));
@@ -173,9 +173,21 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     }
 
     @Test
+    public void jobFailed() {
+        //init
+        Job job = hzInstances[0].getJet().newJob(failingPipeline(), JOB_CONFIG_WITH_METRICS);
+
+        //when
+        assertThatThrownBy(job::join).hasRootCauseInstanceOf(ArithmeticException.class);
+
+        //then
+        assertTrueEventually(() -> assertJobStatusMetric(job, FAILED));
+        assertTrueEventually(() -> assertJobStats(1, 1, 1, 0, 1));
+    }
+
+    @Test
     public void executionRelatedMetrics() {
-        Job job = hzInstances[0].getJet().newJob(batchPipeline(),
-                new JobConfig().setStoreMetricsAfterJobCompletion(true));
+        Job job = hzInstances[0].getJet().newJob(batchPipeline(), JOB_CONFIG_WITH_METRICS);
         job.join();
         assertTrueEventually(() -> assertJobStatusMetric(job, COMPLETED));
 
@@ -188,6 +200,15 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(1, 2, 3))
          .writeTo(Sinks.logger());
+        return p;
+    }
+
+    private Pipeline failingPipeline() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(1, 2, 3))
+                // cause runtime error
+                .map(i -> 5 / (i - 2))
+                .writeTo(Sinks.logger());
         return p;
     }
 
