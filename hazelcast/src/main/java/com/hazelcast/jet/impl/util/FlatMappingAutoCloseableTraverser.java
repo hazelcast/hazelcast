@@ -16,20 +16,20 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.jet.AutoCloseableTraversers;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Traversers;
 
 import java.util.function.Function;
 
 /**
- * A flat-mapping decorator over a traverser.
+ * Same as {@link FlatMappingTraverser}. This traverser will close the current traverser
  */
-public class FlatMappingTraverser<T, R> implements Traverser<R> {
+public class FlatMappingAutoCloseableTraverser<T, R> implements AutoCloseableTraverser<R> {
 
     // Do not replace with lambda as we rely on the NULL_TRAVERSER to be our
     // own unique instance, which is not guaranteed with lambda.
     @SuppressWarnings("Convert2Lambda")
-    private static final Traverser NULL_TRAVERSER = new Traverser() {
+    private static final AutoCloseableTraverser NULL_TRAVERSER = new AutoCloseableTraverser() {
         @Override
         public Object next() {
             return null;
@@ -37,10 +37,10 @@ public class FlatMappingTraverser<T, R> implements Traverser<R> {
     };
 
     private final Traverser<T> wrapped;
-    private final Function<? super T, ? extends Traverser<? extends R>> mapper;
-    private Traverser<? extends R> currentTraverser = Traversers.empty();
+    private final Function<? super T, ? extends AutoCloseableTraverser<? extends R>> mapper;
+    private AutoCloseableTraverser<? extends R> currentTraverser = AutoCloseableTraversers.emptyAutoCloseableTraverser();
 
-    public FlatMappingTraverser(Traverser<T> wrapped, Function<? super T, ? extends Traverser<? extends R>> mapper) {
+    public FlatMappingAutoCloseableTraverser(Traverser<T> wrapped, Function<? super T, ? extends AutoCloseableTraverser<? extends R>> mapper) {
         this.wrapped = wrapped;
         this.mapper = mapper;
     }
@@ -58,8 +58,15 @@ public class FlatMappingTraverser<T, R> implements Traverser<R> {
     }
 
     @SuppressWarnings("unchecked")
-    private Traverser<? extends R> nextTraverser() {
+    private AutoCloseableTraverser<? extends R> nextTraverser() {
         final T t = wrapped.next();
         return t != null ? mapper.apply(t) : NULL_TRAVERSER;
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (currentTraverser != NULL_TRAVERSER) {
+            currentTraverser.close();
+        }
     }
 }

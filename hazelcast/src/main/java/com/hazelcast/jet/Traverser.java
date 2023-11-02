@@ -17,6 +17,8 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.core.AppendableTraverser;
+import com.hazelcast.jet.impl.util.AutoCloseableTraverser;
+import com.hazelcast.jet.impl.util.FlatMappingAutoCloseableTraverser;
 import com.hazelcast.jet.impl.util.FlatMappingTraverser;
 
 import javax.annotation.CheckReturnValue;
@@ -43,7 +45,7 @@ import java.util.function.Predicate;
  * @since Jet 3.0
  */
 @FunctionalInterface
-public interface Traverser<T> extends AutoCloseable {
+public interface Traverser<T> {
 
     /**
      * Returns the next item, removing it from this traverser. If no item is
@@ -52,13 +54,6 @@ public interface Traverser<T> extends AutoCloseable {
      * {@code null} forever. Otherwise, trying again later may produce one.
      */
     T next();
-
-    /**
-     * Close the traverser
-     */
-    @Override
-    default void close() throws Exception {
-    }
 
     /**
      * Returns a traverser that will emit the results of applying {@code
@@ -110,6 +105,15 @@ public interface Traverser<T> extends AutoCloseable {
     @CheckReturnValue
     default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<R>> flatMapFn) {
         return new FlatMappingTraverser<>(this, flatMapFn);
+    }
+
+    /**
+     * Same as {{@link #flatMap(Function)}}. The returned traverser will close the internal traverser
+     */
+    @Nonnull
+    @CheckReturnValue
+    default <R> AutoCloseableTraverser<R> flatMapAutoCloseable(@Nonnull Function<? super T, ? extends AutoCloseableTraverser<R>> flatMapFn) {
+        return new FlatMappingAutoCloseableTraverser<>(this, flatMapFn);
     }
 
     /**

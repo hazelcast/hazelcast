@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.impl.util.AutoCloseableTraverser;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.processor.TransformBatchedP;
+import com.hazelcast.jet.impl.processor.TransformBatchedAutoCloseableP;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -78,14 +78,14 @@ abstract class AbstractJoinProcessorSupplier
         // Return a collection having count number of Processors
         return IntStream.range(0, count)
                 // The processor is not cooperative due to blocking in joinRows
-                .mapToObj(i -> new TransformBatchedP<>(this::joinRows).setCooperative(false)).
+                .mapToObj(i -> new TransformBatchedAutoCloseableP<>(this::joinRows).setCooperative(false)).
                 collect(toList());
     }
 
     /**
      * Return a Traverser that processes given rows
      */
-    protected abstract Traverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows);
+    protected abstract AutoCloseableTraverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows);
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {

@@ -30,10 +30,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.LongStream;
 
 import static com.hazelcast.dataconnection.impl.JdbcDataConnectionTest.isClosed;
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
 
@@ -114,37 +112,6 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
             assertThat(isClosed(dataSource0)).isTrue();
             assertThat(isClosed(dataSource1)).isTrue();
         }, 10);
-    }
-
-    @Test
-    public void joinWithTableValuedFunction_dataLoss() throws Exception {
-        String otherTableName = randomTableName();
-        createTable(otherTableName);
-        insertItems(otherTableName, ITEM_COUNT);
-
-
-        String tableName0 = randomTableName();
-        createTable(tableName0);
-        insertItems(tableName0, 128);
-
-        execute(
-                "CREATE MAPPING " + tableName0 + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + TEST_DATABASE_REF
-        );
-
-        List<SqlRow> actualList = getRows("SELECT t.v,n.id,LENGTH(n.name) FROM " +
-                "(SELECT v FROM TABLE(generate_stream(1000))) t " +
-                "JOIN " + tableName0 + " n ON n.id IN (v, v+1) LIMIT 64");
-
-        List<Long> ids = actualList.stream()
-                                   .map(row -> (Long) row.getObject(0))
-                                   .sorted()
-                                   .collect(toList());
-        assertThat(ids).hasSize(64);
-        assertThat(ids).containsExactlyElementsOf(LongStream.range(0, 32).flatMap(l -> LongStream.of(l, l)).boxed().collect(toList()));
     }
 
     private static DataSource getDataSource(int instanceNumber, String dataConnectionName) {

@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.AutoCloseableTraversers;
 import com.hazelcast.jet.Traversers;
+import com.hazelcast.jet.impl.util.AutoCloseableTraverser;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.jdbc.join.FullScanEmptyResultSetMapper;
 import com.hazelcast.jet.sql.impl.connector.jdbc.join.FullScanResultSetIterator;
@@ -56,9 +57,9 @@ public class JdbcJoinFullScanProcessorSupplier
         this.projections = projections;
     }
 
-    protected Traverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows) {
+    protected AutoCloseableTraverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows) {
         return Traversers.traverseIterable(leftRows)
-                  .flatMap(jetSqlRow -> Traversers.traverseIterator(joinRow(jetSqlRow)));
+                  .flatMapAutoCloseable(jetSqlRow -> AutoCloseableTraversers.traverseAutoCloseableIterator(joinRow(jetSqlRow)));
     }
 
     private FullScanResultSetIterator<JetSqlRow> joinRow(JetSqlRow leftRow) {

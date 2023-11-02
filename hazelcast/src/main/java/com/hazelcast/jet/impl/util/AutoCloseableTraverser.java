@@ -14,11 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.pipeline.file.impl;
+package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.jet.Traverser;
 
-import java.io.Closeable;
+/**
+ * Same as {@link Traverser}. This traverser can be closed
+ *
+ * @param <T>
+ */
+@FunctionalInterface
+public interface AutoCloseableTraverser<T> extends Traverser<T>, AutoCloseable {
 
-public interface FileTraverser<R> extends Traverser<R>, Closeable {
+    @Override
+    default void close() throws Exception {
+    }
 }

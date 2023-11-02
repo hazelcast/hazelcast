@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.impl.util.AutoCloseableTraverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Inbox;
 
@@ -24,22 +24,17 @@ import javax.annotation.Nonnull;
 import java.util.function.Function;
 
 /**
- * Processor which exploits natural batching of {@link Inbox} items. For
- * each received batch of items it emits all the items from the traverser
- * returned by the given itemList-to-traverser function.
- *
- * @param <T> received item type
- * @param <R> emitted item type
+ * Same as {@link TransformBatchedP}. This processor will close the internal traverser
  */
-public class TransformBatchedP<T, R> extends AbstractProcessor {
+public class TransformBatchedAutoCloseableP<T, R> extends AbstractProcessor {
 
-    private final Function<? super Iterable<T>, ? extends Traverser<? extends R>> mapper;
+    private final Function<? super Iterable<T>, ? extends AutoCloseableTraverser<? extends R>> mapper;
 
-    private Traverser<? extends R> outputTraverser;
+    private AutoCloseableTraverser<? extends R> outputTraverser;
 
     private boolean isCooperative = true;
 
-    public TransformBatchedP(Function<? super Iterable<T>, ? extends Traverser<? extends R>> mapper) {
+    public TransformBatchedAutoCloseableP(Function<? super Iterable<T>, ? extends AutoCloseableTraverser<? extends R>> mapper) {
         this.mapper = mapper;
     }
 
@@ -48,7 +43,7 @@ public class TransformBatchedP<T, R> extends AbstractProcessor {
         return isCooperative;
     }
 
-    public TransformBatchedP<T, R> setCooperative(boolean cooperative) {
+    public TransformBatchedAutoCloseableP<T, R> setCooperative(boolean cooperative) {
         isCooperative = cooperative;
         return this;
     }
@@ -62,12 +57,28 @@ public class TransformBatchedP<T, R> extends AbstractProcessor {
 
         if (emitFromTraverser(outputTraverser)) {
             inbox.clear();
-            outputTraverser = null;
+            closeTraverser();
         }
+    }
+
+    @Override
+    public void close() throws Exception {
+        closeTraverser();
     }
 
     @Override
     public boolean closeIsCooperative() {
         return true;
     }
+
+    private void closeTraverser() {
+        if (outputTraverser != null) {
+            try {
+                outputTraverser.close();
+            } catch (Exception ignored) {
+            }
+            outputTraverser = null;
+        }
+    }
+
 }
