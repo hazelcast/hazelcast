@@ -28,8 +28,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -46,6 +44,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
+@SuppressWarnings("unused")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCompatibilityTest_2_6 {
@@ -53,15 +52,15 @@ public class ClientCompatibilityTest_2_6 {
 
     @Before
     public void setUp() throws IOException {
-        File file = new File(getClass().getResource("/2.6.protocol.compatibility.binary").getFile());
-        InputStream inputStream = new FileInputStream(file);
-        byte[] data = new byte[(int) file.length()];
-        inputStream.read(data);
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        ClientMessageReader reader = new ClientMessageReader(0);
-        while (reader.readFrom(buffer, true)) {
-            clientMessages.add(reader.getClientMessage());
-            reader.reset();
+        try (InputStream inputStream = getClass().getResourceAsStream("/2.6.protocol.compatibility.binary")) {
+            assert inputStream != null;
+            byte[] data = inputStream.readAllBytes();
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            ClientMessageReader reader = new ClientMessageReader(0);
+            while (reader.readFrom(buffer, true)) {
+                clientMessages.add(reader.getClientMessage());
+                reader.reset();
+            }
         }
     }
 
@@ -86,6 +85,8 @@ public class ClientCompatibilityTest_2_6 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertFalse(parameters.isTpcPortsExists);
+        assertFalse(parameters.isTpcTokenExists);
     }
 
     @Test
@@ -109,6 +110,8 @@ public class ClientCompatibilityTest_2_6 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertFalse(parameters.isTpcPortsExists);
+        assertFalse(parameters.isTpcTokenExists);
     }
 
     @Test
@@ -6831,10 +6834,11 @@ public class ClientCompatibilityTest_2_6 {
 
     private static class CPSubsystemAddGroupAvailabilityListenerCodecHandler extends CPSubsystemAddGroupAvailabilityListenerCodec.AbstractEventHandler {
         @Override
-        public void handleGroupAvailabilityEventEvent(com.hazelcast.cp.internal.RaftGroupId groupId, java.util.Collection<com.hazelcast.cp.CPMember> members, java.util.Collection<com.hazelcast.cp.CPMember> unavailableMembers) {
+        public void handleGroupAvailabilityEventEvent(com.hazelcast.cp.internal.RaftGroupId groupId, java.util.Collection<com.hazelcast.cp.CPMember> members, java.util.Collection<com.hazelcast.cp.CPMember> unavailableMembers, boolean isIsShutdownExists, boolean isShutdown) {
             assertTrue(isEqual(aRaftGroupId, groupId));
             assertTrue(isEqual(aListOfCpMembers, members));
             assertTrue(isEqual(aListOfCpMembers, unavailableMembers));
+            assertFalse(isIsShutdownExists);
         }
     }
 
@@ -6862,71 +6866,8 @@ public class ClientCompatibilityTest_2_6 {
     }
 
     @Test
-    public void test_ExperimentalAuthenticationCodec_encodeRequest() {
-        int fileClientMessageIndex = 871;
-        ClientMessage encoded = ExperimentalAuthenticationCodec.encodeRequest(aString, aString, aString, aUUID, aString, aByte, aString, aString, aListOfStrings);
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_ExperimentalAuthenticationCodec_decodeResponse() {
-        int fileClientMessageIndex = 872;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ExperimentalAuthenticationCodec.ResponseParameters parameters = ExperimentalAuthenticationCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aByte, parameters.status));
-        assertTrue(isEqual(anAddress, parameters.address));
-        assertTrue(isEqual(aUUID, parameters.memberUuid));
-        assertTrue(isEqual(aByte, parameters.serializationVersion));
-        assertTrue(isEqual(aString, parameters.serverHazelcastVersion));
-        assertTrue(isEqual(anInt, parameters.partitionCount));
-        assertTrue(isEqual(aUUID, parameters.clusterId));
-        assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertTrue(isEqual(aListOfIntegers, parameters.tpcPorts));
-        assertTrue(isEqual(aByteArray, parameters.tpcToken));
-    }
-
-    @Test
-    public void test_ExperimentalAuthenticationCustomCodec_encodeRequest() {
-        int fileClientMessageIndex = 873;
-        ClientMessage encoded = ExperimentalAuthenticationCustomCodec.encodeRequest(aString, aByteArray, aUUID, aString, aByte, aString, aString, aListOfStrings);
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_ExperimentalAuthenticationCustomCodec_decodeResponse() {
-        int fileClientMessageIndex = 874;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ExperimentalAuthenticationCustomCodec.ResponseParameters parameters = ExperimentalAuthenticationCustomCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aByte, parameters.status));
-        assertTrue(isEqual(anAddress, parameters.address));
-        assertTrue(isEqual(aUUID, parameters.memberUuid));
-        assertTrue(isEqual(aByte, parameters.serializationVersion));
-        assertTrue(isEqual(aString, parameters.serverHazelcastVersion));
-        assertTrue(isEqual(anInt, parameters.partitionCount));
-        assertTrue(isEqual(aUUID, parameters.clusterId));
-        assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertTrue(isEqual(aListOfIntegers, parameters.tpcPorts));
-        assertTrue(isEqual(aByteArray, parameters.tpcToken));
-    }
-
-    @Test
-    public void test_ExperimentalTpcAuthenticationCodec_encodeRequest() {
-        int fileClientMessageIndex = 875;
-        ClientMessage encoded = ExperimentalTpcAuthenticationCodec.encodeRequest(aUUID, aByteArray);
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_ExperimentalTpcAuthenticationCodec_decodeResponse() {
-        int fileClientMessageIndex = 876;
-    }
-
-    @Test
     public void test_JetSubmitJobCodec_encodeRequest() {
-        int fileClientMessageIndex = 877;
+        int fileClientMessageIndex = 871;
         ClientMessage encoded = JetSubmitJobCodec.encodeRequest(aLong, aData, aData, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6934,12 +6875,12 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetSubmitJobCodec_decodeResponse() {
-        int fileClientMessageIndex = 878;
+        int fileClientMessageIndex = 872;
     }
 
     @Test
     public void test_JetTerminateJobCodec_encodeRequest() {
-        int fileClientMessageIndex = 879;
+        int fileClientMessageIndex = 873;
         ClientMessage encoded = JetTerminateJobCodec.encodeRequest(aLong, anInt, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6947,12 +6888,12 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetTerminateJobCodec_decodeResponse() {
-        int fileClientMessageIndex = 880;
+        int fileClientMessageIndex = 874;
     }
 
     @Test
     public void test_JetGetJobStatusCodec_encodeRequest() {
-        int fileClientMessageIndex = 881;
+        int fileClientMessageIndex = 875;
         ClientMessage encoded = JetGetJobStatusCodec.encodeRequest(aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6960,14 +6901,14 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetGetJobStatusCodec_decodeResponse() {
-        int fileClientMessageIndex = 882;
+        int fileClientMessageIndex = 876;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(anInt, JetGetJobStatusCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_JetGetJobIdsCodec_encodeRequest() {
-        int fileClientMessageIndex = 883;
+        int fileClientMessageIndex = 877;
         ClientMessage encoded = JetGetJobIdsCodec.encodeRequest(aString, aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6975,7 +6916,7 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetGetJobIdsCodec_decodeResponse() {
-        int fileClientMessageIndex = 884;
+        int fileClientMessageIndex = 878;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetGetJobIdsCodec.ResponseParameters parameters = JetGetJobIdsCodec.decodeResponse(fromFile);
         assertTrue(parameters.isResponseExists);
@@ -6984,7 +6925,7 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetJoinSubmittedJobCodec_encodeRequest() {
-        int fileClientMessageIndex = 885;
+        int fileClientMessageIndex = 879;
         ClientMessage encoded = JetJoinSubmittedJobCodec.encodeRequest(aLong, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6992,12 +6933,12 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetJoinSubmittedJobCodec_decodeResponse() {
-        int fileClientMessageIndex = 886;
+        int fileClientMessageIndex = 880;
     }
 
     @Test
     public void test_JetGetJobSubmissionTimeCodec_encodeRequest() {
-        int fileClientMessageIndex = 887;
+        int fileClientMessageIndex = 881;
         ClientMessage encoded = JetGetJobSubmissionTimeCodec.encodeRequest(aLong, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7005,14 +6946,14 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetGetJobSubmissionTimeCodec_decodeResponse() {
-        int fileClientMessageIndex = 888;
+        int fileClientMessageIndex = 882;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aLong, JetGetJobSubmissionTimeCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_JetGetJobConfigCodec_encodeRequest() {
-        int fileClientMessageIndex = 889;
+        int fileClientMessageIndex = 883;
         ClientMessage encoded = JetGetJobConfigCodec.encodeRequest(aLong, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7020,14 +6961,14 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetGetJobConfigCodec_decodeResponse() {
-        int fileClientMessageIndex = 890;
+        int fileClientMessageIndex = 884;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aData, JetGetJobConfigCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_JetResumeJobCodec_encodeRequest() {
-        int fileClientMessageIndex = 891;
+        int fileClientMessageIndex = 885;
         ClientMessage encoded = JetResumeJobCodec.encodeRequest(aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7035,12 +6976,12 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetResumeJobCodec_decodeResponse() {
-        int fileClientMessageIndex = 892;
+        int fileClientMessageIndex = 886;
     }
 
     @Test
     public void test_JetExportSnapshotCodec_encodeRequest() {
-        int fileClientMessageIndex = 893;
+        int fileClientMessageIndex = 887;
         ClientMessage encoded = JetExportSnapshotCodec.encodeRequest(aLong, aString, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7048,12 +6989,12 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetExportSnapshotCodec_decodeResponse() {
-        int fileClientMessageIndex = 894;
+        int fileClientMessageIndex = 888;
     }
 
     @Test
     public void test_JetGetJobSummaryListCodec_encodeRequest() {
-        int fileClientMessageIndex = 895;
+        int fileClientMessageIndex = 889;
         ClientMessage encoded = JetGetJobSummaryListCodec.encodeRequest();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7061,14 +7002,14 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetGetJobSummaryListCodec_decodeResponse() {
-        int fileClientMessageIndex = 896;
+        int fileClientMessageIndex = 890;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aData, JetGetJobSummaryListCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_JetExistsDistributedObjectCodec_encodeRequest() {
-        int fileClientMessageIndex = 897;
+        int fileClientMessageIndex = 891;
         ClientMessage encoded = JetExistsDistributedObjectCodec.encodeRequest(aString, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7076,14 +7017,14 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetExistsDistributedObjectCodec_decodeResponse() {
-        int fileClientMessageIndex = 898;
+        int fileClientMessageIndex = 892;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aBoolean, JetExistsDistributedObjectCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_JetGetJobMetricsCodec_encodeRequest() {
-        int fileClientMessageIndex = 899;
+        int fileClientMessageIndex = 893;
         ClientMessage encoded = JetGetJobMetricsCodec.encodeRequest(aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7091,14 +7032,14 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetGetJobMetricsCodec_decodeResponse() {
-        int fileClientMessageIndex = 900;
+        int fileClientMessageIndex = 894;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aData, JetGetJobMetricsCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_JetGetJobSuspensionCauseCodec_encodeRequest() {
-        int fileClientMessageIndex = 901;
+        int fileClientMessageIndex = 895;
         ClientMessage encoded = JetGetJobSuspensionCauseCodec.encodeRequest(aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7106,14 +7047,14 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetGetJobSuspensionCauseCodec_decodeResponse() {
-        int fileClientMessageIndex = 902;
+        int fileClientMessageIndex = 896;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aData, JetGetJobSuspensionCauseCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_JetGetJobAndSqlSummaryListCodec_encodeRequest() {
-        int fileClientMessageIndex = 903;
+        int fileClientMessageIndex = 897;
         ClientMessage encoded = JetGetJobAndSqlSummaryListCodec.encodeRequest();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7121,14 +7062,14 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetGetJobAndSqlSummaryListCodec_decodeResponse() {
-        int fileClientMessageIndex = 904;
+        int fileClientMessageIndex = 898;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aListJobAndSqlSummary, JetGetJobAndSqlSummaryListCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_JetIsJobUserCancelledCodec_encodeRequest() {
-        int fileClientMessageIndex = 905;
+        int fileClientMessageIndex = 899;
         ClientMessage encoded = JetIsJobUserCancelledCodec.encodeRequest(aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7136,14 +7077,14 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetIsJobUserCancelledCodec_decodeResponse() {
-        int fileClientMessageIndex = 906;
+        int fileClientMessageIndex = 900;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aBoolean, JetIsJobUserCancelledCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_JetUploadJobMetaDataCodec_encodeRequest() {
-        int fileClientMessageIndex = 907;
+        int fileClientMessageIndex = 901;
         ClientMessage encoded = JetUploadJobMetaDataCodec.encodeRequest(aUUID, aBoolean, aString, aString, aString, aString, aString, aListOfStrings);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7151,12 +7092,12 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetUploadJobMetaDataCodec_decodeResponse() {
-        int fileClientMessageIndex = 908;
+        int fileClientMessageIndex = 902;
     }
 
     @Test
     public void test_JetUploadJobMultipartCodec_encodeRequest() {
-        int fileClientMessageIndex = 909;
+        int fileClientMessageIndex = 903;
         ClientMessage encoded = JetUploadJobMultipartCodec.encodeRequest(aUUID, anInt, anInt, aByteArray, anInt, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7164,12 +7105,12 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetUploadJobMultipartCodec_decodeResponse() {
-        int fileClientMessageIndex = 910;
+        int fileClientMessageIndex = 904;
     }
 
     @Test
     public void test_JetAddJobStatusListenerCodec_encodeRequest() {
-        int fileClientMessageIndex = 911;
+        int fileClientMessageIndex = 905;
         ClientMessage encoded = JetAddJobStatusListenerCodec.encodeRequest(aLong, aUUID, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7177,7 +7118,7 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetAddJobStatusListenerCodec_decodeResponse() {
-        int fileClientMessageIndex = 912;
+        int fileClientMessageIndex = 906;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aUUID, JetAddJobStatusListenerCodec.decodeResponse(fromFile)));
     }
@@ -7195,7 +7136,7 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetAddJobStatusListenerCodec_handleJobStatusEvent() {
-        int fileClientMessageIndex = 913;
+        int fileClientMessageIndex = 907;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetAddJobStatusListenerCodecHandler handler = new JetAddJobStatusListenerCodecHandler();
         handler.handle(fromFile);
@@ -7203,7 +7144,7 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetRemoveJobStatusListenerCodec_encodeRequest() {
-        int fileClientMessageIndex = 914;
+        int fileClientMessageIndex = 908;
         ClientMessage encoded = JetRemoveJobStatusListenerCodec.encodeRequest(aLong, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7211,14 +7152,14 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetRemoveJobStatusListenerCodec_decodeResponse() {
-        int fileClientMessageIndex = 915;
+        int fileClientMessageIndex = 909;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aBoolean, JetRemoveJobStatusListenerCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_JetUpdateJobConfigCodec_encodeRequest() {
-        int fileClientMessageIndex = 916;
+        int fileClientMessageIndex = 910;
         ClientMessage encoded = JetUpdateJobConfigCodec.encodeRequest(aLong, aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7226,7 +7167,7 @@ public class ClientCompatibilityTest_2_6 {
 
     @Test
     public void test_JetUpdateJobConfigCodec_decodeResponse() {
-        int fileClientMessageIndex = 917;
+        int fileClientMessageIndex = 911;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aData, JetUpdateJobConfigCodec.decodeResponse(fromFile)));
     }

@@ -37,7 +37,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Destroys the distributed object with the given name on the requested
  * CP group
  */
-@Generated("6ccff065b277a7da22bc87ce6f0e2c29")
+@SuppressWarnings("unused")
+@Generated("80041ffb364fc11dd34e42a2c3a9b68e")
 public final class CPGroupDestroyCPObjectCodec {
     //hex: 0x1E0200
     public static final int REQUEST_MESSAGE_TYPE = 1966592;

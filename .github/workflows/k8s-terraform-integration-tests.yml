@@ -93,7 +93,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Add env vars
+        run: |
+          echo "GCLOUD_SA=$(gcloud auth list --filter=status:ACTIVE --format="value(account)")" >> "$GITHUB_ENV"
+          echo "GCLOUD_ID_TOKEN=$(gcloud auth print-identity-token)" >> "$GITHUB_ENV"
+
       - name: Run Tests
         working-directory: auto-discovery-suite/terraform/test
         run: |
-          go test -v -timeout 20m -run TestSuite -suite ${{ matrix.suite }} -member-image ${{ needs.build.outputs.HZ_IMG }} -client-image ${{ needs.build.outputs.CL_IMG }}
+          go test -v -timeout 60m -run TestSuite -suite ${{ matrix.suite }} -member-image ${{ needs.build.outputs.HZ_IMG }} 
+          -client-image ${{ needs.build.outputs.CL_IMG }}

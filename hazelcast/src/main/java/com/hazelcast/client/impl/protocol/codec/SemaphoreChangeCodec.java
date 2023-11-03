@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Increases or decreases the number of permits by the given value.
  */
-@Generated("65d5cd1328814468608ba23e48bf93d4")
+@SuppressWarnings("unused")
+@Generated("67e1cb5e4756568ae427b5bf48d7e03a")
 public final class SemaphoreChangeCodec {
     //hex: 0x0C0500
     public static final int REQUEST_MESSAGE_TYPE = 787712;

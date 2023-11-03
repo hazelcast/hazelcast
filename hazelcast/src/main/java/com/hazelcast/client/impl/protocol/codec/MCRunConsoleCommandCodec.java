@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given console command on the member it's called on.
  */
-@Generated("b9b6835d6124238be532f0a9c6caaf8a")
+@SuppressWarnings("unused")
+@Generated("a46044ccab1d2aeef7aa4c7be242ee9c")
 public final class MCRunConsoleCommandCodec {
     //hex: 0x201200
     public static final int REQUEST_MESSAGE_TYPE = 2101760;

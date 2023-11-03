@@ -32,7 +32,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
-import com.hazelcast.internal.util.OsHelper;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -580,6 +580,21 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty MAX_WAIT_SECONDS_BEFORE_JOIN
             = new HazelcastProperty("hazelcast.max.wait.seconds.before.join", 20, SECONDS);
+
+    /**
+     * Controls how {@link #WAIT_SECONDS_BEFORE_JOIN} and {@link #MAX_WAIT_SECONDS_BEFORE_JOIN} behave.
+     * If async is true, the joining member's {@link HazelcastInstance} constructor returns right away without blocking.
+     * Cluster remains in the same state as before until the configured timeouts have expired, and the new member
+     * will behave as if it was a lite member until they expire.
+     * After the timeouts expire and no other joining members are in the queue,
+     * cluster repartitioning will be performed in the background.
+     * <p>
+     * Async reduces latency significantly when new members join clusters, often reducing startup time.
+     *
+     * @since 5.4.0
+     */
+    public static final HazelcastProperty ASYNC_JOIN_STRATEGY_ENABLED
+            = new HazelcastProperty("hazelcast.async.join.strategy.enabled", true);
 
     /**
      * Join timeout, maximum time to try to join before giving up.
@@ -1830,7 +1845,7 @@ public final class ClusterProperty {
      * @since 5.0
      */
     public static final HazelcastProperty LOG_EMOJI_ENABLED = new HazelcastProperty("hazelcast.logging.emoji.enabled",
-            StandardCharsets.UTF_8.equals(Charset.defaultCharset()) && !OsHelper.isWindows());
+            StandardCharsets.UTF_8.equals(Charset.defaultCharset()) && !OS.isWindows());
 
     /**
      * When set to any not-{@code null} value, security recommendations are logged on INFO level during the node start. The
@@ -1924,6 +1939,14 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty WAN_REPLICATE_ICACHE_EVICTIONS
             = new HazelcastProperty("hazelcast.wan.replicate.icache.evictions", false);
+
+    /**
+     * Maximum wait in seconds during member demotion to a lite member.
+     *
+     * @since 5.4
+     */
+    public static final HazelcastProperty DEMOTE_MAX_WAIT
+            = new HazelcastProperty("hazelcast.member.demote.max.wait", 600, SECONDS);
 
     private ClusterProperty() {
     }

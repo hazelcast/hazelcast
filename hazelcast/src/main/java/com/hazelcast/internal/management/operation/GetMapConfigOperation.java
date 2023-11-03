@@ -19,23 +19,23 @@ package com.hazelcast.internal.management.operation;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.config.MapConfigReadOnly;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
-import java.util.function.Consumer;
+import java.util.Map;
 
 /**
  * Operation to fetch Map configuration.
  */
 public class GetMapConfigOperation
-        extends AbstractLocalOperation implements Consumer<IndexConfig> {
+        extends AbstractLocalOperation {
 
     private final String mapName;
 
     private MapConfig mapConfig;
-    private MapConfig mapConfigWithIndexes;
 
     public GetMapConfigOperation(String mapName) {
         this.mapName = mapName;
@@ -47,24 +47,29 @@ public class GetMapConfigOperation
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         mapConfig = mapContainer.getMapConfig();
-        mapContainer.consumeIndexConfigs(this);
+        mapConfig = addIndexConfig(mapConfig, mapContainer.getIndexDefinitions());
+    }
+
+    private static MapConfig addIndexConfig(MapConfig mapConfig,
+                                            Map<String, IndexConfig> indexDefinitions) {
+        // 1. If there is no index-config  to add
+        if (MapUtil.isNullOrEmpty(indexDefinitions)) {
+            return mapConfig;
+        }
+
+        // 2. We have index-configs to add
+        MapConfig mapConfigWithIndexes = new MapConfig(mapConfig);
+        // first clear all existing index-configs
+        // here, not to have duplicate index-configs
+        mapConfigWithIndexes.getIndexConfigs().clear();
+        for (IndexConfig indexConfig : indexDefinitions.values()) {
+            mapConfigWithIndexes.addIndexConfig(indexConfig);
+        }
+        return new MapConfigReadOnly(mapConfigWithIndexes);
     }
 
     @Override
     public Object getResponse() {
-        return mapConfigWithIndexes != null
-                ? new MapConfigReadOnly(mapConfigWithIndexes) : mapConfig;
-    }
-
-    @Override
-    public void accept(IndexConfig indexConfig) {
-        if (mapConfigWithIndexes == null) {
-            mapConfigWithIndexes = new MapConfig(mapConfig);
-            // first clear all existing index-configs
-            // here, not to have duplicate index-configs
-            mapConfigWithIndexes.getIndexConfigs().clear();
-        }
-
-        mapConfigWithIndexes.addIndexConfig(indexConfig);
+        return mapConfig;
     }
 }

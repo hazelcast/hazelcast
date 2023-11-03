@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this collection contains no elements.
  */
-@Generated("ed4414c81e67f755dba698be8103f117")
+@SuppressWarnings("unused")
+@Generated("85058c9b8c947be4b373f45f1a5e0172")
 public final class QueueIsEmptyCodec {
     //hex: 0x031400
     public static final int REQUEST_MESSAGE_TYPE = 201728;

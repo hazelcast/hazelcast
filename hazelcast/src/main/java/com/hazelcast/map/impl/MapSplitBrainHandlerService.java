@@ -130,13 +130,13 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
     }
 
     private void addIndexConfigToNewMapContainer(String mapName, int partitionId,
-                                                 IndexRegistry indexes) {
-        if (indexes == null) {
+                                                 IndexRegistry indexRegistry) {
+        if (indexRegistry == null) {
             return;
         }
 
         LinkedList<IndexConfig> indexConfigs = new LinkedList<>();
-        InternalIndex[] internalIndexes = indexes.getIndexes();
+        InternalIndex[] internalIndexes = indexRegistry.getIndexes();
         for (int i = 0; i < internalIndexes.length; i++) {
             indexConfigs.add(internalIndexes[i].getConfig());
         }

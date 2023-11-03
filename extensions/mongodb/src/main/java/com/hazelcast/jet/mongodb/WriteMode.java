@@ -15,14 +15,11 @@
  */
 package com.hazelcast.jet.mongodb;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * Defines allowed operations.
  *
  * @since 5.3
  */
-@Beta
 public enum WriteMode {
     /**
      * Items will be inserted to MongoDB; in case of ID clash, error will be thrown.

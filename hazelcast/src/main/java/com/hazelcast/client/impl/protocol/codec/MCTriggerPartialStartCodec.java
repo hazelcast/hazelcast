@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Triggers partial start
  */
-@Generated("d89398c5f749680bb6b491337ba34c5a")
+@SuppressWarnings("unused")
+@Generated("f8cbc9f8fb502f4df15de5835c24ca2b")
 public final class MCTriggerPartialStartCodec {
     //hex: 0x201D00
     public static final int REQUEST_MESSAGE_TYPE = 2104576;

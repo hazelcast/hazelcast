@@ -74,6 +74,7 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.DefaultIndexProvider;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexProvider;
+import com.hazelcast.query.impl.IndexRegistry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -147,7 +148,6 @@ class MapServiceContextImpl implements MapServiceContext {
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
     private final ExecutorStats offloadedExecutorStats = new ExecutorStats();
-    private final EventListenerCounter eventListenerCounter = new EventListenerCounter();
     private final AtomicReference<PartitionIdSet> cachedOwnedPartitions = new AtomicReference<>();
 
     /**
@@ -462,9 +462,16 @@ class MapServiceContextImpl implements MapServiceContext {
 
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
+        if (mapContainer.shouldUseGlobalIndex()) {
+            destroyGlobalIndexes(mapContainer);
+        }
+
         localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
-        getEventListenerCounter()
-                .removeCounter(mapName, mapContainer.getInvalidationListenerCounter());
+    }
+
+    protected void destroyGlobalIndexes(MapContainer mapContainer) {
+        IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
+        indexRegistry.destroyIndexes();
     }
 
     /**
@@ -915,6 +922,11 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public boolean isForciblyEnabledGlobalIndex() {
+        return false;
+    }
+
+    @Override
     public ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat) {
         return ValueComparatorUtil.getValueComparatorOf(inMemoryFormat);
     }
@@ -933,8 +945,4 @@ class MapServiceContextImpl implements MapServiceContext {
         return partitioningStrategyFactory;
     }
 
-    @Override
-    public EventListenerCounter getEventListenerCounter() {
-        return eventListenerCounter;
-    }
 }

@@ -133,19 +133,19 @@ public class QueryRunner {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // to optimize the query we need to get any index instance
-        IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
-        if (indexes == null) {
-            indexes = mapContainer.getOrCreateIndexRegistry(ownedPartitions.iterator().next());
+        IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
+        if (indexRegistry == null) {
+            indexRegistry = mapContainer.getOrCreateIndexRegistry(ownedPartitions.iterator().next());
         }
         // first we optimize the query
-        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
+        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexRegistry);
 
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
         Iterable<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
                 migrationStamp, ownedPartitions.size());
 
         if (entries != null && !ownedPartitions.equals(actualPartitions)) {
-            assert indexes.isGlobal();
+            assert indexRegistry.isGlobal();
             // if the query runs on a subset of partitions, filter the results from a global index
             entries = IterableUtil.filter(entries,
                     e -> {
@@ -195,12 +195,12 @@ public class QueryRunner {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // to optimize the query we need to get any index instance
-        IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
-        if (indexes == null) {
-            indexes = mapContainer.getOrCreateIndexRegistry(ownedPartitions.iterator().next());
+        IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
+        if (indexRegistry == null) {
+            indexRegistry = mapContainer.getOrCreateIndexRegistry(ownedPartitions.iterator().next());
         }
         // first we optimize the query
-        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
+        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexRegistry);
 
         // then we try to run using an index
         Iterable<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
@@ -228,9 +228,9 @@ public class QueryRunner {
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getOrCreateIndexRegistry(partitionId));
 
         Iterable<QueryableEntry> entries = null;
-        IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(partitionId);
-        if (indexes != null && !indexes.isGlobal()) {
-            entries = indexes.query(predicate, partitions.size());
+        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
+        if (indexRegistry != null && !indexRegistry.isGlobal()) {
+            entries = indexRegistry.query(predicate, partitions.size());
         }
 
         Result result;
@@ -270,17 +270,17 @@ public class QueryRunner {
             return null;
         }
 
-        IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
-        if (indexes == null) {
+        IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
+        if (indexRegistry == null) {
             return null;
         }
-        if (!indexes.isGlobal()) {
+        if (!indexRegistry.isGlobal()) {
             // rolling-upgrade compatibility guide, if the index is not global we can't use it in the global scan.
             // it may happen if the 3.9 EE node receives a QueryOperation from a 3.8 node, in this case we can't
             // leverage index on this node in a global way.
             return null;
         }
-        Iterable<QueryableEntry> entries = indexes.query(predicate, ownedPartitionCount);
+        Iterable<QueryableEntry> entries = indexRegistry.query(predicate, ownedPartitionCount);
         if (entries == null) {
             return null;
         }

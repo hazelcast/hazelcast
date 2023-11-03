@@ -227,9 +227,9 @@ public class PlanExecutor {
 
     SqlResult execute(CreateIndexPlan plan) {
         MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
-        if (!mapContainer.isGlobalIndexEnabled()) {
-            // for local indexes checking existence is more complicated
-            // and SQL cannot yet use local indexes
+        if (!mapContainer.shouldUseGlobalIndex()) {
+            // for partitioned indexes checking existence is more complicated
+            // and SQL cannot yet use partitioned indexes
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot create index \"" + plan.indexName()
                     + "\" on the IMap \"" + plan.mapName() + "\" because it would not be global "
                     + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
@@ -275,7 +275,7 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(CreateJobPlan plan, List<Object> arguments) {
+    SqlResult execute(CreateJobPlan plan, List<Object> arguments, SqlSecurityContext ssc) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         boolean isStreamingJob = plan.isInfiniteRows();
         JobConfig jobConfig = plan.getJobConfig()
@@ -285,10 +285,13 @@ public class PlanExecutor {
         if (!jobConfig.isSuspendOnFailure()) {
             jobConfig.setSuspendOnFailure(isStreamingJob);
         }
+
+        AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
+
         if (plan.isIfNotExists()) {
-            hazelcastInstance.getJet().newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
+            jet.newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig, ssc.subject());
         } else {
-            hazelcastInstance.getJet().newJob(plan.getExecutionPlan().getDag(), jobConfig);
+            jet.newJob(plan.getExecutionPlan().getDag(), jobConfig, ssc.subject());
         }
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
@@ -538,7 +541,9 @@ public class PlanExecutor {
         assert oldValue == null : oldValue;
         try {
             sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-            Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig, ssc.subject());
+            Job job = plan.isAnalyzed()
+                    ? jet.newJob(jobId, plan.getDag(), jobConfig, ssc.subject())
+                    : jet.newLightJob(jobId, plan.getDag(), jobConfig, ssc.subject());
 
             job.getFuture().whenComplete((r, t) -> {
                 // make sure the queryResultProducer is cleaned up after the job completes. This normally
@@ -578,7 +583,9 @@ public class PlanExecutor {
 
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
-        Job job = jet.newLightJob(plan.getDag(), jobConfig, ssc.subject());
+        Job job = plan.isAnalyzed()
+                ? jet.newJob(plan.getDag(), jobConfig, ssc.subject())
+                : jet.newLightJob(plan.getDag(), jobConfig, ssc.subject());
         job.join();
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);

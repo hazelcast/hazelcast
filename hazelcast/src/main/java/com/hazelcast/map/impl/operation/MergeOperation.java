@@ -129,7 +129,7 @@ public class MergeOperation extends MapOperation
         checkMergePolicy(mapContainer, mergePolicy);
 
         hasMapListener = mapEventPublisher.hasEventListener(name);
-        hasWanReplication = mapContainer.isWanReplicationEnabled()
+        hasWanReplication = mapContainer.getWanContext().isWanReplicationEnabled()
                 && !disableWanReplicationEvent;
         hasBackups = mapContainer.getTotalBackupCount() > 0;
         hasInvalidation = mapContainer.hasInvalidationListener();
@@ -191,8 +191,8 @@ public class MergeOperation extends MapOperation
 
     public Queue<InternalIndex> beginIndexMarking() {
         int partitionId = getPartitionId();
-        IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(partitionId);
-        InternalIndex[] indexesSnapshot = indexes.getIndexes();
+        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
+        InternalIndex[] indexesSnapshot = indexRegistry.getIndexes();
 
         Queue<InternalIndex> notIndexedPartitions = new LinkedList<>();
         for (InternalIndex internalIndex : indexesSnapshot) {

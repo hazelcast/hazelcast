@@ -105,7 +105,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         }
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        SplitBrainMergePolicy wanMergePolicy = mapContainer.getWanMergePolicy();
+        SplitBrainMergePolicy wanMergePolicy = mapContainer.getWanContext().getWanMergePolicy();
         WanMapAddOrUpdateEvent event = new WanMapAddOrUpdateEvent(mapName, wanMergePolicy, entryView);
         publishWanEvent(mapName, event);
     }
@@ -129,7 +129,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     protected void publishWanEvent(String mapName, InternalWanEvent event) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         DelegatingWanScheme wanReplicationPublisher
-                = mapContainer.getWanReplicationDelegate();
+                = mapContainer.getWanContext().getWanReplicationDelegate();
         if (isOwnedPartition(event.getKey())) {
             wanReplicationPublisher.publishReplicationEvent(event);
         } else {

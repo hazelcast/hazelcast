@@ -153,7 +153,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
         this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         this.interceptorRegistry = mapContainer.getInterceptorRegistry();
-        this.wanReplicateEvictions = mapContainer.isWanReplicationEnabled()
+        this.wanReplicateEvictions = mapContainer.getWanContext().isWanReplicationEnabled()
                 && mapServiceContext.getNodeEngine().getProperties().getBoolean(ClusterProperty.WAN_REPLICATE_IMAP_EVICTIONS);
         initJsonMetadataStore();
     }
@@ -538,15 +538,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return definedExpirationTime - System.currentTimeMillis();
     }
 
-    public int removeBulk(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean backup) {
+    public int removeBulk(List<Data> dataKeys, List<Record> records, boolean backup) {
         return removeOrEvictEntries(dataKeys, records, false, backup);
     }
 
-    public int evictBulk(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean backup) {
+    public int evictBulk(List<Data> dataKeys, List<Record> records, boolean backup) {
         return removeOrEvictEntries(dataKeys, records, true, backup);
     }
 
-    private int removeOrEvictEntries(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean eviction,
+    private int removeOrEvictEntries(List<Data> dataKeys, List<Record> records, boolean eviction,
                                      boolean backup) {
         for (int i = 0; i < dataKeys.size(); i++) {
             Data dataKey = dataKeys.get(i);

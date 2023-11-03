@@ -122,7 +122,7 @@ class ClusterDiscoveryServiceBuilder {
         ClientCloudConfig cloudConfig = networkConfig.getCloudConfig();
 
         List<String> addresses = networkConfig.getAddresses();
-        boolean addressListProvided = addresses.size() != 0;
+        boolean addressListProvided = !addresses.isEmpty();
         boolean awsDiscoveryEnabled = networkConfig.getAwsConfig() != null && networkConfig.getAwsConfig().isEnabled();
         boolean gcpDiscoveryEnabled = networkConfig.getGcpConfig() != null && networkConfig.getGcpConfig().isEnabled();
         boolean azureDiscoveryEnabled = networkConfig.getAzureConfig() != null && networkConfig.getAzureConfig().isEnabled();

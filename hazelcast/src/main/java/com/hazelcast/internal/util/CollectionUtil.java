@@ -57,7 +57,6 @@ public final class CollectionUtil {
         return !isEmpty(collection);
     }
 
-
     /**
      * Returns the n-th item or {@code null} if collection is smaller.
      *
@@ -67,7 +66,7 @@ public final class CollectionUtil {
      * @throws NullPointerException if collection is {@code null}
      */
     public static <T> T getItemAtPositionOrNull(Collection<T> collection, int position) {
-        if (position >= collection.size()) {
+        if (position >= collection.size() || position < 0) {
             return null;
         }
         if (collection instanceof List) {

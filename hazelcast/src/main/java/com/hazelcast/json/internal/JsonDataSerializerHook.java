@@ -19,9 +19,10 @@ package com.hazelcast.json.internal;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JSON_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JSON_DS_FACTORY_ID;
@@ -47,14 +48,13 @@ public final class JsonDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
-        constructors[JSON_SCHEMA_NAME_VALUE] = arg -> new JsonSchemaNameValue();
-        constructors[JSON_SCHEMA_TERMINAL_NODE] = arg -> new JsonSchemaTerminalNode();
-        constructors[JSON_SCHEMA_STRUCT_NODE] = arg -> new JsonSchemaStructNode();
+        constructors[JSON_SCHEMA_NAME_VALUE] = JsonSchemaNameValue::new;
+        constructors[JSON_SCHEMA_TERMINAL_NODE] = JsonSchemaTerminalNode::new;
+        constructors[JSON_SCHEMA_STRUCT_NODE] = JsonSchemaStructNode::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }
 
 }
-

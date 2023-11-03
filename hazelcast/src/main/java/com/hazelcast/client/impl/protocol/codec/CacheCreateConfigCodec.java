@@ -36,7 +36,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates the given cache configuration on Hazelcast members.
  */
-@Generated("9218a1a572116d335cb07954afd759f2")
+@SuppressWarnings("unused")
+@Generated("c458a776320a293eacda7a3f61acc16d")
 public final class CacheCreateConfigCodec {
     //hex: 0x130600
     public static final int REQUEST_MESSAGE_TYPE = 1246720;

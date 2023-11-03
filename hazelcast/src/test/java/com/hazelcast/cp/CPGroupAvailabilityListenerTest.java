@@ -21,6 +21,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.event.CPGroupAvailabilityEvent;
 import com.hazelcast.cp.event.CPGroupAvailabilityListener;
+import com.hazelcast.cp.event.impl.CPGroupAvailabilityEventImpl;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -29,10 +30,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -134,5 +139,92 @@ public class CPGroupAvailabilityListenerTest extends HazelcastRaftTestSupport {
             majorityEventCount.incrementAndGet();
             majorityLatch.countDown();
         }
+    }
+
+    public static class GracefulShutdownAvailabilityListener
+            implements CPGroupAvailabilityListener {
+        public final AtomicInteger availabilityDecreased;
+        private final AtomicInteger majorityLost;
+
+        private final Set<UUID> membersShutdown;
+
+        public GracefulShutdownAvailabilityListener() {
+            availabilityDecreased = new AtomicInteger();
+            majorityLost = new AtomicInteger();
+            membersShutdown = ConcurrentHashMap.newKeySet();
+        }
+
+        @Override
+        public void availabilityDecreased(CPGroupAvailabilityEvent event) {
+            handleEvent(event, true);
+        }
+
+        @Override
+        public void majorityLost(CPGroupAvailabilityEvent event) {
+            handleEvent(event, false);
+        }
+
+        private void handleEvent(CPGroupAvailabilityEvent event, boolean isAvailabilityDecrease) {
+            CPGroupAvailabilityEventImpl impl = (CPGroupAvailabilityEventImpl) event;
+            if (impl.isShutdown()) {
+                membersShutdown.addAll(event.getUnavailableMembers().stream().map(CPMember::getUuid).collect(Collectors.toSet()));
+                if (isAvailabilityDecrease) {
+                    availabilityDecreased.incrementAndGet();
+                } else {
+                    majorityLost.incrementAndGet();
+                }
+            }
+        }
+    }
+
+    @Test
+    public void whenMemberShutdown_thenReceiveGracefulAvailabilityEvents_3_cpNodeCount() {
+        whenMemberShutdown_thenReceiveGracefulAvailabilityEvents(3);
+    }
+
+    @Test
+    public void whenMemberShutdown_thenReceiveGracefulAvailabilityEvents_5_cpNodeCount() {
+        whenMemberShutdown_thenReceiveGracefulAvailabilityEvents(5);
+    }
+
+    public void whenMemberShutdown_thenReceiveGracefulAvailabilityEvents(int cpNodeCount) {
+        GracefulShutdownAvailabilityListener listener = new GracefulShutdownAvailabilityListener();
+
+        HazelcastInstance[] instances = newInstances(cpNodeCount);
+        // instances[0] is the only instance we won't shut down; it will observe all the applicable availability events
+        instances[0].getCPSubsystem().addGroupAvailabilityListener(listener);
+
+        HashSet<UUID> expectedShutdownInstanceUuids = new HashSet<>();
+        for (int i = 1; i < instances.length; i++) {
+            expectedShutdownInstanceUuids.add(instances[i].getLocalEndpoint().getUuid());
+        }
+
+        // shutdown the other members until we have only two instances left:
+        //   - instances[0]                   : the one with our event handler attached
+        //   - instances[instances.length - 1]: we'll shut down his one separately as it will result in loss of majority
+        for (int i = 1; i < instances.length - 1; i++) {
+            instances[i].getLifecycleService().shutdown();
+            assertEqualsEventually(i, listener.availabilityDecreased);
+        }
+
+        instances[instances.length - 1].getLifecycleService().shutdown();
+        assertEqualsEventually(1, listener.majorityLost);
+
+        assertEquals(expectedShutdownInstanceUuids, listener.membersShutdown);
+    }
+
+    @Test
+    public void whenMemberExitsNormally_thenReceiveEventsCommunityTest() throws Exception {
+        GracefulShutdownAvailabilityListener listener = new GracefulShutdownAvailabilityListener();
+
+        HazelcastInstance[] instances = newInstances(3);
+        instances[1].getCPSubsystem().addGroupAvailabilityListener(listener);
+
+        instances[0].shutdown();
+        assertEqualsEventually(1, listener.availabilityDecreased);
+
+        instances[2].shutdown();
+        assertEqualsEventually(1, listener.majorityLost);
+        assertEquals(1, listener.availabilityDecreased.get());
     }
 }

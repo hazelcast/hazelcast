@@ -385,6 +385,11 @@ public abstract class Operation implements DataSerializable, Tenantable {
         onSetCallId(newId);
     }
 
+    // Accessed using OperationAccessor
+    final void resetCallId() {
+        CALL_ID.set(this, 0);
+    }
+
     /**
      * Called every time a new <code>callId</code> is set on the operation. A new
      * <code>callId</code> is set before initial invocation and before every

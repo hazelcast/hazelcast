@@ -23,8 +23,12 @@ import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -35,7 +39,6 @@ import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.HotRestartConfig;
@@ -82,9 +85,10 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigPreJoinOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CONFIG_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CONFIG_DS_FACTORY_ID;
@@ -92,7 +96,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CONFIG_D
 /**
  * DataSerializerHook for com.hazelcast.config classes
  */
-@SuppressWarnings("checkstyle:javadocvariable")
+@SuppressWarnings({"checkstyle:javadocvariable", "deprecation"})
 public final class ConfigDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(CONFIG_DS_FACTORY, CONFIG_DS_FACTORY_ID);
@@ -177,77 +181,77 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
-        constructors[WAN_REPLICATION_CONFIG] = arg -> new WanReplicationConfig();
-        constructors[WAN_CONSUMER_CONFIG] = arg -> new WanConsumerConfig();
-        constructors[WAN_CUSTOM_PUBLISHER_CONFIG] = arg -> new WanCustomPublisherConfig();
-        constructors[WAN_BATCH_PUBLISHER_CONFIG] = arg -> new WanBatchPublisherConfig();
-        constructors[NEAR_CACHE_CONFIG] = arg -> new NearCacheConfig();
-        constructors[NEAR_CACHE_PRELOADER_CONFIG] = arg -> new NearCachePreloaderConfig();
-        constructors[ADD_DYNAMIC_CONFIG_OP] = arg -> new AddDynamicConfigOperation();
-        constructors[DYNAMIC_CONFIG_PRE_JOIN_OP] = arg -> new DynamicConfigPreJoinOperation();
-        constructors[MULTIMAP_CONFIG] = arg -> new MultiMapConfig();
-        constructors[LISTENER_CONFIG] = arg -> new ListenerConfig();
-        constructors[ENTRY_LISTENER_CONFIG] = arg -> new EntryListenerConfig();
-        constructors[MAP_CONFIG] = arg -> new MapConfig();
-        constructors[MAP_STORE_CONFIG] = arg -> new MapStoreConfig();
-        constructors[MAP_PARTITION_LOST_LISTENER_CONFIG] = arg -> new MapPartitionLostListenerConfig();
-        constructors[INDEX_CONFIG] = arg -> new IndexConfig();
-        constructors[MAP_ATTRIBUTE_CONFIG] = arg -> new AttributeConfig();
-        constructors[QUERY_CACHE_CONFIG] = arg -> new QueryCacheConfig();
-        constructors[PREDICATE_CONFIG] = arg -> new PredicateConfig();
-        constructors[PARTITION_STRATEGY_CONFIG] = arg -> new PartitioningStrategyConfig();
-        constructors[HOT_RESTART_CONFIG] = arg -> new HotRestartConfig();
-        constructors[TOPIC_CONFIG] = arg -> new TopicConfig();
-        constructors[RELIABLE_TOPIC_CONFIG] = arg -> new ReliableTopicConfig();
-        constructors[ITEM_LISTENER_CONFIG] = arg -> new ItemListenerConfig();
-        constructors[QUEUE_STORE_CONFIG] = arg -> new QueueStoreConfig();
-        constructors[QUEUE_CONFIG] = arg -> new QueueConfig();
-        constructors[LIST_CONFIG] = arg -> new ListConfig();
-        constructors[SET_CONFIG] = arg -> new SetConfig();
-        constructors[EXECUTOR_CONFIG] = arg -> new ExecutorConfig();
-        constructors[DURABLE_EXECUTOR_CONFIG] = arg -> new DurableExecutorConfig();
-        constructors[SCHEDULED_EXECUTOR_CONFIG] = arg -> new ScheduledExecutorConfig();
-        constructors[REPLICATED_MAP_CONFIG] = arg -> new ReplicatedMapConfig();
-        constructors[RINGBUFFER_CONFIG] = arg -> new RingbufferConfig();
-        constructors[RINGBUFFER_STORE_CONFIG] = arg -> new RingbufferStoreConfig();
-        constructors[CARDINALITY_ESTIMATOR_CONFIG] = arg -> new CardinalityEstimatorConfig();
-        constructors[SIMPLE_CACHE_CONFIG] = arg -> new CacheSimpleConfig();
+        constructors[WAN_REPLICATION_CONFIG] = WanReplicationConfig::new;
+        constructors[WAN_CONSUMER_CONFIG] = WanConsumerConfig::new;
+        constructors[WAN_CUSTOM_PUBLISHER_CONFIG] = WanCustomPublisherConfig::new;
+        constructors[WAN_BATCH_PUBLISHER_CONFIG] = WanBatchPublisherConfig::new;
+        constructors[NEAR_CACHE_CONFIG] = NearCacheConfig::new;
+        constructors[NEAR_CACHE_PRELOADER_CONFIG] = NearCachePreloaderConfig::new;
+        constructors[ADD_DYNAMIC_CONFIG_OP] = AddDynamicConfigOperation::new;
+        constructors[DYNAMIC_CONFIG_PRE_JOIN_OP] = DynamicConfigPreJoinOperation::new;
+        constructors[MULTIMAP_CONFIG] = MultiMapConfig::new;
+        constructors[LISTENER_CONFIG] = ListenerConfig::new;
+        constructors[ENTRY_LISTENER_CONFIG] = EntryListenerConfig::new;
+        constructors[MAP_CONFIG] = MapConfig::new;
+        constructors[MAP_STORE_CONFIG] = MapStoreConfig::new;
+        constructors[MAP_PARTITION_LOST_LISTENER_CONFIG] = MapPartitionLostListenerConfig::new;
+        constructors[INDEX_CONFIG] = IndexConfig::new;
+        constructors[MAP_ATTRIBUTE_CONFIG] = AttributeConfig::new;
+        constructors[QUERY_CACHE_CONFIG] = QueryCacheConfig::new;
+        constructors[PREDICATE_CONFIG] = PredicateConfig::new;
+        constructors[PARTITION_STRATEGY_CONFIG] = PartitioningStrategyConfig::new;
+        constructors[HOT_RESTART_CONFIG] = HotRestartConfig::new;
+        constructors[TOPIC_CONFIG] = TopicConfig::new;
+        constructors[RELIABLE_TOPIC_CONFIG] = ReliableTopicConfig::new;
+        constructors[ITEM_LISTENER_CONFIG] = ItemListenerConfig::new;
+        constructors[QUEUE_STORE_CONFIG] = QueueStoreConfig::new;
+        constructors[QUEUE_CONFIG] = QueueConfig::new;
+        constructors[LIST_CONFIG] = ListConfig::new;
+        constructors[SET_CONFIG] = SetConfig::new;
+        constructors[EXECUTOR_CONFIG] = ExecutorConfig::new;
+        constructors[DURABLE_EXECUTOR_CONFIG] = DurableExecutorConfig::new;
+        constructors[SCHEDULED_EXECUTOR_CONFIG] = ScheduledExecutorConfig::new;
+        constructors[REPLICATED_MAP_CONFIG] = ReplicatedMapConfig::new;
+        constructors[RINGBUFFER_CONFIG] = RingbufferConfig::new;
+        constructors[RINGBUFFER_STORE_CONFIG] = RingbufferStoreConfig::new;
+        constructors[CARDINALITY_ESTIMATOR_CONFIG] = CardinalityEstimatorConfig::new;
+        constructors[SIMPLE_CACHE_CONFIG] = CacheSimpleConfig::new;
         constructors[SIMPLE_CACHE_CONFIG_EXPIRY_POLICY_FACTORY_CONFIG] =
-                arg -> new CacheSimpleConfig.ExpiryPolicyFactoryConfig();
+                ExpiryPolicyFactoryConfig::new;
         constructors[SIMPLE_CACHE_CONFIG_TIMED_EXPIRY_POLICY_FACTORY_CONFIG] =
-                arg -> new CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig();
+                TimedExpiryPolicyFactoryConfig::new;
         constructors[SIMPLE_CACHE_CONFIG_DURATION_CONFIG] =
-                arg -> new CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig();
-        constructors[SPLIT_BRAIN_PROTECTION_CONFIG] = arg -> new SplitBrainProtectionConfig();
-        constructors[EVENT_JOURNAL_CONFIG] = arg -> new EventJournalConfig();
-        constructors[SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG] = arg -> new SplitBrainProtectionListenerConfig();
-        constructors[CACHE_PARTITION_LOST_LISTENER_CONFIG] = arg -> new CachePartitionLostListenerConfig();
-        constructors[SIMPLE_CACHE_ENTRY_LISTENER_CONFIG] = arg -> new CacheSimpleEntryListenerConfig();
-        constructors[FLAKE_ID_GENERATOR_CONFIG] = arg -> new FlakeIdGeneratorConfig();
-        constructors[MERGE_POLICY_CONFIG] = arg -> new MergePolicyConfig();
-        constructors[PN_COUNTER_CONFIG] = arg -> new PNCounterConfig();
-        constructors[MERKLE_TREE_CONFIG] = arg -> new MerkleTreeConfig();
-        constructors[WAN_SYNC_CONFIG] = arg -> new WanSyncConfig();
-        constructors[KUBERNETES_CONFIG] = arg -> new KubernetesConfig();
-        constructors[EUREKA_CONFIG] = arg -> new EurekaConfig();
-        constructors[GCP_CONFIG] = arg -> new GcpConfig();
-        constructors[AZURE_CONFIG] = arg -> new AzureConfig();
-        constructors[AWS_CONFIG] = arg -> new AwsConfig();
-        constructors[DISCOVERY_CONFIG] = arg -> new DiscoveryConfig();
-        constructors[DISCOVERY_STRATEGY_CONFIG] = arg -> new DiscoveryStrategyConfig();
-        constructors[WAN_REPLICATION_REF] = arg -> new WanReplicationRef();
-        constructors[EVICTION_CONFIG] = arg -> new EvictionConfig();
-        constructors[PERMISSION_CONFIG] = arg -> new PermissionConfig();
-        constructors[BITMAP_INDEX_OPTIONS] = arg -> new BitmapIndexOptions();
-        constructors[DATA_PERSISTENCE_CONFIG] = arg -> new DataPersistenceConfig();
-        constructors[TIERED_STORE_CONFIG] = arg -> new TieredStoreConfig();
-        constructors[MEMORY_TIER_CONFIG] = arg -> new MemoryTierConfig();
-        constructors[DISK_TIER_CONFIG] = arg -> new DiskTierConfig();
-        constructors[BTREE_INDEX_CONFIG] = arg -> new BTreeIndexConfig();
-        constructors[DATA_CONNECTION_CONFIG] = arg -> new DataConnectionConfig();
-        constructors[PARTITION_ATTRIBUTE_CONFIG] = arg -> new PartitioningAttributeConfig();
+                DurationConfig::new;
+        constructors[SPLIT_BRAIN_PROTECTION_CONFIG] = SplitBrainProtectionConfig::new;
+        constructors[EVENT_JOURNAL_CONFIG] = EventJournalConfig::new;
+        constructors[SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG] = SplitBrainProtectionListenerConfig::new;
+        constructors[CACHE_PARTITION_LOST_LISTENER_CONFIG] = CachePartitionLostListenerConfig::new;
+        constructors[SIMPLE_CACHE_ENTRY_LISTENER_CONFIG] = CacheSimpleEntryListenerConfig::new;
+        constructors[FLAKE_ID_GENERATOR_CONFIG] = FlakeIdGeneratorConfig::new;
+        constructors[MERGE_POLICY_CONFIG] = MergePolicyConfig::new;
+        constructors[PN_COUNTER_CONFIG] = PNCounterConfig::new;
+        constructors[MERKLE_TREE_CONFIG] = MerkleTreeConfig::new;
+        constructors[WAN_SYNC_CONFIG] = WanSyncConfig::new;
+        constructors[KUBERNETES_CONFIG] = KubernetesConfig::new;
+        constructors[EUREKA_CONFIG] = EurekaConfig::new;
+        constructors[GCP_CONFIG] = GcpConfig::new;
+        constructors[AZURE_CONFIG] = AzureConfig::new;
+        constructors[AWS_CONFIG] = AwsConfig::new;
+        constructors[DISCOVERY_CONFIG] = DiscoveryConfig::new;
+        constructors[DISCOVERY_STRATEGY_CONFIG] = DiscoveryStrategyConfig::new;
+        constructors[WAN_REPLICATION_REF] = WanReplicationRef::new;
+        constructors[EVICTION_CONFIG] = EvictionConfig::new;
+        constructors[PERMISSION_CONFIG] = PermissionConfig::new;
+        constructors[BITMAP_INDEX_OPTIONS] = BitmapIndexOptions::new;
+        constructors[DATA_PERSISTENCE_CONFIG] = DataPersistenceConfig::new;
+        constructors[TIERED_STORE_CONFIG] = TieredStoreConfig::new;
+        constructors[MEMORY_TIER_CONFIG] = MemoryTierConfig::new;
+        constructors[DISK_TIER_CONFIG] = DiskTierConfig::new;
+        constructors[BTREE_INDEX_CONFIG] = BTreeIndexConfig::new;
+        constructors[DATA_CONNECTION_CONFIG] = DataConnectionConfig::new;
+        constructors[PARTITION_ATTRIBUTE_CONFIG] = PartitioningAttributeConfig::new;
 
         return new ArrayDataSerializableFactory(constructors);
     }

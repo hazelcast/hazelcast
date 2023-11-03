@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("206b8e347744c430c57e80999247b4fb")
+@SuppressWarnings("unused")
+@Generated("4be6b705ee26bcb67cd523d3b6584aba")
 public final class BTreeIndexConfigCodec {
 
     private BTreeIndexConfigCodec() {

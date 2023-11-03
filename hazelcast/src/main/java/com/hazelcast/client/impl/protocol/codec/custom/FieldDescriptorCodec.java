@@ -24,7 +24,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("0cfb1c012799902db0a7910604923d66")
+@SuppressWarnings("unused")
+@Generated("764df2e82d7e814fc9b257e202d28be3")
 public final class FieldDescriptorCodec {
     private static final int KIND_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = KIND_FIELD_OFFSET + INT_SIZE_IN_BYTES;

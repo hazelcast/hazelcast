@@ -22,7 +22,6 @@ import com.hazelcast.jet.mongodb.MongoSourceBuilder.Stream;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.bson.Document;
@@ -65,7 +64,6 @@ public final class MongoSources {
      * @param clientSupplier a function that creates MongoDB client.
      * @return Batch Mongo source builder
      */
-    @Beta
     @Nonnull
     public static MongoSourceBuilder.Batch<Document> batch(@Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
         return MongoSourceBuilder.batch(clientSupplier);
@@ -94,7 +92,6 @@ public final class MongoSources {
      * @param dataConnectionRef a reference to mongo data connection
      * @return Batch Mongo source builder
      */
-    @Beta
     @Nonnull
     public static MongoSourceBuilder.Batch<Document> batch(@Nonnull DataConnectionRef dataConnectionRef) {
         return MongoSourceBuilder.batch(dataConnectionRef);
@@ -133,7 +130,6 @@ public final class MongoSources {
      * @param filter           filter object as a {@link Document}
      * @param projection       projection object as a {@link Document}
      */
-    @Beta
     @Nonnull
     public static BatchSource<Document> batch(
             @Nonnull String connectionString,
@@ -190,7 +186,6 @@ public final class MongoSources {
      * @param projection        projection object as a {@link Document}
      * @since 5.3
      */
-    @Beta
     @Nonnull
     public static BatchSource<Document> batch(
             @Nonnull DataConnectionRef dataConnectionRef,
@@ -234,7 +229,6 @@ public final class MongoSources {
      * @param clientSupplier a function that creates MongoDB client.
      * @return Stream Mongo source builder
      */
-    @Beta
     @Nonnull
     public static MongoSourceBuilder.Stream<Document> stream(
             @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
@@ -283,7 +277,6 @@ public final class MongoSources {
      * @param filter           filter object as a {@link Document}
      * @param projection       projection object as a {@link Document}
      */
-    @Beta
     @Nonnull
     public static StreamSource<? extends Document> stream(
             @Nonnull String connectionString,

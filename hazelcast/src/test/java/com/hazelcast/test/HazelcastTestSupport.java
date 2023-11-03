@@ -38,7 +38,7 @@ import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
-import com.hazelcast.internal.util.OsHelper;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.logging.ILogger;
@@ -91,7 +91,6 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.OsHelper.isLinux;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -122,8 +121,6 @@ import static org.junit.Assume.assumeTrue;
  */
 public abstract class HazelcastTestSupport {
     public static final String JAVA_VENDOR = System.getProperty("java.vendor");
-
-    public static final String OS_ARCHITECTURE = System.getProperty("os.arch");
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
@@ -1560,15 +1557,15 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assumeThatNoWindowsOS() {
-        assumeFalse("Skipping on Windows", OsHelper.isWindows());
+        assumeFalse("Skipping on Windows", OS.isWindows());
     }
 
     public static void assumeThatLinuxOS() {
-        Assume.assumeTrue("Only Linux platform supported", isLinux());
+        Assume.assumeTrue("Only Linux platform supported", OS.isLinux());
     }
 
     public static void assumeNoArm64Architecture() {
-        Assume.assumeFalse("Not supported on arm64 (aarch64) architecture", "aarch64".equals(OS_ARCHITECTURE));
+        Assume.assumeFalse("Not supported on arm64 (aarch64) architecture", "aarch64".equals(OS.osArch()));
     }
 
     /**

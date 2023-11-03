@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -170,12 +171,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        int size = properties.size();
-        out.writeInt(size);
-        for (Map.Entry<String, Comparable> entry : properties.entrySet()) {
-            out.writeString(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
+        SerializationUtil.writeMapStringKey(properties, out);
         out.writeString(className);
         out.writeObject(implementation);
         out.writeBoolean(persistWanReplicatedData);

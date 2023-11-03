@@ -46,10 +46,10 @@ public class QueryPartitionOperation extends MapOperation
         result = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, getPartitionId());
 
         // we have to increment query count here manually since we are not even
-        // trying to use indexes
-        IndexRegistry indexes = mapContainer.getGlobalIndexRegistry();
-        if (indexes != null) {
-            indexes.getIndexesStats().incrementQueryCount();
+        // trying to use indexRegistry
+        IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
+        if (indexRegistry != null) {
+            indexRegistry.getIndexesStats().incrementQueryCount();
         }
     }
 

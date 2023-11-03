@@ -226,6 +226,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     boolean globalIndexEnabled();
 
+    boolean isForciblyEnabledGlobalIndex();
+
     ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat);
 
     NodeWideUsedCapacityCounter getNodeWideUsedCapacityCounter();
@@ -273,9 +275,4 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     default boolean shouldEnableMerkleTree(MapConfig mapConfig, boolean log) {
         return false;
     }
-
-    /**
-     * @return {@link EventListenerCounter} object.
-     */
-    EventListenerCounter getEventListenerCounter();
 }

@@ -91,7 +91,7 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
     @Override
     public void onReset() {
-        clearGlobalIndexes(false);
+        clearGlobalIndexes();
         // Partitioned indexes are cleared in MapReplicationStateHolder
     }
 
@@ -102,29 +102,24 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
     @Override
     public void onDestroy(boolean isDuringShutdown, boolean internal) {
-        boolean destroyGlobalIndexes = isDuringShutdown || mapContainer.isDestroyed();
-        clearGlobalIndexes(destroyGlobalIndexes);
+        // global indexes are destroyed on map-container
+        // destroy(see MapServiceContextImpl#destroyMap)
+        clearGlobalIndexes();
         clearPartitionedIndexes(true);
     }
 
     /**
      * Only indexed data will be removed, index info will stay.
      */
-    private void clearGlobalIndexes(boolean destroy) {
-        IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(partitionId);
-        if (!indexes.isGlobal()) {
+    private void clearGlobalIndexes() {
+        if (!mapContainer.shouldUseGlobalIndex()) {
             return;
         }
-
-        if (destroy) {
-            indexes.destroyIndexes();
-            return;
-        }
-
-        if (indexes.haveAtLeastOneIndex()) {
+        IndexRegistry indexRegistry = mapContainer.getGlobalIndexRegistry();
+        if (indexRegistry.haveAtLeastOneIndex()) {
             // clears indexed data of this partition
             // from shared global index.
-            fullScanLocalDataToClear(indexes);
+            fullScanLocalDataToClear(indexRegistry);
         }
     }
 
@@ -132,17 +127,17 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
      * Only indexed data will be removed, index info will stay.
      */
     private void clearPartitionedIndexes(boolean destroy) {
-        IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(partitionId);
-        if (indexes.isGlobal()) {
+        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
+        if (indexRegistry.isGlobal()) {
             return;
         }
 
         if (destroy) {
-            indexes.destroyIndexes();
+            indexRegistry.destroyIndexes();
             return;
         }
 
-        indexes.clearAll();
+        indexRegistry.clearAll();
     }
 
     /**
@@ -166,8 +161,8 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
     private void saveIndex(Data dataKey, Record record, Object oldValue,
                            Index.OperationSource operationSource) {
-        IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(partitionId);
-        if (!indexes.haveAtLeastOneIndex()) {
+        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
+        if (!indexRegistry.haveAtLeastOneIndex()) {
             return;
         }
 
@@ -175,17 +170,17 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
                 getValueOrCachedValue(record, ss));
         queryableEntry.setRecord(record);
 
-        indexes.putEntry(queryableEntry, oldValue, operationSource);
+        indexRegistry.putEntry(queryableEntry, oldValue, operationSource);
     }
 
     private void removeIndex(Data dataKey, Record record,
                              Index.OperationSource operationSource) {
-        IndexRegistry indexes = mapContainer.getOrCreateIndexRegistry(partitionId);
-        if (!indexes.haveAtLeastOneIndex()) {
+        IndexRegistry indexRegistry = mapContainer.getOrCreateIndexRegistry(partitionId);
+        if (!indexRegistry.haveAtLeastOneIndex()) {
             return;
         }
 
-        indexes.removeEntry(toBackingKeyFormat(dataKey), getValueOrCachedValue(record, ss), operationSource);
+        indexRegistry.removeEntry(toBackingKeyFormat(dataKey), getValueOrCachedValue(record, ss), operationSource);
     }
 
     private Data toBackingKeyFormat(Data key) {
