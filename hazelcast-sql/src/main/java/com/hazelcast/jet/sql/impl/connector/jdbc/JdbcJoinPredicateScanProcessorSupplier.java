@@ -26,7 +26,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.mongodb.lang.NonNull;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -58,7 +57,7 @@ public class JdbcJoinPredicateScanProcessorSupplier
     public JdbcJoinPredicateScanProcessorSupplier(
             @Nonnull String dataConnectionName,
             @Nonnull String query,
-            @NonNull JetJoinInfo joinInfo,
+            @Nonnull JetJoinInfo joinInfo,
             List<Expression<?>> projections) {
         super(dataConnectionName, query, joinInfo, projections);
     }
