@@ -37,11 +37,11 @@ public interface CPMap<K, V> extends DistributedObject {
      *     See {@link CPMap#set(K, V)} for a more optimal solution when the previous value of @{code key} is not relevant.
      * </p>
      * @param key non-null key of the entry
-     * @param value Value of the entry
+     * @param value non-null value of the entry
      * @return null if {@code key} had no previous mapping, otherwise the previous value associated with {@code key}
-     * @throws NullPointerException when {@code key} is null
+     * @throws NullPointerException when {@code key} or {@code value} is null
      */
-    V put(@Nonnull K key, V value);
+    V put(@Nonnull K key, @Nonnull V value);
 
     /**
      * Associates {@code key} with {@code value}.
@@ -51,10 +51,10 @@ public interface CPMap<K, V> extends DistributedObject {
      *     {@code key} is required.
      * </p>
      * @param key non-null key of the entry
-     * @param value Value of the entry
-     * @throws NullPointerException when {@code key} is null
+     * @param value non-null value of the entry
+     * @throws NullPointerException when {@code key} or {@code value} is null
      */
-    void set(@Nonnull K key, V value);
+    void set(@Nonnull K key, @Nonnull V value);
 
     /**
      * Removes {@code key} if present.
@@ -74,12 +74,12 @@ public interface CPMap<K, V> extends DistributedObject {
     /**
      * Atomically sets {@code key} to {@code newValue} if the current value for {@code key} is equal-to {@code expectedValue}.
      * @param key non-null key of the entry
-     * @param expectedValue Expected value associated with {@code key}
-     * @param newValue New value to associated with {@code key}
+     * @param expectedValue non-null expected value associated with {@code key}
+     * @param newValue non-null new value to associate with {@code key}
      * @return true if {@code key} was associated with {@code newValue}, otherwise false
-     * @throws NullPointerException when {@code key} is null
+     * @throws NullPointerException when {@code key}, {@code expectedValue} or {@code newValue} is null
      */
-    boolean compareAndSet(@Nonnull K key, V expectedValue, V newValue);
+    boolean compareAndSet(@Nonnull K key, @Nonnull V expectedValue, @Nonnull V newValue);
 
     /**
      * Gets the value associated with {@code key}
