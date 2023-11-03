@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -42,16 +43,35 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     }
 
     @Test
-    public void test_select() {
+    public void test_options() {
         createMapping("test", Long.class, String.class);
         assertFalse(assertQueryPlan("SELECT * FROM test").isAnalyzed());
         assertTrue(assertQueryPlan("ANALYZE SELECT * FROM test").isAnalyzed());
         SelectPlan plan = assertQueryPlan(
-                "ANALYZE WITH OPTIONS('opt1'='opt1val', 'opt2'='opt2val') SELECT * FROM test");
+                "ANALYZE WITH OPTIONS("
+                        + "'processingGuarantee'='exactlyOnce', "
+                        + "'snapshotIntervalMillis'='121', "
+                        + "'initialSnapshotName'='pressF', "
+                        + "'maxProcessorAccumulatedRecords'='100'"
+                        + ") SELECT * FROM test");
         assertTrue(plan.isAnalyzed());
-        assertEquals("opt1val", plan.getAnalyzeOptions().get("opt1"));
-        assertEquals("opt2val", plan.getAnalyzeOptions().get("opt2"));
 
+        assertFalse(plan.analyzeJobConfig().isSplitBrainProtectionEnabled());
+        assertFalse(plan.analyzeJobConfig().isAutoScaling());
+        assertFalse(plan.analyzeJobConfig().isSuspendOnFailure());
+
+        assertTrue(plan.analyzeJobConfig().isMetricsEnabled());
+        assertTrue(plan.analyzeJobConfig().isStoreMetricsAfterJobCompletion());
+
+        assertEquals(ProcessingGuarantee.EXACTLY_ONCE, plan.analyzeJobConfig().getProcessingGuarantee());
+        assertEquals(121L, plan.analyzeJobConfig().getSnapshotIntervalMillis());
+        assertEquals("pressF", plan.analyzeJobConfig().getInitialSnapshotName());
+        assertEquals(100, plan.analyzeJobConfig().getMaxProcessorAccumulatedRecords());
+    }
+
+    @Test
+    public void test_select() {
+        createMapping("test", Long.class, String.class);
         instance().getSql().execute("INSERT INTO test VALUES (1, 'testVal')");
         assertRowsAnyOrder("ANALYZE SELECT * FROM test WHERE TRUE", rows(2, 1L, "testVal"));
         final Job job = instance().getJet().getJobs()
@@ -71,13 +91,6 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     public void test_insert() {
         createMapping("test", Long.class, Long.class);
         final String baseQuery = "INSERT INTO test SELECT v, v from table(generate_series(1,2))";
-        assertFalse(assertDmlQueryPlan(baseQuery).isAnalyzed());
-        assertTrue(assertDmlQueryPlan("ANALYZE " + baseQuery).isAnalyzed());
-        SqlPlanImpl.DmlPlan plan = assertDmlQueryPlan(
-                "ANALYZE WITH OPTIONS('opt1'='opt1val', 'opt2'='opt2val') " + baseQuery);
-        assertTrue(plan.isAnalyzed());
-        assertEquals("opt1val", plan.getAnalyzeOptions().get("opt1"));
-        assertEquals("opt2val", plan.getAnalyzeOptions().get("opt2"));
 
         instance().getSql().execute("ANALYZE " + baseQuery);
         final Job job = instance().getJet().getJobs()

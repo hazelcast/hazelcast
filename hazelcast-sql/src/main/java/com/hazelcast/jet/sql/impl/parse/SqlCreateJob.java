@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.sql.impl.QueryUtils;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -145,7 +146,7 @@ public class SqlCreateJob extends SqlCreate {
                     }
                     break;
                 case "snapshotIntervalMillis":
-                    jobConfig.setSnapshotIntervalMillis(parseLong(validator, option));
+                    jobConfig.setSnapshotIntervalMillis(QueryUtils.parseLong(validator, option));
                     break;
                 case "autoScaling":
                     jobConfig.setAutoScaling(Boolean.parseBoolean(value));
@@ -163,7 +164,7 @@ public class SqlCreateJob extends SqlCreate {
                     jobConfig.setInitialSnapshotName(value);
                     break;
                 case "maxProcessorAccumulatedRecords":
-                    jobConfig.setMaxProcessorAccumulatedRecords(parseLong(validator, option));
+                    jobConfig.setMaxProcessorAccumulatedRecords(QueryUtils.parseLong(validator, option));
                     break;
                 case "suspendOnFailure":
                     jobConfig.setSuspendOnFailure(Boolean.parseBoolean(value));
@@ -174,14 +175,5 @@ public class SqlCreateJob extends SqlCreate {
         }
 
         validator.validate(sqlInsert);
-    }
-
-    static long parseLong(SqlValidator validator, SqlOption option) {
-        try {
-            return Long.parseLong(option.valueString());
-        } catch (NumberFormatException e) {
-            throw validator.newValidationError(option.value(),
-                    RESOURCE.jobOptionIncorrectNumber(option.keyString(), option.valueString()));
-        }
     }
 }

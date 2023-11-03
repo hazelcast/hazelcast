@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.DeltaJobConfig;
+import com.hazelcast.sql.impl.QueryUtils;
 import org.apache.calcite.sql.SqlAlter;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
-import static com.hazelcast.jet.sql.impl.parse.SqlCreateJob.parseLong;
 import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.unparseOptions;
 import static java.util.Objects.requireNonNull;
 
@@ -124,7 +124,7 @@ public class SqlAlterJob extends SqlAlter {
 
             switch (key) {
                 case "snapshotIntervalMillis":
-                    deltaConfig.setSnapshotIntervalMillis(parseLong(validator, option));
+                    deltaConfig.setSnapshotIntervalMillis(QueryUtils.parseLong(validator, option));
                     break;
                 case "autoScaling":
                     deltaConfig.setAutoScaling(Boolean.parseBoolean(value));
@@ -139,7 +139,7 @@ public class SqlAlterJob extends SqlAlter {
                     deltaConfig.setStoreMetricsAfterJobCompletion(Boolean.parseBoolean(value));
                     break;
                 case "maxProcessorAccumulatedRecords":
-                    deltaConfig.setMaxProcessorAccumulatedRecords(parseLong(validator, option));
+                    deltaConfig.setMaxProcessorAccumulatedRecords(QueryUtils.parseLong(validator, option));
                     break;
                 case "suspendOnFailure":
                     deltaConfig.setSuspendOnFailure(Boolean.parseBoolean(value));

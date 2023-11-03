@@ -176,9 +176,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             return explainStatement;
         }
 
-        // Handling same corner case as with EXPLAIN
         if (topNode instanceof SqlAnalyzeStatement) {
             SqlAnalyzeStatement analyzeStatement = (SqlAnalyzeStatement) topNode;
+            // Note: we're using custom validate method to handle same issues as for EXPLAIN.
+            analyzeStatement.validate(this);
             SqlNode query = analyzeStatement.getQuery();
             query = super.validate(query);
             analyzeStatement.setQuery(query);
