@@ -16,12 +16,14 @@
 
 package com.hazelcast.sql.impl.schema.type;
 
-import com.google.common.collect.ImmutableMap;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateType;
+import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -32,27 +34,27 @@ import com.hazelcast.sql.impl.type.converter.Converters;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * A class stored in the SQL catalog to represent a type created using the
  * CREATE TYPE command.
- * <p>
- * It can represent a java class, or a portable/compact type, see {@link #kind}.
  */
 public class Type implements Serializable, SqlCatalogObject {
     private String name;
-    private TypeKind kind = TypeKind.JAVA;
-    private String javaClassName;
-    private String compactTypeName;
-    private Integer portableFactoryId;
-    private Integer portableClassId;
-    private Integer portableVersion;
     private List<TypeField> fields;
+    private Map<String, String> options;
 
-    public Type() {
+    public Type() { }
+
+    public Type(String name, List<TypeDefinitionColumn> columns, Map<String, String> options) {
+        this.name = name;
+        this.fields = columns.stream().map(column -> new TypeField(column.name(), column.type())).collect(toList());
+        this.options = options;
     }
 
     @Override
@@ -60,88 +62,16 @@ public class Type implements Serializable, SqlCatalogObject {
         return name;
     }
 
-    public void setName(final String name) {
-        this.name = name;
-    }
-
-    public TypeKind getKind() {
-        return kind;
-    }
-
-    public void setKind(final TypeKind kind) {
-        this.kind = kind;
-    }
-
-    public String getJavaClassName() {
-        return javaClassName;
-    }
-
-    public void setJavaClassName(final String javaClassName) {
-        this.javaClassName = javaClassName;
-    }
-
     public List<TypeField> getFields() {
         return fields;
     }
 
-    public void setFields(final List<TypeField> fields) {
+    public void setFields(List<TypeField> fields) {
         this.fields = fields;
     }
 
-    public Integer getPortableFactoryId() {
-        return portableFactoryId;
-    }
-
-    public void setPortableFactoryId(final Integer portableFactoryId) {
-        this.portableFactoryId = portableFactoryId;
-    }
-
-    public Integer getPortableClassId() {
-        return portableClassId;
-    }
-
-    public void setPortableClassId(final Integer portableClassId) {
-        this.portableClassId = portableClassId;
-    }
-
-    public Integer getPortableVersion() {
-        return portableVersion;
-    }
-
-    public void setPortableVersion(final Integer portableVersion) {
-        this.portableVersion = portableVersion;
-    }
-
-    public String getCompactTypeName() {
-        return compactTypeName;
-    }
-
-    public void setCompactTypeName(final String compactTypeName) {
-        this.compactTypeName = compactTypeName;
-    }
-
     public Map<String, String> options() {
-        if (javaClassName != null) {
-            return ImmutableMap.of(
-                    "format", "java",
-                    "javaClass", javaClassName);
-        }
-
-        if (compactTypeName != null) {
-            return ImmutableMap.of(
-                    "format", "compact",
-                    "compactTypeName", compactTypeName);
-        }
-
-        if (portableFactoryId != null) {
-            return ImmutableMap.of(
-                    "format", "portable",
-                    "portableFactoryId", String.valueOf(portableFactoryId),
-                    "portableClassId", String.valueOf(portableClassId),
-                    "portableClassVersion", String.valueOf(portableVersion != null ? portableVersion : 0));
-        }
-
-        throw new AssertionError("unexpected state");
+        return Collections.unmodifiableMap(options);
     }
 
     @Override
@@ -151,56 +81,17 @@ public class Type implements Serializable, SqlCatalogObject {
     }
 
     @Override
-    public void writeData(final ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
-        out.writeInt(kind.ordinal());
-        switch (kind) {
-            case JAVA:
-                out.writeString(javaClassName);
-                break;
-            case PORTABLE:
-                out.writeInt(portableFactoryId);
-                out.writeInt(portableClassId);
-                out.writeInt(portableVersion);
-                break;
-            case COMPACT:
-                out.writeString(compactTypeName);
-                break;
-            default:
-                throw new UnsupportedOperationException("Unsupported Type Kind: " + kind);
-        }
-
-        out.writeInt(fields.size());
-        for (final TypeField field : fields) {
-            out.writeObject(field);
-        }
+        SerializationUtil.writeList(fields, out);
+        SerializationUtil.writeMap(options, out);
     }
 
     @Override
-    public void readData(final ObjectDataInput in) throws IOException {
-        this.name = in.readString();
-        this.kind = TypeKind.values()[in.readInt()];
-        switch (kind) {
-            case JAVA:
-                this.javaClassName = in.readString();
-                break;
-            case PORTABLE:
-                this.portableFactoryId = in.readInt();
-                this.portableClassId = in.readInt();
-                this.portableVersion = in.readInt();
-                break;
-            case COMPACT:
-                this.compactTypeName = in.readString();
-                break;
-            default:
-                throw new UnsupportedOperationException("Unsupported Type Kind: " + kind);
-        }
-
-        final int size = in.readInt();
-        this.fields = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            this.fields.add(in.readObject());
-        }
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readString();
+        fields = SerializationUtil.readList(in);
+        options = SerializationUtil.readMap(in);
     }
 
     @Override
@@ -210,49 +101,43 @@ public class Type implements Serializable, SqlCatalogObject {
 
     public static class TypeField implements IdentifiedDataSerializable, Serializable {
         private String name;
-        private QueryDataType queryDataType;
+        /**
+         * A predefined type or a custom type without kind and metadata.
+         * <p>
+         * <em>Type kind</em> indicates the serialization format, which is inherited from
+         * mapping. <em>Type metadata</em> stores schema information, which is reconstructed
+         * from {@link Mapping} and {@link Type} options each time a new mapping is created.
+         */
+        private QueryDataType type;
 
-        public TypeField() {
-        }
+        public TypeField() { }
 
-        public TypeField(final String name, final QueryDataType queryDataType) {
+        public TypeField(String name, QueryDataType type) {
             this.name = name;
-            this.queryDataType = queryDataType;
+            this.type = type;
         }
 
         public String getName() {
             return name;
         }
 
-        public void setName(final String name) {
-            this.name = name;
-        }
-
-        public QueryDataType getQueryDataType() {
-            return queryDataType;
-        }
-
-        public void setQueryDataType(final QueryDataType queryDataType) {
-            this.queryDataType = queryDataType;
+        public QueryDataType getType() {
+            return type;
         }
 
         @Override
-        public void writeData(final ObjectDataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeString(name);
-            out.writeInt(queryDataType == null ? -1 : queryDataType.getConverter().getId());
-            out.writeString(queryDataType == null ? "" : queryDataType.getObjectTypeName());
+            out.writeInt(type.getConverter().getId());
+            out.writeString(type.getObjectTypeName());
         }
 
         @Override
-        public void readData(final ObjectDataInput in) throws IOException {
-            this.name = in.readString();
-            final int converterId = in.readInt();
-            final String typeName = in.readString();
-            final Converter converter = Converters.getConverter(converterId);
-
-            // TODO: is this the correct type kind? (NONE). Maybe worth writing it too.
-            this.queryDataType = converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)
-                    && ((typeName != null && !typeName.isEmpty()))
+        public void readData(ObjectDataInput in) throws IOException {
+            name = in.readString();
+            Converter converter = Converters.getConverter(in.readInt());
+            String typeName = in.readString();
+            type = converter.getTypeFamily() == QueryDataTypeFamily.OBJECT && typeName != null
                     ? new QueryDataType(typeName)
                     : QueryDataTypeUtils.resolveTypeForClass(converter.getValueClass());
         }

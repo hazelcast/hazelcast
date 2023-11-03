@@ -58,6 +58,11 @@ public class RelationsStorage extends AbstractSchemaStorage {
         return (Mapping) storage().remove(name);
     }
 
+    public Mapping getMapping(String name) {
+        Object object = storage().get(name);
+        return object instanceof Mapping ? (Mapping) object : null;
+    }
+
     public Collection<Type> getAllTypes() {
         return storage().values().stream()
                 .filter(o -> o instanceof Type)

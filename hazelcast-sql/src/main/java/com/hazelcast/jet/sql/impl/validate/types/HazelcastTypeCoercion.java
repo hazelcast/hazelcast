@@ -241,9 +241,9 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return customTypesCoercion(source, target, ((SqlCall) rowElement).operand(0), scope);
         }
 
-        if (HazelcastTypeUtils.isHzObjectType(source)) {
-            return HazelcastTypeUtils.extractHzObjectType(source).getTypeName()
-                    .equals(HazelcastTypeUtils.extractHzObjectType(target).getTypeName());
+        if (source instanceof HazelcastObjectType) {
+            return ((HazelcastObjectType) source).getTypeName()
+                    .equals(((HazelcastObjectType) target).getTypeName());
         }
 
         assert rowElement instanceof SqlCall : "Row Element must be an SqlCall";

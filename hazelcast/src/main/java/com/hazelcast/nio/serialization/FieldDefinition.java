@@ -37,17 +37,25 @@ public interface FieldDefinition {
     int getIndex();
 
     /**
-     * @return class ID of this field's class
-     */
-    int getClassId();
-
-    /**
      * @return factory ID of this field's class
      */
     int getFactoryId();
 
     /**
+     * @return class ID of this field's class
+     */
+    int getClassId();
+
+    /**
      * @return version of this field's class
      */
     int getVersion();
+
+    /**
+     * @return portable ID of this field's class
+     * @since 5.4
+     */
+    default PortableId getPortableId() {
+        return new PortableId(getFactoryId(), getClassId(), getVersion());
+    }
 }

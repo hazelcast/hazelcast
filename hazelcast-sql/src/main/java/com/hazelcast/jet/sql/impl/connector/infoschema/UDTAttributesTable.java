@@ -95,11 +95,11 @@ public class UDTAttributesTable extends InfoSchemaTable {
                         i + 1,
                         null, // attribute_default
                         "YES", // is_nullable
-                        toSqlDataTypeString(field.getQueryDataType()), // data type
-                        field.getQueryDataType().getTypeFamily().equals(QueryDataTypeFamily.VARCHAR)
+                        toSqlDataTypeString(field.getType()), // data type
+                        field.getType().getTypeFamily() == QueryDataTypeFamily.VARCHAR
                                 ? Integer.MAX_VALUE
                                 : null, // character_maximum_length
-                        field.getQueryDataType().getTypeFamily().equals(QueryDataTypeFamily.VARCHAR)
+                        field.getType().getTypeFamily() == QueryDataTypeFamily.VARCHAR
                                 ? Integer.MAX_VALUE
                                 : null, // character_octet_length
                         null, // character_set_catalog
@@ -108,28 +108,28 @@ public class UDTAttributesTable extends InfoSchemaTable {
                         null, // collation_catalog
                         null, // collation_schema
                         null, // collation_name
-                        field.getQueryDataType().getTypeFamily().isNumeric()
-                                ? getNumericTypePrecision(field.getQueryDataType())
+                        field.getType().getTypeFamily().isNumeric()
+                                ? getNumericTypePrecision(field.getType())
                                 : null, // numeric_precision
-                        field.getQueryDataType().getTypeFamily().isNumeric()
+                        field.getType().getTypeFamily().isNumeric()
                                 ? 2
                                 : null, // numeric_precision_radix
-                        field.getQueryDataType().getTypeFamily().isNumericInteger()
+                        field.getType().getTypeFamily().isNumericInteger()
                                 ? 0
                                 : null, // numeric_scale
-                        field.getQueryDataType().getTypeFamily().isTemporal()
-                                ? getTemporalTypePrecision(field.getQueryDataType())
+                        field.getType().getTypeFamily().isTemporal()
+                                ? getTemporalTypePrecision(field.getType())
                                 : null, // datetime_precision
                         null, // interval_type
                         null, // interval_precision
-                        field.getQueryDataType().isCustomType()
+                        field.getType().isCustomType()
                                 ? catalog()
                                 : null, // attribute_udt_catalog
-                        field.getQueryDataType().isCustomType()
+                        field.getType().isCustomType()
                                 ? schema
                                 : null, // attribute_udt_schema
-                        field.getQueryDataType().isCustomType()
-                                ? field.getQueryDataType().getObjectTypeName()
+                        field.getType().isCustomType()
+                                ? field.getType().getObjectTypeName()
                                 : null, // attribute_udt_name
                         null, // scope_catalog
                         null, // scope_schema
