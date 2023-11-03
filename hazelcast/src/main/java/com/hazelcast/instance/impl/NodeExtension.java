@@ -401,9 +401,9 @@ public interface NodeExtension {
     CPPersistenceService getCPPersistenceService();
 
     /**
-     * Returns CP subsystem implementation.
+     * Creates the relevant CP subsystem implementation.
      */
-    CPSubsystem getCPSubsystem(NodeEngine nodeEngine);
+    CPSubsystem createCPSubsystem(NodeEngine nodeEngine);
 
     /**
      * Returns a JetService.
