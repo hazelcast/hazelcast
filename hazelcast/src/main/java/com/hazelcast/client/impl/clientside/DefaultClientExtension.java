@@ -242,7 +242,7 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     @Override
-    public CPSubsystem getCPSubsystem(HazelcastClientInstanceImpl hazelcastClientInstance) {
+    public CPSubsystem createCPSubsystem(HazelcastClientInstanceImpl hazelcastClientInstance) {
         return new CPSubsystemImpl(new ClientRaftProxyFactory(hazelcastClientInstance));
     }
 }

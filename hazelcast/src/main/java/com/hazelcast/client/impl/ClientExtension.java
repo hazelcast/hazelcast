@@ -115,7 +115,7 @@ public interface ClientExtension {
     JetService getJet();
 
     /**
-     * Gets the CPSubsystem.
+     * Creates the relevant CP subsystem implementation.
      */
-    CPSubsystem getCPSubsystem(HazelcastClientInstanceImpl hazelcastClientInstance);
+    CPSubsystem createCPSubsystem(HazelcastClientInstanceImpl hazelcastClientInstance);
 }

@@ -272,7 +272,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientStatisticsService = new ClientStatisticsService(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
         proxySessionManager = new ClientProxySessionManager(this);
-        cpSubsystem = (CPSubsystemImpl) clientExtension.getCPSubsystem(this);
+        cpSubsystem = (CPSubsystemImpl) clientExtension.createCPSubsystem(this);
         sqlService = new SqlClientService(this);
     }
 
