@@ -282,12 +282,10 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
 
             if (!status.isTerminal()) {
                 // Check JMX metrics
-                JmxMetricsChecker jmx = JmxMetricsChecker.forJob(hzInstances[0], job);
-                long jmxStatus = jmx.getMetricValue(MetricNames.JOB_STATUS);
+                long jmxStatus = JmxMetricsChecker.forJob(hzInstances[0], job)
+                        .getMetricValue(MetricNames.JOB_STATUS);
                 assertEquals(status, JobStatus.getById((int) jmxStatus));
-
-                long jmxCancelled = jmx.getMetricValue(MetricNames.IS_USER_CANCELLED);
-                assertEquals(isUserCancelled ? 1 : 0, jmxCancelled);
+                // IS_USER_CANCELLED is not reported in JMX metrics by design
             }
         } catch (Exception e) {
             throw new AssertionError(e.getMessage(), e);

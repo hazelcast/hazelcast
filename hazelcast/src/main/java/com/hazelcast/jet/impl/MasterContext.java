@@ -59,11 +59,9 @@ import java.util.stream.Collectors;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
-import static com.hazelcast.jet.core.metrics.MetricNames.IS_USER_CANCELLED;
 import static com.hazelcast.jet.core.metrics.MetricNames.JOB_STATUS;
 import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -98,7 +96,6 @@ public class MasterContext implements DynamicMetricsProvider {
     private final JobRecord jobRecord;
     private final JobExecutionRecord jobExecutionRecord;
     private volatile JobStatus jobStatus;
-    private volatile boolean userRequested;
     private volatile long executionId;
     private volatile Map<MemberInfo, ExecutionPlan> executionPlanMap;
 
@@ -169,7 +166,6 @@ public class MasterContext implements DynamicMetricsProvider {
     void setJobStatus(JobStatus jobStatus, String description, boolean userRequested) {
         JobStatus oldStatus = this.jobStatus;
         this.jobStatus = jobStatus;
-        this.userRequested = userRequested;
         // Update metrics before notifying listeners, so that they can see up-to-date metrics.
         jobContext.setJobMetrics(jobStatus, userRequested);
         jobEventService.publishEvent(jobId, oldStatus, jobStatus, description, userRequested);
@@ -238,8 +234,11 @@ public class MasterContext implements DynamicMetricsProvider {
                   .withTag(MetricTags.JOB_NAME, jobName);
 
         context.collect(descriptor, JOB_STATUS, ProbeLevel.INFO, ProbeUnit.ENUM, jobStatus.getId());
-        context.collect(descriptor, IS_USER_CANCELLED, ProbeLevel.INFO, ProbeUnit.BOOLEAN,
-                (jobStatus == FAILED && userRequested) ? 1 : 0);
+
+        // We do not provide IS_USER_CANCELLED metric here. When the job is cancelled,
+        // MasterContext is put into FAILED state, and shortly after, it is removed by
+        // JobCoordinationService, so the probability of observing this is very low.
+        // The metric is included in the final metrics stored after job completion.
     }
 
     public JobRecord jobRecord() {
