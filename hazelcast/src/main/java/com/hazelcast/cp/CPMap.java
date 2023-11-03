@@ -18,48 +18,74 @@ package com.hazelcast.cp;
 
 import com.hazelcast.core.DistributedObject;
 
+import javax.annotation.Nonnull;
+
+/**
+ * CPMap is a key-value store within CP. It can be accessed via {@link CPSubsystem#getMap(String)}.
+ * <p>
+ *     A CPMap must be able to fit within the member's host RAM. A CPMap is not partitioned like an
+ *     {@link com.hazelcast.map.IMap}.
+ * </p>
+ * @param <K> Key
+ * @param <V> Value
+ * @since 5.4
+ */
 public interface CPMap<K, V> extends DistributedObject {
     /**
-     * Associates [key] with [value].
+     * Associates {@code key} with {@code value}.
+     * <p>
+     *     See {@link CPMap#set(K, V)} for a more optimal solution when the previous value of @{code key} is not relevant.
+     * </p>
      * @param key non-null key of the entry
-     * @param value Value of the entry
-     * @return null if [key] had no previous mapping, otherwise the previous value associated with [key]
+     * @param value non-null value of the entry
+     * @return null if {@code key} had no previous mapping, otherwise the previous value associated with {@code key}
+     * @throws NullPointerException when {@code key} or {@code value} is null
      */
-    V put(K key, V value);
+    V put(@Nonnull K key, @Nonnull V value);
 
     /**
-     * Associates [key] with [value].
+     * Associates {@code key} with {@code value}.
+     * <p>
+     *     This method should be preferred over {@link CPMap#put(K, V)} as it has a smaller network footprint due to the previous
+     *     value associated with {@code key} not being transmitted. Use {@link CPMap#put(K, V)} only when the previous value of
+     *     {@code key} is required.
+     * </p>
      * @param key non-null key of the entry
-     * @param value Value of the entry
+     * @param value non-null value of the entry
+     * @throws NullPointerException when {@code key} or {@code value} is null
      */
-    void set(K key, V value);
+    void set(@Nonnull K key, @Nonnull V value);
 
     /**
-     * Removes [key] if present.
+     * Removes {@code key} if present.
      * @param key non-null key of the key-value entry to remove
-     * @return null if [key] was not present, otherwise the value associated with [key]
+     * @return null if {@code key} was not present, otherwise the value associated with {@code key}
+     * @throws NullPointerException when {@code key} is null
      */
-    V remove(K key);
+    V remove(@Nonnull K key);
 
     /**
-     * Removes [key] if present.
+     * Removes {@code key} if present.
      * @param key non-null key of the key-value entry to remove
+     * @throws NullPointerException when {@code key} is null
      */
-    void delete(K key);
+    void delete(@Nonnull K key);
 
     /**
-     * Indivisibly sets [key] to [newValue] if the current value for [key] is equal-to [expectedValue].
+     * Atomically sets {@code key} to {@code newValue} if the current value for {@code key} is equal-to {@code expectedValue}.
      * @param key non-null key of the entry
-     * @param expectedValue Expected value associated with [key]
-     * @param newValue New value to associated with [key]
-     * @return true if [key] was associated with [newValue], otherwise false
+     * @param expectedValue non-null expected value associated with {@code key}
+     * @param newValue non-null new value to associate with {@code key}
+     * @return true if {@code key} was associated with {@code newValue}, otherwise false
+     * @throws NullPointerException when {@code key}, {@code expectedValue} or {@code newValue} is null
      */
-    boolean compareAndSet(K key, V expectedValue, V newValue);
+    boolean compareAndSet(@Nonnull K key, @Nonnull V expectedValue, @Nonnull V newValue);
 
     /**
-     * Gets the value associated with [key]
+     * Gets the value associated with {@code key}
      * @param key non-null key of the entry
-     * @return null if [key] had no association, otherwise the value associated with [key].
+     * @return null if {@code key} had no association, otherwise the value associated with {@code key}
+     * @throws NullPointerException when {@code key} is null
      */
-    V get(K key);
+    V get(@Nonnull K key);
 }

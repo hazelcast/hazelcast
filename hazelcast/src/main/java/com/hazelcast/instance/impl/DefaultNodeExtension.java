@@ -672,7 +672,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public CPSubsystem getCPSubsystem(NodeEngine nodeEngine) {
+    public CPSubsystem createCPSubsystem(NodeEngine nodeEngine) {
         return new CPSubsystemImpl(nodeEngine);
     }
 

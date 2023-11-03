@@ -306,8 +306,8 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public CPSubsystem getCPSubsystem(NodeEngine nodeEngine) {
-        return nodeExtension.getCPSubsystem(nodeEngine);
+    public CPSubsystem createCPSubsystem(NodeEngine nodeEngine) {
+        return nodeExtension.createCPSubsystem(nodeEngine);
     }
 
     @Override
