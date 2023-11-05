@@ -22,6 +22,7 @@ import com.hazelcast.internal.util.StringUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -184,7 +185,8 @@ final class KubernetesConfig {
     static class DefaultFileContentsReader implements FileContentsReader {
         public String readFileContents(String fileName) {
             try {
-                return Files.readString(Paths.get(fileName));
+                byte[] data = Files.readAllBytes(Paths.get(fileName));
+                return new String(data, StandardCharsets.UTF_8);
             } catch (IOException e) {
                 throw new RuntimeException("Could not get " + fileName, e);
             }
