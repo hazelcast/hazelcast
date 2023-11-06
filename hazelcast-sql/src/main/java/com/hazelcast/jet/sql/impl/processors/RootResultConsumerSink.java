@@ -47,12 +47,14 @@ public final class RootResultConsumerSink implements Processor {
 
     private final Expression<?> limitExpression;
     private final Expression<?> offsetExpression;
+    private final boolean planIsAnalyzed;
 
     private QueryResultProducerImpl rootResultConsumer;
 
-    private RootResultConsumerSink(Expression<?> limitExpression, Expression<?> offsetExpression) {
+    private RootResultConsumerSink(Expression<?> limitExpression, Expression<?> offsetExpression, boolean planIsAnalyzed) {
         this.limitExpression = limitExpression;
         this.offsetExpression = offsetExpression;
+        this.planIsAnalyzed = planIsAnalyzed;
     }
 
     @Override
@@ -115,6 +117,22 @@ public final class RootResultConsumerSink implements Processor {
     }
 
     @Override
+    public boolean saveToSnapshot() {
+        if (planIsAnalyzed) {
+            throw new UnsupportedOperationException("Snapshots are not supported in a distributed environment");
+        }
+        return Processor.super.saveToSnapshot();
+    }
+
+    @Override
+    public void restoreFromSnapshot(@Nonnull Inbox inbox) {
+        if (planIsAnalyzed) {
+            throw new UnsupportedOperationException();
+        }
+        Processor.super.restoreFromSnapshot(inbox);
+    }
+
+    @Override
     public boolean complete() {
         rootResultConsumer.done();
         return true;
@@ -133,19 +151,22 @@ public final class RootResultConsumerSink implements Processor {
     public static ProcessorMetaSupplier rootResultConsumerSink(
             Address initiatorAddress,
             Expression<?> limitExpression,
-            Expression<?> offsetExpression
-    ) {
-        ProcessorSupplier pSupplier = ProcessorSupplier.of(new Supplier(limitExpression, offsetExpression));
+            Expression<?> offsetExpression,
+            boolean planIsAnalyzed) {
+        ProcessorSupplier pSupplier = ProcessorSupplier.of(
+                new Supplier(limitExpression, offsetExpression, planIsAnalyzed));
         return forceTotalParallelismOne(pSupplier, initiatorAddress);
     }
 
     public static class Supplier implements SupplierEx<Processor>, IdentifiedDataSerializable {
         private Expression<?> limitExpression;
         private Expression<?> offsetExpression;
+        private boolean planIsAnalyzed;
 
-        public Supplier(Expression<?> limitExpression, Expression<?> offsetExpression) {
+        public Supplier(Expression<?> limitExpression, Expression<?> offsetExpression, boolean planIsAnalyzed) {
             this.limitExpression = limitExpression;
             this.offsetExpression = offsetExpression;
+            this.planIsAnalyzed = planIsAnalyzed;
         }
 
         public Supplier() {
@@ -153,7 +174,7 @@ public final class RootResultConsumerSink implements Processor {
 
         @Override
         public Processor getEx() {
-            return new RootResultConsumerSink(limitExpression, offsetExpression);
+            return new RootResultConsumerSink(limitExpression, offsetExpression, planIsAnalyzed);
         }
 
         @Override

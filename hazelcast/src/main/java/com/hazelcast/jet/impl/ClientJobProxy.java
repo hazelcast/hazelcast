@@ -180,16 +180,11 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     @Override
-    public JobStateSnapshot cancelAndExportSnapshot(String name) {
-        return doExportSnapshot(name, true);
-    }
-
-    @Override
     public JobStateSnapshot exportSnapshot(String name) {
         return doExportSnapshot(name, false);
     }
 
-    private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
+    protected JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
         checkNotLightJob("export snapshot");
         ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, cancelJob);
         try {

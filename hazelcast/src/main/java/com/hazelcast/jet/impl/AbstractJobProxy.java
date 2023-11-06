@@ -21,9 +21,11 @@ import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.JobConfigArguments;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.exception.CancellationByUserException;
@@ -81,9 +83,10 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     // that needs this field we initialize in it superclass constructor.
     protected final Subject subject;
 
+    protected final ILogger logger;
+
     private final long jobId;
     private volatile String name = NOT_LOADED;
-    private final ILogger logger;
     private final C container;
 
     /**
@@ -269,7 +272,18 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
     @Override
     public void suspend() {
-        terminate(TerminationMode.SUSPEND_GRACEFUL);
+        // Note: `checkJobIsAnalyzed` includes an operation sending, not the best way at all.
+        if (!isLightJob() && !checkJobIsAnalyzed(getConfig())) {
+            terminate(TerminationMode.SUSPEND_GRACEFUL);
+        }
+    }
+
+    @Override
+    public JobStateSnapshot cancelAndExportSnapshot(String name) {
+        if (checkJobIsAnalyzed(getConfig())) {
+            throw new UnsupportedOperationException("cancelAndExportSnapshot is not supported for analyzed jobs");
+        }
+        return doExportSnapshot(name, true);
     }
 
     private void terminate(TerminationMode mode) {
@@ -372,6 +386,8 @@ public abstract class AbstractJobProxy<C, M> implements Job {
      */
     protected abstract JobConfig doUpdateJobConfig(@Nonnull DeltaJobConfig deltaConfig);
 
+    protected abstract JobStateSnapshot doExportSnapshot(String name, boolean cancelJob);
+
     /**
      * Associates the specified listener to this job.
      * @throws JobNotFoundException if the job's master context is cleaned up after job
@@ -458,6 +474,10 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         if (isLightJob()) {
             throw new UnsupportedOperationException("not supported for light jobs: " + msg);
         }
+    }
+
+    protected static boolean checkJobIsAnalyzed(JobConfig jobConfig) {
+        return jobConfig.getArgument(JobConfigArguments.KEY_SQL_PLAN_ANALYZED) != null;
     }
 
     public static IllegalStateException cannotAddStatusListener(JobStatus status) {

@@ -740,7 +740,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else {
             Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
-                    new RootRel(physicalRel),
+                    new RootRel(physicalRel, analyze),
                     parameterMetadata,
                     context.getUsedViews(),
                     partitionStrategyCandidates(physicalRel, parameterMetadata));

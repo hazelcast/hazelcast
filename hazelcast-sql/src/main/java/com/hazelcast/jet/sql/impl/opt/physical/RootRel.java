@@ -27,9 +27,15 @@ import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
 public class RootRel extends SingleRel implements PhysicalRel {
+    private final boolean planIsAnalyzed;
 
-    public RootRel(RelNode input) {
+    public RootRel(RelNode input, boolean planIsAnalyzed) {
         super(input.getCluster(), RelTraitSet.createEmpty(), input);
+        this.planIsAnalyzed = planIsAnalyzed;
+    }
+
+    public boolean isPlanAnalyzed() {
+        return planIsAnalyzed;
     }
 
     @Override

@@ -643,7 +643,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
         Vertex vertex = dag.newUniqueVertex(
                 "ClientSink",
-                rootResultConsumerSink(localMemberAddress, fetch, offset)
+                rootResultConsumerSink(
+                        localMemberAddress,
+                        fetch,
+                        offset,
+                        rootRel.isPlanAnalyzed())
         );
 
         // We use distribute-to-one edge to send all the items to the initiator member.
