@@ -17,198 +17,59 @@
 package com.hazelcast.kubernetes;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+
+import java.util.Collections;
+import java.util.HashMap;
+
+import static com.hazelcast.kubernetes.KubernetesFakeUtils.endpointAddress;
+import static com.hazelcast.kubernetes.KubernetesFakeUtils.endpoints;
+import static com.hazelcast.kubernetes.KubernetesFakeUtils.endpointsList;
+
 public class KubernetesApiEndpointProviderTest
         extends KubernetesApiProviderTest {
+
+    private static final ObjectWriter WRITER = new ObjectMapper().writer();
 
     public KubernetesApiEndpointProviderTest() {
         super(new KubernetesApiEndpointProvider());
     }
 
-    public String getEndpointsResponseWithServices() {
-        //language=JSON
-        return "{\n"
-          + "  \"kind\": \"EndpointsList\",\n"
-          + "  \"items\": [\n"
-          + "    {\n"
-          + "      \"metadata\": {\n"
-          + "        \"name\": \"my-release-hazelcast\"\n"
-          + "      },\n"
-          + "      \"subsets\": [\n"
-          + "        {\n"
-          + "          \"addresses\": [\n"
-          + "            {\n"
-          + "              \"ip\": \"192.168.0.25\",\n"
-          + "              \"nodeName\": \"node-name-1\",\n"
-          + "              \"targetRef\": {\n"
-          + "                \"name\": \"hazelcast-0\""
-          + "              }\n"
-          + "            },\n"
-          + "            {\n"
-          + "              \"ip\": \"172.17.0.5\",\n"
-          + "              \"nodeName\": \"node-name-2\",\n"
-          + "              \"targetRef\": {\n"
-          + "                \"name\": \"hazelcast-1\""
-          + "              }\n"
-          + "            }\n"
-          + "          ],\n"
-          + "          \"ports\": [\n"
-          + "            {\n"
-          + "              \"port\": 5701\n"
-          + "            }\n"
-          + "          ]\n"
-          + "        }\n"
-          + "      ]\n"
-          + "    },\n"
-          + "    {\n"
-          + "      \"metadata\": {\n"
-          + "        \"name\": \"service-0\"\n"
-          + "      },\n"
-          + "      \"subsets\": [\n"
-          + "        {\n"
-          + "          \"addresses\": [\n"
-          + "            {\n"
-          + "              \"ip\": \"192.168.0.25\",\n"
-          + "              \"nodeName\": \"node-name-1\",\n"
-          + "              \"targetRef\": {\n"
-          + "                \"name\": \"hazelcast-0\""
-          + "              }\n"
-          + "            }\n"
-          + "          ],\n"
-          + "          \"ports\": [\n"
-          + "            {\n"
-          + "              \"port\": 5701\n"
-          + "            }\n"
-          + "          ]\n"
-          + "        }\n"
-          + "      ]\n"
-          + "    },\n"
-          + "    {\n"
-          + "      \"metadata\": {\n"
-          + "        \"name\": \"hazelcast-0\"\n"
-          + "      },\n"
-          + "      \"subsets\": [\n"
-          + "        {\n"
-          + "          \"addresses\": [\n"
-          + "            {\n"
-          + "              \"ip\": \"192.168.0.25\",\n"
-          + "              \"nodeName\": \"node-name-1\",\n"
-          + "              \"targetRef\" : {\n"
-          + "                \"name\" : \"hazelcast-0\"\n"
-          + "              }\n"
-          + "            }\n"
-          + "          ],\n"
-          + "          \"ports\": [\n"
-          + "            {\n"
-          + "              \"port\": 5701\n"
-          + "            }\n"
-          + "          ]\n"
-          + "        }\n"
-          + "      ]\n"
-          + "    },\n"
-          + "    {\n"
-          + "      \"metadata\": {\n"
-          + "        \"name\": \"service-1\"\n"
-          + "      },\n"
-          + "      \"subsets\": [\n"
-          + "        {\n"
-          + "          \"addresses\": [\n"
-          + "            {\n"
-          + "              \"ip\": \"172.17.0.5\",\n"
-          + "              \"nodeName\": \"node-name-2\",\n"
-          + "              \"targetRef\": {\n"
-          + "                \"name\": \"hazelcast-1\""
-          + "              }\n"
-          + "            }\n"
-          + "          ],\n"
-          + "          \"ports\": [\n"
-          + "            {\n"
-          + "              \"port\": 5701\n"
-          + "            }\n"
-          + "          ]\n"
-          + "        }\n"
-          + "      ]\n"
-          + "    }\n"
-          + "  ]\n"
-          + "}";
+    public String getEndpointsResponseWithServices() throws JsonProcessingException {
+        return WRITER.writeValueAsString(endpointsList(
+                endpoints("my-release-hazelcast", 5701,
+                        endpointAddress("192.168.0.25", "hazelcast-0", "node-name-1"),
+                        endpointAddress("172.17.0.5", "hazelcast-1", "node-name-2")),
+                endpoints("service-0", 5701,
+                        endpointAddress("192.168.0.25", "hazelcast-0", "node-name-1")),
+                endpoints("hazelcast-0", 5701,
+                        endpointAddress("192.168.0.25", "hazelcast-0", "node-name-1")),
+                endpoints("service-1", 5701,
+                        endpointAddress("172.17.0.5", "hazelcast-1", "node-name-2")),
+                endpoints("kubernetes", "192.168.49.2", 443)));
     }
 
-    public String getEndpointsResponse() {
-        //language=JSON
-        return "{\n"
-               + "  \"kind\": \"Endpoints\",\n"
-               + "  \"subsets\": [\n"
-               + "    {\n"
-               + "      \"addresses\": [\n"
-               + "        {\n"
-               + "          \"ip\": \"192.168.0.25\",\n"
-               + "          \"targetRef\": {\n"
-               + "            \"name\": \"hazelcast-1\""
-               + "          }\n"
-               + "        },\n"
-               + "        {\n"
-               + "          \"ip\": \"172.17.0.5\",\n"
-               + "          \"targetRef\": {\n"
-               + "            \"name\": \"hazelcast-1\""
-               + "          }\n"
-               + "        }\n"
-               + "      ],\n"
-               + "      \"ports\": [\n"
-               + "        {\n"
-               + "          \"name\": \"5701\",\n"
-               + "          \"port\": 5701,\n"
-               + "          \"protocol\": \"TCP\"\n"
-               + "        }\n"
-               + "      ]\n"
-               + "    }\n"
-               + "  ]\n"
-               + "}";
+    public String getEndpointsResponse() throws JsonProcessingException {
+        return WRITER.writeValueAsString(
+                endpoints(new HashMap<String, String>() {{
+                    put("192.168.0.25", "hazelcast-0");
+                    put("172.17.0.5", "hazelcast-1");
+                }}, 5701));
     }
 
-    public String getEndpointsListResponse() {
-        //language=JSON
-        return "{\n"
-               + "  \"kind\": \"EndpointsList\",\n"
-               + "  \"items\": [\n"
-               + "    {\n"
-               + "      \"subsets\": [\n"
-               + "        {\n"
-               + "          \"addresses\": [\n"
-               + "            {\n"
-               + "              \"ip\": \"172.17.0.5\",\n"
-               + "              \"targetRef\": {\n"
-               + "                \"name\": \"hazelcast-1\""
-               + "              }\n"
-               + "            },\n"
-               + "            {\n"
-               + "              \"ip\": \"192.168.0.25\",\n"
-               + "              \"targetRef\": {\n"
-               + "                \"name\": \"hazelcast-1\""
-               + "              }\n"
-               + "            }\n"
-               + "          ],\n"
-               + "          \"notReadyAddresses\": [\n"
-               + "            {\n"
-               + "              \"ip\": \"172.17.0.6\",\n"
-               + "              \"targetRef\": {\n"
-               + "                \"name\": \"hazelcast-1\""
-               + "              }\n"
-               + "            }\n"
-               + "          ],\n"
-               + "          \"ports\": [\n"
-               + "            {\n"
-               + "              \"port\": 5701\n"
-               + "            },\n"
-               + "            {\n"
-               + "              \"name\": \"hazelcast\",\n"
-               + "              \"protocol\": \"TCP\",\n"
-               + "              \"port\": 5702\n"
-               + "            }\n"
-               + "          ]\n"
-               + "        }\n"
-               + "      ]\n"
-               + "    }\n"
-               + "  ]\n"
-               + "}";
+    public String getEndpointsListResponse() throws JsonProcessingException {
+        return WRITER.writeValueAsString(endpointsList(
+                endpoints(new HashMap<String, String>() {{
+                              put("172.17.0.5", "hazelcast-0");
+                              put("192.168.0.25", "hazelcast-1");
+                          }},
+                        Collections.singletonMap("172.17.0.6", "hazelcast-2"),
+                        new HashMap<String, Integer>() {{
+                            put("5701", 5701);
+                            put("hazelcast", 5702);
+                        }})));
     }
 
     public String getEndpointsUrlString() {
