@@ -74,7 +74,8 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     public void test_useUnsupportedOptionFails() {
         createMapping("test", Long.class, String.class);
         assertThatThrownBy(() -> sqlService.execute(
-                "ANALYZE WITH OPTIONS('splitBrainProtectionEnabled'='true') SELECT * FROM test"));
+                "ANALYZE WITH OPTIONS('splitBrainProtectionEnabled'='true') SELECT * FROM test"))
+                .hasMessageContaining("Job option is not supported for ANALYZE");
     }
 
     @Test
