@@ -19,6 +19,7 @@ package com.hazelcast.test.compatibility;
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
@@ -46,6 +47,7 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
@@ -301,6 +303,11 @@ public class SamplingNodeExtension implements NodeExtension {
 
     public CPPersistenceService getCPPersistenceService() {
         return NopCPPersistenceService.INSTANCE;
+    }
+
+    @Override
+    public CPSubsystem createCPSubsystem(NodeEngine nodeEngine) {
+        return nodeExtension.createCPSubsystem(nodeEngine);
     }
 
     @Override

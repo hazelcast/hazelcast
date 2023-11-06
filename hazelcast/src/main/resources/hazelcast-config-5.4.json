@@ -2914,7 +2914,8 @@
               "management",
               "job",
               "connector",
-              "sql"
+              "sql",
+              "cpmap"
             ]
           },
           "properties": {

@@ -18,6 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
@@ -43,6 +44,7 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
@@ -396,6 +398,11 @@ public interface NodeExtension {
      * Returns CP persistence service.
      */
     CPPersistenceService getCPPersistenceService();
+
+    /**
+     * Creates the relevant CP subsystem implementation.
+     */
+    CPSubsystem createCPSubsystem(NodeEngine nodeEngine);
 
     /**
      * Returns a JetService.
