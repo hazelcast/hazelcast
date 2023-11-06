@@ -21,6 +21,7 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -44,9 +46,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.management.OperatingSystemMXBean;
 import java.net.ServerSocket;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -83,6 +87,7 @@ import static java.lang.Integer.min;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -90,8 +95,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -788,6 +796,52 @@ public class IOUtilTest extends HazelcastTestSupport {
         Files.delete(src);
         Path target = src.resolveSibling("target.txt");
         Assert.assertThrows(NoSuchFileException.class, () -> IOUtil.move(src, target));
+    }
+
+    @Test
+    public void testFsyncDirNotForcedOnWindows() throws IOException {
+        MockedStatic<OS> os = mockStatic(OS.class);
+        MockedStatic<FileChannel> fc = mockStatic(FileChannel.class);
+        os.when(OS::isWindows).thenReturn(true);
+
+        IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+        fc.verifyNoInteractions();
+    }
+
+    @Test(expected = NoSuchFileException.class)
+    public void testFsyncDirThrowsNoSuchFileExceptionWindows() throws IOException {
+        MockedStatic<OS> os = mockStatic(OS.class);
+        MockedStatic<Files> files = mockStatic(Files.class);
+        os.when(OS::isWindows).thenReturn(true);
+        files.when(() -> Files.exists(any(), any())).thenReturn(false);
+
+        IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+    }
+
+    @Test
+    public void testFsyncDirWhenOSLinux() throws IOException {
+        MockedStatic<OS> os = mockStatic(OS.class);
+        MockedStatic<FileChannel> fc = mockStatic(FileChannel.class);
+        FileChannel mockFileChannel = mock(FileChannel.class);
+
+        os.when(OS::isLinux).thenReturn(true);
+        fc.when(() -> FileChannel.open(tempFolder.getRoot().toPath(), READ)).thenReturn(mockFileChannel);
+
+        IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+        verify(mockFileChannel).force(true);
+    }
+
+    @Test
+    public void testFsyncDirWhenOSIsMac() throws IOException {
+        MockedStatic<OS> os = mockStatic(OS.class);
+        MockedStatic<FileChannel> fc = mockStatic(FileChannel.class);
+        FileChannel mockFileChannel = mock(FileChannel.class);
+
+        os.when(OS::isMac).thenReturn(true);
+        fc.when(() -> FileChannel.open(tempFolder.getRoot().toPath(), READ)).thenReturn(mockFileChannel);
+
+        IOUtil.fsyncDir(tempFolder.getRoot().toPath());
+        verify(mockFileChannel).force(true);
     }
 
     private File newFile(String filename) {

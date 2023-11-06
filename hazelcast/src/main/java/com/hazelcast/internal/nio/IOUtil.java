@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -52,6 +53,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.NetworkChannel;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
@@ -84,8 +86,10 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static java.lang.String.format;
+import static java.nio.channels.FileChannel.open;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
+import static java.nio.file.StandardOpenOption.READ;
 
 @SuppressWarnings({"WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber", "checkstyle:classfanoutcomplexity",
         "checkstyle:ClassDataAbstractionCoupling"})
@@ -897,6 +901,35 @@ public final class IOUtil {
         return options.contains(IOUtil.JDK_NET_TCP_KEEPCOUNT)
                 && options.contains(IOUtil.JDK_NET_TCP_KEEPIDLE)
                 && options.contains(IOUtil.JDK_NET_TCP_KEEPINTERVAL);
+    }
+
+
+    /**
+     * Fsyncs a directory on Linux and MacOSX. On Windows, this method does nothing.
+     * <p>
+     * @param dir the directory to fsync.
+     * @throws IOException if an I/O error occurs.
+     */
+    public static void fsyncDir(Path dir) throws IOException {
+        // If the file is a directory we have to open read-only.
+        if (OS.isWindows()) {
+            // opening a directory on Windows fails, directories can not be fsynced there
+            if (!Files.exists(dir)) {
+                // yet do not suppress trying to fsync directories that do not exist
+                throw new NoSuchFileException(dir.toString());
+            }
+            return;
+        }
+        try (final FileChannel file = open(dir, READ)) {
+            try {
+                file.force(true);
+            } catch (final IOException e) {
+                assert !(OS.isLinux() || OS.isMac())
+                        : "On Linux and MacOSX fsyncing a directory should not throw IOException, "
+                        + "we just don't want to rely on that in production (undocumented). Got: "
+                        + e;
+            }
+        }
     }
 
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {
