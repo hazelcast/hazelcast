@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.JobConfigArguments;
 import com.hazelcast.sql.impl.QueryUtils;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
@@ -91,6 +92,7 @@ public class SqlAnalyzeStatement extends SqlCall {
         jobConfig.setSplitBrainProtection(false);
         jobConfig.setAutoScaling(false);
         jobConfig.setSuspendOnFailure(false);
+        jobConfig.setArgument(JobConfigArguments.KEY_PLAN_ANALYZED_ATTRIBUTE, "true");
 
         for (SqlNode option0 : options) {
             SqlOption option = (SqlOption) option0;

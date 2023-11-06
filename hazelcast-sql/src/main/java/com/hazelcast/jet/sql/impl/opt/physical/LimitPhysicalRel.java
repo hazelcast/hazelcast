@@ -34,7 +34,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
 
-public class  LimitPhysicalRel extends SingleRel implements PhysicalRel {
+public class LimitPhysicalRel extends SingleRel implements PhysicalRel {
 
     private final RexNode offset;
 

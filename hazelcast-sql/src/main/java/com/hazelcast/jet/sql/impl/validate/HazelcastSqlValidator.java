@@ -178,8 +178,8 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
         if (topNode instanceof SqlAnalyzeStatement) {
             SqlAnalyzeStatement analyzeStatement = (SqlAnalyzeStatement) topNode;
-            // Note: we're using custom validate method to handle same issues as for EXPLAIN.
             analyzeStatement.validate(this);
+            // Note: we're using custom validate method to extract & validate options
             SqlNode query = analyzeStatement.getQuery();
             query = super.validate(query);
             analyzeStatement.setQuery(query);

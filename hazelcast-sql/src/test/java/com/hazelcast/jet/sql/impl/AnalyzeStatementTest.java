@@ -48,6 +48,7 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
         createMapping("test", Long.class, String.class);
         assertFalse(assertQueryPlan("SELECT * FROM test").isAnalyzed());
         assertTrue(assertQueryPlan("ANALYZE SELECT * FROM test").isAnalyzed());
+
         // Default options
         SelectPlan plan = assertQueryPlan(
                 "ANALYZE WITH OPTIONS("
@@ -84,9 +85,18 @@ public class AnalyzeStatementTest extends SqlEndToEndTestSupport {
     @Test
     public void test_useUnsupportedOptionFails() {
         createMapping("test", Long.class, String.class);
+        String expectedErrorDescription = "Job option is not supported for ANALYZE";
         assertThatThrownBy(() -> sqlService.execute(
                 "ANALYZE WITH OPTIONS('splitBrainProtectionEnabled'='true') SELECT * FROM test"))
-                .hasMessageContaining("Job option is not supported for ANALYZE");
+                .hasMessageContaining(expectedErrorDescription);
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "ANALYZE WITH OPTIONS('autoScaling'='true') SELECT * FROM test"))
+                .hasMessageContaining(expectedErrorDescription);
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "ANALYZE WITH OPTIONS('suspendOnFailure'='true') SELECT * FROM test"))
+                .hasMessageContaining(expectedErrorDescription);
     }
 
     @Test
