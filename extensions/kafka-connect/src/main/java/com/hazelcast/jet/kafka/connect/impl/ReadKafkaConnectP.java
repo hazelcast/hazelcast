@@ -46,11 +46,11 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.KAFKA_CONNECT_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+import static java.util.Objects.requireNonNull;
 
 public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMetricsProvider {
 
@@ -68,9 +68,9 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     public ReadKafkaConnectP(@Nonnull ConnectorWrapper connectorWrapper,
                              @Nonnull EventTimePolicy<? super T> eventTimePolicy,
                              @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
-        checkNotNull(connectorWrapper, "connectorWrapper is required");
-        checkNotNull(eventTimePolicy, "eventTimePolicy is required");
-        checkNotNull(projectionFn, "projectionFn is required");
+        requireNonNull(connectorWrapper, "connectorWrapper is required");
+        requireNonNull(eventTimePolicy, "eventTimePolicy is required");
+        requireNonNull(projectionFn, "projectionFn is required");
         this.connectorWrapper = connectorWrapper;
         this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
         this.projectionFn = projectionFn;
@@ -191,7 +191,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
 
             @Override
             public void init(@Nonnull Context context) {
-                properties.put("tasks.max", Integer.toString(context.localParallelism()));
+                properties.put("tasks.max", Integer.toString(context.totalParallelism()));
                 this.connectorWrapper = new ConnectorWrapper(properties);
             }
 
@@ -206,7 +206,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
             @Override
             public Collection<? extends Processor> get(int count) {
                 return IntStream.range(0, count)
-                        .mapToObj(i -> new ReadKafkaConnectP(connectorWrapper, eventTimePolicy, projectionFn))
+                        .mapToObj(i -> new ReadKafkaConnectP<>(connectorWrapper, eventTimePolicy, projectionFn))
                         .collect(Collectors.toList());
             }
 

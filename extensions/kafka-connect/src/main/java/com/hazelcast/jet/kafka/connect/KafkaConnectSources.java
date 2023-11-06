@@ -89,7 +89,7 @@ public final class KafkaConnectSources {
         }
 
         return Sources.streamFromProcessorWithWatermarks(name, true,
-                eventTimePolicy -> ProcessorMetaSupplier.randomMember(processSupplier(properties, eventTimePolicy,
+                eventTimePolicy -> ProcessorMetaSupplier.of(processSupplier(properties, eventTimePolicy,
                         projectionFn)));
     }
 

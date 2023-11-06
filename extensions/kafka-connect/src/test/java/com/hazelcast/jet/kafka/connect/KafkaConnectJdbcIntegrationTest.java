@@ -52,6 +52,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -170,28 +171,39 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         HazelcastInstance instance = instances[0];
 
         IMap<String, Integer> processors = instance.getMap("processors_" + randomName());
+        IMap<String, String> processorInstances = instance.getMap("processorInstances_" + randomName());
         Pipeline pipeline = Pipeline.create();
-        StreamStage<Map.Entry<String, Integer>> streamStage = pipeline
+        StreamStage<String> mappedValueStage = pipeline
                 .readFrom(KafkaConnectSources.connect(randomProperties,
                         SourceRecordUtil::convertToString))
                 .withoutTimestamps()
-                .setLocalParallelism(localParallelism)
+                .setLocalParallelism(localParallelism);
+
+        mappedValueStage
                 .mapUsingService(nonSharedService(Context::globalProcessorIndex),
                         (ctx, item) -> Map.entry(item, ctx))
-                .setLocalParallelism(localParallelism);
-        streamStage.writeTo(Sinks.logger());
-        streamStage
+                .setLocalParallelism(localParallelism)
                 .writeTo(Sinks.map(processors));
+
+        mappedValueStage
+                .mapUsingService(nonSharedService(ctx -> ctx.hazelcastInstance().getName()),
+                        (ctx, item) -> Map.entry(item, ctx))
+                .setLocalParallelism(localParallelism)
+                .writeTo(Sinks.map(processorInstances));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
 
-        Job job = instance.getJet().newJob(pipeline, jobConfig);
+        instance.getJet().newJob(pipeline, jobConfig);
 
         var expectedProcessorIndexArray = IntStream.range(0, 3 * localParallelism).boxed().toArray(Integer[]::new);
+        var allInstancesNames = Arrays.stream(instances).map(HazelcastInstance::getName).toArray(String[]::new);
         assertTrueEventually(() -> {
             Set<Integer> array = new TreeSet<>(processors.values());
             assertThat(array).containsExactlyInAnyOrder(expectedProcessorIndexArray);
+
+            Set<String> instanceNames = new TreeSet<>(processorInstances.values());
+            assertThat(instanceNames).containsExactlyInAnyOrder(allInstancesNames);
         });
     }
 
