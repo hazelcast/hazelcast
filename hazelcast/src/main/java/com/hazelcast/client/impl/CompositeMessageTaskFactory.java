@@ -43,7 +43,7 @@ public class CompositeMessageTaskFactory implements MessageTaskFactory {
     public CompositeMessageTaskFactory(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = ((NodeEngineImpl) nodeEngine).getNode();
-        MessageTaskFactoryProvider defaultProvider = node.getNodeExtension().getMessageTaskFactoryProvider(nodeEngine);
+        MessageTaskFactoryProvider defaultProvider = node.getNodeExtension().createMessageTaskFactoryProvider(nodeEngine);
         this.factories = new Int2ObjectHashMap<>(defaultProvider.getFactories().size());
         loadProvider(defaultProvider);
         loadServices();

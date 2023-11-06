@@ -323,7 +323,7 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public MessageTaskFactoryProvider getMessageTaskFactoryProvider(NodeEngine nodeEngine) {
-        return nodeExtension.getMessageTaskFactoryProvider(nodeEngine);
+    public MessageTaskFactoryProvider createMessageTaskFactoryProvider(NodeEngine nodeEngine) {
+        return nodeExtension.createMessageTaskFactoryProvider(nodeEngine);
     }
 }

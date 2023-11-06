@@ -401,7 +401,7 @@ public interface NodeExtension {
     CPPersistenceService getCPPersistenceService();
 
     /**
-     * Creates the relevant CP subsystem implementation.
+     * Creates the relevant {@link CPSubsystem}.
      */
     CPSubsystem createCPSubsystem(NodeEngine nodeEngine);
 
@@ -414,5 +414,8 @@ public interface NodeExtension {
     @Nullable
     JetServiceBackend getJetServiceBackend();
 
-    MessageTaskFactoryProvider getMessageTaskFactoryProvider(NodeEngine nodeEngine);
+    /**
+     * Creates the relevant {@link MessageTaskFactoryProvider}.
+     */
+    MessageTaskFactoryProvider createMessageTaskFactoryProvider(NodeEngine nodeEngine);
 }

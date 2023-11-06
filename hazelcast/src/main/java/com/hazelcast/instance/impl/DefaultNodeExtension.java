@@ -704,7 +704,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public MessageTaskFactoryProvider getMessageTaskFactoryProvider(NodeEngine nodeEngine) {
+    public MessageTaskFactoryProvider createMessageTaskFactoryProvider(NodeEngine nodeEngine) {
         return new DefaultMessageTaskFactoryProvider(nodeEngine);
     }
 }
