@@ -25,7 +25,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
-import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.ClientLoggingService;
 import com.hazelcast.client.impl.clientside.ClusterDiscoveryService;
@@ -119,7 +118,6 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CL
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
-import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -831,14 +829,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             // TODO: Outbound ports for TPC?
             bindSocketToPort(socket);
 
-            // TODO: use the same channel initializer with the legacy connection, when
-            //  we implement TLS support for TPC.
-            HazelcastProperties properties = client.getProperties();
-            SocketOptions socketOptions = client.getClientConfig().getNetworkConfig().getSocketOptions();
-            boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
-            ClientPlainChannelInitializer channelInitializer
-                    = new ClientPlainChannelInitializer(socketOptions, directBuffer);
-
+            ChannelInitializer channelInitializer = clusterDiscoveryService.current().getChannelInitializer();
             Channel channel = networking.register(channelInitializer, socketChannel, true);
 
             channel.addCloseListener(new TpcChannelCloseListener(client));
@@ -1328,7 +1319,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     private void connectTpcPorts(TcpClientConnection connection, List<Integer> tpcPorts, byte[] tpcToken) {
-        TpcChannelConnector connector = new TpcChannelConnector(client,
+        TpcChannelConnector connector = new TpcChannelConnector(
+                client,
                 authenticationTimeout,
                 clientUuid,
                 connection,
