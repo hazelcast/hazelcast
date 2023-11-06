@@ -44,6 +44,7 @@ public class MemberService {
                         .liteMember(m.isLiteMember())
                         .localMember(m.localMember())
                         .uuid(m.getUuid().toString())
+                        .memberVersion(m.getVersion().toString())
                         .build())
                 .forEach(members::add);
 
@@ -65,6 +66,7 @@ public class MemberService {
                 .liteMember(localMember.isLiteMember())
                 .localMember(localMember.localMember())
                 .uuid(localMember.getUuid().toString())
+                .memberVersion(localMember.getVersion().toString())
                 .build();
     }
 
@@ -80,6 +82,7 @@ public class MemberService {
                     .liteMember(member.isLiteMember())
                     .localMember(member.localMember())
                     .uuid(member.getUuid().toString())
+                    .memberVersion(member.getVersion().toString())
                     .build();
         } else {
             return null;
