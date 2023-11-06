@@ -27,6 +27,7 @@ import com.hazelcast.internal.server.PacketFilter;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.collection.IntHashSet;
+import com.hazelcast.logging.ILogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,6 +54,9 @@ public final class PacketFiltersUtil {
         ServerConnectionManager cm = getConnectionManager(instance);
         if (cm instanceof FirewallingServerConnectionManager) {
             ((FirewallingServerConnectionManager) cm).removePacketFilter();
+        } else {
+            ILogger logger = instance.getLoggingService().getLogger(PacketFiltersUtil.class);
+            logger.warning("Trying to reset packet filters when using real network");
         }
     }
 
