@@ -46,8 +46,7 @@ public final class PacketFiltersUtil {
 
     public static ServerConnectionManager getConnectionManager(HazelcastInstance instance) {
         Node node = getNode(instance);
-        ServerConnectionManager connectionManager = node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
-        return connectionManager;
+        return node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
     }
 
     public static void resetPacketFiltersFrom(HazelcastInstance instance) {
